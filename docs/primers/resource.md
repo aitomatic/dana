@@ -2,67 +2,90 @@
 
 ## TL;DR (2 minute read)
 
-**✅ The `resource` keyword is now implemented!** Resources work as specialized structs. The agent `.use()` method integration is still in development.
+Resources are specialized structs in Dana that represent external tools, data sources, and services. They support fields, methods via struct-function pattern, inheritance, and lifecycle management.
 
 ```dana
-# Resource definition - works today!
+# Resource definition
 resource DocumentRAG:
     sources: list = []
     chunk_size: int = 1024
     domain: str = "documents"
 
-# Resource instantiation - works!
+# Resource instantiation
 docs = DocumentRAG(sources=["report.pdf", "analysis.pdf"])
 print("Resource domain:", docs.domain)  # Output: documents
 
-# Resource behavior via struct-function pattern - works!
-def (resource: DocumentRAG) query(request: str) -> str:
-    return f"Analysis of {len(resource.sources)} documents: {request}"
+# Resource methods via struct-function pattern
+def (self: DocumentRAG) query(request: str) -> str:
+    return f"Analysis of {len(self.sources)} documents: {request}"
 
-# Direct usage - works!
+# Direct usage
 result = docs.query("What are the key findings?")
 
-# Agent integration - proposed future enhancement
+# Resource inheritance
+resource BaseResource:
+    kind: str = "base"
+    version: str = "1.0.0"
+
+resource MyRAG(BaseResource):
+    sources: list = []
+    domain: str = "documents"
+
+# Agent integration with resources
 agent_blueprint DataAnalyst:
     name: str = "DataAnalyst"
+    domain: str = "analysis"
 
-agent Alice(DataAnalyst)
-
-# Future: agent.use() method (not yet implemented)
-# def (agent: Alice) analyze(company: str) -> str:
-#     return agent.use(docs).query(f"Analyze {company}")
+analyst = DataAnalyst()
 ```
 
 ---
 
-**What it is**: Resources are now first-class types in Dana using the `resource` keyword. They work as specialized structs with behavior defined through the struct-function pattern. Agent integration via `.use()` is planned.
+**What it is**: Resources are first-class types in Dana using the `resource` keyword. They work as specialized structs with full functionality including inheritance, methods, and integration with agents and other Dana features.
 
-## Current Status & Future Vision
+## Features
 
-**Today (Current Dana)**: Resources are accessed through the legacy `use()` and `py_use()` functions:
+The resource system provides:
+- `resource` keyword for defining resource types
+- Resource instantiation with field initialization
+- Struct-function pattern for resource methods
+- Resource inheritance from base resources
+- Complex field types (lists, dicts, nested structures)
+- Resource lifecycle methods (start, stop, context managers)
+- Integration with agents and workflows
+- Dictionary field subscript access within methods
+
+**Working Examples:**
 ```dana
-agent_blueprint DataWorker:
-    name: str = "DataWorker"
+# Basic resource with methods
+resource CalculatorResource:
+    operation: str = "add"
+    default_value: int = 0
 
-agent Alice(DataWorker)
+def (self: CalculatorResource) add(a: int, b: int) -> int:
+    return a + b
 
-# Current approach - functional calls
-mcp_client = py_use("mcp", endpoint="http://localhost:8880")
-result = mcp_client.call_tool("search", {"query": "test"})
-```
+def (self: CalculatorResource) multiply(a: int, b: int) -> int:
+    return a * b
 
-**Proposed (Future Dana)**: Resources as first-class types with agent `.use()` method:
-```dana
-# Resources defined as structs  
-resource MCPService(BaseResource):
-    endpoint: str = "http://localhost:8880"
+# Resource with inheritance
+resource BaseResource:
+    kind: str = "base"
+    version: str = "1.0.0"
 
-def (resource: MCPService) query(request: str) -> str:
-    return f"MCP result for: {request}"
+resource ExtendedResource(BaseResource):
+    extra_field: str = "extra"
+    chunk_size: int = 1024
 
-# Agent access via .use() method
-def (agent: Alice) search(query: str) -> str:
-    return agent.use(mcp_service).query(query)
+# Resource with complex state management
+resource StatefulResource:
+    current_state: str = "initialized"
+    transition_count: int = 0
+    processors: dict = {"uppercase": "to_upper"}
+
+def (self: StatefulResource) register_processor(name: str, func: str) -> bool:
+    self.processors[name] = func  # Dict subscript access works!
+    return true
 ```
 
 ## What are Resources?
@@ -76,579 +99,560 @@ Resources represent external tools, data sources, services, or computational cap
 - **Database Resources**: Connection endpoints to databases
 - **API Resources**: External web service endpoints
 
-## Implementation Status
-
-✅ **The `resource` keyword is now implemented and working!**
-
-**What exists today:**
-- ✅ `resource` keyword for defining resource types (implemented!)
-- ✅ Resource instantiation and field access
-- ✅ Struct-function pattern for resource behavior  
-- ✅ Standard `query()` interface via struct-functions
-- Agent blueprints and singleton agents (`agent_blueprint`, `agent`)
-- Basic agent functionality
-
-**What's still in development:**
-- 🚧 Agent `.use()` method for accessing resources
-- 🚧 Resource lifecycle management (start/stop/suspend)
-- 🚧 Resource transfer between agents via handles
-- 🚧 Inheritance between resource types
-
-## Core Concepts (Proposed)
-
-### Independent Resource Definition
-Resources would be defined independently of agents and instantiated at module level:
-
-```dana
-# Proposed syntax (not yet implemented)
-my_docs: DocumentRAG = DocumentRAG(sources=["report1.pdf", "report2.pdf"])
-market_api: MCPResource = MCPResource(endpoint="http://localhost:8880/market-data")
-```
-
-### Agent .use() Method (Proposed)
-Agents would access resources using a `.use()` method, providing:
-- Proper resource lifecycle management
-- Security and access control
-- Clear ownership and responsibility
-- Structured resource sharing between agents
-
-### Standard Resource Interface (Proposed)
-All resources would implement a standard `query()` method as the primary interface:
-
-```dana
-# Proposed pattern: agent.use(resource).query(request)
-result = analyst.use(docs).query("What are the key findings?")
-```
+## Core Concepts
 
 ### Resource Definition
-Resources are defined using the `resource` keyword. Like all structs in Dana, they contain only fields:
+Resources are defined using the `resource` keyword as specialized structs with fields only (no methods inside the resource definition):
 
 ```dana
 # Resource definition - fields only
-resource MyResource(BaseResource):
-    kind: str = "custom"
-    endpoint: str = ""
-    timeout: int = 30
-
-# Resource behavior implemented via struct-function pattern
-def (resource: MyResource) start() -> bool:
-    # Allocate/init external connections
-    return true
-
-def (resource: MyResource) stop() -> bool:
-    # Release/cleanup
-    return true
-
-def (resource: MyResource) query(request: str) -> str:
-    # Standard query interface
-    return f"Custom response to: {request}"
+resource DocumentRAG:
+    sources: list = []
+    chunk_size: int = 1024
+    domain: str = "documents"
 ```
 
-### Resource Lifecycle
-Resources follow a defined lifecycle:
-- **CREATED**: Resource instance created but not initialized
-- **RUNNING**: Resource active and available for use
-- **SUSPENDED**: Resource temporarily unavailable
-- **TERMINATED**: Resource permanently shut down
-
-## Basic Usage
-
-### 1. Defining a Custom Resource
+### Resource Methods
+Methods are added to resources using the struct-function pattern, where the first parameter is the resource instance:
 
 ```dana
-# Resource definition - struct only, no functions inside
-resource DocumentRAG(BaseResource):
-    kind: str = "rag"
-    sources: list[str] = []
+# Define methods outside the resource using struct-function pattern
+def (self: DocumentRAG) query(request: str) -> str:
+    return f"Analyzing {len(self.sources)} documents for: {request}"
+
+def (self: DocumentRAG) add_source(source: str) -> bool:
+    self.sources.append(source)
+    return true
+```
+
+### Resource Instantiation
+Resources are instantiated like any struct with optional field initialization:
+
+```dana
+# Create resource instances
+docs = DocumentRAG()  # Use defaults
+docs_custom = DocumentRAG(sources=["doc1.pdf", "doc2.pdf"], chunk_size=512)
+```
+
+### Resource Inheritance
+Resources can inherit from other resources, gaining their fields and compatible with their methods:
+
+```dana
+resource BaseResource:
+    kind: str = "base"
+    version: str = "1.0.0"
+
+resource SpecializedRAG(BaseResource):
+    sources: list = []
+    domain: str = "specialized"
+
+# Inherited resource has all parent fields
+rag = SpecializedRAG()
+print(rag.kind)     # "base" (inherited)
+print(rag.version)  # "1.0.0" (inherited)
+print(rag.domain)   # "specialized" (own field)
+```
+
+## Resource Lifecycle Management
+
+Resources support lifecycle management through standard methods:
+
+```dana
+resource LifecycleResource:
+    state: str = "created"
+    initialized: bool = false
+
+# Lifecycle methods
+def (self: LifecycleResource) start() -> bool:
+    self.state = "running"
+    self.initialized = true
+    return true
+
+def (self: LifecycleResource) stop() -> bool:
+    self.state = "stopped"
+    return true
+
+def (self: LifecycleResource) is_running() -> bool:
+    return self.state == "running"
+
+# Usage
+lifecycle = LifecycleResource()
+lifecycle.start()  # Initialize resource
+result = lifecycle.is_running()  # Check state
+lifecycle.stop()   # Cleanup resource
+```
+
+### State Management
+Resources can manage complex internal state and transitions:
+
+```dana
+resource StatefulResource:
+    current_state: str = "initialized"
+    transition_count: int = 0
+    valid_transitions: dict = {
+        "initialized": ["running", "error"],
+        "running": ["paused", "stopped", "error"],
+        "paused": ["running", "stopped"],
+        "stopped": ["initialized"]
+    }
+
+def (self: StatefulResource) transition_to(new_state: str) -> bool:
+    valid = self.valid_transitions.get(self.current_state, [])
+    if new_state in valid:
+        self.current_state = new_state
+        self.transition_count += 1
+        return true
+    return false
+```
+
+## Basic Usage Examples
+
+### 1. Simple Resource Definition and Usage
+
+```dana
+# Basic resource definition
+resource SimpleResource:
+    name: str = "test"
+    value: int = 42
+    active: bool = true
+
+# Create and use instance
+simple = SimpleResource(name="custom", value=100)
+print(simple.name)    # "custom"
+print(simple.value)   # 100
+print(simple.active)  # true
+```
+
+### 2. Resource with Methods
+
+```dana
+# Resource definition
+resource CalculatorResource:
+    operation: str = "add"
+    history: list = []
+
+# Add methods using struct-function pattern
+def (self: CalculatorResource) add(a: int, b: int) -> int:
+    result = a + b
+    self.history.append(f"{a} + {b} = {result}")
+    return result
+
+def (self: CalculatorResource) multiply(a: int, b: int) -> int:
+    result = a * b
+    self.history.append(f"{a} * {b} = {result}")
+    return result
+
+def (self: CalculatorResource) get_history() -> list:
+    return self.history
+
+# Usage
+calc = CalculatorResource()
+sum_result = calc.add(5, 3)        # 8
+prod_result = calc.multiply(4, 6)  # 24
+history = calc.get_history()       # ["5 + 3 = 8", "4 * 6 = 24"]
+```
+
+### 3. Resource with Complex Fields
+
+```dana
+# Resource with dictionary and list fields
+resource DictResource:
+    processors: dict = {"uppercase": "to_upper", "lowercase": "to_lower"}
+    config: dict = {"timeout": 30, "retries": 3}
+
+# Methods can access and modify dictionary fields
+def (self: DictResource) register_processor(name: str, func: str) -> bool:
+    self.processors[name] = func  # Dict subscript access works
+    return true
+
+def (self: DictResource) get_processor(name: str) -> str:
+    if name in self.processors:
+        return self.processors[name]
+    return "default"
+
+# Usage
+dict_resource = DictResource()
+dict_resource.register_processor("reverse", "to_reverse")
+processor = dict_resource.get_processor("reverse")  # "to_reverse"
+```
+
+### 4. Resource Inheritance
+
+```dana
+# Base resource
+resource BaseResource:
+    kind: str = "base"
+    name: str = ""
+    version: str = "1.0.0"
+
+# Specialized resource inherits from base
+resource TestRAG(BaseResource):
+    sources: list = []
     chunk_size: int = 1024
     domain: str = "documents"
 
-# Resource functions use struct-function pattern
-def (resource: DocumentRAG) start() -> bool:
-    print(f"Loading {len(resource.sources)} document sources")
-    # Initialize vector database, load embeddings, etc.
-    return true
-
-# Standard query method - implemented as external function
-def (resource: DocumentRAG) query(request: str) -> str:
-    if not resource.is_running():
-        return "Resource not available"
-    
-    # Perform RAG query
-    return f"Answer based on {len(resource.sources)} documents: {request}"
-```
-
-### 2. Using Resources with Agents
-
-```dana
-# Define resources independently
-docs: DocumentRAG = DocumentRAG(
-    sources=["report1.pdf", "report2.pdf"],
-    description="Financial analysis documents"
-)
-
-market_api: MCPResource = MCPResource(
-    endpoint="http://localhost:8880/market-data",
-    description="Real-time market data"
-)
-
-# Agent definition
-agent DataAnalyst:
-    name: str = "DataAnalyst"
-
-# Agent functions use .use() to access resources
-def (analyst: DataAnalyst) analyze_company(company: str) -> str:
-    # Use standard query interface on all resources
-    document_context = analyst.use(docs).query(f"Financial data for {company}")
-    market_data = analyst.use(market_api).query(f"Current price for {company}")
-    
-    # Combine with LLM reasoning
-    analysis = reason(f"""
-    Based on documents: {document_context}
-    And market data: {market_data}
-    Provide analysis for {company}
-    """)
-    
-    return analysis
-```
-
-### 3. Resource Transfer Between Agents
-
-Resources can be transferred between agents using portable handles:
-
-```dana
-# Shared resource
-shared_data: DocumentRAG = DocumentRAG(sources=["important_docs.pdf"])
-
-agent SourceAgent:
-    name: str = "SourceAgent"
-
-def (source: SourceAgent) share_data() -> ResourceHandle:
-    # Create portable handle from resource
-    return to_handle(shared_data)
-
-agent TargetAgent:
-    name: str = "TargetAgent"
-
-def (target: TargetAgent) receive_data(handle: ResourceHandle) -> bool:
-    # Reconstruct resource from handle
-    received_data: DocumentRAG = from_handle(handle)
-    
-    # Use the reconstructed resource with standard query interface
-    result = target.use(received_data).query("What documents are available?")
-    return true
+# Create instance - has all parent and child fields
+rag = TestRAG(name="MyRAG", sources=["doc1.pdf", "doc2.pdf"])
+print(rag.kind)       # "base" (inherited)
+print(rag.version)    # "1.0.0" (inherited)
+print(rag.name)       # "MyRAG" (set on creation)
+print(rag.domain)     # "documents" (own field)
 ```
 
 ## Standard Query Interface
 
-All resources implement a standard `query(request: str) -> str` method. This provides a consistent interface regardless of resource type:
+Resources commonly implement a `query(request: str) -> str` method as their primary interface:
 
 ```dana
-# All these use the same query pattern:
-doc_result = agent.use(document_rag).query("What are the key findings?")
-api_result = agent.use(mcp_service).query("Get current stock prices")  
-human_result = agent.use(human_interface).query("Do you approve this decision?")
-knowledge_result = agent.use(knowledge_base).query("What are best practices?")
+resource QueryResource:
+    responses: dict = {"hello": "world", "test": "response"}
+
+def (self: QueryResource) query(request: str) -> str:
+    if request in self.responses:
+        return self.responses[request]
+    return f"Unknown query: {request}"
+
+# Usage
+query_resource = QueryResource()
+result = query_resource.query("hello")  # "world"
 ```
 
-The query method handles:
-- **Request interpretation**: Understanding what the agent is asking for
-- **Resource-specific processing**: Using the resource's capabilities appropriately  
-- **Response formatting**: Returning results in a consistent string format
-- **Error handling**: Managing resource unavailability or failures
+## Context Manager Support
 
-## Lifecycle and Context Managers
-
-- All resources support start()/stop() by default. If you define `def (resource: X) start()` or `stop()`, they are called by lifecycle helpers.
-- Resources are context managers; using `with` or `async with` automatically calls start()/stop():
+Resources can be used as context managers with `with` statements:
 
 ```dana
-# Sync context manager
-with docs:
-    result = agent.use(docs).query("Key findings?")
+resource ContextResource:
+    is_open: bool = false
+    operation_count: int = 0
 
-# Async context manager inside an async function
-def (agent: DataAnalyst) analyze_async(topic: str) -> str:
-    # Pseudocode illustrating async with; actual awaiting depends on call site
-    async with market_api:
-        return agent.use(market_api).query(f"Analyze {topic}")
+# Define context manager methods
+def (self: ContextResource) enter_context() -> ContextResource:
+    self.is_open = true
+    self.operation_count += 1
+    return self
+
+def (self: ContextResource) exit_context(exc_type, exc_val, exc_tb) -> bool:
+    self.is_open = false
+    return false  # Don't suppress exceptions
+
+# Usage with context manager
+context_resource = ContextResource()
+with context_resource as res:
+    # Resource is available within context
+    assert res.operation_count == 1
 ```
 
-### Minimal built-in methods
+## Working with Agents
 
-- start() -> bool: bring the resource up; idempotent
-- stop() -> bool: tear the resource down; idempotent
-- query(request) -> result: primary operation entrypoint (override per resource)
-- get_stats() -> dict: optional lightweight telemetry
-- get_metadata() -> dict: optional static metadata
-
-## Standard Resource Types
-
-### MCP Resource
-For Model Context Protocol endpoints:
+Resources integrate seamlessly with Dana's agent system:
 
 ```dana
-# Resource definition - struct only
-resource MyMCP(MCPResource):
-    endpoint: str = "http://localhost:8880/tools"
-    auth: dict = {"api_key": "your-key"}
-    timeout: int = 60
+# Define resources
+resource DataSource:
+    endpoint: str = "http://api.example.com"
+    api_key: str = ""
+    cache_enabled: bool = true
 
-# MCP resource behavior
-def (resource: MyMCP) query(request: str) -> str:
-    # Implement MCP-specific query logic
-    return f"MCP result for: {request}"
+def (self: DataSource) fetch_data(query: str) -> str:
+    return f"Data from {self.endpoint}: {query}"
 
-# Create resource instance
-tools: MyMCP = MyMCP()
+# Define agent blueprint
+agent_blueprint DataAnalyst:
+    name: str = "DataAnalyst"
+    domain: str = "analysis"
 
-# Usage in agent:
-agent WebSearcher:
-    name: str = "WebSearcher"
+# Create instances
+data_source = DataSource(endpoint="http://api.finance.com")
+analyst = DataAnalyst()
 
-def (searcher: WebSearcher) search(query: str) -> str:
-    return searcher.use(tools).query(f"Search web for: {query}")
+# Both agents and resources work independently
+data = data_source.fetch_data("stock prices")
+print(analyst.name)  # "DataAnalyst"
 ```
 
-### RAG Resource
-For document retrieval systems:
+## Resource Patterns
 
+### Document Processing Resource
 ```dana
-# Resource definition - struct only
-resource CompanyRAG(RAGResource):
-    sources: list[str] = ["10k.pdf", "earnings.pdf"]
-    chunk_size: int = 512
-    embedding_model: str = "all-MiniLM-L6-v2"
+resource DocumentStore:
+    documents: list = []
+    search_index: dict = {}
 
-# RAG resource behavior
-def (resource: CompanyRAG) query(request: str) -> str:
-    # Implement RAG-specific query logic
-    return f"RAG analysis of {len(resource.sources)} documents: {request}"
+def (self: DocumentStore) add_document(doc_id: str, content: str) -> bool:
+    self.documents.append({"id": doc_id, "content": content})
+    self.search_index[doc_id] = content
+    return true
 
-# Create resource instance
-company_docs: CompanyRAG = CompanyRAG()
+def (self: DocumentStore) search(query: str) -> list:
+    results = []
+    for doc_id, content in self.search_index.items():
+        if query.lower() in content.lower():
+            results.append(doc_id)
+    return results
+```
+
+### Text Processing Resource
+```dana
+resource TextProcessor:
+    default_processor: str = "identity"
+
+def (self: TextProcessor) process(text: str, processor_name: str = "") -> str:
+    if processor_name == "":
+        processor_name = self.default_processor
     
-# Usage in agent:
-agent DocumentAnalyzer:
-    name: str = "DocumentAnalyzer"
+    if processor_name == "uppercase":
+        return text.upper()
+    elif processor_name == "lowercase":
+        return text.lower()
+    elif processor_name == "reverse":
+        return text[::-1]
+    else:
+        return text
 
-def (analyzer: DocumentAnalyzer) analyze_trends() -> str:
-    context = analyzer.use(company_docs).query("What are the revenue trends?")
-    return context
-```
-
-### Knowledge Resource
-For structured knowledge operations:
-
-```dana
-# Resource definition - struct only
-resource DomainKnowledge(KnowledgeResource):
-    sources: list[str] = ["knowledge_base.json"]
-    domain: str = "finance"
-
-# Knowledge resource behavior
-def (resource: DomainKnowledge) query(request: str) -> str:
-    # Implement knowledge-specific query logic
-    return f"Knowledge from {resource.domain} domain: {request}"
-
-# Create resource instance
-knowledge_base: DomainKnowledge = DomainKnowledge()
-    
-# Usage in agent:
-agent KnowledgeWorker:
-    name: str = "KnowledgeWorker"
-
-def (worker: KnowledgeWorker) analyze_investment() -> str:
-    # Knowledge resources can handle different types of queries
-    facts = worker.use(knowledge_base).query("What are key investment strategies?")
-    plan = worker.use(knowledge_base).query("Create a plan for portfolio optimization")
-    return f"Facts: {facts}\nPlan: {plan}"
-```
-
-### Human Resource
-For human-in-the-loop interactions:
-
-```dana
-# Resource definition - struct only
-resource UserInterface(HumanResource):
-    interface_type: str = "console"
-    timeout: int = 300
-    prompt_template: str = "Please provide input: {question}"
-
-# Human resource behavior
-def (resource: UserInterface) query(request: str) -> str:
-    # Implement human interaction logic
-    formatted_prompt = resource.prompt_template.format(question=request)
-    return f"Human response to: {formatted_prompt}"
-
-# Create resource instance
-human_interface: UserInterface = UserInterface()
-    
-# Usage in agent:
-agent InteractiveAgent:
-    name: str = "InteractiveAgent"
-
-def (agent: InteractiveAgent) get_approval(decision: str) -> str:
-    response = agent.use(human_interface).query(f"Should we proceed with {decision}?")
-    return response
+# Usage
+processor = TextProcessor()
+result = processor.process("hello", "uppercase")  # "HELLO"
 ```
 
 ## Advanced Patterns
 
-### Resource Composition
-Combine multiple resources for complex workflows:
-
+### Resource with Complex State Management
 ```dana
-# Define resources independently
-documents: DocumentRAG = DocumentRAG(sources=["docs/"])
-market_data: MCPResource = MCPResource(endpoint="http://api.market.com")
-human_expert: HumanResource = HumanResource()
+resource StatefulResource:
+    current_state: str = "initialized"
+    transition_count: int = 0
+    last_transition: str = ""
 
-agent ComplexAnalyst:
-    name: str = "ComplexAnalyst"
-
-def (analyst: ComplexAnalyst) comprehensive_analysis(topic: str) -> str:
-    # Gather data from multiple resources using standard query interface
-    doc_insights = analyst.use(documents).query(f"Analyze documents about {topic}")
-    market_insights = analyst.use(market_data).query(f"Get market analysis for {topic}")
+def (self: StatefulResource) transition_to(new_state: str) -> bool:
+    valid_transitions = {
+        "initialized": ["running", "error"],
+        "running": ["paused", "stopped", "error"],
+        "paused": ["running", "stopped", "error"],
+        "stopped": ["initialized", "error"],
+        "error": ["initialized"]
+    }
     
-    # Get human validation
-    human_feedback = analyst.use(human_expert).query(
-        f"Please review this AI analysis:\nDocs: {doc_insights}\nMarket: {market_insights}"
-    )
-    
-    # Final reasoning with all contexts
-    return reason(f"""
-    Document analysis: {doc_insights}
-    Market analysis: {market_insights}
-    Human feedback: {human_feedback}
-    
-    Provide final recommendation for: {topic}
-    """)
+    if new_state in valid_transitions.get(self.current_state, []):
+        self.last_transition = f"{self.current_state} -> {new_state}"
+        self.current_state = new_state
+        self.transition_count += 1
+        return true
+    return false
+
+def (self: StatefulResource) get_status() -> str:
+    return f"{self.current_state} (transitions: {self.transition_count})"
 ```
 
-### Resource Inheritance
-Create specialized resources by inheriting from base types:
+### Resource with Complex Defaults
+```dana
+resource ComplexDefaultsResource:
+    config: dict = {"timeout": 30, "retries": 3, "backoff": 1.5}
+    tags: list = ["default", "test"]
+    nested: dict = {"level1": {"level2": {"value": 42}}}
+    computed: str = "computed_" + "value"
+
+# Create with custom values
+custom = ComplexDefaultsResource(
+    config={"timeout": 60, "retries": 5},
+    tags=["custom", "production"]
+)
+
+print(custom.config["timeout"])  # 60
+print(custom.tags[0])            # "custom"
+```
+
+### Resource Error Handling
+```dana
+resource ErrorTestResource:
+    should_fail: bool = false
+    error_message: str = "Test error"
+
+def (self: ErrorTestResource) safe_operation() -> str:
+    if self.should_fail:
+        return f"ERROR: {self.error_message}"
+    return "success"
+
+def (self: ErrorTestResource) divide(a: float, b: float) -> str:
+    if b == 0:
+        return "ERROR: Division by zero"
+    return str(a / b)
+
+# Usage
+error_resource = ErrorTestResource()
+result = error_resource.divide(10, 0)  # "ERROR: Division by zero"
+```
+
+## Working with Structs
+
+Resources integrate with Dana's struct system:
 
 ```dana
-# Specialized resource definition - struct only
-resource FinancialRAG(RAGResource):
-    kind: str = "finance_rag"
-    domain: str = "finance"
-    financial_keywords: list[str] = ["revenue", "profit", "assets", "liabilities"]
+# Define a struct
+struct Config:
+    name: str
+    value: int
+    enabled: bool
 
-# Specialized query function
-def (resource: FinancialRAG) query(request: str) -> str:
-    # Enhance query with financial context
-    enhanced_request = f"Financial analysis: {request}. Focus on {resource.financial_keywords}"
-    
-    # Call parent RAG functionality (conceptually)
-    base_result = f"RAG result for: {enhanced_request}"
-    
-    # Post-process for financial data
-    return f"Financial Analysis: {base_result}"
+# Resource that uses structs
+resource StructResource:
+    configs: list = []
+    default_config: Config = Config(name="default", value=0, enabled=false)
+
+def (self: StructResource) add_config(config: Config) -> bool:
+    self.configs.append(config)
+    return true
+
+def (self: StructResource) get_config(name: str) -> Config:
+    for config in self.configs:
+        if config.name == name:
+            return config
+    return self.default_config
+
+# Usage
+struct_resource = StructResource()
+config = Config(name="production", value=100, enabled=true)
+struct_resource.add_config(config)
+retrieved = struct_resource.get_config("production")
+print(retrieved.value)  # 100
 ```
 
-### Conditional Resource Activation
-Initialize resources only when needed:
+## Integration with Workflows
+
+Resources work within workflow patterns:
 
 ```dana
-# Heavy resource defined but not created initially
-heavy_resource: ComplexRAG = None
+# Define resources for workflow
+resource InputProcessor:
+    batch_size: int = 100
+    timeout: int = 30
 
-agent EfficientAgent:
-    name: str = "EfficientAgent"
+resource DataTransformer:
+    transformation_rules: dict = {}
+    output_format: str = "json"
 
-def (agent: EfficientAgent) _is_complex_query(query: str) -> bool:
-    # Check if query requires heavy processing
-    return len(query) > 100 or "analyze" in query
+resource OutputHandler:
+    destination: str = "console"
+    format_options: dict = {}
 
-def (agent: EfficientAgent) analyze_if_needed(query: str) -> str:
-    # Only initialize expensive resource if complex query
-    if agent._is_complex_query(query):
-        if heavy_resource is None:
-            heavy_resource = ComplexRAG(sources=["large_corpus/"])
-            heavy_resource.start()
-        
-        return agent.use(heavy_resource).query(query)
-    else:
-        # Use simple processing
-        return f"Simple analysis for: {query}"
+# Resource methods
+def (self: InputProcessor) process_batch(data: list) -> list:
+    end_index = min(len(data), self.batch_size)
+    return [f"processed_{item}" for item in data[:end_index]]
+
+def (self: DataTransformer) transform(data: list) -> str:
+    transformed = [f"{self.output_format}:{item}" for item in data]
+    return str(transformed)
+
+def (self: OutputHandler) send(data: str) -> bool:
+    return f"Sent to {self.destination}: {data}" != ""
+
+# Pipeline struct
+struct DataPipeline:
+    processor: InputProcessor
+    transformer: DataTransformer
+    handler: OutputHandler
+
+# Use pipeline with resources
+pipeline = DataPipeline(
+    processor=InputProcessor(batch_size=50),
+    transformer=DataTransformer(output_format="csv"),
+    handler=OutputHandler(destination="file")
+)
+
+input_data = ["item1", "item2", "item3"]
+processed = pipeline.processor.process_batch(input_data)
+transformed = pipeline.transformer.transform(processed)
+sent = pipeline.handler.send(transformed)
 ```
 
-## Resource Security and Best Practices
+## Resource Method Patterns
 
-### 1. Agent-Only Access Enforcement
+### Multiple Method Signatures
 ```dana
-# This will cause a runtime error - resources must be in agent context
-# direct_resource = MCPResource(endpoint="http://example.com")  # ERROR!
+resource OverloadTestResource:
+    data: dict = {}
+
+# Different method patterns
+def (self: OverloadTestResource) get(key: str) -> str:
+    return self.data.get(key, "not_found")
+
+def (self: OverloadTestResource) get_with_default(key: str, default: str) -> str:
+    return self.data.get(key, default)
+
+def (self: OverloadTestResource) set(key: str, value: str) -> bool:
+    self.data[key] = value
+    return true
+
+def (self: OverloadTestResource) set_multiple(kwargs: dict) -> int:
+    count = 0
+    for key, value in kwargs.items():
+        self.data[key] = value
+        count += 1
+    return count
+
+# Usage
+overload = OverloadTestResource()
+overload.set("name", "test")
+name = overload.get("name")  # "test"
+missing = overload.get_with_default("missing", "default")  # "default"
 ```
 
-### 2. Proper Resource Lifecycle Management
+## Best Practices
+
+### Field Type Declarations
 ```dana
-# Resource defined independently
-my_resource: MCPResource = MCPResource(endpoint="http://api.com")
-
-agent ResponsibleAgent:
-    resources_initialized: bool = false
-
-def (agent: ResponsibleAgent) initialize_resources():
-    if not agent.resources_initialized:
-        my_resource.start()
-        agent.resources_initialized = true
-
-def (agent: ResponsibleAgent) cleanup():
-    if agent.resources_initialized:
-        my_resource.stop()
-        agent.resources_initialized = false
-
-def (agent: ResponsibleAgent) work():
-    # Always use .use() with standard query interface
-    result = agent.use(my_resource).query("Process the current data")
-    return result
+# Explicit type annotations for clarity
+resource TypedResource:
+    string_field: str = "hello"
+    int_field: int = 123
+    float_field: float = 3.14
+    bool_field: bool = true
+    list_field: list = [1, 2, 3]
+    dict_field: dict = {"key": "value"}
 ```
 
-### 3. Error Handling
+### Resource Initialization
 ```dana
-# Resource defined independently
-my_resource: RAGResource = RAGResource(sources=["docs.pdf"])
+# Initialize with meaningful defaults
+resource ConfigurableResource:
+    host: str = "localhost"
+    port: int = 8080
+    timeout: int = 30
 
-agent RobustAgent:
-    name: str = "RobustAgent"
-
-def (agent: RobustAgent) safe_resource_call(query: str) -> str:
-    try:
-        if not my_resource.is_running():
-            if not my_resource.start():
-                return "Failed to initialize resource"
-        
-        return agent.use(my_resource).query(query)
-    except ResourceError as e:
-        return f"Resource error: {e.message}"
-    except Exception as e:
-        return f"Unexpected error: {str(e)}"
+# Override specific fields on creation
+config = ConfigurableResource(host="example.com", port=9000)
 ```
 
-## Current Reality vs Future Vision
-
-### Today's Dana (What Actually Works)
+### Method Organization
 ```dana
-# Current agent syntax that works
-agent_blueprint DataWorker:
-    name: str = "DataWorker"
-    domain: str = "analysis"
+resource OrganizedResource:
+    state: str = "initialized"
 
-agent Alice(DataWorker):
-    domain = "financial_analysis"
+# Lifecycle methods
+def (self: OrganizedResource) start() -> bool:
+    self.state = "running"
+    return true
 
-# Current approach - external resource calls (implementation varies)
-# Note: py_use() may or may not be fully implemented yet
-print("Alice domain:", Alice.domain)
+def (self: OrganizedResource) stop() -> bool:
+    self.state = "stopped"
+    return true
+
+# Business logic methods
+def (self: OrganizedResource) process(data: str) -> str:
+    if self.state != "running":
+        return "Resource not running"
+    return f"Processed: {data}"
 ```
 
-### Proposed Resource System (Future Enhancement)
-```dana
-# Proposed resource definition
-resource MyMCP(MCPResource):
-    endpoint: str = "http://api.com"
+## Summary
 
-def (resource: MyMCP) query(request: str) -> str:
-    return f"MCP result for: {request}"
+The Dana resource system provides a structured way to define and manage external tools, data sources, and services. Resources are implemented as specialized structs with methods defined via the struct-function pattern.
 
-# Create resource instance
-mcp: MyMCP = MyMCP()
-
-agent_blueprint DataWorker:
-    name: str = "DataWorker"
-
-agent Alice(DataWorker)
-
-# Proposed agent resource usage
-def (agent: Alice) analyze() -> str:
-    return agent.use(mcp).query("Search for test data")
-```
-
-## Integration with Dana Features
-
-### With Agents and Workflows
-Resources work seamlessly with Dana's agent and workflow systems:
-
-```dana
-# Define resource
-docs: DocumentRAG = DocumentRAG(sources=["reports/"])
-
-agent DataAnalyst:
-    name: str = "DataAnalyst"
-
-def (analyst: DataAnalyst) analyze_company(company: str) -> str:
-    return analyst.use(docs).query(f"Analysis for {company}")
-
-workflow AnalysisWorkflow:
-    analyst: DataAnalyst = DataAnalyst()
-
-def (workflow: AnalysisWorkflow) run(company: str) -> str:
-    return workflow.analyst.analyze_company(company)
-```
-
-### With Promises and Concurrency
-Resources support Dana's promise-based concurrency:
-
-```dana
-# Define resource
-analyzer: DocumentRAG = DocumentRAG(sources=["docs/"])
-
-agent ConcurrentAgent:
-    name: str = "ConcurrentAgent"
-
-def (agent: ConcurrentAgent) analyze_single_company(company: str) -> str:
-    return agent.use(analyzer).query(f"Analysis for {company}")
-
-def (agent: ConcurrentAgent) parallel_analysis(companies: list[str]) -> list[str]:
-    promises = []
-    
-    for company in companies:
-        # Each analysis runs concurrently
-        promise = deliver agent.analyze_single_company(company)
-        promises.append(promise)
-    
-    # Wait for all analyses to complete
-    return [await p for p in promises]
-```
-
-## Troubleshooting
-
-### Common Errors
-
-1. **AgentAccessError**: Trying to use resources outside agent context
-   ```
-   Solution: Move resource usage inside agent methods
-   ```
-
-2. **ResourceError**: Resource not found or not initialized
-   ```
-   Solution: Check resource name and ensure proper initialization
-   ```
-
-3. **Resource not running**: Calling methods on uninitialized resources
-   ```
-   Solution: Call resource.start() or check resource.is_running()
-   ```
-
-### Debugging Tips
-
-1. **Check resource state**: Use `resource.state` to see current lifecycle phase
-2. **Verify agent context**: Ensure resource operations are within agent methods
-3. **Test resource handles**: Validate handles before transfer using `handle.validate()`
-4. **Monitor resource statistics**: Use registry statistics for system health
-
-## Conclusion
-
-The Dana resource system provides a powerful, secure, and structured way to manage external resources within agent contexts. By enforcing agent-only access and providing comprehensive lifecycle management, it enables robust, scalable agent applications while maintaining clear separation of concerns and security boundaries.
-
-Key benefits:
-- **Type Safety**: Resources are first-class types with compile-time checking
-- **Security**: Agent-only access prevents unauthorized resource usage  
-- **Lifecycle Management**: Automatic resource initialization and cleanup
-- **Portability**: Resource handles enable seamless agent-to-agent transfer
-- **Extensibility**: Easy to create custom resource types for specific needs
-- **Integration**: Works seamlessly with Dana's agent, workflow, and concurrency features
+Key features:
+- **Type Safety**: Resources are first-class types with field type checking
+- **Inheritance**: Resources can inherit from base resources
+- **Lifecycle Management**: Support for start/stop and context managers
+- **Complex Fields**: Full support for lists, dicts, and nested structures
+- **Method Flexibility**: Define resource behavior through struct-functions
+- **Integration**: Works seamlessly with agents, workflows, and other Dana features
