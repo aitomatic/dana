@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { LibraryTable } from '@/components/library';
+import { ConfirmDialog } from '@/components/library/confirm-dialog';
 import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, SystemRestart, Upload, EmptyPage } from 'iconoir-react';
+import { Search, SystemRestart, Upload, EmptyPage } from 'iconoir-react';
 import { apiService } from '@/lib/api';
+import { useDocumentOperations } from '@/hooks/use-api';
+import { toast } from 'sonner';
+import { PdfViewer } from '@/components/library/pdf-viewer';
 
 // Convert DocumentRead to LibraryItem format
 const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
@@ -28,23 +32,16 @@ const DocumentsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LibraryItem[]>([]);
-  const [uploadingFiles, setUploadingFiles] = useState<string[]>([]); // Track which files are uploading
+  const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Drag and drop functionality
-  const handleFileUpload = async (file: File) => {
-    if (!agent_id) return;
-
-    setUploadingFiles((prev) => [...prev, file.name]);
-    try {
-      await apiService.uploadAgentDocument(agent_id, file);
-      setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
-      await loadDocuments();
-    } catch (error) {
-      console.error('Failed to upload file:', error);
-      setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
-    }
-  };
+  // API hooks
+  const { deleteDocument, isDeleting } = useDocumentOperations();
 
   const handleDragDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -68,18 +65,6 @@ const DocumentsTab: React.FC = () => {
       setUploadingFiles([]);
     }
   };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // Note: Using local uploadingFiles state instead of global document store for per-file tracking
 
   // Load agent-specific documents
   useEffect(() => {
@@ -150,6 +135,43 @@ const DocumentsTab: React.FC = () => {
     }
   };
 
+  const handleViewItem = (item: LibraryItem) => {
+    if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'pdf') {
+      // Use the API download endpoint for the PDF viewer
+      const documentId = parseInt(item.id);
+      const fileUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/documents/${documentId}/download`;
+      setPdfFileUrl(fileUrl);
+      setPdfFileName(item.name);
+      setPdfViewerOpen(true);
+    } else {
+      // For non-PDF files, could implement other viewing logic
+      console.log('View document:', item);
+      // Could show a preview modal or download the file
+    }
+  };
+
+  const handleDeleteItem = async (item: LibraryItem) => {
+    setSelectedItem(item);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItem) return;
+
+    try {
+      const documentId = parseInt(selectedItem.id);
+      await deleteDocument(documentId);
+      toast.success('Document deleted successfully');
+      await loadDocuments(); // Refresh the documents list
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      toast.error('Failed to delete document');
+    } finally {
+      setShowDeleteConfirm(false);
+      setSelectedItem(null);
+    }
+  };
+
   // Empty state component
   const EmptyState = () => {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -190,23 +212,23 @@ const DocumentsTab: React.FC = () => {
           <EmptyPage className="w-10 h-10 text-gray-400" />
         </div>
 
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <h3 className="text-lg font-semibold text-gray-700">No documents yet</h3>
           <p className="text-sm text-gray-500">Drag and drop files here to upload</p>
         </div>
         <Button
           onClick={handleAddFileClick}
-          className="mt-4 cursor-pointer font-semibold"
+          className="mt-4 font-semibold cursor-pointer"
           disabled={uploadingFiles.length > 0}
         >
           {uploadingFiles.length > 0 ? (
             <>
-              <SystemRestart className="animate-spin w-4 h-4 mr-2" />
+              <SystemRestart className="mr-2 w-4 h-4 animate-spin" />
               Uploading...
             </>
           ) : (
             <>
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="mr-2 w-4 h-4" />
               Browse Files
             </>
           )}
@@ -289,9 +311,38 @@ const DocumentsTab: React.FC = () => {
         {filteredData.length === 0 && !loading ? (
           <EmptyState />
         ) : (
-          <LibraryTable data={filteredData} loading={loading} mode="library" />
+          <LibraryTable
+            data={filteredData}
+            loading={loading}
+            mode="library"
+            onViewItem={handleViewItem}
+            onDeleteItem={handleDeleteItem}
+          />
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setSelectedItem(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
+        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+        cancelText="Cancel"
+        variant="destructive"
+      />
+
+      {/* PDF Viewer */}
+      <PdfViewer
+        open={pdfViewerOpen}
+        onClose={() => setPdfViewerOpen(false)}
+        fileUrl={pdfFileUrl || ''}
+        fileName={pdfFileName}
+      />
     </div>
   );
 };

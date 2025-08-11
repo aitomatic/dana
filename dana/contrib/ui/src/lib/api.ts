@@ -228,6 +228,46 @@ export interface AgentTestResponse {
   error?: string;
 }
 
+// Bulk Evaluation Types
+export interface BulkEvaluationQuestion {
+  question: string;
+  expected_answer?: string;
+  context?: string;
+  category?: string;
+}
+
+export interface BulkEvaluationRequest {
+  agent_code: string;
+  questions: BulkEvaluationQuestion[];
+  agent_name?: string;
+  agent_description?: string;
+  context?: Record<string, any>;
+  folder_path?: string;
+  websocket_id?: string;
+  batch_size?: number;
+}
+
+export interface BulkEvaluationResult {
+  question: string;
+  response: string;
+  response_time: number;
+  status: string;
+  error?: string;
+  expected_answer?: string;
+  question_index: number;
+}
+
+export interface BulkEvaluationResponse {
+  success: boolean;
+  results: BulkEvaluationResult[];
+  total_questions: number;
+  successful_count: number;
+  failed_count: number;
+  total_time: number;
+  average_response_time: number;
+  error?: string;
+}
+
 // Knowledge Status Types
 export interface KnowledgeTopicStatus {
   id: string;
@@ -538,6 +578,13 @@ class ApiService {
   // Agent Test API Methods
   async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
     const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
+      timeout: 3000000,
+    });
+    return response.data;
+  }
+
+  async bulkEvaluateAgent(request: BulkEvaluationRequest): Promise<BulkEvaluationResponse> {
+    const response = await this.client.post<BulkEvaluationResponse>('/agent-test/bulk', request, {
       timeout: 3000000,
     });
     return response.data;

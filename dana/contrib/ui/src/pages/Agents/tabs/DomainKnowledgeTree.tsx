@@ -17,10 +17,11 @@ const TRANSITION_DURATION = '0.5s';
 const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
 const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
-// Add CSS animations for smooth transitions
+// Add CSS animations for smooth transitions (optimized for zoom performance)
 const animationStyles = `
   .react-flow__node {
-    transition: ${TRANSITION_ALL} !important;
+    /* Only transition opacity and non-transform properties to avoid zoom lag */
+    transition: opacity ${TRANSITION_DURATION} ${TRANSITION_EASING} !important;
   }
 
   .react-flow__node-enter {
@@ -43,13 +44,14 @@ const animationStyles = `
     transform: scale(0.8) translateY(-10px);
   }
 
-  /* Edge animations - improved implementation */
+  /* Edge animations - optimized for performance */
   .react-flow__edge {
-    transition: ${TRANSITION_ALL} !important;
+    /* Only transition opacity to avoid interfering with zoom */
+    transition: opacity ${TRANSITION_DURATION} ${TRANSITION_EASING} !important;
   }
 
   .react-flow__edge-path {
-    transition: ${TRANSITION_ALL} !important;
+    /* Don't transition edge paths during zoom operations */
   }
 
   /* Animate edges when they appear - using data attributes for better targeting */
@@ -114,11 +116,12 @@ const animationStyles = `
   }
 
   .react-flow__viewport {
-    transition: ${TRANSITION_ALL} !important;
+    /* No transitions on viewport to avoid zoom lag */
   }
 
+  /* Remove transitions from zoom-sensitive elements to improve performance */
   .react-flow__transformationpane {
-    transition: ${TRANSITION_ALL} !important;
+    /* No transitions on transformation pane to avoid zoom lag */
   }
 `;
 
@@ -299,12 +302,12 @@ interface DomainKnowledgeTreeProps {
   agentId?: string | number;
 }
 
-// Add this function to call the API
-async function triggerGenerateKnowledge(agentId: string | number) {
-  const response = await apiService.generateKnowledge(agentId);
-  toast.success(response.message);
-  return response;
-}
+// Add this function to call the API (commented out since Generate Knowledge button is disabled)
+// async function triggerGenerateKnowledge(agentId: string | number) {
+//   const response = await apiService.generateKnowledge(agentId);
+//   toast.success(response.message);
+//   return response;
+// }
 
 // Use backend URL for WebSocket (now disabled - using centralized store)
 // const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
@@ -330,8 +333,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   useEffect(() => {
     setError(storeError);
   }, [storeError]);
-  const [generating, setGenerating] = useState(false);
-  const [, setGenerateMsg] = useState<string | null>(null);
+  // const [generating, setGenerating] = useState(false);
+  // const [, setGenerateMsg] = useState<string | null>(null);
   const [topicStatus] = useState<{ [id: string]: string }>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTopicPath, setSidebarTopicPath] = useState<string>('');
@@ -349,7 +352,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const nodesRef = useRef<FlowNode[]>([]);
   const previousEdgesRef = useRef<Set<string>>(new Set());
 
-  // Function to center the view after nodes are expanded - with smooth transition
+  // Function to center the view after nodes are expanded - optimized for performance
   const centerView = useCallback(() => {
     if (reactFlowInstanceRef.current && nodesRef.current.length > 0) {
       // Use setTimeout to ensure the nodes are rendered before centering
@@ -357,13 +360,13 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         const instance = reactFlowInstanceRef.current;
         if (!instance) return;
 
-        // Use ReactFlow's fitView method
-        // The smooth transition will be handled by CSS transitions on the ReactFlow container
+        // Use ReactFlow's fitView method with consistent zoom limits
         instance.fitView({
           padding: 0.2,
           includeHiddenNodes: false,
-          minZoom: 0.5,
-          maxZoom: 1.5,
+          minZoom: 0.1,
+          maxZoom: 2,
+          duration: 300, // Shorter duration for better performance
         });
       }, 100);
     }
@@ -976,20 +979,20 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   };
 
-  // Handler for the button
-  const handleGenerateKnowledge = async () => {
-    if (!agentId) return;
-    setGenerating(true);
-    setGenerateMsg(null);
-    try {
-      const result = await triggerGenerateKnowledge(agentId);
-      setGenerateMsg(result.message || 'Generation started!');
-    } catch (err) {
-      setGenerateMsg('Failed to start generation');
-    } finally {
-      setGenerating(false);
-    }
-  };
+  // Handler for the button (commented out since Generate Knowledge button is disabled)
+  // const handleGenerateKnowledge = async () => {
+  //   if (!agentId) return;
+  //   setGenerating(true);
+  //   setGenerateMsg(null);
+  //   try {
+  //     const result = await triggerGenerateKnowledge(agentId);
+  //     setGenerateMsg(result.message || 'Generation started!');
+  //   } catch (err) {
+  //     setGenerateMsg('Failed to start generation');
+  //   } finally {
+  //     setGenerating(false);
+  //   }
+  // };
 
   // Handle search query changes
   const handleSearchChange = (query: string) => {
@@ -1194,40 +1197,43 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   )}
                 </div>
 
-                {/* Tree Controls */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleExpandAll}
-                    disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ transition: TRANSITION_ALL }}
-                    title="Expand All"
-                  >
-                    Expand All
-                  </button>
-                  <button
-                    onClick={handleCollapseAll}
-                    disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ transition: TRANSITION_ALL }}
-                    title="Collapse All"
-                  >
-                    Collapse All
-                  </button>
-                </div>
+
               </div>
 
-              {/* Right side - Total count and Generate Button */}
+              {/* Right side - Total count and Tree Controls */}
               <div className="flex gap-3 items-center">
                 {/* Total Items Count */}
                 {statusData && statusData.topics && statusData.topics.length > 0 && (
-                  <div className="text-xs font-medium text-gray-500">
+                  <div className="text-sm font-medium text-gray-500">
                     {getProgressStats().total} items
                   </div>
                 )}
 
+                {/* Tree Toggle Control */}
+                {(() => {
+                  // Calculate if we should show "Expand All" or "Collapse All"
+                  // If we have more than just the root expanded, show "Collapse All"
+                  const shouldShowCollapse = expandedNodes.size > 1;
+                  
+                  return (
+                    <button
+                      onClick={shouldShowCollapse ? handleCollapseAll : handleExpandAll}
+                      disabled={!domainTree}
+                      className="flex items-center gap-1 px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ transition: TRANSITION_ALL }}
+                      title={shouldShowCollapse ? "Collapse All" : "Expand All"}
+                    >
+                      {/* Icon for visual indication */}
+                      <span className="text-xs">
+                        {shouldShowCollapse ? "−" : "+"}
+                      </span>
+                      {shouldShowCollapse ? "Collapse All" : "Expand All"}
+                    </button>
+                  );
+                })()}
+
                 {/* Generate Knowledge Button */}
-                <button
+                {/* <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
                   className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
@@ -1245,7 +1251,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   ) : (
                     <span className="text-sm font-medium text-gray-700">Generate Knowledge</span>
                   )}
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -1266,8 +1272,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 fitViewOptions={{
                   padding: 0.2,
                   includeHiddenNodes: false,
-                  minZoom: 0.5,
-                  maxZoom: 1.5,
+                  minZoom: 0.1,
+                  maxZoom: 2,
                 }}
                 nodesDraggable={false}
                 nodesConnectable={false}
@@ -1278,7 +1284,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 onInit={(reactFlowInstance) => {
                   reactFlowInstanceRef.current = reactFlowInstance;
                 }}
-                // Smooth animation properties
+                // Performance optimized properties
                 defaultViewport={{ x: 0, y: 0, zoom: 1 }}
                 minZoom={0.1}
                 maxZoom={2}
@@ -1286,8 +1292,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 panOnScroll={false}
                 zoomOnPinch={true}
                 panOnDrag={true}
+                // Performance optimizations
+                attributionPosition="bottom-left"
+                snapToGrid={false}
+                deleteKeyCode={null}
+                selectionKeyCode={null}
                 className={`${isTransitioning ? 'opacity-95' : 'opacity-100'}`}
-                style={{ transition: TRANSITION_ALL }}
               >
                 <Controls />
               </ReactFlow>
