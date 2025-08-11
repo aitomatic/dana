@@ -226,14 +226,9 @@ export default function AgentDetailPage() {
 
   // --- Step 2: Training view ---
   return (
-    <div className="flex flex-col w-full h-screen bg-gray-50 overflow-hidden">
-      <AgentDetailHeader
-        onBack={handleClose}
-        title="Train Your Agent"
-        onDeploy={handleDeploy}
-        onCancel={handleClose}
-      />
-      <div className="flex flex-1 w-full h-full overflow-hidden">
+    <div className="flex overflow-hidden flex-col w-full h-screen bg-gray-50">
+      <AgentDetailHeader title="Train Your Agent" onDeploy={handleDeploy} onCancel={handleClose} />
+      <div className="flex overflow-hidden flex-1 w-full h-full">
         <AgentDetailSidebar />
         {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
         <div className="flex-1 min-w-0">
