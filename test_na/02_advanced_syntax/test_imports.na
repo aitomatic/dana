@@ -1,0 +1,114 @@
+# Test: Import System
+# Purpose: Test Dana's import system functionality including basic imports, star imports, and privacy rules
+# Category: Advanced Syntax - Import System
+
+log("Starting Import System test")
+
+# Test 1: Basic imports
+import test_utils.math_utils
+result = test_utils.math_utils.add(5, 3)
+assert result == 8, f"Expected 8, got {result}"
+log("✅ Basic module import works")
+
+# Test 2: Import with alias
+import test_utils.math_utils as math
+result = math.multiply(4, 7)
+assert result == 28, f"Expected 28, got {result}"
+log("✅ Import with alias works")
+
+# Test 3: From import with specific functions
+from test_utils.math_utils import add, multiply
+sum_result = add(10, 5)
+product_result = multiply(3, 6)
+assert sum_result == 15, f"Expected 15, got {sum_result}"
+assert product_result == 18, f"Expected 18, got {product_result}"
+log("✅ From import with specific functions works")
+
+# Test 4: From import with alias
+from test_utils.math_utils import square as sq, power as pw
+squared = sq(4)
+powered = pw(2, 3)
+assert squared == 16, f"Expected 16, got {squared}"
+assert powered == 8, f"Expected 8, got {powered}"
+log("✅ From import with alias works")
+
+# Test 5: Star import with __exports__ control
+from test_utils.math_utils import *
+add_result = add(7, 3)
+mult_result = multiply(5, 4)
+square_result = square(3)
+power_result = power(2, 4)
+assert add_result == 10, f"Expected 10, got {add_result}"
+assert mult_result == 20, f"Expected 20, got {mult_result}"
+assert square_result == 9, f"Expected 9, got {square_result}"
+assert power_result == 16, f"Expected 16, got {power_result}"
+log("✅ Star import with __exports__ control works")
+
+# Test 6: Star import without __exports__ (all public functions)
+from test_utils.user_utils import *
+name = format_name("John", "Doe")
+is_valid = validate_email("test@example.com")
+assert name == "John Doe", f"Expected 'John Doe', got '{name}'"
+assert is_valid == true, f"Expected true, got {is_valid}"
+log("✅ Star import without __exports__ works")
+
+# Test 7: Privacy rules - attempt to import private function (should fail) - This test is working but we can not try/catch on SandboxError
+# try:
+#     from test_utils.math_utils import _complex_formula
+#     assert false, "Should not be able to import private function"
+# except e:
+#     assert true, "Successfully prevented import of private function"
+# log("✅ Privacy rules work")
+
+# Test 8: Python module imports
+import os.py as os
+import json.py as json
+from datetime.py import datetime
+
+# Test os module
+cwd = os.getcwd()
+assert cwd != "", "Expected non-empty current working directory"
+
+# Test json module
+json_str = json.dumps({"name": "test"})
+assert json_str == '{"name": "test"}', f"Expected '{{'name': 'test'}}', got '{json_str}'"
+
+# Test datetime module
+now = datetime.now()
+assert now != null, "Expected non-null datetime"
+
+log("✅ Python module imports work")
+
+# Test 9: Local Python file imports
+# Basic import
+import test_utils.py_utils.py as py_utils
+greeting = py_utils.greet("Dana")
+assert greeting == "Hello, Dana!", f"Expected 'Hello, Dana!', got '{greeting}'"
+
+# Test Python function with list
+numbers = [1, 2, 3, 4, 5]
+total = py_utils.calculate_sum(numbers)
+assert total == 15, f"Expected 15, got {total}"
+
+# Test Python class
+person = py_utils.Person("Alice", 30)
+info = person.get_info()
+assert info == "Alice is 30 years old", f"Expected 'Alice is 30 years old', got '{info}'"
+
+# Test Python constant
+assert py_utils.MAGIC_NUMBER == 42, f"Expected 42, got {py_utils.MAGIC_NUMBER}"
+log("✅ Local Python file imports work")
+
+# # Test 10: From import with Python file
+# from test_utils.py_utils.py import greet, Person, MAGIC_NUMBER
+# direct_greeting = greet("Bob")
+# assert direct_greeting == "Hello, Bob!", f"Expected 'Hello, Bob!', got '{direct_greeting}'"
+
+# direct_person = Person("Charlie", 25)
+# direct_info = direct_person.get_info()
+# assert direct_info == "Charlie is 25 years old", f"Expected 'Charlie is 25 years old', got '{direct_info}'"
+
+# assert MAGIC_NUMBER == 42, f"Expected 42, got {MAGIC_NUMBER}"
+# log("✅ From import with Python file works")
+
+# log("Import System test completed successfully")
