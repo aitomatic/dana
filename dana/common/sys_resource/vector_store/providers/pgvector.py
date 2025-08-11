@@ -7,7 +7,8 @@ from typing import Any
 
 from llama_index.core.vector_stores.types import VectorStore
 
-from dana.common.resource.vector_store.config import PGVectorConfig
+from dana.common.sys_resource.vector_store.config import PGVectorConfig
+
 from .base import BaseVectorStoreProvider
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ class PGVectorProvider(BaseVectorStoreProvider):
         try:
             from llama_index.vector_stores.postgres import PGVectorStore
         except ImportError:
-            raise ImportError("PGVectorStore is not installed. " "Please install it with `pip install llama-index-vector-stores-postgres`")
+            raise ImportError("PGVectorStore is not installed. Please install it with `pip install llama-index-vector-stores-postgres`")
 
         logger.info(f"Initializing PGVector store for database: {config.database}")
         logger.debug(f"HNSW config: m={config.hnsw.m}, ef_construction={config.hnsw.ef_construction}")

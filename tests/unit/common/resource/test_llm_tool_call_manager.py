@@ -4,7 +4,7 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.sys_resource.llm.llm_tool_call_manager import LLMToolCallManager
 
 

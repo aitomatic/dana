@@ -8,7 +8,7 @@ resource keyword system to ease migration.
 import warnings
 from typing import Any
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.core.lang.sandbox_context import SandboxContext
 
 from .context_integration import get_resource_integrator

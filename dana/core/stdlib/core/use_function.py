@@ -1,9 +1,10 @@
-from dana.common.resource.base_resource import BaseResource
-from dana.common.utils.misc import Misc
-from dana.core.lang.sandbox_context import SandboxContext
+import asyncio
 from collections.abc import Callable
 from functools import wraps
-import asyncio
+
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.common.utils.misc import Misc
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
@@ -25,7 +26,7 @@ def create_function_with_better_doc_string(func: Callable, doc_string: str) -> C
         return wrapper
 
 
-def use_function(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseResource:
+def use_function(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseSysResource:
     """Use a function in the context.
     This function is used to call a function in the context.
     It is used to call a function in the context.
@@ -46,9 +47,10 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         context.set_resource(_name, resource)
         return resource
     elif function_name.lower() == "rag":
-        from dana.common.resource.rag.rag_resource import RAGResource
         import os
         from pathlib import Path
+
+        from dana.common.sys_resource.rag.rag_resource import RAGResource
 
         # Make sources DANAPATH-aware if DANAPATH is set and sources are relative
         danapath = os.environ.get("DANAPATH")
@@ -80,7 +82,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         context.set_resource(_name, resource)
         return resource
     elif function_name.lower() == "tabular_index":
-        from dana.common.resource.tabular_index.tabular_index_resource import TabularIndexResource
+        from dana.common.sys_resource.tabular_index.tabular_index_resource import TabularIndexResource
 
         tabular_index_params = kwargs.get("tabular_index_config", {})
         resource = TabularIndexResource(

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 

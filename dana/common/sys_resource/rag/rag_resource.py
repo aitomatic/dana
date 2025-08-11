@@ -4,7 +4,7 @@ from pathlib import Path
 from llama_index.core import Settings
 
 from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager

@@ -10,12 +10,12 @@ from typing import Any
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import ConfigurationError
 from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.common.sys_resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
 from dana.common.types import BaseRequest, BaseResponse
-from dana.common.resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
 
 
-class EmbeddingResource(BaseResource):
+class EmbeddingResource(BaseSysResource):
     """Embedding resource for generating text embeddings.
 
     Loads configuration from dana_config.json and provides a unified interface

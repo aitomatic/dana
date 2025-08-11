@@ -16,7 +16,7 @@ from dana.common.mixins.loggable import Loggable
 from dana.common.mixins.registerable import Registerable
 from dana.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
 from dana.common.mixins.tool_formats import ToolFormat
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 

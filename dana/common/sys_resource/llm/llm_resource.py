@@ -36,7 +36,7 @@ from dana.common.exceptions import (
     LLMError,
 )
 from dana.common.mixins.tool_callable import OpenAIFunctionCall
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.sys_resource.llm.llm_query_executor import LLMQueryExecutor
 from dana.common.sys_resource.llm.llm_tool_call_manager import LLMToolCallManager

@@ -9,7 +9,7 @@ the most appropriate agent for a given task based on skills.
 # from dana.agent.abstract_dana_agent import AbstractDanaAgent
 from typing import Any
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.core.lang.sandbox_context import SandboxContext
 
 from .agent_selector import AgentSelector

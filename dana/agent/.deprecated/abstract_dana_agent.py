@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 
 
 class AbstractDanaAgent(BaseSysResource, ABC):

@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 
 from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 
 logger = logging.getLogger(__name__)
 
@@ -989,7 +989,6 @@ class FinancialCalculations:
             return "Mixed/volatile"
 
     def _assess_profitability(self, metrics: dict[str, Any]) -> str:
-        gross_margin = metrics.get("gross_margin", 0)
         operating_margin = metrics.get("operating_margin", 0)
         net_margin = metrics.get("net_margin", 0)
 

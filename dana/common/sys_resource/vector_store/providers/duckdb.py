@@ -6,10 +6,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from llama_index.vector_stores.duckdb import DuckDBVectorStore
 from llama_index.core.vector_stores.types import VectorStore
+from llama_index.vector_stores.duckdb import DuckDBVectorStore
 
-from dana.common.resource.vector_store.config import DuckDBConfig
+from dana.common.sys_resource.vector_store.config import DuckDBConfig
+
 from .base import BaseVectorStoreProvider
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.sys_resource.llm.llm_resource import LLMResource
 
 from .domain import MemoryItem, MemoryMetadata, MemoryType, StorageType

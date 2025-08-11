@@ -8,19 +8,20 @@ Key improvements:
 - Easy to test with mock dependencies
 """
 
-from typing import Any
-from collections.abc import Callable
+import asyncio
 import logging
 import os
 import time
-import pandas as pd
-import asyncio
-from llama_index.core.schema import Document
-from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core import VectorStoreIndex, StorageContext
+from collections.abc import Callable
+from typing import Any
 
-from dana.common.resource.tabular_index.config import TabularConfig, BatchSearchConfig
-from dana.common.resource.vector_store import VectorStoreProviderProtocol
+import pandas as pd
+from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.schema import Document
+
+from dana.common.sys_resource.tabular_index.config import BatchSearchConfig, TabularConfig
+from dana.common.sys_resource.vector_store import VectorStoreProviderProtocol
 
 logger = logging.getLogger(__name__)
 

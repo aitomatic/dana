@@ -8,18 +8,18 @@ Key improvements:
 - Proper error handling with clear messages
 """
 
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
-from dana.common.resource.base_resource import BaseResource
-from dana.common.resource.tabular_index.tabular_index import TabularIndex
-from dana.common.resource.tabular_index.config import TabularConfig, EmbeddingConfig, BatchSearchConfig
-from dana.common.resource.vector_store import VectorStoreFactory
-from dana.common.resource.embedding import EmbeddingFactory
 from dana.common.exceptions import EmbeddingError
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.common.sys_resource.embedding import EmbeddingFactory
+from dana.common.sys_resource.tabular_index.config import BatchSearchConfig, EmbeddingConfig, TabularConfig
+from dana.common.sys_resource.tabular_index.tabular_index import TabularIndex
+from dana.common.sys_resource.vector_store import VectorStoreFactory
 
 
-class TabularIndexResource(BaseResource):
+class TabularIndexResource(BaseSysResource):
     """Clean tabular index resource using dependency injection.
 
     This class acts as an orchestrator that:
@@ -160,7 +160,7 @@ class TabularIndexResource(BaseResource):
         Returns:
             Structured VectorStoreConfig object for VectorStoreFactory.create_with_provider
         """
-        from dana.common.resource.vector_store import create_duckdb_config, create_pgvector_config
+        from dana.common.sys_resource.vector_store import create_duckdb_config, create_pgvector_config
 
         if not vector_store_config:
             # Use tabular config values to create structured config

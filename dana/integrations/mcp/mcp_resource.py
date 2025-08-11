@@ -8,7 +8,7 @@ from typing import Any
 from mcp.types import Tool as McpTool
 
 from dana.common.mixins.tool_formats import OpenAIToolFormat
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 from dana.integrations.mcp.client.mcp_client import MCPClient

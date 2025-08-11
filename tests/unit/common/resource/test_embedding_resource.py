@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.resource.embedding.embedding_resource import EmbeddingResource
+from dana.common.sys_resource.embedding.embedding_resource import EmbeddingResource
 from dana.common.types import BaseRequest, BaseResponse
 
 
@@ -78,7 +78,7 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_configuration_hierarchy(self):
         """Test configuration hierarchy: constructor > config file."""
-        with patch("dana.common.resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
+        with patch("dana.common.sys_resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
             # Mock config file
             mock_config = {
                 "embedding": {
@@ -96,7 +96,7 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_model_auto_selection(self):
         """Test automatic model selection based on API key availability."""
-        with patch("dana.common.resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
+        with patch("dana.common.sys_resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
             mock_config = {
                 "embedding": {
                     "preferred_models": ["openai:text-embedding-3-small", "cohere:embed-english-v2.0"],
@@ -152,7 +152,7 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_provider_config_resolution(self):
         """Test provider configuration resolution including environment variables."""
-        with patch("dana.common.resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
+        with patch("dana.common.sys_resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
             mock_config = {
                 "embedding": {
                     "preferred_models": ["openai:text-embedding-3-small"],

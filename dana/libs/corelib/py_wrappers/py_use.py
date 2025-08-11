@@ -11,7 +11,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Union
 
-from dana.common.sys_resource.base_resource import BaseSysResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.resource.base_resource import BaseResource
@@ -147,7 +147,7 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         return resource
 
     elif function_name.lower() == "tabular_index":
-        from dana.common.resource.tabular_index.tabular_index_resource import TabularIndexResource
+        from dana.common.sys_resource.tabular_index.tabular_index_resource import TabularIndexResource
 
         # Extract tabular_index specific parameters from kwargs
         tabular_index_params = kwargs.get("tabular_index_config", {})

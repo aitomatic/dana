@@ -1,5 +1,5 @@
 """
-Dana Common Resource Module
+dana.common.sys_resource Module
 
 This module provides base classes and implementations for resources used across the Dana framework.
 
@@ -85,19 +85,11 @@ from dana.common.mixins import (
     ToolFormat,
 )
 
-# Import additional resources from main branch
-from dana.common.resource.embedding import EmbeddingResource
-from dana.common.resource.human_resource import HumanResource
-from dana.common.resource.kb_resource import KBResource
-from dana.common.resource.memory_resource import (
-    LTMemoryResource,
-    MemoryResource,
-    PermMemoryResource,
-    STMemoryResource,
-)
-
 # Import resource exceptions from base_resource module
-from dana.common.sys_resource.base_resource import BaseSysResource, ResourceUnavailableError
+from dana.common.sys_resource.base_sys_resource import BaseSysResource, ResourceUnavailableError
+
+# Import additional resources from main branch
+from dana.common.sys_resource.embedding import EmbeddingResource
 
 # HumanResource moved to core resource plugins
 from dana.common.sys_resource.llm.llm_resource import LLMResource
