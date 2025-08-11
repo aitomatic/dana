@@ -114,5 +114,17 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         resource = FinancialStatementRAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
+    elif function_name.lower() == "tabular_index":
+        from dana.common.resource.tabular_index.tabular_index_resource import TabularIndexResource
+
+        # Extract tabular_index specific parameters from kwargs
+        tabular_index_params = kwargs.get("tabular_index_config", {})
+        # Create resource with config dict
+        resource = TabularIndexResource(
+            name=_name,
+            **tabular_index_params,
+        )
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")

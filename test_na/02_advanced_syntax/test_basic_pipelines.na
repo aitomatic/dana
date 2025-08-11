@@ -1,0 +1,274 @@
+# Test: Basic Pipeline Operations
+# Purpose: Test basic pipeline operations and function composition
+# Category: Advanced Syntax - Pipeline Operations
+
+log("Starting Basic Pipeline Operations test")
+
+# Test 1: Simple pipeline with basic functions
+def add_ten(x: int):
+    return x + 10
+
+def double(x: int):
+    return x * 2
+
+def pipeline(x) = add_ten | double
+result = pipeline(5)
+assert result == 30, f"Expected 30, got {result}"
+log("✅ Simple pipeline with basic functions works")
+
+# Test 2: Pipeline with string operations
+def to_upper(s: str) -> str:
+    return s.upper()
+
+def add_exclamation(s: str) -> str:
+    return s + "!"
+
+def pipeline(s) = to_upper | add_exclamation
+result = pipeline("hello")
+assert result == "HELLO!", f"Expected 'HELLO!', got '{result}'"
+log("✅ Pipeline with string operations works")
+
+# Test 3: Pipeline with multiple steps
+def square(x: int) -> int:
+    return x * x
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_three(x: int) -> int:
+    return x * 3
+
+def pipeline(x) = square | add_one | multiply_by_three
+result = pipeline(2)
+assert result == 15, f"Expected 15, got {result}"
+log("✅ Pipeline with multiple steps works")
+
+# Test 4: Pipeline with list operations
+def filter_even(lst: list) -> list:
+    return [x for x in lst if x % 2 == 0]
+
+def double_list(lst: list) -> list:
+    return [x * 2 for x in lst]
+
+def sum_list(lst: list) -> int:
+    return sum(lst)
+
+def pipeline(lst) = filter_even | double_list | sum_list
+result = pipeline([1, 2, 3, 4, 5, 6])
+assert result == 24, f"Expected 24, got {result}"
+log("✅ Pipeline with list operations works")
+
+# Test 5: Pipeline with conditional functions
+def is_positive(x: int) -> bool:
+    return x > 0
+
+def to_string(x: any) -> str:
+    return str(x)
+
+def add_prefix(s: str) -> str:
+    return "Result: " + s
+
+def pipeline(x) = is_positive | to_string | add_prefix
+result = pipeline(42)
+assert result == "Result: True", f"Expected 'Result: True', got '{result}'"
+log("✅ Pipeline with conditional functions works")
+
+# Test 6: Pipeline with lambda functions
+add_five = lambda x :: x + 5
+multiply_by_two = lambda x :: x * 2
+subtract_one = lambda x :: x - 1
+
+def pipeline(x) = add_five | multiply_by_two | subtract_one
+result = pipeline(10)
+assert result == 29, f"Expected 29, got {result}"
+log("✅ Pipeline with lambda functions works")
+
+# Test 7: Pipeline with mixed function types
+def format_number(x: int) -> str:
+    return f"Number: {x}"
+
+def pipeline(x) = add_ten | double | format_number
+result = pipeline(7)
+assert result == "Number: 34", f"Expected 'Number: 34', got '{result}'"
+log("✅ Pipeline with mixed function types works")
+
+# Test 9: Pipeline with dictionary operations
+def get_keys(d: dict) -> list:
+    return list(d.keys())
+
+def filter_string_keys(lst: list) -> list:
+    return [key for key in lst if type(key) == 'str']
+
+def join_keys(lst: list) -> str:
+    return ", ".join(lst)
+
+def pipeline(d) = get_keys | filter_string_keys | join_keys
+data = {"name": "Alice", "age": 30, "city": "New York"}
+result = pipeline(data)
+assert result == "name, age, city", f"Expected 'name, age, city', got '{result}'"
+log("✅ Pipeline with dictionary operations works")
+
+# Test 10: Pipeline with tuple operations
+def create_tuple(x: int) -> tuple:
+    return (x, x * 2, x * 3)
+
+def sum_tuple(t: tuple) -> int:
+    return sum(t)
+
+def pipeline(x) = create_tuple | sum_tuple
+result = pipeline(5)
+assert result == 30, f"Expected 30, got {result}"
+log("✅ Pipeline with tuple operations works")
+
+# Test 11: Pipeline with set operations
+def to_set(lst: list) -> set:
+    return set(lst)
+
+def filter_even_set(s: set) -> set:
+    return {x for x in s if x % 2 == 0}
+
+def set_to_list(s: set) -> list:
+    return list(s)
+
+def pipeline(lst) = to_set | filter_even_set | set_to_list
+result = pipeline([1, 2, 2, 3, 4, 4, 5, 6])
+assert result == [2, 4, 6], f"Expected [2, 4, 6], got {result}"
+log("✅ Pipeline with set operations works")
+
+# Test 12: Pipeline with boolean operations
+def is_even(x: int) -> bool:
+    return x % 2 == 0
+
+def negate(b: bool) -> bool:
+    return not b
+
+def bool_to_string(b: bool) -> str:
+    return "Even" if b else "Odd"
+
+def pipeline(x) = is_even | negate | bool_to_string
+result = pipeline(7)
+assert result == "Even", f"Expected 'Even', got '{result}'"
+log("✅ Pipeline with boolean operations works")
+
+# Test 13: Pipeline with type conversion
+def to_float(x: any) -> float:
+    return float(x)
+
+def to_int(x: float) -> int:
+    return int(x)
+
+def pipeline(x) = to_float | to_int
+result = pipeline("3.14")
+assert result == 3, f"Expected 3, got {result}"
+log("✅ Pipeline with type conversion works")
+
+# Test 14: Pipeline with arithmetic operations
+def add_hundred(x: int) -> int:
+    return x + 100
+
+def divide_by_five(x: int) -> float:
+    return x / 5
+
+def multiply_by_pi(x: float) -> float:
+    return x * 3.14159
+
+def pipeline(x) = add_hundred | divide_by_five | multiply_by_pi
+result = pipeline(50)
+assert abs(result - 94.2477) < 0.01, f"Expected approximately 94.2477, got {result}"
+log("✅ Pipeline with arithmetic operations works")
+
+# Test 15: Pipeline with string manipulation
+def reverse_string(s: str) -> str:
+    return s[::-1]
+
+def capitalize_first(s: str) -> str:
+    return s.capitalize()
+
+def add_quotes(s: str) -> str:
+    return f'"{s}"'
+
+def pipeline(s) = reverse_string | capitalize_first | add_quotes
+result = pipeline("hello world")
+assert result == '"Dlrow olleh"', f"Expected '\"Dlrow olleh\"', got '{result}'"
+log("✅ Pipeline with string manipulation works")
+
+# Test 16: Pipeline with list filtering and transformation
+def filter_positive(lst: list) -> list:
+    return [x for x in lst if x > 0]
+
+def square_list(lst: list) -> list:
+    return [x * x for x in lst]
+
+def take_first_three(lst: list) -> list:
+    return lst[:3]
+
+def pipeline(lst) = filter_positive | square_list | take_first_three
+result = pipeline([-2, -1, 0, 1, 2, 3, 4, 5])
+assert result == [1, 4, 9], f"Expected [1, 4, 9], got {result}"
+log("✅ Pipeline with list filtering and transformation works")
+
+# Test 17: Pipeline with function composition
+def compose(f: function, g: function) -> function:
+    return lambda x :: f(g(x))
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_ten(x: int) -> int:
+    return x * 10
+
+composed = compose(add_one, multiply_by_ten)
+def pipeline(x) = composed
+result = pipeline(5)
+assert result == 51, f"Expected 51, got {result}"
+log("✅ Pipeline with function composition works")
+
+# Test 18: Pipeline with conditional branching
+def check_range(x: int) -> str:
+    if x < 10:
+        return "small"
+    elif x < 50:
+        return "medium"
+    else:
+        return "large"
+
+def add_size_prefix(s: str) -> str:
+    return f"Size: {s}"
+
+def pipeline(x) = check_range | add_size_prefix
+result = pipeline(25)
+assert result == "Size: medium", f"Expected 'Size: medium', got '{result}'"
+log("✅ Pipeline with conditional branching works")
+
+# Test 19: Pipeline with data validation
+def validate_positive(x: int) -> int:
+    if x <= 0:
+        return 1
+    return x
+
+def validate_even(x: int) -> int:
+    if x % 2 != 0:
+        return x + 1
+    return x
+
+def pipeline(x) = validate_positive | validate_even
+result = pipeline(-5)
+assert result == 2, f"Expected 2, got {result}"
+log("✅ Pipeline with data validation works")
+
+# Test 20: Pipeline with complex data transformation
+def extract_numbers(s: str) -> list:
+    return [int(c) for c in s if c.isdigit()]
+
+def sum_digits(lst: list) -> int:
+    return sum(lst)
+
+def format_result(x: int) -> str:
+    return f"Sum of digits: {x}"
+
+def pipeline(s) = extract_numbers | sum_digits | format_result
+result = pipeline("abc123def456")
+assert result == "Sum of digits: 21", f"Expected 'Sum of digits: 21', got '{result}'"
+log("✅ Pipeline with complex data transformation works")
+
+# log("Basic Pipeline Operations test completed successfully") 

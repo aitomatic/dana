@@ -1,0 +1,94 @@
+# Test: Lambda Receivers
+# Purpose: Test lambda expressions with struct receivers and method calls
+# Category: Advanced Syntax - Lambda Expressions
+
+log("Starting Lambda Receivers test")
+
+# Define a simple struct for testing
+struct Person:
+    name: str
+    age: int
+    
+def (self: Person) get_info() -> str:
+    return f"{self.name} is {self.age} years old"
+
+def (self: Person) is_adult() -> bool:
+    return self.age >= 18
+
+# Test 1: Basic struct receiver lambda
+get_person_info = lambda person: Person :: person.get_info()
+person = Person(name="Alice", age=25)
+result = get_person_info(person)
+assert result == "Alice is 25 years old", f"Expected 'Alice is 25 years old', got '{result}'"
+log("✅ Basic struct receiver lambda works")
+
+# Test 2: Lambda with struct receiver and property access
+get_age = lambda person: Person :: person.age
+result = get_age(person)
+assert result == 25, f"Expected 25, got {result}"
+log("✅ Lambda with struct receiver and property access works")
+
+# Test 3: Lambda with struct receiver and boolean method
+check_adult = lambda person: Person :: person.is_adult()
+result1 = check_adult(person)
+result2 = check_adult(Person(name="Bob", age=16))
+assert result1 == true, f"Expected true, got {result1}"
+assert result2 == false, f"Expected false, got {result2}"
+log("✅ Lambda with struct receiver and boolean method works")
+
+# Test 4: Lambda with struct receiver and conditional logic
+age_category = lambda person: Person :: "adult" if person.age >= 18 else "minor"
+result = age_category(Person(name="Charlie", age=15))
+assert result == "minor", f"Expected 'minor', got '{result}'"
+log("✅ Lambda with struct receiver and conditional logic works")
+
+# Test 5: Lambda with struct receiver and multiple parameters
+compare_age = lambda person: Person, threshold: int :: person.age > threshold
+person = Person(name="Alice", age=25)
+result1 = compare_age(person, 20)
+result2 = compare_age(person, 30)
+assert result1 == true, f"Expected true, got {result1}"
+assert result2 == false, f"Expected false, got {result2}"
+log("✅ Lambda with struct receiver and multiple parameters works")
+
+# Test 6: Lambda with struct receiver and complex nested operations
+struct Address:
+    street: str
+    city: str
+    country: str
+    
+def (self: Address) full_address() -> str:
+    return f"{self.street}, {self.city}, {self.country}"
+
+struct Employee:
+    person: Person
+    address: Address
+    salary: float
+    
+def (self: Employee) get_full_info() -> str:
+    return f"{self.person.get_info()} - {self.address.full_address()} - ${self.salary}"
+
+complex_employee_lambda = lambda employee: Employee :: {
+    "name": employee.person.name,
+    "age": employee.person.age,
+    "address": employee.address.full_address(),
+    "salary": employee.salary,
+}
+
+address = Address(street="123 Main St", city="New York", country="USA")
+employee = Employee(person=Person(name="John", age=30), address=address, salary=50000.0)
+employee.address = address
+employee.salary = 50000.0
+
+result = complex_employee_lambda(employee)
+expected = {
+    "name": "John",
+    "age": 30,
+    "address": "123 Main St, New York, USA",
+    "salary": 50000.0,
+}
+assert result == expected, f"Expected {expected}, got {result}"
+log("✅ Lambda with struct receiver and complex nested operations works")
+
+log("Lambda Receivers test completed successfully") 
+

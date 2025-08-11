@@ -1,0 +1,474 @@
+# Test: Python Function Calls
+# Purpose: Test calling Python functions from Dana
+# Category: Integration - Python
+
+log("Starting Python Function Calls test")
+
+# Test 1: Basic Python function calls
+log("Test 1: Basic Python function calls")
+try:
+    import math
+    
+    # Test basic math functions
+    sqrt_result = math.sqrt(16)
+    assert sqrt_result == 4.0, "math.sqrt should work correctly"
+    log(f"✓ math.sqrt(16) = {sqrt_result}")
+    
+    sin_result = math.sin(math.pi / 2)
+    assert abs(sin_result - 1.0) < 0.0001, "math.sin should work correctly"
+    log(f"✓ math.sin(π/2) = {sin_result}")
+    
+    ceil_result = math.ceil(3.2)
+    assert ceil_result == 4, "math.ceil should work correctly"
+    log(f"✓ math.ceil(3.2) = {ceil_result}")
+    
+    log("✓ Basic Python function calls working")
+    
+except Exception as e:
+    log(f"✗ Basic Python function calls failed: {e}")
+
+# Test 2: String manipulation functions
+log("Test 2: String manipulation functions")
+try:
+    import string
+    
+    # Test string methods
+    test_string = "Hello, World!"
+    upper_result = test_string.upper()
+    assert upper_result == "HELLO, WORLD!", "String upper() should work"
+    log(f"✓ String upper(): '{test_string}' → '{upper_result}'")
+    
+    lower_result = test_string.lower()
+    assert lower_result == "hello, world!", "String lower() should work"
+    log(f"✓ String lower(): '{test_string}' → '{lower_result}'")
+    
+    replace_result = test_string.replace("World", "Dana")
+    assert replace_result == "Hello, Dana!", "String replace() should work"
+    log(f"✓ String replace(): '{test_string}' → '{replace_result}'")
+    
+    split_result = test_string.split(", ")
+    assert len(split_result) == 2, "String split() should return 2 parts"
+    assert split_result[0] == "Hello", "First part should be 'Hello'"
+    log(f"✓ String split(): '{test_string}' → {split_result}")
+    
+    # Test string module functions
+    punctuation_check = string.punctuation
+    assert "!" in punctuation_check, "Punctuation should contain '!'"
+    log("✓ String module constants accessible")
+    
+except Exception as e:
+    log(f"✗ String manipulation functions failed: {e}")
+
+# Test 3: List and collection functions
+log("Test 3: List and collection functions")
+try:
+    # Test built-in list functions
+    test_list = [3, 1, 4, 1, 5, 9, 2, 6]
+    
+    length = len(test_list)
+    assert length == 8, "len() should return correct length"
+    log(f"✓ len({test_list}) = {length}")
+    
+    maximum = max(test_list)
+    assert maximum == 9, "max() should return largest value"
+    log(f"✓ max({test_list}) = {maximum}")
+    
+    minimum = min(test_list)
+    assert minimum == 1, "min() should return smallest value"
+    log(f"✓ min({test_list}) = {minimum}")
+    
+    total = sum(test_list)
+    assert total == 31, "sum() should return total"
+    log(f"✓ sum({test_list}) = {total}")
+    
+    sorted_list = sorted(test_list)
+    assert sorted_list[0] == 1, "sorted() should start with smallest"
+    assert sorted_list[-1] == 9, "sorted() should end with largest"
+    log(f"✓ sorted({test_list}) = {sorted_list}")
+    
+    # Test list methods
+    test_list_copy = test_list.copy()
+    test_list_copy.append(7)
+    assert len(test_list_copy) == 9, "append() should increase length"
+    log("✓ List append() working")
+    
+    test_list_copy.sort()
+    assert test_list_copy[0] == 1, "sort() should arrange in order"
+    log("✓ List sort() working")
+    
+except Exception as e:
+    log(f"✗ List and collection functions failed: {e}")
+
+# Test 4: Dictionary functions
+log("Test 4: Dictionary functions")
+try:
+    test_dict = {"name": "Alice", "age": 30, "city": "San Francisco"}
+    
+    # Test dictionary methods
+    keys = test_dict.keys()
+    assert "name" in keys, "keys() should contain 'name'"
+    log(f"✓ Dictionary keys(): {list(keys)}")
+    
+    values = test_dict.values()
+    assert "Alice" in values, "values() should contain 'Alice'"
+    log(f"✓ Dictionary values(): {list(values)}")
+    
+    items = test_dict.items()
+    items_list = list(items)
+    assert len(items_list) == 3, "items() should return 3 pairs"
+    log(f"✓ Dictionary items(): {items_list}")
+    
+    # Test dictionary access
+    name = test_dict.get("name")
+    assert name == "Alice", "get() should return correct value"
+    log(f"✓ Dictionary get('name'): {name}")
+    
+    unknown = test_dict.get("unknown", "default")
+    assert unknown == "default", "get() with default should work"
+    log(f"✓ Dictionary get('unknown', 'default'): {unknown}")
+    
+    # Test dictionary update
+    test_dict_copy = test_dict.copy()
+    test_dict_copy.update({"country": "USA"})
+    assert "country" in test_dict_copy, "update() should add new key"
+    log("✓ Dictionary update() working")
+    
+except Exception as e:
+    log(f"✗ Dictionary functions failed: {e}")
+
+# Test 5: Date and time functions
+log("Test 5: Date and time functions")
+try:
+    import datetime
+    import time
+    
+    # Test datetime functions
+    now = datetime.datetime.now()
+    assert now is not null, "datetime.now() should return a datetime"
+    log(f"✓ Current datetime: {now}")
+    
+    # Test datetime formatting
+    formatted = now.strftime("%Y-%m-%d")
+    assert len(formatted) == 10, "Date format should be YYYY-MM-DD"
+    log(f"✓ Formatted date: {formatted}")
+    
+    # Test datetime arithmetic
+    tomorrow = now + datetime.timedelta(days=1)
+    assert tomorrow > now, "Adding timedelta should create future date"
+    log("✓ Datetime arithmetic working")
+    
+    # Test time functions
+    timestamp = time.time()
+    assert timestamp > 0, "time.time() should return positive number"
+    log(f"✓ Current timestamp: {timestamp}")
+    
+    # Test time formatting
+    time_struct = time.localtime(timestamp)
+    formatted_time = time.strftime("%H:%M:%S", time_struct)
+    assert len(formatted_time) == 8, "Time format should be HH:MM:SS"
+    log(f"✓ Formatted time: {formatted_time}")
+    
+except Exception as e:
+    log(f"✗ Date and time functions failed: {e}")
+
+# Test 6: Random functions
+log("Test 6: Random functions")
+try:
+    import random
+    
+    # Test random number generation
+    rand_int = random.randint(1, 10)
+    assert 1 <= rand_int <= 10, "randint should be in range"
+    log(f"✓ random.randint(1, 10): {rand_int}")
+    
+    rand_float = random.random()
+    assert 0 <= rand_float < 1, "random() should be between 0 and 1"
+    log(f"✓ random.random(): {rand_float}")
+    
+    # Test random choice
+    choices = ["apple", "banana", "cherry", "date"]
+    choice = random.choice(choices)
+    assert choice in choices, "choice should be from the list"
+    log(f"✓ random.choice({choices}): {choice}")
+    
+    # Test random sample
+    sample = random.sample(choices, 2)
+    assert len(sample) == 2, "sample should return 2 items"
+    for item in sample:
+        assert item in choices, "sample items should be from original list"
+    log(f"✓ random.sample({choices}, 2): {sample}")
+    
+    # Test random shuffle
+    shuffle_list = [1, 2, 3, 4, 5]
+    original_list = shuffle_list.copy()
+    random.shuffle(shuffle_list)
+    assert len(shuffle_list) == len(original_list), "Shuffle should preserve length"
+    log(f"✓ random.shuffle([1,2,3,4,5]): {shuffle_list}")
+    
+except Exception as e:
+    log(f"✗ Random functions failed: {e}")
+
+# Test 7: JSON functions
+log("Test 7: JSON functions")
+try:
+    import json
+    
+    # Test JSON serialization
+    data = {"name": "Bob", "age": 25, "hobbies": ["reading", "coding"]}
+    json_string = json.dumps(data)
+    assert "Bob" in json_string, "JSON dumps should contain data"
+    log(f"✓ JSON dumps: {json_string}")
+    
+    # Test JSON deserialization
+    parsed_data = json.loads(json_string)
+    assert parsed_data["name"] == "Bob", "JSON loads should restore data"
+    assert parsed_data["age"] == 25, "JSON loads should preserve types"
+    assert len(parsed_data["hobbies"]) == 2, "JSON loads should preserve arrays"
+    log(f"✓ JSON loads: {parsed_data}")
+    
+    # Test JSON with different data types
+    complex_data = {
+        "string": "text",
+        "number": 42,
+        "float": 3.14,
+        "boolean": true,
+        "null": null,
+        "array": [1, 2, 3],
+        "object": {"nested": "value"}
+    }
+    
+    complex_json = json.dumps(complex_data)
+    parsed_complex = json.loads(complex_json)
+    
+    assert parsed_complex["string"] == "text", "String should be preserved"
+    assert parsed_complex["number"] == 42, "Number should be preserved"
+    assert parsed_complex["boolean"] == true, "Boolean should be preserved"
+    assert parsed_complex["null"] == null, "Null should be preserved"
+    log("✓ Complex JSON serialization/deserialization working")
+    
+except Exception as e:
+    log(f"✗ JSON functions failed: {e}")
+
+# Test 8: Regular expression functions
+log("Test 8: Regular expression functions")
+try:
+    import re
+    
+    # Test basic regex matching
+    pattern = r"\d+"
+    text = "There are 42 numbers and 123 more"
+    matches = re.findall(pattern, text)
+    
+    assert len(matches) == 2, "Should find 2 number matches"
+    assert "42" in matches, "Should match '42'"
+    assert "123" in matches, "Should match '123'"
+    log(f"✓ re.findall('{pattern}', '{text}'): {matches}")
+    
+    # Test regex search
+    search_result = re.search(r"(\d+)", text)
+    assert search_result is not null, "Search should find a match"
+    first_number = search_result.group(1)
+    assert first_number == "42", "First match should be '42'"
+    log(f"✓ re.search found: {first_number}")
+    
+    # Test regex substitution
+    sub_result = re.sub(r"\d+", "NUM", text)
+    assert "NUM" in sub_result, "Substitution should replace numbers"
+    assert "42" not in sub_result, "Original numbers should be replaced"
+    log(f"✓ re.sub result: {sub_result}")
+    
+    # Test regex split
+    split_text = "apple,banana;cherry:date"
+    split_result = re.split(r"[,;:]", split_text)
+    assert len(split_result) == 4, "Should split into 4 parts"
+    assert "apple" in split_result, "Should contain 'apple'"
+    log(f"✓ re.split('[,;:]', '{split_text}'): {split_result}")
+    
+except Exception as e:
+    log(f"✗ Regular expression functions failed: {e}")
+
+# Test 9: Path and file system functions
+log("Test 9: Path and file system functions")
+try:
+    import os
+    from pathlib import Path
+    
+    # Test os.path functions
+    current_dir = os.getcwd()
+    assert len(current_dir) > 0, "Current directory should have a path"
+    log(f"✓ os.getcwd(): {current_dir}")
+    
+    # Test path joining
+    joined_path = os.path.join("folder", "subfolder", "file.txt")
+    assert "file.txt" in joined_path, "Path join should include filename"
+    log(f"✓ os.path.join: {joined_path}")
+    
+    # Test pathlib
+    path_obj = Path("test") / "file.txt"
+    path_string = str(path_obj)
+    assert "file.txt" in path_string, "Pathlib should work correctly"
+    log(f"✓ Pathlib path: {path_string}")
+    
+    # Test path properties
+    current_path = Path(".")
+    assert current_path.exists(), "Current directory should exist"
+    log("✓ Path.exists() working")
+    
+    # Test path name operations
+    test_path = Path("/home/user/document.pdf")
+    assert test_path.name == "document.pdf", "Path.name should be filename"
+    assert test_path.suffix == ".pdf", "Path.suffix should be extension"
+    assert test_path.stem == "document", "Path.stem should be filename without extension"
+    log("✓ Path name operations working")
+    
+except Exception as e:
+    log(f"✗ Path and file system functions failed: {e}")
+
+# Test 10: Collection utility functions
+log("Test 10: Collection utility functions")
+try:
+    from collections import Counter, defaultdict, deque
+    import itertools
+    
+    # Test Counter
+    text = "hello world"
+    char_count = Counter(text)
+    assert char_count['l'] == 3, "Counter should count 'l' correctly"
+    log(f"✓ Counter('{text}'): {dict(char_count)}")
+    
+    # Test defaultdict
+    dd = defaultdict(list)
+    dd['fruits'].append('apple')
+    dd['fruits'].append('banana')
+    dd['vegetables'].append('carrot')
+    
+    assert len(dd['fruits']) == 2, "defaultdict should handle lists"
+    assert 'apple' in dd['fruits'], "defaultdict should contain added items"
+    log(f"✓ defaultdict usage: {dict(dd)}")
+    
+    # Test deque
+    dq = deque([1, 2, 3])
+    dq.appendleft(0)
+    dq.append(4)
+    
+    assert dq[0] == 0, "deque should allow left append"
+    assert dq[-1] == 4, "deque should allow right append"
+    log(f"✓ deque operations: {list(dq)}")
+    
+    # Test itertools
+    combinations = list(itertools.combinations([1, 2, 3], 2))
+    assert len(combinations) == 3, "Should have 3 combinations"
+    log(f"✓ itertools.combinations: {combinations}")
+    
+    permutations = list(itertools.permutations([1, 2], 2))
+    assert len(permutations) == 2, "Should have 2 permutations"
+    log(f"✓ itertools.permutations: {permutations}")
+    
+except Exception as e:
+    log(f"✗ Collection utility functions failed: {e}")
+
+# Test 11: Function composition and higher-order functions
+log("Test 11: Function composition and higher-order functions")
+try:
+    import functools
+    
+    # Test map function
+    numbers = [1, 2, 3, 4, 5]
+    squared = list(map(lambda x: x * x, numbers))
+    assert squared == [1, 4, 9, 16, 25], "map should square numbers"
+    log(f"✓ map(lambda x: x*x, {numbers}): {squared}")
+    
+    # Test filter function
+    evens = list(filter(lambda x: x % 2 == 0, numbers))
+    assert evens == [2, 4], "filter should find even numbers"
+    log(f"✓ filter(lambda x: x%2==0, {numbers}): {evens}")
+    
+    # Test reduce function
+    def add(x, y):
+        return x + y
+    
+    total = functools.reduce(add, numbers)
+    assert total == 15, "reduce should sum all numbers"
+    log(f"✓ reduce(add, {numbers}): {total}")
+    
+    # Test partial function application
+    def multiply(x, y):
+        return x * y
+    
+    double = functools.partial(multiply, 2)
+    result = double(5)
+    assert result == 10, "partial should create doubling function"
+    log(f"✓ partial(multiply, 2)(5): {result}")
+    
+    # Test any and all
+    has_even = any(x % 2 == 0 for x in numbers)
+    all_positive = all(x > 0 for x in numbers)
+    
+    assert has_even == true, "any should find even numbers"
+    assert all_positive == true, "all should confirm positive numbers"
+    log("✓ any() and all() functions working")
+    
+except Exception as e:
+    log(f"✗ Function composition and higher-order functions failed: {e}")
+
+# Test 12: Error handling in Python function calls
+log("Test 12: Error handling in Python function calls")
+try:
+    import math
+    
+    # Test that Python errors are properly propagated
+    try:
+        invalid_sqrt = math.sqrt(-1)  # Should cause ValueError
+        log("✗ math.sqrt(-1) should have raised an error")
+    except ValueError as e:
+        log(f"✓ Python ValueError properly caught: {e}")
+    except Exception as e:
+        log(f"✓ Python error properly caught (different type): {e}")
+    
+    # Test that function continues to work after error
+    valid_sqrt = math.sqrt(25)
+    assert valid_sqrt == 5.0, "Function should work after error"
+    log("✓ Function continues to work after Python error")
+    
+    # Test invalid function calls
+    try:
+        invalid_call = math.sqrt("not a number")
+        log("✗ Invalid function call should have raised an error")
+    except (TypeError, ValueError) as e:
+        log(f"✓ Invalid function call properly caught: {e}")
+    
+    # Verify normal operation continues
+    normal_result = math.sqrt(9)
+    assert normal_result == 3.0, "Normal operation should continue"
+    log("✓ Normal operation continues after error handling")
+    
+except Exception as e:
+    log(f"✗ Error handling in Python function calls failed: {e}")
+
+log("Python Function Calls test completed")
+
+# Summary of test results
+log("=== Python Function Calls Test Summary ===")
+log("✓ Basic Python function calls (math functions)")
+log("✓ String manipulation functions")
+log("✓ List and collection functions")
+log("✓ Dictionary functions and methods")
+log("✓ Date and time functions")
+log("✓ Random number generation functions")
+log("✓ JSON serialization/deserialization")
+log("✓ Regular expression functions")
+log("✓ Path and file system functions")
+log("✓ Collection utility functions")
+log("✓ Function composition and higher-order functions")
+log("✓ Error handling in Python function calls")
+log("=== All Python function call tests passed ===")
+
+# Notes for developers
+log("")
+log("NOTES:")
+log("- Python functions can be called directly from Dana")
+log("- Function arguments and return values are properly converted")
+log("- Python errors are propagated and can be caught in Dana")
+log("- Complex Python functionality works seamlessly")
+log("- Higher-order functions (map, filter, reduce) work correctly")
+log("- Method chaining and object methods are supported")

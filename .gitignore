@@ -79,6 +79,12 @@ dana/contrib/ui/public/static/
 generated/
 /agents/
 docs/.ai-only/ai_output/
+
+# act file
+.actrc
+.secrets
+.secrets.example
+tasks.json
 experiments/
 
 .vscode/launch.json.backup

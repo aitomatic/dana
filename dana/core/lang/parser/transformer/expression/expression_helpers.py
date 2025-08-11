@@ -83,7 +83,7 @@ class OperatorHelper:
             "-": BinaryOperator.SUBTRACT,
             "*": BinaryOperator.MULTIPLY,
             "/": BinaryOperator.DIVIDE,
-            "//": BinaryOperator.DIVIDE,  # Floor division maps to regular division for now
+            "//": BinaryOperator.FLOOR_DIVIDE,
             "%": BinaryOperator.MODULO,
             "**": BinaryOperator.POWER,
             "==": BinaryOperator.EQUALS,
