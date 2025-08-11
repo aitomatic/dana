@@ -51,7 +51,7 @@ def (filesystem: FilesystemResource) query(request: str) -> str:
     # Security check: ensure path is within root_path
     safe_path = filesystem._make_safe_path(filepath)
     if safe_path == "":
-        return f"Access denied: path '{filepath}' is outside allowed root '{resource.root_path}'"
+        return f"Access denied: path '{filepath}' is outside allowed root '{filesystem.root_path}'"
     
     if operation == "read":
         return filesystem._handle_read(safe_path)
