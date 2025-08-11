@@ -125,11 +125,16 @@ class KnowledgeOpsHandler(AbstractHandler):
             "status": "success",
             "message": "Generated 10 knowledge artifacts",
             "conversation": [...],  # Full conversation with all tool results
-            "final_result": {...}
+            "final_result": {...},
+            "tree_modified": bool,  # Indicates if tree was modified
+            "updated_tree": {...}  # Only included if tree was modified
         }
         """
         # Initialize conversation with user request
-        conversation = request.chat_history + [MessageData(role="user", content=request.user_message)]
+        conversation = request.chat_history
+        
+        # Track if tree was modified
+        tree_modified = False
 
         # Tool loop - max 15 iterations
         for _ in range(15):
@@ -145,6 +150,10 @@ class KnowledgeOpsHandler(AbstractHandler):
 
             # Execute tool and get result (pass conversation for validation)
             tool_result_msg = await self._execute_tool(tool_msg, conversation)
+            
+            # Check if this was a tree modification
+            if "modify_tree" in tool_msg.content:
+                tree_modified = True
 
             if tool_result_msg.require_user:
                 return {
@@ -152,6 +161,8 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "message": tool_result_msg.content,
                     "conversation": conversation,
                     "final_result": None,
+                    "tree_modified": tree_modified,
+                    "updated_tree": self.tree_structure if tree_modified else None,
                 }
 
             # Add result to conversation
@@ -160,13 +171,21 @@ class KnowledgeOpsHandler(AbstractHandler):
             # Check if workflow completed after tool execution
             if "attempt_completion" in tool_msg.content:
                 break
-        # Mock final result
-        return {
+        
+        # Build final result
+        result = {
             "status": "success",
             "message": conversation[-1].content,
             "conversation": conversation,
             "final_result": None,
+            "tree_modified": tree_modified,
         }
+        
+        # Only include updated tree if it was modified
+        if tree_modified:
+            result["updated_tree"] = self.tree_structure
+            
+        return result
 
     async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
         """

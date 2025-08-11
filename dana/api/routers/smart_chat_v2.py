@@ -133,6 +133,23 @@ async def smart_chat_v2(
 
         logger.info(f"✅ KnowledgeOpsHandler completed for agent {agent.id}: status={result.get('status')}")
 
+        # Check if tree was modified and needs reloading
+        updated_domain_tree = None
+        tree_modified = result.get("tree_modified", False)
+        
+        if tree_modified:
+            # Clear cache to ensure fresh data
+            clear_agent_cache(folder_path)
+            logger.info(f"Cleared RAG cache for agent {agent.id} after tree modification")
+            
+            # Use the updated tree from handler if provided, otherwise reload
+            if result.get("updated_tree"):
+                # Convert dict back to DomainKnowledgeTree model
+                updated_domain_tree = result.get("updated_tree")
+            else:
+                # Fallback: reload from database
+                updated_domain_tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
+            
         # Convert KnowledgeOpsHandler result to smart_chat format
         if result.get("status") == "success":
             response = {
@@ -152,6 +169,7 @@ async def smart_chat_v2(
                 "conversation": result.get("conversation", []),
                 "follow_up_message": result.get("message", "Knowledge operation completed. What else would you like me to learn?"),
             }
+            
         elif result.get("status") == "user_input_required":
             response = {
                 "success": False,
@@ -184,6 +202,10 @@ async def smart_chat_v2(
                 "conversation": result.get("conversation", []),
                 "follow_up_message": "I had trouble processing that request. Could you try rephrasing it?",
             }
+
+        # Only include updated_domain_tree if tree was modified
+        if updated_domain_tree:
+            response["updated_domain_tree"] = updated_domain_tree.model_dump()
 
         # --- Save agent response to AgentChatHistory ---
         agent_response_text = response.get("follow_up_message")
