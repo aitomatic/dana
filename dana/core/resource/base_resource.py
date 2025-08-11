@@ -7,7 +7,7 @@ It provides the standard interface and lifecycle management for resources.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from dana.common.types import BaseRequest, BaseResponse
 
@@ -37,10 +37,10 @@ class BaseResource:
     version: str = "1.0.0"  # Resource version
     description: str = ""  # Human-readable description
     domain: str = "general"  # Domain classification
-    tags: List[str] = field(default_factory=list)  # Discovery/classification tags
-    capabilities: List[str] = field(default_factory=list)  # Available capabilities
-    permissions: List[str] = field(default_factory=list)  # Required permissions
-    config: Dict[str, Any] = field(default_factory=dict)  # Provider-specific config
+    tags: list[str] = field(default_factory=list)  # Discovery/classification tags
+    capabilities: list[str] = field(default_factory=list)  # Available capabilities
+    permissions: list[str] = field(default_factory=list)  # Required permissions
+    config: dict[str, Any] = field(default_factory=dict)  # Provider-specific config
 
     # Runtime state
     state: ResourceState = ResourceState.CREATED
@@ -101,7 +101,7 @@ class BaseResource:
         """Check if resource is in running state."""
         return self.state == ResourceState.RUNNING
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """Get resource metadata for discovery and transfer."""
         return {
             "kind": self.kind,

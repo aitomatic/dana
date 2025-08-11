@@ -181,6 +181,11 @@ class DanaSandbox(Loggable):
                 # Load stdlib resources by executing the .na files
                 stdlib_resources_path = Path(__file__).parent.parent.parent / "libs" / "stdlib" / "resources"
                 if stdlib_resources_path.exists():
+                    # Clear method registry before loading resources to prevent duplicate method errors
+                    from dana.core.lang.interpreter.struct_system import MethodRegistry
+
+                    MethodRegistry.clear()
+
                     for na_file in stdlib_resources_path.glob("*.na"):
                         try:
                             with open(na_file, encoding="utf-8") as f:
@@ -247,14 +252,21 @@ class DanaSandbox(Loggable):
         from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
 
         base_llm_resource = BaseLLMResource(name="system_llm", model="openai:gpt-4o-mini")
-        base_llm_resource.initialize()
+        if not base_llm_resource.initialize():
+            self.warning("Failed to initialize BaseLLMResource")
 
         # Enable mock mode for testing if DANA_MOCK_LLM is set
         if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
-            base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+            import os
+
+            if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
+                base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
 
         # Set LLM resource in context for reason function access
-        self._context.set_system_llm_resource(base_llm_resource)
+        try:
+            self._context.set_system_llm_resource(base_llm_resource)
+        except Exception as e:
+            self.error(f"Failed to set system LLM resource: {e}")
 
         # Initialize module system
         from dana.core.runtime.modules.core import initialize_module_system
