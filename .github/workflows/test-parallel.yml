@@ -169,6 +169,13 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/functional/ -m "not live and not deep" --tb=short -v
+    - name: Test Dana Files (.na via pytest)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest test_na/ -m "not live and not deep" --tb=short -v
 
   # Dana Integration - End-to-end system integration
   test-dana-integration:

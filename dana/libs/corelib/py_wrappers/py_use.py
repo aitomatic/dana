@@ -74,9 +74,6 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         from dana.core.resource.plugins.rag_resource import RAGResource
 
         resource = RAGResource(*args, name=_name, **kwargs)
-        description = kwargs.get("description", None)
-        # Note: Core RAG resource may have different structure
-        doc_string = f"RAG resource for document retrieval and querying. {description or ''}"
         context.set_resource(_name, resource)
         return resource
 
@@ -149,5 +146,17 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         context.set_resource(_name, resource)
         return resource
 
+    elif function_name.lower() == "tabular_index":
+        from dana.common.resource.tabular_index.tabular_index_resource import TabularIndexResource
+
+        # Extract tabular_index specific parameters from kwargs
+        tabular_index_params = kwargs.get("tabular_index_config", {})
+        # Create resource with config dict
+        resource = TabularIndexResource(
+            name=_name,
+            **tabular_index_params,
+        )
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")

@@ -1218,7 +1218,13 @@ class ExpressionExecutor(BaseExecutor):
                     lambda_context.set(param.name, args[i])
                 elif param.name in kwargs:
                     lambda_context.set(param.name, kwargs[param.name])
-                # TODO: Handle default values if implemented
+                elif param.default_value is not None:
+                    # Evaluate the default value in the original context
+                    default_val = self.parent.execute(param.default_value, context)
+                    lambda_context.set(param.name, default_val)
+                else:
+                    # Missing required parameter
+                    raise SandboxError(f"Missing required parameter: {param.name}")
 
             # Execute the lambda body
             try:

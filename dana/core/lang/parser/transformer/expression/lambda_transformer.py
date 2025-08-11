@@ -103,8 +103,11 @@ class LambdaTransformer(BaseTransformer):
     def _transform_parameters(self, items):
         """Transform parameter items into a list of Parameters.
 
+        The grammar is: NAME [":" basic_type] ["=" expr] ("," NAME [":" basic_type] ["=" expr])*
+        So the parsing logic needs to handle: name [type] [default] [, name [type] [default]]*
+
         Args:
-            items: List of parameter tokens and types
+            items: List of parameter tokens, types, and default values
 
         Returns:
             list[Parameter]: The transformed parameters
@@ -113,27 +116,46 @@ class LambdaTransformer(BaseTransformer):
         i = 0
 
         while i < len(items):
-            if isinstance(items[i], Token):
-                name = items[i].value
+            item = items[i]
+
+            # Skip comma tokens
+            if isinstance(item, Token) and item.type == "COMMA":
+                i += 1
+                continue
+
+            # Each parameter starts with a NAME token
+            if isinstance(item, Token) and item.type == "NAME":
+                name = item.value
                 type_hint = None
+                default_value = None
+                i += 1
 
-                # Check if next item is a type annotation (could be Token or Tree)
-                if i + 1 < len(items):
-                    next_item = items[i + 1]
-                    # If next item is a token, check if it looks like a type name
-                    if isinstance(next_item, Token):
-                        # Check if the next item is in the predefined type names
-                        if next_item.value in COMMON_TYPE_NAMES:
-                            type_hint = self._transform_type(next_item)
-                            i += 1  # Skip the type
-                    elif not isinstance(next_item, Token):
-                        # If it's a tree, it's definitely a type annotation
-                        type_hint = self._transform_type(next_item)
-                        i += 1  # Skip the type
+                # Check for optional type annotation
+                if i < len(items) and not isinstance(items[i], Token):
+                    # It's a Tree (type annotation)
+                    type_hint = self._transform_type(items[i])
+                    i += 1
+                elif i < len(items) and isinstance(items[i], Token) and items[i].value in COMMON_TYPE_NAMES:
+                    # It's a simple type token
+                    type_hint = self._transform_type(items[i])
+                    i += 1
 
-                parameters.append(Parameter(name=name, type_hint=type_hint))
+                # Check for optional default value (any non-name, non-comma expression)
+                if i < len(items):
+                    next_item = items[i]
+                    # If it's not a comma and not a name token, it must be a default value
+                    if not (isinstance(next_item, Token) and (next_item.type in ["COMMA", "NAME"])):
+                        # It's a default value expression
+                        if self.main_transformer and hasattr(self.main_transformer, "expression_transformer"):
+                            default_value = self.main_transformer.expression_transformer.transform(next_item)
+                        else:
+                            default_value = next_item
+                        i += 1
 
-            i += 1
+                parameters.append(Parameter(name=name, type_hint=type_hint, default_value=default_value))
+            else:
+                # Skip any unexpected items
+                i += 1
 
         return parameters
 

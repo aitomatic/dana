@@ -52,10 +52,10 @@ class PythonicBuiltinsFactory:
             raise TypeError("max expected at least 1 argument, got 0")
         elif len(resolved_args) == 1:
             # Single argument case
-            if isinstance(resolved_args[0], list | tuple):
+            if isinstance(resolved_args[0], list | tuple | set):
                 if len(resolved_args[0]) == 0:
                     raise ValueError("max() arg is an empty sequence")
-                return max(resolved_args[0])  # max([1,2,3]) or max((1,2,3))
+                return max(resolved_args[0])  # max([1,2,3]) or max((1,2,3)) or max({1,2,3})
             else:
                 # Single non-iterable argument: just return it
                 return resolved_args[0]  # max(42) returns 42
@@ -78,10 +78,10 @@ class PythonicBuiltinsFactory:
             raise TypeError("min expected at least 1 argument, got 0")
         elif len(resolved_args) == 1:
             # Single argument case
-            if isinstance(resolved_args[0], list | tuple):
+            if isinstance(resolved_args[0], list | tuple | set):
                 if len(resolved_args[0]) == 0:
                     raise ValueError("min() arg is an empty sequence")
-                return min(resolved_args[0])  # min([1,2,3]) or min((1,2,3))
+                return min(resolved_args[0])  # min([1,2,3]) or min((1,2,3)) or min({1,2,3})
             else:
                 # Single non-iterable argument: just return it
                 return resolved_args[0]  # min(42) returns 42
@@ -113,9 +113,9 @@ class PythonicBuiltinsFactory:
         # Numeric functions
         "len": {
             "func": len,
-            "types": [list, dict, str, tuple, LazyPromise],
+            "types": [list, dict, str, tuple, set, LazyPromise],
             "doc": "Return the length of an object",
-            "signatures": [(list,), (dict,), (str,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (dict,), (str,), (tuple,), (set,), (LazyPromise,)],
         },
         # Smart wrappers for flexible argument handling
         "sum": {
@@ -125,11 +125,16 @@ class PythonicBuiltinsFactory:
             "signatures": [
                 (list,),
                 (tuple,),
+                (set,),
                 (list, int),
                 (list, float),
                 (tuple, int),
                 (tuple, float),
-            ],  # Allow list/tuple with optional start
+                (set, int),
+                (set, float),
+                (type({}.keys()),),
+                (type({}.values()),),
+            ],  # Allow list/tuple/set with optional start
         },
         "max": {
             "func": max,
@@ -146,21 +151,21 @@ class PythonicBuiltinsFactory:
         # Original basic versions (strict iterable-only)
         "basic_sum": {
             "func": sum,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the sum of a sequence of numbers (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "basic_max": {
             "func": max,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the largest item in an iterable (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "basic_min": {
             "func": min,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the smallest item in an iterable (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "abs": {
             "func": abs,
@@ -179,7 +184,7 @@ class PythonicBuiltinsFactory:
             "func": int,
             "types": [str, float, bool, LazyPromise],
             "doc": "Convert a value to an integer",
-            "signatures": [(str,), (float,), (bool,), (LazyPromise,)],
+            "signatures": [(int,), (str,), (float,), (bool,), (LazyPromise,)],
         },
         "float": {
             "func": float,
@@ -205,9 +210,9 @@ class PythonicBuiltinsFactory:
         # Collection functions
         "sorted": {
             "func": sorted,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return a new sorted list from an iterable",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         "reversed": {
             "func": reversed,
@@ -224,31 +229,55 @@ class PythonicBuiltinsFactory:
         # Logic functions
         "all": {
             "func": all,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return True if all elements are true",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         "any": {
             "func": any,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return True if any element is true",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         # Range function
         "range": {"func": range, "types": [int], "doc": "Return a range object", "signatures": [(int,), (int, int), (int, int, int)]},
         # List constructor
         "list": {
             "func": list,
-            "types": [list, tuple, str, range, type(reversed([])), type({}.keys()), LazyPromise],
+            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
             "doc": "Convert an iterable to a list",
             "signatures": [
+                (),  # Empty list: list()
                 (list,),
                 (tuple,),
+                (set,),
                 (str,),
                 (range,),
                 (type(reversed([])),),
                 (type(enumerate([])),),
                 (type({}.keys()),),
+                (type({}.values()),),
+                (type({}.items()),),
+                (LazyPromise,),
+            ],
+        },
+        # Set constructor
+        "set": {
+            "func": set,
+            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
+            "doc": "Convert an iterable to a set (removes duplicates) or create an empty set",
+            "signatures": [
+                (),  # Empty set: set()
+                (list,),
+                (tuple,),
+                (set,),
+                (str,),
+                (range,),
+                (type(reversed([])),),
+                (type(enumerate([])),),
+                (type({}.keys()),),
+                (type({}.values()),),
+                (type({}.items()),),
                 (LazyPromise,),
             ],
         },

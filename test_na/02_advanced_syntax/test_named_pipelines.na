@@ -1,0 +1,93 @@
+# Test: Named Pipeline Stages
+# Purpose: Test named pipeline stages and intermediate result capture
+# Category: Advanced Syntax - Pipeline Operations
+
+log("Starting Named Pipeline Stages test")
+
+# Test 1: Basic Named Parameter Capture Mode
+def add_ten(x: int) -> int:
+    return x + 10
+
+def multiply_by(x: int, factor: int) -> int:
+    return x * factor
+
+def add_values(a: int, b: int) -> int:
+    return a + b
+
+# Capture and reuse intermediate values
+def named_capture_pipeline(x: int) = add_ten as base | multiply_by(2) as doubled | add_values(base, doubled)
+result = named_capture_pipeline(5)
+assert result == 45, f"Expected 45, got {result}"  # base=15, doubled=30, 15+30=45
+log("✅ Basic named parameter capture mode works")
+
+# Test 2: Multiple Named Pipeline Stages
+def square(x: int) -> int:
+    return x * x
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def multiply_by_three(x: int) -> int:
+    return x * 3
+
+def multi_pipeline(x: int) = square as squared | add_one as incremented | multiply_by_three
+result = multi_pipeline(2)
+assert result == 15, f"Expected 15, got {result}"  # 2^2=4, 4+1=5, 5*3=15
+log("✅ Multiple named pipeline stages works")
+
+# Test 3: Mixed Mode - Combining Implicit and Named Capture
+def add_prefix(text: str, prefix: str) -> str:
+    return f"{prefix}{text}"
+
+def wrap_with_brackets(text: str, left: str, right: str) -> str:
+    return f"{left}{text}{right}"
+
+def format_result(text: str, original: str) -> str:
+    return f"{text} (was: {original})"
+
+# Mix implicit and named capture modes
+def mixed_pipeline(text: str) = add_prefix("INFO: ") as prefixed | wrap_with_brackets(prefixed, "[", "]") as wrapped | format_result(wrapped, prefixed)
+result = mixed_pipeline("data")
+expected = "[INFO: data] (was: INFO: data)"
+assert result == expected, f"Expected '{expected}', got '{result}'"
+log("✅ Mixed mode pipeline works")
+
+# Test 4: Complex Business Logic with Multiple Captures
+def apply_discount(price: float, discount_percent: int) -> float:
+    return price * (1 - discount_percent / 100)
+
+def calculate_tax(price: float, tax_rate: float) -> float:
+    return price * tax_rate
+
+def format_invoice(original: float, discounted: float, tax: float, total: float) -> str:
+    return f"Invoice: Original=${original}, Discounted=${discounted}, Tax=${tax}, Total=${total}"
+
+# Complex business logic with multiple captures
+def calculate_invoice(price: float) = multiply_by(1) as original | apply_discount(original, 20) as discounted | calculate_tax(discounted, 0.08) as tax | add_values(discounted, tax) as total | format_invoice(original, discounted, tax, total)
+result = calculate_invoice(100.0)
+expected = "Invoice: Original=$100.0, Discounted=$80.0, Tax=$6.4, Total=$86.4"
+assert result == expected, f"Expected '{expected}', got '{result}'"
+log("✅ Complex business logic with multiple captures works")
+
+# Test 7: Advanced Placeholder Mode with Named Captures
+def format_message(prefix: str, text: str, suffix: str) -> str:
+    return f"{prefix}{text}{suffix}"
+
+# Placeholder in first position with named capture
+def first_placeholder_pipeline(text: str) = format_message($$, "MIDDLE", "!!!") as formatted | wrap_with_brackets(formatted, "[", "]")
+result = first_placeholder_pipeline("world")
+assert result == "[worldMIDDLE!!!]", f"Expected '[worldMIDDLE!!!]', got '{result}'"
+log("✅ Advanced placeholder mode with named captures works")
+
+# Test 8: Multiple Placeholders with Named Captures
+def multi_placeholder_func(a: str, b: str, c: str, d: str) -> str:
+    return f"{a}-{b}-{c}-{d}"
+
+# Multiple placeholders with named capture
+def add_suffix(suffix: str, text: str) -> str:
+    return f"{text}{suffix}"
+
+def multi_placeholder_pipeline(text: str) = multi_placeholder_func("start", $$, "middle", $$) as combined | add_prefix(combined, "RESULT: ") | add_suffix("!!!", $$)
+result = multi_placeholder_pipeline("value")
+assert result == "RESULT: start-value-middle-value!!!", f"Expected 'RESULT: start-value-middle-value!!!', got '{result}'"
+log("✅ Multiple placeholders with named captures works")
