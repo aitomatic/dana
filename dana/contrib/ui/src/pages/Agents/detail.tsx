@@ -163,24 +163,8 @@ export default function AgentDetailPage() {
       await deleteAgent(parseInt(agent_id));
       setShowCancelConfirmation(false);
 
-      // Show success toast notification
-      toast.success('Agent has been deleted successfully');
-      /*toast.success(
-        <div>
-          <span style={{ fontWeight: 'bold' }}>{selectedAgent?.config.name}</span> has been deleted
-        </div>,
-        {
-          style: {
-            background: '#f0fdf4',
-            color: '#166534',
-            border: '1px solid #bbf7d0',
-            borderRadius: '8px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        },
-      );*/
+      // No toast message when user chooses "Do not save" - they're discarding unsaved changes
+      // Only show success toast when user explicitly deletes a saved agent
 
       navigate('/agents');
     } catch (error) {
