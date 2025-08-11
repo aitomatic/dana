@@ -86,12 +86,24 @@ class DanaTypeWrapper:
 
     @property
     def instance_type(self) -> str | None:
-        """Get the instance type (ResourceInstance, StructInstance, etc.)."""
+        """
+        Get the instance type of the wrapped object.
+
+        Returns:
+            str: The type of instance, such as "ResourceInstance" or "StructInstance".
+            None: If the object is not recognized as a resource or struct instance.
+        """
         return self._instance_type
 
     @property
     def underlying_type_name(self) -> str | None:
-        """Get the underlying type name for instances."""
+        """
+        Get the underlying type name for instances.
+
+        Returns:
+            str: The name of the underlying type if available (e.g., the resource or struct type name).
+            None: If the underlying type name cannot be determined or is not applicable.
+        """
         return self._underlying_type_name
 
     def __eq__(self, other) -> bool:
