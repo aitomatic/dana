@@ -316,6 +316,15 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
 
   return (
     <div className={`h-[100%] min-h-140 w-full ${className}`}>
+      <style>
+        {`
+          /* Hide ONLY the connection handles (black dots) - keep edges/lines visible */
+          .agent-overview-flow .react-flow__handle {
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+        `}
+      </style>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -326,7 +335,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         nodesConnectable={false}
         elementsSelectable={false}
         proOptions={{ hideAttribution: true }}
-        className="bg-gray-50"
+        className="bg-gray-50 agent-overview-flow"
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
       >
         <Controls />
