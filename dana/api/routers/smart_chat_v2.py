@@ -79,7 +79,7 @@ async def smart_chat_v2(
             raise HTTPException(status_code=404, detail="Agent not found")
 
         # --- Save user message to AgentChatHistory ---
-        user_history = AgentChatHistory(agent_id=agent_id, sender="user", text=user_message, type="smart_chat_v2")
+        user_history = AgentChatHistory(agent_id=agent_id, sender="user", text=user_message, type="smart_chat")
         db.add(user_history)
         db.commit()
         db.refresh(user_history)
@@ -192,7 +192,7 @@ async def smart_chat_v2(
                 agent_id=agent_id,
                 sender="agent",
                 text=agent_response_text,
-                type="smart_chat_v2",
+                type="smart_chat",
             )
             db.add(agent_history)
             db.commit()

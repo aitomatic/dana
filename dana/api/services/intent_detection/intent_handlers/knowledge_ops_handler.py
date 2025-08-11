@@ -10,7 +10,6 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_
     ExploreKnowledgeTool,
     GenerateKnowledgeTool,
     ModifyTreeTool,
-    ValidateTool,
     AttemptCompletionTool,
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
@@ -104,12 +103,17 @@ class KnowledgeOpsHandler(AbstractHandler):
         )
 
         # Tree management
-        self.tools.update(ModifyTreeTool(tree_structure=self.tree_structure, domain_knowledge_path=self.domain_knowledge_path).as_dict())
+        self.tools.update(
+            ModifyTreeTool(
+                tree_structure=self.tree_structure,
+                domain_knowledge_path=self.domain_knowledge_path,
+                domain=self.domain,
+                role=self.role,
+                tasks=self.tasks,
+            ).as_dict()
+        )
 
         # Quality and completion tools
-        self.tools.update(ValidateTool(llm=self.llm).as_dict())
-        # Note: PersistTool removed - persistence now handled by GenerateKnowledgeTool
-        # Note: CheckExistingTool removed - functionality merged into ExploreKnowledgeTool
         self.tools.update(AttemptCompletionTool().as_dict())
 
     async def handle(self, request: IntentDetectionRequest) -> dict[str, Any]:
@@ -139,8 +143,8 @@ class KnowledgeOpsHandler(AbstractHandler):
             # Add tool call to conversation
             conversation.append(tool_msg)
 
-            # Execute tool and get result
-            tool_result_msg = await self._execute_tool(tool_msg)
+            # Execute tool and get result (pass conversation for validation)
+            tool_result_msg = await self._execute_tool(tool_msg, conversation)
 
             if tool_result_msg.require_user:
                 return {
@@ -195,9 +199,9 @@ class KnowledgeOpsHandler(AbstractHandler):
         response = await self.llm.query(llm_request)
         tool_call = Misc.get_response_content(response).strip()
 
-        return MessageData(role="assistant", content=tool_call)
+        return MessageData(role="assistant", content=tool_call, treat_as_tool=True)
 
-    async def _execute_tool(self, tool_msg: MessageData) -> MessageData:
+    async def _execute_tool(self, tool_msg: MessageData, conversation: list[MessageData] = None) -> MessageData:
         """
         Execute the tool and return the result.
         """
@@ -211,6 +215,22 @@ class KnowledgeOpsHandler(AbstractHandler):
             if thinking_content:
                 logger.debug(f"LLM thinking: {thinking_content}")
 
+            # Guard against using modify_tree without exploration
+            # if tool_name == "modify_tree" and conversation:
+            #     # Check if explore_knowledge was used in this conversation
+            #     # Look through the conversation history for exploration
+            #     exploration_found = False
+            #     for msg in conversation:
+            #         if msg.role == "assistant" and "explore_knowledge" in msg.content:
+            #             exploration_found = True
+            #             break
+
+            #     if not exploration_found:
+            #         return MessageData(
+            #             role="user",
+            #             content="⚠️ Error: You must use explore_knowledge before modify_tree to understand the current tree structure. Please explore the tree first to see what nodes exist and their exact paths.",
+            #         )
+
             # Check if tool exists
             if tool_name not in self.tools:
                 error_msg = f"Tool '{tool_name}' not found. Available tools: {', '.join(self.tools.keys())}"
@@ -222,7 +242,7 @@ class KnowledgeOpsHandler(AbstractHandler):
             result = tool.execute(**params)
 
             # Convert ToolResult to MessageData
-            message_data = MessageData(role="user", content=result.result, require_user=result.require_user)
+            message_data = MessageData(role="user", content=result.result, require_user=result.require_user, treat_as_tool=True)
 
             # If this was a modify_tree operation, reload the tree structure
             if tool_name == "modify_tree":
@@ -240,6 +260,8 @@ class KnowledgeOpsHandler(AbstractHandler):
         Parse XML tool call to extract tool name, parameters, and thinking content.
 
         Example input:
+        I need to first explore the structure...
+        
         <thinking>...</thinking>
         <ask_follow_up_question>
         <question>What type of ratios?</question>
@@ -254,12 +276,44 @@ class KnowledgeOpsHandler(AbstractHandler):
         # Clean up the content - remove any extra whitespace
         xml_content = xml_content.strip()
 
-        # Extract thinking content if present
-        thinking_match = re.search(r"<thinking>(.*?)</thinking>", xml_content, flags=re.DOTALL)
-        thinking_content = thinking_match.group(1).strip() if thinking_match else ""
+        # Find the first XML tag (either <thinking> or a tool tag)
+        first_tag_match = re.search(r"<(\w+)(?:\s[^>]*)?>", xml_content)
+        if not first_tag_match:
+            raise ValueError(f"""Could not find any XML tags. Please provide the correct format include exactly TWO XML blocks, in this order:
+1) Planning
+<thinking>
+<!-- Max 60 words. State (a) what’s known, (b) what’s needed next, (c) chosen tool + 1–2 reasons. -->
+</thinking>
 
-        # Remove thinking tags for tool parsing
-        xml_without_thinking = re.sub(r"<thinking>.*?</thinking>\s*", "", xml_content, flags=re.DOTALL)
+2) Tool call (strict tags as defined)
+<tool_name>
+  <param1>value</param1>
+  ...
+</tool_name>""")
+
+        first_tag_start = first_tag_match.start()
+        
+        # Extract any text before the first XML tag as additional thinking content
+        text_before_xml = xml_content[:first_tag_start].strip() if first_tag_start > 0 else ""
+
+        # Extract thinking content from <thinking> tags if present
+        thinking_match = re.search(r"<thinking>(.*?)</thinking>", xml_content, flags=re.DOTALL)
+        thinking_tag_content = thinking_match.group(1).strip() if thinking_match else ""
+
+        # Combine text before XML and thinking tag content
+        thinking_parts = []
+        if text_before_xml:
+            thinking_parts.append(text_before_xml)
+        if thinking_tag_content:
+            thinking_parts.append(thinking_tag_content)
+        
+        thinking_content = "\n\n".join(thinking_parts) if thinking_parts else ""
+
+        # Remove thinking tags and text before XML for tool parsing
+        xml_for_parsing = xml_content
+        if text_before_xml:
+            xml_for_parsing = xml_content[first_tag_start:]
+        xml_without_thinking = re.sub(r"<thinking>.*?</thinking>\s*", "", xml_for_parsing, flags=re.DOTALL)
 
         # Extract tool name - look for the first tag that's not 'thinking'
         tool_match = re.search(r"<(\w+)(?:\s[^>]*)?>(?!.*<thinking>)", xml_without_thinking)
