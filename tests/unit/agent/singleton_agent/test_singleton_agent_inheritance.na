@@ -1,0 +1,266 @@
+# Singleton Agent Inheritance Tests
+# Tests for singleton agent inheritance patterns
+
+log_level("INFO")
+
+# Test 1: Basic inheritance from blueprint
+agent_blueprint BaseAgent:
+    name: str = "Base"
+    version: str = "1.0"
+    capabilities: list = ["chat", "plan"]
+
+agent InheritedAgent(BaseAgent)
+
+def test_basic_inheritance():
+    # Test that singleton inherits all fields from blueprint
+    try:
+        if InheritedAgent.name != "Base":
+            return "❌ Inherited name field not working"
+        if InheritedAgent.version != "1.0":
+            return "❌ Inherited version field not working"
+        if len(InheritedAgent.capabilities) != 2:
+            return "❌ Inherited capabilities field not working"
+        
+        return "✅ Basic inheritance works"
+    except Exception as e:
+        return f"❌ Basic inheritance failed: {e}"
+
+# Test 2: Multi-level inheritance
+agent_blueprint Animal:
+    name: str = "Animal"
+    legs: int = 4
+
+agent_blueprint Dog(Animal):
+    name = "Dog"
+    breed: str = "Unknown"
+
+agent MyDog(Dog)
+
+def test_multi_level_inheritance():
+    # Test inheritance through multiple levels
+    try:
+        if MyDog.name != "Dog":
+            return "❌ Multi-level name inheritance not working"
+        if MyDog.legs != 4:
+            return "❌ Multi-level legs inheritance not working"
+        if MyDog.breed != "Unknown":
+            return "❌ Multi-level breed inheritance not working"
+        
+        return "✅ Multi-level inheritance works"
+    except Exception as e:
+        return f"❌ Multi-level inheritance failed: {e}"
+
+# Test 3: Method inheritance
+agent_blueprint MethodBase:
+    name: str = "MethodBase"
+    counter: int = 0
+
+agent MethodInherited(MethodBase)
+
+def test_method_inheritance():
+    # Test that inherited methods work correctly
+    try:
+        # Test that all agent methods are available
+        plan_result = MethodInherited.plan("inherited task")
+        if "planning" not in str(plan_result).lower():
+            return "❌ Inherited plan method not working"
+        
+        solve_result = MethodInherited.solve("inherited problem")
+        if "solving" not in str(solve_result).lower():
+            return "❌ Inherited solve method not working"
+        
+        remember_result = MethodInherited.remember("inherited_key", "inherited_value")
+        if remember_result != true:
+            return "❌ Inherited remember method not working"
+        
+        recall_result = MethodInherited.recall("inherited_key")
+        if recall_result != "inherited_value":
+            return "❌ Inherited recall method not working"
+        
+        return "✅ Method inheritance works"
+    except Exception as e:
+        return f"❌ Method inheritance failed: {e}"
+
+# Test 4: Field override inheritance
+agent_blueprint OverrideBase:
+    name: str = "Base"
+    value: int = 10
+    flag: bool = false
+
+agent OverrideTest(OverrideBase):
+    name = "Override"
+    flag = true
+
+def test_field_override_inheritance():
+    # Test that field overrides work in inheritance
+    try:
+        if OverrideTest.name != "Override":
+            return "❌ Name override not working"
+        if OverrideTest.value != 10:
+            return "❌ Inherited value not working"
+        if OverrideTest.flag != true:
+            return "❌ Flag override not working"
+        
+        return "✅ Field override inheritance works"
+    except Exception as e:
+        return f"❌ Field override inheritance failed: {e}"
+
+# Test 5: Complex inheritance with nested structures
+agent_blueprint ComplexBase:
+    name: str = "ComplexBase"
+    config: dict = {"base": true, "level": 1}
+    items: list = ["base_item"]
+
+agent_blueprint ComplexChild(ComplexBase):
+    name = "ComplexChild"
+    config = {"base": true, "level": 2, "child": true}
+    items = ["base_item", "child_item"]
+
+agent ComplexInherited(ComplexChild)
+
+def test_complex_inheritance():
+    # Test inheritance with complex data structures
+    try:
+        if ComplexInherited.name != "ComplexChild":
+            return "❌ Complex name inheritance not working"
+        if ComplexInherited.config.get("level") != 2:
+            return "❌ Complex config inheritance not working"
+        if len(ComplexInherited.items) != 2:
+            return "❌ Complex items inheritance not working"
+        
+        return "✅ Complex inheritance works"
+    except Exception as e:
+        return f"❌ Complex inheritance failed: {e}"
+
+# Test 6: Inheritance isolation
+agent_blueprint IsolatedBase:
+    name: str = "Isolated"
+    shared_data: dict = {"key": "base_value"}
+
+agent Isolated1(IsolatedBase)
+agent Isolated2(IsolatedBase)
+
+def test_inheritance_isolation():
+    # Test that inherited agents maintain isolation
+    try:
+        # Modify shared data in one instance
+        Isolated1.shared_data["key"] = "modified_value"
+        
+        # Check that the other instance is not affected
+        if Isolated2.shared_data["key"] != "base_value":
+            return "❌ Inheritance isolation not working"
+        
+        # Check that the modification worked for the first instance
+        if Isolated1.shared_data["key"] != "modified_value":
+            return "❌ Inheritance modification not working"
+        
+        return "✅ Inheritance isolation works"
+    except Exception as e:
+        return f"❌ Inheritance isolation failed: {e}"
+
+# Test 7: Method behavior inheritance
+agent_blueprint BehaviorBase:
+    name: str = "Behavior"
+    state: str = "initial"
+
+agent BehaviorInherited(BehaviorBase)
+
+def test_method_behavior_inheritance():
+    # Test that method behavior is consistent across inheritance
+    try:
+        # Test that both instances behave the same way
+        result1 = BehaviorBase.plan("test task")
+        result2 = BehaviorInherited.plan("test task")
+        
+        # Both should return planning results
+        if "planning" not in str(result1).lower():
+            return "❌ Base method behavior not working"
+        if "planning" not in str(result2).lower():
+            return "❌ Inherited method behavior not working"
+        
+        return "✅ Method behavior inheritance works"
+    except Exception as e:
+        return f"❌ Method behavior inheritance failed: {e}"
+
+# Test 8: Deep inheritance chain
+agent_blueprint Level1:
+    name: str = "Level1"
+    level: int = 1
+
+agent_blueprint Level2(Level1):
+    name = "Level2"
+    level = 2
+    extra: str = "level2"
+
+agent_blueprint Level3(Level2):
+    name = "Level3"
+    level = 3
+    extra = "level3"
+    final: bool = true
+
+agent DeepInherited(Level3)
+
+def test_deep_inheritance_chain():
+    # Test deep inheritance chain with multiple levels
+    try:
+        if DeepInherited.name != "Level3":
+            return "❌ Deep inheritance name not working"
+        if DeepInherited.level != 3:
+            return "❌ Deep inheritance level not working"
+        if DeepInherited.extra != "level3":
+            return "❌ Deep inheritance extra not working"
+        if DeepInherited.final != true:
+            return "❌ Deep inheritance final not working"
+        
+        return "✅ Deep inheritance chain works"
+    except Exception as e:
+        return f"❌ Deep inheritance chain failed: {e}"
+
+# Run inheritance tests
+log("=== Singleton Agent Inheritance Tests ===")
+
+tests = [
+    test_basic_inheritance,
+    test_multi_level_inheritance,
+    test_method_inheritance,
+    test_field_override_inheritance,
+    test_complex_inheritance,
+    test_inheritance_isolation,
+    test_method_behavior_inheritance,
+    test_deep_inheritance_chain
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Inheritance Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All inheritance tests passed!")
+else:
+    log(f"⚠️  {failed} inheritance tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}

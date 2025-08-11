@@ -1,0 +1,277 @@
+# Singleton Agent Overrides Tests
+# Tests for singleton agent field and method overrides
+
+log_level("INFO")
+
+# Test 1: Basic field overrides
+agent_blueprint OverrideBase:
+    name: str = "Base"
+    value: int = 100
+    enabled: bool = false
+
+agent OverrideTest(OverrideBase):
+    name = "Override"
+    value = 200
+    enabled = true
+
+def test_basic_field_overrides():
+    # Test basic field overrides in singleton
+    try:
+        if OverrideTest.name != "Override":
+            return "❌ Name override not working"
+        if OverrideTest.value != 200:
+            return "❌ Value override not working"
+        if OverrideTest.enabled != true:
+            return "❌ Boolean override not working"
+        
+        return "✅ Basic field overrides work"
+    except Exception as e:
+        return f"❌ Basic field overrides failed: {e}"
+
+# Test 2: Partial field overrides
+agent_blueprint PartialBase:
+    name: str = "Partial"
+    count: int = 0
+    items: list = ["item1", "item2"]
+    config: dict = {"key1": "value1"}
+
+agent PartialOverride(PartialBase):
+    count = 5
+    items = ["item1", "item2", "item3"]
+
+def test_partial_field_overrides():
+    # Test that only specified fields are overridden
+    try:
+        if PartialOverride.name != "Partial":
+            return "❌ Non-overridden name changed"
+        if PartialOverride.count != 5:
+            return "❌ Count override not working"
+        if len(PartialOverride.items) != 3:
+            return "❌ Items override not working"
+        if PartialOverride.config.get("key1") != "value1":
+            return "❌ Non-overridden config changed"
+        
+        return "✅ Partial field overrides work"
+    except Exception as e:
+        return f"❌ Partial field overrides failed: {e}"
+
+# Test 3: Complex data structure overrides
+agent_blueprint ComplexBase:
+    name: str = "Complex"
+    settings: dict = {"timeout": 30, "retries": 3, "debug": false}
+    tags: list = ["base", "default"]
+
+agent ComplexOverride(ComplexBase):
+    settings = {"timeout": 60, "retries": 5, "debug": true, "new": "value"}
+    tags = ["override", "custom"]
+
+def test_complex_data_overrides():
+    # Test overrides with complex data structures
+    try:
+        if ComplexOverride.settings.get("timeout") != 60:
+            return "❌ Settings timeout override not working"
+        if ComplexOverride.settings.get("retries") != 5:
+            return "❌ Settings retries override not working"
+        if ComplexOverride.settings.get("debug") != true:
+            return "❌ Settings debug override not working"
+        if ComplexOverride.settings.get("new") != "value":
+            return "❌ Settings new field not working"
+        if len(ComplexOverride.tags) != 2:
+            return "❌ Tags override not working"
+        
+        return "✅ Complex data overrides work"
+    except Exception as e:
+        return f"❌ Complex data overrides failed: {e}"
+
+# Test 4: Nested structure overrides
+agent_blueprint NestedBase:
+    name: str = "Nested"
+    config: dict = {
+        "database": {"host": "localhost", "port": 5432},
+        "cache": {"enabled": false, "ttl": 300}
+    }
+
+agent NestedOverride(NestedBase):
+    config = {
+        "database": {"host": "prod.example.com", "port": 5432},
+        "cache": {"enabled": true, "ttl": 600},
+        "logging": {"level": "info"}
+    }
+
+def test_nested_structure_overrides():
+    # Test overrides with nested data structures
+    try:
+        db_config = NestedOverride.config.get("database")
+        if db_config.get("host") != "prod.example.com":
+            return "❌ Nested database host override not working"
+        if db_config.get("port") != 5432:
+            return "❌ Nested database port not preserved"
+        
+        cache_config = NestedOverride.config.get("cache")
+        if cache_config.get("enabled") != true:
+            return "❌ Nested cache enabled override not working"
+        if cache_config.get("ttl") != 600:
+            return "❌ Nested cache ttl override not working"
+        
+        if NestedOverride.config.get("logging") is None:
+            return "❌ Nested new section not working"
+        
+        return "✅ Nested structure overrides work"
+    except Exception as e:
+        return f"❌ Nested structure overrides failed: {e}"
+
+# Test 5: Multiple override levels
+agent_blueprint Level1:
+    name: str = "Level1"
+    value: int = 1
+
+agent_blueprint Level2(Level1):
+    name = "Level2"
+    value = 2
+    extra: str = "level2"
+
+agent Level3(Level2):
+    name = "Level3"
+    value = 3
+    extra = "level3"
+    final: bool = true
+
+def test_multiple_override_levels():
+    # Test overrides through multiple inheritance levels
+    try:
+        if Level3.name != "Level3":
+            return "❌ Level3 name override not working"
+        if Level3.value != 3:
+            return "❌ Level3 value override not working"
+        if Level3.extra != "level3":
+            return "❌ Level3 extra override not working"
+        if Level3.final != true:
+            return "❌ Level3 final field not working"
+        
+        return "✅ Multiple override levels work"
+    except Exception as e:
+        return f"❌ Multiple override levels failed: {e}"
+
+# Test 6: Override with different types
+agent_blueprint TypeBase:
+    name: str = "Type"
+    count: int = 10
+    flag: bool = false
+    items: list = ["a", "b"]
+
+agent TypeOverride(TypeBase):
+    count = "twenty"  # Override int with string
+    flag = 1  # Override bool with int
+    items = {"key": "value"}  # Override list with dict
+
+def test_override_with_different_types():
+    # Test overrides with different data types
+    try:
+        if TypeOverride.count != "twenty":
+            return "❌ Type override to string not working"
+        if TypeOverride.flag != 1:
+            return "❌ Type override to int not working"
+        if TypeOverride.items.get("key") != "value":
+            return "❌ Type override to dict not working"
+        
+        return "✅ Override with different types works"
+    except Exception as e:
+        return f"❌ Override with different types failed: {e}"
+
+# Test 7: Override isolation
+agent_blueprint IsolationBase:
+    name: str = "Isolation"
+    data: dict = {"shared": "value"}
+
+agent Isolation1(IsolationBase):
+    data = {"shared": "modified1", "unique1": "value1"}
+
+agent Isolation2(IsolationBase):
+    data = {"shared": "modified2", "unique2": "value2"}
+
+def test_override_isolation():
+    # Test that overrides are isolated between different singletons
+    try:
+        if Isolation1.data.get("shared") != "modified1":
+            return "❌ Isolation1 override not working"
+        if Isolation1.data.get("unique1") != "value1":
+            return "❌ Isolation1 unique field not working"
+        
+        if Isolation2.data.get("shared") != "modified2":
+            return "❌ Isolation2 override not working"
+        if Isolation2.data.get("unique2") != "value2":
+            return "❌ Isolation2 unique field not working"
+        
+        return "✅ Override isolation works"
+    except Exception as e:
+        return f"❌ Override isolation failed: {e}"
+
+# Test 8: Override validation
+agent_blueprint ValidationBase:
+    name: str = "Validation"
+    required: str = "default"
+
+agent ValidationOverride(ValidationBase):
+    name = ""
+    required = None
+
+def test_override_validation():
+    # Test that overrides can handle edge cases
+    try:
+        if ValidationOverride.name != "":
+            return "❌ Empty string override not working"
+        if ValidationOverride.required != None:
+            return "❌ None override not working"
+        
+        return "✅ Override validation works"
+    except Exception as e:
+        return f"❌ Override validation failed: {e}"
+
+# Run override tests
+log("=== Singleton Agent Overrides Tests ===")
+
+tests = [
+    test_basic_field_overrides,
+    test_partial_field_overrides,
+    test_complex_data_overrides,
+    test_nested_structure_overrides,
+    test_multiple_override_levels,
+    test_override_with_different_types,
+    test_override_isolation,
+    test_override_validation
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Overrides Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All overrides tests passed!")
+else:
+    log(f"⚠️  {failed} overrides tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}
