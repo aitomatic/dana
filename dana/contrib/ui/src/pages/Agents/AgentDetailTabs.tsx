@@ -48,9 +48,9 @@ export const AgentDetailTabs: React.FC<{
   return (
     <div className="grid grid-cols-[1fr_max-content] h-full relative overflow-hidden">
       {/* Main content area */}
-      <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 h-full">
+      <div className="overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 h-full custom-scrollbar">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen border-b border-gray-200">
+        <div className="flex justify-between items-center border-b border-gray-200 max-w-screen">
           <div className="flex">
             {TABS.map((tab) => (
               <button
@@ -67,7 +67,7 @@ export const AgentDetailTabs: React.FC<{
               </button>
             ))}
           </div>
-          <div className="flex gap-2 pr-2 items-center">
+          <div className="flex gap-2 items-center pr-2">
             {!isChatSidebarOpen && (
               <Button
                 variant="link"

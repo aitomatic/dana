@@ -13,7 +13,7 @@ export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({
   onDeploy,
   onCancel,
 }) => (
-  <div className="flex justify-between items-center px-6 py-4 bg-white border-b h-[52px]">
+  <div className="flex justify-between items-center px-6 py-4 bg-white border-b h-[64px]">
     <div className="font-semibold text-gray-700">{title}</div>
     <div className="flex gap-2 items-center">
       <Button

@@ -97,22 +97,6 @@ const ResizeHandle: React.FC<{
 };
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
-  // Custom scrollbar styles
-  const scrollbarStyles = `
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: transparent;
-      border-radius: 3px;
-    }
-    .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-      background: #d1d5db;
-    }
-  `;
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -303,21 +287,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   return (
     <>
-      <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
-        <div
-          className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'transparent transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.scrollbarColor = '#d1d5db transparent';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.scrollbarColor = 'transparent transparent';
-          }}
-        >
+        <div className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar">
           {messages.map((msg, idx) => {
             const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
             const isWelcomeMessage =
