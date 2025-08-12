@@ -99,16 +99,16 @@ assert info == "Alice is 30 years old", f"Expected 'Alice is 30 years old', got 
 assert py_utils.MAGIC_NUMBER == 42, f"Expected 42, got {py_utils.MAGIC_NUMBER}"
 log("✅ Local Python file imports work")
 
-# # Test 10: From import with Python file
-# from test_utils.py_utils.py import greet, Person, MAGIC_NUMBER
-# direct_greeting = greet("Bob")
-# assert direct_greeting == "Hello, Bob!", f"Expected 'Hello, Bob!', got '{direct_greeting}'"
+# Test 10: From import with Python file
+from test_utils.py_utils.py import greet, Person, MAGIC_NUMBER
+direct_greeting = greet("Bob")
+assert direct_greeting == "Hello, Bob!", f"Expected 'Hello, Bob!', got '{direct_greeting}'"
 
-# direct_person = Person("Charlie", 25)
-# direct_info = direct_person.get_info()
-# assert direct_info == "Charlie is 25 years old", f"Expected 'Charlie is 25 years old', got '{direct_info}'"
+direct_person = Person("Charlie", 25)
+direct_info = direct_person.get_info()
+assert direct_info == "Charlie is 25 years old", f"Expected 'Charlie is 25 years old', got '{direct_info}'"
 
-# assert MAGIC_NUMBER == 42, f"Expected 42, got {MAGIC_NUMBER}"
-# log("✅ From import with Python file works")
+assert MAGIC_NUMBER == 42, f"Expected 42, got {MAGIC_NUMBER}"
+log("✅ From import with Python file works")
 
-# log("Import System test completed successfully")
+log("Import System test completed successfully")
