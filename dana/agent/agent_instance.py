@@ -11,9 +11,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.lang.interpreter.struct_system import StructInstance, StructType, universal_method_registry
 from dana.core.lang.sandbox_context import SandboxContext
 
 # --- Default Agent Method Implementations ---
@@ -100,32 +100,78 @@ class AgentType(StructType):
     """
 
     # Agent-specific capabilities
-    agent_methods: dict[str, Callable] = field(default_factory=dict)
     memory_system: Any | None = None  # Placeholder for future memory system
     reasoning_capabilities: list[str] = field(default_factory=list)
+    _initial_agent_methods: dict[str, Callable] = field(default_factory=dict)
+
+    def __init__(
+        self,
+        name: str,
+        fields: dict[str, str],
+        field_order: list[str],
+        field_comments: dict[str, str] | None = None,
+        field_defaults: dict[str, Any] | None = None,
+        docstring: str | None = None,
+        memory_system: Any | None = None,
+        reasoning_capabilities: list[str] | None = None,
+        agent_methods: dict[str, Callable] | None = None,
+    ):
+        """Initialize AgentType with support for agent_methods parameter."""
+        # Set agent-specific attributes FIRST
+        self.memory_system = memory_system
+        self.reasoning_capabilities = reasoning_capabilities or []
+        self._initial_agent_methods = agent_methods or {}
+
+        # Call parent constructor (this may call __post_init__)
+        super().__init__(
+            name=name,
+            fields=fields,
+            field_order=field_order,
+            field_comments=field_comments or {},
+            field_defaults=field_defaults,
+            docstring=docstring,
+        )
 
     def __post_init__(self):
         """Initialize default agent methods."""
         super().__post_init__()
 
-        # Add default agent methods
-        self.agent_methods.update(
-            {
-                "plan": default_plan_method,
-                "solve": default_solve_method,
-                "remember": default_remember_method,
-                "recall": default_recall_method,
-                "chat": default_chat_method,
-            }
-        )
+        # Register default agent methods in the universal registry
+        universal_method_registry.register_agent_method(self.name, "plan", default_plan_method)
+        universal_method_registry.register_agent_method(self.name, "solve", default_solve_method)
+        universal_method_registry.register_agent_method(self.name, "remember", default_remember_method)
+        universal_method_registry.register_agent_method(self.name, "recall", default_recall_method)
+        universal_method_registry.register_agent_method(self.name, "chat", default_chat_method)
 
-    def add_agent_method(self, name: str, method: Callable):
-        """Add agent-specific method."""
-        self.agent_methods[name] = method
+        # Register any custom agent methods that were passed in
+        for method_name, method in self._initial_agent_methods.items():
+            universal_method_registry.register_agent_method(self.name, method_name, method)
+
+    def add_agent_method(self, name: str, method: Callable) -> None:
+        """Add an agent-specific method to the universal registry."""
+        universal_method_registry.register_agent_method(self.name, name, method)
 
     def has_agent_method(self, name: str) -> bool:
-        """Check if agent has a specific method."""
-        return name in self.agent_methods
+        """Check if this agent type has a specific method."""
+        return universal_method_registry.has_agent_method(self.name, name)
+
+    def get_agent_method(self, name: str) -> Callable | None:
+        """Get an agent method by name."""
+        return universal_method_registry.get_agent_method(self.name, name)
+
+    @property
+    def agent_methods(self) -> dict[str, Callable]:
+        """Get all agent methods for this type."""
+        methods = {}
+        # Get all methods registered for this agent type from the registry
+        from dana.core.lang.interpreter.struct_system import TypeAwareMethodRegistry
+
+        # Access the internal registry to find all methods for this agent type
+        for (receiver_type, method_name), method in TypeAwareMethodRegistry._methods.items():
+            if receiver_type == self.name:
+                methods[method_name] = method
+
+        return methods
 
 
 class AgentInstance(StructInstance):
@@ -152,7 +198,7 @@ class AgentInstance(StructInstance):
         self._memory = {}
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
-        self._llm_resource: LLMResource = None  # Lazy initialization
+        self._llm_resource: LegacyLLMResource = None  # Lazy initialization
 
     @property
     def agent_type(self) -> AgentType:
@@ -161,32 +207,37 @@ class AgentInstance(StructInstance):
 
     def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
-        if self.__struct_type__.has_agent_method("plan"):
-            return self.__struct_type__.agent_methods["plan"](self, sandbox_context, task, context)
+        method = self.__struct_type__.get_agent_method("plan")
+        if method:
+            return method(self, sandbox_context, task, context)
         return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
-        if self.__struct_type__.has_agent_method("solve"):
-            return self.__struct_type__.agent_methods["solve"](self, sandbox_context, problem, context)
+        method = self.__struct_type__.get_agent_method("solve")
+        if method:
+            return method(self, sandbox_context, problem, context)
         return default_solve_method(self, sandbox_context, problem, context)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
-        """Store information in agent memory."""
-        if self.__struct_type__.has_agent_method("remember"):
-            return self.__struct_type__.agent_methods["remember"](self, sandbox_context, key, value)
+        """Execute agent memory storage method."""
+        method = self.__struct_type__.get_agent_method("remember")
+        if method:
+            return method(self, sandbox_context, key, value)
         return default_remember_method(self, sandbox_context, key, value)
 
     def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
-        """Retrieve information from agent memory."""
-        if self.__struct_type__.has_agent_method("recall"):
-            return self.__struct_type__.agent_methods["recall"](self, sandbox_context, key)
+        """Execute agent memory retrieval method."""
+        method = self.__struct_type__.get_agent_method("recall")
+        if method:
+            return method(self, sandbox_context, key)
         return default_recall_method(self, sandbox_context, key)
 
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
-        """Chat with the agent using conversation memory. Returns a Promise that resolves to the response."""
-        if self.__struct_type__.has_agent_method("chat"):
-            return self.__struct_type__.agent_methods["chat"](self, sandbox_context, message, context, max_context_turns)
+        """Execute agent chat method."""
+        method = self.__struct_type__.get_agent_method("chat")
+        if method:
+            return method(self, sandbox_context, message, context, max_context_turns)
         return default_chat_method(self, sandbox_context, message, context, max_context_turns)
 
     def _initialize_conversation_memory(self):
@@ -215,7 +266,7 @@ class AgentInstance(StructInstance):
             if sandbox_context is not None:
                 # Look for LLM resource in agent's available resources
                 resources = sandbox_context.get_resources()
-                for name, resource in resources.items():
+                for _, resource in resources.items():
                     if hasattr(resource, "kind") and resource.kind == "llm":
                         return resource
             return None
@@ -311,7 +362,7 @@ class AgentInstance(StructInstance):
         if sandbox_context is not None:
             # Look for LLM resource in agent's available resources
             resources = sandbox_context.get_resources()
-            for name, resource in resources.items():
+            for _, resource in resources.items():
                 if hasattr(resource, "kind") and resource.kind == "llm":
                     llm_resource = resource
                     break
