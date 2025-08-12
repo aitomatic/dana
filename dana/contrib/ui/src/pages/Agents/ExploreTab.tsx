@@ -246,7 +246,7 @@ export const ExploreTab: React.FC<{
       <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col gap-3 mb-2">
               <div className="flex overflow-hidden  justify-center items-center w-12 h-12 rounded-full">
                 {selectedAgent && (
                   <img
@@ -266,7 +266,7 @@ export const ExploreTab: React.FC<{
                 )}
               </div>
               <div>
-                <DialogTitle className="text-lg font-semibold text-gray-900">
+                <DialogTitle className="text-xl font-semibold text-gray-900">
                   {selectedAgent?.name}
                 </DialogTitle>
               </div>
@@ -274,7 +274,7 @@ export const ExploreTab: React.FC<{
 
             <div className="space-y-4 mb-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-800 mb-1">Description</h4>
+                <h4 className="text-sm font-medium text-gray-800 mb-1">Role</h4>
                 <p className="text-sm text-gray-600">
                   {selectedAgent?.description || 'No description available'}
                 </p>
@@ -354,7 +354,7 @@ export const ExploreTab: React.FC<{
               className="w-full sm:w-1/2 text-sm font-semibold text-gray-700"
             >
               <Settings style={{ width: '16', height: '16' }} />
-              Customize from this agent
+              Start from this agent
             </Button>
             <Button
               onClick={handleSaveAndUseAgent}
