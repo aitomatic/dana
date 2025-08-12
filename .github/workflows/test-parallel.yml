@@ -175,7 +175,52 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest test_na/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/test_na/ -m "not live and not deep" --tb=short -v
+
+  # Dana Test NA - Language syntax and feature tests (.na files)
+  test-dana-test-na:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Basic Syntax (.na files)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/test_na/test_na_basic_syntax.py -m "not live and not deep" --tb=short -v
+    - name: Test Dana Advanced Syntax (.na files)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/test_na/test_na_advanced_syntax.py -m "not live and not deep" --tb=short -v
+    - name: Test Dana Comprehensive (.na files)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/test_na/test_na_comprehensive.py -m "not live and not deep" --tb=short -v
 
   # Dana Integration - End-to-end system integration
   test-dana-integration:
@@ -241,7 +286,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-core, test-dana-frameworks, test-dana-common, test-dana-agent, test-dana-functional, test-dana-integration, test-dana-regression]
+    needs: [test-dana-core, test-dana-frameworks, test-dana-common, test-dana-agent, test-dana-functional, test-dana-test-na, test-dana-integration, test-dana-regression]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -252,6 +297,7 @@ jobs:
               "${{ needs.test-dana-common.result }}" == "failure" || 
               "${{ needs.test-dana-agent.result }}" == "failure" || 
               "${{ needs.test-dana-functional.result }}" == "failure" || 
+              "${{ needs.test-dana-test-na.result }}" == "failure" || 
               "${{ needs.test-dana-integration.result }}" == "failure" || 
               "${{ needs.test-dana-regression.result }}" == "failure" ]]; then
           echo "One or more test jobs failed"
