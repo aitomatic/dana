@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { LogUpdate } from '@/hooks/useVariableUpdates';
+import type { LogUpdate } from '@/hooks/useVariableUpdates';
 
 interface LogViewerProps {
   logs: LogUpdate[];

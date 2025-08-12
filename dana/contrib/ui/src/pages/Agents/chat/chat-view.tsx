@@ -257,7 +257,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
               >
                 <div
                   className={cn(
-                    'flex relative flex-col justify-between w-full h-full',
+                    'grid grid-rows-[1fr_max-content_max-content] justify-between w-full h-full',
                     isSidebarCollapsed ? 'pr-6 pl-10' : 'px-4',
                     'max-w-[760px] 3xl:max-w-[1200px]',
                     'opacity-100',
@@ -266,7 +266,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
+                    className="overflow-y-auto flex-1 items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
                     <ChatSession
                       messages={messages}
@@ -277,7 +277,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
                   {/* Collapsible Live Logs Section */}
                   {(isSending || logUpdates.length > 0) && !hideLogs && (
-                    <div className="border-t border-gray-200 dark:border-gray-700">
+                    <div className="border-t pb-6 border-gray-200 dark:border-gray-700 w-full max-w-[760px] 3xl:max-w-[1200px]">
                       {/* Toggle Button */}
                       <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <div

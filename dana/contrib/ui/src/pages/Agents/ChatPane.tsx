@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUp, NavArrowDown, NavArrowUp, Xmark } from 'iconoir-react';
+import { ArrowUp, NavArrowDown, NavArrowUp, Xmark, Table2Columns, Download, Page } from 'iconoir-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
+import type { BulkEvaluationRequest, BulkEvaluationQuestion, BulkEvaluationResult } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import { getAgentAvatarSync } from '@/utils/avatar';
@@ -20,6 +21,35 @@ interface Message {
   sender: 'user' | 'agent';
   timestamp: Date;
 }
+
+// CSV-related interfaces
+interface CSVRow {
+  question: string;
+  expected_answer?: string;
+  category?: string;
+  context?: string;
+}
+
+interface ParsedCSV {
+  data: CSVRow[];
+  headers: string[];
+  preview: CSVRow[];
+}
+
+interface BulkEvaluationState {
+  isRunning: boolean;
+  results: BulkEvaluationResult[];
+  progress: {
+    current: number;
+    total: number;
+    successful: number;
+    failed: number;
+    progress: number;
+    estimatedTimeRemaining: number;
+  };
+}
+
+type EvaluationMode = 'individual' | 'bulk';
 
 interface ChatPaneProps {
   agentName?: string;
@@ -119,6 +149,26 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   const [hideLogs, setHideLogs] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Bulk evaluation state
+  const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('individual');
+  const [, setCsvFile] = useState<File | null>(null);
+  const [parsedCSV, setParsedCSV] = useState<ParsedCSV | null>(null);
+  const [csvError, setCsvError] = useState<string>('');
+  const [batchSize, setBatchSize] = useState(5);
+  const [bulkEvaluationState, setBulkEvaluationState] = useState<BulkEvaluationState>({
+    isRunning: false,
+    results: [],
+    progress: {
+      current: 0,
+      total: 0,
+      successful: 0,
+      failed: 0,
+      progress: 0,
+      estimatedTimeRemaining: 0,
+    },
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Resize state management
   const [chatWidth, setChatWidth] = useState(() => {
     // Try to get saved width from localStorage
@@ -146,7 +196,15 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   );
 
   // WebSocket for variable updates and log streaming
-  const { updates, logUpdates, disconnect, clearLogUpdates } = useVariableUpdates(websocketId, {
+  const {
+    updates,
+    logUpdates,
+    bulkEvaluationProgress,
+    bulkEvaluationResults,
+    disconnect,
+    clearLogUpdates,
+    clearBulkEvaluationData,
+  } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -179,6 +237,43 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       }
     }
   }, [updates]);
+
+  // Handle bulk evaluation progress updates
+  useEffect(() => {
+    if (bulkEvaluationProgress) {
+      setBulkEvaluationState((prev) => ({
+        ...prev,
+        progress: {
+          current: bulkEvaluationProgress.current_question,
+          total: bulkEvaluationProgress.total_questions,
+          successful: bulkEvaluationProgress.successful_count,
+          failed: bulkEvaluationProgress.failed_count,
+          progress: bulkEvaluationProgress.progress,
+          estimatedTimeRemaining: bulkEvaluationProgress.estimated_time_remaining,
+        },
+      }));
+    }
+  }, [bulkEvaluationProgress]);
+
+  // Handle bulk evaluation result updates
+  useEffect(() => {
+    if (bulkEvaluationResults.length > 0) {
+      const latestResults = bulkEvaluationResults.map((result) => ({
+        question: result.question,
+        response: result.response,
+        response_time: result.response_time,
+        status: result.status,
+        error: result.error,
+        expected_answer: undefined,
+        question_index: result.question_index,
+      }));
+
+      setBulkEvaluationState((prev) => ({
+        ...prev,
+        results: latestResults,
+      }));
+    }
+  }, [bulkEvaluationResults]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -241,6 +336,217 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     loadChatHistory();
   }, [agent_id, agentName, isVisible]);
 
+  // CSV parsing function
+  const parseCSV = (content: string): ParsedCSV => {
+    const lines = content.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have at least a header row and one data row');
+    }
+
+    const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+    const questionIndex = headers.findIndex((h) => h.toLowerCase().includes('question'));
+    if (questionIndex === -1) {
+      throw new Error('CSV must have a column with "question" in the header');
+    }
+
+    const data: CSVRow[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+      if (values.length !== headers.length) continue;
+
+      const row: CSVRow = {
+        question: values[questionIndex] || '',
+        expected_answer:
+          values[headers.findIndex((h) => h.toLowerCase().includes('expected'))] || undefined,
+        category: values[headers.findIndex((h) => h.toLowerCase().includes('category'))] || undefined,
+        context: values[headers.findIndex((h) => h.toLowerCase().includes('context'))] || undefined,
+      };
+
+      if (row.question.trim()) {
+        data.push(row);
+      }
+    }
+
+    if (data.length === 0) {
+      throw new Error('No valid questions found in CSV');
+    }
+
+    return {
+      data,
+      headers,
+      preview: data.slice(0, 5),
+    };
+  };
+
+  // Handle CSV file selection
+  const handleCSVUpload = async (file: File) => {
+    setCsvError('');
+    setCsvFile(file);
+
+    try {
+      const content = await file.text();
+      const parsed = parseCSV(content);
+      setParsedCSV(parsed);
+    } catch (error) {
+      setCsvError(error instanceof Error ? error.message : 'Failed to parse CSV');
+      setParsedCSV(null);
+    }
+  };
+
+  // Handle file drop
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    const csvFile = files.find((f) => f.name.toLowerCase().endsWith('.csv'));
+    if (csvFile) {
+      handleCSVUpload(csvFile);
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleCSVUpload(file);
+    }
+  };
+
+  // Export results to CSV
+  const exportResultsToCSV = () => {
+    if (bulkEvaluationState.results.length === 0) return;
+
+    const headers = ['question', 'response', 'status', 'response_time_ms', 'error'];
+    const csvContent = [
+      headers.join(','),
+      ...bulkEvaluationState.results.map((result) =>
+        [
+          `"${result.question.replace(/"/g, '""')}"`,
+          `"${result.response.replace(/"/g, '""')}"`,
+          result.status,
+          result.response_time.toFixed(2),
+          result.error ? `"${result.error.replace(/"/g, '""')}"` : '',
+        ].join(','),
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulk-evaluation-results-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Download sample CSV file
+  const downloadSampleCSV = () => {
+    const sampleData = [
+      ['question', 'expected_answer', 'category'],
+      ['What is 2+2?', '4', 'Math'],
+      ['What is the capital of France?', 'Paris', 'Geography'],
+      ['Who wrote Romeo and Juliet?', 'William Shakespeare', 'Literature'],
+      ['What is the largest planet in our solar system?', 'Jupiter', 'Astronomy'],
+      ['What is the chemical symbol for water?', 'H2O', 'Chemistry'],
+    ];
+
+    const csvContent = sampleData.map(row => 
+      row.map(field => `"${field}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample-questions.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Start bulk evaluation
+  const startBulkEvaluation = async () => {
+    if (!parsedCSV || !agent_id || bulkEvaluationState.isRunning) return;
+
+    setBulkEvaluationState((prev) => ({
+      ...prev,
+      isRunning: true,
+      results: [],
+      progress: {
+        current: 0,
+        total: parsedCSV.data.length,
+        successful: 0,
+        failed: 0,
+        progress: 0,
+        estimatedTimeRemaining: 0,
+      },
+    }));
+
+    clearLogUpdates();
+    clearBulkEvaluationData();
+    setHideLogs(false);
+
+    try {
+      const questions: BulkEvaluationQuestion[] = parsedCSV.data.map((row) => ({
+        question: row.question,
+        expected_answer: row.expected_answer,
+        context: row.context,
+        category: row.category,
+      }));
+
+      // Get agent data first  
+      const agentData = await apiService.getAgent(parseInt(agent_id));
+
+      const request: BulkEvaluationRequest = {
+        agent_code: '', // Backend will handle agent code loading via folder_path
+        questions,
+        agent_name: agentName,
+        context: { user_id: 'bulk_evaluation_user', session_id: `bulk_${Date.now()}` },
+        websocket_id: websocketId,
+        batch_size: batchSize,
+        folder_path: agentData.folder_path,
+      };
+
+      const response = await apiService.bulkEvaluateAgent(request);
+
+      // Update final state
+      setBulkEvaluationState((prev) => ({
+        ...prev,
+        isRunning: false,
+        results: response.results,
+        progress: {
+          ...prev.progress,
+          current: response.total_questions,
+          successful: response.successful_count,
+          failed: response.failed_count,
+          progress: 100,
+          estimatedTimeRemaining: 0,
+        },
+      }));
+
+      // Add summary message to chat
+      const summaryMessage: Message = {
+        id: Date.now().toString(),
+        text: `**Bulk Evaluation Complete**\n\n- Total Questions: ${response.total_questions}\n- Successful: ${response.successful_count}\n- Failed: ${response.failed_count}\n- Total Time: ${response.total_time.toFixed(2)}s\n- Average Response Time: ${response.average_response_time.toFixed(2)}ms`,
+        sender: 'agent',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, summaryMessage]);
+    } catch (error: any) {
+      console.error('Bulk evaluation error:', error);
+      setBulkEvaluationState((prev) => ({
+        ...prev,
+        isRunning: false,
+      }));
+
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: `**Bulk Evaluation Failed**\n\nError: ${error.message || 'Unknown error occurred'}`,
+        sender: 'agent',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
+  };
+
   // Clean up WebSocket when component becomes invisible or unmounts
   useEffect(() => {
     if (!isVisible) {
@@ -253,7 +559,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   }, [isVisible, disconnect]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || isLoading || !agent_id) return;
+    if (!inputText.trim() || isLoading || !agent_id || bulkEvaluationState.isRunning) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -327,85 +633,374 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         setIsResizing={setIsResizing}
       />
       {/* Header */}
-      <div className="flex justify-between items-center h-14 p-4 border-b border-gray-200">
-        <div className="flex gap-3 items-center">
-          <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
-            <img
-              src={getAgentAvatarSync(agent_id || '0')}
-              alt={`${agentName} avatar`}
-              className="object-cover w-full h-full"
-              onError={(e) => {
-                // Fallback to colored circle if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                //const parent = target.parentElement;
-                // if (parent) {
-                //   parent.innerHTML = `<div class="flex justify-center items-center w-full h-full text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400">${agentName?.[0] || 'A'}</div>`;
-                // }
-              }}
-            />
+      <div className="border-b border-gray-200">
+        <div className="flex justify-between items-center h-14 p-4">
+          <div className="flex gap-3 items-center">
+            <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
+              <img
+                src={getAgentAvatarSync(agent_id || '0')}
+                alt={`${agentName} avatar`}
+                className="object-cover w-full h-full"
+                onError={(e) => {
+                  // Fallback to colored circle if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  //const parent = target.parentElement;
+                  // if (parent) {
+                  //   parent.innerHTML = `<div class="flex justify-center items-center w-full h-full text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400">${agentName?.[0] || 'A'}</div>`;
+                  // }
+                }}
+              />
+            </div>
+            <h3 className="font-semibold text-gray-900">{agentName}</h3>
           </div>
-          <h3 className="font-semibold text-gray-900">{agentName}</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 transition-colors cursor-pointer hover:text-gray-600"
+          >
+            <SidebarExpand width={20} height={20} />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 text-gray-400 transition-colors cursor-pointer hover:text-gray-600"
-        >
-          <SidebarExpand width={20} height={20} />
-        </button>
+
+        {/* Mode Toggle */}
+        <div className="px-4 pb-4">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setEvaluationMode('individual')}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                evaluationMode === 'individual'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Chat
+            </button>
+            <button
+              onClick={() => setEvaluationMode('bulk')}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                evaluationMode === 'bulk'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Bulk Evaluation
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex overflow-y-auto flex-col flex-1 p-4 space-y-4">
-        {isLoadingHistory ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
-              <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-              <div className="text-sm text-gray-700">
-                <span className="font-medium">Loading chat history...</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'bg-white text-gray-900 border border-gray-200'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
-                  <p className="mt-1 text-xs opacity-70">
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
+      {/* Content Area */}
+      <div className="flex overflow-y-auto flex-col flex-1">
+        {evaluationMode === 'individual' ? (
+          /* Individual Chat Messages */
+          <div className="flex overflow-y-auto flex-col flex-1 p-4 space-y-4">
+            {isLoadingHistory ? (
+              <div className="flex justify-center items-center h-full">
                 <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
                   <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
                   <div className="text-sm text-gray-700">
-                    <span className="font-medium">Thinking...</span>
-                    {currentStep && (
-                      <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
-                    )}
+                    <span className="font-medium">Loading chat history...</span>
                   </div>
                 </div>
               </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        message.sender === 'user'
+                          ? 'bg-white text-gray-900 border border-gray-200'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
+                      <p className="mt-1 text-xs opacity-70">
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+                      <div className="text-sm text-gray-700">
+                        <span className="font-medium">Thinking...</span>
+                        {currentStep && (
+                          <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </>
+            <div ref={messagesEndRef} />
+          </div>
+        ) : (
+          /* Bulk Evaluation UI */
+          <div className="flex flex-col flex-1 p-4 space-y-4">
+            {!parsedCSV ? (
+              /* CSV Upload */
+              <div className="flex flex-col items-center justify-center flex-1 border-2 border-dashed border-gray-300 rounded-lg p-8">
+                <div
+                  className="text-center cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleFileDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                >
+                  <Table2Columns className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Add Evaluation File (.csv)</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Drop your CSV file here or click to browse.
+                  </p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Required: 'question' column. Optional: 'expected_answer', 'category', 'context'
+                  </p>
+                  
+                  {/* Sample CSV Download Link */}
+                  <button variant="default"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadSampleCSV();
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                  >
+                    <Page className="w-4 h-4" />
+                    Get Sample CSV
+                  </button>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                  />
+                </div>
+                {csvError && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{csvError}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* CSV Preview and Configuration */
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium text-green-800">
+                        ✓ CSV Loaded Successfully
+                      </h4>
+                      <p className="text-sm text-green-600 mt-1">
+                        {parsedCSV.data.length} questions found
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCsvFile(null);
+                        setParsedCSV(null);
+                        setCsvError('');
+                      }}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <Xmark className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* CSV Preview */}
+                <div className="border border-gray-200 rounded-lg">
+                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h4 className="font-medium text-gray-900">Preview (First 5 rows)</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          {parsedCSV.headers.map((header, index) => (
+                            <th
+                              key={index}
+                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {parsedCSV.preview.map((row, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                              {row.question}
+                            </td>
+                            {row.expected_answer !== undefined && (
+                              <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                                {row.expected_answer}
+                              </td>
+                            )}
+                            {row.category !== undefined && (
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {row.category}
+                              </td>
+                            )}
+                            {row.context !== undefined && (
+                              <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                                {row.context}
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Configuration */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-3">Configuration</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Batch Size
+                      </label>
+                      <select
+                        value={batchSize}
+                        onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value={1}>1 (Sequential)</option>
+                        <option value={3}>3</option>
+                        <option value={5}>5 (Recommended)</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Total Questions
+                      </label>
+                      <p className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                        {parsedCSV.data.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Start Button */}
+                <button
+                  onClick={startBulkEvaluation}
+                  disabled={bulkEvaluationState.isRunning}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                    bulkEvaluationState.isRunning
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {bulkEvaluationState.isRunning ? 'Running Evaluation...' : 'Start Bulk Evaluation'}
+                </button>
+
+                {/* Progress */}
+                {bulkEvaluationState.isRunning && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-blue-800">Progress</span>
+                      <span className="text-sm text-blue-600">
+                        {bulkEvaluationState.progress.current} / {bulkEvaluationState.progress.total}
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${bulkEvaluationState.progress.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-green-600 font-medium">
+                          ✓ {bulkEvaluationState.progress.successful}
+                        </span>
+                        <span className="text-gray-600 ml-1">successful</span>
+                      </div>
+                      <div>
+                        <span className="text-red-600 font-medium">
+                          ✗ {bulkEvaluationState.progress.failed}
+                        </span>
+                        <span className="text-gray-600 ml-1">failed</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600 font-medium">
+                          {Math.ceil(bulkEvaluationState.progress.estimatedTimeRemaining)}s
+                        </span>
+                        <span className="text-gray-600 ml-1">remaining</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Results */}
+                {bulkEvaluationState.results.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg">
+                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                      <h4 className="font-medium text-gray-900">
+                        Results ({bulkEvaluationState.results.length})
+                      </h4>
+                      <button
+                        onClick={exportResultsToCSV}
+                        className="flex items-center gap-2 px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                      </button>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {bulkEvaluationState.results.map((result, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 border-b border-gray-200 last:border-b-0 ${
+                            result.status === 'error' ? 'bg-red-50' : 'bg-white'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h5 className="text-sm font-medium text-gray-900">
+                              Q{index + 1}: {result.question}
+                            </h5>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                result.status === 'success'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {result.status} ({result.response_time.toFixed(0)}ms)
+                            </span>
+                          </div>
+                          {result.status === 'success' ? (
+                            <div className="text-sm text-gray-700">
+                              <MarkdownViewerSmall>{result.response}</MarkdownViewerSmall>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-red-600">
+                              Error: {result.error || 'Unknown error'}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Collapsible Live Logs Section */}
@@ -467,31 +1062,33 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         </div>
       )}
 
-      {/* Input */}
-      <div className="p-4">
-        <div className="flex relative">
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type your message"
-            className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
-              focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
-            rows={2}
-            disabled={isLoading}
-          />
-          {inputText.trim() && (
-            <button
-              onClick={handleSendMessage}
-              className="absolute bottom-3 right-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600"
-              title="Send message"
-              disabled={isLoading}
-            >
-              <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-          )}
+      {/* Input - Only show for individual mode */}
+      {evaluationMode === 'individual' && (
+        <div className="p-4">
+          <div className="flex relative">
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message"
+              className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
+                focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
+              rows={2}
+              disabled={isLoading || bulkEvaluationState.isRunning}
+            />
+            {inputText.trim() && (
+              <button
+                onClick={handleSendMessage}
+                className="absolute bottom-3 right-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600"
+                title="Send message"
+                disabled={isLoading || bulkEvaluationState.isRunning}
+              >
+                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
