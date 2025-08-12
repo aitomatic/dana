@@ -134,7 +134,7 @@ include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
+dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
