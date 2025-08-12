@@ -72,7 +72,7 @@ complex_employee_lambda = lambda employee: Employee :: {
     "name": employee.person.name,
     "age": employee.person.age,
     "address": employee.address.full_address(),
-    "salary": employee.salary,
+    "salary": employee.salary
     # "full_info": employee.get_full_info()
 }
 
@@ -86,7 +86,7 @@ expected = {
     "name": "John",
     "age": 30,
     "address": "123 Main St, New York, USA",
-    "salary": 50000.0,
+    "salary": 50000.0
     # "full_info": "John is 30 years old - 123 Main St, New York, USA - $50000.0"
 }
 assert result == expected, f"Expected {expected}, got {result}"
