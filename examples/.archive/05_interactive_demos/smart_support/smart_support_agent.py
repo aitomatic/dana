@@ -44,7 +44,7 @@ except ImportError:
 print("🎧 Loading POET-enhanced customer support agent")
 
 try:
-    from dana.common.resource.llm_resource import LLMRequest, LLMResource
+    from dana.common.sys_resource.llm_resource import LLMRequest, LLMResource
     from dana.frameworks.poet.plugins.enhanced_llm_optimization_plugin import EnhancedLLMOptimizationPlugin
     from dana.frameworks.poet.poet import poet
 

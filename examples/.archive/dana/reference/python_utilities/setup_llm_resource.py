@@ -17,7 +17,7 @@ Note:
 import asyncio
 import os
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.sys_resource.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
 

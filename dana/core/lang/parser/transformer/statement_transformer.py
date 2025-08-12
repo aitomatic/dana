@@ -340,6 +340,18 @@ class StatementTransformer(BaseTransformer):
         """Transform an agent field rule into an AgentField node."""
         return self.function_definition_transformer.agent_field(items)
 
+    def resource_definition(self, items):
+        """Transform a resource definition rule into a ResourceDefinition node."""
+        return self.function_definition_transformer.resource_definition(items)
+
+    def resource_field(self, items):
+        """Transform a resource field rule into a ResourceField node."""
+        return self.function_definition_transformer.resource_field(items)
+
+    def resource_method(self, items):
+        """Transform a resource method rule into a ResourceMethod node."""
+        return self.function_definition_transformer.resource_method(items)
+
     # === Agent Singleton Definitions ===
     def singleton_agent_definition(self, items):
         """Transform non-alias singleton agent definition into AST."""

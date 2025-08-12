@@ -36,6 +36,7 @@ from dana.core.lang.ast import (
     MethodDefinition,
     PassStatement,
     RaiseStatement,
+    ResourceDefinition,
     SingletonAgentDefinition,
     StructDefinition,
     UseStatement,
@@ -99,6 +100,7 @@ class StatementExecutor(BaseExecutor):
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
+            ResourceDefinition: self.execute_resource_definition,
             StructDefinition: self.execute_struct_definition,
             UseStatement: self.execute_use_statement,
             ExportStatement: self.execute_export_statement,
@@ -489,6 +491,54 @@ class StatementExecutor(BaseExecutor):
             None (agent definitions don't produce a value, they register a type)
         """
         return self.agent_handler.execute_agent_definition(node, context)
+
+    def execute_resource_definition(self, node, context: SandboxContext) -> None:
+        """Execute a resource definition statement.
+
+        Registers a first-class ResourceType and binds a constructor that
+        creates ResourceInstance at runtime.
+
+        Args:
+            node: The ResourceDefinition node
+            context: The execution context
+
+        Returns:
+            None (registers type and constructor in scope)
+        """
+        # Import lazily to avoid circulars
+        from dana.common.exceptions import SandboxError
+        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.core.resource.resource_instance import create_resource_type_from_ast
+
+        try:
+            # Build ResourceType from AST
+            resource_type = create_resource_type_from_ast(node)
+
+            # Evaluate default values in the current context (same approach as structs)
+            if resource_type.field_defaults:
+                evaluated_defaults: dict[str, Any] = {}
+                for field_name, default_expr in resource_type.field_defaults.items():
+                    try:
+                        # Evaluate default values using the parent executor
+                        default_value = self.parent.execute(default_expr, context)
+                        evaluated_defaults[field_name] = default_value
+                    except Exception as e:
+                        raise SandboxError(f"Failed to evaluate default value for resource field '{field_name}': {e}")
+                resource_type.field_defaults = evaluated_defaults
+
+            # Register the resource type in the same registry as structs
+            StructTypeRegistry.register(resource_type)
+            self.debug(f"Registered resource type: {resource_type.name}")
+
+            # Bind constructor into local scope, reusing the registry factory which
+            # will now return a ResourceInstance for this type
+            def resource_constructor(**kwargs):
+                return StructTypeRegistry.create_instance(resource_type.name, kwargs)
+
+            context.set(f"local:{node.name}", resource_constructor)
+            return None
+        except Exception as e:
+            raise SandboxError(f"Failed to register resource {node.name}: {e}")
 
     def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
         """Execute a singleton agent definition statement using optimized handler."""

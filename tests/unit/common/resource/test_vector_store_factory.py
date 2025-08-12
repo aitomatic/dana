@@ -1,14 +1,14 @@
 """Test vector store factory functionality."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from dana.common.resource.vector_store.factory import VectorStoreFactory
-from dana.common.resource.vector_store.config import (
+from dana.common.sys_resource.vector_store.config import (
     VectorStoreConfig,
     create_duckdb_config,
     create_pgvector_config,
 )
+from dana.common.sys_resource.vector_store.factory import VectorStoreFactory
 
 
 class TestVectorStoreFactory(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestVectorStoreFactory(unittest.TestCase):
         self.assertFalse(VectorStoreFactory.validate_provider("unsupported"))
         self.assertFalse(VectorStoreFactory.validate_provider(""))
 
-    @patch("dana.common.resource.vector_store.factory.DuckDBProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.DuckDBProvider")
     def test_create_duckdb(self, mock_provider):
         """Test creating DuckDB vector store."""
         # Setup mocks
@@ -49,7 +49,7 @@ class TestVectorStoreFactory(unittest.TestCase):
         mock_provider.validate_config.assert_called_once_with(config.duckdb)
         mock_provider.create.assert_called_once_with(config.duckdb, 1536)
 
-    @patch("dana.common.resource.vector_store.factory.PGVectorProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.PGVectorProvider")
     def test_create_pgvector(self, mock_provider):
         """Test creating PGVector vector store."""
         # Setup mocks
@@ -73,7 +73,7 @@ class TestVectorStoreFactory(unittest.TestCase):
             VectorStoreConfig(provider="unsupported")
         self.assertIn("Unsupported vector store provider", str(context.exception))
 
-    @patch("dana.common.resource.vector_store.factory.DuckDBProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.DuckDBProvider")
     def test_create_with_provider_duckdb(self, mock_provider_class):
         """Test creating DuckDB provider wrapper."""
         # Setup mocks
@@ -93,7 +93,7 @@ class TestVectorStoreFactory(unittest.TestCase):
         mock_provider_class.create.assert_called_once_with(config.duckdb, 1536)
         mock_provider_class.assert_called_once_with(mock_vector_store)
 
-    @patch("dana.common.resource.vector_store.factory.PGVectorProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.PGVectorProvider")
     def test_create_with_provider_pgvector(self, mock_provider_class):
         """Test creating PGVector provider wrapper."""
         # Setup mocks
@@ -113,7 +113,7 @@ class TestVectorStoreFactory(unittest.TestCase):
         mock_provider_class.create.assert_called_once_with(config.pgvector, 1536)
         mock_provider_class.assert_called_once_with(mock_vector_store)
 
-    @patch("dana.common.resource.vector_store.factory.VectorStoreFactory.create")
+    @patch("dana.common.sys_resource.vector_store.factory.VectorStoreFactory.create")
     def test_create_from_dict_duckdb(self, mock_create):
         """Test creating DuckDB vector store from dict."""
         mock_vector_store = MagicMock()
@@ -137,7 +137,7 @@ class TestVectorStoreFactory(unittest.TestCase):
         self.assertEqual(config.duckdb.filename, "test.db")
         self.assertEqual(config.duckdb.table_name, "test_table")
 
-    @patch("dana.common.resource.vector_store.factory.VectorStoreFactory.create")
+    @patch("dana.common.sys_resource.vector_store.factory.VectorStoreFactory.create")
     def test_create_from_dict_pgvector(self, mock_create):
         """Test creating PGVector vector store from dict."""
         mock_vector_store = MagicMock()
@@ -169,7 +169,7 @@ class TestVectorStoreFactory(unittest.TestCase):
             VectorStoreFactory.create_from_dict("unsupported", embed_dim=1536)
         self.assertIn("Unsupported vector store provider", str(context.exception))
 
-    @patch("dana.common.resource.vector_store.factory.DuckDBProvider.validate_config")
+    @patch("dana.common.sys_resource.vector_store.factory.DuckDBProvider.validate_config")
     def test_create_with_validation_error(self, mock_validate):
         """Test factory handles validation errors properly."""
         # Setup mock to raise validation error

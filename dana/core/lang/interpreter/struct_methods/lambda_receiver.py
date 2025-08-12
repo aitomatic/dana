@@ -140,7 +140,9 @@ class LambdaReceiver:
         method_function = self.create_method_function()
 
         # Register with the method registry
-        MethodRegistry.register_method(receiver_types, method_name, method_function)
+        # Provide source information for better error messages
+        source_info = f"lambda method '{method_name}'"
+        MethodRegistry.register_method(receiver_types, method_name, method_function, source_info=source_info)
 
 
 class LambdaMethodDispatcher:

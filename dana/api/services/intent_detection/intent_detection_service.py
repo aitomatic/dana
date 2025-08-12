@@ -1,5 +1,5 @@
 from dana.api.services.intent_detection_service import IntentDetectionService
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.api.core.schemas import IntentDetectionRequest, IntentDetectionResponse
 
 

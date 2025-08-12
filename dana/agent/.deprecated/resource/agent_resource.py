@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING
 # First-party imports
 from dana.common.exceptions import AgentError, ResourceError
 from dana.common.mixins import ToolCallable
-from dana.common.resource import BaseResource
+from dana.common.sys_resource import BaseSysResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from dana.frameworks.agent.agent import Agent  # Only used for type hints
 
 
-class AgentResource(BaseResource):
+class AgentResource(BaseSysResource):
     """Resource for accessing and coordinating agent interactions."""
 
     def __init__(self, name: str, agent: "Agent", description: str):

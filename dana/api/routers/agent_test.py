@@ -12,7 +12,7 @@ import json
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)

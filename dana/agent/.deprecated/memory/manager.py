@@ -2,15 +2,15 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from dana.common.resource.base_resource import BaseResource
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 
 from .domain import MemoryItem, MemoryMetadata, MemoryType, StorageType
 from .llm_integration import LLMIntentDetector, LLMMemoryExtractor, LLMMemoryRanker
 from .repository import WorkingMemory
 
 
-class MemoryManager(BaseResource):
+class MemoryManager(BaseSysResource):
     """Central orchestrator for all memory operations - MemOS Architecture with Dana LLM Integration"""
 
     def __init__(

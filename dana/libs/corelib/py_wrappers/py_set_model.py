@@ -11,8 +11,7 @@ from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import LLMError, SandboxError
-from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -313,28 +312,15 @@ def py_set_model(
     if options is None:
         options = {}
 
-    # Check if there's an existing LLM resource in the context
-    existing_llm_resource = None
-    try:
-        existing_llm_resource = context.get("system:llm_resource")
-    except Exception:
-        pass
-
-    if not existing_llm_resource:
-        try:
-            existing_llm_resource = context.get("llm_resource")
-        except Exception:
-            pass
-
-    # Get the current LLM resource from context using consolidated method
+    # Get the current LLM resource from context using system resource access
     llm_resource = context.get_system_llm_resource()
 
     # If no model argument provided, display comprehensive information
     if model is None:
         # Get current model - only show model if it was explicitly set in context
         current_model = "None"
-        if existing_llm_resource is not None and existing_llm_resource.model is not None:
-            current_model = existing_llm_resource.model
+        if llm_resource is not None and llm_resource.model is not None:
+            current_model = llm_resource.model
 
         # Get only available models (with API keys)
         config_manager = LLMConfigurationManager()
@@ -384,11 +370,14 @@ def py_set_model(
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
 
-        if existing_llm_resource is None:
+        if llm_resource is None:
             # If no LLM resource exists in context, create a new one with the specified model
             logger.info(f"No existing LLM resource found in context, creating new one with model: {model}")
-            llm_resource = LLMResource(name="dana_llm", model=model)
-            context.set_system_llm_resource(llm_resource)
+            from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+            dana_llm = BaseLLMResource(name="dana_llm", model=model)
+            dana_llm.start()  # Start the resource so it can be used
+            context.set_system_llm_resource(dana_llm)
         else:
             # Update the existing LLM resource's model
             logger.info(f"Updating existing LLM resource model from '{llm_resource.model}' to '{model}'")

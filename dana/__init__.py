@@ -4,8 +4,6 @@ Dana - Domain-Aware Neurosymbolic Agents
 A language and framework for building domain-expert multi-agent systems.
 """
 
-import os
-
 #
 # Get the version of the dana package
 #
@@ -16,60 +14,78 @@ try:
 except Exception:
     __version__ = "0.25.7.29"
 
-from .common import dana_load_dotenv, ConfigLoader, DANA_LOGGER
 
 #
-# Make sure we have the environment variables loaded first
+# Dana Startup Sequence - Initialize all systems in dependency order
 #
-dana_load_dotenv()
+import os
 
-#
-# Initialize the configuration loader (singleton pattern)
-# This sets up the config system but doesn't load heavy resources yet
-#
-# Pre-load the configuration to cache it and avoid repeated file I/O
-# This ensures all subsequent ConfigLoader calls use the cached version
-#
-ConfigLoader().get_default_config()
-
-#
-# Configure logging with default settings if not already configured
-#
-DANA_LOGGER.configure(level=DANA_LOGGER.INFO, console=True)
-
-#
-# Initialize the Dana module system with default search paths
-# This enables .na file imports and module resolution
-# DEFERRED: Custom search paths - these are set per DanaSandbox instance
-#
 if not os.getenv("DANA_TEST_MODE"):
+    # 1. Environment System - Load .env files and validate environment
+    from .core.runtime.environment.core import initialize_environment_system
+
+    initialize_environment_system()
+
+    # 2. Configuration System - Pre-load and cache configuration
+    from .core.runtime.config.core import initialize_config_system
+
+    initialize_config_system()
+
+    # 3. Logging System - Configure logging with default settings
+    from .core.runtime.logging.core import initialize_logging_system
+
+    initialize_logging_system()
+
+    # 4. Module System - Set up .na file imports and module resolution
     from .core.runtime.modules.core import initialize_module_system
 
     initialize_module_system()
 
+    # 5. Resource System - Load stdlib resources at startup
+    from .core.runtime.resources.core import initialize_resource_system
 
-#
-# Initialize critical Data libaries early
-#
-import dana.libs as __dana_libs
+    initialize_resource_system()
 
-#
-# And the omnipresent Parser, Interpreter, and Sandbox
-#
+    # 6. Library System - Initialize core Dana libraries
+    from .core.runtime.library.core import initialize_library_system
+
+    initialize_library_system()
+
+    # 7. Corelib System - Initialize critical data libraries
+    from .core.runtime.corelib.core import initialize_corelib_system
+
+    initialize_corelib_system()
+
+    # 8. Integration System - Set up integration bridges
+    from .core.runtime.integrations.core import initialize_integration_system
+
+    initialize_integration_system()
+
+    # 9. Runtime System - Initialize Parser, Interpreter, and Sandbox
+    from .core.runtime.runtime.core import initialize_runtime_system
+
+    initialize_runtime_system()
+
+else:
+    # Test mode - minimal initialization
+    from .core.runtime.environment.core import initialize_environment_system
+
+    initialize_environment_system()
+
+    from .core.runtime.logging.core import initialize_logging_system
+
+    initialize_logging_system()
+
+# Import core components for public API
+from .common import DANA_LOGGER
 from .core import DanaInterpreter, DanaParser, DanaSandbox
-
-#
-# Import the bridge for Dana to import Python modules
-# TODO: rename to a better name than "dana_module"
-#
-from .integrations.python.to_dana import dana as dana_module
+from .integrations.python.to_dana import dana as py2na_module
 
 __all__ = [
-    "__dana_libs",
     "DanaParser",
     "DanaInterpreter",
     "DanaSandbox",
     "DANA_LOGGER",
     "__version__",
-    "dana_module",
+    "py2na_module",
 ]

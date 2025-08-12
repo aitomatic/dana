@@ -1,11 +1,12 @@
 """Test vector store configuration classes."""
 
 import unittest
-from dana.common.resource.vector_store.config import (
-    VectorStoreConfig,
+
+from dana.common.sys_resource.vector_store.config import (
     DuckDBConfig,
-    PGVectorConfig,
     HNSWConfig,
+    PGVectorConfig,
+    VectorStoreConfig,
     create_duckdb_config,
     create_pgvector_config,
 )

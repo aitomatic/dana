@@ -41,7 +41,7 @@ from typing import Any, ClassVar
 # First-party imports
 from dana.common.io import IOFactory
 from dana.common.mixins import ToolCallable
-from dana.common.resource import BaseResource
+from dana.common.sys_resource import BaseSysResource
 from dana.common.types import BaseRequest, BaseResponse
 
 # Local imports
@@ -55,7 +55,7 @@ class ExpertResponse(BaseResponse):
     model: str | None = None
 
 
-class ExpertResource(BaseResource):
+class ExpertResource(BaseSysResource):
     """Resource for interacting with human experts."""
 
     # Class-level default configuration

@@ -61,7 +61,7 @@ def run_repl_and_capture_output(input_code):
     "input_code,expected_output",
     [
         ("private:x = 5", "5"),
-        ("if x > 0 print('missing colon')", "Syntax Error:"),
+        ("if x > 0 print('missing colon')", "Syntax Error"),
     ],
 )
 def test_repl_output(input_code, expected_output, request):

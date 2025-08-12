@@ -205,7 +205,11 @@ class FunctionExecutor(BaseExecutor):
             final_func = dana_func
 
         # Register the method with all receiver types
-        MethodRegistry.register_method(receiver_types, node.name.name, final_func)
+        # Provide source information for better error messages
+        source_info = ""
+        if hasattr(node, "location") and node.location:
+            source_info = f"line {node.location.line}, file {getattr(context, 'current_file', '<unknown>')}"
+        MethodRegistry.register_method(receiver_types, node.name.name, final_func, source_info=source_info)
 
         # Also store in context for direct access
         context.set(f"local:{node.name.name}", final_func)

@@ -9,10 +9,12 @@ __all__ = ["py_use"]
 import asyncio
 from collections.abc import Callable
 from functools import wraps
+from typing import Union
 
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource.base_resource import BaseResource
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
@@ -34,7 +36,7 @@ def create_function_with_better_doc_string(func: Callable, doc_string: str) -> C
         return wrapper
 
 
-def py_use(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseResource:
+def py_use(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> Union[BaseSysResource, BaseResource]:
     """Use a function to create and manage resources.
 
     This function is used to create various types of resources like MCP and RAG.
@@ -55,67 +57,97 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
     """
     if _name is None:
         _name = Misc.generate_base64_uuid(length=6)
-    if function_name.lower() == "mcp":
-        from dana.integrations.mcp import MCPResource
 
-        resource = MCPResource(*args, name=_name, **kwargs)
+    if function_name.lower() == "mcp":
+        from dana.core.resource.plugins.mcp_resource import MCPResource
+
+        # MCPResource expects name as first argument, then client args
+        if args:
+            resource = MCPResource(*args, name=_name, **kwargs)
+        else:
+            # If no args provided, use a default URL
+            resource = MCPResource(name=_name, server_url="http://localhost:3000/sse", **kwargs)
         context.set_resource(_name, resource)
         return resource
+
     elif function_name.lower() == "rag":
-        from dana.common.resource.rag.rag_resource import RAGResource
+        from dana.core.resource.plugins.rag_resource import RAGResource
 
         resource = RAGResource(*args, name=_name, **kwargs)
-        description = kwargs.get("description", None)
-        filenames = sorted(resource.filenames)
-        doc_string = f"{resource.query.__func__.__doc__ if not description else description}. These are the expertise data sources: {filenames[:3]} known as {_name}"
-        resource.query = create_function_with_better_doc_string(resource.query, doc_string)
         context.set_resource(_name, resource)
         return resource
-    elif function_name.lower() == "knowledge":
-        from dana.common.resource.rag.knowledge_resource import KnowledgeResource
 
-        description = kwargs.get("description", None)
-        resource = KnowledgeResource(*args, name=_name, **kwargs)
-        doc_string = f"{resource.get_facts.__func__.__doc__}. {'' if not description else description}"
-        resource.get_facts = create_function_with_better_doc_string(resource.get_facts, doc_string)
-        doc_string = f"{resource.get_plan.__func__.__doc__}. {'' if not description else description}"
-        resource.get_plan = create_function_with_better_doc_string(resource.get_plan, doc_string)
-        doc_string = f"{resource.get_heuristics.__func__.__doc__}. {'' if not description else description}"
-        resource.get_heuristics = create_function_with_better_doc_string(resource.get_heuristics, doc_string)
+    elif function_name.lower() == "knowledge":
+        # Use knowledge_base instead of the old knowledge resource
+        from dana.core.resource.plugins.knowledge_base_resource import KnowledgeBaseResource
+
+        resource = KnowledgeBaseResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
+
     elif function_name.lower() == "human":
-        from dana.common.resource.human_resource import HumanResource
+        # HumanResource moved to core resource plugins
+
+        from dana.core.resource.plugins.human_resource import HumanResource
 
         resource = HumanResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
+
+    elif function_name.lower() == "memory":
+        from dana.core.resource.plugins.memory_resource import MemoryResource
+
+        resource = MemoryResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+
+    elif function_name.lower() == "knowledge_base":
+        from dana.core.resource.plugins.knowledge_base_resource import KnowledgeBaseResource
+
+        resource = KnowledgeBaseResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+
     elif function_name.lower() == "coding":
-        from dana.common.resource.coding.coding_resource import CodingResource
+        from dana.core.resource.plugins.coding_resource import CodingResource
 
         resource = CodingResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
+
     elif function_name.lower() == "finance_coding":
-        from dana.common.resource.coding.finance_coding_resource import FinanceCodingResource
+        from dana.core.resource.plugins.financial_coding_resource import FinancialCodingResource
 
-        resource = FinanceCodingResource(*args, name=_name, **kwargs)
+        resource = FinancialCodingResource(*args, name=_name, **kwargs)
+        resource.initialize()
         context.set_resource(_name, resource)
         return resource
+
     elif function_name.lower() == "financial_tools":
-        from dana.common.resource.financial_resources.financial_stmt_tools import FinancialStatementTools
+        from dana.core.resource.plugins.financial_statement_tools_resource import FinancialStatementToolsResource
 
-        resource = FinancialStatementTools(*args, name=_name, **kwargs)
+        resource = FinancialStatementToolsResource(*args, name=_name, **kwargs)
+        resource.initialize()
         context.set_resource(_name, resource)
         return resource
+
     elif function_name.lower() == "finance_rag":
-        from dana.common.resource.rag.financial_statement_rag_resource import FinancialStatementRAGResource
+        from dana.core.resource.plugins.financial_statement_rag_resource import FinancialStatementRAGResource
 
         resource = FinancialStatementRAGResource(*args, name=_name, **kwargs)
+        resource.initialize()
         context.set_resource(_name, resource)
         return resource
+
+    elif function_name.lower() == "llm":
+        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+        resource = BaseLLMResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+
     elif function_name.lower() == "tabular_index":
-        from dana.common.resource.tabular_index.tabular_index_resource import TabularIndexResource
+        from dana.common.sys_resource.tabular_index.tabular_index_resource import TabularIndexResource
 
         # Extract tabular_index specific parameters from kwargs
         tabular_index_params = kwargs.get("tabular_index_config", {})

@@ -20,7 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 import re
 
 from dana.common.exceptions import TranscoderError
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.core.lang.parser.dana_parser import ParseResult, Program
 from dana.core.lang.parser.utils.parsing_utils import ParserCache

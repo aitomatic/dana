@@ -18,6 +18,8 @@ from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
+from .type_wrapper import create_type_wrapper
+
 
 class UnsupportedReason(Enum):
     """Reasons why certain built-in functions are not supported."""
@@ -197,15 +199,12 @@ class PythonicBuiltinsFactory:
             "signatures": [(str,), (int,), (float,), (list,), (dict,), (LazyPromise,)],
         },
         "type": {
-            # SECURITY: Dana's type() function is NOT the same as Python's type() function.
-            # Returns string name instead of type object to prevent introspection attacks.
-            # This is a deliberate sandbox security choice to prevent malicious code from
-            # accessing type internals, performing isinstance checks, or gaining access
-            # to class hierarchies and internal Python type system details.
-            # Dana: type(obj) -> "str", Python: type(obj).__name__ -> "str"
-            "func": lambda v: type(v).__name__,
+            # SECURITY: Dana's type() function returns a secure wrapper object.
+            # This provides rich type information while maintaining security boundaries
+            # and preventing introspection attacks on internal Python type system details.
+            "func": lambda v: create_type_wrapper(v),
             "types": [object, LazyPromise],
-            "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict'). SECURITY NOTE: Unlike Python's type(), this returns a string for sandbox security.",
+            "doc": "Return a secure type wrapper with rich type information (e.g., 'ResourceInstance[User]', 'StructInstance[Point]'). Provides safe access to type details while maintaining sandbox security.",
             "signatures": [(object,), (LazyPromise,)],
         },
         # Collection functions

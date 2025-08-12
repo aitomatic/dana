@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -209,13 +209,16 @@ class AgentInstance(StructInstance):
                 max_turns=20,  # Keep last 20 turns in active memory
             )
 
-    def _get_llm_resource(self):
-        """Get LLM resource context."""
+    def _get_llm_resource(self, sandbox_context: SandboxContext | None = None):
+        """Get LLM resource through core resource system."""
         try:
-            from dana.core.lang.sandbox_context import SandboxContext
-
-            context = SandboxContext()
-            return context.get_system_llm_resource()
+            if sandbox_context is not None:
+                # Look for LLM resource in agent's available resources
+                resources = sandbox_context.get_resources()
+                for name, resource in resources.items():
+                    if hasattr(resource, "kind") and resource.kind == "llm":
+                        return resource
+            return None
         except Exception:
             return None
 
@@ -303,12 +306,17 @@ class AgentInstance(StructInstance):
         assert self._conversation_memory is not None  # Should be initialized by _initialize_conversation_memory
         conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
-        # Try to get LLM resource
-        llm_resource: LLMResource = None
+        # Try to get LLM resource through core resource system
+        llm_resource = None
         if sandbox_context is not None:
-            llm_resource = sandbox_context.get_system_llm_resource()
+            # Look for LLM resource in agent's available resources
+            resources = sandbox_context.get_resources()
+            for name, resource in resources.items():
+                if hasattr(resource, "kind") and resource.kind == "llm":
+                    llm_resource = resource
+                    break
         else:
-            llm_resource = self._get_llm_resource()
+            llm_resource = self._get_llm_resource(sandbox_context)
 
         if llm_resource:
             # Build prompt with agent description and conversation context
@@ -318,12 +326,12 @@ class AgentInstance(StructInstance):
             if context:
                 system_prompt += f" Additional context: {context}"
 
-            # Create computation that will call LLM resource directly
+            # Create computation that will call LLM resource through core resource interface
             def llm_computation():
                 try:
                     from dana.common.types import BaseRequest
 
-                    # Build proper messages format for LLM query executor
+                    # Build proper messages format for LLM query
                     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
 
                     # Add conversation context if available
@@ -331,8 +339,10 @@ class AgentInstance(StructInstance):
                         # Insert conversation context before the user message
                         messages.insert(-1, {"role": "system", "content": f"Previous conversation:\n{conversation_context}"})
 
+                    # Use core resource interface
                     request = BaseRequest(arguments={"messages": messages})
-                    response = llm_resource.query_sync(request)
+                    response = llm_resource.query(request)  # Core resource interface
+
                     if response.success:
                         # Extract the actual text content from the response
                         content = response.content

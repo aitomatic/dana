@@ -4,9 +4,10 @@ Test runner for stdlib .na test files.
 Automatically discovers and runs all test_*.na files in this directory.
 """
 
-import pytest
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
@@ -25,6 +26,18 @@ class TestStdlib:
         """Set up test fixtures."""
         self.interpreter = DanaInterpreter()
         self.context = SandboxContext()
+
+        # Set up LLM resource for tests that use reason function
+        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+        base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        base_llm_resource.initialize()
+
+        # Enable mock mode for testing
+        if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
+            base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+
+        self.context.set_system_llm_resource(base_llm_resource)
 
     def run_dana_test_file(self, file_path: str) -> Any:
         """Run a .na test file and return the result."""

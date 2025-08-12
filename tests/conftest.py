@@ -46,7 +46,7 @@ def configure_test_logging():
     logging.getLogger("dana.dana").setLevel(logging.ERROR)
     logging.getLogger("dana.common").setLevel(logging.ERROR)
     logging.getLogger("dana.api").setLevel(logging.ERROR)
-    logging.getLogger("dana.common.resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("dana.common.sys_resource.llm_resource").setLevel(logging.ERROR)
     logging.getLogger("dana.api.client").setLevel(logging.ERROR)
     logging.getLogger("dana.api.server").setLevel(logging.ERROR)
 

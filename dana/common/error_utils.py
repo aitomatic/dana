@@ -72,6 +72,7 @@ class ErrorUtils:
 
     # Reserved keywords in Dana
     RESERVED_KEYWORDS = {
+        "resource",
         "agent",
         "agent_pool",
         "struct",

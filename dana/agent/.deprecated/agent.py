@@ -22,7 +22,7 @@ from typing import Any
 from dana.common.deprecated.capability import BaseCapability
 from dana.common.io import BaseIO, IOFactory
 from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.resource import BaseResource, LLMResource
+from dana.common.sys_resource import BaseSysResource, LLMResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 
@@ -72,7 +72,7 @@ class AgentResponse(BaseResponse):
 
 
 # pylint: disable=too-many-public-methods
-class Agent(BaseResource):
+class Agent(BaseSysResource):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
@@ -80,7 +80,7 @@ class Agent(BaseResource):
         """Initialize agent with optional name and description."""
         # BaseResource requires a non-None name, so provide default
         actual_name = name or "Agent"
-        BaseResource.__init__(self, name=actual_name, description=description)
+        BaseSysResource.__init__(self, name=actual_name, description=description)
         # Don't call Capable.__init__ as we use a different capabilities structure
         self._llm = None
         self._resources = {}
@@ -115,7 +115,7 @@ class Agent(BaseResource):
         return self._llm
 
     @property
-    def available_resources(self) -> dict[str, BaseResource]:
+    def available_resources(self) -> dict[str, BaseSysResource]:
         """Property to get or initialize available resources."""
         if not self._resources:
             self._resources = {}
@@ -151,7 +151,7 @@ class Agent(BaseResource):
             self._llm = LLMResource(name=f"{self.name}_llm", config=llm)
         return self
 
-    def with_resources(self, resources: dict[str, BaseResource]) -> "Agent":
+    def with_resources(self, resources: dict[str, BaseSysResource]) -> "Agent":
         """Add resources to agent."""
         if not self._resources:
             self._resources = {}

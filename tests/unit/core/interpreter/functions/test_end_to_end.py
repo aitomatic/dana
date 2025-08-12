@@ -10,6 +10,8 @@ together correctly, including:
 5. Error handling
 """
 
+import os
+
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -324,13 +326,8 @@ def test_end_to_end_function_integration():
 
 
 def test_reason_function_integration():
-    """Test reason function integration in end-to-end scenarios.
-
-    Consolidates tests from tests/dana/functions/reason_function/ directory.
-    """
-    import os
-
-    # Setup environment for mocking
+    """Test the reason function integration with proper LLM resource setup."""
+    # Save original environment
     original_mock_env = os.environ.get("DANA_MOCK_LLM")
     os.environ["DANA_MOCK_LLM"] = "true"
 
@@ -338,8 +335,20 @@ def test_reason_function_integration():
         context = SandboxContext()
         interpreter = DanaInterpreter()
 
+        # Set up LLM resource in context using the new system
+        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+        llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm_resource.initialize()
+
+        # Enable mock mode for testing
+        if llm_resource._bridge and llm_resource._bridge._sys_resource:
+            llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+
+        context.set_system_llm_resource(llm_resource)
+
         # Test 1: Basic reason function call
-        result = interpreter.call_function("reason", ["What is 2 + 2?"])
+        result = interpreter.call_function("reason", ["What is 2 + 2?"], context=context)
         assert result is not None
 
         # Handle POETResult wrapper if present
@@ -356,17 +365,17 @@ def test_reason_function_integration():
         context.set("question", "What is the square root of 16?")
 
         # This would normally use f-strings, but we'll test direct calls
-        result = interpreter.call_function("reason", [f"Topic: {context.get('topic')} - {context.get('question')}"])
+        result = interpreter.call_function("reason", [f"Topic: {context.get('topic')} - {context.get('question')}"], context=context)
         assert result is not None
 
         # Test 3: Reason function with options
-        result = interpreter.call_function("reason", ["Explain gravity"])
+        result = interpreter.call_function("reason", ["Explain gravity"], context=context)
         assert result is not None
 
         # Test 4: Reason function error handling
         try:
             # Test with invalid input
-            result = interpreter.call_function("reason", [None])
+            result = interpreter.call_function("reason", [None], context=context)
             # Should either handle gracefully or raise appropriate error
             assert result is not None or True  # Either succeeds or raises exception
         except Exception as e:

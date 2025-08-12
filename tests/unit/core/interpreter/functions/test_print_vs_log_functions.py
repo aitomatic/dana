@@ -387,7 +387,7 @@ class TestDynamicHelp:
         from io import StringIO
         from unittest.mock import patch
 
-        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.llm_resource import LLMResource
         from dana.common.terminal_utils import ColorScheme
         from dana.core.repl.commands.command_handler import CommandHandler
         from dana.core.repl.repl import REPL

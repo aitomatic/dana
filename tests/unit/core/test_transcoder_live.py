@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.core.lang.translator.translator import Translator
 
 

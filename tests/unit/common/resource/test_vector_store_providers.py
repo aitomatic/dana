@@ -1,14 +1,14 @@
 """Test vector store provider implementations."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from dana.common.resource.vector_store.providers.base import (
+from dana.common.sys_resource.vector_store.config import DuckDBConfig, HNSWConfig, PGVectorConfig
+from dana.common.sys_resource.vector_store.providers.base import (
     BaseVectorStoreProvider,
 )
-from dana.common.resource.vector_store.providers.duckdb import DuckDBProvider
-from dana.common.resource.vector_store.providers.pgvector import PGVectorProvider
-from dana.common.resource.vector_store.config import DuckDBConfig, PGVectorConfig, HNSWConfig
+from dana.common.sys_resource.vector_store.providers.duckdb import DuckDBProvider
+from dana.common.sys_resource.vector_store.providers.pgvector import PGVectorProvider
 
 
 class TestBaseVectorStoreProvider(unittest.TestCase):
@@ -110,7 +110,7 @@ class TestDuckDBProvider(unittest.TestCase):
         self.mock_vector_store.table_name = "test_vectors"
         self.provider = DuckDBProvider(self.mock_vector_store)
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.DuckDBVectorStore")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.DuckDBVectorStore")
     def test_create(self, mock_duckdb_class):
         """Test creating DuckDB vector store."""
         mock_store = MagicMock()
@@ -129,7 +129,7 @@ class TestDuckDBProvider(unittest.TestCase):
         # Should not raise any exception
         DuckDBProvider.validate_config(config)
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.Path")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.Path")
     def test_exists_true(self, mock_path_class):
         """Test exists returns True when database file exists."""
         mock_path = MagicMock()
@@ -142,7 +142,7 @@ class TestDuckDBProvider(unittest.TestCase):
         mock_path_class.assert_called_once_with("/tmp/test")
         mock_path.__truediv__.assert_called_once_with("test.db")
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.Path")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.Path")
     def test_exists_false(self, mock_path_class):
         """Test exists returns False when database file doesn't exist."""
         mock_path = MagicMock()
@@ -153,7 +153,7 @@ class TestDuckDBProvider(unittest.TestCase):
 
         self.assertFalse(result)
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.Path")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.Path")
     def test_exists_exception(self, mock_path_class):
         """Test exists returns False when exception occurs."""
         mock_path_class.side_effect = Exception("Test error")
@@ -215,7 +215,7 @@ class TestDuckDBProvider(unittest.TestCase):
         # Should not raise exception
         self.provider.drop_data()
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.Path")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.Path")
     def test_get_statistics_success(self, mock_path_class):
         """Test get_statistics with successful operations."""
         # Setup path mock
@@ -243,7 +243,7 @@ class TestDuckDBProvider(unittest.TestCase):
 
         self.assertEqual(stats, expected_stats)
 
-    @patch("dana.common.resource.vector_store.providers.duckdb.Path")
+    @patch("dana.common.sys_resource.vector_store.providers.duckdb.Path")
     def test_get_statistics_exception(self, mock_path_class):
         """Test get_statistics with exception."""
         mock_path_class.side_effect = Exception("Test error")
