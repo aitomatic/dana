@@ -157,7 +157,7 @@ class FunctionExecutor(BaseExecutor):
             The defined method
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, MethodRegistry
+        from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 
         # Extract receiver type(s) from the receiver parameter
         receiver_param = node.receiver
@@ -865,6 +865,22 @@ class FunctionExecutor(BaseExecutor):
 
             except Exception as dana_method_error:
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
+
+            # Step 2.5: Try struct method delegation for struct instances
+            from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+            from dana.core.lang.interpreter.struct_system import StructInstance
+
+            if isinstance(target_object, StructInstance):
+                try:
+                    if LambdaMethodDispatcher.can_handle_method_call(target_object, method_name):
+                        self.debug(f"Delegating to LambdaMethodDispatcher for struct method: {method_name}")
+                        result = LambdaMethodDispatcher.dispatch_method_call(
+                            target_object, method_name, *evaluated_args, context=context, **evaluated_kwargs
+                        )
+                        self.debug(f"Struct method delegation successful: {method_name}() = {result}")
+                        return result
+                except Exception as delegation_error:
+                    self.debug(f"Struct method delegation failed: {delegation_error}")
 
             # Step 3: Fallback to Python object method calls
             if hasattr(target_object, method_name):

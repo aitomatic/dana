@@ -207,14 +207,81 @@ class StructInstance:
         """Get the struct type definition (for compatibility with method calls)."""
         return self._type
 
+    def _get_delegatable_fields(self) -> list[str]:
+        """Get list of delegatable fields (those with underscore prefix) in declaration order.
+
+        Returns:
+            List of field names that are delegatable (start with underscore)
+        """
+        return [field_name for field_name in self._type.field_order if field_name.startswith("_")]
+
+    def _find_delegated_field_access(self, field_name: str) -> tuple[Any, str] | None:
+        """Find if a field can be accessed through delegation.
+
+        Args:
+            field_name: The field name to look for
+
+        Returns:
+            Tuple of (delegated_object, field_name) if found, None otherwise
+        """
+        for delegatable_field in self._get_delegatable_fields():
+            delegated_object = self._values.get(delegatable_field)
+            if delegated_object is not None and hasattr(delegated_object, field_name):
+                return delegated_object, field_name
+        return None
+
+    def _find_delegated_method_access(self, method_name: str) -> tuple[Any, str] | None:
+        """Find if a method can be accessed through delegation.
+
+        Args:
+            method_name: The method name to look for
+
+        Returns:
+            Tuple of (delegated_object, method_name) if found, None otherwise
+        """
+        for delegatable_field in self._get_delegatable_fields():
+            delegated_object = self._values.get(delegatable_field)
+            if delegated_object is not None:
+                # Check if it's a struct instance with registered methods
+                if hasattr(delegated_object, "__struct_type__"):
+                    delegated_struct_type = delegated_object.__struct_type__
+                    # Use the module-level TypeAwareMethodRegistry class
+                    if type_aware_method_registry.has_struct_method(delegated_struct_type.name, method_name):
+                        return delegated_object, method_name
+
+                # Also check for direct callable attributes (for non-struct objects)
+                if hasattr(delegated_object, method_name):
+                    attr = getattr(delegated_object, method_name)
+                    if callable(attr):
+                        return delegated_object, method_name
+        return None
+
     def __getattr__(self, name: str) -> Any:
-        """Get field value using dot notation."""
-        if name.startswith("_"):
+        """Get field value using dot notation with delegation support."""
+        # Special handling for truly internal attributes (like _type, _values)
+        if name.startswith("_") and name in ["_type", "_values"]:
             # Allow access to internal attributes
             return super().__getattribute__(name)
 
         if name in self._type.fields:
             return self._values.get(name)
+
+        # Try delegation for field access
+        delegation_result = self._find_delegated_field_access(name)
+        if delegation_result is not None:
+            delegated_object, field_name = delegation_result
+            return getattr(delegated_object, field_name)
+
+        # Try delegation for method access
+        method_delegation_result = self._find_delegated_method_access(name)
+        if method_delegation_result is not None:
+            delegated_object, method_name = method_delegation_result
+            return getattr(delegated_object, method_name)
+
+        # If it's an underscore field that doesn't exist in struct fields,
+        # fall back to Python attribute access
+        if name.startswith("_"):
+            return super().__getattribute__(name)
 
         available_fields = sorted(self._type.fields.keys())
 
@@ -222,10 +289,27 @@ class StructInstance:
         suggestion = self._find_similar_field(name, available_fields)
         suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-        raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
+        # Enhanced error message that mentions delegation
+        delegatable_fields = self._get_delegatable_fields()
+        if delegatable_fields:
+            available_delegated_fields = []
+            for delegatable_field in delegatable_fields:
+                delegated_object = self._values.get(delegatable_field)
+                if delegated_object is not None:
+                    if hasattr(delegated_object, "__dict__"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{attr}" for attr in vars(delegated_object)])
+                    elif hasattr(delegated_object, "_type") and hasattr(delegated_object._type, "fields"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{field}" for field in delegated_object._type.fields])
+
+            if available_delegated_fields:
+                suggestion_text += f" Available through delegation: {sorted(available_delegated_fields)[:5]}"
+
+        raise AttributeError(
+            f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+        )
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """Set field value using dot notation."""
+        """Set field value using dot notation with delegation support."""
         if name.startswith("_"):
             # Allow setting internal attributes
             super().__setattr__(name, value)
@@ -243,6 +327,13 @@ class StructInstance:
                 )
             self._values[name] = value
         elif hasattr(self, "_type"):
+            # Try delegation for field assignment
+            delegation_result = self._find_delegated_field_access(name)
+            if delegation_result is not None:
+                delegated_object, field_name = delegation_result
+                setattr(delegated_object, field_name, value)
+                return
+
             # Struct type is initialized, reject unknown fields
             available_fields = sorted(self._type.fields.keys())
 

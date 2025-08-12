@@ -128,7 +128,36 @@ class LambdaMethodDispatcher:
             return False
 
         struct_type = obj.__struct_type__
-        return universal_method_registry.has_struct_method(struct_type.name, method_name)
+        # Check direct method first
+        if universal_method_registry.has_struct_method(struct_type.name, method_name):
+            return True
+
+        # Check delegation
+        return LambdaMethodDispatcher._can_handle_delegated_method_call(obj, method_name)
+
+    @staticmethod
+    def _can_handle_delegated_method_call(obj: Any, method_name: str) -> bool:
+        """Check if a method call can be handled through delegation.
+
+        Args:
+            obj: The object the method is being called on
+            method_name: The method name
+
+        Returns:
+            True if a delegated method exists
+        """
+        # Use the struct instance delegation logic
+        if hasattr(obj, "_find_delegated_method_access"):
+            delegation_result = obj._find_delegated_method_access(method_name)
+            if delegation_result is not None:
+                delegated_object, _ = delegation_result
+                # Check if the delegated object can handle the method through registry
+                if hasattr(delegated_object, "__struct_type__"):
+                    delegated_struct_type = delegated_object.__struct_type__
+                    return universal_method_registry.has_struct_method(delegated_struct_type.name, method_name)
+                # For non-struct objects, check if method exists and is callable
+                return hasattr(delegated_object, method_name) and callable(getattr(delegated_object, method_name))
+        return False
 
     @staticmethod
     def dispatch_method_call(obj: Any, method_name: str, *args, context: SandboxContext | None = None, **kwargs) -> Any:
@@ -150,9 +179,48 @@ class LambdaMethodDispatcher:
         struct_type = obj.__struct_type__
         method_function = universal_method_registry.get_struct_method(struct_type.name, method_name)
 
-        if method_function is None:
-            raise AttributeError(f"No lambda method '{method_name}' found for type '{struct_type.name}'")
+        # Try direct method first
+        if method_function is not None:
+            return LambdaMethodDispatcher._execute_method_function(method_function, obj, args, context, kwargs)
 
+        # Try delegation
+        if hasattr(obj, "_find_delegated_method_access"):
+            delegation_result = obj._find_delegated_method_access(method_name)
+            if delegation_result is not None:
+                delegated_object, delegated_method_name = delegation_result
+
+                # Check if delegated object is a struct with registered methods
+                if hasattr(delegated_object, "__struct_type__"):
+                    delegated_struct_type = delegated_object.__struct_type__
+                    delegated_method_function = universal_method_registry.get_struct_method(
+                        delegated_struct_type.name, delegated_method_name
+                    )
+                    if delegated_method_function is not None:
+                        return LambdaMethodDispatcher._execute_method_function(
+                            delegated_method_function, delegated_object, args, context, kwargs
+                        )
+
+                # Fall back to direct method call on delegated object
+                method = getattr(delegated_object, delegated_method_name)
+                if callable(method):
+                    return method(*args, **kwargs)
+
+        raise AttributeError(f"No lambda method '{method_name}' found for type '{struct_type.name}' or through delegation")
+
+    @staticmethod
+    def _execute_method_function(method_function: Any, obj: Any, args: tuple, context: SandboxContext | None, kwargs: dict) -> Any:
+        """Execute a method function with proper context handling.
+
+        Args:
+            method_function: The method function to execute
+            obj: The object the method is being called on
+            args: Method arguments
+            context: Optional SandboxContext to use for execution
+            kwargs: Method keyword arguments
+
+        Returns:
+            The result of the method call
+        """
         # Check if this is a DanaFunction that needs to be called via execute()
         if isinstance(method_function, DanaFunction):
             # Use provided context or create a new one
