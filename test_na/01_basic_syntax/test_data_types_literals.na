@@ -1,0 +1,213 @@
+# Test: Data Types and Literals
+# Purpose: Test basic literals, collection literals, string literals, f-strings, and numeric literals
+# Category: Basic Syntax - Data Types and Literals
+
+log("Starting Data Types and Literals test")
+
+# Test 1: Integer literals
+positive_int = 42
+negative_int = -42
+zero_int = 0
+large_int = 1000000
+assert positive_int == 42, f"Expected 42, got {positive_int}"
+assert negative_int == -42, f"Expected -42, got {negative_int}"
+assert zero_int == 0, f"Expected 0, got {zero_int}"
+assert large_int == 1000000, f"Expected 1000000, got {large_int}"
+log("✅ Integer literals work")
+
+# Test 2: Float literals
+positive_float = 3.14
+negative_float = -3.14
+zero_float = 0.0
+scientific_float = 1.23e-4
+assert positive_float == 3.14, f"Expected 3.14, got {positive_float}"
+assert negative_float == -3.14, f"Expected -3.14, got {negative_float}"
+assert zero_float == 0.0, f"Expected 0.0, got {zero_float}"
+assert scientific_float == 1.23e-4, f"Expected 1.23e-4, got {scientific_float}"
+log("✅ Float literals work")
+
+# Test 3: String literals - single quotes
+single_quote = 'Hello World'
+assert single_quote == "Hello World", f"Expected 'Hello World', got {single_quote}"
+log("✅ String literals with single quotes work")
+
+# Test 4: String literals - double quotes
+double_quote = "Hello World"
+assert double_quote == "Hello World", f"Expected 'Hello World', got {double_quote}"
+log("✅ String literals with double quotes work")
+
+# Test 5: String literals - triple quotes
+triple_quote = """This is a
+multi-line string
+with multiple lines"""
+assert "multi-line" in triple_quote, f"Expected 'multi-line' in string, got {triple_quote}"
+log("✅ String literals with triple quotes work")
+
+# Test 6: String literals - raw strings
+raw_string = r"C:\Users\Name\Documents"
+assert raw_string == r"C:\Users\Name\Documents", f"Expected r'C:\Users\Name\Documents', got {raw_string}"
+log("✅ Raw string literals work")
+
+# Test 7: Boolean literals
+true_val = True
+false_val = False
+assert true_val == True, f"Expected True, got {true_val}"
+assert false_val == False, f"Expected False, got {false_val}"
+log("✅ Boolean literals work")
+
+# Test 8: None literal
+none_val = None
+assert none_val == None, f"Expected None, got {none_val}"
+log("✅ None literal works")
+
+# Test 9: List literals
+empty_list = []
+simple_list = [1, 2, 3, 4, 5]
+mixed_list = [1, "hello", 3.14, True]
+nested_list = [[1, 2], [3, 4], [5, 6]]
+assert len(empty_list) == 0, f"Expected 0, got {len(empty_list)}"
+assert len(simple_list) == 5, f"Expected 5, got {len(simple_list)}"
+assert len(mixed_list) == 4, f"Expected 4, got {len(mixed_list)}"
+assert len(nested_list) == 3, f"Expected 3, got {len(nested_list)}"
+log("✅ List literals work")
+
+# Test 10: Dictionary literals
+empty_dict = {}
+simple_dict = {"a": 1, "b": 2, "c": 3}
+mixed_dict = {"name": "John", "age": 30, "active": True}
+nested_dict = {"user": {"name": "Alice", "settings": {"theme": "dark"}}}
+assert len(empty_dict) == 0, f"Expected 0, got {len(empty_dict)}"
+assert len(simple_dict) == 3, f"Expected 3, got {len(simple_dict)}"
+assert len(mixed_dict) == 3, f"Expected 3, got {len(mixed_dict)}"
+assert len(nested_dict) == 1, f"Expected 1, got {len(nested_dict)}"
+log("✅ Dictionary literals work")
+
+# Test 11: Set literals
+empty_set = set()
+simple_set = {1, 2, 3, 4, 5}
+mixed_set = {1, "hello", 3.14}
+assert len(simple_set) == 5, f"Expected 5, got {len(simple_set)}"
+assert len(mixed_set) == 3, f"Expected 3, got {len(mixed_set)}"
+assert len(empty_set) == 0, f"Expected 0, got {len(empty_set)}"
+log("✅ Set literals work")
+
+# Test 12: Tuple literals
+empty_tuple = ()
+simple_tuple = (1, 2, 3, 4, 5)
+mixed_tuple = (1, "hello", 3.14, True)
+nested_tuple = ((1, 2), (3, 4), (5, 6))
+assert len(empty_tuple) == 0, f"Expected 0, got {len(empty_tuple)}"
+assert len(simple_tuple) == 5, f"Expected 5, got {len(simple_tuple)}"
+assert len(mixed_tuple) == 4, f"Expected 4, got {len(mixed_tuple)}"
+assert len(nested_tuple) == 3, f"Expected 3, got {len(nested_tuple)}"
+log("✅ Tuple literals work")
+
+# Test 13: F-string literals - basic
+name = "Alice"
+age = 30
+f_string = f"My name is {name} and I am {age} years old"
+expected = "My name is Alice and I am 30 years old"
+assert f_string == expected, f"Expected '{expected}', got '{f_string}'"
+log("✅ Basic f-string literals work")
+
+# Test 14: F-string literals - expressions
+x = 10
+y = 5
+f_string_expr = f"The sum of {x} and {y} is {x + y}"
+expected_expr = "The sum of 10 and 5 is 15"
+assert f_string_expr == expected_expr, f"Expected '{expected_expr}', got '{f_string_expr}'"
+log("✅ F-string literals with expressions work")
+
+# # Test 15: F-string literals - formatting - [NOT SUPPORTED YET]
+# pi = 3.14159
+# f_string_format = f"Pi rounded to 2 decimal places: {pi:.2f}"
+# expected_format = "Pi rounded to 2 decimal places: 3.14"
+# assert f_string_format == expected_format, f"Expected '{expected_format}', got '{f_string_format}'"
+# log("✅ F-string literals with formatting work")
+
+# Test 16: F-string literals - nested - [NOT SUPPORTED YET] map()
+# data = {"name": "Bob", "scores": [85, 90, 78]}
+# f_string_nested = f"{data['name']} has scores: {', '.join(map(str, data['scores']))}"
+# expected_nested = "Bob has scores: 85, 90, 78"
+# assert f_string_nested == expected_nested, f"Expected '{expected_nested}', got '{f_string_nested}'"
+# log("✅ F-string literals with nested expressions work")
+
+# Test 17: Numeric literals - negative numbers
+negative_int = -42
+negative_float = -3.14
+negative_scientific = -1.23e-4
+assert negative_int == -42, f"Expected -42, got {negative_int}"
+assert negative_float == -3.14, f"Expected -3.14, got {negative_float}"
+assert negative_scientific == -1.23e-4, f"Expected -1.23e-4, got {negative_scientific}"
+log("✅ Negative numeric literals work")
+
+# Test 18: Numeric literals - scientific notation
+small_scientific = 1.23e-10
+large_scientific = 1.23e+10
+assert small_scientific == 1.23e-10, f"Expected 1.23e-10, got {small_scientific}"
+assert large_scientific == 1.23e+10, f"Expected 1.23e+10, got {large_scientific}"
+log("✅ Scientific notation literals work")
+
+# Test 19: Numeric literals - zero values
+zero_int = 0
+zero_float = 0.0
+assert zero_int == 0, f"Expected 0, got {zero_int}"
+assert zero_float == 0.0, f"Expected 0.0, got {zero_float}"
+log("✅ Zero numeric literals work")
+
+# # Test 20: String literals - escape sequences - [NOT SUPPORTED YET] repr()
+# escaped_string = "Hello\nWorld\tTabbed"
+# assert "\\n" in repr(escaped_string), f"Expected newline in string, got {repr(escaped_string)}"
+# assert "\\t" in repr(escaped_string), f"Expected tab in string, got {repr(escaped_string)}"
+# log("✅ String literals with escape sequences work")
+
+# Test 21: String literals - unicode
+unicode_string = "Hello 世界"
+assert len(unicode_string) > 5, f"Expected unicode string length > 5, got {len(unicode_string)}"
+log("✅ String literals with unicode work")
+
+# Test 22: Collection literals - empty collections
+empty_list = []
+empty_dict = {}
+empty_set = set()
+empty_tuple = ()
+assert len(empty_list) == 0, f"Expected 0, got {len(empty_list)}"
+assert len(empty_dict) == 0, f"Expected 0, got {len(empty_dict)}"
+assert len(empty_set) == 0, f"Expected 0, got {len(empty_set)}"
+assert len(empty_tuple) == 0, f"Expected 0, got {len(empty_tuple)}"
+log("✅ Empty collection literals work")
+
+# Test 23: Collection literals - single element
+single_list = [42]
+single_dict = {"key": "value"}
+single_set = {42}
+single_tuple = (42,)
+assert len(single_list) == 1, f"Expected 1, got {len(single_list)}"
+assert len(single_dict) == 1, f"Expected 1, got {len(single_dict)}"
+assert len(single_set) == 1, f"Expected 1, got {len(single_set)}"
+assert len(single_tuple) == 1, f"Expected 1, got {len(single_tuple)}"
+log("✅ Single element collection literals work")
+
+# Test 24: Collection literals - mixed types
+mixed_list = [1, "hello", 3.14, True, None]
+mixed_dict = {1: "one", "two": 2, 3.14: "pi", True: "true"}
+mixed_set = {1, "hello", 3.14, True}
+mixed_tuple = (1, "hello", 3.14, True, None)
+assert len(mixed_list) == 5, f"Expected 5, got {len(mixed_list)}"
+assert len(mixed_dict) == 3, f"Expected 3, got {len(mixed_dict)}"
+assert len(mixed_set) == 3, f"Expected 3, got {len(mixed_set)}"
+assert len(mixed_tuple) == 5, f"Expected 5, got {len(mixed_tuple)}"
+log("✅ Mixed type collection literals work")
+
+# Test 25: Collection literals - nested structures
+nested_list = [[1, 2], [3, 4], [5, 6]]
+nested_dict = {"level1": {"level2": {"level3": "value"}}}
+nested_set = {(1, 2), (3, 4), (5, 6)}
+nested_tuple = ((1, 2), (3, 4), (5, 6))
+assert len(nested_list) == 3, f"Expected 3, got {len(nested_list)}"
+assert len(nested_dict) == 1, f"Expected 1, got {len(nested_dict)}"
+assert len(nested_set) == 3, f"Expected 3, got {len(nested_set)}"
+assert len(nested_tuple) == 3, f"Expected 3, got {len(nested_tuple)}"
+log("✅ Nested collection literals work")
+
+log("Data Types and Literals test completed successfully") 
