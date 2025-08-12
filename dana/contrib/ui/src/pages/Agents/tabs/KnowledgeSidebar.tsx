@@ -173,7 +173,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
       {/* Sidebar */}
       <div className="flex flex-col w-200 max-h-full bg-white border-l border-gray-200 shadow-xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex justify-between items-center py-2 px-4 bg-gray-50 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {formatTopicName(topicPath)}

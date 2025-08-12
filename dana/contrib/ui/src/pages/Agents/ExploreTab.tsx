@@ -354,7 +354,7 @@ export const ExploreTab: React.FC<{
               className="w-full sm:w-1/2 text-sm font-semibold text-gray-700"
             >
               <Settings style={{ width: '16', height: '16' }} />
-              Start from this agent
+              Train from this agent
             </Button>
             <Button
               onClick={handleSaveAndUseAgent}

@@ -6,7 +6,7 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, Upload, EmptyPage } from 'iconoir-react';
+import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentOperations } from '@/hooks/use-api';
 import { toast } from 'sonner';
@@ -228,7 +228,7 @@ const DocumentsTab: React.FC = () => {
             </>
           ) : (
             <>
-              <Upload className="mr-2 w-4 h-4" />
+              <DocMagnifyingGlass className="mr-2 w-4 h-4" />
               Browse Files
             </>
           )}
