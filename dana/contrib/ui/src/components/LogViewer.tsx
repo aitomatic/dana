@@ -52,7 +52,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
   if (logs.length === 0) {
     return (
       <div
-        className={`flex items-center justify-center h-16 text-gray-500 dark:text-gray-400 text-sm ${className}`}
+        className={`flex justify-center items-center h-16 text-sm text-gray-500 dark:text-gray-400 ${className}`}
       >
         No logs yet...
       </div>
@@ -61,18 +61,18 @@ const LogViewer: React.FC<LogViewerProps> = ({
 
   return (
     <div
-      className={`bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}
+      className={`bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${className}`}
     >
-      <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 text-xs font-medium text-gray-600 dark:text-gray-300 rounded-t-lg">
+      <div className="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-t-lg border-b border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
         Agent Logs ({logs.length})
       </div>
       <div
         ref={logContainerRef}
-        className="p-3 overflow-y-auto font-mono text-xs bg-gray-50 dark:bg-gray-800"
+        className="overflow-y-auto p-3 font-mono text-xs bg-gray-50 dark:bg-gray-800 custom-scrollbar"
         style={{ maxHeight }}
       >
         {logs.map((log) => (
-          <div key={log.id} className="mb-1 flex items-start gap-2">
+          <div key={log.id} className="flex gap-2 items-start mb-1">
             {showTimestamps && (
               <span className="text-gray-400 dark:text-gray-500 shrink-0 text-[10px]">
                 {formatTimestamp(log.timestamp)}
@@ -83,7 +83,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
             >
               {log.level}:
             </span>
-            <span className="text-gray-800 dark:text-gray-200 break-words min-w-0">
+            <span className="min-w-0 text-gray-800 break-words dark:text-gray-200">
               {log.message}
             </span>
           </div>

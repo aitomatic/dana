@@ -6,6 +6,7 @@ import 'reactflow/dist/style.css';
 import AgentChartNode from './AgentChartNode';
 import type { AgentOverviewChartProps, AgentChartData } from './types/agent-chart';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
+import { useDocumentStore } from '@/stores/document-store';
 
 const nodeWidth = 250;
 const nodeHeight = 100;
@@ -79,6 +80,9 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
   // Use centralized knowledge store
   const { domainKnowledge, knowledgeStatus, setCurrentAgent } = useKnowledgeStore();
 
+  // Use centralized document store
+  const { documents, isLoading: documentsLoading, fetchDocuments } = useDocumentStore();
+
   // Update current agent when component mounts or agent changes
   useEffect(() => {
     if (agent?.id) {
@@ -87,6 +91,13 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       setCurrentAgent(null);
     }
   }, [agent?.id, setCurrentAgent]);
+
+  // Fetch agent-specific documents when agent changes
+  useEffect(() => {
+    if (agent?.id) {
+      fetchDocuments({ agent_id: parseInt(agent.id.toString()) });
+    }
+  }, [agent?.id, fetchDocuments]);
 
   const chartData = useMemo((): AgentChartData => {
     if (!agent) {
@@ -112,8 +123,11 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       knowledgeStatus?.topics?.filter((topic) => topic.status === 'in_progress').length || 0;
     const isGeneratingKnowledge = inProgressCount > 0;
 
-    // Count documents (from agent.files or other source)
-    const documentsCount = agent.files ? agent.files.length : 0;
+    // Count documents from store (filtered for current agent)
+    const agentDocuments = documents.filter(
+      (doc) => doc.agent_id?.toString() === agent.id.toString(),
+    );
+    const documentsCount = agentDocuments.length;
 
     return {
       agent: {
@@ -138,7 +152,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
           },
           documents: {
             count: documentsCount,
-            status: documentsCount > 0 ? 'active' : 'empty',
+            status: documentsLoading ? 'loading' : documentsCount > 0 ? 'active' : 'empty',
           },
           workflows: {
             status: 'coming-soon',
@@ -149,7 +163,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         },
       },
     };
-  }, [agent, domainKnowledge, knowledgeStatus]);
+  }, [agent, domainKnowledge, knowledgeStatus, documents, documentsLoading]);
 
   const { nodes, edges } = useMemo(() => {
     const flowNodes: FlowNode[] = [];
@@ -159,6 +173,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
     const inProgressCount =
       knowledgeStatus?.topics?.filter((topic) => topic.status === 'in_progress').length || 0;
     const isGeneratingKnowledge = inProgressCount > 0;
+    const isKnowledgeBaseLoading = isGeneratingKnowledge || documentsLoading;
 
     // Main agent node
     flowNodes.push({
@@ -191,7 +206,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       type: 'agentChart',
       data: {
         label: 'Knowledge Base',
-        status: isGeneratingKnowledge ? 'loading' : 'active',
+        status: isKnowledgeBaseLoading ? 'loading' : 'active',
       },
       position: { x: 0, y: 0 },
     });
@@ -227,7 +242,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         label: 'Documents',
         count: chartData.components.knowledgeBase.documents.count,
         status: chartData.components.knowledgeBase.documents.status,
-        description: `${chartData.components.knowledgeBase.documents.count} added document`,
+        description: `${chartData.components.knowledgeBase.documents.count} ${chartData.components.knowledgeBase.documents.count === 1 ? 'document' : 'documents'}`,
       },
       position: { x: 0, y: 0 },
     });
@@ -297,7 +312,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
 
     const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'TB');
     return { nodes: layoutedNodes, edges: flowEdges };
-  }, [chartData, agent?.id, knowledgeStatus]);
+  }, [chartData, agent?.id, knowledgeStatus, documentsLoading]);
 
   const nodeTypes = useMemo(
     () => ({

@@ -264,7 +264,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
+      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll custom-scrollbar">
         <div className="flex flex-col gap-3 px-2 mt-3">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">

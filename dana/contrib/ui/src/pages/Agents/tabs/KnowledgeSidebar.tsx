@@ -189,7 +189,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="overflow-y-auto flex-1 p-4 custom-scrollbar">
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="w-8 h-8 rounded-full border-b-2 border-blue-600 animate-spin"></div>

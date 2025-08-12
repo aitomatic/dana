@@ -1,13 +1,26 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUp, NavArrowDown, NavArrowUp, Xmark, Table2Columns, Download, Page } from 'iconoir-react';
+import {
+  ArrowUp,
+  NavArrowDown,
+  NavArrowUp,
+  Xmark,
+  Table2Columns,
+  Download,
+  Page,
+} from 'iconoir-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
-import type { BulkEvaluationRequest, BulkEvaluationQuestion, BulkEvaluationResult } from '@/lib/api';
+import type {
+  BulkEvaluationRequest,
+  BulkEvaluationQuestion,
+  BulkEvaluationResult,
+} from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import LogViewer from '@/components/LogViewer';
+import { Button } from '@/components/ui/button';
 
 // Constants for resize functionality
 const MIN_WIDTH = 380;
@@ -112,7 +125,7 @@ const ChatResizeHandle: React.FC<{
       className={`
         absolute top-0 left-0 h-full z-50
         hover:bg-gray-200 hover:shadow-sm transition-all duration-200
-        ${isResizing ? 'bg-primary' : ' hover:bg-gray-200'}
+        ${isResizing ? 'bg-primary' : 'hover:bg-gray-200'}
         group
       `}
       onMouseDown={handleMouseDown}
@@ -127,7 +140,7 @@ const ChatResizeHandle: React.FC<{
         className={`
           absolute top-1/2 left-1/2 transform -translate-x-2/3 -translate-y-1/2
           w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
-          ${isResizing ? 'bg-primary shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
+          ${isResizing ? 'shadow-sm bg-primary' : 'bg-white shadow-sm group-hover:bg-primary'}
         `}
         style={{
           zIndex: 60,
@@ -358,7 +371,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         question: values[questionIndex] || '',
         expected_answer:
           values[headers.findIndex((h) => h.toLowerCase().includes('expected'))] || undefined,
-        category: values[headers.findIndex((h) => h.toLowerCase().includes('category'))] || undefined,
+        category:
+          values[headers.findIndex((h) => h.toLowerCase().includes('category'))] || undefined,
         context: values[headers.findIndex((h) => h.toLowerCase().includes('context'))] || undefined,
       };
 
@@ -449,9 +463,9 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       ['What is the chemical symbol for water?', 'H2O', 'Chemistry'],
     ];
 
-    const csvContent = sampleData.map(row => 
-      row.map(field => `"${field}"`).join(',')
-    ).join('\n');
+    const csvContent = sampleData
+      .map((row) => row.map((field) => `"${field}"`).join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -492,7 +506,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         category: row.category,
       }));
 
-      // Get agent data first  
+      // Get agent data first
       const agentData = await apiService.getAgent(parseInt(agent_id));
 
       const request: BulkEvaluationRequest = {
@@ -634,7 +648,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       />
       {/* Header */}
       <div className="border-b border-gray-200">
-        <div className="flex justify-between items-center h-14 p-4">
+        <div className="flex justify-between items-center p-4 h-14">
           <div className="flex gap-3 items-center">
             <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
               <img
@@ -664,7 +678,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
         {/* Mode Toggle */}
         <div className="px-4 pb-4">
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex p-1 bg-gray-100 rounded-lg">
             <button
               onClick={() => setEvaluationMode('individual')}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
@@ -690,10 +704,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       </div>
 
       {/* Content Area */}
-      <div className="flex overflow-y-auto flex-col flex-1">
+      <div className="flex overflow-y-auto flex-col flex-1 custom-scrollbar">
         {evaluationMode === 'individual' ? (
           /* Individual Chat Messages */
-          <div className="flex overflow-y-auto flex-col flex-1 p-4 space-y-4">
+          <div className="flex overflow-y-auto flex-col flex-1 p-4 space-y-4 custom-scrollbar">
             {isLoadingHistory ? (
               <div className="flex justify-center items-center h-full">
                 <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
@@ -746,37 +760,40 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
           </div>
         ) : (
           /* Bulk Evaluation UI */
-          <div className="flex flex-col flex-1 p-4 space-y-4">
+          <div className="flex flex-col flex-1 p-4 space-y-4 custom-scrollbar">
             {!parsedCSV ? (
               /* CSV Upload */
-              <div className="flex flex-col items-center justify-center flex-1 border-2 border-dashed border-gray-300 rounded-lg p-8">
+              <div className="flex flex-col flex-1 justify-center items-center p-8 rounded-lg border-2 border-gray-300 border-dashed">
                 <div
                   className="text-center cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                   onDrop={handleFileDrop}
                   onDragOver={(e) => e.preventDefault()}
                 >
-                  <Table2Columns className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Add Evaluation File (.csv)</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <Table2Columns className="mx-auto mb-4 w-12 h-12 text-gray-400" />
+                  <h3 className="mb-2 text-lg font-medium text-gray-900">
+                    Add Evaluation File (.csv)
+                  </h3>
+                  <p className="mb-4 text-sm text-gray-600">
                     Drop your CSV file here or click to browse.
                   </p>
-                  <p className="text-xs text-gray-500 mb-4">
+                  <p className="mb-4 text-xs text-gray-500">
                     Required: 'question' column. Optional: 'expected_answer', 'category', 'context'
                   </p>
-                  
+
                   {/* Sample CSV Download Link */}
-                  <button variant="default"
+                  <Button
+                    variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
                       downloadSampleCSV();
                     }}
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                    className="inline-flex gap-2 items-center px-3 py-2 text-sm text-blue-600 rounded-md transition-colors hover:text-blue-800 hover:bg-blue-50"
                   >
                     <Page className="w-4 h-4" />
                     Get Sample CSV
-                  </button>
-                  
+                  </Button>
+
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -786,7 +803,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   />
                 </div>
                 {csvError && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <div className="p-3 mt-4 bg-red-50 rounded-md border border-red-200">
                     <p className="text-sm text-red-600">{csvError}</p>
                   </div>
                 )}
@@ -794,13 +811,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             ) : (
               /* CSV Preview and Configuration */
               <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                <div className="p-4 bg-green-50 rounded-md border border-green-200">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-medium text-green-800">
-                        ✓ CSV Loaded Successfully
-                      </h4>
-                      <p className="text-sm text-green-600 mt-1">
+                      <h4 className="font-medium text-green-800">✓ CSV Loaded Successfully</h4>
+                      <p className="mt-1 text-sm text-green-600">
                         {parsedCSV.data.length} questions found
                       </p>
                     </div>
@@ -818,8 +833,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 </div>
 
                 {/* CSV Preview */}
-                <div className="border border-gray-200 rounded-lg">
-                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="rounded-lg border border-gray-200">
+                  <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                     <h4 className="font-medium text-gray-900">Preview (First 5 rows)</h4>
                   </div>
                   <div className="overflow-x-auto">
@@ -829,7 +844,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                           {parsedCSV.headers.map((header, index) => (
                             <th
                               key={index}
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                              className="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                             >
                               {header}
                             </th>
@@ -839,21 +854,19 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                       <tbody className="divide-y divide-gray-200">
                         {parsedCSV.preview.map((row, index) => (
                           <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                            <td className="px-4 py-3 max-w-xs text-sm text-gray-900 truncate">
                               {row.question}
                             </td>
                             {row.expected_answer !== undefined && (
-                              <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                              <td className="px-4 py-3 max-w-xs text-sm text-gray-900 truncate">
                                 {row.expected_answer}
                               </td>
                             )}
                             {row.category !== undefined && (
-                              <td className="px-4 py-3 text-sm text-gray-900">
-                                {row.category}
-                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900">{row.category}</td>
                             )}
                             {row.context !== undefined && (
-                              <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                              <td className="px-4 py-3 max-w-xs text-sm text-gray-900 truncate">
                                 {row.context}
                               </td>
                             )}
@@ -865,17 +878,17 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 </div>
 
                 {/* Configuration */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Configuration</h4>
+                <div className="p-4 rounded-lg border border-gray-200">
+                  <h4 className="mb-3 font-medium text-gray-900">Configuration</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">
                         Batch Size
                       </label>
                       <select
                         value={batchSize}
                         onChange={(e) => setBatchSize(parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
                         <option value={1}>1 (Sequential)</option>
                         <option value={3}>3</option>
@@ -885,10 +898,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">
                         Total Questions
                       </label>
-                      <p className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                      <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md border border-gray-300">
                         {parsedCSV.data.length}
                       </p>
                     </div>
@@ -905,42 +918,45 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {bulkEvaluationState.isRunning ? 'Running Evaluation...' : 'Start Bulk Evaluation'}
+                  {bulkEvaluationState.isRunning
+                    ? 'Running Evaluation...'
+                    : 'Start Bulk Evaluation'}
                 </button>
 
                 {/* Progress */}
                 {bulkEvaluationState.isRunning && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-blue-800">Progress</span>
                       <span className="text-sm text-blue-600">
-                        {bulkEvaluationState.progress.current} / {bulkEvaluationState.progress.total}
+                        {bulkEvaluationState.progress.current} /{' '}
+                        {bulkEvaluationState.progress.total}
                       </span>
                     </div>
-                    <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+                    <div className="mb-3 w-full h-2 bg-blue-200 rounded-full">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="h-2 bg-blue-600 rounded-full transition-all duration-300"
                         style={{ width: `${bulkEvaluationState.progress.progress}%` }}
                       ></div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-green-600 font-medium">
+                        <span className="font-medium text-green-600">
                           ✓ {bulkEvaluationState.progress.successful}
                         </span>
-                        <span className="text-gray-600 ml-1">successful</span>
+                        <span className="ml-1 text-gray-600">successful</span>
                       </div>
                       <div>
-                        <span className="text-red-600 font-medium">
+                        <span className="font-medium text-red-600">
                           ✗ {bulkEvaluationState.progress.failed}
                         </span>
-                        <span className="text-gray-600 ml-1">failed</span>
+                        <span className="ml-1 text-gray-600">failed</span>
                       </div>
                       <div>
-                        <span className="text-blue-600 font-medium">
+                        <span className="font-medium text-blue-600">
                           {Math.ceil(bulkEvaluationState.progress.estimatedTimeRemaining)}s
                         </span>
-                        <span className="text-gray-600 ml-1">remaining</span>
+                        <span className="ml-1 text-gray-600">remaining</span>
                       </div>
                     </div>
                   </div>
@@ -948,20 +964,20 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
                 {/* Results */}
                 {bulkEvaluationState.results.length > 0 && (
-                  <div className="border border-gray-200 rounded-lg">
-                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                  <div className="rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-b border-gray-200">
                       <h4 className="font-medium text-gray-900">
                         Results ({bulkEvaluationState.results.length})
                       </h4>
                       <button
                         onClick={exportResultsToCSV}
-                        className="flex items-center gap-2 px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        className="flex gap-2 items-center px-3 py-1 text-sm text-white bg-green-600 rounded-md transition-colors hover:bg-green-700"
                       >
                         <Download className="w-4 h-4" />
                         Export CSV
                       </button>
                     </div>
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="overflow-y-auto max-h-96 custom-scrollbar">
                       {bulkEvaluationState.results.map((result, index) => (
                         <div
                           key={index}
@@ -1007,16 +1023,16 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       {(isLoading || logUpdates.length > 0) && !hideLogs && (
         <div className="border-t border-gray-200 dark:border-gray-700">
           {/* Toggle Button */}
-          <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <div className="flex justify-between items-center px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
             <div
-              className="flex items-center gap-2 cursor-pointer flex-1"
+              className="flex flex-1 gap-2 items-center cursor-pointer"
               onClick={() => setShowLogs(!showLogs)}
             >
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 Backend Logs
               </span>
               {isLoading && (
-                <div className="flex items-center gap-1">
+                <div className="flex gap-1 items-center">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                   <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
                 </div>
@@ -1040,7 +1056,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   setHideLogs(true);
                   setShowLogs(false);
                 }}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                 title="Hide logs"
               >
                 <Xmark className="w-3 h-3 text-gray-400 dark:text-gray-500" />
@@ -1072,7 +1088,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
               onKeyDown={handleKeyPress}
               placeholder="Type your message"
               className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
-                focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
+                focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto custom-scrollbar"
               rows={2}
               disabled={isLoading || bulkEvaluationState.isRunning}
             />

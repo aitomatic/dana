@@ -40,7 +40,7 @@ const AgentChat = () => {
       <div className="flex w-full h-full">
         <div
           className={cn(
-            'relative transition-all duration-300 ease-in-out z-31 shrink-0 overflow-x-hidden bg-background [view-transition-name:var(--sidebar-slideover)] max-md:w-0! scrollbar-hide',
+            'relative transition-all duration-300 ease-in-out z-31 shrink-0 overflow-x-hidden bg-background [view-transition-name:var(--sidebar-slideover)] max-md:w-0! custom-scrollbar',
             isSidebarCollapsed ? 'w-0 opacity-0' : 'opacity-100 w-[260px]',
           )}
         >
