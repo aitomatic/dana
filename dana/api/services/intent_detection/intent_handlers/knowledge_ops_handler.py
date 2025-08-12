@@ -18,6 +18,7 @@ import re
 import json
 from xml.etree import ElementTree as ET
 from pathlib import Path
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         knowledge_status_path: str | None = None,
+        notifier: Callable[[str], None] | None = None,
     ):
         from pathlib import Path
 
@@ -57,6 +59,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         self.llm = llm or LLMResource()
         self.tree_structure = self._load_tree_structure(domain_knowledge_path)
         self.tools = {}
+        self.notifier = notifier
         self._initialize_tools()
 
     def _load_tree_structure(self, domain_knowledge_path: str | None = None):
@@ -140,6 +143,13 @@ class KnowledgeOpsHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
+            conversation.append(tool_msg)
+            try:
+                tool_name, params, thinking_content = self._parse_xml_tool_call(tool_msg.content)
+                tool_result_msg = await self._execute_tool(tool_name, params, thinking_content)
+            except Exception as e:
+                conversation.append(MessageData(role="user", content=f"Error: {e}"))
+                continue
 
             print(tool_msg.content)
 
@@ -150,9 +160,6 @@ class KnowledgeOpsHandler(AbstractHandler):
             # Add tool call to conversation
             conversation.append(tool_msg)
 
-            # Execute tool and get result (pass conversation for validation)
-            tool_result_msg = await self._execute_tool(tool_msg, conversation)
-            
             # Check if this was a tree modification
             if "modify_tree" in tool_msg.content:
                 tree_modified = True
@@ -166,9 +173,16 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "tree_modified": tree_modified,
                     "updated_tree": self.tree_structure if tree_modified else None,
                 }
+            
+            if self.notifier:
+                await self.notifier(thinking_content)
+
+            if self.notifier:
+                await self.notifier(tool_result_msg.content)
 
             # Add result to conversation
             conversation.append(tool_result_msg)
+            
 
             # Check if workflow completed after tool execution
             if "attempt_completion" in tool_msg.content:
@@ -222,16 +236,11 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         return MessageData(role="assistant", content=tool_call, treat_as_tool=True)
 
-    async def _execute_tool(self, tool_msg: MessageData, conversation: list[MessageData] = None) -> MessageData:
+    async def _execute_tool(self, tool_name: str, params: dict, thinking_content: str) -> MessageData:
         """
         Execute the tool and return the result.
         """
-        content = tool_msg.content
-
         try:
-            # Extract tool name, parameters, and thinking from XML
-            tool_name, params, thinking_content = self._parse_xml_tool_call(content)
-
             # Log thinking content for debugging
             if thinking_content:
                 logger.debug(f"LLM thinking: {thinking_content}")

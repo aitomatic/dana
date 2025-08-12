@@ -29,7 +29,9 @@ from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler im
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.api.services.auto_knowledge_generator import get_auto_knowledge_generator
 import os
+from fastapi import WebSocket, WebSocketDisconnect
 import json
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,49 @@ router = APIRouter(prefix="/agents", tags=["smart-chat-v2"])
 
 # Concurrency protection: In-memory locks per agent
 _agent_locks = defaultdict(Lock)
+
+
+class SmartChatWSNotifier:
+    def __init__(self):
+        self.active_connections: dict[str, WebSocket] = {}
+
+    async def connect(self, websocket_id: str, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[websocket_id] = websocket
+
+    def disconnect(self, websocket_id: str):
+        if websocket_id in self.active_connections:
+            del self.active_connections[websocket_id]
+
+    async def send_chat_update_msg(self, websocket_id: str, message: str):
+        """Send a message via WebSocket"""
+        if not isinstance(websocket_id, str):
+            websocket_id = str(websocket_id)
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                message = {
+                    "type": "chat_update",
+                    "message": message,
+                    "timestamp": asyncio.get_event_loop().time(),
+                }
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.error(f"Failed to send chat update message via WebSocket: {e}")
+                # Remove disconnected WebSocket
+                self.disconnect(websocket_id)
+
+smart_chat_ws_notifier = SmartChatWSNotifier()
+
+def create_smart_chat_ws_notifier(websocket_id: str | None = None):
+    """Create a chat update notifier that sends updates via WebSocket"""
+
+    async def chat_update_notifier(message: str) -> None:
+        # Send via WebSocket if connection exists
+        if websocket_id:
+            await smart_chat_ws_notifier.send_chat_update_msg(websocket_id, message)
+
+    return chat_update_notifier
 
 
 @router.post("/{agent_id}/smart-chat")
@@ -124,6 +169,7 @@ async def smart_chat_v2(
             domain=agent.description or "General",
             role=agent.name or "Domain Expert",
             knowledge_status_path=knowledge_status_path,
+            notifier=create_smart_chat_ws_notifier(agent_id),
         )
 
         logger.info(f"🚀 Starting KnowledgeOpsHandler workflow for agent {agent.id}")
@@ -394,3 +440,27 @@ async def _get_recent_chat_history(agent_id: int, db: Session, limit: int = 10) 
     except Exception as e:
         logger.warning(f"Failed to get chat history: {e}")
         return []
+    
+
+@router.websocket("/ws/dana-chat/{agent_id}")
+async def send_chat_update_msg(agent_id: str, websocket: WebSocket):
+    await smart_chat_ws_notifier.connect(agent_id, websocket)
+    try:
+        while True:
+            # Keep the connection alive and listen for client messages
+            data = await websocket.receive_text()
+            # Echo back for debugging (optional)
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "type": "echo",
+                        "message": f"Connected to variable updates for ID: {agent_id}",
+                        "data": data,
+                    }
+                )
+            )
+    except WebSocketDisconnect:
+        smart_chat_ws_notifier.disconnect(agent_id)
+    except Exception as e:
+        logger.error(f"WebSocket error for {agent_id}: {e}")
+        smart_chat_ws_notifier.disconnect(agent_id)
