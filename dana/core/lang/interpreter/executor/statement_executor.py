@@ -188,7 +188,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -275,7 +275,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -495,8 +495,8 @@ class StatementExecutor(BaseExecutor):
     def execute_resource_definition(self, node, context: SandboxContext) -> None:
         """Execute a resource definition statement.
 
-        Registers a first-class ResourceType and binds a constructor that
-        creates ResourceInstance at runtime.
+        Registers a ResourceType in the resource registry and binds a constructor
+        that creates ResourceInstance at runtime.
 
         Args:
             node: The ResourceDefinition node
@@ -507,8 +507,8 @@ class StatementExecutor(BaseExecutor):
         """
         # Import lazily to avoid circulars
         from dana.common.exceptions import SandboxError
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-        from dana.core.resource.resource_instance import create_resource_type_from_ast
+        from dana.core.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.resource.resource_registry import ResourceTypeRegistry
 
         try:
             # Build ResourceType from AST
@@ -526,14 +526,13 @@ class StatementExecutor(BaseExecutor):
                         raise SandboxError(f"Failed to evaluate default value for resource field '{field_name}': {e}")
                 resource_type.field_defaults = evaluated_defaults
 
-            # Register the resource type in the same registry as structs
-            StructTypeRegistry.register(resource_type)
+            # Register the resource type in the resource registry
+            ResourceTypeRegistry.register_resource(resource_type)
             self.debug(f"Registered resource type: {resource_type.name}")
 
-            # Bind constructor into local scope, reusing the registry factory which
-            # will now return a ResourceInstance for this type
+            # Bind constructor that uses resource registry
             def resource_constructor(**kwargs):
-                return StructTypeRegistry.create_instance(resource_type.name, kwargs)
+                return ResourceTypeRegistry.create_resource_instance(resource_type.name, kwargs)
 
             context.set(f"local:{node.name}", resource_constructor)
             return None

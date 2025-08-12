@@ -5,7 +5,7 @@ from pathlib import Path
 
 from python_a2a import A2AServer, TaskState, TaskStatus, agent, run_server, skill
 
-from dana import py2na_module
+from dana import py2na
 
 
 def validate_agent_module(na_file_path: str, na_module):
@@ -142,7 +142,7 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
     try:
         # Add the directory containing the .na file to search paths
         file_dir = str(Path(na_file_path).parent)
-        py2na_module.enable_module_imports(search_paths=[file_dir])
+        py2na.enable_module_imports(search_paths=[file_dir])
 
         # Import the Dana module (without .na extension)
         module_name = Path(na_file_path).stem
@@ -168,4 +168,4 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
         print("  - system:agent_description variable")
         print("  - solve(query: str) -> str function")
     finally:
-        py2na_module.close()
+        py2na.close()

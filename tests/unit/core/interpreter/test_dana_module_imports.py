@@ -29,7 +29,7 @@ class TestDanaModuleImports:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
         # Reset and reinitialize the module system to pick up the updated DANAPATH
-        from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+        from dana.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()

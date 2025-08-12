@@ -6,7 +6,7 @@ Uses simple heuristics but can be extended to use proper tokenizers.
 """
 
 import re
-from typing import List, Dict, Any
+from typing import Any
 
 
 class SimpleTokenizer:
@@ -43,7 +43,7 @@ class SimpleTokenizer:
 
         return max(1, estimated_tokens)  # At least 1 token for non-empty text
 
-    def count_tokens_batch(self, texts: List[str]) -> List[int]:
+    def count_tokens_batch(self, texts: list[str]) -> list[int]:
         """Count tokens for multiple texts"""
         return [self.count_tokens(text) for text in texts]
 
@@ -90,7 +90,6 @@ class FinancialTokenizer(SimpleTokenizer):
             "cet1",
             "lcr",
             "nsfr",
-            "var",
             "cvar",
             "es",
             "sharpe",
@@ -117,7 +116,7 @@ class FinancialTokenizer(SimpleTokenizer):
 
 
 # Global tokenizer instances for different use cases
-_tokenizers: Dict[str, SimpleTokenizer] = {
+_tokenizers: dict[str, SimpleTokenizer] = {
     "default": SimpleTokenizer(),
     "financial": FinancialTokenizer(),
     "technical": SimpleTokenizer("technical"),

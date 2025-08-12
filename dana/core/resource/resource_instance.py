@@ -1,198 +1,132 @@
 """
-Resource Type System for Dana
+Resource Instance
 
-Defines first-class resource runtime types that extend the core struct system.
-Mirrors the structure of dana/agent/agent_instance.py for consistency.
+Extends StructInstance to add resource-specific functionality while maintaining
+compatibility with the struct system.
 """
 
-import asyncio
-from collections.abc import Awaitable
-from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.lang.interpreter.struct_system import StructInstance
 
-
-@dataclass
-class ResourceType(StructType):
-    """Runtime representation of a resource type definition.
-
-    Behaves like a StructType but marks the type as a Resource for
-    downstream runtime decisions (e.g., instantiation returns ResourceInstance).
-    """
-
-    def __repr__(self) -> str:
-        """String representation showing this is a ResourceType."""
-        field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
-        return f"ResourceType({self.name}, fields=[{', '.join(field_strs)}])"
-
-    def __str__(self) -> str:
-        """String representation showing this is a ResourceType."""
-        return self.__repr__()
+from .resource_type import ResourceType
 
 
 class ResourceInstance(StructInstance):
-    """Runtime representation of a resource instance.
+    """
+    Resource instance that extends StructInstance with resource-specific functionality.
 
-    Extends StructInstance semantics while providing a distinct runtime type
-    for resource instances to enable feature gating and specialization.
+    Resources are struct instances with additional lifecycle management capabilities.
     """
 
-    def __repr__(self) -> str:
-        """String representation showing resource type and field values."""
-        field_strs = []
-        for field_name in self._type.field_order:
-            value = self._values.get(field_name)
-            field_strs.append(f"{field_name}={repr(value)}")
-
-        return f"{self._type.name}({', '.join(field_strs)})"
-
-    def __str__(self) -> str:
-        """String representation showing resource type and field values."""
-        return self.__repr__()
-
-    # --- Default lifecycle methods ---
-    # These delegate to struct-defined functions when present. If not present,
-    # they behave as no-ops returning True, so resources always support the API.
-
-    def start(self) -> bool | Any:
-        """Start the resource by delegating to struct-defined start(), if any.
-
-        Returns True if no explicit start is defined.
+    def __init__(self, resource_type: ResourceType, values: dict[str, Any] | None = None):
         """
-        try:
-            return self.call_method("start")
-        except AttributeError:
+        Initialize a resource instance.
+
+        Args:
+            resource_type: The resource type definition
+            values: Initial field values
+        """
+        # Call parent constructor
+        super().__init__(resource_type, values or {})
+
+        # Resource-specific attributes
+        self._backend = None
+
+    @property
+    def resource_type(self) -> ResourceType:
+        """Get the resource type definition."""
+        return self._type
+
+    def has_method(self, method_name: str) -> bool:
+        """Check if this resource has a method (including inherited)."""
+        # Check current instance
+        if hasattr(self, method_name):
             return True
 
-    def stop(self) -> bool | Any:
-        """Stop the resource by delegating to struct-defined stop(), if any.
-
-        Returns True if no explicit stop is defined.
-        """
-        try:
-            return self.call_method("stop")
-        except AttributeError:
+        # Check resource type
+        if self.resource_type.has_method(method_name):
             return True
 
-    # --- Context manager support ---
-    # Sync context manager calls start()/stop().
-    def __enter__(self) -> "ResourceInstance":
-        try:
-            result = self.start()
-            # Support start() returning an awaitable even in sync path (ignore result)
-            if isinstance(result, Awaitable):
-                # Best-effort: run to completion
-                try:
-                    asyncio.get_event_loop().run_until_complete(result)  # type: ignore[arg-type]
-                except RuntimeError:
-                    # No running loop; start() will be effectively deferred
-                    pass
-        except Exception:
-            # Suppress start errors here; user code may handle within context
-            pass
-        return self
-
-    def __exit__(self, exc_type, exc, tb) -> bool:
-        try:
-            result = self.stop()
-            if isinstance(result, Awaitable):
-                try:
-                    asyncio.get_event_loop().run_until_complete(result)  # type: ignore[arg-type]
-                except RuntimeError:
-                    pass
-        except Exception:
-            pass
-        # Do not suppress exceptions from the with-block
         return False
 
-    # Async context manager calls start()/stop(), awaiting if coroutine.
-    async def __aenter__(self) -> "ResourceInstance":
+    def call_method(self, method_name: str, *args, **kwargs) -> Any:
+        """Call a method on this resource with inheritance support."""
+        # Try to call method directly
+        if hasattr(self, method_name):
+            method = getattr(self, method_name)
+            if callable(method):
+                return method(*args, **kwargs)
+
+        # Try to call method on parent instance
+        if self.resource_type.parent_type:
+            parent_instance = self._create_parent_instance()
+            if hasattr(parent_instance, method_name):
+                method = getattr(parent_instance, method_name)
+                if callable(method):
+                    return method(*args, **kwargs)
+
+        raise AttributeError(f"Method '{method_name}' not found on resource '{self.resource_type.name}'")
+
+    def _create_parent_instance(self) -> "ResourceInstance | None":
+        """Create a parent instance for method calls."""
+        if not self.resource_type.parent_type:
+            return None
+
+        # Create parent instance with current values
+        parent_values = {}
+        for field_name in self.resource_type.parent_type.field_order:
+            if hasattr(self, field_name):
+                parent_values[field_name] = getattr(self, field_name)
+
+        return ResourceInstance(self.resource_type.parent_type, parent_values)
+
+    def initialize(self) -> bool:
+        """Initialize the resource."""
         try:
-            result = self.start()
-            if asyncio.iscoroutine(result) or isinstance(result, Awaitable):
-                await result  # type: ignore[misc]
-        except Exception:
-            pass
-        return self
+            self.state = "INITIALIZED"
+            return True
+        except Exception as e:
+            self.state = "ERROR"
+            raise e
 
-    async def __aexit__(self, exc_type, exc, tb) -> bool:
+    def cleanup(self) -> bool:
+        """Clean up the resource."""
         try:
-            result = self.stop()
-            if asyncio.iscoroutine(result) or isinstance(result, Awaitable):
-                await result  # type: ignore[misc]
-        except Exception:
-            pass
-        return False
+            self.state = "TERMINATED"
+            return True
+        except Exception as e:
+            self.state = "ERROR"
+            raise e
 
+    def start(self) -> bool:
+        """Start the resource."""
+        try:
+            self.state = "RUNNING"
+            return True
+        except Exception as e:
+            self.state = "ERROR"
+            raise e
 
-def create_resource_type_from_ast(resource_def, context=None) -> ResourceType:
-    """Create a ResourceType from a ResourceDefinition AST node.
+    def stop(self) -> bool:
+        """Stop the resource."""
+        try:
+            self.state = "TERMINATED"
+            return True
+        except Exception as e:
+            self.state = "ERROR"
+            raise e
 
-    Mirrors create_struct_type_from_ast but accepts ResourceDefinition and handles inheritance.
+    def is_running(self) -> bool:
+        """Check if the resource is running."""
+        return self.state == "RUNNING"
 
-    Args:
-        resource_def: The ResourceDefinition AST node
-        context: Optional sandbox context for evaluating default values
-
-    Returns:
-        ResourceType with fields and default values, including inherited fields
-    """
-    # Import here to avoid circular imports
-    from dana.core.lang.ast import ResourceDefinition
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-
-    if not isinstance(resource_def, ResourceDefinition):
-        raise TypeError(f"Expected ResourceDefinition, got {type(resource_def)}")
-
-    # Start with inherited fields if parent exists
-    fields: dict[str, str] = {}
-    field_order: list[str] = []
-    field_defaults: dict[str, Any] = {}
-    field_comments: dict[str, str] = {}
-
-    # Handle inheritance by merging parent fields
-    if resource_def.parent_name:
-        parent_type = StructTypeRegistry.get(resource_def.parent_name)
-        if parent_type is None:
-            raise ValueError(f"Parent resource '{resource_def.parent_name}' not found for '{resource_def.name}'")
-
-        # Copy parent fields first (inheritance order: parent fields come first)
-        fields.update(parent_type.fields)
-        field_order.extend(parent_type.field_order)
-
-        if parent_type.field_defaults:
-            field_defaults.update(parent_type.field_defaults)
-
-        if hasattr(parent_type, "field_comments") and parent_type.field_comments:
-            field_comments.update(parent_type.field_comments)
-
-    # Add child fields (child fields override parent fields with same name)
-    for field in resource_def.fields:
-        if field.type_hint is None:
-            raise ValueError(f"Field {field.name} has no type hint")
-        if not hasattr(field.type_hint, "name"):
-            raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
-
-        # Add or override field
-        fields[field.name] = field.type_hint.name
-
-        # Update field order (remove if exists, then add to end)
-        if field.name in field_order:
-            field_order.remove(field.name)
-        field_order.append(field.name)
-
-        if field.default_value is not None:
-            field_defaults[field.name] = field.default_value
-
-        if getattr(field, "comment", None):
-            field_comments[field.name] = cast(str, field.comment)
-
-    return ResourceType(
-        name=resource_def.name,
-        fields=fields,
-        field_order=field_order,
-        field_defaults=field_defaults if field_defaults else None,
-        field_comments=field_comments,
-        docstring=resource_def.docstring,
-    )
+    def get_metadata(self) -> dict[str, Any]:
+        """Get resource metadata."""
+        return {
+            "name": getattr(self, "name", ""),
+            "kind": getattr(self, "kind", ""),
+            "state": self.state,
+            "type": self.resource_type.name,
+            "fields": {name: getattr(self, name) for name in self.resource_type.field_order},
+        }

@@ -15,18 +15,18 @@ def setup_python_path():
     """Add the dana project to Python path."""
     # Get the path to the dana.poet project (parent of demos)
     current_dir = Path(__file__).parent.absolute()
-    dana_path = current_dir.parent.parent
+    danapath = current_dir.parent.parent
 
     # Add to Python path
-    if str(dana_path) not in sys.path:
-        sys.path.insert(0, str(dana_path))
+    if str(danapath) not in sys.path:
+        sys.path.insert(0, str(danapath))
 
     # Also set environment variable for subprocess
     env_path = os.environ.get("PYTHONPATH", "")
-    if str(dana_path) not in env_path:
-        os.environ["PYTHONPATH"] = f"{dana_path}:{env_path}"
+    if str(danapath) not in env_path:
+        os.environ["PYTHONPATH"] = f"{danapath}:{env_path}"
 
-    print(f"✅ Added to Python path: {dana_path}")
+    print(f"✅ Added to Python path: {danapath}")
 
 
 def check_dependencies():

@@ -8,7 +8,6 @@ Run with: python test_basic_functionality.py
 
 import sys
 import traceback
-from typing import Dict, Any
 
 
 def test_imports():
@@ -41,7 +40,7 @@ def test_tokenizer():
     print("\nTesting tokenizer...")
 
     try:
-        from dana.frameworks.conteng.tokenizer import SimpleTokenizer, FinancialTokenizer, get_tokenizer, count_tokens
+        from dana.frameworks.conteng.tokenizer import SimpleTokenizer, FinancialTokenizer, count_tokens
 
         # Test basic tokenizer
         tokenizer = SimpleTokenizer()
@@ -145,7 +144,6 @@ def test_architect():
     try:
         from dana.frameworks.conteng.registry import DomainRegistry
         from dana.frameworks.conteng.architect import ContextArchitect
-        from dana.frameworks.conteng.templates import ContextSpec
 
         # Create registry with test data
         registry = DomainRegistry()

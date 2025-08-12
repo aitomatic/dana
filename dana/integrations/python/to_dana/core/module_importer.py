@@ -17,7 +17,7 @@ from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 
-from dana.core.runtime.modules.core import initialize_module_system
+from dana.__init__ import initialize_module_system
 from dana.integrations.python.to_dana.core.exceptions import DanaCallError
 from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 from dana.integrations.python.to_dana.core.sandbox_interface import SandboxInterface

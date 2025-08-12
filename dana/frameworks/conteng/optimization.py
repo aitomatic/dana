@@ -6,10 +6,8 @@ for context engineering systems.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any
 from datetime import datetime, timedelta
-import hashlib
-import json
 import threading
 from collections import defaultdict
 
@@ -26,7 +24,7 @@ class ContextPerformanceMetrics:
     assembly_time_ms: float
     token_count: int
     success: bool
-    quality_score: Optional[float] = None
+    quality_score: float | None = None
 
     # Resource usage
     cache_hit: bool = False
@@ -36,7 +34,7 @@ class ContextPerformanceMetrics:
     # Timing
     timestamp: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging/storage"""
         return {
             "context_signature": self.context_signature,
@@ -64,7 +62,7 @@ class OptimizationRecommendation:
     confidence: float  # 0.0-1.0 confidence in recommendation
 
     # Specific changes
-    changes: Dict[str, Any] = field(default_factory=dict)
+    changes: dict[str, Any] = field(default_factory=dict)
 
     def apply_to_template(self, template: Any) -> Any:
         """Apply this recommendation to a template"""
@@ -79,11 +77,11 @@ class ContextCache:
     def __init__(self, max_size: int = 1000, default_ttl: timedelta = timedelta(hours=1)):
         self.max_size = max_size
         self.default_ttl = default_ttl
-        self._cache: Dict[str, Tuple[Any, datetime]] = {}
-        self._access_times: Dict[str, datetime] = {}
+        self._cache: dict[str, tuple[Any, datetime]] = {}
+        self._access_times: dict[str, datetime] = {}
         self._lock = threading.RLock()
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get cached context if available and fresh"""
         with self._lock:
             if key in self._cache:
@@ -99,7 +97,7 @@ class ContextCache:
                         del self._access_times[key]
         return None
 
-    def put(self, key: str, context: Any, ttl: Optional[timedelta] = None):
+    def put(self, key: str, context: Any, ttl: timedelta | None = None):
         """Cache context with TTL"""
         with self._lock:
             # Ensure we don't exceed max size
@@ -126,7 +124,7 @@ class ContextCache:
             self._cache.clear()
             self._access_times.clear()
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         with self._lock:
             now = datetime.now()
@@ -146,15 +144,15 @@ class RuntimeContextOptimizer:
 
     def __init__(self, cache_size: int = 1000):
         self.cache = ContextCache(max_size=cache_size)
-        self.metrics: List[ContextPerformanceMetrics] = []
-        self.recommendations: Dict[str, List[OptimizationRecommendation]] = defaultdict(list)
+        self.metrics: list[ContextPerformanceMetrics] = []
+        self.recommendations: dict[str, list[OptimizationRecommendation]] = defaultdict(list)
         self._lock = threading.RLock()
 
         # Performance tracking
         self.hit_rate_window = 100  # Track hit rate over last N requests
-        self.recent_hits: List[bool] = []
+        self.recent_hits: list[bool] = []
 
-    def get_cached_context(self, signature: str) -> Optional[Any]:
+    def get_cached_context(self, signature: str) -> Any | None:
         """Get cached context instance"""
         context = self.cache.get(signature)
 
@@ -166,7 +164,7 @@ class RuntimeContextOptimizer:
 
         return context
 
-    def cache_context(self, signature: str, context: Any, ttl: Optional[timedelta] = None):
+    def cache_context(self, signature: str, context: Any, ttl: timedelta | None = None):
         """Cache a context instance"""
         self.cache.put(signature, context, ttl)
 
@@ -186,7 +184,7 @@ class RuntimeContextOptimizer:
                 return 0.0
             return sum(self.recent_hits) / len(self.recent_hits)
 
-    def analyze_performance(self, domain: Optional[str] = None) -> Dict[str, Any]:
+    def analyze_performance(self, domain: str | None = None) -> dict[str, Any]:
         """Analyze recent performance metrics"""
         with self._lock:
             relevant_metrics = self.metrics
@@ -221,7 +219,7 @@ class RuntimeContextOptimizer:
             "analysis_timestamp": datetime.now().isoformat(),
         }
 
-    def generate_recommendations(self, domain: Optional[str] = None) -> List[OptimizationRecommendation]:
+    def generate_recommendations(self, domain: str | None = None) -> list[OptimizationRecommendation]:
         """Generate optimization recommendations based on performance data"""
         recommendations = []
 
@@ -301,7 +299,7 @@ class RuntimeContextOptimizer:
 
         return template
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get comprehensive optimizer statistics"""
         return {
             "cache_stats": self.cache.stats(),

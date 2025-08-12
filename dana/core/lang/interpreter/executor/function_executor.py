@@ -86,14 +86,21 @@ class FunctionExecutor(BaseExecutor):
         """
         # Create a DanaFunction object instead of a raw dict
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.struct_system import TypeAwareMethodRegistry
 
         # Extract parameter names and defaults
         param_names = []
         param_defaults = {}
-        for param in node.parameters:
+        first_param_type = None  # Track the type of the first parameter for method registration
+
+        for i, param in enumerate(node.parameters):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
+
+                # Extract type information from the first parameter
+                if i == 0 and hasattr(param, "type_hint") and param.type_hint:
+                    first_param_type = param.type_hint.name if hasattr(param.type_hint, "name") else None
 
                 # Extract default value if present
                 if hasattr(param, "default_value") and param.default_value is not None:
@@ -122,10 +129,11 @@ class FunctionExecutor(BaseExecutor):
             body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
-        # Check if this function should be associated with an agent type
-        # Import here to avoid circular imports
-        # Agent method registration disabled during struct system migration
-        # TODO: Re-enable after unified struct system is complete
+        # Check if this is a method definition (first parameter has a type)
+        if first_param_type:
+            # Register as a method in the type-aware registry
+            TypeAwareMethodRegistry.register_method(first_param_type, node.name.name, dana_func)
+            self.debug(f"Registered method {node.name.name} for type {first_param_type}")
 
         # Apply decorators if present
         if node.decorators:
@@ -149,7 +157,7 @@ class FunctionExecutor(BaseExecutor):
             The defined method
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
+        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, MethodRegistry
 
         # Extract receiver type(s) from the receiver parameter
         receiver_param = node.receiver
@@ -164,7 +172,19 @@ class FunctionExecutor(BaseExecutor):
 
         # Validate that all receiver types exist
         for type_name in receiver_types:
-            if not StructTypeRegistry.exists(type_name):
+            # Check both struct registry and resource registry
+            is_struct_type = StructTypeRegistry.exists(type_name)
+            is_resource_type = False
+
+            # Check resource registry if available
+            try:
+                from dana.core.resource.resource_registry import ResourceTypeRegistry
+
+                is_resource_type = ResourceTypeRegistry.exists(type_name)
+            except ImportError:
+                pass
+
+            if not is_struct_type and not is_resource_type:
                 raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
 
         # Extract parameter names (excluding receiver)

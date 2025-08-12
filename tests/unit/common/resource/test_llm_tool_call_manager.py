@@ -297,7 +297,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
         """Test that LLMResource properly uses LLMToolCallManager."""
         import os
 
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API key
         previous_key = os.environ.get("OPENAI_API_KEY")
@@ -305,7 +305,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
 
         try:
             # Create LLMResource
-            llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+            llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
             # Verify tool call manager is created
             self.assertIsNotNone(llm._tool_call_manager)

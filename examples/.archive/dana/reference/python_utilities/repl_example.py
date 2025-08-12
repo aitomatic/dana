@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LLMResource
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.repl import REPL
 

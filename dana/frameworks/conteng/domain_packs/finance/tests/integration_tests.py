@@ -5,13 +5,11 @@ to validate functionality and performance metrics.
 """
 
 import unittest
-from typing import Dict, List, Any, Optional
+from typing import Any
 from dataclasses import dataclass
 import time
-import json
 
 from ..domain_pack import FinanceDomainPack, FinanceSpecialization, FinanceContextConfig
-from ..workflow_templates import RiskAssessmentTemplate, ComplianceCheckTemplate
 from ..conditional_templates import RiskToleranceRouter, ComplianceThresholds
 from ..tool_guides import FinancialToolSelector
 
@@ -23,8 +21,8 @@ class TestResult:
     test_name: str
     passed: bool
     execution_time: float
-    metrics: Dict[str, Any]
-    errors: List[str]
+    metrics: dict[str, Any]
+    errors: list[str]
 
 
 @dataclass
@@ -441,7 +439,7 @@ class FinanceIntegrationTests(unittest.TestCase):
             )
         )
 
-    def generate_test_report(self) -> Dict[str, Any]:
+    def generate_test_report(self) -> dict[str, Any]:
         """Generate comprehensive test report"""
 
         total_tests = len(self.test_results)

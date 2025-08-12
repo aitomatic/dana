@@ -6,10 +6,9 @@ with versioning, caching, and conflict resolution.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
 from datetime import datetime, timedelta
 import json
-import os
 from pathlib import Path
 
 
@@ -23,7 +22,7 @@ class KnowledgeAsset:
     version: str  # Semantic version
 
     # Content
-    tasks: List[str]  # Tasks this asset applies to
+    tasks: list[str]  # Tasks this asset applies to
     content: str  # Knowledge content as string
     source: str  # Source system/URL/file
 
@@ -32,7 +31,7 @@ class KnowledgeAsset:
     age_days: int  # Age in days for freshness calculation
 
     # Metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.now)
 
     def __post_init__(self):
@@ -63,9 +62,9 @@ class DomainPackManifest:
     version: str
     description: str
     author: str
-    dependencies: List[str] = field(default_factory=list)
-    templates: List[str] = field(default_factory=list)
-    knowledge_assets: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    templates: list[str] = field(default_factory=list)
+    knowledge_assets: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 
@@ -73,13 +72,13 @@ class DomainPackManifest:
 class DomainRegistry:
     """Central registry for domain packs, templates, and knowledge assets"""
 
-    def __init__(self, base_path: Optional[str] = None):
+    def __init__(self, base_path: str | None = None):
         self.base_path = Path(base_path) if base_path else Path(__file__).parent / "domain_packs"
-        self._template_cache: Dict[str, Any] = {}
-        self._asset_cache: Dict[str, List[KnowledgeAsset]] = {}
-        self._domain_packs: Dict[str, Any] = {}
+        self._template_cache: dict[str, Any] = {}
+        self._asset_cache: dict[str, list[KnowledgeAsset]] = {}
+        self._domain_packs: dict[str, Any] = {}
         self._cache_ttl = timedelta(hours=1)
-        self._last_cache_update: Dict[str, datetime] = {}
+        self._last_cache_update: dict[str, datetime] = {}
 
         # Load available domain packs
         self._discover_domain_packs()
@@ -119,7 +118,7 @@ class DomainRegistry:
         except Exception as e:
             print(f"Warning: Could not load domain pack {domain_name}: {e}")
 
-    def get_template(self, name: str, version: Optional[str] = None) -> Optional[Any]:
+    def get_template(self, name: str, version: str | None = None) -> Any | None:
         """Get context template by name and version"""
         cache_key = f"{name}:{version or 'latest'}"
 
@@ -141,7 +140,7 @@ class DomainRegistry:
 
         return None
 
-    def get_knowledge_assets(self, domain: str, task: Optional[str] = None) -> List[KnowledgeAsset]:
+    def get_knowledge_assets(self, domain: str, task: str | None = None) -> list[KnowledgeAsset]:
         """Get knowledge assets for domain and optional task"""
         cache_key = f"{domain}:{task or 'all'}"
 
@@ -202,7 +201,7 @@ class DomainRegistry:
             output_schema=None,
         )
 
-    def _convert_to_canonical_asset(self, asset_data: Any, domain: str, asset_name: str, task: Optional[str]) -> Optional[KnowledgeAsset]:
+    def _convert_to_canonical_asset(self, asset_data: Any, domain: str, asset_name: str, task: str | None) -> KnowledgeAsset | None:
         """Convert domain pack asset to canonical KnowledgeAsset"""
 
         # Handle different asset formats
@@ -283,11 +282,11 @@ class DomainRegistry:
         self._asset_cache[cache_key].append(asset)
         self._last_cache_update[cache_key] = datetime.now()
 
-    def list_domains(self) -> List[str]:
+    def list_domains(self) -> list[str]:
         """List available domains"""
         return list(self._domain_packs.keys())
 
-    def list_templates(self, domain: Optional[str] = None) -> List[Dict[str, str]]:
+    def list_templates(self, domain: str | None = None) -> list[dict[str, str]]:
         """List available templates, optionally filtered by domain"""
         templates = []
 
@@ -315,7 +314,7 @@ class DomainRegistry:
 
 
 # Global registry instance
-_global_registry: Optional[DomainRegistry] = None
+_global_registry: DomainRegistry | None = None
 
 
 def get_registry() -> DomainRegistry:

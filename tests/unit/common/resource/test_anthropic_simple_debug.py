@@ -2,7 +2,7 @@
 
 import os
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
 
 def test_simple_provider_configs_debug():
@@ -12,7 +12,7 @@ def test_simple_provider_configs_debug():
 
     try:
         # Create LLMResource to see what provider_configs it loads
-        llm = LLMResource(name="debug_test")
+        llm = LegacyLLMResource(name="debug_test")
         print(f"provider_configs loaded: {llm.provider_configs}")
 
         # Test initialization

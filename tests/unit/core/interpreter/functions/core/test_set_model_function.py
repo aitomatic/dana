@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from dana.common.exceptions import SandboxError
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.libs.corelib.py_wrappers.py_set_model import py_set_model as set_model_function
 
@@ -43,9 +43,9 @@ class TestSetModelFunction(unittest.TestCase):
         # Verify LLM resource was created and set in context
         llm_resource = self.context.get_system_llm_resource()
         self.assertIsNotNone(llm_resource)
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
-        self.assertIsInstance(llm_resource, BaseLLMResource)
+        self.assertIsInstance(llm_resource, LLMResourceInstance)
         self.assertEqual(llm_resource.model, "openai:gpt-4o")
 
     def test_set_model_with_existing_llm_resource(self):
@@ -55,9 +55,10 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
         # Create existing LLM resource using the new system
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-        existing_llm = BaseLLMResource(name="existing_llm", model="openai:gpt-4o-mini")
+        existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="existing_llm", model="openai:gpt-4o-mini"))
         self.context.set_system_llm_resource(existing_llm)
 
         result = set_model_function(self.context, "anthropic:claude-3-5-sonnet-20241022")
@@ -113,11 +114,11 @@ class TestSetModelFunction(unittest.TestCase):
 
         self.assertEqual(result, "openai:gpt-4o")
 
-    @patch("dana.core.resource.plugins.base_llm_resource.BaseLLMResource")
-    def test_set_model_llm_resource_creation_error(self, mock_base_llm_resource):
-        """Test error handling when BaseLLMResource creation fails."""
-        # Mock BaseLLMResource to raise an exception
-        mock_base_llm_resource.side_effect = Exception("Resource creation failed")
+    @patch("dana.core.resource.builtins.llm_resource_type.LLMResourceType.create_default_instance")
+    def test_set_model_llm_resource_creation_error(self, mock_create_default_instance):
+        """Test error handling when LLMResourceType creation fails."""
+        # Mock create_default_instance to raise an exception
+        mock_create_default_instance.side_effect = Exception("Resource creation failed")
 
         with self.assertRaises(SandboxError) as context:
             set_model_function(self.context, "openai:gpt-4o")
@@ -130,9 +131,11 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         # Create existing LLM resource with custom name using the new system
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-        existing_llm = BaseLLMResource(name="custom_llm_name", model="openai:gpt-4o-mini")
+        existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="custom_llm_name", model="openai:gpt-4o-mini"))
         self.context.set_system_llm_resource(existing_llm)
 
         set_model_function(self.context, "openai:gpt-4o")

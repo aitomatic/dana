@@ -102,7 +102,7 @@ def old_reason_function(
         request = BaseRequest(arguments=request_params)
 
         # Make the synchronous call
-        response = llm_resource.query(request)
+        response = llm_resource.query_sync(request)
 
         if not response.success:
             raise SandboxError(f"LLM call failed: {response.error}")

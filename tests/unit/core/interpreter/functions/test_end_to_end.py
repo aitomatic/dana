@@ -336,14 +336,16 @@ def test_reason_function_integration():
         interpreter = DanaInterpreter()
 
         # Set up LLM resource in context using the new system
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-        llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
 
         # Enable mock mode for testing
-        if llm_resource._bridge and llm_resource._bridge._sys_resource:
-            llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+        # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+        llm_resource.with_mock_llm_call(True)
 
         context.set_system_llm_resource(llm_resource)
 

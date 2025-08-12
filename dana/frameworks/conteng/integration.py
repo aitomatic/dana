@@ -5,14 +5,14 @@ Provides integration points with Dana's agent system, reason() calls,
 and POET framework for seamless context engineering adoption.
 """
 
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
 from dataclasses import dataclass
 import logging
 from datetime import datetime
 
-from .templates import ContextTemplate, ContextInstance, ContextSpec
+from .templates import ContextInstance, ContextSpec
 from .architect import ContextArchitect
-from .registry import get_registry, KnowledgeAsset
+from .registry import get_registry
 from .optimization import RuntimeContextOptimizer, ContextPerformanceMetrics
 
 
@@ -25,17 +25,17 @@ class AgentContextConfig:
 
     # Core agent identity
     agent_type: str
-    domain: Optional[str] = None
-    specialization: Optional[str] = None
-    experience_level: Optional[str] = None
+    domain: str | None = None
+    specialization: str | None = None
+    experience_level: str | None = None
     compliance_focus: bool = False
 
     # Optional explicit context control
-    context_template: Optional[str] = None
-    knowledge_domains: Optional[List[str]] = None
-    policies: Optional[Dict[str, Any]] = None
+    context_template: str | None = None
+    knowledge_domains: list[str] | None = None
+    policies: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging/caching"""
         return {
             "agent_type": self.agent_type,
@@ -56,15 +56,15 @@ class ConEngIntegration:
         self.registry = get_registry()
         self.architect = ContextArchitect(self.registry)
         self.optimizer = RuntimeContextOptimizer()
-        self._agent_contexts: Dict[str, ContextInstance] = {}
+        self._agent_contexts: dict[str, ContextInstance] = {}
 
         # Integration state
         self.enabled = True
         self.telemetry_enabled = True
 
     def enhance_agent_method(
-        self, method_name: str, agent_config: AgentContextConfig, task_description: str, existing_context: Optional[Any] = None
-    ) -> Optional[ContextInstance]:
+        self, method_name: str, agent_config: AgentContextConfig, task_description: str, existing_context: Any | None = None
+    ) -> ContextInstance | None:
         """Enhance agent method with context engineering
 
         Args:
@@ -157,7 +157,7 @@ class ConEngIntegration:
         )
 
     def _record_performance_metrics(
-        self, spec: ContextSpec, assembly_time_ms: float, cache_hit: bool, success: bool, context: Optional[ContextInstance] = None
+        self, spec: ContextSpec, assembly_time_ms: float, cache_hit: bool, success: bool, context: ContextInstance | None = None
     ):
         """Record performance metrics for optimization"""
 
@@ -212,7 +212,7 @@ class ConEngIntegration:
 
         return config
 
-    def enhance_reason_call(self, prompt: str, context: Optional[Any] = None, domain: Optional[str] = None, **kwargs) -> Any:
+    def enhance_reason_call(self, prompt: str, context: Any | None = None, domain: str | None = None, **kwargs) -> Any:
         """Enhance reason() call with context engineering
 
         This would be called by Dana's reason() implementation
@@ -244,7 +244,7 @@ class ConEngIntegration:
 
         return context
 
-    def get_performance_report(self, domain: Optional[str] = None) -> Dict[str, Any]:
+    def get_performance_report(self, domain: str | None = None) -> dict[str, Any]:
         """Get performance report for monitoring"""
 
         base_stats = self.optimizer.get_stats()
@@ -289,7 +289,7 @@ class ConEngIntegration:
 
 
 # Global integration instance
-_global_integration: Optional[ConEngIntegration] = None
+_global_integration: ConEngIntegration | None = None
 
 
 def get_integration() -> ConEngIntegration:

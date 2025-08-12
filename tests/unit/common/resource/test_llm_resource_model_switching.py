@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 
 
@@ -28,25 +28,25 @@ class TestLLMResourceModelSwitching:
 
     def test_llm_resource_creation_with_anthropic(self):
         """Test LLMResource creation with Anthropic model."""
-        llm = LLMResource(name="test_anthropic", model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(name="test_anthropic", model="anthropic:claude-3-5-sonnet-20240620")
         assert llm.model == "anthropic:claude-3-5-sonnet-20240620"
         assert llm.name == "test_anthropic"
 
     def test_llm_resource_creation_with_openai(self):
         """Test LLMResource creation with OpenAI model."""
-        llm = LLMResource(name="test_openai", model="openai:gpt-4")
+        llm = LegacyLLMResource(name="test_openai", model="openai:gpt-4")
         assert llm.model == "openai:gpt-4"
         assert llm.name == "test_openai"
 
     def test_llm_resource_creation_with_local(self):
         """Test LLMResource creation with local model."""
-        llm = LLMResource(name="test_local", model="local:llama3.2")
+        llm = LegacyLLMResource(name="test_local", model="local:llama3.2")
         assert llm.model == "local:llama3.2"
         assert llm.name == "test_local"
 
     def test_model_switching_anthropic_to_openai(self):
         """Test switching from Anthropic to OpenAI model."""
-        llm = LLMResource(name="test_switch", model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(name="test_switch", model="anthropic:claude-3-5-sonnet-20240620")
         assert llm.model == "anthropic:claude-3-5-sonnet-20240620"
 
         llm.model = "openai:gpt-4"
@@ -54,7 +54,7 @@ class TestLLMResourceModelSwitching:
 
     def test_model_switching_openai_to_local(self):
         """Test switching from OpenAI to local model."""
-        llm = LLMResource(name="test_switch", model="openai:gpt-4")
+        llm = LegacyLLMResource(name="test_switch", model="openai:gpt-4")
         assert llm.model == "openai:gpt-4"
 
         llm.model = "local:llama3.2"
@@ -62,7 +62,7 @@ class TestLLMResourceModelSwitching:
 
     def test_model_switching_local_to_anthropic(self):
         """Test switching from local to Anthropic model."""
-        llm = LLMResource(name="test_switch", model="local:llama3.2")
+        llm = LegacyLLMResource(name="test_switch", model="local:llama3.2")
         assert llm.model == "local:llama3.2"
 
         llm.model = "anthropic:claude-3-5-sonnet-20240620"
@@ -70,7 +70,7 @@ class TestLLMResourceModelSwitching:
 
     def test_model_switching_cycle(self):
         """Test cycling through multiple models."""
-        llm = LLMResource(name="test_cycle", model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(name="test_cycle", model="anthropic:claude-3-5-sonnet-20240620")
 
         # Cycle through models
         models = ["openai:gpt-4", "local:llama3.2", "anthropic:claude-3-5-sonnet-20240620", "openai:gpt-3.5-turbo", "local:mistral"]
@@ -81,7 +81,7 @@ class TestLLMResourceModelSwitching:
 
     def test_model_switching_preserves_name(self):
         """Test that model switching preserves the resource name."""
-        llm = LLMResource(name="test_preserve", model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(name="test_preserve", model="anthropic:claude-3-5-sonnet-20240620")
         original_name = llm.name
 
         llm.model = "openai:gpt-4"
@@ -93,14 +93,14 @@ class TestLLMResourceModelSwitching:
     def test_invalid_model_format(self):
         """Test handling of invalid model format."""
         # LLMResource currently accepts any model format and validates availability later
-        llm = LLMResource(name="test_invalid", model="invalid-model")
+        llm = LegacyLLMResource(name="test_invalid", model="invalid-model")
         assert llm.model == "invalid-model"
         # The model will be validated when trying to initialize the client
 
     def test_empty_model(self):
         """Test handling of empty model."""
         # LLMResource auto-selects a model if given an empty string
-        llm = LLMResource(name="test_empty", model="")
+        llm = LegacyLLMResource(name="test_empty", model="")
         assert llm.model is not None
         assert isinstance(llm.model, str)
         assert len(llm.model) > 0
@@ -108,7 +108,7 @@ class TestLLMResourceModelSwitching:
     def test_none_model(self):
         """Test handling of None model."""
         # LLMResource auto-selects a model if given None
-        llm = LLMResource(name="test_none", model=None)
+        llm = LegacyLLMResource(name="test_none", model=None)
         assert llm.model is not None
         assert isinstance(llm.model, str)
         assert len(llm.model) > 0
@@ -116,7 +116,7 @@ class TestLLMResourceModelSwitching:
     def test_model_switching_with_minimal_config(self):
         """Test model switching with minimal configuration."""
         # Test with minimal config that relies on environment variables
-        llm = LLMResource(name="test_minimal")
+        llm = LegacyLLMResource(name="test_minimal")
 
         # Set model after creation
         llm.model = "anthropic:claude-3-5-sonnet-20240620"
@@ -128,7 +128,7 @@ class TestLLMResourceModelSwitching:
     @pytest.mark.asyncio
     async def test_async_model_switching(self):
         """Test model switching in async context."""
-        llm = LLMResource(name="test_async", model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(name="test_async", model="anthropic:claude-3-5-sonnet-20240620")
 
         # Switch models in async context
         llm.model = "openai:gpt-4"
@@ -145,7 +145,7 @@ class TestLLMResourceModelSwitching:
             "local": {"api_key": "test-local-key"},
         }
 
-        llm = LLMResource(name="test_config", model="anthropic:claude-3-5-sonnet-20240620", provider_configs=provider_configs)
+        llm = LegacyLLMResource(name="test_config", model="anthropic:claude-3-5-sonnet-20240620", provider_configs=provider_configs)
 
         # Test switching with explicit configs
         llm.model = "openai:gpt-4"
@@ -156,7 +156,7 @@ class TestLLMResourceModelSwitching:
 
     def test_invalid_model_format_raises_on_query(self):
         """Test that querying with an invalid model format returns a failed response with an error message."""
-        llm = LLMResource(name="test_invalid_query", model="microsoft/Phi-3.5-mini-instruct")
+        llm = LegacyLLMResource(name="test_invalid_query", model="microsoft/Phi-3.5-mini-instruct")
         request = BaseRequest(arguments={"messages": [{"role": "user", "content": "hello"}]})
         response = llm.query_sync(request)
         assert not response.success
@@ -167,7 +167,7 @@ class TestLLMResourceModelSwitching:
         from dana.common.types import BaseRequest
 
         # Test with invalid local model format (should be "local:model_name")
-        llm = LLMResource(name="test_local_invalid", model="microsoft/Phi-3.5-mini-instruct")
+        llm = LegacyLLMResource(name="test_local_invalid", model="microsoft/Phi-3.5-mini-instruct")
 
         # Set up minimal config to allow initialization
         provider_configs = {"microsoft": {"api_key": "test-key", "base_url": "http://localhost:8000/v1"}}
@@ -193,7 +193,7 @@ class TestLLMResourceModelSwitching:
         from dana.common.types import BaseRequest
 
         # Test with invalid OpenAI model format (should be "openai:model_name")
-        llm = LLMResource(name="test_openai_invalid", model="gpt-4-invalid-format")
+        llm = LegacyLLMResource(name="test_openai_invalid", model="gpt-4-invalid-format")
 
         # Set up OpenAI config to allow initialization
         provider_configs = {"openai": {"api_key": "test-key", "base_url": "https://api.openai.com/v1"}}
@@ -219,7 +219,7 @@ class TestLLMResourceModelSwitching:
         from dana.common.types import BaseRequest
 
         # Test with invalid Anthropic model format (should be "anthropic:model_name")
-        llm = LLMResource(name="test_anthropic_invalid", model="claude-3-invalid-format")
+        llm = LegacyLLMResource(name="test_anthropic_invalid", model="claude-3-invalid-format")
 
         # Set up Anthropic config to allow initialization
         provider_configs = {"anthropic": {"api_key": "test-key"}}
@@ -245,7 +245,7 @@ class TestLLMResourceModelSwitching:
         from dana.common.types import BaseRequest
 
         # Start with valid model
-        llm = LLMResource(name="test_switching_invalid", model="openai:gpt-4")
+        llm = LegacyLLMResource(name="test_switching_invalid", model="openai:gpt-4")
 
         # Set up configs for multiple providers
         provider_configs = {
@@ -285,7 +285,7 @@ class TestLLMResourceModelSwitching:
 
         try:
             # Create LLMResource with the exact model that's causing the error
-            llm = LLMResource(name="test_actual_aisuite", model="microsoft/Phi-3.5-mini-instruct")
+            llm = LegacyLLMResource(name="test_actual_aisuite", model="microsoft/Phi-3.5-mini-instruct")
 
             # Mock the provider config validation to allow initialization
             with patch.object(llm, "_get_provider_config_for_current_model") as mock_get_config:
@@ -335,7 +335,7 @@ class TestLLMResourceModelSwitching:
         bad_config["llm"]["provider_configs"] = {"microsoft": {"api_key": "test-key", "base_url": "http://localhost:8000/v1"}}
 
         with patch.object(ConfigLoader, "get_default_config", return_value=bad_config):
-            llm = LLMResource()
+            llm = LegacyLLMResource()
             request = BaseRequest(arguments={"messages": [{"role": "user", "content": "hello"}]})
             response = llm.query_sync(request)
             assert not response.success
@@ -364,7 +364,7 @@ class TestLLMResourceModelSwitching:
             }
         }
 
-        llm_default = LLMResource(name="test_local_default", model="local", provider_configs=provider_configs_default)
+        llm_default = LegacyLLMResource(name="test_local_default", model="local", provider_configs=provider_configs_default)
         assert (
             llm_default.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct"
         ), f"Expected default openai format, got: {llm_default.aisuite_model_name}"
@@ -379,7 +379,7 @@ class TestLLMResourceModelSwitching:
             }
         }
 
-        llm_openai = LLMResource(name="test_local_openai", model="local", provider_configs=provider_configs_openai)
+        llm_openai = LegacyLLMResource(name="test_local_openai", model="local", provider_configs=provider_configs_openai)
         assert (
             llm_openai.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct"
         ), f"Expected openai format, got: {llm_openai.aisuite_model_name}"
@@ -394,7 +394,7 @@ class TestLLMResourceModelSwitching:
             }
         }
 
-        llm_anthropic = LLMResource(name="test_local_anthropic", model="local", provider_configs=provider_configs_anthropic)
+        llm_anthropic = LegacyLLMResource(name="test_local_anthropic", model="local", provider_configs=provider_configs_anthropic)
         assert (
             llm_anthropic.aisuite_model_name == "anthropic:claude-3.5-sonnet"
         ), f"Expected anthropic format, got: {llm_anthropic.aisuite_model_name}"
@@ -459,7 +459,7 @@ class TestLLMResourceModelSwitching:
             if api_type is not None:
                 provider_configs["local"]["api_type"] = api_type
 
-            llm = LLMResource(name=f"test_api_type_{api_type or 'default'}", model="local", provider_configs=provider_configs)
+            llm = LegacyLLMResource(name=f"test_api_type_{api_type or 'default'}", model="local", provider_configs=provider_configs)
 
             assert (
                 llm.aisuite_model_name == expected_aisuite_name

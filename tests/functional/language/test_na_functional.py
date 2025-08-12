@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 from dana.core.lang.parser.dana_parser import parse_program
@@ -58,22 +58,23 @@ def test_na_file(na_file):
     # Initialize LLM resource if needed
     if "reason(" in program_text:
         # Initialize the LLM resource
-        llm_resource = LLMResource()
+        llm_resource = LegacyLLMResource()
         # Use mock for all LLM calls
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-        base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
-        base_llm_resource.initialize()
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
 
         # Enable mock mode for testing
-        if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
-            base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+        # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+        llm_resource.with_mock_llm_call(True)
 
         # Set LLM resource in context for reason function access
-        context.set_system_llm_resource(base_llm_resource)
+        context.set_system_llm_resource(llm_resource)
 
     # Parse the program - disable type checking for enhanced coercion tests
     # These tests specifically test runtime coercion that TypeChecker doesn't understand
