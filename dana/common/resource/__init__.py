@@ -57,6 +57,9 @@ from dana.common.exceptions import (
     DanaContextError,
     DanaError,
     DanaMemoryError,
+    EmbeddingError,
+    EmbeddingProviderError,
+    EmbeddingAuthenticationError,
     LLMError,
     NetworkError,
     ReasoningError,
@@ -84,6 +87,7 @@ from dana.common.mixins import (
 
 # Import resource exceptions from base_resource module
 from dana.common.resource.base_resource import BaseResource, ResourceUnavailableError
+from dana.common.resource.embedding import EmbeddingResource
 from dana.common.resource.human_resource import HumanResource
 from dana.common.resource.kb_resource import KBResource
 from dana.common.resource.llm.llm_resource import LLMResource
@@ -117,6 +121,9 @@ __all__ = [
     "StateError",
     "DanaMemoryError",
     "DanaContextError",
+    "EmbeddingError",
+    "EmbeddingProviderError",
+    "EmbeddingAuthenticationError",
     # Types (from types.py)
     "JsonPrimitive",
     "JsonType",
@@ -153,6 +160,7 @@ __all__ = [
     "LTMemoryResource",
     "STMemoryResource",
     "PermMemoryResource",
+    "EmbeddingResource",
     # MCP Services (from integrations/mcp/)
     "MCPResource",
     # Utils (from utils/)

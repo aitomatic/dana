@@ -92,6 +92,63 @@ class LLMResponseError(LLMError):
         super().__init__(message)
 
 
+# ===== Embedding Exceptions =====
+
+
+class EmbeddingError(DanaError):
+    """Embedding related errors."""
+
+    pass
+
+
+class EmbeddingProviderError(EmbeddingError):
+    """Error from an embedding provider API."""
+
+    def __init__(self, message: str, provider: str | None = None, status_code: int | None = None):
+        """Initialize EmbeddingProviderError.
+
+        Args:
+            message: The error message
+            provider: The embedding provider name (e.g., 'openai', 'huggingface')
+            status_code: HTTP status code (if applicable)
+        """
+        self.provider = provider
+        self.status_code = status_code
+        super().__init__(message)
+
+
+class EmbeddingAuthenticationError(EmbeddingProviderError):
+    """Authentication error with embedding provider."""
+
+    pass
+
+
+class EmbeddingRateLimitError(EmbeddingProviderError):
+    """Rate limit error from embedding provider."""
+
+    pass
+
+
+class EmbeddingContextLengthError(EmbeddingProviderError):
+    """Context length exceeded error from embedding provider."""
+
+    pass
+
+
+class EmbeddingResponseError(EmbeddingError):
+    """Error due to problems with an embedding response."""
+
+    def __init__(self, message: str, response: dict[str, Any] | None = None):
+        """Initialize EmbeddingResponseError.
+
+        Args:
+            message: The error message
+            response: The raw response data (if available)
+        """
+        self.response = response
+        super().__init__(message)
+
+
 class ResourceError(DanaError):
     """Resource related errors."""
 

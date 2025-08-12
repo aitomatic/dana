@@ -1,0 +1,153 @@
+# Test: POET Framework Integration - [NOT WORKING YET] this is a work in progress
+# Purpose: Test Dana's POET (Perceive-Operate-Enforce-Train) framework including:
+#   - Basic POET decorator functionality
+#   - Domain-specific enhancements
+#   - Type conversion and validation
+#   - Pipeline composition with POET
+#   - Error handling and retries
+# Category: Integration - POET Framework
+
+# log("Starting POET Framework Integration test")
+
+# # Test setup
+# log("Setting up POET test configuration...")
+
+# test_mock_mode = true  # Set to false for real LLM calls
+
+# # Test 1: Basic POET Decorator
+# log("Test 1: Basic POET Decorator")
+
+# # Test basic credit assessment (like in docs)
+# @poet()
+# def assess_credit(score: int, income: float) -> str:
+#     print(f"assess_credit: {score}, {income}")
+#     return (score, income)
+
+# # Test with various input formats
+# result1 = assess_credit(None, 65000)          # Should use defaults
+# assert result1[0] == 720, "✗ POET should use default credit score 720"
+# assert result1[1] == 65000, "✗ POET should use default income 65000"
+
+# result2 = assess_credit(720, "65,000")        # Should convert to (720, 65000)
+# assert result2[0] == 720, "✗ POET should convert 720 credit score to 720"
+# assert result2[1] == 65000, "✗ POET should convert '65,000' income to 65000"
+
+# result3 = assess_credit("excellent", "$50K")  # Should convert to (780, 50000)
+# assert result3[0] == 780, "✗ POET should convert 'excellent' credit score to 780"
+# assert result3[1] == 50000, "✗ POET should convert '$50K' income to 50000"
+
+# log("✓ Basic POET decorator working")
+
+# # Test 2: Domain-Specific POET
+# log("Test 2: Domain-Specific POET")
+
+# # Test financial services domain
+# @poet(domain="financial_services", retries=3)
+# def calculate_loan(principal: float, rate: float, years: int) -> dict:
+#     monthly_rate = rate / 12 / 100
+#     num_payments = years * 12
+#     payment = principal * (monthly_rate * (1 + monthly_rate)**num_payments) / ((1 + monthly_rate)**num_payments - 1)
+#     return {
+#         "monthly_payment": payment,
+#         "total_payments": payment * num_payments,
+#         "total_interest": (payment * num_payments) - principal
+#     }
+
+# # Test with various financial inputs
+# loan_result = calculate_loan("100K", "5.5%", "30")  # Should handle financial notation
+# assert loan_result is not null, "✗ Financial domain POET should work"
+# assert loan_result.monthly_payment > 0, "✗ Should calculate valid payment"
+# log("✓ Financial domain POET working")
+
+# # Test building management domain
+# @poet(domain="building_management", timeout=30)
+# def process_sensor_data(temp: float, humidity: float) -> dict:
+#     return {
+#         "status": "normal" if temp < 80 and humidity < 60 else "warning",
+#         "temp": temp,
+#         "humidity": humidity
+#     }
+
+# # Test with various sensor inputs
+# sensor_result = process_sensor_data("75F", "45%")  # Should handle units
+# assert sensor_result is not null, "✗ Building management POET should work"
+# assert sensor_result.status in ["normal", "warning"], "✗ Should return valid status"
+# log("✓ Building management POET working")
+
+# # Test 3: POET Pipeline Composition
+# log("Test 3: POET Pipeline Composition")
+
+# # Define pipeline components
+# @poet(domain="data_loading", retries=3)
+# def load_data(source: str) -> dict:
+#     return {"data": f"loaded from {source}"}
+
+# @poet(domain="data_cleaning", validation=true)
+# def clean_data(data: dict) -> dict:
+#     return {"cleaned": data.data, "rows": 1000}
+
+# @poet(domain="analysis", timeout=30)
+# def analyze_data(data: dict) -> dict:
+#     return {"stats": f"processed {data.rows} rows"}
+
+# # Create POET-enhanced pipeline
+# @poet(domain="enterprise_pipeline", retries=2, timeout=120)
+# def data_pipeline(source: str) = load_data | clean_data | analyze_data
+
+# # Test pipeline execution
+# pipeline_result = data_pipeline("test.csv")
+# assert pipeline_result is not null, "✗ POET pipeline should work"
+# assert pipeline_result.stats is not null, "✗ Pipeline should produce stats"
+# log("✓ POET pipeline composition working")
+
+# # Test 4: POET Error Handling
+# log("Test 4: POET Error Handling")
+
+# # Test function with retry logic
+# @poet(domain="api_calls", retries=3, timeout=10)
+# def api_call(endpoint: str) -> dict:
+#     if endpoint == "bad_endpoint":
+#         raise "API Error"  # Simulate failure
+#     return {"status": "success", "data": endpoint}
+
+# # Test with failing endpoint (should retry)
+# api_result = api_call("test_endpoint")
+# assert api_result is not null, "✗ API call should work with valid endpoint"
+# assert api_result.status == "success", "✗ Should return success status"
+
+# # Test with validation
+# @poet(domain="validation", validation=true)
+# def validate_data(data: dict) -> dict:
+#     if not data or not data.status:
+#         raise "Invalid data"
+#     return {"validated": true, "data": data}
+
+# validation_result = validate_data(api_result)
+# assert validation_result is not null, "✗ Validation should work"
+# assert validation_result.validated == true, "✗ Should mark data as validated"
+# log("✓ POET error handling working")
+
+# log("POET Framework Integration test completed successfully")
+
+# # Summary of test results
+# log("=== POET Framework Integration Test Summary ===")
+# log("✓ Basic POET decorator")
+# log("✓ Domain-specific POET (financial, building)")
+# log("✓ Pipeline composition")
+# log("✓ Error handling and retries")
+# log("=== All POET framework tests passed ===")
+
+# # Notes for developers
+# log("")
+# log("NOTES:")
+# log("- POET provides intelligent function enhancement through 4 phases:")
+# log("  * PERCEIVE: Input processing and validation")
+# log("  * OPERATE: Enhanced execution with retries and optimization")
+# log("  * ENFORCE: Output validation and compliance")
+# log("  * TRAIN: Learning and adaptation from feedback")
+# log("- Domain-specific optimizations available for:")
+# log("  * financial_services: Currency, percentages, credit scores")
+# log("  * building_management: Sensor readings, units")
+# log("  * enterprise_pipeline: Workflow composition")
+# log("- POET supports both individual function enhancement and pipeline composition")
+# log("- Error handling includes retries, timeouts, and validation")
