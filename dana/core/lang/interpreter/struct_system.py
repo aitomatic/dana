@@ -341,7 +341,9 @@ class StructInstance:
             suggestion = self._find_similar_field(name, available_fields)
             suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-            raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
+            raise AttributeError(
+                f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+            )
         else:
             # Struct type not yet initialized (during __init__)
             super().__setattr__(name, value)
