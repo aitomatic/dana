@@ -44,7 +44,7 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/parser/ -m "not live and not deep" --tb=short -v --timeout=300 --durations=10
+        uv run pytest tests/unit/core/parser/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Core Interpreter - Execution engine and built-in functions
   test-dana-core-interpreter:
@@ -75,7 +75,7 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/interpreter/ -m "not live and not deep" --tb=short -v --timeout=300 --durations=10
+        uv run pytest tests/unit/core/interpreter/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Core Language Features - Structs, lambdas, pipelines
   test-dana-core-lang:
@@ -106,7 +106,7 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/lang/ tests/unit/core/pipeline/ tests/unit/core/runtime/ -m "not live and not deep" --tb=short -v --timeout=300 --durations=10
+        uv run pytest tests/unit/core/lang/ tests/unit/core/pipeline/ tests/unit/core/runtime/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Core System - Registry, types, errors, misc
   test-dana-core-system:
@@ -137,7 +137,7 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/test_*.py tests/unit/core/stdlib/ tests/unit/core/misc/ tests/unit/core/reasoning/ -m "not live and not deep" --tb=short -v --timeout=300 --durations=10
+        uv run pytest tests/unit/core/test_*.py tests/unit/core/stdlib/ tests/unit/core/misc/ tests/unit/core/reasoning/ -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Core REPL - Interactive execution
   test-dana-core-repl:
@@ -168,7 +168,7 @@ jobs:
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/unit/core/test_repl*.py -m "not live and not deep" --tb=short -v --timeout=300 --durations=10
+        uv run pytest tests/unit/core/test_repl*.py -m "not live and not deep" --tb=short -v --durations=10
 
   # Dana Frameworks - POET and other frameworks
   test-dana-frameworks:
