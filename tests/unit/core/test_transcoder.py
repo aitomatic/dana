@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from dana.common.exceptions import ParseError, TranscoderError
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseResponse
 from dana.core.lang.ast import Program
 from dana.core.lang.parser.dana_parser import ParseResult
@@ -19,7 +19,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         """Set up async test environment."""
-        self.llm = AsyncMock(spec=LLMResource)
+        self.llm = AsyncMock(spec=LegacyLLMResource)
         self.llm.query = AsyncMock()
         self.transcoder = Translator(self.llm)
 

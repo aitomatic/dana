@@ -1,9 +1,7 @@
+# from .resources import *
+
 from .resources.coding_resource import CodingResource
-from .resources.config_resource import ConfigResource
-from .resources.filesystem_resource import FilesystemResource
-from .resources.knowledge_base_resource import KnowledgeBaseResource
-from .resources.memory_resource import MemoryResource
+from .resources.filesystem_resource import FileSystemResource
 from .resources.simple_cache_resource import SimpleCacheResource
 from .resources.timer_resource import TimerResource
 from .resources.webhook_resource import WebhookResource
-

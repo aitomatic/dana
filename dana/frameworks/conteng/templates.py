@@ -8,7 +8,7 @@ Defines the core data structures for context engineering:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
 from enum import Enum
 import json
 import hashlib
@@ -70,10 +70,10 @@ class TokenBudget:
 class KnowledgeSelector:
     """Selects knowledge assets based on metadata filters"""
 
-    domain: Optional[str] = None
-    task: Optional[str] = None
+    domain: str | None = None
+    task: str | None = None
     trust_threshold: float = 0.7
-    freshness_days: Optional[int] = None
+    freshness_days: int | None = None
     max_assets: int = 10
 
     def matches(self, asset: "KnowledgeAsset") -> bool:
@@ -105,13 +105,13 @@ class ContextTemplate:
 
     # Template structure
     instructions_template: str = ""
-    example_templates: List[str] = field(default_factory=list)
-    output_schema: Optional[Dict[str, Any]] = None
+    example_templates: list[str] = field(default_factory=list)
+    output_schema: dict[str, Any] | None = None
 
     # Metadata
     created_at: datetime = field(default_factory=datetime.now)
     created_by: str = "system"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Generate template signature for caching"""
@@ -129,7 +129,7 @@ class ContextTemplate:
         )
         self.signature = hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def create_spec(self, overrides: Optional[Dict[str, Any]] = None) -> "ContextSpec":
+    def create_spec(self, overrides: dict[str, Any] | None = None) -> "ContextSpec":
         """Create a specification that can be resolved to instance"""
         return ContextSpec(template_name=self.name, template_version=self.version, overrides=overrides or {})
 
@@ -144,13 +144,13 @@ class ContextInstance:
 
     # Assembled content
     instructions: str
-    knowledge_chunks: List[str] = field(default_factory=list)
-    examples: List[str] = field(default_factory=list)
-    memory: List[str] = field(default_factory=list)
+    knowledge_chunks: list[str] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)
+    memory: list[str] = field(default_factory=list)
 
     # Metrics and provenance
     total_tokens: int = 0
-    knowledge_sources: List[str] = field(default_factory=list)
+    knowledge_sources: list[str] = field(default_factory=list)
     assembly_time: datetime = field(default_factory=datetime.now)
     cache_key: str = ""
 
@@ -164,7 +164,7 @@ class ContextInstance:
         content = f"{self.template_signature}:{len(self.knowledge_chunks)}:{len(self.examples)}"
         self.cache_key = hashlib.md5(content.encode()).hexdigest()[:12]
 
-    def to_prompt_parts(self) -> Dict[str, str]:
+    def to_prompt_parts(self) -> dict[str, str]:
         """Convert to parts suitable for LLM prompt assembly"""
         parts = {"instructions": self.instructions}
 
@@ -198,11 +198,11 @@ class ContextSpec:
 
     template_name: str
     template_version: str = "latest"
-    overrides: Dict[str, Any] = field(default_factory=dict)
+    overrides: dict[str, Any] = field(default_factory=dict)
 
     # Runtime parameters
-    input_data: Optional[Any] = None
-    additional_context: Optional[Dict[str, Any]] = None
+    input_data: Any | None = None
+    additional_context: dict[str, Any] | None = None
 
     def resolve_key(self) -> str:
         """Generate key for caching resolved instances"""
@@ -251,7 +251,7 @@ class ContextMerger:
         return merged
 
     @staticmethod
-    def apply_overrides(template: ContextTemplate, overrides: Dict[str, Any]) -> ContextTemplate:
+    def apply_overrides(template: ContextTemplate, overrides: dict[str, Any]) -> ContextTemplate:
         """Apply runtime overrides to template"""
         # Create copy to avoid mutation
         modified = ContextTemplate(

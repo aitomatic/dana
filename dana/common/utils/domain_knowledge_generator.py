@@ -107,7 +107,7 @@ class DomainKnowledgeGenerator:
 
         # Recursively optimize children
         optimized_children = {}
-        for topic, child in node.children.items():
+        for _topic, child in node.children.items():
             optimized_child = self.optimize_tree(child, max_depth, current_depth + 1)
             optimized_children[optimized_child.topic] = optimized_child
 

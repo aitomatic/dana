@@ -2,8 +2,8 @@
 
 import os
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestUnderscorePrivacy:

@@ -80,9 +80,9 @@ class LLMResourceBridge(SystemResourceBridge):
 
     def _create_sys_resource(self) -> Any:
         """Create LLM system resource."""
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
-        return LLMResource(name=f"{self.name}_sys", model=self.model, temperature=self.temperature, max_tokens=self.max_tokens)
+        return LegacyLLMResource(name=f"{self.name}_sys", model=self.model, temperature=self.temperature, max_tokens=self.max_tokens)
 
     def _get_capabilities(self) -> list[str]:
         """Get LLM capabilities."""

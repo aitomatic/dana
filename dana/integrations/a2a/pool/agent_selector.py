@@ -9,7 +9,7 @@ import json
 from typing import TYPE_CHECKING, Any
 
 from dana.common.mixins import Loggable
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils import Misc
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class AgentSelector(Loggable):
     """Handles agent selection logic."""
 
-    def __init__(self, pool: "AgentPool", llm: LLMResource | None = None):
+    def __init__(self, pool: "AgentPool", llm: LegacyLLMResource | None = None):
         """Initialize selector.
 
         Args:
@@ -29,7 +29,7 @@ class AgentSelector(Loggable):
         self.pool = pool
         self._skill_cache: dict[str, list[str]] = {}
         self._performance_metrics: dict[str, dict[str, float]] = {}
-        self._llm = llm if llm is not None else LLMResource(name="agent_selector_llm")
+        self._llm = llm if llm is not None else LegacyLLMResource(name="agent_selector_llm")
 
     def select_agent(self, task: any, strategy: str = "llm", included_resources: list[str | Any] | None = None) -> Any:
         """Select an agent using LLM-based selection only.

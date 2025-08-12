@@ -41,7 +41,7 @@ class AlphaFeedbackSystem:
             if len(result) > 100:
                 return f"string: {result[:100]}..."
             return f"string: {result}"
-        if isinstance(result, (int, float)):
+        if isinstance(result, int | float):
             return f"{type(result).__name__}: {result}"
         return str(result)
 

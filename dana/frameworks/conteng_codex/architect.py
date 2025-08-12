@@ -4,7 +4,6 @@ from __future__ import annotations
 ContextArchitect builds ContextInstance from a template and registry assets.
 """
 
-from typing import List, Tuple
 from datetime import datetime, timedelta
 import logging
 
@@ -62,11 +61,11 @@ class ContextArchitect:
 
         return inst
 
-    def _select_assets(self, template: ContextTemplate) -> List[KnowledgeAsset]:
+    def _select_assets(self, template: ContextTemplate) -> list[KnowledgeAsset]:
         sel = template.knowledge_selector
         assets = self.registry.get_knowledge_assets(domain=sel.domain or template.domain, task=sel.task or template.task)
         # Filter by trust and age
-        out: List[KnowledgeAsset] = []
+        out: list[KnowledgeAsset] = []
         for a in assets:
             if a.trust_score < sel.trust_threshold:
                 continue
@@ -77,11 +76,11 @@ class ContextArchitect:
         out.sort(key=lambda a: a.trust_score * a.recency_score, reverse=True)
         return out[: sel.max_assets]
 
-    def _pack_assets(self, assets: List[KnowledgeAsset], template: ContextTemplate) -> tuple[List[str], int, List[str]]:
+    def _pack_assets(self, assets: list[KnowledgeAsset], template: ContextTemplate) -> tuple[list[str], int, list[str]]:
         max_tokens = template.token_budget.available("knowledge")
         total = 0
-        chunks: List[str] = []
-        sources: List[str] = []
+        chunks: list[str] = []
+        sources: list[str] = []
         for a in assets:
             t = int(_approx_tokens(a.content))
             if total + t <= max_tokens:
@@ -100,10 +99,10 @@ class ContextArchitect:
                 break
         return chunks, total, sources
 
-    def _pack_examples(self, template: ContextTemplate) -> tuple[List[str], int]:
+    def _pack_examples(self, template: ContextTemplate) -> tuple[list[str], int]:
         max_tokens = template.token_budget.available("examples")
         total = 0
-        out: List[str] = []
+        out: list[str] = []
         for ex in template.example_templates:
             t = int(_approx_tokens(ex))
             if total + t <= max_tokens:

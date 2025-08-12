@@ -1,1 +1,2 @@
 from .na_modules import *
+from .core_resources import *

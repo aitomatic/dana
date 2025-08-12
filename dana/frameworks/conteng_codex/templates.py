@@ -7,7 +7,7 @@ This module defines minimal, canonical schemas intended to compile and run.
 """
 
 from dataclasses import dataclass, field, replace
-from typing import Dict, List, Optional, Any
+from typing import Any
 from enum import Enum
 from datetime import datetime
 import hashlib
@@ -24,7 +24,7 @@ class ContextScope(Enum):
 class TokenBudget:
     """Simple sectioned token budget."""
 
-    def __init__(self, total: int = 4000, sections: Optional[Dict[str, int]] = None):
+    def __init__(self, total: int = 4000, sections: dict[str, int] | None = None):
         self.total = total
         if sections is None:
             sections = {
@@ -33,7 +33,7 @@ class TokenBudget:
                 "examples": int(total * 0.2),
                 "output": int(total * 0.1),
             }
-        self.sections: Dict[str, int] = dict(sections)
+        self.sections: dict[str, int] = dict(sections)
 
     def available(self, section: str) -> int:
         return self.sections.get(section, 0)
@@ -47,11 +47,11 @@ class TokenBudget:
 
 @dataclass
 class KnowledgeSelector:
-    domain: Optional[str] = None
-    task: Optional[str] = None
+    domain: str | None = None
+    task: str | None = None
     trust_threshold: float = 0.6
     max_assets: int = 8
-    max_age_days: Optional[int] = None
+    max_age_days: int | None = None
 
     def to_key(self) -> str:
         return f"{self.domain}:{self.task}:{self.trust_threshold}:{self.max_assets}:{self.max_age_days}"
@@ -65,11 +65,11 @@ class ContextTemplate:
     task: str
 
     instructions_template: str = ""
-    example_templates: List[str] = field(default_factory=list)
+    example_templates: list[str] = field(default_factory=list)
     knowledge_selector: KnowledgeSelector = field(default_factory=KnowledgeSelector)
     token_budget: TokenBudget = field(default_factory=TokenBudget)
     scope: ContextScope = ContextScope.LOCAL
-    output_schema: Optional[Dict[str, Any]] = None
+    output_schema: dict[str, Any] | None = None
 
     # Derived
     signature: str = field(init=False)
@@ -87,7 +87,7 @@ class ContextTemplate:
         content = json.dumps(payload, sort_keys=True)
         self.signature = hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def create_spec(self, overrides: Optional[Dict[str, Any]] = None) -> ContextSpec:
+    def create_spec(self, overrides: dict[str, Any] | None = None) -> ContextSpec:
         return ContextSpec(
             template_name=self.name,
             template_version=self.version,
@@ -101,10 +101,10 @@ class ContextInstance:
     domain: str
     task: str
     instructions: str
-    knowledge_chunks: List[str] = field(default_factory=list)
-    examples: List[str] = field(default_factory=list)
+    knowledge_chunks: list[str] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)
     total_tokens: int = 0
-    knowledge_sources: List[str] = field(default_factory=list)
+    knowledge_sources: list[str] = field(default_factory=list)
     assembly_time: datetime = field(default_factory=datetime.now)
     cache_key: str = field(default="")
 
@@ -112,7 +112,7 @@ class ContextInstance:
         key_src = f"{self.template_signature}:{len(self.knowledge_chunks)}:{len(self.examples)}:{self.domain}:{self.task}"
         self.cache_key = hashlib.md5(key_src.encode()).hexdigest()[:12]
 
-    def to_prompt_parts(self) -> Dict[str, str]:
+    def to_prompt_parts(self) -> dict[str, str]:
         parts = {"instructions": self.instructions}
         if self.knowledge_chunks:
             parts["knowledge"] = "\n\n".join(self.knowledge_chunks)
@@ -125,9 +125,9 @@ class ContextInstance:
 class ContextSpec:
     template_name: str
     template_version: str = "latest"
-    overrides: Dict[str, Any] = field(default_factory=dict)
-    input_data: Optional[Any] = None
-    additional_context: Optional[Dict[str, Any]] = None
+    overrides: dict[str, Any] = field(default_factory=dict)
+    input_data: Any | None = None
+    additional_context: dict[str, Any] | None = None
 
     def resolve_key(self) -> str:
         oh = hashlib.md5(json.dumps(self.overrides, sort_keys=True).encode()).hexdigest()[:8]
@@ -136,7 +136,7 @@ class ContextSpec:
 
 class ContextMerger:
     @staticmethod
-    def apply_overrides(template: ContextTemplate, overrides: Dict[str, Any]) -> ContextTemplate:
+    def apply_overrides(template: ContextTemplate, overrides: dict[str, Any]) -> ContextTemplate:
         t = replace(template)
         if "instructions_template" in overrides:
             t.instructions_template = overrides["instructions_template"]

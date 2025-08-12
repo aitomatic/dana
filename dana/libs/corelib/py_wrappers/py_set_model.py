@@ -373,10 +373,10 @@ def py_set_model(
         if llm_resource is None:
             # If no LLM resource exists in context, create a new one with the specified model
             logger.info(f"No existing LLM resource found in context, creating new one with model: {model}")
-            from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-            dana_llm = BaseLLMResource(name="dana_llm", model=model)
-            dana_llm.start()  # Start the resource so it can be used
+            dana_llm = LLMResourceType.create_default_instance()
+            dana_llm.model = model
             context.set_system_llm_resource(dana_llm)
         else:
             # Update the existing LLM resource's model

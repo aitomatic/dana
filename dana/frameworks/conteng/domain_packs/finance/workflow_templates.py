@@ -5,10 +5,6 @@ These provide structured patterns for risk assessment, compliance checking,
 portfolio analysis, and reporting workflows.
 """
 
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from enum import Enum
-
 
 class WorkflowStep:
     """Represents a step in a financial workflow"""
@@ -18,10 +14,10 @@ class WorkflowStep:
         name: str,
         function_type: str,  # "symbolic" or "neural"
         description: str,
-        inputs: List[str],
-        outputs: List[str],
-        tools: Optional[List[str]] = None,
-        validation: Optional[List[str]] = None,
+        inputs: list[str],
+        outputs: list[str],
+        tools: list[str] | None = None,
+        validation: list[str] | None = None,
         cost_estimate: str = "medium",  # "low", "medium", "high"
         latency_estimate: str = "medium",  # "low", "medium", "high"
     ):
@@ -43,16 +39,16 @@ class WorkflowTemplate:
         self.name = name
         self.description = description
         self.variant = variant
-        self.steps: List[WorkflowStep] = []
-        self.conditional_branches: Dict[str, List[WorkflowStep]] = {}
-        self.success_criteria: List[str] = []
-        self.failure_conditions: List[str] = []
+        self.steps: list[WorkflowStep] = []
+        self.conditional_branches: dict[str, list[WorkflowStep]] = {}
+        self.success_criteria: list[str] = []
+        self.failure_conditions: list[str] = []
 
     def add_step(self, step: WorkflowStep):
         """Add a step to the workflow"""
         self.steps.append(step)
 
-    def add_conditional_branch(self, condition: str, steps: List[WorkflowStep]):
+    def add_conditional_branch(self, condition: str, steps: list[WorkflowStep]):
         """Add a conditional branch to the workflow"""
         self.conditional_branches[condition] = steps
 

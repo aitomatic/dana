@@ -6,7 +6,7 @@ Implements the core "knowledge architecture before prompting" principle.
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any
 from datetime import datetime, timedelta
 
 from .templates import ContextTemplate, ContextInstance, ContextSpec, ContextMerger, KnowledgeSelector, TokenBudget
@@ -22,7 +22,7 @@ class ContextArchitect:
 
     def __init__(self, registry: DomainRegistry):
         self.registry = registry
-        self.cache: Dict[str, ContextInstance] = {}
+        self.cache: dict[str, ContextInstance] = {}
         self.cache_ttl = timedelta(hours=1)  # Cache assembled contexts
 
     def build_context(self, spec: ContextSpec) -> ContextInstance:
@@ -92,7 +92,7 @@ class ContextArchitect:
 
         return instance
 
-    def _select_knowledge(self, selector: KnowledgeSelector) -> List[KnowledgeAsset]:
+    def _select_knowledge(self, selector: KnowledgeSelector) -> list[KnowledgeAsset]:
         """Select relevant knowledge assets based on selector criteria"""
 
         # Get all assets from registry
@@ -110,7 +110,7 @@ class ContextArchitect:
         # Return top assets within limit
         return relevant_assets[: selector.max_assets]
 
-    def _assemble_knowledge(self, assets: List[KnowledgeAsset], budget: TokenBudget) -> Tuple[List[str], int]:
+    def _assemble_knowledge(self, assets: list[KnowledgeAsset], budget: TokenBudget) -> tuple[list[str], int]:
         """Assemble knowledge chunks within token budget"""
 
         chunks = []
@@ -154,7 +154,7 @@ class ContextArchitect:
 
         return chunks, int(total_tokens)
 
-    def _assemble_examples(self, example_templates: List[str], budget: TokenBudget) -> Tuple[List[str], int]:
+    def _assemble_examples(self, example_templates: list[str], budget: TokenBudget) -> tuple[list[str], int]:
         """Assemble examples within token budget"""
 
         examples = []
@@ -174,7 +174,7 @@ class ContextArchitect:
 
         return examples, int(total_tokens)
 
-    def _merge_additional_context(self, instance: ContextInstance, additional: Dict[str, Any]) -> ContextInstance:
+    def _merge_additional_context(self, instance: ContextInstance, additional: dict[str, Any]) -> ContextInstance:
         """Merge additional context from spec"""
 
         if "knowledge" in additional:
@@ -197,7 +197,7 @@ class ContextArchitect:
 
         return instance
 
-    def optimize_context(self, instance: ContextInstance, performance_feedback: Dict[str, Any]) -> ContextInstance:
+    def optimize_context(self, instance: ContextInstance, performance_feedback: dict[str, Any]) -> ContextInstance:
         """Optimize context based on performance feedback"""
 
         # This is a placeholder for more sophisticated optimization
@@ -225,7 +225,7 @@ class ContextArchitect:
         """Clear the context cache"""
         self.cache.clear()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         return {
             "total_entries": len(self.cache),

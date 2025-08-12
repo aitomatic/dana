@@ -190,8 +190,8 @@ def run_dana_test_file(dana_test_file):
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
     # Clear struct registry to ensure test isolation
+    from dana.__init__ import initialize_module_system, reset_module_system
     from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
-    from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
     StructTypeRegistry.clear()
     MethodRegistry.clear()

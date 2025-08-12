@@ -102,7 +102,7 @@ def py_llm(
             request = BaseRequest(arguments=request_params)
 
             # Make the async call directly
-            response = await llm_resource.query_async(request)
+            response = await llm_resource.query(request)
 
             if not response.success:
                 raise SandboxError(f"LLM call failed: {response.error}")

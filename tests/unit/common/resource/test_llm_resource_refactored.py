@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
-from dana.common.sys_resource.llm.llm_resource import LLMResource
 
 
 class TestLLMResourceRefactored(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that LLMResource properly integrates with LLMConfigurationManager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Verify configuration manager is created and configured correctly
         self.assertIsInstance(llm._config_manager, LLMConfigurationManager)
@@ -43,7 +43,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that model property stays in sync with configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Verify getter returns the correct model
         self.assertEqual(llm.model, "openai:gpt-4o-mini")
@@ -56,7 +56,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "test-key"
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Change model through property
         llm.model = "anthropic:claude-3-5-sonnet-20241022"
@@ -71,7 +71,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True)  # Only have OpenAI key
     def test_model_property_setter_permissive_behavior(self):
         """Test model property setter permissive behavior."""
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Try to set unavailable model (no API key for someprovider)
         # This should succeed now with the permissive approach
@@ -88,7 +88,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that _validate_model uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Test validation through LLMResource
         self.assertTrue(llm._validate_model("openai:gpt-4"))
@@ -104,7 +104,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that _find_first_available_model uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Test method delegation
         with patch.object(llm._config_manager, "_find_first_available_model", return_value="openai:gpt-4") as mock_find:
@@ -116,7 +116,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that get_available_models uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Test method delegation with logging
         with patch.object(llm._config_manager, "get_available_models", return_value=["openai:gpt-4"]) as mock_get:
@@ -134,15 +134,15 @@ class TestLLMResourceRefactored(unittest.TestCase):
         # Test all original instantiation patterns still work
 
         # 1. Default instantiation
-        llm1 = LLMResource()
+        llm1 = LegacyLLMResource()
         self.assertIsNotNone(llm1._config_manager)
 
         # 2. With explicit model
-        llm2 = LLMResource(name="test_llm", model="openai:gpt-4")
+        llm2 = LegacyLLMResource(name="test_llm", model="openai:gpt-4")
         self.assertIsInstance(llm2.model, str)
 
         # 3. With config parameters
-        llm3 = LLMResource(name="test_llm", temperature=0.9, max_tokens=2048)
+        llm3 = LegacyLLMResource(name="test_llm", temperature=0.9, max_tokens=2048)
         self.assertEqual(llm3.config["temperature"], 0.9)
         self.assertEqual(llm3.config["max_tokens"], 2048)
 
@@ -164,7 +164,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
 
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm")  # No explicit model
+        llm = LegacyLLMResource(name="test_llm")  # No explicit model
 
         # Should have preferred_models as a list of strings
         self.assertIsInstance(llm.preferred_models, list)
@@ -179,13 +179,13 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Verify that the refactoring actually reduced code complexity."""
         import inspect
 
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
         from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
 
         # Get method source code lengths for verification
-        llm_validate_lines = len(inspect.getsource(LLMResource._validate_model).split("\n"))
-        llm_find_lines = len(inspect.getsource(LLMResource._find_first_available_model).split("\n"))
-        llm_get_available_lines = len(inspect.getsource(LLMResource.get_available_models).split("\n"))
+        llm_validate_lines = len(inspect.getsource(LegacyLLMResource._validate_model).split("\n"))
+        llm_find_lines = len(inspect.getsource(LegacyLLMResource._find_first_available_model).split("\n"))
+        llm_get_available_lines = len(inspect.getsource(LegacyLLMResource.get_available_models).split("\n"))
 
         config_validate_lines = len(inspect.getsource(LLMConfigurationManager._validate_model).split("\n"))
         config_find_lines = len(inspect.getsource(LLMConfigurationManager._find_first_available_model).split("\n"))
@@ -205,7 +205,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test that the public API surface of LLMResource is unchanged."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Verify all expected public methods/properties exist
         self.assertTrue(hasattr(llm, "model"))

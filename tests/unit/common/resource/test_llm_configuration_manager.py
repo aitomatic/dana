@@ -304,13 +304,13 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
 
     def test_llm_resource_uses_configuration_manager(self):
         """Test that LLMResource properly uses LLMConfigurationManager."""
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API key
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         # Create LLMResource with explicit model
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Verify configuration manager is created
         self.assertIsNotNone(llm._config_manager)
@@ -329,13 +329,13 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
 
     def test_model_setting_through_property(self):
         """Test setting model through property."""
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API keys
         os.environ["OPENAI_API_KEY"] = "test-key"
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
-        llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Change model through property
         llm.model = "anthropic:claude-3-5-sonnet-20241022"
