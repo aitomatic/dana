@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import ReactFlow, { Controls, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge } from 'reactflow';
 import dagre from 'dagre';
@@ -6,6 +6,8 @@ import 'reactflow/dist/style.css';
 import AgentChartNode from './AgentChartNode';
 import type { AgentOverviewChartProps, AgentChartData } from './types/agent-chart';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
+import { apiService } from '@/lib/api';
+import type { DocumentRead } from '@/types/document';
 
 const nodeWidth = 250;
 const nodeHeight = 100;
@@ -79,6 +81,9 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
   // Use centralized knowledge store
   const { domainKnowledge, knowledgeStatus, setCurrentAgent } = useKnowledgeStore();
 
+  // State for documents
+  const [documents, setDocuments] = useState<DocumentRead[]>([]);
+
   // Update current agent when component mounts or agent changes
   useEffect(() => {
     if (agent?.id) {
@@ -87,6 +92,30 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       setCurrentAgent(null);
     }
   }, [agent?.id, setCurrentAgent]);
+
+  // Fetch documents from API when agent changes
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (!agent?.id) {
+        setDocuments([]);
+        return;
+      }
+
+      try {
+        // Fetch all documents and filter by agent_id (same approach as DocumentsTab)
+        const allDocuments = await apiService.getDocuments();
+        const agentDocuments = allDocuments.filter(
+          (doc) => doc.agent_id?.toString() === agent.id.toString(),
+        );
+        setDocuments(agentDocuments);
+      } catch (error) {
+        console.error('Failed to load agent documents:', error);
+        setDocuments([]);
+      }
+    };
+
+    loadDocuments();
+  }, [agent?.id]);
 
   const chartData = useMemo((): AgentChartData => {
     if (!agent) {
@@ -112,8 +141,8 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       knowledgeStatus?.topics?.filter((topic) => topic.status === 'in_progress').length || 0;
     const isGeneratingKnowledge = inProgressCount > 0;
 
-    // Count documents (from agent.files or other source)
-    const documentsCount = agent.files ? agent.files.length : 0;
+    // Count documents from API
+    const documentsCount = documents.length;
 
     return {
       agent: {
@@ -149,7 +178,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         },
       },
     };
-  }, [agent, domainKnowledge, knowledgeStatus]);
+  }, [agent, domainKnowledge, knowledgeStatus, documents]);
 
   const { nodes, edges } = useMemo(() => {
     const flowNodes: FlowNode[] = [];
@@ -227,7 +256,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         label: 'Documents',
         count: chartData.components.knowledgeBase.documents.count,
         status: chartData.components.knowledgeBase.documents.status,
-        description: `${chartData.components.knowledgeBase.documents.count} added document`,
+        description: `${chartData.components.knowledgeBase.documents.count} ${chartData.components.knowledgeBase.documents.count === 1 ? 'document' : 'documents'}`,
       },
       position: { x: 0, y: 0 },
     });
