@@ -131,7 +131,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         }
         """
         # Initialize conversation with user request
-        conversation = request.chat_history
+        conversation = request.chat_history # TODO : IMPROVE MANAGING CONVERSATION HISTORY
         
         # Track if tree was modified
         tree_modified = False
@@ -140,6 +140,8 @@ class KnowledgeOpsHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
+
+            print(tool_msg.content)
 
             # Check if complete
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":
