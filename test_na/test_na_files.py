@@ -57,7 +57,7 @@ def start_mcp_server():
     # Kill any existing process on port 8000
     kill_process_on_port(8000)
 
-    server_script = Path(__file__).parent / "08_integration" / "python" / "start_http_streamable_server.py"
+    server_script = Path(__file__).parent / "03_ai_function" / "python" / "start_http_streamable_server.py"
 
     # Start server in background
     mcp_server_process = subprocess.Popen(
