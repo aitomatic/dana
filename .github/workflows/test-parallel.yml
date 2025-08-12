@@ -171,9 +171,10 @@ jobs:
         uv run pytest tests/functional/ -m "not live and not deep" --tb=short -v
     - name: Test Dana Files (.na via pytest)
       env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "false"
+        DANA_USE_REAL_LLM: "true"
         PYTHONPATH: ${{ github.workspace }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         uv run pytest test_na/ -m "not live and not deep" --tb=short -v
 
