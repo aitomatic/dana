@@ -6,7 +6,6 @@ portfolio analysis, and reporting workflows.
 """
 
 
-
 class WorkflowStep:
     """Represents a step in a financial workflow"""
 

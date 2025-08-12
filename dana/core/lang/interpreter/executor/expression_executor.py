@@ -491,7 +491,7 @@ class ExpressionExecutor(BaseExecutor):
             if func is not None:
                 self.debug(f"DEBUG: Found function, type: {type(func)}")
                 # Use the function's own context as the base if available
-                base_context = getattr(func, "context", None) or context
+                getattr(func, "context", None) or context
                 if hasattr(func, "execute"):
                     self.debug("DEBUG: Using function.execute() with base_context")
                     # Create a new context that inherits from the current context to ensure isolation

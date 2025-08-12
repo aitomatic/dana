@@ -593,7 +593,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
         resource_block = None
 
         # Parse items to extract name, optional parent, and block
-        for i, item in enumerate(items):
+        for _i, item in enumerate(items):
             if isinstance(item, Token) and item.type == "NAME":
                 if name_token is None:
                     name_token = item

@@ -99,7 +99,7 @@ class IntentDetectionService(Loggable):
 
         # Analyze domain knowledge structure for better suggestions
         domain_analysis = self._analyze_domain_knowledge(knowledge_topics)
-        topics_str = ", ".join(knowledge_topics) if knowledge_topics else "(none yet)"
+        ", ".join(knowledge_topics) if knowledge_topics else "(none yet)"
 
         # Build domain-aware, LLM-generated follow-up prompt
         context_prompt = f"""

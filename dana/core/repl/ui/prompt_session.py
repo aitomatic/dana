@@ -65,7 +65,7 @@ class StatusBarManager:
 
             for scope in ["private", "public", "local", "system"]:
                 scope_vars = context._state.get(scope, {})
-                for var_name, var_value in scope_vars.items():
+                for var_name, _var_value in scope_vars.items():
                     if not var_name.startswith("_"):  # Skip internal variables
                         var_count += 1
 
@@ -159,7 +159,6 @@ class DanaCompleter(Completer):
 
     def get_completions(self, document: Document, complete_event):
         """Get completion suggestions for the current document."""
-        text = document.text_before_cursor
         current_word = document.get_word_before_cursor()
 
         # Get basic keyword completions

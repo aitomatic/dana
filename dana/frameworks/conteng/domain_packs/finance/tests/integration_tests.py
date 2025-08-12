@@ -303,14 +303,14 @@ class FinanceIntegrationTests(unittest.TestCase):
 
         # Benchmark context assembly
         start_time = time.time()
-        for i in range(100):  # Test 100 iterations
-            template = self.domain_pack.get_context_template("solve", config)
+        for _i in range(100):  # Test 100 iterations
+            self.domain_pack.get_context_template("solve", config)
         context_assembly_time = (time.time() - start_time) / 100
 
         # Benchmark tool selection
         start_time = time.time()
-        for i in range(100):
-            recommendations = self.tool_selector.get_tools_for_method("solve", "portfolio_management")
+        for _i in range(100):
+            self.tool_selector.get_tools_for_method("solve", "portfolio_management")
         tool_selection_time = (time.time() - start_time) / 100
 
         # Validate performance criteria from design document

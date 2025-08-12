@@ -211,7 +211,7 @@ def test_integration():
         print("✓ Enable/disable works")
 
         # Create agent config
-        config = AgentContextConfig(agent_type="TestAgent", domain="test", specialization="testing")
+        AgentContextConfig(agent_type="TestAgent", domain="test", specialization="testing")
         print("✓ Agent config created")
 
         return True

@@ -51,7 +51,7 @@ class SimpleTokenizer:
         """Estimate tokens for complex objects"""
         if isinstance(obj, str):
             return self.count_tokens(obj)
-        elif isinstance(obj, (list, tuple)):
+        elif isinstance(obj, list | tuple):
             return sum(self.estimate_tokens_for_object(item) for item in obj)
         elif isinstance(obj, dict):
             total = 0
