@@ -368,14 +368,29 @@ Return as JSON:
             with open(status_file) as f:
                 status_data = json.load(f)
 
-            topic_status = status_data.get(topic, {})
-            current_status = topic_status.get("status", "not_started")
+            # Handle new structured format with topics array
+            topics = status_data.get("topics", [])
+
+            # Find topic by path or topic name
+            topic_entry = None
+            for t in topics:
+                # Check if path contains the topic or if topic name matches
+                if topic in t.get("path", "") or t.get("path", "").split(" - ")[-1] == topic:
+                    topic_entry = t
+                    break
+
+            if not topic_entry:
+                # Topic not found in status, needs to be added
+                return {"skip": False, "status": "not_started", "reason": "Topic not found in status file"}
+
+            current_status = topic_entry.get("status", "pending")
 
             if current_status == "success":
+                last_generated = topic_entry.get("last_generated")
                 return {
                     "skip": True,
                     "status": current_status,
-                    "reason": f"Topic already completed successfully on {topic_status.get('last_updated', 'unknown date')}",
+                    "reason": f"Topic already completed successfully on {last_generated or 'unknown date'}",
                 }
             else:
                 return {"skip": False, "status": current_status, "reason": f"Topic needs generation (current status: {current_status})"}
@@ -386,25 +401,66 @@ Return as JSON:
             return {"skip": False, "status": "error", "reason": f"Status check failed: {e}"}
 
     def _update_knowledge_status(self, topic: str, status: str, message: str = "") -> None:
-        """Update the knowledge generation status for the given topic."""
+        """Update the knowledge generation status for the given topic using the structured format."""
         try:
             from pathlib import Path
             from datetime import datetime, UTC
             import json
+            import uuid
 
             status_file = Path(self.knowledge_status_path)
 
-            # Load existing status data or create new
+            # Load existing status data or create new structure
             if status_file.exists():
                 with open(status_file) as f:
                     status_data = json.load(f)
             else:
-                status_data = {}
+                status_data = {"topics": [], "agent_id": "1"}
                 # Ensure parent directory exists
                 status_file.parent.mkdir(parents=True, exist_ok=True)
 
-            # Update topic status
-            status_data[topic] = {"status": status, "last_updated": datetime.now(UTC).isoformat(), "message": message}
+            # Ensure topics array exists
+            if "topics" not in status_data:
+                status_data["topics"] = []
+
+            # Find existing topic entry
+            topic_entry = None
+            for t in status_data["topics"]:
+                # Check if path contains the topic or if topic name matches
+                if topic in t.get("path", "") or t.get("path", "").split(" - ")[-1] == topic:
+                    topic_entry = t
+                    break
+
+            current_time = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+            if topic_entry:
+                # Update existing entry
+                topic_entry["status"] = status
+                topic_entry["last_topic_update"] = current_time
+                if status == "success":
+                    topic_entry["last_generated"] = current_time
+                    topic_entry["error"] = None
+                elif status == "failed":
+                    topic_entry["error"] = message
+                    topic_entry["last_generated"] = None
+            else:
+                # Create new topic entry
+                # Build full path from tree structure (with " - " separators like the example)
+                full_path = self._build_full_path_for_topic(topic)
+
+                # Create actual file path for the knowledge file
+                actual_file_path = self._get_knowledge_file_path(topic)
+
+                new_entry = {
+                    "id": str(uuid.uuid4()),
+                    "path": full_path,
+                    "file": actual_file_path,
+                    "status": status,
+                    "last_generated": current_time if status == "success" else None,
+                    "last_topic_update": current_time,
+                    "error": message if status == "failed" else None,
+                }
+                status_data["topics"].append(new_entry)
 
             # Save updated status
             with open(status_file, "w") as f:
@@ -414,6 +470,64 @@ Return as JSON:
 
         except Exception as e:
             logger.error(f"Failed to update knowledge status: {e}")
+
+    def _build_full_path_for_topic(self, topic: str) -> str:
+        """Build full path from root to topic using tree structure with ' - ' separators."""
+        if not self.tree_structure or not self.tree_structure.root:
+            # Fallback: use domain if no tree structure
+            return f"{self.domain} - {topic}"
+
+        # Find the path to the topic in the tree
+        def find_path_to_topic(node, target_topic, current_path=None):
+            if current_path is None:
+                current_path = []
+
+            current_path = current_path + [node.topic]
+
+            # Check if this is the target topic
+            if node.topic == target_topic:
+                return current_path
+
+            # Search in children
+            for child in node.children:
+                path = find_path_to_topic(child, target_topic, current_path)
+                if path:
+                    return path
+
+            return None
+
+        path = find_path_to_topic(self.tree_structure.root, topic)
+        if path:
+            return " - ".join(path)
+        else:
+            # Fallback if topic not found in tree
+            return f"{self.tree_structure.root.topic} - {topic}"
+
+    def _get_knowledge_file_path(self, topic: str) -> str:
+        """Get the actual file path where knowledge will be stored."""
+        if not self.storage_path:
+            # Return just filename if no storage path
+            safe_topic = topic.replace(" ", "_").replace("-", "_")
+            safe_topic = "".join(c for c in safe_topic if c.isalnum() or c == "_")
+            return f"{safe_topic}.json"
+
+        # Build the actual storage path structure
+        from pathlib import Path
+
+        safe_topic = topic.replace(" ", "_").replace("-", "_")
+        safe_topic = "".join(c for c in safe_topic if c.isalnum() or c == "_")
+
+        # Create relative path from storage directory
+        storage_dir = Path(self.storage_path)
+        knowledge_dir = storage_dir / "processed_knowledge" / f"topic_{safe_topic}"
+        knowledge_file = knowledge_dir / "knowledge.json"
+
+        # Return relative path from storage directory
+        try:
+            return str(knowledge_file.relative_to(storage_dir))
+        except ValueError:
+            # If relative path fails, return just the filename
+            return f"processed_knowledge/topic_{safe_topic}/knowledge.json"
 
     def _persist_knowledge(self, topic: str, content: str, result_data: dict, total_artifacts: int) -> str:
         """Persist generated knowledge to disk storage."""
