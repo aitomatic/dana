@@ -141,7 +141,7 @@ export const MyAgentTab: React.FC<{
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-1 w-8 h-8"
+                            className="p-0 transform translate-x-4 -translate-y-2"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVert className="text-gray-700 size-4" strokeWidth={2} />

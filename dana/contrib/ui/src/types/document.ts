@@ -58,6 +58,7 @@ export interface DocumentUploadData {
 export interface DocumentFilters {
   search?: string;
   topic_id?: number;
+  agent_id?: number;
   skip?: number;
   limit?: number;
   mime_type?: string;

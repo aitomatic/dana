@@ -1,7 +1,63 @@
-/* Full CSS conversion for Tailwind v4 */
+/* Beautiful Markdown Content Styling */
 
-.content * {
+.content *:not(.katex):not(.katex *):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
   font-size: 14px !important;
+}
+
+/* Enhanced typography hierarchy */
+.content {
+  line-height: 1.7;
+  color: rgb(var(--gray-800));
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.content > * + * {
+  margin-top: 0 !important;
+}
+
+/* Paragraph styling */
+.content p {
+  margin: 0 !important;
+  text-align: justify;
+  hyphens: auto;
+  line-height: 1.6;
+}
+
+.content p:first-child {
+  margin-top: 0;
+}
+
+.content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced strong and emphasis for variable definitions */
+.content strong {
+  font-weight: 700 !important;
+  color: rgb(var(--blue-800)) !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  position: relative !important;
+}
+
+.content em {
+  font-style: italic !important;
+  color: rgb(var(--gray-700)) !important;
+  font-weight: 500 !important;
+}
+
+/* Enhanced blockquotes */
+.content blockquote {
+  margin: 0 !important;
+  padding: 1rem 1.5rem;
+  border-left: 4px solid rgb(var(--blue-400));
+  background: linear-gradient(135deg, rgb(var(--blue-50)) 0%, rgb(var(--gray-50)) 100%);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: rgb(var(--gray-700));
 }
 
 /* Content table styling */
@@ -29,15 +85,35 @@
   text-align: left;
 }
 
-/* List styling */
+/* Enhanced list styling */
 .content ul {
-  padding-left: 1.5rem;
-  list-style: disc;
+  padding-left: 0 !important;
+  margin: 0.75rem 0 !important;
+  list-style: none !important;
 }
 
 .content ol {
+  padding-left: 1.25rem;
+  margin: 0 !important;
+  list-style: none;
+  counter-reset: list-counter;
+}
+
+.content ol li {
+  position: relative;
+  margin: 0.5rem 0;
   padding-left: 2rem;
-  list-style: decimal;
+  counter-increment: list-counter;
+}
+
+.content ol li::before {
+  content: counter(list-counter) '.';
+  color: rgb(var(--blue-600));
+  font-weight: 600;
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 1.5rem;
 }
 
 /* Typography sizing */
@@ -50,127 +126,411 @@
   white-space: break-spaces;
 }
 
-/* Heading styles */
+/* Beautiful heading hierarchy */
 .content h1 {
   font-size: 1.5rem;
   font-weight: 700;
+  color: rgb(var(--gray-900));
+  margin: 0 !important;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgb(var(--gray-100));
 }
 
 .content h2 {
-  font-size: 1.125rem;
-  font-weight: 500;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: rgb(var(--blue-800)) !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+  padding: 0.75rem 1rem !important;
+  border-bottom: 2px solid rgb(var(--blue-200)) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.04) 0%,
+    rgba(99, 102, 241, 0.02) 100%
+  ) !important;
+  border-radius: 8px 8px 0 0 !important;
+  position: relative !important;
 }
 
 .content h3 {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: rgb(var(--gray-700));
-}
-
-.content h3:not(:first-child) {
-  margin-top: 1rem;
+  margin: 0 !important;
 }
 
 .content h4 {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: rgb(var(--gray-900));
+  color: rgb(var(--gray-700));
+  margin: 0 !important;
 }
 
-/* Math formatting */
+.content h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgb(var(--gray-600));
+  margin: 0 !important;
+}
+
+.content h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgb(var(--gray-600));
+  margin: 0 !important;
+}
+
+/* Beautiful math formatting with enhanced spacing for financial formulas */
 .content .katex {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  font-size: 1.3em !important;
+  color: rgb(var(--gray-900)) !important;
+  line-height: 1.6 !important;
+  font-family: 'KaTeX_Main', 'Times New Roman', Times, serif !important;
 }
 
-/* Link styling */
+.content .katex * {
+  font-size: inherit !important;
+}
+
+.content .katex-display {
+  margin: 1.5rem 0 2rem 0 !important;
+  padding: 1.5rem 2rem !important;
+  background: rgb(var(--gray-25)) !important;
+  border-radius: 8px !important;
+  text-align: center !important;
+  position: relative !important;
+  min-height: 50px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.content .katex-inline {
+  padding: 0.1rem 0.2rem !important;
+  background: transparent !important;
+  font-size: 1.1em !important;
+  margin: 0 0.1rem !important;
+  vertical-align: middle !important;
+}
+
+/* Enhanced math expression containers */
+.content p:has(.katex-display) {
+  margin: 2rem 0 !important;
+}
+
+/* Additional spacing around math content */
+.content .katex-display + p {
+  margin-top: 1.5rem !important;
+}
+
+.content p + .katex-display {
+  margin-top: 1.5rem !important;
+}
+
+/* Special spacing for formula sections */
+.content li p:has(.katex) {
+  margin: 0.75rem 0 !important;
+}
+
+.content li .katex-display {
+  margin: 1.25rem 0 !important;
+}
+
+/* Ensure KaTeX fonts are properly loaded and displayed */
+.content .katex .base {
+  font-family: inherit !important;
+}
+
+.content .katex .mord,
+.content .katex .mop,
+.content .katex .mbin,
+.content .katex .mrel,
+.content .katex .mopen,
+.content .katex .mclose,
+.content .katex .mpunct {
+  font-family: 'KaTeX_Main', 'Times New Roman', Times, serif !important;
+}
+
+/* Mathematical symbols and operators */
+.content .katex .mord.mathdefault,
+.content .katex .mop.mathdefault {
+  font-family: 'KaTeX_Math', 'Times New Roman', Times, serif !important;
+  font-style: italic !important;
+}
+
+/* Special mathematical fonts */
+.content .katex .mathscr {
+  font-family: 'KaTeX_Script', cursive !important;
+}
+
+.content .katex .mathcal {
+  font-family: 'KaTeX_Caligraphic', cursive !important;
+}
+
+.content .katex .mathfrak {
+  font-family: 'KaTeX_Fraktur', serif !important;
+}
+
+.content .katex .mathbb {
+  font-family: 'KaTeX_AMS', serif !important;
+}
+
+/* Enhanced code styling for formulas */
+.content code:not(.katex) {
+  background: rgb(var(--blue-50)) !important;
+  color: rgb(var(--blue-900)) !important;
+  border: 1px solid rgb(var(--blue-200)) !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 6px !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace !important;
+  font-size: 1em !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Enhanced code blocks for mathematical formulas with icons */
+.content pre {
+  background: linear-gradient(135deg, rgb(var(--blue-25)) 0%, rgb(var(--gray-25)) 100%) !important;
+  border: 1px solid rgb(var(--blue-200)) !important;
+  border-radius: 12px !important;
+  padding: 1rem 1.25rem !important;
+  margin: 0 !important;
+  overflow-x: auto !important;
+  position: relative !important;
+}
+
+.content pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 1.25em !important;
+  color: rgb(var(--blue-900)) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.4 !important;
+}
+
+/* Clean up any remaining standalone elements */
+.content p:empty {
+  display: none !important;
+  margin: 0 !important;
+}
+
+.content p br:only-child {
+  display: none !important;
+}
+
+/* Hide paragraphs that only contain a $ symbol */
+.content p:has-text('$'):not(:has(*)) {
+  display: none !important;
+}
+
+/* Enhanced list styling for financial content */
+.content ol {
+  counter-reset: financial-counter;
+  padding-left: 0 !important;
+  margin: 1rem 0 !important;
+  list-style: none !important;
+}
+
+.content ol li {
+  counter-increment: financial-counter;
+  position: relative;
+  margin: 0 !important;
+  padding: 1rem 1.5rem 1rem 3rem !important;
+  background: rgb(var(--blue-25)) !important;
+  border-radius: 8px !important;
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+.content ol li::before {
+  content: counter(financial-counter);
+  position: absolute;
+  left: 0.75rem;
+  top: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgb(var(--blue-500)) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Clean and consistent ul li styling */
+.content ul {
+  list-style: none !important;
+  padding-left: 1.25rem !important;
+  margin: 0 !important;
+}
+
+.content ul li {
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0.5rem 0.75rem 0.5rem 1.5rem !important;
+  background: rgba(59, 130, 246, 0.02) !important;
+  border-radius: 4px !important;
+  border-left: 2px solid rgb(var(--blue-300)) !important;
+  list-style: none !important;
+  list-style-type: none !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 2rem !important;
+}
+
+.content ul li::before {
+  content: '•' !important;
+  font-size: 1rem !important;
+  position: absolute !important;
+  left: 0.75rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: rgb(var(--blue-500)) !important;
+  font-weight: bold !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Remove old border styling */
+.content ol > li:not(:last-child) {
+  border-bottom: none !important;
+}
+
+/* Beautiful link styling */
 .content a,
-a:visited {
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+.content a:visited {
+  color: rgb(var(--blue-600));
+  text-decoration: none;
   font-weight: 500;
-  cursor: pointer;
-  color: rgb(var(--brand-700));
+  border-bottom: 1px solid transparent;
+  padding: 0.1rem 0.2rem;
+  border-radius: 3px;
 }
 
-.content a:hover {
-  text-decoration: underline;
-  color: rgb(var(--brand-800));
+/* Special formatting for financial terms */
+.content .financial-term {
+  background: linear-gradient(135deg, rgb(var(--emerald-50)) 0%, rgb(var(--green-50)) 100%);
+  color: rgb(var(--emerald-800));
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--emerald-200));
+  font-weight: 500;
+  font-size: 0.95em;
+}
+
+/* Enhanced horizontal rules for visual separation */
+.content hr {
+  margin: 2rem 0 !important;
+  border: none !important;
+  height: 2px !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(var(--blue-300)) 20%,
+    rgb(var(--blue-400)) 50%,
+    rgb(var(--blue-300)) 80%,
+    transparent 100%
+  ) !important;
+  border-radius: 1px !important;
 }
 
 /* Keyword highlighting */
 .highlight-keyword {
   display: inline;
-  padding: 0.125rem 0.375rem; /* 2px 6px */
-  margin: 0 0.125rem; /* 0 2px */
-  border-radius: 0.25rem; /* 4px */
-  background-color: rgb(var(--gray-100)); /* #f3f4f6 */
+  background: rgb(var(--yellow-100));
+  color: rgb(var(--yellow-800));
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* Beautiful content wrapper */
+.content-wrapper {
+  padding: 1.5rem;
+  background: rgb(var(--white));
+  border-radius: 12px;
+  border: 1px solid rgb(var(--gray-200));
+}
+
+/* Enhanced financial term styling */
+.content .financial-term {
+  background: rgb(var(--success-50)) !important;
+  color: rgb(var(--success-800)) !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+}
+
+/* Beautiful typography for financial content */
+.content strong {
+  color: rgb(var(--blue-700)) !important;
+  font-weight: 700 !important;
+}
+
+.content em {
+  color: rgb(var(--gray-700)) !important;
+  font-style: italic !important;
+}
+
+/* Animation for formula containers */
+@keyframes subtle-pulse {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Enhanced content wrapper */
+.content {
+  line-height: 1.7 !important;
   font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
-  font-size: 0.875rem; /* 14px */
-  color: rgb(var(--gray-800)); /* #1f2937 */
-  white-space: nowrap;
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif !important;
 }
 
-/* Code blocks */
-pre {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--gray-400) / 0.5) transparent;
+/* Special styling for formula titles in list items */
+.content ol li strong:first-child {
+  display: inline-block !important;
+  margin-bottom: 0.75rem !important;
+  font-size: 1.1em !important;
+  color: rgb(var(--blue-800)) !important;
 }
 
-pre::-webkit-scrollbar {
-  height: 0.375rem; /* 6px */
+/* Force remove all default list styling */
+.content ol,
+.content ul {
+  margin-left: 0 !important;
 }
 
-pre::-webkit-scrollbar-track {
-  background: transparent;
+.content ol li,
+.content ul li {
+  margin-left: 0 !important;
 }
 
-pre::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--gray-400) / 0.5);
-  border-radius: 0.1875rem; /* 3px */
-}
-
-pre::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(var(--gray-500) / 0.7);
-}
-
-/* List items */
-li {
-  font-size: 0.875rem;
-}
-
-/* Bold text */
-strong {
-  font-weight: 700;
-  color: rgb(var(--gray-900));
-}
-
-/* Horizontal rule */
-hr {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border-top-width: 1px;
-  border-color: rgb(var(--gray-200));
+.content ol li::marker,
+.content ul li::marker {
+  display: none !important;
+  content: none !important;
 }
 
 /* Responsive adjustments */
 @media (min-width: 1280px) {
-  li {
-    font-size: 1rem;
+  .content *:not(.katex):not(.katex *):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+    font-size: 16px !important;
   }
 
-  .highlight-keyword {
-    font-size: 1rem; /* 16px */
-  }
-
-  .content h4 {
-    font-size: 1rem;
+  .content-small *:not(.katex):not(.katex *):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+    font-size: 15px !important;
   }
 }

@@ -31,7 +31,7 @@ export interface AgentChartData {
       };
       documents: {
         count: number;
-        status: 'active' | 'empty';
+        status: 'active' | 'empty' | 'loading';
       };
       workflows: {
         status: 'coming-soon';

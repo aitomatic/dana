@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   IconSearch,
-  IconPlus,
   IconDatabase,
   IconCalendar,
   IconCloud,
@@ -80,13 +78,13 @@ const ToolsTab: React.FC = () => {
     <div className="flex flex-col p-6 h-full bg-white">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex gap-3 items-center">
             <h1 className="text-2xl font-bold text-gray-900">Tools</h1>
-            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+            <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
               Coming Soon
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-1">External tool connections are on the way.</p>
+          <p className="mt-1 text-sm text-gray-500">External tool connections are on the way.</p>
         </div>
         {/* <Button variant="outline" className="flex items-center">
             <IconPlus className="mr-2 w-4 h-4" /> Add Tool
@@ -110,7 +108,7 @@ const ToolsTab: React.FC = () => {
             className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow min-h-[140px]"
           >
             <div className="flex flex-col mb-4">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
                 {tool.icon}
               </div>
               <span className="mt-4 text-lg font-semibold text-gray-900">{tool.name}</span>
