@@ -342,10 +342,10 @@ const SmartAgentChat: React.FC<{
               <div
                 key={idx}
                 className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
-                  ? 'bg-gray-100'
+                  ? 'border border-gray-100 bg-gray-50'
                   : isThinking
                     ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left'
+                    : ' self-start text-left bg-white'
                   }`}
               >
                 {isThinking ? (
@@ -355,7 +355,11 @@ const SmartAgentChat: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
+                    <MarkdownViewerSmall 
+                      backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
+                    >
+                      {msg.text}
+                    </MarkdownViewerSmall>
                     {isWelcomeMessage && (
                       <div className="flex flex-col gap-2 mt-3">
                         <button
@@ -384,10 +388,10 @@ const SmartAgentChat: React.FC<{
             </div>
           )}
           {processingStatus && (
-            <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border border-blue-200 bg-blue-50 rounded-lg">
+            <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border text-gray-500 rounded-lg">
               <div className="flex gap-2 items-center">
                 {processingStatus.status === 'in_progress' && (
-                  <div className="w-4 h-4 rounded-full border-2 border-blue-600 animate-spin border-t-transparent"></div>
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
                 )}
                 {processingStatus.status === 'finish' && (
                   <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
@@ -399,13 +403,13 @@ const SmartAgentChat: React.FC<{
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
-                <span className="text-sm font-medium text-blue-800">{processingStatus.toolName}</span>
+                <span className="text-sm font-medium text-gray-500">{processingStatus.toolName}</span>
               </div>
-              <span className="text-sm text-blue-700">{processingStatus.message}</span>
+              <span className="text-sm text-gray-500">{processingStatus.message}</span>
               {processingStatus.progression !== undefined && (
-                <div className="w-full bg-blue-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-gray-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${processingStatus.progression * 100}%` }}
                   ></div>
                 </div>
