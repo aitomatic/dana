@@ -109,6 +109,7 @@ docs = [
     "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
     "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
+    "aicapture",
 ]
 
 # Command-line entry points

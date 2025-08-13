@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -455,7 +455,7 @@ class DomainNode(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     topic: str
-    children: list["DomainNode"] = []
+    children: list[DomainNode] = []
 
 
 class DomainKnowledgeTree(BaseModel):
@@ -562,3 +562,37 @@ class ChatWithIntentResponse(BaseModel):
     updated_tree: DomainKnowledgeTree | None = None
 
     error: str | None = None
+
+
+# Visual Document Extraction schemas
+class DeepExtractionRequest(BaseModel):
+    """Request schema for visual document extraction endpoint"""
+
+    file_path: str
+    prompt: str | None = None
+    config: dict[str, Any] | None = None
+
+
+class PageContent(BaseModel):
+    """Schema for a single page content"""
+
+    page_number: int
+    page_content: str
+    page_hash: str
+
+
+class FileObject(BaseModel):
+    """Schema for file object in extraction response"""
+
+    file_name: str
+    cache_key: str
+    total_pages: int
+    total_words: int
+    file_full_path: str
+    pages: list[PageContent]
+
+
+class DeepExtractionResponse(BaseModel):
+    """Response schema for deep extraction endpoint"""
+
+    file_object: FileObject
