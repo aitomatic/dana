@@ -46,13 +46,13 @@ class BaseTool(ABC):
     def __init__(self, tool_information: BaseToolInformation):
         self.tool_information = tool_information
 
-    def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, **kwargs) -> ToolResult:
         if not self.tool_information.validate_arguments(kwargs):
             raise ValueError(f"Invalid arguments for tool {self.tool_information.name}")
-        return self._execute(**kwargs)
+        return await self._execute(**kwargs)
 
     @abstractmethod
-    def _execute(self, **kwargs) -> ToolResult:
+    async def _execute(self, **kwargs) -> ToolResult:
         raise NotImplementedError("Subclasses must implement this method")
 
     def __repr__(self) -> str:

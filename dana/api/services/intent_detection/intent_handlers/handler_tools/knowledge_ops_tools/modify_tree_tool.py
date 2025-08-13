@@ -59,7 +59,7 @@ class ModifyTreeTool(BaseTool):
         self.tree_structure = tree_structure
         self.domain_knowledge_path = domain_knowledge_path
 
-    def _execute(self, operation: str, tree_path: str = "", bulk_operations: str = "") -> ToolResult:
+    async def _execute(self, operation: str, tree_path: str = "", bulk_operations: str = "") -> ToolResult:
         """
         Modify the domain knowledge tree structure.
 

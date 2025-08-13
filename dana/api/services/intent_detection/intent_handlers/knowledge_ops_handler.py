@@ -19,6 +19,7 @@ import json
 from xml.etree import ElementTree as ET
 from pathlib import Path
 from typing import Callable
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,9 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         self.domain_knowledge_path = domain_knowledge_path
         # Default knowledge_status_path to same directory as domain_knowledge if not provided
-        self.knowledge_status_path = knowledge_status_path or str(base_path / "knowledge_status.json")
+        self.knowledge_status_path = knowledge_status_path or os.path.join(str(base_path), "knowledge_status.json")
         # Derive storage path from domain_knowledge_path parent directory
-        self.storage_path = str(base_path)
+        self.storage_path = os.path.join(str(base_path), "knows")
         self.domain = domain
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
@@ -102,6 +103,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 domain=self.domain,
                 role=self.role,
                 tasks=self.tasks,
+                notifier=self.notifier,
             ).as_dict()
         )
 
@@ -143,15 +145,25 @@ class KnowledgeOpsHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
+            print("="*100)
+            print(tool_msg.content)
+            print("="*100)
             conversation.append(tool_msg)
+            init = False
             try:
                 tool_name, params, thinking_content = self._parse_xml_tool_call(tool_msg.content)
+                if self.notifier:
+                    await self.notifier(tool_name, thinking_content, "init", None)
+                init = True
                 tool_result_msg = await self._execute_tool(tool_name, params, thinking_content)
+                if self.notifier:
+                    await self.notifier(tool_name, tool_result_msg.content, "finish", 1.0)
+                init = False
             except Exception as e:
                 conversation.append(MessageData(role="user", content=f"Error: {e}"))
+                if self.notifier and init:
+                    await self.notifier(tool_name, f"Error: {e}", "error", None)
                 continue
-
-            print(tool_msg.content)
 
             # Check if complete
             if isinstance(tool_msg, MessageData) and tool_msg.content.strip().lower() == "complete":
@@ -174,12 +186,6 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "updated_tree": self.tree_structure if tree_modified else None,
                 }
             
-            if self.notifier:
-                await self.notifier(thinking_content)
-
-            if self.notifier:
-                await self.notifier(tool_result_msg.content)
-
             # Add result to conversation
             conversation.append(tool_result_msg)
             
@@ -265,14 +271,17 @@ class KnowledgeOpsHandler(AbstractHandler):
             if tool_name not in self.tools:
                 error_msg = f"Tool '{tool_name}' not found. Available tools: {', '.join(self.tools.keys())}"
                 logger.error(error_msg)
-                return MessageData(role="user", content=f"Error: {error_msg}")
+                return MessageData(role="user", content=f"Error calling tool `{tool_name}`: {error_msg}")
 
             # Execute the tool
             tool = self.tools[tool_name]
-            result = tool.execute(**params)
+            result = await tool.execute(**params)
 
             # Convert ToolResult to MessageData
-            message_data = MessageData(role="user", content=result.result, require_user=result.require_user, treat_as_tool=True)
+            # NOTE : If tool requires user input, we treat it as a regular message, else we add the tool name for clarity
+            output_content = f"Tool `{tool_name}` result: \n{result.result}" if not result.require_user else result.result
+            treat_as_tool = not result.require_user
+            message_data = MessageData(role="user", content=output_content, require_user=result.require_user, treat_as_tool=treat_as_tool)
 
             # If this was a modify_tree operation, reload the tree structure
             if tool_name == "modify_tree":
@@ -309,10 +318,10 @@ class KnowledgeOpsHandler(AbstractHandler):
         # Find the first XML tag (either <thinking> or a tool tag)
         first_tag_match = re.search(r"<(\w+)(?:\s[^>]*)?>", xml_content)
         if not first_tag_match:
-            raise ValueError(f"""Could not find any XML tags. Please provide the correct format include exactly TWO XML blocks, in this order:
+            raise ValueError(f"""Could not find any XML tags. Please reformat the original request to include exactly TWO XML blocks, in this order:
 1) Planning
 <thinking>
-<!-- Max 60 words. State (a) what’s known, (b) what’s needed next, (c) chosen tool + 1–2 reasons. -->
+Your thinking logic here...
 </thinking>
 
 2) Tool call (strict tags as defined)

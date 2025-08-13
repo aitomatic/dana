@@ -39,7 +39,7 @@ class ExploreKnowledgeTool(BaseTool):
         super().__init__(tool_info)
         self.tree_structure = tree_structure
 
-    def _execute(self, query: str = "", depth: str = "3") -> ToolResult:
+    async def _execute(self, query: str = "", depth: str = "3") -> ToolResult:
         """
         Explore and discover knowledge areas in the domain tree.
 

@@ -23,8 +23,8 @@ class AskQuestionTool(BaseTool):
                     BaseArgument(
                         name="question",
                         type="string",
-                        description="The question to ask the user. For approvals, phrase as 'Do you approve...?' or 'Should I proceed with...?'. For information gathering, ask directly what you need to know.",
-                        example="Do you approve removing these deprecated topics from the tree structure?",
+                        description="You need to provide the context of existing tool results and then the follow up question you want to ask the user.",
+                        example="Question to ask the user with sufficient context to understand the current situation and the follow up question.",
                     ),
                     BaseArgument(
                         name="options",
@@ -38,7 +38,7 @@ class AskQuestionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    def _execute(self, question: str, options: list[str] = None) -> ToolResult:
+    async def _execute(self, question: str, options: list[str] = None) -> ToolResult:
         """
         Execute question based on content - automatically handles approvals vs general questions.
         """

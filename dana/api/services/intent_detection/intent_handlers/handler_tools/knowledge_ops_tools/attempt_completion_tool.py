@@ -27,27 +27,8 @@ class AttemptCompletionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    def _execute(self, summary: str) -> ToolResult:
+    async def _execute(self, summary: str) -> ToolResult:
         # Detect if this is a completion (mentions artifacts/generation) or information response
-        is_completion = any(
-            keyword in summary.lower() for keyword in ["generated", "created", "complete", "artifacts", "workflow", "finished"]
-        )
-
-        if is_completion:
-            # Format as workflow completion
-            content = f"""🎉 Knowledge Generation Complete
-
-{summary}
-
-✅ All knowledge has been:
-- Generated with high accuracy
-- Validated for quality  
-- Stored to vector database
-- Made available for agent usage
-
-The knowledge generation workflow is now complete. Your agent has been enhanced with new domain expertise!"""
-        else:
-            # Format as direct information response
-            content = f"""ℹ️ {summary}"""
-
+        
+        content = f"""ℹ️ {summary}"""
         return ToolResult(name="attempt_completion", result=content, require_user=True)
