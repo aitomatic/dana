@@ -117,39 +117,61 @@ class DeepExtractionService:
         file_name = Path(file_path).name
         file_full_path = os.path.abspath(file_path)
 
-        # Extract pages from aicapture result
+        # If the aicapture_result is already in the expected API format, just return it
+        # (This can happen if aicapture_result is a dict with a "file_object" key)
+        if (
+            isinstance(aicapture_result, dict)
+            and "file_object" in aicapture_result
+            and isinstance(aicapture_result["file_object"], dict)
+            and "pages" in aicapture_result["file_object"]
+        ):
+            file_obj = aicapture_result["file_object"]
+            # Convert pages to PageContent objects if needed
+            pages = [
+                PageContent(
+                    page_number=page.get("page_number", i + 1),
+                    page_content=page.get("page_content", ""),
+                    page_hash=page.get("page_hash", ""),
+                )
+                for i, page in enumerate(file_obj.get("pages", []))
+            ]
+            file_object = FileObject(
+                file_name=file_obj.get("file_name", file_name),
+                cache_key=file_obj.get("cache_key", ""),
+                total_pages=file_obj.get("total_pages", len(pages)),
+                total_words=file_obj.get("total_words", 0),
+                file_full_path=file_obj.get("file_full_path", file_full_path),
+                pages=pages,
+            )
+            return DeepExtractionResponse(file_object=file_object)
+
+        # Otherwise, build the response from the raw aicapture_result
         pages = []
+        total_words = 0
 
-        # Handle different response structures from aicapture
-        if "pages" in aicapture_result:
-            # PDF response with multiple pages
-            for page_data in aicapture_result["pages"]:
+        if "pages" in aicapture_result and isinstance(aicapture_result["pages"], list):
+            # PDF or multipage response
+            for i, page_data in enumerate(aicapture_result["pages"]):
                 page_content = page_data.get("content", "")
-                page_number = page_data.get("page_number", len(pages) + 1)
+                page_number = page_data.get("page_number", i + 1)
                 page_hash = page_data.get("page_hash", "")
-                total_words = page_data.get("total_words", 0)
-
                 pages.append(PageContent(page_number=page_number, page_content=page_content, page_hash=page_hash))
+            total_words = aicapture_result.get("total_words", 0)
         elif "content" in aicapture_result:
             # Single image response
             content = aicapture_result["content"]
             page_hash = aicapture_result.get("page_hash", "")
-            total_words = aicapture_result.get("total_words", 0)
-
             pages.append(PageContent(page_number=1, page_content=content, page_hash=page_hash))
+            total_words = aicapture_result.get("total_words", 0)
         else:
-            # Fallback: treat the entire result as content
+            # Fallback: treat the entire result as content (should rarely happen)
             content = str(aicapture_result)
             page_hash = aicapture_result.get("page_hash", "")
+            pages.append(PageContent(page_number=1, page_content=content, page_hash=page_hash))
             total_words = aicapture_result.get("total_words", 0)
 
-            pages.append(PageContent(page_number=1, page_content=content, page_hash=page_hash))
-
-        # Get cache_key and total_words from aicapture result
         cache_key = aicapture_result.get("cache_key", "")
-        total_words = aicapture_result.get("total_words", 0)
 
-        # Create file object
         file_object = FileObject(
             file_name=file_name,
             cache_key=cache_key,
