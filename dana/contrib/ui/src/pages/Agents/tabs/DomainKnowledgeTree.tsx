@@ -10,7 +10,7 @@ import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledg
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
-import { Search } from 'iconoir-react';
+import { Search, Collapse, Expand } from 'iconoir-react';
 
 // Single transition definition for consistency
 const TRANSITION_DURATION = '0.5s';
@@ -1224,9 +1224,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                       title={shouldShowCollapse ? "Collapse All" : "Expand All"}
                     >
                       {/* Icon for visual indication */}
-                      <span className="text-xs">
-                        {shouldShowCollapse ? "−" : "+"}
-                      </span>
+                      {shouldShowCollapse ? (
+                        <Collapse className="w-4 h-4" />
+                      ) : (
+                        <Expand className="w-4 h-4" />
+                      )}
                       {shouldShowCollapse ? "Collapse All" : "Expand All"}
                     </button>
                   );

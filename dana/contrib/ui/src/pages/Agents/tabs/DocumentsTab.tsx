@@ -6,9 +6,10 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, Upload, EmptyPage } from 'iconoir-react';
+import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentOperations } from '@/hooks/use-api';
+import { useDocumentStore } from '@/stores/document-store';
 import { toast } from 'sonner';
 import { PdfViewer } from '@/components/library/pdf-viewer';
 
@@ -30,8 +31,6 @@ const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
 const DocumentsTab: React.FC = () => {
   const { agent_id } = useParams<{ agent_id: string }>();
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<LibraryItem[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
@@ -40,7 +39,10 @@ const DocumentsTab: React.FC = () => {
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // API hooks
+  // Use document store for state management
+  const { documents, isLoading, fetchDocuments } = useDocumentStore();
+
+  // API hooks for operations not in store
   const { deleteDocument, isDeleting } = useDocumentOperations();
 
   const handleDragDrop = async (e: React.DragEvent) => {
@@ -59,42 +61,19 @@ const DocumentsTab: React.FC = () => {
         await apiService.uploadAgentDocument(agent_id, file);
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
       }
-      await loadDocuments();
+      await fetchDocuments({ agent_id: parseInt(agent_id) });
     } catch (error) {
       console.error('Failed to upload files:', error);
       setUploadingFiles([]);
     }
   };
 
-  // Load agent-specific documents
+  // Load agent-specific documents using store
   useEffect(() => {
     if (agent_id) {
-      loadDocuments();
+      fetchDocuments({ agent_id: parseInt(agent_id) });
     }
-  }, [agent_id]);
-
-  const loadDocuments = async () => {
-    if (!agent_id) return;
-
-    setLoading(true);
-    try {
-      // Note: The API getDocuments doesn't currently support agent_id filtering
-      // So we fetch all documents and filter client-side for now
-      // TODO: Update API to support agent_id filtering in DocumentFilters
-      const documents = await apiService.getDocuments();
-
-      // Filter documents by agent_id (client-side filtering for now)
-      const agentDocuments = documents.filter((doc) => doc.agent_id?.toString() === agent_id);
-
-      const libraryItems = agentDocuments.map(convertDocumentToLibraryItem);
-      setData(libraryItems);
-    } catch (error) {
-      console.error('Failed to load agent documents:', error);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [agent_id, fetchDocuments]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -120,14 +99,14 @@ const DocumentsTab: React.FC = () => {
         // Remove this file from uploading list as it completes
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
         // Reload documents immediately after each file upload for better UX
-        await loadDocuments();
+        await fetchDocuments({ agent_id: parseInt(agent_id) });
       }
     } catch (error) {
       console.error('Failed to upload file:', error);
       // Clear uploading state on error
       setUploadingFiles([]);
       // Still reload documents to show any files that were successfully uploaded before the error
-      await loadDocuments();
+      await fetchDocuments({ agent_id: parseInt(agent_id) });
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
       // Ensure all files are cleared from uploading state
@@ -162,7 +141,7 @@ const DocumentsTab: React.FC = () => {
       const documentId = parseInt(selectedItem.id);
       await deleteDocument(documentId);
       toast.success('Document deleted successfully');
-      await loadDocuments(); // Refresh the documents list
+      await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
     } catch (error) {
       console.error('Failed to delete document:', error);
       toast.error('Failed to delete document');
@@ -228,7 +207,7 @@ const DocumentsTab: React.FC = () => {
             </>
           ) : (
             <>
-              <Upload className="mr-2 w-4 h-4" />
+              <DocMagnifyingGlass className="mr-2 w-4 h-4" />
               Browse Files
             </>
           )}
@@ -237,6 +216,11 @@ const DocumentsTab: React.FC = () => {
     );
   };
 
+  // Convert store documents to LibraryItem format and filter by current agent
+  const agentDocuments = documents.filter((doc) => doc.agent_id?.toString() === agent_id);
+  const data = agentDocuments.map(convertDocumentToLibraryItem);
+
+  // Apply search filter
   const filteredData = data.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -308,12 +292,12 @@ const DocumentsTab: React.FC = () => {
       )}
 
       <div className="flex-1">
-        {filteredData.length === 0 && !loading ? (
+        {filteredData.length === 0 && !isLoading ? (
           <EmptyState />
         ) : (
           <LibraryTable
             data={filteredData}
-            loading={loading}
+            loading={isLoading}
             mode="library"
             onViewItem={handleViewItem}
             onDeleteItem={handleDeleteItem}

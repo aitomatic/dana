@@ -15,6 +15,7 @@ import {
   IconFolderPlus,
   IconRefresh,
   IconArrowLeft,
+  IconFileExport,
 } from '@tabler/icons-react';
 import type { LibraryItem, FolderItem } from '@/types/library';
 import { useTopicOperations, useDocumentOperations } from '@/hooks/use-api';
@@ -28,6 +29,8 @@ import { toast } from 'sonner';
 import { convertTopicToFolderItem, convertDocumentToFileItem } from '@/components/library';
 import { LibraryTable } from '@/components/library';
 import { PdfViewer } from '@/components/library/pdf-viewer';
+import { useExtractionFileStore } from '@/stores/extraction-file-store';
+import { ExtractionFilePopup } from './extraction-file';
 
 export default function LibraryPage() {
   // API hooks
@@ -61,6 +64,9 @@ export default function LibraryPage() {
   // Folder navigation
   const { folderState, navigateToFolder, navigateToRoot, getItemsInCurrentFolder } =
     useFolderNavigation();
+
+  // Extraction file store
+  const { openExtractionPopup, isExtractionPopupOpen } = useExtractionFileStore();
 
   // Local state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
@@ -276,6 +282,10 @@ export default function LibraryPage() {
             <IconFolderPlus className="mr-2 w-4 h-4" />
             New Topic
           </Button>
+          <Button onClick={openExtractionPopup} variant="outline">
+            <IconFileExport className="mr-2 w-4 h-4" />
+            Extract Files
+          </Button>
           <Button onClick={handleUploadClick} disabled={isUploading}>
             <IconUpload className="mr-2 w-4 h-4" />
             Add Documents
@@ -292,7 +302,7 @@ export default function LibraryPage() {
             onClick={navigateToRoot}
             className="text-gray-600 hover:text-gray-900"
           >
-            <IconArrowLeft className="w-4 h-4 mr-1" />
+            <IconArrowLeft className="mr-1 w-4 h-4" />
             Back to Library
           </Button>
         </div>
@@ -300,7 +310,7 @@ export default function LibraryPage() {
 
       {/* Error Display */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
           <p className="text-red-800">{error}</p>
           <Button
             variant="ghost"
@@ -437,6 +447,9 @@ export default function LibraryPage() {
         fileUrl={pdfFileUrl || ''}
         fileName={pdfFileName}
       />
+
+      {/* Extraction File Popup */}
+      {isExtractionPopupOpen && <ExtractionFilePopup />}
     </div>
   );
 }

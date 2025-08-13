@@ -406,6 +406,7 @@ class ApiService {
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
+    if (filters?.agent_id) params.append('agent_id', filters.agent_id.toString());
 
     const response = await this.client.get<DocumentRead[]>(`/documents/?${params.toString()}`);
     return response.data;

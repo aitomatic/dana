@@ -8,6 +8,7 @@ import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
 // Constants for resize functionality
 const MIN_WIDTH = 380;
@@ -96,23 +97,10 @@ const ResizeHandle: React.FC<{
   );
 };
 
-const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
-  // Custom scrollbar styles
-  const scrollbarStyles = `
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: transparent;
-      border-radius: 3px;
-    }
-    .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-      background: #d1d5db;
-    }
-  `;
+const SmartAgentChat: React.FC<{
+  agentName?: string;
+  onConnectionStateChange?: (state: string) => void;
+}> = ({ agentName, onConnectionStateChange }) => {
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -127,6 +115,43 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingMessage, setThinkingMessage] = useState('Thinking...');
+  const [processingStatus, setProcessingStatus] = useState<{
+    toolName: string;
+    message: string;
+    status: 'init' | 'in_progress' | 'finish' | 'error';
+    progression?: number;
+  } | null>(null);
+
+  // WebSocket integration for real-time updates
+  const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
+    setProcessingStatus({
+      toolName: message.tool_name,
+      message: message.content,
+      status: message.status,
+      progression: message.progression,
+    });
+
+    // Clear processing status when finished or error
+    if (message.status === 'finish' || message.status === 'error') {
+      setTimeout(() => {
+        setProcessingStatus(null);
+      }, 2000);
+    }
+  }, []);
+
+  const { connectionState } = useSmartChatWebSocket({
+    agentId: agent_id || '',
+    onChatUpdate: handleChatUpdate,
+    onConnect: () => console.log('🟢 WebSocket connected'),
+    onDisconnect: () => console.log('🔴 WebSocket disconnected'),
+    onError: (error) => console.error('❌ WebSocket error:', error),
+    enabled: !!agent_id, // Only enable when we have an agent_id
+  });
+
+  // Notify parent component of connection state changes
+  useEffect(() => {
+    onConnectionStateChange?.(connectionState);
+  }, [connectionState, onConnectionStateChange]);
 
   // Function to handle CTA button click
   const handleCTAClick = () => {
@@ -303,21 +328,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   return (
     <>
-      <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
-        <div
-          className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'transparent transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.scrollbarColor = '#d1d5db transparent';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.scrollbarColor = 'transparent transparent';
-          }}
-        >
+        <div className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar">
           {messages.map((msg, idx) => {
             const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
             const isWelcomeMessage =
@@ -329,13 +341,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${
-                  msg.sender === 'user'
-                    ? 'bg-gray-100'
-                    : isThinking
-                      ? ' self-start text-left border border-gray-100'
-                      : ' self-start text-left'
-                }`}
+                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
+                  ? 'bg-gray-100'
+                  : isThinking
+                    ? ' self-start text-left border border-gray-100'
+                    : ' self-start text-left'
+                  }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center px-3 py-2">
@@ -370,6 +381,35 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             <div className="flex gap-2 items-center self-start px-3 py-2 text-left">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
               <span className="text-sm text-gray-700">{thinkingMessage}</span>
+            </div>
+          )}
+          {processingStatus && (
+            <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border border-blue-200 bg-blue-50 rounded-lg">
+              <div className="flex gap-2 items-center">
+                {processingStatus.status === 'in_progress' && (
+                  <div className="w-4 h-4 rounded-full border-2 border-blue-600 animate-spin border-t-transparent"></div>
+                )}
+                {processingStatus.status === 'finish' && (
+                  <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                )}
+                {processingStatus.status === 'error' && (
+                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                )}
+                <span className="text-sm font-medium text-blue-800">{processingStatus.toolName}</span>
+              </div>
+              <span className="text-sm text-blue-700">{processingStatus.message}</span>
+              {processingStatus.progression !== undefined && (
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${processingStatus.progression * 100}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
           )}
           <div ref={bottomRef} />
@@ -432,6 +472,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
 export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
+  const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // Try to get saved width from localStorage
     const savedWidth = localStorage.getItem('agent-detail-sidebar-width');
@@ -465,13 +506,25 @@ export const AgentDetailSidebar: React.FC = () => {
       <div className="flex overflow-y-auto flex-col h-full bg-white">
         <div className="flex gap-3 items-center p-2 h-14 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
-          <div>
+          <div className="flex-1">
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
+          <div className="flex items-center gap-1">
+            <div
+              className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
+                connectionState === 'connecting' || connectionState === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-gray-400'
+                }`}
+              title={`WebSocket ${connectionState}`}
+            />
+          </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
-          <SmartAgentChat agentName={selectedAgent?.name} />
+          <SmartAgentChat
+            agentName={selectedAgent?.name}
+            onConnectionStateChange={setConnectionState}
+          />
         </div>
       </div>
     </div>

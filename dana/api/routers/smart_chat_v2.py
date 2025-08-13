@@ -3,7 +3,7 @@ Smart Chat V2 Router - Enhanced chat API using KnowledgeOpsHandler directly.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal
 from threading import Lock
 from collections import defaultdict
 
@@ -53,7 +53,11 @@ class SmartChatWSNotifier:
         if websocket_id in self.active_connections:
             del self.active_connections[websocket_id]
 
-    async def send_chat_update_msg(self, websocket_id: str, message: str):
+    async def send_chat_update_msg(self, websocket_id: Any, 
+                                   tool_name: str, message: str,
+                                   status: Literal["init", "in_progress", "finish"],
+                                   progression: float | None = None,
+                                   ):
         """Send a message via WebSocket"""
         if not isinstance(websocket_id, str):
             websocket_id = str(websocket_id)
@@ -62,7 +66,12 @@ class SmartChatWSNotifier:
             try:
                 message = {
                     "type": "chat_update",
-                    "message": message,
+                    "message": {
+                        "tool_name": tool_name,
+                        "content": message,
+                        "status": status,
+                        "progression": progression,
+                    },
                     "timestamp": asyncio.get_event_loop().time(),
                 }
                 await websocket.send_text(json.dumps(message))
@@ -71,15 +80,17 @@ class SmartChatWSNotifier:
                 # Remove disconnected WebSocket
                 self.disconnect(websocket_id)
 
+    
+
 smart_chat_ws_notifier = SmartChatWSNotifier()
 
 def create_smart_chat_ws_notifier(websocket_id: str | None = None):
     """Create a chat update notifier that sends updates via WebSocket"""
 
-    async def chat_update_notifier(message: str) -> None:
+    async def chat_update_notifier(tool_name: str, message: str, status: Literal["init", "in_progress", "finish" ,"error"], progression: float | None = None) -> None:
         # Send via WebSocket if connection exists
         if websocket_id:
-            await smart_chat_ws_notifier.send_chat_update_msg(websocket_id, message)
+            await smart_chat_ws_notifier.send_chat_update_msg(websocket_id, tool_name, message, status, progression)
 
     return chat_update_notifier
 
