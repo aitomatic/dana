@@ -42,9 +42,8 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
   const getIconComponent = () => {
     if (icon) return icon;
 
-    // Check if this is a coming soon item or loading
+    // Check if this is a coming soon item
     const isComingSoon = status === 'coming-soon';
-    const isLoading = status === 'loading';
 
     // Default icons based on label with wrapping circles
     const iconMap: Record<string, React.ReactNode> = {

@@ -4,7 +4,7 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { CheckCircleSolid, SystemRestart, Xmark, NavArrowRight, NavArrowDown } from 'iconoir-react';
+import { SystemRestart, Xmark, NavArrowRight } from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
