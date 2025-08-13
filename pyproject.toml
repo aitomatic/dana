@@ -68,6 +68,7 @@ dependencies = [
     "python-a2a>=0.5.9",
     # Misc / Other
     "tqdm",
+    "aicapture",
 ]
 
 # Optional dependency groups
@@ -109,7 +110,6 @@ docs = [
     "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
     "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
-    "aicapture",
 ]
 
 # Command-line entry points

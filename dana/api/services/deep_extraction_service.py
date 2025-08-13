@@ -1,11 +1,10 @@
 """
-Visual Document Service Module
+Deep Extraction Service Module
 
 This module provides business logic for visual document extraction and processing.
 Supports various file types that aicapture can handle.
 """
 
-import hashlib
 import logging
 import os
 from pathlib import Path
@@ -18,11 +17,12 @@ logger = logging.getLogger(__name__)
 
 class DeepExtractionService:
     """
-    Service for handling visual document extraction operations.
+    Service for handling visual document extraction operations using aicapture.
     """
 
     def __init__(self):
-        """Initialize the visual document service."""
+        """Initialize the deep extraction service."""
+        # Only allow file types that aicapture can actually process (images and PDFs)
         self.supported_extensions = {
             ".png",
             ".jpg",
@@ -30,17 +30,9 @@ class DeepExtractionService:
             ".gif",
             ".bmp",
             ".tiff",
-            ".tif",  # Images
+            ".tif",
+            ".webp",  # Images
             ".pdf",  # PDFs
-            ".docx",
-            ".doc",  # Word documents
-            ".pptx",
-            ".ppt",  # PowerPoint presentations
-            ".xlsx",
-            ".xls",  # Excel spreadsheets
-            ".txt",
-            ".md",
-            ".rtf",  # Text documents
         }
 
     def is_supported_file_type(self, file_path: str) -> bool:
@@ -56,54 +48,128 @@ class DeepExtractionService:
         file_ext = Path(file_path).suffix.lower()
         return file_ext in self.supported_extensions
 
-    def generate_cache_key(self, file_path: str, prompt: str | None = None) -> str:
+    def _get_vision_parser(self, config: dict | None = None):
+        """Get a configured VisionParser instance."""
+        try:
+            from aicapture import VisionParser
+            from aicapture.settings import MAX_CONCURRENT_TASKS, ImageQuality
+            from aicapture.vision_parser import DEFAULT_PROMPT
+        except ImportError:
+            raise ImportError("aicapture package is not installed. Please install it to use deep extraction features.")
+
+        if config is None:
+            config = {}
+
+        return VisionParser(
+            vision_model=config.get("vision_model", None),
+            cache_dir=config.get("cache_dir", None),
+            max_concurrent_tasks=config.get("max_concurrent_tasks", MAX_CONCURRENT_TASKS),
+            image_quality=config.get("image_quality", ImageQuality.DEFAULT),
+            invalidate_cache=config.get("invalidate_cache", False),
+            cloud_bucket=config.get("cloud_bucket", None),
+            prompt=config.get("prompt", DEFAULT_PROMPT),
+            dpi=config.get("dpi", 333),
+        )
+
+    async def _process_with_aicapture(self, file_path: str, prompt: str | None, config: dict | None = None) -> dict[str, Any]:
         """
-        Generate a cache key for the file and prompt combination.
+        Process file using aicapture VisionParser.
 
         Args:
-            file_path: Path to the file
-            prompt: Optional prompt for extraction
+            file_path: Path to the file to process
+            prompt: Custom prompt for processing
+            config: Configuration dictionary for the processor
 
         Returns:
-            Cache key string
+            Dict containing processing results
         """
-        # Create a hash of file path and prompt
-        content = f"{file_path}:{prompt or ''}"
-        return hashlib.sha256(content.encode()).hexdigest()
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
 
-    def generate_page_hash(self, page_content: str) -> str:
+        file_ext = os.path.splitext(file_path)[1].lower()
+
+        # Handle PDF files
+        if file_ext == ".pdf":
+            parser = self._get_vision_parser(config)
+            if prompt:
+                parser.prompt = prompt
+            return await parser.process_pdf_async(file_path)
+        elif file_ext in [".jpg", ".jpeg", ".png", ".tiff", ".tif", ".webp", ".bmp", ".gif"]:
+            parser = self._get_vision_parser(config)
+            if prompt:
+                parser.prompt = prompt
+            return await parser.process_image_async(file_path)
+        else:
+            raise ValueError(f"Unsupported file type: {file_ext}. Supported types: PDF, Images (jpg, jpeg, png, tiff, tif, webp, bmp, gif)")
+
+    def _convert_aicapture_response(self, aicapture_result: dict[str, Any], file_path: str, prompt: str | None) -> DeepExtractionResponse:
         """
-        Generate a hash for page content.
+        Convert aicapture response to our API response format.
 
         Args:
-            page_content: Content of the page
+            aicapture_result: Raw result from aicapture
+            file_path: Original file path
+            prompt: Original prompt used
 
         Returns:
-            Hash string
+            DeepExtractionResponse in our API format
         """
-        return hashlib.sha256(page_content.encode()).hexdigest()
+        file_name = Path(file_path).name
+        file_full_path = os.path.abspath(file_path)
 
-    def count_words(self, text: str) -> int:
-        """
-        Count words in text.
+        # Extract pages from aicapture result
+        pages = []
 
-        Args:
-            text: Text to count words in
+        # Handle different response structures from aicapture
+        if "pages" in aicapture_result:
+            # PDF response with multiple pages
+            for page_data in aicapture_result["pages"]:
+                page_content = page_data.get("content", "")
+                page_number = page_data.get("page_number", len(pages) + 1)
+                page_hash = page_data.get("page_hash", "")
+                total_words = page_data.get("total_words", 0)
 
-        Returns:
-            Number of words
-        """
-        return len(text.split())
+                pages.append(PageContent(page_number=page_number, page_content=page_content, page_hash=page_hash))
+        elif "content" in aicapture_result:
+            # Single image response
+            content = aicapture_result["content"]
+            page_hash = aicapture_result.get("page_hash", "")
+            total_words = aicapture_result.get("total_words", 0)
+
+            pages.append(PageContent(page_number=1, page_content=content, page_hash=page_hash))
+        else:
+            # Fallback: treat the entire result as content
+            content = str(aicapture_result)
+            page_hash = aicapture_result.get("page_hash", "")
+            total_words = aicapture_result.get("total_words", 0)
+
+            pages.append(PageContent(page_number=1, page_content=content, page_hash=page_hash))
+
+        # Get cache_key and total_words from aicapture result
+        cache_key = aicapture_result.get("cache_key", "")
+        total_words = aicapture_result.get("total_words", 0)
+
+        # Create file object
+        file_object = FileObject(
+            file_name=file_name,
+            cache_key=cache_key,
+            total_pages=len(pages),
+            total_words=total_words,
+            file_full_path=file_full_path,
+            pages=pages,
+        )
+
+        return DeepExtractionResponse(file_object=file_object)
 
     async def deep_extract(self, request: DeepExtractionRequest) -> DeepExtractionResponse:
         """
-        Extract data from a visual document.
+        Extract data from a visual document using aicapture.
 
         Args:
             request: Extraction request containing file_path, prompt, and config
 
         Returns:
-            VisualDocumentExtractionResponse with extracted data
+            DeepExtractionResponse with extracted data
         """
         try:
             file_path = request.file_path
@@ -118,183 +184,20 @@ class DeepExtractionService:
             if not self.is_supported_file_type(file_path):
                 raise ValueError(f"Unsupported file type: {Path(file_path).suffix}")
 
-            # Generate cache key
-            cache_key = self.generate_cache_key(file_path, prompt)
+            logger.info(f"Processing file with aicapture: {file_path}")
 
-            # Get file info
-            file_name = Path(file_path).name
-            file_full_path = os.path.abspath(file_path)
+            # Process with aicapture
+            aicapture_result = await self._process_with_aicapture(file_path, prompt, config)
 
-            # Mock extraction logic - in real implementation, this would call aicapture
-            # For now, we'll create a mock response based on the file type
-            extracted_content = self._mock_extract_content(file_path, prompt, config)
+            # Convert to our API response format
+            result = self._convert_aicapture_response(aicapture_result, file_path, prompt)
 
-            # Generate page hash
-            page_hash = self.generate_page_hash(extracted_content)
+            logger.info(f"Successfully processed file: {file_path}")
+            return result
 
-            # Count words
-            total_words = self.count_words(extracted_content)
-
-            # Create page content
-            page_content = PageContent(page_number=1, page_content=extracted_content, page_hash=page_hash)
-
-            # Create file object
-            file_object = FileObject(
-                file_name=file_name,
-                cache_key=cache_key,
-                total_pages=1,
-                total_words=total_words,
-                file_full_path=file_full_path,
-                pages=[page_content],
-            )
-
-            return DeepExtractionResponse(file_object=file_object)
-
+        except ImportError as e:
+            logger.error(f"aicapture import error: {e}")
+            raise
         except Exception as e:
             logger.error(f"Error extracting visual document: {e}")
             raise
-
-    def _mock_extract_content(self, file_path: str, prompt: str | None, config: dict[str, Any]) -> str:
-        """
-        Mock content extraction based on file type.
-        In real implementation, this would call aicapture or similar service.
-
-        Args:
-            file_path: Path to the file
-            prompt: Optional extraction prompt
-            config: Optional configuration
-
-        Returns:
-            Extracted content as markdown
-        """
-        file_ext = Path(file_path).suffix.lower()
-        file_name = Path(file_path).name
-
-        # Mock content based on file type
-        if file_ext in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif"]:
-            if "heart" in file_name.lower():
-                return """```markdown
-Diagram type: Anatomical diagram of the human heart (cross-sectional view)
-
-Components and their functions:
-- Superior vena cava: Large vein carrying deoxygenated blood from the upper body to the right atrium.
-- Inferior vena cava: Large vein carrying deoxygenated blood from the lower body to the right atrium.
-- Right atrium: Receives deoxygenated blood from the body via the superior and inferior vena cava.
-- Right ventricle: Pumps deoxygenated blood to the lungs via the pulmonary artery.
-- Pulmonary valve: Valve between the right ventricle and pulmonary artery, prevents backflow of blood.
-- Tricuspid valve: Valve between the right atrium and right ventricle, prevents backflow of blood.
-- Pulmonary artery: Carries deoxygenated blood from the right ventricle to the lungs.
-- Pulmonary vein: Carries oxygenated blood from the lungs to the left atrium.
-- Left atrium: Receives oxygenated blood from the lungs via the pulmonary veins.
-- Left ventricle: Pumps oxygenated blood to the body via the aorta.
-- Mitral valve: Valve between the left atrium and left ventricle, prevents backflow of blood.
-- Aortic valve: Valve between the left ventricle and aorta, prevents backflow of blood.
-- Aorta: Main artery carrying oxygenated blood from the left ventricle to the body.
-
-Connections and relationships:
-- Blood flows from the superior and inferior vena cava into the right atrium.
-- From the right atrium, blood passes through the tricuspid valve into the right ventricle.
-- The right ventricle pumps blood through the pulmonary valve into the pulmonary artery, which leads to the lungs.
-- Oxygenated blood returns from the lungs via the pulmonary veins to the left atrium.
-- Blood flows from the left atrium through the mitral valve into the left ventricle.
-- The left ventricle pumps blood through the aortic valve into the aorta, distributing it to the body.
-
-Labels and annotations:
-- Arrows indicate the direction of blood flow through the heart chambers, valves, and vessels.
-- Each heart chamber and valve is clearly labeled.
-- Major blood vessels (superior vena cava, inferior vena cava, pulmonary artery, pulmonary vein, aorta) are labeled.
-
-Purpose and operation:
-- The diagram illustrates the structure of the human heart and the flow of blood through its chambers, valves, and major vessels.
-- It shows the separation of oxygenated and deoxygenated blood and the role of valves in preventing backflow.
-- The diagram is useful for understanding cardiovascular anatomy and physiology.
-```"""
-            else:
-                return f"""```markdown
-Image type: {file_ext.upper()[1:]} image file
-
-File information:
-- Filename: {file_name}
-- File type: {file_ext.upper()[1:]} image
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This appears to be an image file. The content would be extracted based on the visual elements present in the image, including any text, diagrams, charts, or other visual information.
-
-Note: This is a mock response. In a real implementation, this would contain the actual extracted content from the image using computer vision and OCR techniques.
-```"""
-
-        elif file_ext == ".pdf":
-            return f"""```markdown
-Document type: PDF document
-
-File information:
-- Filename: {file_name}
-- File type: PDF document
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This is a PDF document. The content would be extracted using PDF parsing techniques, including text extraction, table recognition, and image analysis if present.
-
-Note: This is a mock response. In a real implementation, this would contain the actual extracted text and structured content from the PDF.
-```"""
-
-        elif file_ext in [".docx", ".doc"]:
-            return f"""```markdown
-Document type: Microsoft Word document
-
-File information:
-- Filename: {file_name}
-- File type: Word document ({file_ext.upper()[1:]})
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This is a Microsoft Word document. The content would be extracted using document parsing libraries, preserving formatting, tables, and embedded objects.
-
-Note: This is a mock response. In a real implementation, this would contain the actual extracted text and formatting from the Word document.
-```"""
-
-        elif file_ext in [".pptx", ".ppt"]:
-            return f"""```markdown
-Document type: Microsoft PowerPoint presentation
-
-File information:
-- Filename: {file_name}
-- File type: PowerPoint presentation ({file_ext.upper()[1:]})
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This is a Microsoft PowerPoint presentation. The content would be extracted slide by slide, including text, images, charts, and speaker notes.
-
-Note: This is a mock response. In a real implementation, this would contain the actual extracted content from each slide of the presentation.
-```"""
-
-        elif file_ext in [".xlsx", ".xls"]:
-            return f"""```markdown
-Document type: Microsoft Excel spreadsheet
-
-File information:
-- Filename: {file_name}
-- File type: Excel spreadsheet ({file_ext.upper()[1:]})
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This is a Microsoft Excel spreadsheet. The content would be extracted including cell data, formulas, charts, and formatting information.
-
-Note: This is a mock response. In a real implementation, this would contain the actual extracted data from the spreadsheet, including tables and charts.
-```"""
-
-        else:
-            return f"""```markdown
-Document type: Text document
-
-File information:
-- Filename: {file_name}
-- File type: {file_ext.upper()[1:]} text document
-- Extraction prompt: {prompt or "No specific prompt provided"}
-
-Content description:
-This is a text document. The content would be extracted directly from the file, preserving formatting and structure.
-
-Note: This is a mock response. In a real implementation, this would contain the actual text content from the document.
-```"""
