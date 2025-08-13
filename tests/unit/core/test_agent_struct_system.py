@@ -6,9 +6,9 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 import unittest
 
 from dana.agent import (
+    AgentInstance,
     AgentType,
     AgentTypeRegistry,
-    AgentInstance,
     create_agent_instance,
     get_agent_type,
     register_agent_type,
@@ -36,9 +36,14 @@ class TestAgentStructType(unittest.TestCase):
         )
 
         self.assertEqual(agent_type.name, "TestAgent")
-        self.assertEqual(agent_type.fields, fields)
-        self.assertEqual(agent_type.field_order, field_order)
-        self.assertEqual(agent_type.field_defaults, field_defaults)
+        # AgentType automatically adds a 'state' field, so we expect it in addition to the provided fields
+        expected_fields = {"state": "str", **fields}
+        expected_field_order = ["state"] + field_order
+        expected_defaults = {"state": "CREATED", **field_defaults}
+
+        self.assertEqual(agent_type.fields, expected_fields)
+        self.assertEqual(agent_type.field_order, expected_field_order)
+        self.assertEqual(agent_type.field_defaults, expected_defaults)
         self.assertEqual(agent_type.docstring, "Test agent type")
 
     def test_agent_type_inheritance(self):
@@ -57,6 +62,7 @@ class TestAgentStructType(unittest.TestCase):
         self.assertIn("solve", agent_type.agent_methods)
         self.assertIn("remember", agent_type.agent_methods)
         self.assertIn("recall", agent_type.agent_methods)
+        self.assertIn("reason", agent_type.agent_methods)
         self.assertIn("chat", agent_type.agent_methods)
 
         # Check that methods are callable
@@ -64,6 +70,7 @@ class TestAgentStructType(unittest.TestCase):
         self.assertTrue(callable(agent_type.agent_methods["solve"]))
         self.assertTrue(callable(agent_type.agent_methods["remember"]))
         self.assertTrue(callable(agent_type.agent_methods["recall"]))
+        self.assertTrue(callable(agent_type.agent_methods["reason"]))
         self.assertTrue(callable(agent_type.agent_methods["chat"]))
 
     def test_custom_agent_methods(self):

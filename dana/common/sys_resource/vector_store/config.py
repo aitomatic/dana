@@ -89,9 +89,7 @@ class VectorStoreConfig:
         """Validate configuration."""
         supported_providers = ["duckdb", "pgvector"]
         if self.provider not in supported_providers:
-            raise ValueError(
-                f"Unsupported vector store provider: {self.provider}. " f"Supported providers: {', '.join(supported_providers)}"
-            )
+            raise ValueError(f"Unsupported vector store provider: {self.provider}. Supported providers: {', '.join(supported_providers)}")
 
     def get_provider_config(self) -> DuckDBConfig | PGVectorConfig:
         """Get the configuration for the selected provider."""

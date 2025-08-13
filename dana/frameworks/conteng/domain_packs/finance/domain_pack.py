@@ -297,7 +297,7 @@ class FinanceDomainPack(BaseDomainPack):
         method_instructions = {
             "plan": f"""Your task is to create comprehensive plans for {config.specialization.value} operations.
 Focus on regulatory compliance, risk management, and systematic approaches.
-Consider {', '.join(config.market_focus)} market factors.""",
+Consider {", ".join(config.market_focus)} market factors.""",
             "solve": f"""Your task is to solve {config.specialization.value} problems using quantitative methods and domain expertise.
 Apply appropriate risk metrics, calculations, and validation procedures.
 Ensure all solutions meet {config.regulatory_framework} regulatory requirements.""",

@@ -98,7 +98,9 @@ class TestAgentChat(unittest.TestCase):
         # Create mock LLM resource
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.return_value = Mock(success=True, content="This is a mock LLM response.")
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="This is a mock LLM response.")
 
         # Mock the get_resources method to return our mock LLM resource
         with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
@@ -108,10 +110,10 @@ class TestAgentChat(unittest.TestCase):
 
             # Should use LLM
             self.assertEqual(response, "This is a mock LLM response.")
-            mock_llm_resource.query.assert_called_once()
+            mock_llm_resource.query_sync.assert_called_once()
 
             # Check that prompt contains agent description
-            call_args = mock_llm_resource.query.call_args[0][0]
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
             # Look for agent description in system message
             messages = call_args.arguments["messages"]
             system_messages = [msg for msg in messages if msg["role"] == "system"]
@@ -127,7 +129,9 @@ class TestAgentChat(unittest.TestCase):
         # Mock LLM resource
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.return_value = Mock(success=True, content="LLM field response")
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="LLM field response")
 
         # Mock the get_resources method to return our mock LLM resource
         with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
@@ -135,7 +139,7 @@ class TestAgentChat(unittest.TestCase):
             response = response_promise._wait_for_delivery()
 
             self.assertEqual(response, "LLM field response")
-            mock_llm_resource.query.assert_called_once()
+            mock_llm_resource.query_sync.assert_called_once()
 
     def test_default_llm_resource(self):
         """Test that agents try to use default LLMResource."""
@@ -225,7 +229,9 @@ class TestAgentChat(unittest.TestCase):
         """Test chat with additional context."""
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.return_value = Mock(success=True, content="Contextual response")
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Contextual response")
         agent = self.create_test_agent()
 
         # Mock the get_resources method to return our mock LLM resource
@@ -236,7 +242,7 @@ class TestAgentChat(unittest.TestCase):
             _ = response_promise._wait_for_delivery()
 
             # Check that context was included in prompt
-            call_args = mock_llm_resource.query.call_args[0][0]
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
             # Look for context in system message
             messages = call_args.arguments["messages"]
             system_messages = [msg for msg in messages if msg["role"] == "system"]
@@ -248,7 +254,9 @@ class TestAgentChat(unittest.TestCase):
         """Test limiting context turns."""
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.return_value = Mock(success=True, content="Limited context response")
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Limited context response")
         agent = self.create_test_agent()
 
         # Mock the get_resources method to return our mock LLM resource
@@ -261,7 +269,7 @@ class TestAgentChat(unittest.TestCase):
             agent.chat(self.sandbox_context, "New message", max_context_turns=2)._wait_for_delivery()
 
             # Check that only recent turns are included
-            call_args = mock_llm_resource.query.call_args[0][0]
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
             # Look for messages in system message context
             messages = call_args.arguments["messages"]
             all_content = " ".join([msg["content"] for msg in messages])
@@ -275,7 +283,7 @@ class TestAgentChat(unittest.TestCase):
         # Create LLM that throws an error
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.side_effect = Exception("LLM error")
+        mock_llm_resource.query_sync.side_effect = Exception("LLM error")
         agent = self.create_test_agent()
 
         # Mock the get_resources method to return our mock LLM resource
@@ -332,14 +340,16 @@ class TestAgentChat(unittest.TestCase):
         """Test that agent fields are included in context."""
         mock_llm_resource = Mock()
         mock_llm_resource.kind = "llm"  # Set the kind attribute
-        mock_llm_resource.query.return_value = Mock(success=True, content="Response with fields")
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Response with fields")
         agent = self.create_test_agent("FieldAgent", {"department": "engineering", "specialty": "AI"})
 
         # Mock the get_resources method to return our mock LLM resource
         with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             agent.chat(self.sandbox_context, "Test")._wait_for_delivery()
 
-            call_args = mock_llm_resource.query.call_args[0][0]
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
             # With first message, agent characteristics should be in system prompt
             messages = call_args.arguments["messages"]
             system_messages = [msg for msg in messages if msg["role"] == "system"]

@@ -41,41 +41,24 @@ class TestResourceType:
         assert resource_type.field_defaults["kind"] == "test"
         assert resource_type.field_defaults["state"] == "CREATED"
 
-    def test_resource_type_inheritance(self):
-        """Test resource type inheritance."""
-        parent_type = ResourceType(
-            name="BaseResource",
-            fields={"name": "str", "kind": "str"},
-            field_order=["name", "kind"],
-            field_defaults={"kind": "base"},
+    def test_resource_type_composition(self):
+        """Test resource type composition without inheritance."""
+        # Create independent resource types
+        extended_type = ResourceType(
+            name="ExtendedResource",
+            fields={"name": "str", "kind": "str", "extra_field": "int"},
+            field_order=["name", "kind", "extra_field"],
+            field_defaults={"kind": "extended", "extra_field": 42},
         )
 
-        child_type = ResourceType(
-            name="ChildResource",
-            fields={"extra_field": "int"},
-            field_order=["extra_field"],
-            field_defaults={"extra_field": 42},
-            parent_type=parent_type,
-        )
-
-        # Check inheritance
-        assert child_type.parent_type == parent_type
-        assert "name" in child_type.fields  # Inherited
-        assert "kind" in child_type.fields  # Inherited
-        assert "extra_field" in child_type.fields  # Own field
-        assert child_type.field_order == ["state", "name", "kind", "extra_field"]
-        assert child_type.field_defaults["kind"] == "base"  # Inherited
-        assert child_type.field_defaults["extra_field"] == 42  # Own default
-        assert child_type.field_defaults["state"] == "CREATED"  # Built-in
-
-    def test_inheritance_chain(self):
-        """Test getting inheritance chain."""
-        grandparent = ResourceType(name="Grandparent", fields={"id": "str"}, field_order=["id"])
-        parent = ResourceType(name="Parent", fields={"name": "str"}, field_order=["name"], parent_type=grandparent)
-        child = ResourceType(name="Child", fields={"value": "int"}, field_order=["value"], parent_type=parent)
-
-        chain = child.get_inheritance_chain()
-        assert [rt.name for rt in chain] == ["Grandparent", "Parent", "Child"]
+        # Check that they are independent (no inheritance)
+        assert "name" in extended_type.fields
+        assert "kind" in extended_type.fields
+        assert "extra_field" in extended_type.fields
+        assert extended_type.field_order == ["state", "name", "kind", "extra_field"]
+        assert extended_type.field_defaults["kind"] == "extended"
+        assert extended_type.field_defaults["extra_field"] == 42
+        assert extended_type.field_defaults["state"] == "CREATED"
 
 
 class TestResourceInstance:
@@ -124,29 +107,51 @@ class TestResourceInstance:
         assert instance.cleanup()
         assert instance.state == "TERMINATED"
 
-    def test_method_inheritance(self):
-        """Test method inheritance in resource instances."""
-        # Create parent type with method
-        parent_type = ResourceType(
-            name="BaseResource",
+    def test_composition_and_delegation(self):
+        """Test composition and delegation in resource instances."""
+        # Create resource type
+        resource_type = ResourceType(
+            name="ComposedResource",
             fields={"name": "str"},
             field_order=["name"],
         )
 
-        # Create child type
-        child_type = ResourceType(
-            name="ChildResource",
-            fields={"extra": "str"},
-            field_order=["extra"],
-            parent_type=parent_type,
-        )
-
         # Create instance
-        instance = ResourceInstance(child_type, {"name": "test", "extra": "value"})
+        instance = ResourceInstance(resource_type, {"name": "test"})
 
-        # Test that instance can access parent fields
-        assert instance.name == "test"
-        assert instance.extra == "value"
+        # Create a backend object
+        class Backend:
+            def process(self):
+                return "processed"
+
+            def compute(self, value):
+                return value * 2
+
+        backend = Backend()
+        instance.set_backend(backend)
+
+        # Test backend delegation
+        assert instance.has_method("process")
+        assert instance.call_method("process") == "processed"
+        assert instance.call_method("compute", 5) == 10
+
+        # Create a delegate object
+        class Logger:
+            def log(self, message):
+                return f"logged: {message}"
+
+        logger = Logger()
+        instance.add_delegate("logger", logger)
+
+        # Test delegate methods
+        assert instance.has_method("log")
+        assert instance.call_method("log", "test message") == "logged: test message"
+
+        # Test delegate management
+        assert instance.get_delegate("logger") == logger
+        instance.remove_delegate("logger")
+        assert instance.get_delegate("logger") is None
+        assert not instance.has_method("log")
 
 
 class TestResourceTypeRegistry:
@@ -185,29 +190,28 @@ class TestResourceTypeRegistry:
         assert instance.kind == "test"
         assert isinstance(instance, ResourceInstance)
 
-    def test_inheritance_queries(self):
-        """Test inheritance-related queries."""
-        # Create inheritance chain
+    def test_resource_composition_queries(self):
+        """Test resource type queries for composition-based resources."""
+        # Create independent resource types
         base_type = ResourceType(name="BaseResource", fields={"id": "str"}, field_order=["id"])
-        child_type = ResourceType(name="ChildResource", fields={"name": "str"}, field_order=["name"], parent_type=base_type)
-        grandchild_type = ResourceType(name="GrandchildResource", fields={"value": "int"}, field_order=["value"], parent_type=child_type)
+        extended_type = ResourceType(name="ExtendedResource", fields={"id": "str", "name": "str"}, field_order=["id", "name"])
+        specialized_type = ResourceType(
+            name="SpecializedResource", fields={"id": "str", "name": "str", "value": "int"}, field_order=["id", "name", "value"]
+        )
 
         ResourceTypeRegistry.register_resource(base_type)
-        ResourceTypeRegistry.register_resource(child_type)
-        ResourceTypeRegistry.register_resource(grandchild_type)
+        ResourceTypeRegistry.register_resource(extended_type)
+        ResourceTypeRegistry.register_resource(specialized_type)
 
-        # Test inheritance chain
-        chain = ResourceTypeRegistry.get_inheritance_chain("GrandchildResource")
-        assert chain == ["BaseResource", "ChildResource", "GrandchildResource"]
+        # Test that types are registered independently
+        assert ResourceTypeRegistry.exists("BaseResource")
+        assert ResourceTypeRegistry.exists("ExtendedResource")
+        assert ResourceTypeRegistry.exists("SpecializedResource")
 
-        # Test subtypes
-        subtypes = ResourceTypeRegistry.get_all_subtypes("BaseResource")
-        assert "ChildResource" in subtypes
-        assert "GrandchildResource" in subtypes
-
-        subtypes = ResourceTypeRegistry.get_all_subtypes("ChildResource")
-        assert "GrandchildResource" in subtypes
-        assert "BaseResource" not in subtypes
+        # Test getting resource types
+        assert ResourceTypeRegistry.get_resource_type("BaseResource") == base_type
+        assert ResourceTypeRegistry.get_resource_type("ExtendedResource") == extended_type
+        assert ResourceTypeRegistry.get_resource_type("SpecializedResource") == specialized_type
 
 
 class TestAST:
@@ -215,10 +219,11 @@ class TestAST:
 
     def test_resource_definition(self):
         """Test ResourceDefinition AST node."""
-        definition = ResourceDefinition(name="MyResource", parent_name="BaseResource", fields=[], methods=[])
+        # Without parent (composition-based)
+        definition = ResourceDefinition(name="MyResource", parent_name=None, fields=[], methods=[])
 
         assert definition.name == "MyResource"
-        assert definition.parent_name == "BaseResource"
+        assert definition.parent_name is None
 
     def test_resource_field(self):
         """Test ResourceField AST node."""

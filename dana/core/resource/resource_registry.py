@@ -64,34 +64,6 @@ class ResourceTypeRegistry:
         return instance
 
     @classmethod
-    def get_inheritance_chain(cls, resource_name: str) -> list[str]:
-        """Get the inheritance chain for a resource type."""
-        resource_type = cls.get_resource_type(resource_name)
-        if not resource_type:
-            return []
-
-        return [rt.name for rt in resource_type.get_inheritance_chain()]
-
-    @classmethod
-    def get_all_subtypes(cls, base_type_name: str) -> list[str]:
-        """Get all resource types that inherit from a base type."""
-        subtypes = []
-        for name, resource_type in cls._resource_types.items():
-            if cls._inherits_from(resource_type, base_type_name):
-                subtypes.append(name)
-        return subtypes
-
-    @classmethod
-    def _inherits_from(cls, resource_type: ResourceType, base_name: str) -> bool:
-        """Check if a resource type inherits from a base type."""
-        current = resource_type
-        while current:
-            if current.name == base_name:
-                return True
-            current = current.parent_type
-        return False
-
-    @classmethod
     def clear(cls) -> None:
         """Clear all registered resource types (for testing)."""
         cls._resource_types.clear()
