@@ -1,0 +1,4 @@
+# Base agent singleton should create a default agent instance with no fields
+agent Solo
+
+_ = Solo.chat("hi") 

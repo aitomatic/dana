@@ -11,7 +11,7 @@ class TestArbitrarilyDeepImports:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear module registry to ensure test isolation
-        from dana.core.runtime.modules.core import reset_module_system
+        from dana.__init__.init_modules import reset_module_system
 
         reset_module_system()
 
@@ -35,159 +35,163 @@ class TestArbitrarilyDeepImports:
 
     def test_4_component_import_verification(self):
         """Verify 4-component imports work: from a.b.c.d import very_deep_function"""
-        result = self.sandbox.eval("from a.b.c.d import very_deep_function")
+        result = self.sandbox.execute_string("from a.b.c.d import very_deep_function")
         assert result.success, f"4-component import failed: {result.error}"
 
         # Test the imported function
-        func_result = self.sandbox.eval("very_deep_function()")
+        func_result = self.sandbox.execute_string("very_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from very deep module!"
 
     def test_5_component_import_basic(self):
         """Test 5-component imports: from a.b.c.d.e import module_function"""
         # First check if the module can be directly imported
-        import_result = self.sandbox.eval("import a.b.c.d.e")
+        import_result = self.sandbox.execute_string("import a.b.c.d.e")
         assert import_result.success, f"5-component module import failed: {import_result.error}"
 
     def test_6_component_import_basic(self):
         """Test 6-component imports: from a.b.c.d.e.f import extremely_deep_function"""
-        result = self.sandbox.eval("from a.b.c.d.e.f import extremely_deep_function")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f import extremely_deep_function")
         assert result.success, f"6-component import failed: {result.error}"
 
         # Test the imported function
-        func_result = self.sandbox.eval("extremely_deep_function()")
+        func_result = self.sandbox.execute_string("extremely_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from extremely deep module!"
 
     def test_6_component_import_constant(self):
         """Test 6-component import of constant: from a.b.c.d.e.f import EXTREMELY_DEEP_CONSTANT"""
-        result = self.sandbox.eval("from a.b.c.d.e.f import EXTREMELY_DEEP_CONSTANT")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f import EXTREMELY_DEEP_CONSTANT")
         assert result.success, f"6-component constant import failed: {result.error}"
 
         # Test the imported constant
-        const_result = self.sandbox.eval("EXTREMELY_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("EXTREMELY_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Extremely deep level constant"
 
     def test_6_component_comma_separated_imports(self):
         """Test 6-component comma-separated imports: from a.b.c.d.e.f import extremely_deep_function, EXTREMELY_DEEP_CONSTANT"""
-        result = self.sandbox.eval("from a.b.c.d.e.f import extremely_deep_function, EXTREMELY_DEEP_CONSTANT")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f import extremely_deep_function, EXTREMELY_DEEP_CONSTANT")
         assert result.success, f"6-component comma-separated import failed: {result.error}"
 
         # Test both imported items
-        func_result = self.sandbox.eval("extremely_deep_function()")
+        func_result = self.sandbox.execute_string("extremely_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from extremely deep module!"
 
-        const_result = self.sandbox.eval("EXTREMELY_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("EXTREMELY_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Extremely deep level constant"
 
     def test_6_component_import_with_alias(self):
         """Test 6-component import with alias: from a.b.c.d.e.f import extremely_deep_function as edf"""
-        result = self.sandbox.eval("from a.b.c.d.e.f import extremely_deep_function as edf")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f import extremely_deep_function as edf")
         assert result.success, f"6-component import with alias failed: {result.error}"
 
         # Test the aliased function
-        func_result = self.sandbox.eval("edf()")
+        func_result = self.sandbox.execute_string("edf()")
         assert func_result.success
         assert func_result.result == "Hello from extremely deep module!"
 
     def test_6_component_mixed_comma_imports(self):
         """Test 6-component mixed comma-separated imports with aliases"""
-        result = self.sandbox.eval("from a.b.c.d.e.f import extremely_deep_function as edf, EXTREMELY_DEEP_CONSTANT, calculate_deep_depth")
+        result = self.sandbox.execute_string(
+            "from a.b.c.d.e.f import extremely_deep_function as edf, EXTREMELY_DEEP_CONSTANT, calculate_deep_depth"
+        )
         assert result.success, f"6-component mixed comma imports failed: {result.error}"
 
         # Test all imported items
-        func_result = self.sandbox.eval("edf()")
+        func_result = self.sandbox.execute_string("edf()")
         assert func_result.success
         assert func_result.result == "Hello from extremely deep module!"
 
-        const_result = self.sandbox.eval("EXTREMELY_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("EXTREMELY_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Extremely deep level constant"
 
-        depth_result = self.sandbox.eval("calculate_deep_depth()")
+        depth_result = self.sandbox.execute_string("calculate_deep_depth()")
         assert depth_result.success
         assert depth_result.result == 6
 
     def test_7_component_import_basic(self):
         """Test 7-component imports: from a.b.c.d.e.f.g import ultra_deep_function"""
-        result = self.sandbox.eval("from a.b.c.d.e.f.g import ultra_deep_function")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f.g import ultra_deep_function")
         assert result.success, f"7-component import failed: {result.error}"
 
         # Test the imported function
-        func_result = self.sandbox.eval("ultra_deep_function()")
+        func_result = self.sandbox.execute_string("ultra_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"
 
     def test_7_component_import_constant(self):
         """Test 7-component import of constant: from a.b.c.d.e.f.g import ULTRA_DEEP_CONSTANT"""
-        result = self.sandbox.eval("from a.b.c.d.e.f.g import ULTRA_DEEP_CONSTANT")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f.g import ULTRA_DEEP_CONSTANT")
         assert result.success, f"7-component constant import failed: {result.error}"
 
         # Test the imported constant
-        const_result = self.sandbox.eval("ULTRA_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("ULTRA_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Ultra deep level constant"
 
     def test_7_component_comma_separated_imports(self):
         """Test 7-component comma-separated imports"""
-        result = self.sandbox.eval("from a.b.c.d.e.f.g import ultra_deep_function, ULTRA_DEEP_CONSTANT, calculate_ultra_depth")
+        result = self.sandbox.execute_string("from a.b.c.d.e.f.g import ultra_deep_function, ULTRA_DEEP_CONSTANT, calculate_ultra_depth")
         assert result.success, f"7-component comma-separated import failed: {result.error}"
 
         # Test all imported items
-        func_result = self.sandbox.eval("ultra_deep_function()")
+        func_result = self.sandbox.execute_string("ultra_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"
 
-        const_result = self.sandbox.eval("ULTRA_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("ULTRA_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Ultra deep level constant"
 
-        depth_result = self.sandbox.eval("calculate_ultra_depth()")
+        depth_result = self.sandbox.execute_string("calculate_ultra_depth()")
         assert depth_result.success
         assert depth_result.result == 7
 
     def test_7_component_import_with_aliases(self):
         """Test 7-component imports with mixed aliases"""
-        result = self.sandbox.eval("from a.b.c.d.e.f.g import ultra_deep_function as udf, ULTRA_DEEP_CONSTANT as UDC, describe_location")
+        result = self.sandbox.execute_string(
+            "from a.b.c.d.e.f.g import ultra_deep_function as udf, ULTRA_DEEP_CONSTANT as UDC, describe_location"
+        )
         assert result.success, f"7-component import with aliases failed: {result.error}"
 
         # Test all imported items
-        func_result = self.sandbox.eval("udf()")
+        func_result = self.sandbox.execute_string("udf()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"
 
-        const_result = self.sandbox.eval("UDC")
+        const_result = self.sandbox.execute_string("UDC")
         assert const_result.success
         assert const_result.result == "Ultra deep level constant"
 
-        desc_result = self.sandbox.eval("describe_location()")
+        desc_result = self.sandbox.execute_string("describe_location()")
         assert desc_result.success
         assert desc_result.result == "Seven levels deep in the import hierarchy"
 
     def test_deep_import_module_access(self):
         """Test that deeply imported modules maintain their full namespace access"""
-        result = self.sandbox.eval("import a.b.c.d.e.f.g")
+        result = self.sandbox.execute_string("import a.b.c.d.e.f.g")
         assert result.success, f"Deep module import failed: {result.error}"
 
         # Test accessing through full namespace
-        func_result = self.sandbox.eval("a.b.c.d.e.f.g.ultra_deep_function()")
+        func_result = self.sandbox.execute_string("a.b.c.d.e.f.g.ultra_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"
 
     def test_deep_import_with_alias_access(self):
         """Test deep import with alias for easier access"""
-        result = self.sandbox.eval("import a.b.c.d.e.f.g as ultra_deep")
+        result = self.sandbox.execute_string("import a.b.c.d.e.f.g as ultra_deep")
         assert result.success, f"Deep import with alias failed: {result.error}"
 
         # Test accessing through alias
-        func_result = self.sandbox.eval("ultra_deep.ultra_deep_function()")
+        func_result = self.sandbox.execute_string("ultra_deep.ultra_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"
 
-        const_result = self.sandbox.eval("ultra_deep.ULTRA_DEEP_CONSTANT")
+        const_result = self.sandbox.execute_string("ultra_deep.ULTRA_DEEP_CONSTANT")
         assert const_result.success
         assert const_result.result == "Ultra deep level constant"
 
@@ -195,12 +199,12 @@ class TestArbitrarilyDeepImports:
         """Test that imports of different depths work correctly in the same session"""
         # Import from different depths
         results = [
-            self.sandbox.eval("from simple_math import add"),  # 1 component
-            self.sandbox.eval("from a.b import nested_dana_function"),  # 2 components
-            self.sandbox.eval("from a.b.c import deep_function"),  # 3 components
-            self.sandbox.eval("from a.b.c.d import very_deep_function"),  # 4 components
-            self.sandbox.eval("from a.b.c.d.e.f import extremely_deep_function"),  # 6 components
-            self.sandbox.eval("from a.b.c.d.e.f.g import ultra_deep_function"),  # 7 components
+            self.sandbox.execute_string("from simple_math import add"),  # 1 component
+            self.sandbox.execute_string("from a.b import nested_dana_function"),  # 2 components
+            self.sandbox.execute_string("from a.b.c import deep_function"),  # 3 components
+            self.sandbox.execute_string("from a.b.c.d import very_deep_function"),  # 4 components
+            self.sandbox.execute_string("from a.b.c.d.e.f import extremely_deep_function"),  # 6 components
+            self.sandbox.execute_string("from a.b.c.d.e.f.g import ultra_deep_function"),  # 7 components
         ]
 
         # All imports should succeed
@@ -218,7 +222,7 @@ class TestArbitrarilyDeepImports:
         ]
 
         for call, expected in test_calls:
-            result = self.sandbox.eval(call)
+            result = self.sandbox.execute_string(call)
             assert result.success, f"Function call '{call}' failed: {result.error}"
             assert result.result == expected, f"Function call '{call}' returned {result.result}, expected {expected}"
 
@@ -230,7 +234,7 @@ class TestArbitrarilyDeepImports:
         start_time = time.time()
 
         for i in range(5):  # Import multiple times to test caching
-            result = self.sandbox.eval("from a.b.c.d.e.f.g import ultra_deep_function")
+            result = self.sandbox.execute_string("from a.b.c.d.e.f.g import ultra_deep_function")
             assert result.success, f"Performance test import {i + 1} failed: {result.error}"
 
         end_time = time.time()
@@ -240,6 +244,6 @@ class TestArbitrarilyDeepImports:
         assert total_time < 2.0, f"Deep imports took too long: {total_time:.2f} seconds"
 
         # Verify functionality still works
-        func_result = self.sandbox.eval("ultra_deep_function()")
+        func_result = self.sandbox.execute_string("ultra_deep_function()")
         assert func_result.success
         assert func_result.result == "Hello from ultra deep module!"

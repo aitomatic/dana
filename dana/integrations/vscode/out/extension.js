@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deactivate = exports.activate = void 0;
+exports.activate = activate;
+exports.deactivate = deactivate;
 const vscode = require("vscode");
 const path = require("path");
 // Make language server optional
@@ -151,7 +152,6 @@ The highlighting should work automatically in Markdown Preview Enhanced. Look fo
     });
     context.subscriptions.push(runFileCommand, testMPECommand);
 }
-exports.activate = activate;
 function startLanguageServer(context) {
     // Find the Dana Language Server command
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -224,5 +224,4 @@ function deactivate() {
     }
     return client.stop();
 }
-exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

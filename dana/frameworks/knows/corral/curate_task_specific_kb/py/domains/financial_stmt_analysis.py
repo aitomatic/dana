@@ -156,24 +156,29 @@ Create your plan using the template provided.
 Create your plan now:
 """
 
+
 class FinancialStmtAnalysisDomain(DefaultDomain):
     role: str = "Senior Financial Statement Analyst"
-    domain : str = "Financial Statement Analysis"
-    tasks : list[str] = ["Analyze Financial Statements", "Provide Financial Insights", "Answer Financial Questions", "Forecast Financial Performance"]
+    domain: str = "Financial Statement Analysis"
+    tasks: list[str] = [
+        "Analyze Financial Statements",
+        "Provide Financial Insights",
+        "Answer Financial Questions",
+        "Forecast Financial Performance",
+    ]
 
-    plan_templates : dict[str, str] = {"SIMPLE": SIMPLE_PLANNING_TEMPLATE, "MODERATE": MODERATE_PLANNING_TEMPLATE, "COMPLEX": COMPLEX_PLANNING_TEMPLATE}
+    plan_templates: dict[str, str] = {
+        "SIMPLE": SIMPLE_PLANNING_TEMPLATE,
+        "MODERATE": MODERATE_PLANNING_TEMPLATE,
+        "COMPLEX": COMPLEX_PLANNING_TEMPLATE,
+    }
 
-    categorize_prompt : str = CATEGORIZE_PROMPT
+    categorize_prompt: str = CATEGORIZE_PROMPT
 
     def get_plan_prompt(self, question: str, category: str) -> str:
         for key, value in self.plan_templates.items():
             if key.lower() in category.lower():
-                return FOCUSED_PLANNING_PROMPT.format(
-                    role=self.role,
-                    complexity_level=key,
-                    template=value,
-                    question=question
-                )
+                return FOCUSED_PLANNING_PROMPT.format(role=self.role, complexity_level=key, template=value, question=question)
         raise ValueError(f"No plan template found for category: {category}")
 
     def get_fact_prompt(self, question: str) -> str:
@@ -226,18 +231,18 @@ List the specific factual information needed:"""
 
 **EXPERT HEURISTICS AND INSIGHTS**:
 Provide the key rules of thumb and expert insights:"""
-    
+
     def get_categorize_prompt(self, question: str) -> str:
         return self.categorize_prompt.format(question=question)
 
     def get_fresher_question_prompt(self, paths_description: str, task_descriptions: str) -> str:
         """
         Generate specialized prompt for creating real-world financial analysis questions.
-        
+
         Args:
             paths_description: Description of all tree paths
             task_descriptions: Description of the role's tasks
-            
+
         Returns:
             A specialized prompt for generating financial analysis questions
         """

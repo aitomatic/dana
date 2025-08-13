@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -455,7 +455,7 @@ class DomainNode(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     topic: str
-    children: list["DomainNode"] = []
+    children: list[DomainNode] = []
 
 
 class DomainKnowledgeTree(BaseModel):

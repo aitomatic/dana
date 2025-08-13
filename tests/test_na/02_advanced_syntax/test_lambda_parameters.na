@@ -1,0 +1,151 @@
+# Test: Lambda Parameters
+# Purpose: Test lambda expressions with various parameter types and type hints
+# Category: Advanced Syntax - Lambda Expressions
+
+log("Starting Lambda Parameters test")
+
+# Test 1: Lambda with type hints
+add_ints = lambda x: int, y: int :: x + y
+result = add_ints(5, 3)
+assert result == 8, f"Expected 8, got {result}"
+log("✅ Lambda with type hints works")
+
+# Test 2: Lambda with string type hints
+concat_strings = lambda a: str, b: str :: a + b
+result = concat_strings("Hello", "World")
+assert result == "HelloWorld", f"Expected 'HelloWorld', got '{result}'"
+log("✅ Lambda with string type hints works")
+
+# Test 3: Lambda with float type hints
+multiply_floats = lambda x: float, y: float :: x * y
+result = multiply_floats(2.5, 3.0)
+assert result == 7.5, f"Expected 7.5, got {result}"
+log("✅ Lambda with float type hints works")
+
+# Test 4: Lambda with boolean type hints
+logical_and = lambda a: bool, b: bool :: a and b
+result = logical_and(true, false)
+assert result == false, f"Expected false, got {result}"
+log("✅ Lambda with boolean type hints works")
+
+# Test 5: Lambda with list type hints
+list_length = lambda lst: list :: len(lst)
+result = list_length([1, 2, 3, 4])
+assert result == 4, f"Expected 4, got {result}"
+log("✅ Lambda with list type hints works")
+
+# Test 6: Lambda with dict type hints
+dict_keys = lambda d: dict :: list(d.keys())
+data = {"a": 1, "b": 2, "c": 3}
+result = dict_keys(data)
+assert result == ["a", "b", "c"], f"Expected ['a', 'b', 'c'], got {result}"
+log("✅ Lambda with dict type hints works")
+
+# Test 7: Lambda with mixed type hints
+mixed_op = lambda x: int, y: float :: x + y
+result = mixed_op(5, 3.5)
+assert result == 8.5, f"Expected 8.5, got {result}"
+log("✅ Lambda with mixed type hints works")
+
+# Test 8: Lambda with optional parameters (default values)
+optional_add = lambda x: int, y: int = 0 :: x + y
+result1 = optional_add(5)
+result2 = optional_add(5, 3)
+assert result1 == 5, f"Expected 5, got {result1}"
+assert result2 == 8, f"Expected 8, got {result2}"
+log("✅ Lambda with optional parameters works")
+
+# Test 9: Lambda with multiple optional parameters
+config_func = lambda x: int, y: str = "default", z: bool = true :: (x, y, z)
+result1 = config_func(10)
+result2 = config_func(10, "custom")
+result3 = config_func(10, "custom", false)
+assert result1 == (10, "default", true), f"Expected (10, 'default', true), got {result1}"
+assert result2 == (10, "custom", true), f"Expected (10, 'custom', true), got {result2}"
+assert result3 == (10, "custom", false), f"Expected (10, 'custom', false), got {result3}"
+log("✅ Lambda with multiple optional parameters works")
+
+# Test 10: Lambda with complex type hints
+complex_type = lambda data: dict, key: str, default: any = None :: data.get(key, default)
+test_dict = {"name": "Dana", "version": "1.0"}
+result1 = complex_type(test_dict, "name")
+result2 = complex_type(test_dict, "missing", "default")
+assert result1 == "Dana", f"Expected 'Dana', got '{result1}'"
+assert result2 == "default", f"Expected 'default', got '{result2}'"
+log("✅ Lambda with complex type hints works")
+
+# Test 11: Lambda with tuple type hints
+tuple_op = lambda t: tuple :: len(t)
+result = tuple_op((1, 2, 3, 4, 5))
+assert result == 5, f"Expected 5, got {result}"
+log("✅ Lambda with tuple type hints works")
+
+# Test 12: Lambda with set type hints
+set_op = lambda s: set :: len(s)
+result = set_op({1, 2, 3, 4})
+assert result == 4, f"Expected 4, got {result}"
+log("✅ Lambda with set type hints works")
+
+# Test 13: Lambda with None type hint
+none_handler = lambda x: any :: x if x is not None else "None value"
+result1 = none_handler("test")
+result2 = none_handler(None)
+assert result1 == "test", f"Expected 'test', got '{result1}'"
+assert result2 == "None value", f"Expected 'None value', got '{result2}'"
+log("✅ Lambda with None type hint works")
+
+# Test 14: Lambda with function type hint
+function_applier = lambda func: function, value: any :: func(value)
+double = lambda x :: x * 2
+result = function_applier(double, 5)
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Lambda with function type hint works")
+
+# Test 15: Lambda with list of specific type (if supported)
+# Note: This may not be supported in all implementations
+int_list_op = lambda lst: list[int] :: sum(lst)
+result = int_list_op([1, 2, 3, 4])
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Lambda with list of specific type works")
+
+# Test 16: Lambda with dict of specific types (if supported)
+# Note: This may not be supported in all implementations
+str_int_dict = lambda d: dict[str, int] :: sum(d.values())
+result = str_int_dict({"a": 1, "b": 2, "c": 3})
+assert result == 6, f"Expected 6, got {result}"
+log("✅ Lambda with dict of specific types works")
+
+# Test 17: Lambda with union type hints (if supported)
+# Note: This may not be supported in all implementations
+union_handler = lambda x: int | str :: str(x)
+result1 = union_handler(42)
+result2 = union_handler("hello")
+assert result1 == "42", f"Expected '42', got '{result1}'"
+assert result2 == "hello", f"Expected 'hello', got '{result2}'"
+log("✅ Lambda with union type hints works")
+
+# Test 18: Lambda with nested type hints
+nested_handler = lambda data: list[dict] :: len(data)
+test_data = [{"id": 1}, {"id": 2}, {"id": 3}]
+result = nested_handler(test_data)
+assert result == 3, f"Expected 3, got {result}"
+log("✅ Lambda with nested type hints works")
+
+# Test 19: Lambda with callback type hint
+callback_handler = lambda callback: function, data: list :: [callback(item) for item in data]
+square = lambda x :: x * x
+result = callback_handler(square, [1, 2, 3])
+assert result == [1, 4, 9], f"Expected [1, 4, 9], got {result}"
+log("✅ Lambda with callback type hint works")
+
+# Test 20: Lambda with complex parameter validation
+validator = lambda value: any, min_val: int = 0, max_val: int = 100 :: (min_val <= value) and (value <= max_val)
+result1 = validator(50)
+result2 = validator(150)
+result3 = validator(-10)
+assert result1 == true, f"Expected true, got {result1}"
+assert result2 == false, f"Expected false, got {result2}"
+assert result3 == false, f"Expected false, got {result3}"
+log("✅ Lambda with complex parameter validation works")
+
+log("Lambda Parameters test completed successfully") 

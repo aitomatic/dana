@@ -2,12 +2,9 @@
 Unit tests for ConversationMemory class.
 """
 
-import json
 import os
 import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 
 from dana.frameworks.memory.conversation_memory import ConversationMemory
 
@@ -244,7 +241,6 @@ class TestConversationMemoryEdgeCases(unittest.TestCase):
 
     def test_nonexistent_directory(self):
         """Test creating memory with nonexistent directory."""
-        nonexistent_path = "/nonexistent/directory/memory.json"
 
         # Should create directory structure
         with tempfile.TemporaryDirectory() as temp_dir:

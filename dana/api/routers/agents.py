@@ -3,60 +3,60 @@ Agent routers - consolidated routing for agent-related endpoints.
 Thin routing layer that delegates business logic to services.
 """
 
-import logging
-from typing import List
-import os
 import asyncio
-import json
 import base64
+import json
+import logging
+import os
+import shutil
 import traceback
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import (
     APIRouter,
-    Depends,
-    HTTPException,
-    File,
-    Form,
-    UploadFile,
-    Query,
     BackgroundTasks,
     Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
 )
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
-from dana.api.core.database import get_db, engine
+from dana.api.core.database import engine, get_db
+from dana.api.core.models import Agent, AgentChatHistory
 from dana.api.core.schemas import (
     AgentCreate,
+    AgentGenerationRequest,
     AgentRead,
-    CodeValidationRequest,
-    CodeValidationResponse,
     CodeFixRequest,
     CodeFixResponse,
+    CodeValidationRequest,
+    CodeValidationResponse,
     DocumentRead,
 )
-from dana.api.services.agent_manager import get_agent_manager, AgentManager
-from dana.api.services.document_service import get_document_service, DocumentService
+from dana.api.server.server import ws_manager
+from dana.api.services.agent_deletion_service import AgentDeletionService, get_agent_deletion_service
+from dana.api.services.agent_manager import AgentManager, get_agent_manager
+from dana.api.services.avatar_service import AvatarService
+from dana.api.services.document_service import DocumentService, get_document_service
 from dana.api.services.domain_knowledge_service import (
-    get_domain_knowledge_service,
     DomainKnowledgeService,
+    get_domain_knowledge_service,
 )
 from dana.api.services.domain_knowledge_version_service import (
-    get_domain_knowledge_version_service,
     DomainKnowledgeVersionService,
+    get_domain_knowledge_version_service,
 )
-from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
-from dana.api.core.models import Agent, AgentChatHistory, Document, Conversation
-from datetime import datetime, timezone
 from dana.api.services.knowledge_status_manager import (
-    KnowledgeStatusManager,
     KnowledgeGenerationManager,
+    KnowledgeStatusManager,
 )
-from dana.api.services.avatar_service import AvatarService
-from dana.api.server.server import ws_manager
-import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ def _ensure_domain_knowledge_has_uuids(domain_knowledge_path: str):
     """Ensure domain knowledge file has UUIDs, add them if missing"""
 
     try:
-        with open(domain_knowledge_path, "r", encoding="utf-8") as f:
+        with open(domain_knowledge_path, encoding="utf-8") as f:
             domain_data = json.load(f)
 
         # Check if root already has UUID
@@ -406,6 +406,90 @@ workflow = should_use_rag | refine_query | search_document | get_answer
         f.write(workflows_content)
 
 
+@router.post("/generate")
+async def generate_agent(request: AgentGenerationRequest):
+    """
+    Generate Dana agent code based on conversation messages.
+
+    Supports two-phase generation:
+    - Phase 1 (description): Extract agent name/description from conversation
+    - Phase 2 (code_generation): Generate full Dana code
+
+    Args:
+        request: AgentGenerationRequest with messages and optional agent_data
+
+    Returns:
+        Agent generation response with Dana code or agent metadata
+    """
+    try:
+        logger.info(f"Received agent generation request: phase={request.phase}")
+
+        # Check if mock mode is enabled
+        mock_mode = os.getenv("DANA_MOCK_AGENT_GENERATION", "false").lower() == "true"
+
+        if mock_mode:
+            logger.info("Using mock agent generation")
+
+            if request.phase == "code_generation":
+                # Mock Dana code for testing
+                mock_dana_code = '''"""Weather Information Agent"""
+
+# Agent Card declaration
+agent WeatherAgent:
+    name : str = "Weather Information Agent"
+    description : str = "A weather information agent that provides current weather and recommendations"
+    resources : list = []
+
+# Agent's problem solver
+def solve(weather_agent : WeatherAgent, problem : str):
+    return reason(f"Weather help for: {problem}")'''
+
+                return {
+                    "success": True,
+                    "phase": "code_generation",
+                    "dana_code": mock_dana_code,
+                    "agent_name": "Weather Information Agent",
+                    "agent_description": "A weather information agent that provides current weather and recommendations",
+                    "error": None,
+                }
+            else:
+                # Phase 1 - description extraction
+                return {
+                    "success": True,
+                    "phase": "description",
+                    "dana_code": None,
+                    "agent_name": "Weather Information Agent",
+                    "agent_description": "A weather information agent that provides current weather and recommendations",
+                    "error": None,
+                }
+        else:
+            # Real implementation would go here
+            # For now, return a basic implementation
+            logger.warning("Real agent generation not implemented, using basic mock")
+
+            basic_code = """# Generated Agent
+
+agent GeneratedAgent:
+    name : str = "Generated Agent"
+    description : str = "A generated agent"
+    
+def solve(agent : GeneratedAgent, problem : str):
+    return reason(f"Help with: {problem}")"""
+
+            return {
+                "success": True,
+                "phase": request.phase,
+                "dana_code": basic_code,
+                "agent_name": "Generated Agent",
+                "agent_description": "A generated agent",
+                "error": None,
+            }
+
+    except Exception as e:
+        logger.error(f"Error in agent generation endpoint: {e}")
+        return {"success": False, "phase": request.phase, "dana_code": None, "agent_name": None, "agent_description": None, "error": str(e)}
+
+
 @router.post("/validate-code", response_model=CodeValidationResponse)
 async def validate_code(request: CodeValidationRequest):
     """
@@ -458,7 +542,7 @@ async def fix_code(request: CodeFixRequest):
 
 
 # CRUD Operations for Agents
-@router.get("/", response_model=List[AgentRead])
+@router.get("/", response_model=list[AgentRead])
 async def list_agents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all agents with pagination."""
     try:
@@ -494,7 +578,7 @@ async def get_prebuilt_agents():
             logger.warning(f"Prebuilt agents file not found at {assets_path}")
             return []
 
-        with open(assets_path, "r", encoding="utf-8") as f:
+        with open(assets_path, encoding="utf-8") as f:
             prebuilt_agents = json.load(f)
 
         # Add mock IDs and additional UI properties for compatibility
@@ -737,7 +821,7 @@ async def create_agent_from_prebuilt(
     try:
         # Load prebuilt agents list
         assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
-        with open(assets_path, "r", encoding="utf-8") as f:
+        with open(assets_path, encoding="utf-8") as f:
             prebuilt_agents = json.load(f)
         prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
         if not prebuilt_agent:
@@ -802,17 +886,18 @@ async def create_agent_from_prebuilt(
             status_path = knows_folder / "knowledge_status.json"
 
             if status_path.exists():
+                from datetime import datetime
+
                 from dana.api.services.knowledge_status_manager import (
                     KnowledgeStatusManager,
                 )
-                from datetime import datetime, timezone
 
                 status_manager = KnowledgeStatusManager(str(status_path), agent_id=str(db_agent.id))
                 data = status_manager.load()
 
                 # Mark all topics as successfully generated since they're prebuilt
                 updated = False
-                now_str = datetime.now(timezone.utc).isoformat() + "Z"
+                now_str = datetime.now(UTC).isoformat() + "Z"
 
                 for entry in data.get("topics", []):
                     if entry.get("status") in (
@@ -1190,7 +1275,7 @@ def run_generation(agent_id: int):
         # 1. Build or update knowledge_status.json
         status_path = os.path.join(knows_folder, "knowledge_status.json")
         status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent_id))
-        now_str = datetime.now(timezone.utc).isoformat() + "Z"
+        now_str = datetime.now(UTC).isoformat() + "Z"
         # Add/update all leaves
         for path, _ in leaf_paths:
             area_name = " - ".join(path)
@@ -1331,7 +1416,7 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
             assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
 
             try:
-                with open(assets_path, "r", encoding="utf-8") as f:
+                with open(assets_path, encoding="utf-8") as f:
                     prebuilt_agents = json.load(f)
 
                 prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == agent_id), None)
@@ -1369,11 +1454,11 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
 
         # Import the test logic from agent_test module
-        from dana.core.runtime.modules.core import (
+        from dana.api.routers.agent_test import AgentTestRequest, test_agent
+        from dana.__init__.init_modules import (
             initialize_module_system,
             reset_module_system,
         )
-        from dana.api.routers.agent_test import AgentTestRequest, test_agent
 
         initialize_module_system()
         reset_module_system()
@@ -1514,7 +1599,6 @@ async def get_agent_avatar(agent_id: int):
     try:
         # Verify agent exists
         from dana.api.core.database import get_db
-        from sqlalchemy.orm import Session
 
         # Get database session
         db = next(get_db())

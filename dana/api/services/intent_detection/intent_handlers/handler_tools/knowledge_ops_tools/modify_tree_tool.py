@@ -6,7 +6,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool 
     ToolResult,
 )
 from dana.api.core.schemas import DomainKnowledgeTree
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 import logging

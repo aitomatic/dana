@@ -328,7 +328,7 @@ class ConfigurationManager:
             if self.debug:
                 print(f"Testing reason function with prompt: {test_prompt}")
 
-            result = sandbox.eval(f'reason("{test_prompt}")', filename="<config-test>")
+            result = sandbox.execute_string(f'reason("{test_prompt}")', filename="<config-test>")
 
             if not (result.success and result.result):
                 print(f"{self.colors.error('✗ Reason function validation failed')}")

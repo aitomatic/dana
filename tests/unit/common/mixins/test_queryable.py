@@ -16,7 +16,7 @@ class TestQueryable:
         """Test initialization with default values."""
         obj = Queryable()
         assert obj._query_strategy == QueryStrategy.ONCE
-        assert obj._query_max_iterations == 3
+        assert obj._query_max_iterations == 10
 
     def test_get_query_strategy(self):
         """Test getting the query strategy."""

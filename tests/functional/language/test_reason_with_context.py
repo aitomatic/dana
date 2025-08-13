@@ -11,7 +11,7 @@ def test_reason_with_context():
     sandbox = DanaSandbox()
 
     # Run the Dana test file
-    result = sandbox.run_file("tests/functional/language/test_reason_with_context.na")
+    result = sandbox.execute_file("tests/functional/language/test_reason_with_context.na")
 
     # Verify that all tests completed successfully
     assert result.success
@@ -36,7 +36,7 @@ def test_reason_context_backward_compatibility():
     sandbox = DanaSandbox()
 
     # Test basic reason call without context
-    result = sandbox.eval("reason('What is 2 + 2?')")
+    result = sandbox.execute_string("reason('What is 2 + 2?')")
 
     assert result.success
     assert result.result is not None
@@ -50,7 +50,7 @@ def test_reason_with_empty_context():
     sandbox = DanaSandbox()
 
     # Test reason call with empty context
-    result = sandbox.eval("reason('What is 2 + 2?', context={})")
+    result = sandbox.execute_string("reason('What is 2 + 2?', context={})")
 
     assert result.success
     assert result.result is not None
@@ -64,7 +64,7 @@ def test_reason_with_simple_context():
     sandbox = DanaSandbox()
 
     # Test reason call with simple context
-    result = sandbox.eval("reason('What are the numbers?', context={'numbers': [5, 3]})")
+    result = sandbox.execute_string("reason('What are the numbers?', context={'numbers': [5, 3]})")
 
     assert result.success
     assert result.result is not None

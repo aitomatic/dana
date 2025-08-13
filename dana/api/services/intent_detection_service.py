@@ -3,10 +3,11 @@
 import json
 import logging
 from typing import Any
+
 import yaml
 from dana.api.core.schemas import IntentDetectionRequest, IntentDetectionResponse, DomainKnowledgeTree, MessageData
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)

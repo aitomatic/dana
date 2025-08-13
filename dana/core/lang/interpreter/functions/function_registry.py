@@ -90,6 +90,51 @@ class FunctionRegistry:
         self._functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
+        # Load preloaded functions if available
+        self._register_preloaded_functions()
+
+    @staticmethod
+    def get_preloaded_functions():
+        """Get preloaded functions."""
+        import dana.core.lang.interpreter.functions.function_registry as registry_module
+
+        if not hasattr(registry_module, "_preloaded_functions"):
+            registry_module._preloaded_functions = {}
+
+        return registry_module._preloaded_functions
+
+    @staticmethod
+    def add_preloaded_functions(functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]]):
+        """Add preloaded functions to the registry module for later registration."""
+        preloaded_functions = FunctionRegistry.get_preloaded_functions()
+
+        for namespace, funcs in functions.items():
+            if namespace not in preloaded_functions:
+                preloaded_functions[namespace] = {}
+            preloaded_functions[namespace].update(funcs)
+
+    def _register_preloaded_functions(self):
+        """Load preloaded corelib functions from initlib startup.
+
+        This method loads core library functions that were preloaded during
+        Dana startup to avoid the need for deferred registration.
+        """
+        try:
+            # Check if preloaded functions are available in the module
+            preloaded_functions = FunctionRegistry.get_preloaded_functions()
+            # Merge preloaded functions into this registry
+            for namespace, functions in preloaded_functions.items():
+                if namespace not in self._functions:
+                    self._functions[namespace] = {}
+                self._functions[namespace].update(functions)
+
+        except Exception:
+            # If preloading failed, corelib functions will not be available
+            # This is expected behavior - preloading should always work during normal startup
+            from dana.common import DANA_LOGGER
+
+            DANA_LOGGER.error("Failed to load preloaded functions")
+
     def _get_arg_processor(self):
         """
         Get or create the ArgumentProcessor.
@@ -324,7 +369,7 @@ class FunctionRegistry:
 
         Args:
             name: Function name to resolve
-            namespace: Optional namespace
+            namespace: Optional namespace. If None, searches all namespaces.
 
         Returns:
             Tuple of (function, type, metadata)
@@ -332,6 +377,10 @@ class FunctionRegistry:
         Raises:
             FunctionRegistryError: If function not found
         """
+        # If namespace is explicitly None, search across all namespaces
+        if namespace is None:
+            return self._resolve_across_namespaces(name)
+
         ns, name = self._remap_namespace_and_name(namespace, name)
         if ns in self._functions and name in self._functions[ns]:
             return self._functions[ns][name]
@@ -343,6 +392,40 @@ class FunctionRegistry:
             f"Function '{name}' not found in namespace '{ns}'",
             function_name=name,
             namespace=ns,
+            operation="resolve",
+            calling_function=calling_function,
+            call_stack=call_stack,
+        )
+
+    def _resolve_across_namespaces(self, name: str) -> tuple[Callable, FunctionType, FunctionMetadata]:
+        """Search for a function across all namespaces in priority order.
+
+        Priority order: system > public > private > local
+
+        Args:
+            name: Function name to resolve
+
+        Returns:
+            Tuple of (function, type, metadata)
+
+        Raises:
+            FunctionRegistryError: If function not found in any namespace
+        """
+        # Search in priority order: system first (built-ins), then others
+        search_order = ["system", "public", "private", "local"]
+
+        for namespace in search_order:
+            if namespace in self._functions and name in self._functions[namespace]:
+                return self._functions[namespace][name]
+
+        # Function not found in any namespace
+        calling_function = self._get_calling_function_context()
+        call_stack = self._get_call_stack()
+
+        raise FunctionRegistryError(
+            f"Function '{name}' not found in any namespace. Searched: {search_order}",
+            function_name=name,
+            namespace="None",
             operation="resolve",
             calling_function=calling_function,
             call_stack=call_stack,
@@ -513,26 +596,55 @@ class FunctionRegistry:
         """List all functions in a namespace.
 
         Args:
-            namespace: Optional namespace to list from
+            namespace: Optional namespace to list from. If None, lists from all namespaces.
 
         Returns:
             List of function names
         """
-        ns, _ = self._remap_namespace_and_name(namespace, "")
-        return list(self._functions.get(ns, {}).keys())
+        if namespace is None:
+            # Return functions from all namespaces
+            all_functions = []
+            for ns_functions in self._functions.values():
+                all_functions.extend(ns_functions.keys())
+            return list(set(all_functions))  # Remove duplicates
+        else:
+            ns, _ = self._remap_namespace_and_name(namespace, "")
+            return list(self._functions.get(ns, {}).keys())
 
     def has(self, name: str, namespace: str | None = None) -> bool:
         """Check if a function exists.
 
         Args:
             name: Function name
-            namespace: Optional namespace
+            namespace: Optional namespace. If None, searches all namespaces.
 
         Returns:
             True if function exists
         """
+        # If namespace is explicitly None, search across all namespaces
+        if namespace is None:
+            return self._has_across_namespaces(name)
+
         ns, name = self._remap_namespace_and_name(namespace, name)
         return ns in self._functions and name in self._functions[ns]
+
+    def _has_across_namespaces(self, name: str) -> bool:
+        """Check if a function exists in any namespace.
+
+        Args:
+            name: Function name
+
+        Returns:
+            True if function exists in any namespace
+        """
+        # Search in priority order: system first (built-ins), then others
+        search_order = ["system", "public", "private", "local"]
+
+        for namespace in search_order:
+            if namespace in self._functions and name in self._functions[namespace]:
+                return True
+
+        return False
 
     def get_metadata(self, name: str, namespace: str | None = None) -> FunctionMetadata:
         """Get metadata for a function.
@@ -549,3 +661,26 @@ class FunctionRegistry:
         """
         _, _, metadata = self.resolve(name, namespace)
         return metadata
+
+
+class PreloadedFunctionRegistry(FunctionRegistry):
+    """A registry for preloaded functions."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        FunctionRegistry.add_preloaded_functions(self._functions)
+
+    def __aenter__(self):
+        return self
+
+    def __aexit__(self, exc_type, exc_value, traceback):
+        FunctionRegistry.add_preloaded_functions(self._functions)
+
+    def _register_preloaded_functions(self):
+        """Register preloaded functions."""
+        pass

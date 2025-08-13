@@ -8,7 +8,7 @@ import logging
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.rag.rag_resource import RAGResource
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 

@@ -9,4 +9,7 @@ public:PACKAGE_VERSION = "v1.0.0"
 public:PACKAGE_NAME = "utils"
 
 def get_package_info():
-    return f"Package: {context.get('public:PACKAGE_NAME')} v{context.get('public:PACKAGE_VERSION')}" 
+    # Access constants directly from the current module scope
+    name = public:PACKAGE_NAME
+    version = public:PACKAGE_VERSION
+    return f"{name} {version}" 
