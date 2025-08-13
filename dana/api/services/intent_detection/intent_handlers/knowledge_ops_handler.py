@@ -11,6 +11,9 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_
     GenerateKnowledgeTool,
     ModifyTreeTool,
     AttemptCompletionTool,
+    ProposeKnowledgeStructureTool,
+    RefineKnowledgeStructureTool,
+    PreviewKnowledgeTopicTool,
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 import logging
@@ -99,6 +102,34 @@ class KnowledgeOpsHandler(AbstractHandler):
                 knowledge_status_path=self.knowledge_status_path,
                 storage_path=self.storage_path,
                 tree_structure=self.tree_structure,
+                domain=self.domain,
+                role=self.role,
+                tasks=self.tasks,
+            ).as_dict()
+        )
+
+        # Structure proposal tool
+        self.tools.update(
+            ProposeKnowledgeStructureTool(
+                llm=self.llm,
+                domain=self.domain,
+                role=self.role,
+            ).as_dict()
+        )
+
+        # Structure refinement tool
+        self.tools.update(
+            RefineKnowledgeStructureTool(
+                llm=self.llm,
+                domain=self.domain,
+                role=self.role,
+            ).as_dict()
+        )
+
+        # Knowledge preview tool
+        self.tools.update(
+            PreviewKnowledgeTopicTool(
+                llm=self.llm,
                 domain=self.domain,
                 role=self.role,
                 tasks=self.tasks,
@@ -272,7 +303,10 @@ class KnowledgeOpsHandler(AbstractHandler):
             result = tool.execute(**params)
 
             # Convert ToolResult to MessageData
-            message_data = MessageData(role="user", content=result.result, require_user=result.require_user, treat_as_tool=True)
+            content = result.result
+            if tool_name in ("attempt_completion", "ask_question"):
+                content = f"{thinking_content}\n\n{content}"
+            message_data = MessageData(role="user", content=content, require_user=result.require_user, treat_as_tool=True)
 
             # If this was a modify_tree operation, reload the tree structure
             if tool_name == "modify_tree":
