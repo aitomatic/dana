@@ -1,0 +1,76 @@
+# Debug agent LLM resource initialization
+
+# Define an agent blueprint with LLM config
+agent_blueprint SmartAgent:
+    name: str = "Smart Agent"
+    expertise: str = "general"
+    config: dict = {
+        "llm_model": "openai:gpt-4o-mini",
+        "llm_temperature": 0.3
+    }
+
+# Create instance from blueprint
+smart_agent = SmartAgent()
+
+print("=== Agent LLM Debug Test ===")
+print("SmartAgent type:", type(smart_agent))
+print("SmartAgent config:", smart_agent.config)
+
+# Check if agent has LLM resource instance
+print("\n--- Checking LLM Resource ---")
+try:
+    llm_instance = smart_agent._llm_resource_instance
+    print("_llm_resource_instance:", llm_instance)
+except:
+    print("_llm_resource_instance: Not found")
+
+# Try to get LLM resource
+print("\n--- Getting LLM Resource ---")
+llm_resource = smart_agent._get_llm_resource()
+print("LLM Resource:", llm_resource)
+if llm_resource:
+    print("LLM Resource type:", type(llm_resource))
+    try:
+        print("LLM Resource is_available:", llm_resource.is_available)
+    except:
+        print("LLM Resource is_available: Cannot check")
+else:
+    print("❌ No LLM resource found")
+
+# Check if agent has underlying LLM resource
+print("\n--- Checking Underlying LLM Resource ---")
+try:
+    llm_resource = smart_agent._llm_resource
+    print("_llm_resource:", llm_resource)
+    if llm_resource:
+        print("_llm_resource type:", type(llm_resource))
+        try:
+            model = llm_resource._model
+            print("_llm_resource model:", model)
+        except:
+            print("_llm_resource model: Cannot access")
+except:
+    print("_llm_resource: Not found")
+
+# Test what happens when we try to initialize
+print("\n--- Testing Initialization ---")
+try:
+    smart_agent._initialize_llm_resource()
+    print("✅ Initialization completed")
+    try:
+        print("After init - _llm_resource_instance:", smart_agent._llm_resource_instance)
+        if smart_agent._llm_resource_instance:
+            try:
+                print("After init - is_available:", smart_agent._llm_resource_instance.is_available)
+            except:
+                print("After init - is_available: Cannot check")
+    except:
+        print("After init - _llm_resource_instance: Cannot access")
+except Exception as e:
+    print("❌ Initialization failed:", e)
+
+# Test chat again after initialization
+print("\n--- Testing Chat After Init ---")
+response = smart_agent.chat("Hello!")
+print("Response:", response)
+print("Response type:", type(response))

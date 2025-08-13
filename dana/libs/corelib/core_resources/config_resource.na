@@ -1,0 +1,268 @@
+# Configuration resource  
+# Provides configuration management and key-value storage for Dana agents
+
+resource ConfigResource:
+    kind: str = "config"
+    name: str = ""
+    state: str = "created"
+    config_file: str = ""
+    read_only: bool = false
+    auto_save: bool = true
+    description: str = "Configuration management config"
+
+# Configuration storage (simulated)
+_config_data: dict = {}
+_dirty: bool = false
+
+# Initialize the config config
+def (config: ConfigResource) initialize() -> bool:
+    if config.state == "created":
+        config.state = "initialized"
+        
+        # Load configuration from file if specified
+        if config.config_file != "":
+            config._load_config_file()
+        else:
+            # Initialize with default config
+            config._load_default_config()
+        
+        print(f"Config config '{config.name}' initialized")
+        return true
+    return false
+
+# Start the config config
+def (config: ConfigResource) start() -> bool:
+    if config.state == "initialized":
+        config.state = "running"
+        return true
+    return false
+
+# Stop the config config
+def (config: ConfigResource) stop() -> bool:
+    if config.state == "running":
+        # Auto-save if enabled and dirty
+        if config.auto_save and _dirty:
+            config._save_config()
+        config.state = "terminated"
+        return true
+    return false
+
+# Check if config is running
+def (config: ConfigResource) is_running() -> bool:
+    return config.state == "running"
+
+# Standard query interface for config operations
+def (config: ConfigResource) query(request: str) -> str:
+    if config.state != "running":
+        return f"Config config {config.name} not running (state: {config.state})"
+    
+    # Parse the request to determine operation
+    # Format: "get:key" or "set:key:value" or "delete:key" or "list" or "save" or "load"
+    parts = request.split(":")
+    
+    if len(parts) < 1:
+        return "Invalid config request format"
+    
+    operation = parts[0]
+    
+    if operation == "get":
+        if len(parts) < 2:
+            return "Get operation requires key. Use 'get:key'"
+        key = parts[1]
+        return config._get_config_value(key)
+        
+    elif operation == "set":
+        if config.read_only:
+            return "Set operation denied: config is in read-only mode"
+        if len(parts) < 3:
+            return "Set operation requires key and value. Use 'set:key:value'"
+        key = parts[1]
+        value = ":".join(parts[2:])  # Rejoin in case value contains colons
+        return config._set_config_value(key, value)
+        
+    elif operation == "delete":
+        if config.read_only:
+            return "Delete operation denied: config is in read-only mode"
+        if len(parts) < 2:
+            return "Delete operation requires key. Use 'delete:key'"
+        key = parts[1]
+        return config._delete_config_value(key)
+        
+    elif operation == "list":
+        return config._list_config_keys()
+        
+    elif operation == "save":
+        if config.read_only:
+            return "Save operation denied: config is in read-only mode"
+        return config._save_config()
+        
+    elif operation == "load":
+        return config._load_config_file()
+        
+    elif operation == "clear":
+        if config.read_only:
+            return "Clear operation denied: config is in read-only mode"
+        return config._clear_config()
+        
+    elif operation == "exists":
+        if len(parts) < 2:
+            return "Exists operation requires key. Use 'exists:key'"
+        key = parts[1]
+        return config._key_exists(key)
+        
+    else:
+        return f"Unknown config operation: {operation}"
+
+# Load default configuration
+def (config: ConfigResource) _load_default_config():
+    _config_data["app.name"] = "Dana Application"
+    _config_data["app.version"] = "1.0.0"
+    _config_data["app.debug"] = "false"
+    _config_data["cache.enabled"] = "true"
+    _config_data["cache.size"] = "1000"
+    _config_data["log.level"] = "INFO"
+
+# Load configuration from file
+def (config: ConfigResource) _load_config_file() -> str:
+    if config.config_file == "":
+        return "No config file specified"
+    
+    # Simulate loading from file
+    # In real implementation would parse actual config file (JSON, YAML, etc.)
+    _config_data["loaded_from"] = config.config_file
+    _config_data["loaded_at"] = "2025-01-22T10:30:00Z"
+    _dirty = false
+    
+    return f"Configuration loaded from '{config.config_file}'"
+
+# Save configuration to file
+def (config: ConfigResource) _save_config() -> str:
+    if config.config_file == "":
+        return "No config file specified for saving"
+    
+    # Simulate saving to file
+    _config_data["saved_at"] = "2025-01-22T10:35:00Z"
+    _dirty = false
+    
+    return f"Configuration saved to '{config.config_file}'"
+
+# Get a configuration value
+def (config: ConfigResource) _get_config_value(key: str) -> str:
+    if key in _config_data:
+        value = _config_data[key]
+        return f"Config '{key}' = '{value}'"
+    else:
+        return f"Config key '{key}' not found"
+
+# Set a configuration value
+def (config: ConfigResource) _set_config_value(key: str, value: str) -> str:
+    old_value = _config_data.get(key, "[not set]")
+    _config_data[key] = value
+    _dirty = true
+    
+    return f"Config '{key}' changed from '{old_value}' to '{value}'"
+
+# Delete a configuration value
+def (config: ConfigResource) _delete_config_value(key: str) -> str:
+    if key in _config_data:
+        old_value = _config_data[key]
+        _config_data[key] = None
+        _dirty = true
+        return f"Deleted config '{key}' (was '{old_value}')"
+    else:
+        return f"Config key '{key}' not found"
+
+# List all configuration keys
+def (config: ConfigResource) _list_config_keys() -> str:
+    if len(_config_data) == 0:
+        return "No configuration values set"
+    
+    key_list = "Configuration keys:\n"
+    for key in _config_data.keys():
+        value = _config_data[key]
+        key_list = key_list + f"  - {key} = '{value}'\n"
+    
+    return key_list
+
+# Clear all configuration
+def (config: ConfigResource) _clear_config() -> str:
+    count = len(_config_data)
+    _config_data.clear()
+    _dirty = true
+    return f"Cleared {count} configuration values"
+
+# Check if key exists
+def (config: ConfigResource) _key_exists(key: str) -> str:
+    exists = key in _config_data
+    return f"Config key '{key}' exists: {exists}"
+
+# High-level configuration functions
+
+# Get configuration value with default
+def (config: ConfigResource) get_config(key: str, default_value: str = "") -> str:
+    if not config.is_running():
+        return default_value
+    
+    if key in _config_data:
+        return _config_data[key]
+    else:
+        return default_value
+
+# Set configuration value
+def (config: ConfigResource) set_config(key: str, value: str) -> bool:
+    if not config.is_running() or config.read_only:
+        return false
+    
+    _config_data[key] = value
+    _dirty = true
+    
+    # Auto-save if enabled
+    if config.auto_save:
+        config._save_config()
+    
+    return true
+
+# Get configuration as boolean
+def (config: ConfigResource) get_bool_config(key: str, default_value: bool = false) -> bool:
+    value = config.get_config(key, "")
+    if value == "":
+        return default_value
+    
+    lower_value = value.lower()
+    return lower_value == "true" or lower_value == "1" or lower_value == "yes"
+
+# Get configuration as integer
+def (config: ConfigResource) get_int_config(key: str, default_value: int = 0) -> int:
+    value = config.get_config(key, "")
+    if value == "":
+        return default_value
+    
+    try:
+        return int(value)
+    except:
+        return default_value
+
+# Check if configuration has been modified
+def (config: ConfigResource) is_dirty() -> bool:
+    return _dirty
+
+# Force save configuration
+def (config: ConfigResource) save() -> bool:
+    if not config.is_running() or config.read_only:
+        return false
+    
+    config._save_config()
+    return true
+
+# Get config config statistics
+def (config: ConfigResource) get_stats() -> dict:
+    return {
+        "name": config.name,
+        "state": config.state,
+        "config_file": config.config_file,
+        "read_only": config.read_only,
+        "auto_save": config.auto_save,
+        "total_keys": len(_config_data),
+        "is_dirty": _dirty,
+        "operations_supported": ["get", "set", "delete", "list", "save", "load", "clear", "exists"]
+    }

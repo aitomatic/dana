@@ -1,0 +1,355 @@
+# Singleton Agent Methods Tests
+# Tests for singleton agent method behavior and functionality
+
+log_level("INFO")
+
+# Test 1: Basic singleton methods
+agent BasicMethods
+
+def test_basic_singleton_methods():
+    # Test that singleton agents have all basic methods
+    try:
+        # Test plan method
+        plan_result = BasicMethods.plan("basic planning task")
+        if "planning" not in str(plan_result).lower():
+            return "❌ Basic plan method not working"
+        
+        # Test solve method
+        solve_result = BasicMethods.solve("basic solving problem")
+        if "solving" not in str(solve_result).lower():
+            return "❌ Basic solve method not working"
+        
+        # Test chat method
+        chat_result = BasicMethods.chat("basic chat message")
+        if "basic" not in str(chat_result).lower():
+            return "❌ Basic chat method not working"
+        
+        return "✅ Basic singleton methods work"
+    except Exception as e:
+        return f"❌ Basic singleton methods failed: {e}"
+
+# Test 2: Memory methods in singleton
+agent MemoryMethods
+
+def test_memory_methods():
+    # Test memory operations in singleton agents
+    try:
+        # Test remember method
+        remember_result = MemoryMethods.remember("test_key", "test_value")
+        if remember_result != true:
+            return "❌ Singleton remember method not working"
+        
+        # Test recall method
+        recall_result = MemoryMethods.recall("test_key")
+        if recall_result != "test_value":
+            return "❌ Singleton recall method not working"
+        
+        # Test recall with missing key
+        missing_result = MemoryMethods.recall("missing_key")
+        if missing_result != None:
+            return "❌ Singleton recall with missing key should return None"
+        
+        return "✅ Memory methods work"
+    except Exception as e:
+        return f"❌ Memory methods failed: {e}"
+
+# Test 3: Method chaining in singleton
+agent_blueprint ChainingAgent:
+    name: str = "Chaining"
+    counter: int = 0
+
+agent ChainingTest(ChainingAgent)
+
+def test_method_chaining():
+    # Test that methods can be chained in singleton
+    try:
+        # Test multiple method calls
+        ChainingTest.remember("step1", "completed")
+        plan_result = ChainingTest.plan("chained task")
+        solve_result = ChainingTest.solve("chained problem")
+        recall_result = ChainingTest.recall("step1")
+        
+        if "planning" not in str(plan_result).lower():
+            return "❌ Chained plan method not working"
+        if "solving" not in str(solve_result).lower():
+            return "❌ Chained solve method not working"
+        if recall_result != "completed":
+            return "❌ Chained recall method not working"
+        
+        return "✅ Method chaining works"
+    except Exception as e:
+        return f"❌ Method chaining failed: {e}"
+
+# Test 4: Method parameter handling
+agent_blueprint ParameterAgent:
+    name: str = "Parameter"
+    config: dict = {"timeout": 30}
+
+agent ParameterTest(ParameterAgent)
+
+def test_method_parameter_handling():
+    # Test method behavior with different parameter types
+    try:
+        # Test with empty parameters
+        empty_result = ParameterTest.plan("")
+        if "planning" not in str(empty_result).lower():
+            return "❌ Empty parameter handling not working"
+        
+        # Test with long parameters
+        long_param = "x" * 500
+        long_result = ParameterTest.solve(long_param)
+        if "solving" not in str(long_result).lower():
+            return "❌ Long parameter handling not working"
+        
+        # Test with special characters
+        special_result = ParameterTest.chat("test@#$%^&*()")
+        if "test" not in str(special_result).lower():
+            return "❌ Special character handling not working"
+        
+        return "✅ Method parameter handling works"
+    except Exception as e:
+        return f"❌ Method parameter handling failed: {e}"
+
+# Test 5: Method return values
+agent_blueprint ReturnAgent:
+    name: str = "Return"
+    data: dict = {"key": "value"}
+
+agent ReturnTest(ReturnAgent)
+
+def test_method_return_values():
+    # Test that methods return expected value types
+    try:
+        # Test plan return value
+        plan_result = ReturnTest.plan("test task")
+        if not isinstance(plan_result, str):
+            return "❌ Plan method should return string"
+        
+        # Test solve return value
+        solve_result = ReturnTest.solve("test problem")
+        if not isinstance(solve_result, str):
+            return "❌ Solve method should return string"
+        
+        # Test chat return value
+        chat_result = ReturnTest.chat("test message")
+        if not isinstance(chat_result, str):
+            return "❌ Chat method should return string"
+        
+        # Test remember return value
+        remember_result = ReturnTest.remember("key", "value")
+        if remember_result != true:
+            return "❌ Remember method should return true"
+        
+        # Test recall return value
+        recall_result = ReturnTest.recall("key")
+        if recall_result != "value":
+            return "❌ Recall method should return stored value"
+        
+        return "✅ Method return values are correct"
+    except Exception as e:
+        return f"❌ Method return values failed: {e}"
+
+# Test 6: Method performance
+agent PerformanceTest
+
+def test_method_performance():
+    # Test method performance with multiple rapid calls
+    try:
+        for i in range(10):
+            # Test rapid method calls
+            plan_result = PerformanceTest.plan(f"task {i}")
+            solve_result = PerformanceTest.solve(f"problem {i}")
+            PerformanceTest.remember(f"key{i}", f"value{i}")
+            recall_result = PerformanceTest.recall(f"key{i}")
+            
+            if "planning" not in str(plan_result).lower():
+                return f"❌ Performance test failed on plan iteration {i}"
+            if "solving" not in str(solve_result).lower():
+                return f"❌ Performance test failed on solve iteration {i}"
+            if recall_result != f"value{i}":
+                return f"❌ Performance test failed on recall iteration {i}"
+        
+        return "✅ Method performance is stable"
+    except Exception as e:
+        return f"❌ Method performance failed: {e}"
+
+# Test 7: Method isolation between singletons
+agent_blueprint IsolationAgent:
+    name: str = "Isolation"
+    counter: int = 0
+
+agent Isolation1(IsolationAgent)
+agent Isolation2(IsolationAgent)
+
+def test_method_isolation():
+    # Test that methods are isolated between different singletons
+    try:
+        # Store different values in each singleton
+        Isolation1.remember("shared_key", "value1")
+        Isolation2.remember("shared_key", "value2")
+        
+        # Test that each singleton has its own memory
+        result1 = Isolation1.recall("shared_key")
+        result2 = Isolation2.recall("shared_key")
+        
+        if result1 != "value1":
+            return "❌ Isolation1 memory not isolated"
+        if result2 != "value2":
+            return "❌ Isolation2 memory not isolated"
+        
+        # Test that method calls don't interfere
+        plan1 = Isolation1.plan("task for isolation1")
+        plan2 = Isolation2.plan("task for isolation2")
+        
+        if "planning" not in str(plan1).lower():
+            return "❌ Isolation1 plan method not working"
+        if "planning" not in str(plan2).lower():
+            return "❌ Isolation2 plan method not working"
+        
+        return "✅ Method isolation works"
+    except Exception as e:
+        return f"❌ Method isolation failed: {e}"
+
+# Test 8: Method error handling
+agent ErrorMethods
+
+def test_method_error_handling():
+    # Test that methods handle errors gracefully
+    try:
+        # Test with invalid parameters
+        try:
+            result = ErrorMethods.plan(None)
+            if result is None:
+                return "❌ Method should handle None parameter"
+        except Exception:
+            return "❌ Method should not throw exception with None parameter"
+        
+        # Test with very large parameters
+        large_param = "x" * 10000
+        result = ErrorMethods.solve(large_param)
+        if result is None:
+            return "❌ Method should handle large parameters"
+        
+        # Test memory operations with edge cases
+        ErrorMethods.remember("", "empty_key_value")
+        empty_result = ErrorMethods.recall("")
+        if empty_result != "empty_key_value":
+            return "❌ Method should handle empty keys"
+        
+        return "✅ Method error handling works"
+    except Exception as e:
+        return f"❌ Method error handling failed: {e}"
+
+# Test 9: Method state persistence
+agent_blueprint StateAgent:
+    name: str = "State"
+    operations: list = []
+
+agent StateTest(StateAgent)
+
+def test_method_state_persistence():
+    # Test that method calls maintain state across operations
+    try:
+        # Perform a sequence of operations
+        StateTest.remember("operation1", "step1")
+        plan_result = StateTest.plan("stateful task")
+        StateTest.remember("operation2", "step2")
+        solve_result = StateTest.solve("stateful problem")
+        
+        # Verify that state is maintained
+        op1 = StateTest.recall("operation1")
+        op2 = StateTest.recall("operation2")
+        
+        if op1 != "step1":
+            return "❌ State persistence failed for operation1"
+        if op2 != "step2":
+            return "❌ State persistence failed for operation2"
+        
+        if "planning" not in str(plan_result).lower():
+            return "❌ State persistence failed for plan"
+        if "solving" not in str(solve_result).lower():
+            return "❌ State persistence failed for solve"
+        
+        return "✅ Method state persistence works"
+    except Exception as e:
+        return f"❌ Method state persistence failed: {e}"
+
+# Test 10: Method behavior consistency
+agent ConsistencyTest
+
+def test_method_behavior_consistency():
+    # Test that methods behave consistently across calls
+    try:
+        # Test multiple calls with same parameters
+        result1 = ConsistencyTest.plan("consistent task")
+        result2 = ConsistencyTest.plan("consistent task")
+        
+        # Both should return planning results
+        if "planning" not in str(result1).lower():
+            return "❌ First consistency test failed"
+        if "planning" not in str(result2).lower():
+            return "❌ Second consistency test failed"
+        
+        # Test solve consistency
+        solve1 = ConsistencyTest.solve("consistent problem")
+        solve2 = ConsistencyTest.solve("consistent problem")
+        
+        if "solving" not in str(solve1).lower():
+            return "❌ First solve consistency test failed"
+        if "solving" not in str(solve2).lower():
+            return "❌ Second solve consistency test failed"
+        
+        return "✅ Method behavior consistency works"
+    except Exception as e:
+        return f"❌ Method behavior consistency failed: {e}"
+
+# Run methods tests
+log("=== Singleton Agent Methods Tests ===")
+
+tests = [
+    test_basic_singleton_methods,
+    test_memory_methods,
+    test_method_chaining,
+    test_method_parameter_handling,
+    test_method_return_values,
+    test_method_performance,
+    test_method_isolation,
+    test_method_error_handling,
+    test_method_state_persistence,
+    test_method_behavior_consistency
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Methods Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All methods tests passed!")
+else:
+    log(f"⚠️  {failed} methods tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}

@@ -3,10 +3,10 @@
 import asyncio
 import os
 import unittest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from dana.common.exceptions import EmbeddingError, EmbeddingProviderError
-from dana.common.resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
+from dana.common.sys_resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
 
 
 class TestEmbeddingQueryExecutor(unittest.TestCase):
@@ -139,7 +139,7 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
 
         asyncio.run(run_test())
 
-    @patch("dana.common.resource.embedding.embedding_query_executor.asyncio.get_event_loop")
+    @patch("dana.common.sys_resource.embedding.embedding_query_executor.asyncio.get_event_loop")
     def test_openai_provider_initialization(self, mock_get_loop):
         """Test OpenAI provider initialization."""
         mock_loop = MagicMock()

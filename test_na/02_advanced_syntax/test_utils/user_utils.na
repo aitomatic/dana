@@ -1,9 +1,0 @@
-# User utility functions for testing imports
-def format_name(first: str, last: str) -> str: 
-    return f"{first} {last}"
-def validate_email(email: str) -> bool: 
-    return _check_email_format(email)
-def _check_email_format(email: str) -> bool: 
-    return "@" in email and "." in email
-
-# No __exports__ defined - all public functions will be available for star import

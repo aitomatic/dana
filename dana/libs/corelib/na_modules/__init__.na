@@ -9,7 +9,15 @@ when the sandbox is initialized.
 # Core library initialization
 # Import all core modules to make their functions available
 
+from .basic_agent import BasicAgent, DanaAgent
 from .core import add_one, add_two, add_three, add_four
-from .basic_agent import BasicAgent, hello, HelloWorld
+# from . import a2a_agent  # This will trigger registration of A2A_Agent - temporarily disabled due to recursion
 
-__exports__ = [ "BasicAgent", "add_one", "add_two", "add_three", "add_four", "hello", "HelloWorld" ]
+__exports__ = [
+    "BasicAgent",
+    "DanaAgent",
+    "add_one",
+    "add_two",
+    "add_three",
+    "add_four",
+]

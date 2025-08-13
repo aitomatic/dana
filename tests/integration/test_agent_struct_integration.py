@@ -5,7 +5,7 @@ Tests coexistence, method dispatch priority, and registry integration.
 
 import unittest
 
-from dana.agent import AgentType, AgentInstance, create_agent_instance, register_agent_type
+from dana.agent import AgentInstance, AgentType, create_agent_instance, register_agent_type
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -142,8 +142,9 @@ class TestAgentInheritance(unittest.TestCase):
 
         # Test that agent type has all struct type attributes
         self.assertEqual(agent_type.name, "TestAgent")
-        self.assertEqual(agent_type.fields, {"name": "str"})
-        self.assertEqual(agent_type.field_order, ["name"])
+        # AgentType automatically adds a 'state' field
+        self.assertEqual(agent_type.fields, {"state": "str", "name": "str"})
+        self.assertEqual(agent_type.field_order, ["state", "name"])
 
         # Test that agent type has additional agent-specific attributes
         self.assertIn("plan", agent_type.agent_methods)

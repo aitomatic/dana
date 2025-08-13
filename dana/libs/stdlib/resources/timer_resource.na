@@ -1,0 +1,235 @@
+# Timer Resource
+# Provides timing and scheduling operations for Dana agents
+
+resource TimerResource:
+    kind: str = "timer"
+    name: str = ""
+    state: str = "created"
+    default_interval: int = 1000  # milliseconds
+    max_timers: int = 100
+    description: str = "Timer and scheduling resource"
+
+# Timer storage (simulated - would use actual timing mechanisms)
+_active_timers: dict = {}
+_timer_counter: int = 0
+
+# Initialize the timer resource
+def (timer: TimerResource) initialize() -> bool:
+    if timer.state == "created":
+        timer.state = "initialized"
+        print(f"Timer resource '{timer.name}' initialized")
+        return true
+    return false
+
+# Start the timer resource
+def (timer: TimerResource) start() -> bool:
+    if timer.state == "initialized":
+        timer.state = "running"
+        print(f"Timer resource '{timer.name}' ready for scheduling")
+        return true
+    return false
+
+# Stop the timer resource
+def (timer: TimerResource) stop() -> bool:
+    if timer.state == "running":
+        # Cancel all active timers
+        timer._cancel_all_timers()
+        timer.state = "terminated"
+        return true
+    return false
+
+# Check if resource is running
+def (timer: TimerResource) is_running() -> bool:
+    return timer.state == "running"
+
+# Standard query interface for timer operations
+def (timer: TimerResource) query(request: str) -> str:
+    if timer.state != "running":
+        return f"Timer resource {timer.name} not running (state: {timer.state})"
+    
+    # Parse the request to determine operation
+    # Format: "start:interval" or "stop:timer_id" or "list" or "delay:milliseconds"
+    parts = request.split(":")
+    
+    if len(parts) < 1:
+        return "Invalid timer request format"
+    
+    operation = parts[0]
+    
+    if operation == "start":
+        interval = timer.default_interval
+        if len(parts) > 1:
+            try:
+                interval = int(parts[1])
+            except:
+                return f"Invalid interval: {parts[1]}"
+        return timer._start_timer(interval)
+        
+    elif operation == "stop":
+        if len(parts) < 2:
+            return "Stop operation requires timer ID. Use 'stop:timer_id'"
+        timer_id = parts[1]
+        return timer._stop_timer(timer_id)
+        
+    elif operation == "list":
+        return timer._list_timers()
+        
+    elif operation == "delay":
+        if len(parts) < 2:
+            return "Delay operation requires duration. Use 'delay:milliseconds'"
+        try:
+            duration = int(parts[1])
+            return timer._create_delay(duration)
+        except:
+            return f"Invalid duration: {parts[1]}"
+            
+    elif operation == "schedule":
+        if len(parts) < 3:
+            return "Schedule operation requires duration and callback. Use 'schedule:milliseconds:callback_name'"
+        try:
+            duration = int(parts[1])
+            callback = parts[2]
+            return timer._schedule_callback(duration, callback)
+        except:
+            return f"Invalid schedule parameters"
+            
+    else:
+        return f"Unknown timer operation: {operation}"
+
+# Start a new timer
+def (timer: TimerResource) _start_timer(interval: int) -> str:
+    if len(_active_timers) >= timer.max_timers:
+        return f"Maximum number of timers reached ({timer.max_timers})"
+    
+    if interval < 1:
+        return "Timer interval must be at least 1 millisecond"
+    
+    # Generate timer ID
+    _timer_counter = _timer_counter + 1
+    timer_id = f"timer_{_timer_counter}"
+    
+    # Store timer info (in real implementation would start actual timer)
+    _active_timers[timer_id] = {
+        "id": timer_id,
+        "interval": interval,
+        "started": timer._get_current_time(),
+        "status": "running"
+    }
+    
+    return f"Started timer '{timer_id}' with {interval}ms interval"
+
+# Stop a specific timer
+def (timer: TimerResource) _stop_timer(timer_id: str) -> str:
+    if timer_id not in _active_timers:
+        return f"Timer '{timer_id}' not found"
+    
+    _active_timers[timer_id]["status"] = "stopped"
+    # In real implementation would cancel the actual timer
+    return f"Stopped timer '{timer_id}'"
+
+# List all active timers
+def (timer: TimerResource) _list_timers() -> str:
+    if len(_active_timers) == 0:
+        return "No active timers"
+    
+    timer_list = "Active timers:\n"
+    for timer_id in _active_timers.keys():
+        timer_info = _active_timers[timer_id]
+        timer_list = timer_list + f"  - {timer_id}: {timer_info['interval']}ms, {timer_info['status']}\n"
+    
+    return timer_list
+
+# Create a delay (blocking wait)
+def (timer: TimerResource) _create_delay(duration: int) -> str:
+    if duration < 1:
+        return "Delay duration must be at least 1 millisecond"
+    
+    # In real implementation would actually wait/sleep
+    return f"Delayed for {duration} milliseconds"
+
+# Schedule a callback
+def (timer: TimerResource) _schedule_callback(duration: int, callback: str) -> str:
+    if duration < 1:
+        return "Schedule duration must be at least 1 millisecond"
+    
+    # Generate schedule ID
+    _timer_counter = _timer_counter + 1
+    schedule_id = f"schedule_{_timer_counter}"
+    
+    # Store schedule info
+    _active_timers[schedule_id] = {
+        "id": schedule_id,
+        "type": "schedule",
+        "duration": duration,
+        "callback": callback,
+        "scheduled": timer._get_current_time(),
+        "status": "scheduled"
+    }
+    
+    return f"Scheduled callback '{callback}' in {duration}ms (ID: {schedule_id})"
+
+# Cancel all timers
+def (timer: TimerResource) _cancel_all_timers() -> int:
+    count = len(_active_timers)
+    _active_timers.clear()
+    return count
+
+# Get current time (simulated)
+def (timer: TimerResource) _get_current_time() -> str:
+    # In real implementation would return actual timestamp
+    return "2025-01-22T10:30:00Z"
+
+# High-level timer functions
+
+# Start a repeating timer
+def (timer: TimerResource) start_interval_timer(interval_ms: int) -> str:
+    if not timer.is_running():
+        return "Resource not running"
+    return timer.query(f"start:{interval_ms}")
+
+# Create a one-time delay
+def (timer: TimerResource) delay(duration_ms: int) -> str:
+    if not timer.is_running():
+        return "Resource not running"
+    return timer.query(f"delay:{duration_ms}")
+
+# Schedule a one-time callback
+def (timer: TimerResource) schedule_once(duration_ms: int, callback_name: str) -> str:
+    if not timer.is_running():
+        return "Resource not running"
+    return timer.query(f"schedule:{duration_ms}:{callback_name}")
+
+# Stop a specific timer by ID
+def (timer: TimerResource) cancel_timer(timer_id: str) -> str:
+    if not timer.is_running():
+        return "Resource not running"
+    return timer.query(f"stop:{timer_id}")
+
+# Get all active timers
+def (timer: TimerResource) list_active_timers() -> str:
+    if not timer.is_running():
+        return "Resource not running"
+    return timer.query("list")
+
+# Get timer resource statistics
+def (timer: TimerResource) get_stats() -> dict:
+    active_count = 0
+    scheduled_count = 0
+    
+    for timer_id in _active_timers.keys():
+        timer_info = _active_timers[timer_id]
+        if timer_info.get("status") == "running":
+            active_count = active_count + 1
+        elif timer_info.get("status") == "scheduled":
+            scheduled_count = scheduled_count + 1
+    
+    return {
+        "name": timer.name,
+        "state": timer.state,
+        "default_interval": timer.default_interval,
+        "max_timers": timer.max_timers,
+        "active_timers": active_count,
+        "scheduled_callbacks": scheduled_count,
+        "total_timers": len(_active_timers),
+        "operations_supported": ["start", "stop", "list", "delay", "schedule"]
+    }
