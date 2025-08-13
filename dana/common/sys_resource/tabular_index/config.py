@@ -37,8 +37,7 @@ class TabularConfig:
 
         if source_path.suffix.lower() not in valid_extensions:
             raise ValueError(
-                f"Source file must be a CSV or Parquet file. "
-                f"Got '{source_path.suffix}' but expected one of: {', '.join(valid_extensions)}"
+                f"Source file must be a CSV or Parquet file. Got '{source_path.suffix}' but expected one of: {', '.join(valid_extensions)}"
             )
 
 

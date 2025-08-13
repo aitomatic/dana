@@ -155,6 +155,52 @@ class StructType:
 
         return description
 
+    def merge_additional_fields(self, additional_fields: dict[str, str | dict[str, Any]], prepend: bool = True) -> None:
+        """Merge additional fields into this struct type.
+
+        Args:
+            additional_fields: Dictionary mapping field names to either:
+                              - Type name string (e.g., 'str', 'int')
+                              - Field config dict with keys: 'type', 'default', 'comment'
+            prepend: If True, add fields at the beginning of field_order. If False, append at the end.
+        """
+        # Collect new fields to add
+        fields_to_add = []
+
+        for field_name, field_spec in additional_fields.items():
+            if field_name not in self.fields:
+                fields_to_add.append((field_name, field_spec))
+
+                if isinstance(field_spec, str):
+                    # Simple case: field_name -> type_name
+                    self.fields[field_name] = field_spec
+                elif isinstance(field_spec, dict):
+                    # Complex case: field_name -> {type, default, comment}
+                    if "type" not in field_spec:
+                        raise ValueError(f"Field '{field_name}' config must include 'type' key")
+
+                    self.fields[field_name] = field_spec["type"]
+
+                    if "default" in field_spec:
+                        if self.field_defaults is None:
+                            self.field_defaults = {}
+                        self.field_defaults[field_name] = field_spec["default"]
+
+                    if "comment" in field_spec:
+                        if not hasattr(self, "field_comments") or self.field_comments is None:
+                            self.field_comments = {}
+                        self.field_comments[field_name] = field_spec["comment"]
+                else:
+                    raise ValueError(f"Field '{field_name}' spec must be string or dict, got {type(field_spec)}")
+
+        # Update field_order with new fields
+        if fields_to_add:
+            new_field_names = [field_name for field_name, _ in fields_to_add]
+            if prepend:
+                self.field_order = new_field_names + self.field_order
+            else:
+                self.field_order.extend(new_field_names)
+
     def __repr__(self) -> str:
         """String representation showing struct type with field information."""
         field_strs = []
@@ -246,7 +292,7 @@ class StructInstance:
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
                     # Use the module-level TypeAwareMethodRegistry class
-                    if type_aware_method_registry.has_struct_method(delegated_struct_type.name, method_name):
+                    if type_aware_method_registry.has_method(delegated_struct_type.name, method_name):
                         return delegated_object, method_name
 
                 # Also check for direct callable attributes (for non-struct objects)
@@ -513,6 +559,19 @@ class TypeAwareMethodRegistry:
         return cls._methods.get(key)
 
     @classmethod
+    def has_method(cls, receiver_type: str, method_name: str) -> bool:
+        """Check if a method exists for a receiver type.
+
+        Args:
+            receiver_type: The type name of the receiver
+            method_name: The name of the method
+
+        Returns:
+            True if the method exists
+        """
+        return cls.lookup_method(receiver_type, method_name) is not None
+
+    @classmethod
     def lookup_method_for_instance(cls, instance: Any, method_name: str) -> Callable | None:
         """Lookup method for a specific instance (extracts type automatically).
 
@@ -592,117 +651,6 @@ class TypeAwareMethodRegistry:
             return [(rt, mn) for (rt, mn) in cls._methods.keys() if rt == receiver_type]
         return list(cls._methods.keys())
 
-    @classmethod
-    def get_struct_method(cls, struct_type: str, method_name: str) -> Callable | None:
-        """Get a method for a struct type (backward compatibility).
-
-        Args:
-            struct_type: The struct type name
-            method_name: The method name
-
-        Returns:
-            The registered method or None
-        """
-        return cls.lookup_method(struct_type, method_name)
-
-    @classmethod
-    def has_struct_method(cls, struct_type: str, method_name: str) -> bool:
-        """Check if a method exists for a struct type (backward compatibility).
-
-        Args:
-            struct_type: The struct type name
-            method_name: The method name
-
-        Returns:
-            True if the method exists
-        """
-        return cls.lookup_method(struct_type, method_name) is not None
-
-    @classmethod
-    def get_agent_method(cls, agent_type: str, method_name: str) -> Callable | None:
-        """Get a method for an agent type (backward compatibility).
-
-        Args:
-            agent_type: The agent type name
-            method_name: The method name
-
-        Returns:
-            The registered method or None
-        """
-        return cls.lookup_method(agent_type, method_name)
-
-    @classmethod
-    def has_agent_method(cls, agent_type: str, method_name: str) -> bool:
-        """Check if a method exists for an agent type (backward compatibility).
-
-        Args:
-            agent_type: The agent type name
-            method_name: The method name
-
-        Returns:
-            True if the method exists
-        """
-        return cls.lookup_method(agent_type, method_name) is not None
-
-    @classmethod
-    def get_resource_method(cls, resource_type: str, method_name: str) -> Callable | None:
-        """Get a method for a resource type (backward compatibility).
-
-        Args:
-            resource_type: The resource type name
-            method_name: The method name
-
-        Returns:
-            The registered method or None
-        """
-        return cls.lookup_method(resource_type, method_name)
-
-    @classmethod
-    def has_resource_method(cls, resource_type: str, method_name: str) -> bool:
-        """Check if a method exists for a resource type (backward compatibility).
-
-        Args:
-            resource_type: The resource type name
-            method_name: The method name
-
-        Returns:
-            True if the method exists
-        """
-        return cls.lookup_method(resource_type, method_name) is not None
-
-    @classmethod
-    def register_agent_method(cls, agent_type: str, method_name: str, func: Callable) -> None:
-        """Register a method for an agent type (backward compatibility).
-
-        Args:
-            agent_type: The agent type name
-            method_name: The method name
-            func: The callable function/method to register
-        """
-        cls.register_method(agent_type, method_name, func)
-
-    @classmethod
-    def register_resource_method(cls, resource_type: str, method_name: str, func: Callable) -> None:
-        """Register a method for a resource type (backward compatibility).
-
-        Args:
-            resource_type: The resource type name
-            method_name: The method name
-            func: The callable function/method to register
-        """
-        cls.register_method(resource_type, method_name, func)
-
-    @classmethod
-    def register_struct_method(cls, struct_type: str, method_name: str, func: Callable) -> None:
-        """Register a method for a struct type (backward compatibility).
-
-        Args:
-            struct_type: The struct type name
-            method_name: The method name
-            func: The callable function/method to register
-        """
-        cls.register_method(struct_type, method_name, func)
-
 
 class MethodRegistry:
     """Legacy method registry for backward compatibility.
@@ -749,7 +697,7 @@ type_aware_method_registry = TypeAwareMethodRegistry()
 method_registry = MethodRegistry()
 
 # For backward compatibility - universal_method_registry referenced in other files
-universal_method_registry = type_aware_method_registry
+universal_dana_method_registry = type_aware_method_registry
 
 
 class StructTypeRegistry:

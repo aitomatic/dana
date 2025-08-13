@@ -119,6 +119,8 @@ class LLMResourceInstance(ResourceInstance):
         try:
             self._llm_resource.startup()
             self.state = "STARTED"
+            print(f"CTN >>> LLM resource started: {self._llm_resource}")
+            print(f"CTN >>> LLM resource is_available: {self.is_available}")
             return True
         except Exception as e:
             self.state = "ERROR"

@@ -1,0 +1,5 @@
+# Test basic agent syntax
+agent BasicAgent
+
+print("=== Basic Agent Test ===")
+print("BasicAgent type:", type(BasicAgent))

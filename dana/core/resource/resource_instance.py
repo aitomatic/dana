@@ -5,11 +5,28 @@ Extends StructInstance to add resource-specific functionality while maintaining
 compatibility with the struct system.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from dana.core.lang.interpreter.struct_system import StructInstance
 
 from .resource_type import ResourceType
+
+
+# Default resource method implementations
+def default_resource_start(resource_instance: "ResourceInstance") -> bool:
+    """Default start method for resources."""
+    return resource_instance.start()
+
+
+def default_resource_stop(resource_instance: "ResourceInstance") -> bool:
+    """Default stop method for resources."""
+    return resource_instance.stop()
+
+
+def default_resource_query(resource_instance: "ResourceInstance", request: dict[str, Any]) -> dict[str, Any]:
+    """Default query method for resources."""
+    return resource_instance.query(request)
 
 
 class ResourceInstance(StructInstance):
@@ -30,56 +47,127 @@ class ResourceInstance(StructInstance):
         # Call parent constructor
         super().__init__(resource_type, values or {})
 
-        # Resource-specific attributes
+        # Resource-specific attributes for composition
         self._backend = None
+        self._delegates = {}  # Name -> delegate object mapping
+
+    @staticmethod
+    def get_default_resource_fields() -> dict[str, str | dict[str, Any]]:
+        """Get the default fields that all resources should have.
+
+        This method defines what the standard resource fields are,
+        keeping the definition close to where they're used.
+        """
+        return {
+            "state": {
+                "type": "str",
+                "default": "CREATED",
+                "comment": "Current state of the resource",
+            }
+        }
+
+    @staticmethod
+    def get_default_dana_methods() -> dict[str, Callable]:
+        """Get the default resource methods that all resources should have.
+
+        This method defines what the standard resource methods are,
+        keeping the definition close to where they're implemented.
+        """
+        return {
+            "start": default_resource_start,
+            "stop": default_resource_stop,
+            "query": default_resource_query,
+        }
 
     @property
     def resource_type(self) -> ResourceType:
         """Get the resource type definition."""
-        return self._type
+        return self._type  # type: ignore
 
     def has_method(self, method_name: str) -> bool:
-        """Check if this resource has a method (including inherited)."""
+        """Check if this resource has a method through composition/delegation."""
         # Check current instance
         if hasattr(self, method_name):
             return True
 
-        # Check resource type
+        # Check resource type (no inheritance)
         if self.resource_type.has_method(method_name):
             return True
+
+        # Check backend if available
+        if self._backend and hasattr(self._backend, method_name):
+            return True
+
+        # Check delegates
+        for delegate in self._delegates.values():
+            if hasattr(delegate, method_name):
+                return True
 
         return False
 
     def call_method(self, method_name: str, *args, **kwargs) -> Any:
-        """Call a method on this resource with inheritance support."""
-        # Try to call method directly
+        """Call a method on this resource using composition/delegation."""
+        # Try to call method directly on instance
         if hasattr(self, method_name):
             method = getattr(self, method_name)
             if callable(method):
                 return method(*args, **kwargs)
 
-        # Try to call method on parent instance
-        if self.resource_type.parent_type:
-            parent_instance = self._create_parent_instance()
-            if hasattr(parent_instance, method_name):
-                method = getattr(parent_instance, method_name)
+        # Try to delegate to backend if available
+        if self._backend and hasattr(self._backend, method_name):
+            method = getattr(self._backend, method_name)
+            if callable(method):
+                return method(*args, **kwargs)
+
+        # Try to delegate to registered delegates
+        for delegate in self._delegates.values():
+            if hasattr(delegate, method_name):
+                method = getattr(delegate, method_name)
                 if callable(method):
                     return method(*args, **kwargs)
 
         raise AttributeError(f"Method '{method_name}' not found on resource '{self.resource_type.name}'")
 
-    def _create_parent_instance(self) -> "ResourceInstance | None":
-        """Create a parent instance for method calls."""
-        if not self.resource_type.parent_type:
-            return None
+    def set_backend(self, backend: Any) -> None:
+        """
+        Set a backend implementation for this resource.
 
-        # Create parent instance with current values
-        parent_values = {}
-        for field_name in self.resource_type.parent_type.field_order:
-            if hasattr(self, field_name):
-                parent_values[field_name] = getattr(self, field_name)
+        Args:
+            backend: The backend object to delegate calls to
+        """
+        self._backend = backend
 
-        return ResourceInstance(self.resource_type.parent_type, parent_values)
+    def add_delegate(self, name: str, delegate: Any) -> None:
+        """
+        Add a delegate object for method dispatch.
+
+        Args:
+            name: Name for this delegate
+            delegate: The delegate object
+        """
+        self._delegates[name] = delegate
+
+    def remove_delegate(self, name: str) -> None:
+        """
+        Remove a delegate object.
+
+        Args:
+            name: Name of the delegate to remove
+        """
+        if name in self._delegates:
+            del self._delegates[name]
+
+    def get_delegate(self, name: str) -> Any | None:
+        """
+        Get a delegate by name.
+
+        Args:
+            name: Name of the delegate
+
+        Returns:
+            The delegate object or None if not found
+        """
+        return self._delegates.get(name)
 
     def initialize(self) -> bool:
         """Initialize the resource."""
@@ -120,6 +208,16 @@ class ResourceInstance(StructInstance):
     def is_running(self) -> bool:
         """Check if the resource is running."""
         return self.state == "RUNNING"
+
+    def query(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Query the resource with a request."""
+        # Default implementation returns basic status and metadata
+        return {
+            "success": True,
+            "state": self.state,
+            "metadata": self.get_metadata(),
+            "request": request,
+        }
 
     def get_metadata(self) -> dict[str, Any]:
         """Get resource metadata."""

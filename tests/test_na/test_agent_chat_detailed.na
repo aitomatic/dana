@@ -1,0 +1,26 @@
+# Test agent chat functionality in detail
+agent TestAgent
+
+print("=== Detailed Agent Chat Test ===")
+print("Agent type:", type(TestAgent))
+
+# Test different types of messages
+messages = [
+    "Hello!",
+    "What's your name?",
+    "Can you help me?",
+    "What can you do?",
+    "Remember something for me"
+]
+
+for msg in messages:
+    print(f"\n--- Testing: '{msg}' ---")
+    response = TestAgent.chat(msg)
+    print(f"Response: {response}")
+    print(f"Response type: {type(response)}")
+    
+    # Check if it's a promise
+    if "Promise" in str(type(response)):
+        print("✅ Response is a Promise (async)")
+    else:
+        print("✅ Response is synchronous")
