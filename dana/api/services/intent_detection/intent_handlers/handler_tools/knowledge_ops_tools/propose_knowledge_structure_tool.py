@@ -54,7 +54,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    def _execute(self, topic: str, focus_areas: str = "", depth_level: str = "comprehensive") -> ToolResult:
+    async def _execute(self, topic: str, focus_areas: str = "", depth_level: str = "comprehensive") -> ToolResult:
         """
         Generate hierarchical knowledge structure for a new topic domain.
         

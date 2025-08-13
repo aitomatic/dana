@@ -56,7 +56,7 @@ class AskQuestionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    def _execute(self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> ToolResult:
+    async def _execute(self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> ToolResult:
         """
         Execute sophisticated question with context, decision logic, and formatted options.
         """

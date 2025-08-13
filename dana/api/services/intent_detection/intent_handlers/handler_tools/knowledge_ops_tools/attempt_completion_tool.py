@@ -27,7 +27,7 @@ class AttemptCompletionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    def _execute(self, summary: str) -> ToolResult:
+    async def _execute(self, summary: str) -> ToolResult:
         # Context-validated completion detection - check actual state, not just phrases
         # First, check for obvious non-completion indicators
         if any(phrase in summary.lower() for phrase in [

@@ -49,7 +49,7 @@ class PreviewKnowledgeTopicTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    def _execute(self, topic: str, context: str = "") -> ToolResult:
+    async def _execute(self, topic: str, context: str = "") -> ToolResult:
         """
         Generate a lightweight preview of knowledge content for a topic.
         

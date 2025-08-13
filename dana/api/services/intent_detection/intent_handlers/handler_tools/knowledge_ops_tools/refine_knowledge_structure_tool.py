@@ -54,7 +54,7 @@ class RefineKnowledgeStructureTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    def _execute(self, current_structure: str = "", modification_request: str = "", topic: str = "") -> ToolResult:
+    async def _execute(self, current_structure: str = "", modification_request: str = "", topic: str = "") -> ToolResult:
         """
         Refine the knowledge structure based on user feedback.
         
