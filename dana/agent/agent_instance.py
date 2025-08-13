@@ -13,7 +13,7 @@ from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType, universal_method_registry
+from dana.core.lang.interpreter.struct_system import StructInstance, StructType, universal_dana_method_registry
 from dana.core.lang.sandbox_context import SandboxContext
 
 # --- Default Agent Method Implementations ---
@@ -78,6 +78,26 @@ def default_recall_method(agent_instance: "AgentInstance", sandbox_context: Sand
         return None
 
 
+def default_reason_method(
+    agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
+) -> Any:
+    """Default reason method for agent structs."""
+    agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
+    # TODO: Implement actual reasoning logic with prompt
+    # context_info = f" with context: {context}" if context else ""
+    # prompt = f"""You are an agent with fields: {agent_fields}.
+    #
+    # Premise: {premise}{context_info}
+    #
+    # Please reason about this premise. Apply logical thinking, consider implications,
+    # and draw reasonable conclusions based on the available information.
+    #
+    # Return your reasoning process and conclusions."""
+
+    # For now, return a simple response since we don't have context access
+    return f"Agent {agent_instance.agent_type.name} reasoning about: {premise} (fields: {agent_fields})"
+
+
 def default_chat_method(
     agent_instance: "AgentInstance",
     sandbox_context: SandboxContext,
@@ -102,7 +122,6 @@ class AgentType(StructType):
     # Agent-specific capabilities
     memory_system: Any | None = None  # Placeholder for future memory system
     reasoning_capabilities: list[str] = field(default_factory=list)
-    _initial_agent_methods: dict[str, Callable] = field(default_factory=dict)
 
     def __init__(
         self,
@@ -120,9 +139,13 @@ class AgentType(StructType):
         # Set agent-specific attributes FIRST
         self.memory_system = memory_system
         self.reasoning_capabilities = reasoning_capabilities or []
-        self._initial_agent_methods = agent_methods or {}
 
-        # Call parent constructor (this may call __post_init__)
+        # Store agent_methods temporarily just for __post_init__ registration
+        # This is not stored as persistent instance state since the universal registry
+        # is the single source of truth for agent methods
+        self._temp_agent_methods = agent_methods or {}
+
+        # Initialize as a regular StructType first
         super().__init__(
             name=name,
             fields=fields,
@@ -133,31 +156,37 @@ class AgentType(StructType):
         )
 
     def __post_init__(self):
-        """Initialize default agent methods."""
+        """Initialize agent methods and add default agent fields."""
+        # Add default agent fields automatically
+        additional_fields = AgentInstance.get_default_agent_fields()
+        self.merge_additional_fields(additional_fields)
+
+        # Register default agent methods (defined by AgentInstance)
+        default_methods = AgentInstance.get_default_dana_methods()
+        for method_name, method in default_methods.items():
+            universal_dana_method_registry.register_method(self.name, method_name, method)
+
+        # Register any custom agent methods that were passed in during initialization
+        for method_name, method in self._temp_agent_methods.items():
+            universal_dana_method_registry.register_method(self.name, method_name, method)
+
+        # Clean up temporary storage since the registry is now the source of truth
+        del self._temp_agent_methods
+
+        # Call parent's post-init last
         super().__post_init__()
-
-        # Register default agent methods in the universal registry
-        universal_method_registry.register_agent_method(self.name, "plan", default_plan_method)
-        universal_method_registry.register_agent_method(self.name, "solve", default_solve_method)
-        universal_method_registry.register_agent_method(self.name, "remember", default_remember_method)
-        universal_method_registry.register_agent_method(self.name, "recall", default_recall_method)
-        universal_method_registry.register_agent_method(self.name, "chat", default_chat_method)
-
-        # Register any custom agent methods that were passed in
-        for method_name, method in self._initial_agent_methods.items():
-            universal_method_registry.register_agent_method(self.name, method_name, method)
 
     def add_agent_method(self, name: str, method: Callable) -> None:
         """Add an agent-specific method to the universal registry."""
-        universal_method_registry.register_agent_method(self.name, name, method)
+        universal_dana_method_registry.register_method(self.name, name, method)
 
     def has_agent_method(self, name: str) -> bool:
         """Check if this agent type has a specific method."""
-        return universal_method_registry.has_agent_method(self.name, name)
+        return universal_dana_method_registry.has_method(self.name, name)
 
     def get_agent_method(self, name: str) -> Callable | None:
         """Get an agent method by name."""
-        return universal_method_registry.get_agent_method(self.name, name)
+        return universal_dana_method_registry.lookup_method(self.name, name)
 
     @property
     def agent_methods(self) -> dict[str, Callable]:
@@ -201,6 +230,37 @@ class AgentInstance(StructInstance):
         self._llm_resource: LegacyLLMResource = None  # Lazy initialization
         self._llm_resource_instance = None  # Lazy initialization
 
+    @staticmethod
+    def get_default_dana_methods() -> dict[str, Callable]:
+        """Get the default agent methods that all agents should have.
+
+        This method defines what the standard agent methods are,
+        keeping the definition close to where they're implemented.
+        """
+        return {
+            "plan": default_plan_method,
+            "solve": default_solve_method,
+            "remember": default_remember_method,
+            "recall": default_recall_method,
+            "reason": default_reason_method,
+            "chat": default_chat_method,
+        }
+
+    @staticmethod
+    def get_default_agent_fields() -> dict[str, str | dict[str, Any]]:
+        """Get the default fields that all agents should have.
+
+        This method defines what the standard agent fields are,
+        keeping the definition close to where they're used.
+        """
+        return {
+            "state": {
+                "type": "str",
+                "default": "CREATED",
+                "comment": "Current state of the agent",
+            }
+        }
+
     @property
     def agent_type(self) -> AgentType:
         """Get the agent type."""
@@ -208,35 +268,42 @@ class AgentInstance(StructInstance):
 
     def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
-        method = self.__struct_type__.get_agent_method("plan")
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "plan")
         if method:
             return method(self, sandbox_context, task, context)
         return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
-        method = self.__struct_type__.get_agent_method("solve")
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "solve")
         if method:
             return method(self, sandbox_context, problem, context)
         return default_solve_method(self, sandbox_context, problem, context)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
         """Execute agent memory storage method."""
-        method = self.__struct_type__.get_agent_method("remember")
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "remember")
         if method:
             return method(self, sandbox_context, key, value)
         return default_remember_method(self, sandbox_context, key, value)
 
     def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Execute agent memory retrieval method."""
-        method = self.__struct_type__.get_agent_method("recall")
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "recall")
         if method:
             return method(self, sandbox_context, key)
         return default_recall_method(self, sandbox_context, key)
 
+    def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> Any:
+        """Execute agent reasoning method."""
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "reason")
+        if method:
+            return method(self, sandbox_context, premise, context)
+        return default_reason_method(self, sandbox_context, premise, context)
+
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
-        method = self.__struct_type__.get_agent_method("chat")
+        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "chat")
         if method:
             return method(self, sandbox_context, message, context, max_context_turns)
         return default_chat_method(self, sandbox_context, message, context, max_context_turns)

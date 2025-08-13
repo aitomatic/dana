@@ -75,6 +75,5 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
         field_order=field_order,
         field_defaults=field_defaults if field_defaults else None,
         field_comments=field_comments,
-        parent_type=parent_type,
         docstring=resource_def.docstring,
     )
