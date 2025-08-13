@@ -240,10 +240,16 @@ class AssignmentHandler(Loggable):
                     raise cached_exception
                 return cached_result
 
-            try:
-                from dana.core.lang.interpreter.unified_coercion import TypeCoercion
+            # Handle None values - None can be assigned to any type
+            # This allows for optional/nullable types in Dana
+            if value is None:
+                return None
 
-                coerced_value = TypeCoercion.coerce_value(value, target_type)
+            try:
+                from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer, CoercionStrategy
+
+                coercer = SemanticCoercer(strategy=CoercionStrategy.ENHANCED)
+                coerced_value = coercer.coerce_value(value, target_type.__name__)
 
                 # Cache successful coercion
                 if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:

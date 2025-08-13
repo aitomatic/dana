@@ -199,11 +199,13 @@ class LoopHandler(Loggable):
 
         # Perform boolean coercion with smart logic
         try:
-            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer, CoercionStrategy
+            import os
 
             # Use smart boolean coercion if available and enabled
-            if TypeCoercion.should_enable_coercion():
-                result = TypeCoercion.coerce_to_bool_smart(value)
+            if os.environ.get("DANA_AUTO_COERCION", "1").lower() in ["1", "true", "yes", "y"]:
+                coercer = SemanticCoercer(strategy=CoercionStrategy.ENHANCED)
+                result = coercer.coerce_to_bool(value)
             else:
                 result = bool(value)
 

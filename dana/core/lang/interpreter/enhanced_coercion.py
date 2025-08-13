@@ -219,6 +219,9 @@ class SemanticCoercer(Loggable):
         elif target_type == "float":
             return float(value)
         elif target_type == "str":
+            # Special handling for bool to string - use lowercase Dana standard
+            if isinstance(value, bool):
+                return "true" if value else "false"
             return str(value)
         elif target_type == "dict":
             return self._coerce_to_dict(value, context)

@@ -639,16 +639,47 @@ class FunctionExecutor(BaseExecutor):
             The potentially coerced result
         """
         try:
-            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer, CoercionStrategy
+            import os
 
             # Only apply LLM coercion if enabled
-            if not TypeCoercion.should_enable_llm_coercion():
+            if os.environ.get("DANA_LLM_AUTO_COERCION", "1").lower() not in ["1", "true", "yes", "y"]:
                 return result
 
             # Apply LLM-specific coercion for AI/reasoning functions
             llm_functions = ["reason", "ask_ai", "llm_call", "generate", "summarize", "analyze"]
             if function_name in llm_functions and isinstance(result, str):
-                return TypeCoercion.coerce_llm_response(result)
+                # Use enhanced semantic coercion for LLM responses
+                if not isinstance(result, str):
+                    return result
+
+                # Use enhanced semantic coercion for smarter LLM response handling
+                coercer = SemanticCoercer(strategy=CoercionStrategy.ENHANCED)
+
+                # Strip whitespace for analysis
+                cleaned = result.strip().lower()
+
+                # Try boolean patterns first (enhanced semantic detection)
+                try:
+                    # Convert standalone boolean-like responses
+                    if cleaned in ["yes", "no", "true", "false", "correct", "wrong", "right", "valid", "ok", "okay", "1", "0"]:
+                        return coercer.coerce_to_bool(result)
+                except Exception:
+                    pass
+
+                # Try numeric conversion for clearly numeric responses
+                try:
+                    # Check if it's an integer
+                    if cleaned.isdigit() or (cleaned.startswith("-") and cleaned[1:].isdigit()):
+                        return int(cleaned)
+                    # Check if it's a float
+                    if any(c.isdigit() for c in cleaned) and ("." in cleaned or "e" in cleaned.lower()):
+                        return float(cleaned)
+                except ValueError:
+                    pass
+
+                # Return as string if no clear conversion
+                return result
 
         except ImportError:
             # TypeCoercion not available, return original result
