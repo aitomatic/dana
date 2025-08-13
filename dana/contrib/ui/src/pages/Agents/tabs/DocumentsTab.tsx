@@ -6,7 +6,7 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage } from 'iconoir-react';
+import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentOperations } from '@/hooks/use-api';
 import { useDocumentStore } from '@/stores/document-store';
