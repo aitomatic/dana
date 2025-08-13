@@ -129,3 +129,97 @@ def test_na_file(na_file):
 
     # Log the result (None is acceptable for programs that just execute statements)
     print(f"Successfully executed {na_file}")
+
+
+def test_type_system_differences():
+    """
+    Test demonstrating the key differences in Dana's type system between:
+    - agent_blueprint (creates constructors)
+    - agent (creates singleton instances)
+    - resource (creates constructors)
+
+    This test documents the important type system behavior shown in the user's example.
+    """
+    # Clear registries for clean test
+    StructTypeRegistry.clear()
+    MethodRegistry.clear()
+
+    # Create a context
+    context = SandboxContext()
+
+    # Test program that demonstrates the type differences
+    program_text = """
+# Define an agent blueprint (creates a constructor)
+agent_blueprint Abc:
+    name: str = "An Agent"
+
+# Create an instance from the blueprint
+a = Abc()
+
+# Define a singleton agent (creates an instance directly)
+agent AA(Abc)
+
+# Define a resource (creates a constructor)
+resource R:
+    name: str = "A Resource"
+
+# Create an instance from the resource
+r = R()
+
+# Test type information
+print("Agent Blueprint Constructor Type:", type(Abc))
+print("Agent Blueprint Instance Type:", type(a))
+print("Singleton Agent Type:", type(AA))
+print("Resource Constructor Type:", type(R))
+print("Resource Instance Type:", type(r))
+"""
+
+    # Parse and execute
+    program = parse_program(program_text, do_type_check=False)
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(program, context)
+
+    # Verify the types match the expected pattern
+    # The key insight is:
+    # - agent_blueprint creates Constructor[agent_constructor]
+    # - agent creates StructInstance[AgentName] directly
+    # - resource creates Constructor[resource_constructor]
+
+    # Get the variables from context
+    abc_constructor = context.get("local:Abc")
+    a_instance = context.get("local:a")
+    aa_singleton = context.get("local:AA")
+    r_constructor = context.get("local:R")
+    r_instance = context.get("local:r")
+
+    # Verify constructor types
+    assert callable(abc_constructor), "Abc should be a callable constructor"
+    assert callable(r_constructor), "R should be a callable constructor"
+
+    # Verify instance types
+    from dana.agent import AgentInstance
+    from dana.core.resource.resource_instance import ResourceInstance
+
+    assert isinstance(a_instance, AgentInstance), f"a should be AgentInstance, got {type(a_instance)}"
+    assert isinstance(aa_singleton, AgentInstance), f"AA should be AgentInstance, got {type(aa_singleton)}"
+    assert isinstance(r_instance, ResourceInstance), f"r should be ResourceInstance, got {type(r_instance)}"
+
+    # Verify field values
+    assert a_instance.name == "An Agent"
+    assert aa_singleton.name == "An Agent"  # Inherits from Abc blueprint
+    assert r_instance.name == "A Resource"
+
+    print("✅ Type system differences test passed!")
+    print(f"  - agent_blueprint Abc creates: {type(abc_constructor)}")
+    print(f"  - Abc() creates: {type(a_instance)}")
+    print(f"  - agent AA(Abc) creates: {type(aa_singleton)}")
+    print(f"  - resource R creates: {type(r_constructor)}")
+    print(f"  - R() creates: {type(r_instance)}")
+
+    # Document the actual observed types for reference
+    print("\n📋 Observed Type Patterns:")
+    print("  - type(Abc) → Constructor[agent_constructor]")
+    print("  - type(a) → AgentInstance[Abc]")
+    print("  - type(AA) → AgentInstance[AA]")
+    print("  - type(R) → Constructor[resource_constructor]")
+    print("  - type(r) → ResourceInstance[R]")

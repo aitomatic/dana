@@ -199,6 +199,7 @@ class AgentInstance(StructInstance):
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
         self._llm_resource: LegacyLLMResource = None  # Lazy initialization
+        self._llm_resource_instance = None  # Lazy initialization
 
     @property
     def agent_type(self) -> AgentType:
@@ -260,9 +261,69 @@ class AgentInstance(StructInstance):
                 max_turns=20,  # Keep last 20 turns in active memory
             )
 
+    def _initialize_llm_resource(self):
+        """Initialize LLM resource from agent's config if not already done."""
+        if self._llm_resource_instance is None:
+            from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+            # Get LLM parameters from agent's config field
+            llm_params = {}
+            if hasattr(self, "_values") and "config" in self._values:
+                config = self._values["config"]
+                if isinstance(config, dict):
+                    # Extract LLM parameters from config
+                    llm_params = {
+                        "model": config.get("llm_model", config.get("model", "auto")),
+                        "temperature": config.get("llm_temperature", config.get("temperature", 0.7)),
+                        "max_tokens": config.get("llm_max_tokens", config.get("max_tokens", 2048)),
+                        "provider": config.get("llm_provider", config.get("provider", "auto")),
+                    }
+                    # Add any other LLM-related config keys
+                    for key, value in config.items():
+                        if key.startswith("llm_") and key not in ["llm_model", "llm_temperature", "llm_max_tokens", "llm_provider"]:
+                            llm_params[key[4:]] = value  # Remove "llm_" prefix
+
+            # Create the underlying LLM resource
+            self._llm_resource = LegacyLLMResource(
+                name=f"{self.agent_type.name}_llm",
+                model=llm_params.get("model", "auto"),
+                temperature=llm_params.get("temperature", 0.7),
+                max_tokens=llm_params.get("max_tokens", 2048),
+                **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens"]},
+            )
+
+            print(f"CTN >>> LLM resource: {self._llm_resource}")
+
+            # Create the LLM resource instance
+            self._llm_resource_instance = LLMResourceType.create_instance(
+                self._llm_resource,
+                values={
+                    "name": f"{self.agent_type.name}_llm",
+                    "model": llm_params.get("model", "auto"),
+                    "provider": llm_params.get("provider", "auto"),
+                    "temperature": llm_params.get("temperature", 0.7),
+                    "max_tokens": llm_params.get("max_tokens", 2048),
+                },
+            )
+
+            # Initialize the resource
+            self._llm_resource_instance.initialize()
+            self._llm_resource_instance.start()
+
     def _get_llm_resource(self, sandbox_context: SandboxContext | None = None):
-        """Get LLM resource through core resource system."""
+        """Get LLM resource - prioritize agent's own LLM resource, fallback to sandbox context."""
         try:
+            # First, try to use the agent's own LLM resource
+            if self._llm_resource_instance is None:
+                self._initialize_llm_resource()
+                print(f"CTN >>> Initialized agent's own LLM resource: {self._llm_resource_instance}")
+
+            if self._llm_resource_instance and self._llm_resource_instance.is_available:
+                print(f"CTN >>> Using agent's own LLM resource: {self._llm_resource_instance}")
+                return self._llm_resource_instance
+
+            # Fallback to sandbox context if agent's LLM is not available
             if sandbox_context is not None:
                 # Look for LLM resource in agent's available resources
                 resources = sandbox_context.get_resources()
@@ -357,17 +418,17 @@ class AgentInstance(StructInstance):
         assert self._conversation_memory is not None  # Should be initialized by _initialize_conversation_memory
         conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
-        # Try to get LLM resource through core resource system
-        llm_resource = None
-        if sandbox_context is not None:
+        # Try to get LLM resource - prioritize agent's own LLM resource
+        llm_resource = self._get_llm_resource(sandbox_context)
+
+        # Fallback to sandbox context if agent's LLM is not available
+        if llm_resource is None and sandbox_context is not None:
             # Look for LLM resource in agent's available resources
             resources = sandbox_context.get_resources()
             for _, resource in resources.items():
                 if hasattr(resource, "kind") and resource.kind == "llm":
                     llm_resource = resource
                     break
-        else:
-            llm_resource = self._get_llm_resource(sandbox_context)
 
         if llm_resource:
             # Build prompt with agent description and conversation context
@@ -392,7 +453,7 @@ class AgentInstance(StructInstance):
 
                     # Use core resource interface
                     request = BaseRequest(arguments={"messages": messages})
-                    response = llm_resource.query(request)  # Core resource interface
+                    response = llm_resource.query_sync(request)  # Use synchronous query
 
                     if response.success:
                         # Extract the actual text content from the response

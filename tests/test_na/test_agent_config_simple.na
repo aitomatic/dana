@@ -1,0 +1,16 @@
+# Test simple agent config LLM parameters
+
+# Define an agent blueprint with LLM config
+agent_blueprint SmartAgent:
+    name: str = "Smart Agent"
+    config: dict = {
+        "llm_model": "openai:gpt-4o-mini",
+        "llm_temperature": 0.3
+    }
+
+# Create instance from blueprint
+smart_agent = SmartAgent()
+
+print("=== Simple Agent Config Test ===")
+print("SmartAgent type:", type(smart_agent))
+print("SmartAgent config:", smart_agent.config)

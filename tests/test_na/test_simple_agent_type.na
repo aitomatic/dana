@@ -1,0 +1,6 @@
+# Test simple agent type
+agent AA
+
+print("=== Simple Agent Type Test ===")
+print("type(AA):", type(AA))
+print("AA:", AA)
