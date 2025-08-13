@@ -1,12 +1,12 @@
 """Integration tests for vector store module."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from dana.common.resource.vector_store import (
-    VectorStoreConfig,
+from dana.common.sys_resource.vector_store import (
     DuckDBConfig,
     PGVectorConfig,
+    VectorStoreConfig,
     VectorStoreFactory,
     create_duckdb_config,
     create_pgvector_config,
@@ -19,11 +19,11 @@ class TestVectorStoreIntegration(unittest.TestCase):
     def test_module_imports(self):
         """Test that all expected classes and functions are importable."""
         # Test that imports work without errors
-        from dana.common.resource.vector_store import (
-            VectorStoreConfig,
+        from dana.common.sys_resource.vector_store import (
             DuckDBConfig,
-            PGVectorConfig,
             HNSWConfig,
+            PGVectorConfig,
+            VectorStoreConfig,
             VectorStoreFactory,
         )
 
@@ -34,7 +34,7 @@ class TestVectorStoreIntegration(unittest.TestCase):
         self.assertTrue(callable(HNSWConfig))
         self.assertTrue(callable(VectorStoreFactory))
 
-    @patch("dana.common.resource.vector_store.factory.DuckDBProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.DuckDBProvider")
     def test_end_to_end_duckdb_workflow(self, mock_provider_class):
         """Test complete workflow for DuckDB vector store creation."""
         # Setup mocks
@@ -84,7 +84,7 @@ class TestVectorStoreIntegration(unittest.TestCase):
         mock_provider_instance.get_row_count.assert_called()
         mock_provider_instance.get_statistics.assert_called()
 
-    @patch("dana.common.resource.vector_store.factory.PGVectorProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.PGVectorProvider")
     def test_end_to_end_pgvector_workflow(self, mock_provider_class):
         """Test complete workflow for PGVector vector store creation."""
         # Setup mocks
@@ -143,7 +143,7 @@ class TestVectorStoreIntegration(unittest.TestCase):
 
     def test_factory_create_from_dict_workflow(self):
         """Test using factory create_from_dict method."""
-        with patch("dana.common.resource.vector_store.factory.VectorStoreFactory.create") as mock_create:
+        with patch("dana.common.sys_resource.vector_store.factory.VectorStoreFactory.create") as mock_create:
             mock_vector_store = MagicMock()
             mock_create.return_value = mock_vector_store
 
@@ -197,7 +197,7 @@ class TestVectorStoreIntegration(unittest.TestCase):
         with self.assertRaises(ValueError):
             PGVectorConfig(port=0)  # Invalid port should fail
 
-    @patch("dana.common.resource.vector_store.factory.DuckDBProvider")
+    @patch("dana.common.sys_resource.vector_store.factory.DuckDBProvider")
     def test_provider_lifecycle_operations(self, mock_provider_class):
         """Test provider lifecycle operations integration."""
         # Setup provider mock

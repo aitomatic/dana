@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_instance import AgentType, AgentInstance
+from dana.agent.agent_instance import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -68,8 +68,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_basic_chat_without_llm(self):
         """Test basic chat functionality without LLM."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             agent = self.create_test_agent()
 
             # Test greeting - chat now returns a Promise
@@ -97,9 +97,13 @@ class TestAgentChat(unittest.TestCase):
 
         # Create mock LLM resource
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="This is a mock LLM response.")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        from dana.common.types import BaseResponse
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="This is a mock LLM response.")
+
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # Chat with agent
             response_promise = agent.chat(self.sandbox_context, "Tell me about yourself")
             response = response_promise._wait_for_delivery()
@@ -124,9 +128,13 @@ class TestAgentChat(unittest.TestCase):
 
         # Mock LLM resource
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="LLM field response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        from dana.common.types import BaseResponse
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="LLM field response")
+
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             response_promise = agent.chat(self.sandbox_context, "Test message")
             response = response_promise._wait_for_delivery()
 
@@ -135,8 +143,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_default_llm_resource(self):
         """Test that agents try to use default LLMResource."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             agent = self.create_test_agent()
 
             response_promise = agent.chat(self.sandbox_context, "Hello")
@@ -148,8 +156,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_conversation_persistence(self):
         """Test that conversations persist across agent instances."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # First agent instance
             agent1 = self.create_test_agent()
             agent1.chat(self.sandbox_context, "My name is Alice")._wait_for_delivery()
@@ -165,8 +173,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_multiple_agent_separation(self):
         """Test that different agent types maintain separate conversations."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Create two different agent types
             agent1 = self.create_test_agent("Agent1", {"role": "support"})
             agent2 = self.create_test_agent("Agent2", {"role": "sales"})
@@ -220,10 +228,14 @@ class TestAgentChat(unittest.TestCase):
     def test_chat_with_context(self):
         """Test chat with additional context."""
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Contextual response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Contextual response")
         agent = self.create_test_agent()
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # Chat with additional context
             context = {"priority": "high", "category": "support"}
             response_promise = agent.chat(self.sandbox_context, "Help me", context=context)
@@ -241,10 +253,14 @@ class TestAgentChat(unittest.TestCase):
     def test_max_context_turns(self):
         """Test limiting context turns."""
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Limited context response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Limited context response")
         agent = self.create_test_agent()
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # Add several turns
             for i in range(5):
                 agent.chat(self.sandbox_context, f"Message {i}")._wait_for_delivery()
@@ -266,10 +282,12 @@ class TestAgentChat(unittest.TestCase):
         """Test handling of LLM errors."""
         # Create LLM that throws an error
         mock_llm_resource = Mock()
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
         mock_llm_resource.query_sync.side_effect = Exception("LLM error")
         agent = self.create_test_agent()
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             response_promise = agent.chat(self.sandbox_context, "Test message")
             response = response_promise._wait_for_delivery()
 
@@ -290,8 +308,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_fallback_responses(self):
         """Test fallback response generation."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             agent = self.create_test_agent()
 
             # Test different types of queries
@@ -321,10 +339,14 @@ class TestAgentChat(unittest.TestCase):
     def test_agent_fields_in_context(self):
         """Test that agent fields are included in context."""
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Response with fields")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        from dana.common.types import BaseResponse
+
+        mock_llm_resource.query_sync.return_value = BaseResponse(success=True, content="Response with fields")
         agent = self.create_test_agent("FieldAgent", {"department": "engineering", "specialty": "AI"})
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             agent.chat(self.sandbox_context, "Test")._wait_for_delivery()
 
             call_args = mock_llm_resource.query_sync.call_args[0][0]
@@ -352,8 +374,8 @@ class TestAgentChatIntegration(unittest.TestCase):
 
     def test_full_conversation_flow(self):
         """Test a complete conversation flow."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             agent_type = AgentType(
                 name="ConversationAgent",
                 fields={"role": "assistant", "domain": "general"},
@@ -389,8 +411,8 @@ class TestAgentChatIntegration(unittest.TestCase):
 
     def test_agent_customization(self):
         """Test that agents can be customized for different roles."""
-        # Mock the sandbox context to return None for LLM resource to force fallback behavior
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources to force fallback behavior
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Create specialized agent types
             support_type = AgentType(
                 name="SupportAgent",

@@ -8,7 +8,7 @@
 The agent system has been successfully implemented with three distinct forms:
 
 1. **`agent_blueprint`** - Defines reusable agent types (like struct definitions)
-2. **Singleton agents** - Creates named agent instances with optional blueprint inheritance
+2. **Singleton agents** - Creates named agent instances with optional blueprint field overrides
 3. **`a2a_agent()`** - Function-based remote agent connections (in corelib)
 
 This design replaces the deprecated `agent(...)` grammar syntax with a cleaner, more maintainable approach that leverages Dana's existing struct and function registry systems.
@@ -213,7 +213,7 @@ Our solution must address **dual objectives** that create specific design constr
 **Brief Description**: What we explicitly won't do in this implementation to maintain focus and simplicity.
 
 **Technical Non-Goals:**
-- **Complex inheritance hierarchies**: Keep simple struct-like approach, avoid OOP complexity
+- **Complex composition hierarchies**: Keep simple struct-like approach, avoid OOP complexity
 - **Runtime agent modification**: No dynamic capability addition/removal after instantiation
 - **Breaking changes**: Maintain full backward compatibility with existing `agent()` functions
 - **External framework integration**: Focus on native DANA capabilities, not third-party agent frameworks
@@ -739,7 +739,7 @@ remote = a2a_agent(url="...")
 - Grammar extensions for all agent forms
 - AST nodes and transformers
 - Agent handler with deprecation handling
-- AgentType/AgentInstance with struct inheritance
+- AgentType/AgentInstance with struct composition
 - Built-in methods (plan, solve, chat, remember, recall)
 - Conversation memory persistence
 - LLM resource integration

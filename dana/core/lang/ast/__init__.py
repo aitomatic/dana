@@ -74,6 +74,7 @@ Statement = Union[
     "MethodDefinition",
     "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
+    "ResourceDefinition",
     "AgentDefinition",
     "ImportStatement",
     "ImportFromStatement",
@@ -152,7 +153,7 @@ class LambdaExpression:
 
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
-    body: Expression = None  # Lambda body expression
+    body: Expression | None = None  # Lambda body expression
     location: Location | None = None
 
 
@@ -557,6 +558,18 @@ class StructDefinition:
 
 
 @dataclass
+class ResourceDefinition:
+    """Resource definition statement (e.g., resource MyRAG(BaseResource): sources: list[str])."""
+
+    name: str
+    parent_name: str | None = None  # Optional parent resource
+    fields: list["ResourceField"] = field(default_factory=list)
+    methods: list["ResourceMethod"] = field(default_factory=list)
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
 class StructField:
     """A field in a struct definition."""
 
@@ -564,6 +577,29 @@ class StructField:
     type_hint: TypeHint
     comment: str | None = None  # Field description from inline comment
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ResourceField:
+    """A field in a resource definition."""
+
+    name: str
+    type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
+    default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ResourceMethod:
+    """A method in a resource definition."""
+
+    name: str
+    parameters: list[Parameter]
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)
     location: Location | None = None
 
 

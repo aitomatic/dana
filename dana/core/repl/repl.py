@@ -51,18 +51,20 @@ from typing import Any
 
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils import Misc
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.lang.translator.translator import Translator
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing Dana programs."""
 
-    def __init__(self, llm_resource: LLMResource | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None):
+    def __init__(
+        self, llm_resource: LLMResourceInstance | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None
+    ):
         """Initialize the REPL.
 
         Args:
@@ -154,11 +156,36 @@ class REPL(Loggable):
             return (
                 f"Syntax Error:\n  Input: {user_input}\n  {main_msg}\n  Please check for typos, missing operators, or unsupported syntax."
             )
+
+        # Handle new parser error format
+        if "No terminal matches" in error_msg:
+            import re
+
+            # Extract the problematic character and location
+            match = re.search(r"No terminal matches '([^']+)' in the current parser context, at line (\d+) col (\d+)", error_msg)
+            if match:
+                char, line, col = match.groups()
+                caret_line = " " * (int(col) - 1) + "^"
+                return (
+                    f"Syntax Error:\n"
+                    f"  Input: {user_input}\n"
+                    f"         {caret_line}\n"
+                    f"  Unexpected '{char}' after condition. Did you forget a colon (:)?\n"
+                    f"  Tip: Use a colon after the condition, e.g., if x > 0:"
+                )
+            else:
+                return f"Syntax Error:\n  Input: {user_input}\n  {error_msg}"
+
         # Determine error type
         error_type = "Error"
         summary = None
         tip = None
-        if "Unexpected token" in error_msg or "Invalid syntax" in error_msg or "Expected one of" in error_msg:
+        if (
+            "Unexpected token" in error_msg
+            or "Invalid syntax" in error_msg
+            or "Expected one of" in error_msg
+            or "No terminal matches" in error_msg
+        ):
             error_type = "Syntax Error"
         elif "Unsupported expression type" in error_msg:
             error_type = "Execution Error"

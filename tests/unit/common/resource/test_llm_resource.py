@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from dana.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest, BaseResponse
 
 
@@ -14,7 +14,7 @@ class TestLLMResource(unittest.TestCase):
 
     def test_mock_llm_call(self):
         """Test LLMResource with a mock_llm_call function."""
-        llm_resource = LLMResource(name="test_llm").with_mock_llm_call(True)
+        llm_resource = LegacyLLMResource(name="test_llm").with_mock_llm_call(True)
         llm_resource._is_available = True  # Set the resource as available
 
         async def run_test():
@@ -35,7 +35,7 @@ class TestLLMResource(unittest.TestCase):
         from dana.common.types import BaseRequest
 
         # Create LLMResource and make it available
-        llm = LLMResource(name="test_llm", model="openai:gpt-4")
+        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4")
         llm._is_available = True  # Make the resource available
         llm._started = True  # Mark as started to skip initialization
 
@@ -121,7 +121,7 @@ class TestLLMResource(unittest.TestCase):
         mock_estimate.return_value = 50  # Mock token count per message
 
         # Set up LLMResource
-        llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
+        llm_resource = LegacyLLMResource(name="test_llm", model="openai:gpt-4")
         llm_resource._is_available = True
 
         # NOTE : TEMPORARY REMOVE UNTIL WE HAVE A COMPATIBLE VERSION OF: enforce_context_window

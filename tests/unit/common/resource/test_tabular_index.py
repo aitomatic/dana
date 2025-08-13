@@ -1,12 +1,13 @@
 """Test TabularIndex core functionality."""
 
-import unittest
-from unittest.mock import patch, MagicMock, AsyncMock
-import pandas as pd
 import asyncio
+import unittest
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.resource.tabular_index.tabular_index import TabularIndex
-from dana.common.resource.tabular_index.config import TabularConfig, BatchSearchConfig
+import pandas as pd
+
+from dana.common.sys_resource.tabular_index.config import BatchSearchConfig, TabularConfig
+from dana.common.sys_resource.tabular_index.tabular_index import TabularIndex
 
 
 class TestTabularIndex(unittest.TestCase):

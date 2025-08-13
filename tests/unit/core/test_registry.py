@@ -2,12 +2,12 @@
 
 import pytest
 
-from dana.core.runtime.modules.core.errors import (
+from dana.core.runtime.modules.errors import (
     CircularImportError,
     ModuleNotFoundError,
 )
-from dana.core.runtime.modules.core.registry import ModuleRegistry
-from dana.core.runtime.modules.core.types import Module, ModuleSpec
+from dana.core.runtime.modules.registry import ModuleRegistry
+from dana.core.runtime.modules.types import Module, ModuleSpec
 
 
 def test_registry_singleton():

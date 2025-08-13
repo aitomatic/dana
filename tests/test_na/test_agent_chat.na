@@ -1,0 +1,12 @@
+# Test agent chat functionality
+agent TestAgent
+
+print("=== Agent Chat Test ===")
+print("Agent type:", type(TestAgent))
+
+# Test chat method
+response = TestAgent.chat("Hello! What's your name?")
+print("Chat response:", response)
+
+# Test if response is a promise by checking its type
+print("Response type:", type(response))
