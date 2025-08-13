@@ -15,9 +15,3 @@ agent_blueprint DanaAgentBlueprint:
 
 agent DanaAgent(DanaAgentBlueprint):
     name = "The Official Dana Agent"
-
-def hello():
-    print("Hello there")
-
-struct HelloWorld:
-    name: str = "Hello World"

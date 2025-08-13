@@ -1,0 +1,38 @@
+# Type System Differences Demo
+# This demonstrates the key differences in Dana's type system
+
+# 1. Agent Blueprint - creates a constructor
+agent_blueprint Abc:
+    name: str = "An Agent"
+
+# 2. Create instance from blueprint
+a = Abc()
+
+# 3. Singleton agent - creates an instance directly
+agent AA(Abc)
+
+# 4. Resource - creates a constructor  
+resource R:
+    name: str = "A Resource"
+
+# 5. Create instance from resource
+r = R()
+
+# Now let's examine the types
+print("=== Type System Analysis ===")
+print("Agent Blueprint Constructor Type:", type(Abc))
+print("Agent Blueprint Instance Type:", type(a))
+print("Singleton Agent Type:", type(AA))
+print("Resource Constructor Type:", type(R))
+print("Resource Instance Type:", type(r))
+
+print("\n=== Instance Details ===")
+print("a:", a)
+print("AA:", AA)
+print("r:", r)
+
+print("\n=== Key Differences ===")
+print("1. agent_blueprint creates: Constructor[agent_constructor]")
+print("2. agent creates: AgentInstance[AgentName] directly")
+print("3. resource creates: Constructor[resource_constructor]")
+print("4. Instances from constructors: AgentInstance[TypeName] or ResourceInstance[TypeName]")

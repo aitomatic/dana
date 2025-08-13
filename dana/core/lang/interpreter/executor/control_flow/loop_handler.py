@@ -141,7 +141,7 @@ class LoopHandler(Loggable):
             # Set the loop variable(s) in the context with scope optimization
             if isinstance(node.target, list):
                 # Tuple unpacking: unpack item into multiple variables
-                if hasattr(item, "__iter__") and not isinstance(item, (str, bytes)):
+                if hasattr(item, "__iter__") and not isinstance(item, str | bytes):
                     try:
                         unpacked_values = list(item)
                         if len(unpacked_values) != len(node.target):

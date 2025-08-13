@@ -1,0 +1,71 @@
+# Simple Cache Resource
+# A basic in-memory cache resource implemented in Dana
+
+resource SimpleCacheResource:
+    kind: str = "cache"
+    name: str = ""
+    state: str = "created"
+    max_size: int = 100
+    ttl_seconds: int = 3600
+    description: str = "Simple in-memory cache resource"
+
+# Initialize the cache resource
+def (cache: SimpleCacheResource) initialize() -> bool:
+    if cache.state == "created":
+        cache.state = "initialized"
+        print(f"Cache '{cache.name}' initialized with max_size={cache.max_size}")
+        return true
+    return false
+
+# Start the cache resource
+def (cache: SimpleCacheResource) start() -> bool:
+    if cache.state == "initialized":
+        cache.state = "running"
+        return true
+    return false
+
+
+
+# Standard query interface for cache operations
+def (cache: SimpleCacheResource) query(request: str) -> str:
+    if cache.state != "running":
+        return f"Cache resource {cache.name} not running (state: {cache.state})"
+    
+    # Parse the request to determine operation
+    # Format: "get:key" or "set:key:value" or "delete:key"
+    parts = request.split(":")
+    
+    if len(parts) < 2:
+        return "Invalid cache request format. Use 'get:key', 'set:key:value', or 'delete:key'"
+    
+    operation = parts[0]
+    key = parts[1]
+    
+    if operation == "get":
+        # In a real implementation, this would retrieve from cache storage
+        return f"Cache GET: {key} -> [cached value]"
+    elif operation == "set":
+        if len(parts) < 3:
+            return "SET operation requires key and value"
+        value = parts[2]
+        return f"Cache SET: {key} = {value} (TTL: {cache.ttl_seconds}s)"
+    elif operation == "delete":
+        return f"Cache DELETE: {key} removed"
+    else:
+        return f"Unknown cache operation: {operation}"
+
+# Get cache statistics
+def (cache: SimpleCacheResource) get_stats() -> dict:
+    return {
+        "name": cache.name,
+        "state": cache.state,
+        "max_size": cache.max_size,
+        "ttl_seconds": cache.ttl_seconds,
+        "items": 0,  # Would track actual cache size
+        "hits": 0,    # Would track cache hits
+        "misses": 0   # Would track cache misses
+    }
+
+# Check if cache is running
+def (cache: SimpleCacheResource) is_running() -> bool:
+    return cache.state == "running"

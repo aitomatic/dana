@@ -2,14 +2,14 @@
 
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from dana.common.exceptions import EmbeddingError
-from dana.common.resource.embedding.embedding_integrations import (
+from dana.common.sys_resource.embedding.embedding_integrations import (
     LlamaIndexEmbeddingResource,
-    get_embedding_model,
-    get_default_embedding_model,
     RAGEmbeddingResource,
+    get_default_embedding_model,
+    get_embedding_model,
 )
 
 
@@ -30,7 +30,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
             elif key in os.environ:
                 del os.environ[key]
 
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
     def test_get_embedding_model_simple(self, mock_create_embedding):
         """Test get_embedding_model calls the internal creation method."""
         mock_embedding_instance = MagicMock()
@@ -41,8 +41,8 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         self.assertEqual(result, mock_embedding_instance)
         mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small", None)
 
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._is_model_available")
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._is_model_available")
     def test_get_default_embedding_model_simple(self, mock_is_available, mock_create_embedding):
         """Test get_default_embedding_model calls the internal creation method."""
         mock_embedding_instance = MagicMock()
@@ -55,7 +55,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         self.assertTrue(mock_create_embedding.called)
 
     @patch("llama_index.core.Settings")
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
     def test_setup_llamaindex_simple(self, mock_create_embedding, mock_settings):
         """Test setup_llamaindex configures global settings correctly."""
         mock_embedding_instance = MagicMock()
@@ -67,7 +67,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         self.assertEqual(mock_settings.embed_model, mock_embedding_instance)
         self.assertEqual(mock_settings.chunk_size, 512)
 
-    @patch("dana.common.resource.embedding.embedding_integrations.ConfigLoader")
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.ConfigLoader")
     def test_resource_config_override_simple(self, mock_loader):
         """Test that resource methods use config overrides correctly."""
         base_config = {"embedding": {"provider_configs": {"openai": {"api_key": "env:OPENAI_API_KEY", "batch_size": 100}}}}

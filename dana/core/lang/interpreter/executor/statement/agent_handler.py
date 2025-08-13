@@ -234,22 +234,25 @@ class AgentHandler(Loggable):
             # Merge with defaults from the type
             merged_defaults: dict[str, Any] = {}
             if getattr(blueprint_type, "field_defaults", None):
-                merged_defaults.update(blueprint_type.field_defaults)
+                field_defaults = blueprint_type.field_defaults
+                if field_defaults:
+                    merged_defaults.update(field_defaults)
             merged_defaults.update(overrides)
 
             # If an alias is provided, create a derived AgentType that inherits blueprint fields/methods
             instance_type = blueprint_type
             if node.alias_name:
                 derived = AgentType(
-                    name=node.alias_name,
+                    # name=node.alias_name,
+                    name=node.blueprint_name,
                     fields=dict(getattr(blueprint_type, "fields", {})),
                     field_order=list(getattr(blueprint_type, "field_order", [])),
                     field_defaults=dict(merged_defaults) if merged_defaults else {},
                     field_comments=dict(getattr(blueprint_type, "field_comments", {})),
                 )
                 # Inherit agent methods and capabilities
-                if hasattr(blueprint_type, "agent_methods"):
-                    derived.agent_methods.update(blueprint_type.agent_methods)
+                if hasattr(blueprint_type, "_initial_agent_methods"):
+                    derived._initial_agent_methods.update(blueprint_type._initial_agent_methods)
                 if hasattr(blueprint_type, "reasoning_capabilities") and blueprint_type.reasoning_capabilities:
                     derived.reasoning_capabilities.extend(blueprint_type.reasoning_capabilities)
 

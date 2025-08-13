@@ -9,6 +9,7 @@ MIT License
 """
 
 import atexit
+import os
 import weakref
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,10 +18,12 @@ from typing import Any
 from dana.api.client import APIClient
 from dana.api.server import APIServiceManager
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
@@ -63,7 +66,7 @@ class DanaSandbox(Loggable):
     # Resource pooling for better leak resistance and performance
     _shared_api_service: APIServiceManager | None = None
     _shared_api_client: APIClient | None = None
-    _shared_llm_resource: LLMResource | None = None
+    _shared_llm_resource: LegacyLLMResource | None = None
     _resource_users = 0  # Count of instances using shared resources
 
     def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
@@ -85,10 +88,31 @@ class DanaSandbox(Loggable):
         # Set interpreter in context
         self._context.interpreter = self._interpreter
 
-        # Add global objects from corelib registration to context
-        if hasattr(self._interpreter.function_registry, "_global_objects"):
-            for obj_name, obj in self._interpreter.function_registry._global_objects.items():
-                self._context.set(f"local:{obj_name}", obj)
+        # Store module search paths in context for import handler access
+        if module_search_paths:
+            self._context.set("system:module_search_paths", module_search_paths)
+
+        # Add system functions to local context for easy access
+        if "system" in self._interpreter.function_registry._functions:
+            for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
+                self._context.set(f"local:{func_name}", func)
+
+        # In test mode, ensure corelib functions are available by loading them manually
+        if os.getenv("DANA_TEST_MODE") and "system" not in self._interpreter.function_registry._functions:
+            try:
+                from pathlib import Path
+
+                from dana.libs.corelib.py_wrappers.register_py_wrappers import _register_python_functions
+
+                py_dir = Path(__file__).parent.parent.parent / "libs" / "corelib" / "py_wrappers"
+                _register_python_functions(py_dir, self._interpreter.function_registry)
+
+                # Add the newly registered functions to the context
+                if "system" in self._interpreter.function_registry._functions:
+                    for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
+                        self._context.set(f"local:{func_name}", func)
+            except Exception as e:
+                self.warning(f"Failed to load corelib functions in test mode: {e}")
 
         # Automatic lifecycle management
         self._initialized = False
@@ -96,7 +120,7 @@ class DanaSandbox(Loggable):
         self._using_shared = False  # Track if using shared resources
         self._api_service: APIServiceManager | None = None
         self._api_client: APIClient | None = None
-        self._llm_resource: LLMResource | None = None
+        self._llm_resource: LLMResourceInstance | None = None
 
         # Track instances for cleanup with weakref callback
         DanaSandbox._instances.add(self)
@@ -141,22 +165,36 @@ class DanaSandbox(Loggable):
             # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
+
+            # Set LLM resource in context so reason() function can access it
             self._context.set_system_llm_resource(self._llm_resource)
 
-            # Perform a root-only auto-import of corelib Dana modules using the module's __name__
-            # to avoid hardcoding the path.
-            try:
-                import dana.libs.corelib.na_modules as module
+            # Enable mock mode for tests (check environment variable)
+            import os
 
-                module_path = module.__name__
-                self._interpreter._eval(
-                    f"from {module_path} import *",
-                    context=self._context,
-                    filename="<auto-import>",
-                )
-            except Exception as auto_import_err:
-                # Non-fatal: if auto-import fails, continue without it
-                self.error(f"Auto-import skipped: {auto_import_err}")
+            if os.environ.get("DANA_MOCK_LLM", "true").lower() == "true":
+                self._llm_resource.with_mock_llm_call(True)
+
+            # Load Dana startup file that handles all Dana resource loading and initialization
+            try:
+                # Load the main Dana startup file
+                startup_file = Path(__file__).parent.parent.parent / "__init__.na"
+                if startup_file.exists():
+                    with open(startup_file, encoding="utf-8") as f:
+                        startup_code = f.read()
+
+                    self._interpreter._eval(
+                        startup_code,
+                        context=self._context,
+                        filename="<dana-init-na>",
+                    )
+                    self.info("Dana startup file loaded successfully")
+                else:
+                    self.warning(f"Dana startup file not found at {startup_file}")
+
+            except Exception as startup_err:
+                # Non-fatal: if startup fails, continue without it
+                self.error(f"Dana startup file loading failed: {startup_err}")
 
             # Register started APIClient as default POET client
             # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
@@ -199,16 +237,10 @@ class DanaSandbox(Loggable):
         # self._api_client.startup()
 
         # Initialize LLM resource (required for core Dana functionalities involving language model operations)
-        self._llm_resource = LLMResource()
-        self._llm_resource.startup()
-
-        # Initialize module system
-        from dana.core.runtime.modules.core import initialize_module_system
-
-        if self._module_search_paths is not None:
-            initialize_module_system(self._module_search_paths)
-        else:
-            initialize_module_system()
+        self._llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource())
+        # self._llm_resource = LLMResource()
+        self._llm_resource.initialize()
+        self._llm_resource.start()
 
         self._using_shared = False
 
@@ -439,7 +471,7 @@ class DanaSandbox(Loggable):
             file_path = Path(file_path).resolve()
 
             # Add the file's directory to the module search path temporarily
-            from dana.core.runtime.modules.core import get_module_loader
+            from dana.__init__.init_modules import get_module_loader
 
             loader = get_module_loader()
             file_dir = file_path.parent

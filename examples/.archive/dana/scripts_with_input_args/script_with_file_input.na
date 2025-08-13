@@ -1,4 +1,0 @@
-"""Dana script with large or structured argument from file."""
-
-def __main__(this_arg: str | dict | list = "You can pass a large or structured argument by `this_arg=@path/to/file`"):
-    print(this_arg)

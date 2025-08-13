@@ -9,8 +9,8 @@ This test suite covers Steps 5.1 and 5.2 with WORKING function names:
 import os
 from pathlib import Path
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestImportIntegrationWorking:

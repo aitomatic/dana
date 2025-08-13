@@ -1,15 +1,15 @@
+import logging
+import os
 from pathlib import Path
 from typing import Any
-import os
-import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.types import BaseRequest
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,9 @@ async def _llm_fallback(agent_name: str, agent_description: str, message: str) -
         logger.info(f"Using LLM fallback for agent '{agent_name}' with message: {message}")
 
         # Create LLM resource
-        llm = LLMResource(name="agent_test_fallback_llm", description="LLM fallback for agent testing when Dana code is not available")
+        llm = LegacyLLMResource(
+            name="agent_test_fallback_llm", description="LLM fallback for agent testing when Dana code is not available"
+        )
         await llm.initialize()
 
         # Check if LLM is available

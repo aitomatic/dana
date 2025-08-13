@@ -46,7 +46,7 @@ def configure_test_logging():
     logging.getLogger("dana.dana").setLevel(logging.ERROR)
     logging.getLogger("dana.common").setLevel(logging.ERROR)
     logging.getLogger("dana.api").setLevel(logging.ERROR)
-    logging.getLogger("dana.common.resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("dana.common.sys_resource.llm_resource").setLevel(logging.ERROR)
     logging.getLogger("dana.api.client").setLevel(logging.ERROR)
     logging.getLogger("dana.api.server").setLevel(logging.ERROR)
 
@@ -190,8 +190,8 @@ def run_dana_test_file(dana_test_file):
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
     # Clear struct registry to ensure test isolation
+    from dana.__init__ import initialize_module_system, reset_module_system
     from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
-    from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
     StructTypeRegistry.clear()
     MethodRegistry.clear()

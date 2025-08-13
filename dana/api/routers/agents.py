@@ -3,60 +3,60 @@ Agent routers - consolidated routing for agent-related endpoints.
 Thin routing layer that delegates business logic to services.
 """
 
+import asyncio
+import base64
+import json
 import logging
 import os
-import asyncio
-import json
-import base64
+import shutil
 import traceback
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import (
     APIRouter,
-    Depends,
-    HTTPException,
-    File,
-    Form,
-    UploadFile,
-    Query,
     BackgroundTasks,
     Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
 )
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
-from dana.api.core.database import get_db, engine
+from dana.api.core.database import engine, get_db
+from dana.api.core.models import Agent, AgentChatHistory
 from dana.api.core.schemas import (
     AgentCreate,
-    AgentRead,
     AgentGenerationRequest,
-    CodeValidationRequest,
-    CodeValidationResponse,
+    AgentRead,
     CodeFixRequest,
     CodeFixResponse,
+    CodeValidationRequest,
+    CodeValidationResponse,
     DocumentRead,
 )
-from dana.api.services.agent_manager import get_agent_manager, AgentManager
-from dana.api.services.document_service import get_document_service, DocumentService
+from dana.api.server.server import ws_manager
+from dana.api.services.agent_deletion_service import AgentDeletionService, get_agent_deletion_service
+from dana.api.services.agent_manager import AgentManager, get_agent_manager
+from dana.api.services.avatar_service import AvatarService
+from dana.api.services.document_service import DocumentService, get_document_service
 from dana.api.services.domain_knowledge_service import (
-    get_domain_knowledge_service,
     DomainKnowledgeService,
+    get_domain_knowledge_service,
 )
 from dana.api.services.domain_knowledge_version_service import (
-    get_domain_knowledge_version_service,
     DomainKnowledgeVersionService,
+    get_domain_knowledge_version_service,
 )
-from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
-from dana.api.core.models import Agent, AgentChatHistory
-from datetime import datetime, UTC
 from dana.api.services.knowledge_status_manager import (
-    KnowledgeStatusManager,
     KnowledgeGenerationManager,
+    KnowledgeStatusManager,
 )
-from dana.api.services.avatar_service import AvatarService
-from dana.api.server.server import ws_manager
-import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -886,10 +886,11 @@ async def create_agent_from_prebuilt(
             status_path = knows_folder / "knowledge_status.json"
 
             if status_path.exists():
+                from datetime import datetime
+
                 from dana.api.services.knowledge_status_manager import (
                     KnowledgeStatusManager,
                 )
-                from datetime import datetime
 
                 status_manager = KnowledgeStatusManager(str(status_path), agent_id=str(db_agent.id))
                 data = status_manager.load()
@@ -1453,11 +1454,11 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
 
         # Import the test logic from agent_test module
-        from dana.core.runtime.modules.core import (
+        from dana.api.routers.agent_test import AgentTestRequest, test_agent
+        from dana.__init__.init_modules import (
             initialize_module_system,
             reset_module_system,
         )
-        from dana.api.routers.agent_test import AgentTestRequest, test_agent
 
         initialize_module_system()
         reset_module_system()

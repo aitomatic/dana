@@ -460,7 +460,7 @@ async def _process_add_information_intent(
 
                     # Create a set of new leaf paths to identify what's actually new
                     new_leaf_paths = set()
-                    for path, leaf_node in leaf_paths:
+                    for path, _leaf_node in leaf_paths:
                         area_name = " - ".join(path)
                         new_leaf_paths.add(area_name)
 
@@ -468,7 +468,7 @@ async def _process_add_information_intent(
                     existing_paths = set(entry["path"] for entry in existing_status_data["topics"])
 
                     # Only add truly new topics, don't modify existing ones
-                    for path, leaf_node in leaf_paths:
+                    for path, _leaf_node in leaf_paths:
                         area_name = " - ".join(path)
 
                         # Only add topics that don't already exist in the status file
@@ -750,7 +750,7 @@ async def _process_remove_information_intent(
                         # Remove ALL knowledge files that contain the removed topics in their path
                         for topic in topics_to_remove:
                             # Normalize topic name for file matching
-                            safe_topic = (
+                            (
                                 topic.replace("/", "_")
                                 .replace(" ", "_")
                                 .replace("-", "_")
@@ -1054,7 +1054,7 @@ async def _update_instruction_as_knowledge(
 
         # This path must exist in the tree
         matching_leaves = [([topic for topic in topics if topic != "root"], None)]
-        for path, leaf_node in matching_leaves:
+        for path, _leaf_node in matching_leaves:
             area_name = " - ".join(path)
             safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
             file_name = f"{safe_area}.json"

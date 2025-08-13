@@ -52,16 +52,50 @@ def _patched_format_user_error(e, user_input=None):
         match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", msg)
         if match:
             symbol_type, symbol = match.groups()
-            main_msg = f"The symbol '{symbol}' is not allowed in this context."
-            # Special suggestion for exponentiation
-            if symbol == "*" and user_input and "**" in user_input:
-                suggestion = "For exponentiation in Dana, use '^' (e.g., x = x ^ 2)."
+
+            # Reserved keyword guidance
+            reserved_symbol_values = {
+                "resource",
+                "agent",
+                "use",
+                "with",
+                "if",
+                "elif",
+                "else",
+                "for",
+                "while",
+                "try",
+                "except",
+                "finally",
+                "def",
+                "struct",
+                "return",
+                "raise",
+                "pass",
+                "as",
+            }
+            reserved_token_types = {"RESOURCE", "AGENT", "AGENT_BLUEPRINT", "USE", "WITH"}
+
+            if symbol in reserved_symbol_values or symbol_type in reserved_token_types:
+                main_msg = f"The identifier '{symbol}' is a reserved keyword in Dana and cannot be used as a name here."
+
+                # Tailored hint for common receiver-parameter mistake
+                receiver_hint = ""
+                if user_input and "def (" in user_input and f"({symbol}:" in user_input:
+                    receiver_hint = " For receiver methods, use a non-reserved name like 'self', e.g.: def (self: Type) method(...):"
+
+                suggestion = f"Rename it to a non-reserved identifier (e.g., 'self', 'res', or 'instance').{receiver_hint}"
             else:
-                suggestion = "Please check for typos, missing operators, or unsupported syntax."
+                main_msg = f"The symbol '{symbol}' is not allowed in this context."
+                # Special suggestion for exponentiation
+                if symbol == "*" and user_input and "**" in user_input:
+                    suggestion = "For exponentiation in Dana, use '^' (e.g., x = x ^ 2)."
+                else:
+                    suggestion = "Please check for typos, missing operators, or unsupported syntax."
         else:
             main_msg = "An invalid symbol is not allowed in this context."
             suggestion = "Please check for typos, missing operators, or unsupported syntax."
-        return f"Syntax Error:\n  Input: {user_input}\n  {main_msg}\n  {suggestion}"
+        return f"Syntax Error:\n  {main_msg}\n  {suggestion}"
     return _original_format_user_error(e, user_input)
 
 

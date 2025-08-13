@@ -37,6 +37,7 @@ class HelpFormatter(Loggable):
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp off')}        - Disable natural language processing mode"))
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp status')}     - Check if NLP mode is enabled"))
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp test')}       - Test the NLP transcoder functionality"))
+        print_formatted_text(ANSI(f"  {self.colors.accent('/status')}         - Show current REPL status and context information"))
 
         # Show core functions
         print_formatted_text(ANSI(f"\n{self.colors.bold('Core Functions:')}"))

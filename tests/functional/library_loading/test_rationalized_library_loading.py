@@ -5,7 +5,7 @@ Test the rationalized library loading system.
 This test verifies that:
 1. Startup activities are conducted correctly
 2. corelib is preloaded during startup
-3. stdlib is available in DANA_PATH for on-demand loading
+3. stdlib is available in DANAPATH for on-demand loading
 """
 
 import os
@@ -22,7 +22,7 @@ class TestRationalizedLibraryLoading:
     def setup_method(self):
         """Set up test fixtures."""
         # Reset module system to ensure clean state
-        from dana.core.runtime.modules.core import reset_module_system
+        from dana.__init__.init_modules import reset_module_system
 
         reset_module_system()
 
@@ -67,18 +67,24 @@ class TestRationalizedLibraryLoading:
             assert registry.has(func_name), f"Corelib function {func_name} should be available"
 
     def test_stdlib_in_danapath(self):
-        """Test that stdlib is added to DANA_PATH for on-demand loading."""
-        # Import dana to trigger startup and DANA_PATH setup
+        """Test that stdlib is added to DANAPATH for on-demand loading."""
+        # Import dana to trigger startup and DANAPATH setup
+        import dana  # noqa: F401
 
-        # Verify DANA_PATH contains stdlib (note: variable name is DANA_PATH, not DANAPATH)
-        assert "DANA_PATH" in os.environ, "DANA_PATH not found in environment"
-        dana_path = os.environ["DANA_PATH"]
+        # Explicitly initialize module system to ensure DANAPATH is set up
+        from dana.__init__.init_modules import initialize_module_system
+
+        initialize_module_system()
+
+        # Verify DANAPATH contains stdlib (note: variable name is DANAPATH, not DANAPATH)
+        assert "DANAPATH" in os.environ, "DANAPATH not found in environment"
+        danapath = os.environ["DANAPATH"]
 
         # Get the expected stdlib path
         expected_stdlib_path = str(Path(__file__).parent.parent.parent.parent / "dana" / "libs" / "stdlib")
 
-        # Verify stdlib path is in DANA_PATH
-        assert expected_stdlib_path in dana_path, f"Expected stdlib path {expected_stdlib_path} not found in DANA_PATH: {dana_path}"
+        # Verify stdlib path is in DANAPATH
+        assert expected_stdlib_path in danapath, f"Expected stdlib path {expected_stdlib_path} not found in DANAPATH: {danapath}"
 
     def test_stdlib_on_demand_loading(self):
         """Test that stdlib functions can be loaded on-demand."""
@@ -106,6 +112,7 @@ result
 
         # Check that the functions executed by looking at the context state
         context = result.final_context
+        assert context is not None
         assert context.get("local", "result") is not None, "log function should have executed"
         assert context.get("local", "reason_result") is not None, "reason function should have executed"
 
@@ -193,7 +200,7 @@ result
 
         try:
             # Reset module system to test clean startup
-            from dana.core.runtime.modules.core import reset_module_system
+            from dana.__init__.init_modules import reset_module_system
 
             reset_module_system()
 
@@ -201,7 +208,7 @@ result
 
             # Module system should be available (test mode doesn't prevent initialization,
             # it just minimizes resource usage)
-            from dana.core.runtime.modules.core import get_module_registry
+            from dana.__init__.init_modules import get_module_registry
 
             # This should succeed - test mode allows module system initialization
             registry = get_module_registry()
