@@ -17,7 +17,6 @@ import pytest
 from textual.app import App
 
 # Test markers
-pytest_plugins = ["pytest_asyncio"]
 
 
 @pytest.fixture

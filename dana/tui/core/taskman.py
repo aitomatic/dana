@@ -11,8 +11,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from .events import AgentEvent
-
 
 @dataclass
 class TaskInfo:
@@ -247,44 +245,3 @@ class TaskManager:
 
 # Global task manager instance
 task_manager = TaskManager()
-
-
-async def run_agent_task(
-    agent_name: str, agent_coro: Any, description: str = "", event_callback: Callable[[str, AgentEvent], None] | None = None
-) -> None:
-    """Run an agent task with proper error handling and event forwarding.
-
-    Args:
-        agent_name: Name of the agent
-        agent_coro: Agent coroutine that yields events
-        description: Task description
-        event_callback: Optional callback for events (task_id, event)
-    """
-    task_id, cancel_token = task_manager.start_task(agent_name, agent_coro, description)
-
-    try:
-        async for event in agent_coro:
-            # Check for cancellation
-            if cancel_token.is_cancelled():
-                break
-
-            # Forward event if callback provided
-            if event_callback:
-                event_callback(task_id, event)
-
-    except asyncio.CancelledError:
-        # Task was cancelled - this is expected
-        if event_callback:
-            from .events import Done, Error
-
-            event_callback(task_id, Error("Task cancelled"))
-            event_callback(task_id, Done())
-        raise
-    except Exception as e:
-        # Unexpected error
-        if event_callback:
-            from .events import Done, Error
-
-            event_callback(task_id, Error(f"Task failed: {str(e)}"))
-            event_callback(task_id, Done())
-        raise

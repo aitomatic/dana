@@ -74,6 +74,7 @@ class TestAgent:
         metrics = agent.get_metrics()
         assert "invalid_key" not in metrics
 
+    @pytest.mark.asyncio
     async def test_chat_functionality(self):
         """Test agent chat functionality."""
         agent = MockTestAgent("test_agent", "hello world")
@@ -260,6 +261,7 @@ class TestDanaSandbox:
         assert sandbox.get("same_name") is agent2
         assert len(sandbox.list()) == 1
 
+    @pytest.mark.asyncio
     async def test_agent_interaction_through_sandbox(self, sandbox):
         """Test agent interaction through the sandbox."""
         agent = MockTestAgent("test_agent", "sandbox response")

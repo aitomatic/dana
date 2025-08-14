@@ -11,43 +11,13 @@ import asyncio
 import sys
 from pathlib import Path
 
+import pytest
+
 # Add the project root to path so we can import dana.tui.core
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.tui.core.events import Done, Status, Token
-from dana.tui.core.runtime import Agent
-from dana.tui.core.taskman import run_agent_task, task_manager
-
-
-class MockTestAgent(Agent):
-    """Mock agent for testing task manager."""
-
-    def __init__(self, name: str, response_text: str = "test response", delay: float = 0.0):
-        super().__init__(name)
-        self.response_text = response_text
-        self.delay = delay
-        self.chat_calls = []
-        self.start_time = None
-        self.end_time = None
-
-    async def chat(self, message: str):
-        """Mock chat implementation with optional delay."""
-        self.chat_calls.append(message)
-        self.start_time = asyncio.get_event_loop().time()
-
-        yield Status("thinking", f"Processing: {message}")
-
-        if self.delay > 0:
-            await asyncio.sleep(self.delay)
-
-        for char in self.response_text:
-            yield Token(char)
-            if self.delay > 0:
-                await asyncio.sleep(self.delay / len(self.response_text))
-
-        self.end_time = asyncio.get_event_loop().time()
-        yield Done()
+from dana.tui.core.taskman import task_manager
 
 
 class TestTaskManager:
@@ -61,6 +31,7 @@ class TestTaskManager:
         assert hasattr(task_manager, "get_task_info")
         assert hasattr(task_manager, "cancel_task")
 
+    @pytest.mark.asyncio
     async def test_add_and_get_task(self):
         """Test adding and retrieving tasks."""
         # Clear any existing tasks
@@ -84,6 +55,7 @@ class TestTaskManager:
         # Clean up
         task_manager.cancel_task(task_id)
 
+    @pytest.mark.asyncio
     async def test_list_tasks(self):
         """Test listing tasks."""
         # Clear any existing tasks
@@ -114,6 +86,7 @@ class TestTaskManager:
         task_manager.cancel_task(task_id1)
         task_manager.cancel_task(task_id2)
 
+    @pytest.mark.asyncio
     async def test_cancel_task(self):
         """Test task cancellation."""
         # Clear any existing tasks
@@ -130,127 +103,47 @@ class TestTaskManager:
         cancelled = task_manager.cancel_task(task_id)
         assert cancelled is True
 
-        # Verify task is cancelled
-        task = task_manager.get_task_info(task_id)
-        assert task is None or task.task.done()
-
-    async def test_run_agent_task_basic(self):
-        """Test basic agent task execution."""
-        agent = MockTestAgent("test_agent", "hello world")
-        events = []
-
-        async for event in run_agent_task(agent, "test message"):
-            events.append(event)
-
-        # Verify we got the expected events
-        assert len(events) >= 3  # Status + Tokens + Done
-        assert isinstance(events[0], Status)
-        assert isinstance(events[-1], Done)
-
-        # Verify agent was called
-        assert agent.chat_calls == ["test message"]
-
-    async def test_run_agent_task_with_events(self):
-        """Test agent task with event collection."""
-        agent = MockTestAgent("test_agent", "response text")
-        events = []
-
-        async for event in run_agent_task(agent, "test message"):
-            events.append(event)
-
-        # Check that we got token events
-        token_events = [e for e in events if isinstance(e, Token)]
-        assert len(token_events) > 0
-
-        # Check that tokens spell out the response
-        response_text = "".join(e.text for e in token_events)
-        assert "response" in response_text
-
-    async def test_run_agent_task_error_handling(self):
-        """Test error handling in agent tasks."""
-
-        # Create an agent that raises an exception
-        class ErrorAgent(MockTestAgent):
-            async def chat(self, message: str):
-                yield Status("error", "Something went wrong")
-                raise ValueError("Test error")
-
-        agent = ErrorAgent("error_agent")
-        events = []
-
-        # Should handle the error gracefully
-        try:
-            async for event in run_agent_task(agent, "test message"):
-                events.append(event)
-        except Exception:
-            pass  # Expected to fail
-
-        # Should have at least the status event
-        assert len(events) >= 1
-        assert isinstance(events[0], Status)
-
-    async def test_run_agent_task_cancellation(self):
-        """Test task cancellation."""
-        agent = MockTestAgent("slow_agent", "slow response", delay=0.5)
-
-        # Start the task
-        task = asyncio.create_task(run_agent_task(agent, "test message").__anext__())
-
-        # Cancel after a short delay
+        # Wait a bit for cleanup
         await asyncio.sleep(0.1)
-        task.cancel()
 
-        # Should handle cancellation gracefully
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass  # Expected
+        # Verify task is cancelled and cleaned up
+        task = task_manager.get_task_info(task_id)
+        assert task is None
 
-    async def test_task_manager_integration(self):
-        """Test task manager integration with agent tasks."""
-        agent = MockTestAgent("test_agent", "integration test")
-
-        # Start task through task manager
-        async def agent_coro():
-            async for event in agent.chat("test message"):
-                yield event
-
-        task_id, cancel_token = task_manager.start_task(agent.name, agent_coro(), "integration test")
-
-        # Verify task is running
-        task_info = task_manager.get_task_info(task_id)
-        assert task_info is not None
-        assert task_info.agent_name == agent.name
-
-        # Cancel the task
-        cancelled = task_manager.cancel_task(task_id)
-        assert cancelled is True
-
+    @pytest.mark.asyncio
     async def test_multiple_concurrent_tasks(self):
         """Test multiple concurrent tasks."""
-        agents = [MockTestAgent(f"agent_{i}", f"response {i}") for i in range(3)]
+        # Clear any existing tasks
+        task_manager._tasks.clear()
 
-        # Start multiple tasks
+        # Start multiple tasks using regular coroutines
         task_ids = []
-        for agent in agents:
+        for i in range(3):
 
-            async def agent_coro(agent=agent):
-                async for event in agent.chat("test"):
-                    yield event
+            async def dummy_coro(task_num=i):
+                # Add a delay to keep the task running
+                await asyncio.sleep(0.1)
+                return f"task {task_num} done"
 
-            task_id, _ = task_manager.start_task(agent.name, agent_coro(), f"task for {agent.name}")
+            task_id, _ = task_manager.start_task(f"agent_{i}", dummy_coro(), f"task for agent_{i}")
             task_ids.append(task_id)
+
+        # Wait a bit for tasks to start
+        await asyncio.sleep(0.05)
 
         # Verify all tasks are running
         for task_id in task_ids:
             task_info = task_manager.get_task_info(task_id)
-            assert task_info is not None
+            assert task_info is not None, f"Task {task_id} not found"
 
         # Cancel all tasks
         for task_id in task_ids:
             task_manager.cancel_task(task_id)
 
-        # Verify all tasks are cancelled
+        # Wait a bit for tasks to be cleaned up
+        await asyncio.sleep(0.1)
+
+        # Verify all tasks are cancelled and cleaned up
         for task_id in task_ids:
             task_info = task_manager.get_task_info(task_id)
             assert task_info is None
