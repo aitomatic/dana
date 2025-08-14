@@ -271,6 +271,8 @@ export const MarkdownViewerSmall = ({
   backgroundContext?: 'user' | 'agent' | 'default';
   citations?: any[];
 }) => {
+  // Define font size classes in one place for consistency
+  const textSizeClasses = 'text-xs xl:text-sm';
   // Dynamically import dark theme CSS when needed
   useEffect(() => {
     if (theme === 'dark') {
@@ -337,7 +339,7 @@ export const MarkdownViewerSmall = ({
   return (
     <div
       className={cn(
-        `markdown-body markdown-body-${theme} markdown-body-${backgroundContext} w-full text-sm xl:text-base`,
+        `markdown-body markdown-body-${theme} markdown-body-${backgroundContext} w-full ${textSizeClasses}`,
         classname,
       )}
     >
@@ -372,7 +374,7 @@ export const MarkdownViewerSmall = ({
               return (
                 <code
                   className={cn(
-                    'font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base',
+                    `font-mono font-normal px-1.5 py-0.5 rounded ${textSizeClasses}`,
                     isHook
                       ? 'bg-purple-100 text-purple-800'
                       : isType
@@ -402,6 +404,12 @@ export const MarkdownViewerSmall = ({
             return <CodeBlock content={content} language={language} />;
           },
 
+          ul: ({ children }: any) => (
+            <ul className={`${textSizeClasses} text-gray-900`}>{children}</ul>
+          ),
+          li: ({ children }: any) => (
+            <li className={`${textSizeClasses} text-gray-900 list-disc`}>{children}</li>
+          ),
           p: ({ children }: ParagraphProps) => {
             // Helper function to enhance financial terms
             const enhanceFinancialTerms = (text: string) => {
@@ -440,7 +448,7 @@ export const MarkdownViewerSmall = ({
 
               if (hasAtMention) {
                 return (
-                  <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                  <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                     {children.map((child, index) => {
                       if (typeof child === 'string' && child.includes('@')) {
                         const parts = child.split(regex);
@@ -483,7 +491,7 @@ export const MarkdownViewerSmall = ({
 
               // Handle array children without @ mentions
               return (
-                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                   {children.map((child, index) => {
                     if (typeof child === 'string') {
                       // Skip rendering if the child only contains a $ symbol
@@ -509,7 +517,7 @@ export const MarkdownViewerSmall = ({
             if (typeof children === 'string' && children.includes('@')) {
               const parts = children.split(regex);
               return (
-                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                   {parts.map((part, index) => {
                     if (part.startsWith('@')) {
                       // Use the enhanced MentionSpan component
@@ -536,14 +544,14 @@ export const MarkdownViewerSmall = ({
 
               return (
                 <p
-                  className={`py-1 text-sm text-gray-900 xl:text-base`}
+                  className={`py-1 ${textSizeClasses} text-gray-900`}
                   dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(children) }}
                 />
               );
             }
 
             // For non-string children (React elements), render normally without financial term enhancement
-            return <p className={`py-1 text-sm text-gray-900 xl:text-base`}>{children}</p>;
+            return <p className={`py-1 ${textSizeClasses} text-gray-900`}>{children}</p>;
           },
 
           table: ({ children }: TableProps) => (
