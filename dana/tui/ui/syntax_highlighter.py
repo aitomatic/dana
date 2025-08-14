@@ -7,6 +7,9 @@ MIT License
 
 import re
 
+from rich.highlighter import Highlighter
+from rich.text import Text
+
 
 class DanaSyntaxHighlighter:
     """
@@ -231,5 +234,19 @@ class DanaSyntaxHighlighter:
             return message
 
 
+class RichDanaHighlighter(DanaSyntaxHighlighter, Highlighter):
+    """A Rich highlighter for Dana syntax, using multiple inheritance."""
+
+    def highlight(self, text: Text) -> None:
+        """Highlight the given text.
+
+        Args:
+            text: The text to highlight.
+        """
+        highlighted_string = self.highlight_code(text.plain)
+        highlighted_text = Text.from_markup(highlighted_string)
+        text.spans = highlighted_text.spans
+
+
 # Global instance for convenience
-dana_highlighter = DanaSyntaxHighlighter()
+dana_highlighter = RichDanaHighlighter()
