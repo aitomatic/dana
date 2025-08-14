@@ -143,6 +143,8 @@ class KnowledgeOpsHandler(AbstractHandler):
             ModifyTreeTool(
                 tree_structure=self.tree_structure,
                 domain_knowledge_path=self.domain_knowledge_path,
+                storage_path=self.storage_path,
+                knowledge_status_path=self.knowledge_status_path,
                 domain=self.domain,
                 role=self.role,
                 tasks=self.tasks,
