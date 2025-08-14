@@ -1,0 +1,16 @@
+=== AI QUALITY ASSURANCE REPORT ===
+Date: Tue Jul 29 12:22:20 +07 2025
+Final Dana examples tested:       95
+Final broken examples: 91
+Final build status: SUCCESS
+Files missing expected outputs: 91
+Orphaned files:      278
+Missing navigation files:        1
+
+QUALITY METRICS:
+- Dana Examples: 91 BROKEN
+- MkDocs Build: SUCCESS
+- Navigation: ISSUES FOUND
+- Content Quality: MISSING OUTPUTS
+
+OVERALL STATUS: ISSUES FOUND

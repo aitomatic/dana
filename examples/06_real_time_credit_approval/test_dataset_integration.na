@@ -1,0 +1,33 @@
+"""Test Dataset Integration - Credit Approval"""
+
+from credit_agent import CreditApprovalSystem
+from resources import load_credit_dataset, load_credit_domain_theory, get_dataset_statistics
+
+# Test dataset loading
+print("Testing dataset integration...")
+
+# Load dataset statistics
+stats = get_dataset_statistics()
+print(f"Dataset Statistics: {stats['total_instances']} instances, {stats['positive_class']} approved, {stats['negative_class']} rejected")
+
+# Load dataset
+dataset = load_credit_dataset()
+print("Dataset loaded successfully")
+
+# Load domain theory
+domain_theory = load_credit_domain_theory()
+print("Domain theory loaded successfully")
+
+# Test with a sample application
+test_app = {
+    "applicant_id": "DATASET-TEST-001",
+    "name": "Test Applicant",
+    "age": 35,
+    "income": 50000000,
+    "amount": 30000000,
+    "employment": "permanent",
+    "documents": ["salary_slip", "bank_statement", "identity_document"]
+}
+
+print("Test completed successfully!")
+print(f"Test application: {test_app}") 
