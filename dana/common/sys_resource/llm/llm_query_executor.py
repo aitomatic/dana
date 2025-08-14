@@ -398,7 +398,7 @@ class LLMQueryExecutor(Loggable):
                 raise LLMError(f"An unexpected error occurred: {e}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Intelligent mock LLM query that understands POET-enhanced prompts and agent context.
+        """Intelligent mock LLM query that understands POET-enhanced prompts.
 
         Args:
             request: Dictionary containing the request parameters
@@ -417,14 +417,8 @@ class LLMQueryExecutor(Loggable):
 
         content = last_message["content"]
 
-        # Get system messages to understand agent context
-        system_messages = [msg for msg in messages if msg["role"] == "system"]
-        agent_context = ""
-        for sys_msg in system_messages:
-            agent_context += sys_msg.get("content", "") + " "
-
-        # Intelligent response based on prompt analysis and agent context
-        mock_content = self._generate_intelligent_mock_response(content, agent_context.strip())
+        # Intelligent response based on prompt analysis
+        mock_content = self._generate_intelligent_mock_response(content)
 
         # Create a mock response
         return {
@@ -433,12 +427,11 @@ class LLMQueryExecutor(Loggable):
             "model": "mock-model",
         }
 
-    def _generate_intelligent_mock_response(self, prompt: str, agent_context: str = "") -> str:
-        """Generate intelligent mock responses based on prompt analysis and agent context.
+    def _generate_intelligent_mock_response(self, prompt: str) -> str:
+        """Generate intelligent mock responses based on prompt analysis.
 
         Args:
             prompt: The user prompt to analyze
-            agent_context: The agent context from system messages
 
         Returns:
             str: Appropriate mock response
@@ -531,110 +524,7 @@ class LLMQueryExecutor(Loggable):
         elif any(term in prompt_lower for term in ["invest", "renewable", "proceed", "continue"]):
             return "Based on the context, I would recommend proceeding with careful consideration of the relevant factors."
         else:
-            # Check if we have agent context to make response more agent-aware
-            if agent_context:
-                agent_name = self._extract_agent_name(agent_context)
-                if agent_name:
-                    # Generate agent-specific responses
-                    if any(term in prompt_lower for term in ["who are you", "tell me about yourself", "introduce yourself"]):
-                        return f"Hello! I'm {agent_name}. How can I assist you today?"
-                    elif any(term in prompt_lower for term in ["your name", "what's your name"]):
-                        return f"I'm {agent_name}, an AI agent. How can I help you?"
-                    elif "hello" in prompt_lower or "hi" in prompt_lower:
-                        return f"Hello! I'm {agent_name}. How can I assist you today?"
-                    elif any(term in prompt_lower for term in ["can you help", "help me", "what can you do"]):
-                        return f"I can help with a variety of tasks. I'm {agent_name}, ready to chat and assist you!"
-                    elif "remember" in prompt_lower or "recall" in prompt_lower:
-                        # Check if there's conversation history with relevant information
-                        history_info = self._extract_relevant_history(agent_context, prompt_lower)
-                        if history_info:
-                            return f"Yes, I remember! {history_info}"
-                        else:
-                            return "I can remember our conversations. What would you like me to remember, or are you asking about something we discussed?"
-                    else:
-                        return f"I'm {agent_name}, and I'm here to help. Regarding your question about '{prompt[:50]}{'...' if len(prompt) > 50 else ''}', I'd be happy to assist you."
-
             return f"This is a mock response. In a real scenario, I would provide a thoughtful answer to: {prompt[:100]}{'...' if len(prompt) > 100 else ''}"
-
-    def _extract_agent_name(self, agent_context: str) -> str | None:
-        """Extract agent name from system message context.
-
-        Args:
-            agent_context: The agent context from system messages
-
-        Returns:
-            str | None: The agent name if found, None otherwise
-        """
-        if not agent_context:
-            return None
-
-        # Look for patterns like "You are AgentName" or "I'm AgentName"
-        import re
-
-        patterns = [
-            r"You are (\w+)",
-            r"I'm (\w+)",
-            r"I am (\w+)",
-            r"My name is (\w+)",
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, agent_context, re.IGNORECASE)
-            if match:
-                name = match.group(1)
-                # Filter out generic terms
-                if name.lower() not in ["agent", "assistant", "ai", "bot", "chatbot", "helper"]:
-                    return name
-
-        return None
-
-    def _extract_relevant_history(self, agent_context: str, prompt_lower: str) -> str | None:
-        """Extract relevant information from conversation history.
-
-        Args:
-            agent_context: The full agent context including conversation history
-            prompt_lower: The lowercase user prompt to understand what they're asking about
-
-        Returns:
-            str | None: Relevant historical information if found, None otherwise
-        """
-        if not agent_context:
-            return None
-
-        # Look for conversation history section
-        if "Previous conversation:" in agent_context:
-            # Extract the conversation history part
-            history_start = agent_context.find("Previous conversation:")
-            if history_start != -1:
-                history_section = agent_context[history_start:]
-
-                # Look for specific patterns based on what the user is asking
-                if any(term in prompt_lower for term in ["my name", "name"]):
-                    # Look for name mentions in history
-                    import re
-
-                    name_patterns = [r"my name is (\w+)", r"i'm (\w+)", r"i am (\w+)", r"call me (\w+)"]
-                    for pattern in name_patterns:
-                        match = re.search(pattern, history_section, re.IGNORECASE)
-                        if match:
-                            name = match.group(1)
-                            return f"Your name is {name}."
-
-                # Look for other interests/topics mentioned
-                interests = []
-                if "programming" in history_section.lower():
-                    interests.append("programming")
-                if "coding" in history_section.lower():
-                    interests.append("coding")
-                if "music" in history_section.lower():
-                    interests.append("music")
-                if "sports" in history_section.lower():
-                    interests.append("sports")
-
-                if interests:
-                    return f"You mentioned you like {', '.join(interests)}."
-
-        return None
 
     def _build_default_request_params(self, request: dict[str, Any]) -> dict[str, Any]:
         """Build request parameters for LLM API call.

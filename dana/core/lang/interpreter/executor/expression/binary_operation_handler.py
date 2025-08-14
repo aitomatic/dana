@@ -52,24 +52,7 @@ class BinaryOperationHandler(Loggable):
             left = self._extract_value(left_raw)
             right = self._extract_value(right_raw)
 
-            # For equality operations, check semantic equivalence first (before coercion)
-            if node.operator in [BinaryOperator.EQUALS, BinaryOperator.NOT_EQUALS]:
-                try:
-                    from dana.core.lang.interpreter.enhanced_coercion import semantic_equals
-                    import os
-
-                    if os.environ.get("DANA_AUTO_COERCION", "1").lower() in ["1", "true", "yes", "y"]:
-                        if node.operator == BinaryOperator.EQUALS:
-                            return semantic_equals(left, right)
-                        elif node.operator == BinaryOperator.NOT_EQUALS:
-                            return not semantic_equals(left, right)
-                except ImportError:
-                    pass
-                except Exception as e:
-                    self.debug(f"Error in semantic equals: {e}")
-                    pass
-
-            # Apply type coercion if enabled (for non-equality operations or fallback)
+            # Apply type coercion if enabled
             left, right = self._apply_binary_coercion(left, right, node.operator.value)
 
             # Perform the operation
@@ -119,40 +102,11 @@ class BinaryOperationHandler(Loggable):
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled."""
         try:
-            import os
+            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
             # Only apply coercion if enabled
-            if os.environ.get("DANA_AUTO_COERCION", "1").lower() in ["1", "true", "yes", "y"]:
-                # If types already match, no coercion needed
-                if type(left) is type(right):
-                    return left, right
-
-                # Numeric promotion: int + float → float + float
-                if isinstance(left, int) and isinstance(right, float):
-                    return float(left), right
-                if isinstance(left, float) and isinstance(right, int):
-                    return left, float(right)
-
-                # String concatenation: allow number + string → string + string
-                if operator == "+" and isinstance(left, int | float | bool) and isinstance(right, str):
-                    return str(left), right
-                if operator == "+" and isinstance(left, str) and isinstance(right, int | float | bool):
-                    return left, str(right)
-
-                # Comparison operations: allow cross-type comparisons with conversion
-                if operator in ["==", "!=", "<", ">", "<=", ">="]:
-                    if isinstance(left, str) and isinstance(right, int | float):
-                        try:
-                            return type(right)(left), right
-                        except (ValueError, TypeError):
-                            pass
-                    if isinstance(right, str) and isinstance(left, int | float):
-                        try:
-                            return left, type(left)(right)
-                        except (ValueError, TypeError):
-                            pass
-
-                return left, right
+            if TypeCoercion.should_enable_coercion():
+                return TypeCoercion.coerce_binary_operands(left, right, operator)
 
         except ImportError:
             # TypeCoercion not available, return original values
