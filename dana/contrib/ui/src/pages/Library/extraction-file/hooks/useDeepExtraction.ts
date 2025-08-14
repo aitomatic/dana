@@ -1,9 +1,19 @@
 import { useState, useTransition } from 'react';
 import { useDocumentStore } from '@/stores/document-store';
+import { apiService } from '@/lib/api';
 
 interface Document {
   text: string;
+  page_content?: string;
+  page_number?: number;
   [key: string]: any;
+}
+
+function unwrapMarkdownFences(content: string | undefined): string {
+  if (!content) return '';
+  const fencePattern = /^```(?:markdown|md)?\n([\s\S]*?)\n```\s*$/i;
+  const match = content.match(fencePattern);
+  return match ? match[1] : content;
 }
 
 export const useDeepExtraction = (selectedFile: any) => {
@@ -14,37 +24,54 @@ export const useDeepExtraction = (selectedFile: any) => {
     selectedFile?.is_deep_extracted || false,
   );
   const [prompt, setPrompt] = useState<string>(selectedFile?.prompt || '');
+  const [error, setError] = useState<string | null>(null);
 
   const handleDeepExtract = async (usePrompt: boolean = true): Promise<void> => {
-    setIsDeepExtracted(true);
+    if (!selectedFile?.file) return;
 
-    // Update the document with deep extraction status
-    if (selectedFile?.id) {
-      updateDocument(selectedFile.id, {
-        // Note: The document store doesn't support these fields
-        // This would need to be handled by a different API endpoint
-      });
-    }
+    setError(null);
 
     startTransition(async () => {
-      // Simulate deep extraction process
-      // In a real implementation, this would call the deep extraction API
-      console.log('Deep extraction started with prompt:', usePrompt ? prompt : 'No prompt');
+      try {
+        // 1) Upload file to server uploads directory
+        const uploaded = await apiService.uploadDocumentRaw(selectedFile.file);
 
-      // Simulate API response
-      const mockResponse = {
-        documents: {
-          documents: [{ text: 'Extracted content from document...' }],
-        },
-      };
+        // 2) Build server-side file path for deep extraction
+        const serverFilePath = `uploads/${uploaded.filename}`;
 
-      setDeepExtractedDocuments(mockResponse?.documents?.documents || []);
-
-      if (selectedFile?.id) {
-        updateDocument(selectedFile.id, {
-          // Note: The document store doesn't support these fields
-          // This would need to be handled by a different API endpoint
+        // 3) Call deep extract endpoint
+        const response = await apiService.deepExtract({
+          file_path: serverFilePath,
+          prompt: usePrompt ? prompt : undefined,
         });
+
+        // 4) Map pages to our document structure and unwrap fenced markdown
+        const docs = (response.file_object?.pages || []).map((p) => {
+          console.log('[useDeepExtraction] Processing page:', {
+            page_number: p.page_number,
+            page_content_length: p.page_content?.length,
+            page_content_preview: p.page_content?.substring(0, 100),
+          });
+          return {
+            text: unwrapMarkdownFences(p.page_content),
+            page_content: p.page_content,
+            page_number: p.page_number,
+          };
+        });
+        console.log('[useDeepExtraction] Final docs with page_content:', docs);
+        console.log(
+          '[useDeepExtraction] First doc page_content:',
+          docs[0]?.page_content?.substring(0, 200),
+        );
+        setDeepExtractedDocuments(docs);
+        setIsDeepExtracted(true);
+
+        if (selectedFile?.id) {
+          updateDocument(selectedFile.id, {} as any);
+        }
+      } catch (e: any) {
+        setError(e?.message || 'Deep extraction failed');
+        setIsDeepExtracted(false);
       }
     });
   };
@@ -63,6 +90,7 @@ export const useDeepExtraction = (selectedFile: any) => {
     deepExtractedDocuments,
     prompt,
     setPrompt,
+    error,
     handleDeepExtractWithPrompt,
     handleDeepExtractWithoutPrompt,
   };

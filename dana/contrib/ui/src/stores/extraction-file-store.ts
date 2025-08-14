@@ -1,4 +1,35 @@
 import { create } from 'zustand';
+import { apiService } from '@/lib/api';
+
+function unwrapMarkdownFences(content: string | undefined): string {
+  if (!content) return '';
+  const fencePattern = /^```(?:markdown|md)?\n([\s\S]*?)\n```\s*$/i;
+  const match = content.match(fencePattern);
+  return match ? match[1] : content;
+}
+
+function isAutoExtractCandidate(fileName: string): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return [
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'bmp',
+    'tiff',
+    'tif',
+    'pdf',
+    'docx',
+    'doc',
+    'pptx',
+    'ppt',
+    'xlsx',
+    'xls',
+    'txt',
+    'md',
+    'rtf',
+  ].includes(ext);
+}
 
 export interface ExtractionFile {
   id: string;
@@ -11,10 +42,13 @@ export interface ExtractionFile {
   prompt?: string;
   documents?: Array<{
     text: string;
+    page_content?: string;
+    page_number?: number;
     [key: string]: any;
   }>;
   created_at?: string;
   updated_at?: string;
+  status?: 'uploading' | 'extracting' | 'ready';
 }
 
 export interface ExtractionFileState {
@@ -84,6 +118,9 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
       selectedFile: null,
       showConfirmDiscard: false,
       error: null,
+      extractedFiles: [],
+      extractionProgress: 0,
+      currentExtractionStep: 'upload',
     });
   },
 
@@ -105,12 +142,144 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
       file_size: file.size,
       mime_type: file.type,
       created_at: new Date().toISOString(),
+      status: undefined,
     };
 
     set((state) => ({
       extractedFiles: [...state.extractedFiles, newExtractionFile],
       selectedFile: state.selectedFile || newExtractionFile,
     }));
+
+    // Auto-extract supported types
+    console.log('[Extraction] Checking if file is auto-extract candidate:', file.name);
+    console.log('[Extraction] File extension:', file.name.split('.').pop()?.toLowerCase());
+    console.log('[Extraction] Is auto-extract candidate:', isAutoExtractCandidate(file.name));
+    if (isAutoExtractCandidate(file.name)) {
+      console.log('[Extraction] File is auto-extract candidate:', file.name);
+      const fileId = newExtractionFile.id;
+      (async () => {
+        try {
+          console.info('[Extraction] Starting auto-extraction for:', file.name);
+          console.info('[Extraction] File ID:', fileId);
+          // Mark as uploading
+          set((state) => ({
+            extractedFiles: state.extractedFiles.map((f) =>
+              f.id === fileId ? { ...f, status: 'uploading' } : f,
+            ),
+          }));
+
+          const uploaded = await apiService.uploadDocumentRaw(file);
+          console.info('[Extraction] Upload response:', uploaded);
+          console.info('[Extraction] uploaded.filename:', uploaded.filename);
+          console.info('[Extraction] uploaded.original_filename:', uploaded.original_filename);
+
+          // Try using the filename directly instead of uploads/ prefix
+          const serverFilePath = uploaded.filename;
+          console.info('[Extraction] Server file path (filename only):', serverFilePath);
+          console.info('[Extraction] Calling deep-extract with:', { file_path: serverFilePath });
+
+          // Mark as extracting
+          set((state) => ({
+            extractedFiles: state.extractedFiles.map((f) =>
+              f.id === fileId ? { ...f, status: 'extracting' } : f,
+            ),
+          }));
+
+          const extractParams = { file_path: serverFilePath };
+          console.info('[Extraction] Calling deep extract API with params:', extractParams);
+          console.info('[Extraction] Server file path being sent:', serverFilePath);
+          console.info('[Extraction] Uploaded file response was:', uploaded);
+
+          const deep = await apiService.deepExtract(extractParams);
+          console.info('[Extraction] Deep extract API response:', deep);
+          console.info('[Extraction] API response file_object:', deep.file_object);
+          console.info('[Extraction] API response pages:', deep.file_object?.pages);
+          const docs = (deep.file_object?.pages || []).map((p) => {
+            console.log('[Extraction Store] Raw page data:', {
+              page_number: p.page_number,
+              page_content_length: p.page_content?.length,
+              page_content_preview: p.page_content?.substring(0, 100),
+            });
+            return {
+              text: unwrapMarkdownFences(p.page_content),
+              page_content: p.page_content,
+              page_number: p.page_number,
+            };
+          });
+          console.info('[Extraction] Processed docs:', docs);
+          console.info(
+            '[Extraction] First doc page_content:',
+            docs[0]?.page_content?.substring(0, 200),
+          );
+
+          // Store results
+          set((state) => {
+            const updatedFiles = state.extractedFiles.map((f) =>
+              f.id === fileId
+                ? {
+                    ...f,
+                    is_deep_extracted: true,
+                    documents: docs,
+                    updated_at: new Date().toISOString(),
+                    status: 'ready' as const,
+                  }
+                : f,
+            );
+            console.info('[Extraction] Updated files array:', updatedFiles);
+            const updatedFile = updatedFiles.find((f) => f.id === fileId);
+            console.info('[Extraction] Updated specific file:', updatedFile);
+            console.info('[Extraction] Updated file documents:', updatedFile?.documents);
+
+            // Also update selectedFile if it's the same file
+            const updatedSelectedFile =
+              state.selectedFile?.id === fileId ? updatedFile : state.selectedFile;
+            console.info('[Extraction] Updated selectedFile:', updatedSelectedFile);
+            console.info(
+              '[Extraction] Updated selectedFile documents:',
+              updatedSelectedFile?.documents,
+            );
+
+            return {
+              extractedFiles: updatedFiles,
+              selectedFile: updatedSelectedFile,
+            };
+          });
+
+          console.info('[Extraction] Updated file entry for ID:', fileId);
+
+          // Verify the store state after update
+          const currentState = get();
+          const fileInStore = currentState.extractedFiles.find((f) => f.id === fileId);
+          console.info('[Extraction] File in store after update:', fileInStore);
+          console.info('[Extraction] Documents in store:', fileInStore?.documents);
+        } catch (err: any) {
+          console.error('[Extraction] Auto extraction failed for file:', file.name);
+          console.error('[Extraction] Error details:', err);
+          console.error('[Extraction] Error status:', err.status);
+          console.error('[Extraction] Error response data:', err.details);
+          console.error(
+            '[Extraction] Error message:',
+            err instanceof Error ? err.message : 'Auto extraction failed',
+          );
+
+          // For 422 errors, log the validation details
+          if (err.status === 422) {
+            console.error('[Extraction] 422 Validation Error - Details:', err.details);
+            console.error('[Extraction] 422 Error - This usually means invalid request parameters');
+          }
+
+          set({ error: err instanceof Error ? err.message : 'Auto extraction failed' });
+          // Clear status on error
+          set((state) => ({
+            extractedFiles: state.extractedFiles.map((f) =>
+              f.id === fileId ? { ...f, status: undefined } : f,
+            ),
+          }));
+        }
+      })();
+    } else {
+      console.log('[Extraction] File skipped - not an auto-extract candidate:', file.name);
+    }
   },
 
   removeFile: (fileId: string) => {
@@ -130,7 +299,6 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
   // Extraction Process
   startExtraction: async () => {
     const { extractedFiles } = get();
-
     if (extractedFiles.length === 0) {
       set({ error: 'No files to extract' });
       return;
@@ -144,29 +312,74 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
     });
 
     try {
-      // Simulate extraction process
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        set({ extractionProgress: i });
+      const total = extractedFiles.length;
+      let processed = 0;
+
+      for (const fileItem of extractedFiles) {
+        try {
+          console.info('[Extraction] Uploading file:', fileItem.filename);
+          const uploaded = await apiService.uploadDocumentRaw(fileItem.file);
+          const serverFilePath = `uploads/${uploaded.filename}`;
+          console.info('[Extraction] deep-extract payload:', {
+            file_path: serverFilePath,
+            prompt: fileItem.prompt,
+          });
+
+          const deep = await apiService.deepExtract({
+            file_path: serverFilePath,
+            prompt: fileItem.prompt,
+          });
+          const docs = (deep.file_object?.pages || []).map((p) => {
+            console.log('[Extraction Store Manual] Raw page data:', {
+              page_number: p.page_number,
+              page_content_length: p.page_content?.length,
+              page_content_preview: p.page_content?.substring(0, 100),
+            });
+            return {
+              text: unwrapMarkdownFences(p.page_content),
+              page_content: p.page_content,
+              page_number: p.page_number,
+            };
+          });
+          console.info('[Extraction Manual] Processed docs:', docs);
+
+          set((state) => {
+            const updatedFiles = state.extractedFiles.map((f) =>
+              f.id === fileItem.id
+                ? {
+                    ...f,
+                    is_deep_extracted: true,
+                    documents: docs,
+                    updated_at: new Date().toISOString(),
+                  }
+                : f,
+            );
+
+            // Also update selectedFile if it's the same file
+            const updatedSelectedFile =
+              state.selectedFile?.id === fileItem.id
+                ? updatedFiles.find((f) => f.id === fileItem.id)
+                : state.selectedFile;
+
+            return {
+              extractedFiles: updatedFiles,
+              selectedFile: updatedSelectedFile,
+            };
+          });
+        } catch (innerErr) {
+          console.error('[Extraction] Extraction failed:', innerErr);
+          set({
+            error: innerErr instanceof Error ? innerErr.message : 'Extraction failed for a file',
+          });
+        } finally {
+          processed += 1;
+          set({ extractionProgress: Math.round((processed / total) * 100) });
+        }
       }
 
-      // Update files with extraction status
-      set((state) => ({
-        extractedFiles: state.extractedFiles.map((file) => ({
-          ...file,
-          is_deep_extracted: true,
-          documents: [
-            {
-              text: `Extracted content from ${file.original_filename}...`,
-            },
-          ],
-          updated_at: new Date().toISOString(),
-        })),
-        currentExtractionStep: 'review',
-        isExtracting: false,
-        extractionProgress: 100,
-      }));
+      set({ currentExtractionStep: 'review', isExtracting: false });
     } catch (error) {
+      console.error('[Extraction] Extraction run failed:', error);
       set({
         error: error instanceof Error ? error.message : 'Extraction failed',
         isExtracting: false,

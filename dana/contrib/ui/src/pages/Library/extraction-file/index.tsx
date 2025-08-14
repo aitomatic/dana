@@ -28,9 +28,9 @@ export const ExtractionFilePopup = () => {
     closeExtractionPopup,
     setSelectedFile,
     addFile,
-    removeFile,
     setShowConfirmDiscard,
-    startExtraction,
+
+    clearFiles,
   } = useExtractionFileStore();
 
   // Determine if all files are uploaded
@@ -62,23 +62,7 @@ export const ExtractionFilePopup = () => {
   };
 
   const handleDeleteFile = () => {
-    if (selectedFile) {
-      const deletedIndex = currentFileIndex;
-      removeFile(selectedFile.id);
-
-      // Adjust current file index after deletion
-      if (extractedFiles.length > 1) {
-        if (deletedIndex >= extractedFiles.length - 1) {
-          // If we deleted the last file, go to the previous one
-          setCurrentFileIndex(Math.max(0, deletedIndex - 1));
-        }
-        // If we deleted a file before the current one, the index stays the same
-        // If we deleted the current file, the next file takes its place
-      } else {
-        // If no files left, reset index
-        setCurrentFileIndex(0);
-      }
-    }
+    clearFiles();
     setShowConfirmDiscard(false);
   };
 
@@ -101,6 +85,9 @@ export const ExtractionFilePopup = () => {
 
   // Update current file index when selected file changes
   const handleFileSelect = (file: any) => {
+    console.log('[ExtractionPopup] File selected:', file);
+    console.log('[ExtractionPopup] File documents:', file?.documents);
+    console.log('[ExtractionPopup] File documents length:', file?.documents?.length);
     const fileIndex = extractedFiles.findIndex((f) => f.id === file.id);
     setCurrentFileIndex(fileIndex >= 0 ? fileIndex : 0);
     setSelectedFile(file);
@@ -161,20 +148,32 @@ export const ExtractionFilePopup = () => {
                         />
                       </div>
                       <div className="flex flex-col gap-1 w-full">
+                        1
                         <span className="text-sm font-medium text-gray-900">
                           {file?.original_filename}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {isExtracting ? 'Extracting...' : 'Ready for extraction'}
+                          {file.status === 'uploading'
+                            ? 'Uploading...'
+                            : file.status === 'extracting'
+                              ? 'Extracting...'
+                              : file.status === 'ready'
+                                ? 'Extraction complete'
+                                : 'Ready for extraction'}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex justify-center items-center size-6">
-                      {isExtracting && (
+                      {(file.status === 'uploading' || file.status === 'extracting') && (
                         <IconLoader2 className="animate-spin size-4 text-brand-700" />
                       )}
-                      {!isExtracting && (
+                      {file.status === 'ready' && (
+                        <div className="flex justify-center items-center bg-green-500 rounded-full size-4">
+                          <Check className="text-white size-3" strokeWidth={3} />
+                        </div>
+                      )}
+                      {!file.status && (
                         <div className="flex justify-center items-center bg-gray-400 rounded-full size-4">
                           <Check className="text-white size-3" strokeWidth={3} />
                         </div>
@@ -215,13 +214,6 @@ export const ExtractionFilePopup = () => {
                 disabled={isDisabled}
               >
                 Discard
-              </Button>
-              <Button
-                onClick={startExtraction}
-                disabled={isDisabled || extractedFiles.length === 0}
-                variant="outline"
-              >
-                Start Extraction
               </Button>
               <Button
                 disabled={isDisabled || extractedFiles.length === 0}

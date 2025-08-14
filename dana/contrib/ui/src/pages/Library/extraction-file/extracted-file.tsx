@@ -133,9 +133,33 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
 
   // Get documents from either deep extraction or original data
   const documents =
-    deepExtractedDocuments?.length > 0
-      ? deepExtractedDocuments
-      : selectedFile?.data?.documents || [];
+    deepExtractedDocuments?.length > 0 ? deepExtractedDocuments : selectedFile?.documents || [];
+
+  console.log('[ExtractedFile] selectedFile:', selectedFile);
+  console.log('[ExtractedFile] selectedFile?.documents:', selectedFile?.documents);
+  console.log('[ExtractedFile] selectedFile?.documents?.length:', selectedFile?.documents?.length);
+  console.log(
+    '[ExtractedFile] selectedFile?.documents[0]?.page_content:',
+    selectedFile?.documents?.[0]?.page_content?.substring(0, 100),
+  );
+  console.log('[ExtractedFile] deepExtractedDocuments:', deepExtractedDocuments);
+  console.log('[ExtractedFile] deepExtractedDocuments?.length:', deepExtractedDocuments?.length);
+  console.log(
+    '[ExtractedFile] deepExtractedDocuments[0]?.page_content:',
+    deepExtractedDocuments?.[0]?.page_content?.substring(0, 100),
+  );
+  console.log(
+    '[ExtractedFile] Using documents from:',
+    deepExtractedDocuments?.length > 0 ? 'deepExtractedDocuments' : 'selectedFile.documents',
+  );
+  console.log('[ExtractedFile] final documents array:', documents);
+  console.log('[ExtractedFile] final documents.length:', documents.length);
+  console.log('[ExtractedFile] currentPage:', currentPage);
+  console.log('[ExtractedFile] current document:', documents[currentPage - 1]);
+  console.log(
+    '[ExtractedFile] current document page_content:',
+    documents[currentPage - 1]?.page_content?.substring(0, 100),
+  );
 
   // Navigation functions
   const goBack = (): void => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
@@ -211,7 +235,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                 {/* Header */}
                 <div className="flex gap-2 justify-between items-center p-4 border-b border-gray-200">
                   <span className="text-sm font-semibold text-gray-600">
-                    {isDeepExtracted ? 'Deep Extract' : 'Standard Extract'}
+                    Extract {documents.length > 0 && `(${documents.length} pages)`}
                   </span>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls
@@ -250,7 +274,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                       onSave={handleSave}
                       onEdit={handleEdit}
                       isUploading={selectedFile?.status === 'uploading'}
-                      isDeepExtracting={isDeepExtracting}
+                      isDeepExtracting={isDeepExtracting || selectedFile?.status === 'extracting'}
                     />
                   </div>
                 </div>

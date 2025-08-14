@@ -26,7 +26,7 @@ export const ExtractionControls = ({
     return (
       <div className="flex gap-2 items-center">
         <Button variant="secondary" size="sm" className="text-gray-700" onClick={onShowPromptInput}>
-          Deep Extract
+          Extract with Prompt
         </Button>
         {!isDeepExtracting &&
           (isEditing ? (
@@ -59,7 +59,7 @@ export const ExtractionControls = ({
           size="sm"
           className="text-gray-700"
         >
-          {isDeepExtracting ? 'Deep extraction in progress...' : 'Start Deep Extract'}
+          {isDeepExtracting ? 'Extraction in progress...' : 'Start Extract'}
         </Button>
         {!isDeepExtracting &&
           (isEditing ? (
@@ -91,7 +91,7 @@ export const ExtractionControls = ({
           onClick={onShowPromptInput}
           disabled={isDeepExtracting}
         >
-          Deep Extract Again
+          Extract Again
         </Button>
         {isEditing ? (
           <Button variant="secondary" size="sm" className="text-gray-700" onClick={onSave}>

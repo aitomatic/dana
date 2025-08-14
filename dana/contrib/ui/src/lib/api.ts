@@ -432,6 +432,42 @@ class ApiService {
     return response.data;
   }
 
+  // Raw upload for a single file (no title/description required)
+  async uploadDocumentRaw(
+    file: File,
+    options?: { topic_id?: number; agent_id?: number; build_index?: boolean },
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.topic_id !== undefined) formData.append('topic_id', String(options.topic_id));
+    if (options?.agent_id !== undefined) formData.append('agent_id', String(options.agent_id));
+    if (options?.build_index !== undefined)
+      formData.append('build_index', String(options.build_index));
+    const response = await this.client.post<DocumentRead>('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  // Visual Document Deep Extraction
+  async deepExtract(request: {
+    file_path: string;
+    prompt?: string;
+    config?: Record<string, any>;
+  }): Promise<{
+    file_object: {
+      file_name: string;
+      cache_key: string;
+      total_pages: number;
+      total_words: number;
+      file_full_path: string;
+      pages: Array<{ page_number: number; page_content: string; page_hash: string }>;
+    };
+  }> {
+    const response = await this.client.post('/extract-documents/deep-extract', request);
+    return response.data;
+  }
+
   async updateDocument(documentId: number, document: DocumentUpdate): Promise<DocumentRead> {
     const response = await this.client.put<DocumentRead>(`/documents/${documentId}`, document);
     return response.data;
