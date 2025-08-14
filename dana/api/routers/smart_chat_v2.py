@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 from dana.api.core.database import get_db
 from dana.api.core.models import Agent, AgentChatHistory
 from dana.api.core.schemas import (
-    DomainKnowledgeTree,
     IntentDetectionRequest,
     MessageData,
 )
@@ -21,8 +20,6 @@ from dana.api.services.domain_knowledge_service import (
     get_domain_knowledge_service,
     DomainKnowledgeService,
 )
-from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeManager
-from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.api.routers.agents import clear_agent_cache
 # Use KnowledgeOpsHandler directly
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler

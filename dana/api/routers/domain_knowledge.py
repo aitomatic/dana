@@ -3,7 +3,6 @@ Domain Knowledge routers - API endpoints for managing agent domain knowledge tre
 """
 
 import logging
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -20,7 +19,6 @@ from dana.api.core.schemas import (
 )
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.services.intent_detection_service import get_intent_detection_service, IntentDetectionService
-from dana.api.services.chat_service import ChatService
 import os
 import json
 
@@ -493,7 +491,7 @@ async def get_specific_domain_knowledge_version(
         
         # Load the version
         import json
-        with open(version_file, 'r', encoding='utf-8') as f:
+        with open(version_file, encoding='utf-8') as f:
             data = json.load(f)
         
         return DomainKnowledgeTree(**data)
@@ -589,7 +587,7 @@ def _load_flatten_knowledge_content(topic_path: str, folder_path: str) -> dict:
     
     # Read the knowledge file
     try:
-        with open(knowledge_file_path, 'r', encoding='utf-8') as f:
+        with open(knowledge_file_path, encoding='utf-8') as f:
             knowledge_data = json.load(f)
             
         return {
@@ -632,7 +630,7 @@ def _load_hierarchical_knowledge_content(topic_path: str, folder_path: str) -> d
     if not os.path.exists(final_path):
         raise FileNotFoundError(f"Knowledge file not found at {final_path}")
 
-    with open(final_path, 'r', encoding='utf-8') as f:
+    with open(final_path, encoding='utf-8') as f:
         knowledge_data = json.load(f)   
 
     return {
