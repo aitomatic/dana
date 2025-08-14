@@ -504,13 +504,14 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
                 try:
                     # Create sandbox and override print function for streaming
-                    sandbox = DanaSandbox(context=sandbox_context)
-                    sandbox._ensure_initialized()  # Make sure function registry is available
+                    # sandbox = DanaSandbox(context=sandbox_context)
+                    # sandbox._ensure_initialized()  # Make sure function registry is available
 
                     # Override both Dana print function and Python stdout for complete coverage
-                    with streaming_print_override(sandbox.function_registry, log_streamer):
-                        with StdoutContextManager(log_streamer):
-                            result = sandbox.run_file(temp_file_path)
+                    # with streaming_print_override(sandbox.function_registry, log_streamer):
+                    with StdoutContextManager(log_streamer):
+                        # result = sandbox.execute_file(temp_file_path)
+                        result = DanaSandbox.execute_file_once(temp_file_path, context=sandbox_context)
 
                     if hasattr(result, "error"):
                         logger.error(f"Error: {result.error}")

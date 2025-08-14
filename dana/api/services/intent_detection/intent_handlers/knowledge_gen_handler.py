@@ -1,6 +1,6 @@
 from dana.api.services.intent_detection.intent_handlers.abstract_handler import AbstractHandler
 from dana.api.services.intent_detection.intent_handlers.handler_prompts.knowledge_ops_prompts import TOOL_SELECTION_PROMPT
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from dana.api.core.schemas import DomainKnowledgeTree, IntentDetectionRequest, DomainNode, MessageData
@@ -169,8 +169,8 @@ class KnowledgeOpsHandler(AbstractHandler):
         }
         """
         # Initialize conversation with user request
-        conversation = request.chat_history  # TODO : IMPROVE MANAGING CONVERSATION HISTORY
-
+        conversation = request.chat_history # TODO : IMPROVE MANAGING CONVERSATION HISTORY
+        
         # Track if tree was modified
         tree_modified = False
 
@@ -178,9 +178,9 @@ class KnowledgeOpsHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
-            print("=" * 100)
+            print("="*100)
             print(tool_msg.content)
-            print("=" * 100)
+            print("="*100)
             conversation.append(tool_msg)
             init = False
             try:
@@ -218,14 +218,15 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "tree_modified": tree_modified,
                     "updated_tree": self.tree_structure if tree_modified else None,
                 }
-
+            
             # Add result to conversation
             conversation.append(tool_result_msg)
+            
 
             # Check if workflow completed after tool execution
             if "attempt_completion" in tool_msg.content:
                 break
-
+        
         # Build final result
         result = {
             "status": "success",
@@ -234,11 +235,11 @@ class KnowledgeOpsHandler(AbstractHandler):
             "final_result": None,
             "tree_modified": tree_modified,
         }
-
+        
         # Only include updated tree if it was modified
         if tree_modified:
             result["updated_tree"] = self.tree_structure
-
+            
         return result
 
     async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
@@ -332,7 +333,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         Example input:
         I need to first explore the structure...
-
+        
         <thinking>...</thinking>
         <ask_follow_up_question>
         <question>What type of ratios?</question>
@@ -363,7 +364,7 @@ Your thinking logic here...
 </tool_name>""")
 
         first_tag_start = first_tag_match.start()
-
+        
         # Extract any text before the first XML tag as additional thinking content
         text_before_xml = xml_content[:first_tag_start].strip() if first_tag_start > 0 else ""
 
@@ -377,7 +378,7 @@ Your thinking logic here...
             thinking_parts.append(text_before_xml)
         if thinking_tag_content:
             thinking_parts.append(thinking_tag_content)
-
+        
         thinking_content = "\n\n".join(thinking_parts) if thinking_parts else ""
 
         # Remove thinking tags and text before XML for tool parsing

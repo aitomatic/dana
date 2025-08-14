@@ -360,25 +360,21 @@ Decision logic: This is Structure Modification intent - use refine_knowledge_str
 Tool choice: refine_knowledge_structure with extracted structure from previous propose_knowledge_structure result
 </thinking>
 <refine_knowledge_structure>
-  <current_structure>📁 Blockchain Fundamentals
+  <current_structure>📁 **Blockchain Fundamentals**
 ├── 📄 Overview of Blockchain Technology
 ├── 📄 Types of Blockchains (Public, Private, Consortium)
 ├── 📄 Consensus Mechanisms (Proof of Work, Proof of Stake, etc.)
-├── 📄 Smart Contracts and Their Applications
-└── 📄 Security Considerations in Blockchain
 
-📁 Major Cryptocurrencies
+📁 **Major Cryptocurrencies**
 ├── 📄 Bitcoin: History, Use Cases, and Investment Strategies
 ├── 📄 Ethereum: Smart Contracts and DApps Ecosystem
 ├── 📄 Stablecoins: Types, Use Cases, and Risks
 ├── 📄 Emerging Cryptocurrencies: Trends and Analysis
 └── 📄 Cryptocurrency Market Capitalization and Trends
 
-📁 Regulatory Environment
+📁 **Regulatory Environment**
 ├── 📄 Global Regulatory Frameworks for Cryptocurrencies
 ├── 📄 Compliance Requirements for Crypto Businesses
-├── 📄 Anti-Money Laundering (AML) and Know Your Customer (KYC)
-├── 📄 Impact of Regulations on Cryptocurrency Markets
 └── 📄 Future of Cryptocurrency Regulation</current_structure>
   <modification_request>remove the Decentralized Finance (DeFi)</modification_request>
   <topic>cryptocurrency</topic>

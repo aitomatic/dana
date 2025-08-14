@@ -1,4 +1,4 @@
-import { useMemo, Fragment } from 'react';
+import { useMemo, Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -8,6 +8,15 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 
 // Import KaTeX CSS directly
 import 'katex/dist/katex.min.css';
+
+// Import GitHub Markdown CSS for light theme (default)
+import 'github-markdown-css/github-markdown-light.css';
+
+// Import custom theme switcher CSS
+import './markdown-theme-switcher.css';
+
+// Import enhanced KaTeX styling
+import './katex-styling.css';
 
 let codeStyle: any;
 try {
@@ -27,7 +36,6 @@ import 'katex/dist/katex.min.css';
 
 import { cn } from '@/lib/utils';
 
-import styles from './MarkdownViewer.module.css';
 import ReactCodeBlock from './react-code-block';
 
 // Comprehensive markdown pre-processing function
@@ -236,7 +244,6 @@ export const CodeBlock = ({ content, language }: { content: string; language: st
           borderRadius: 0,
           lineHeight: 1.6,
           padding: '1rem',
-          background: 'rgb(30, 30, 30)',
           fontSize: '0.875rem',
         }}
         showLineNumbers={true}
@@ -254,12 +261,24 @@ export const MarkdownViewerSmall = ({
   children = '',
   classname = '',
   useMath = true,
+  theme = 'light',
+  backgroundContext = 'default',
 }: {
   children: string;
   classname?: string;
   useMath?: boolean;
+  theme?: 'light' | 'dark';
+  backgroundContext?: 'user' | 'agent' | 'default';
   citations?: any[];
 }) => {
+  // Define font size classes in one place for consistency
+  const textSizeClasses = 'text-xs xl:text-sm';
+  // Dynamically import dark theme CSS when needed
+  useEffect(() => {
+    if (theme === 'dark') {
+      import('github-markdown-css/github-markdown-dark.css');
+    }
+  }, [theme]);
   const refinedContent = useMemo(() => {
     let content = children;
 
@@ -275,71 +294,30 @@ export const MarkdownViewerSmall = ({
     }
 
     // PRE-PROCESSING: Transform content for better rendering
-    content = preprocessMarkdownContent(content);
+    // Skip preprocessing if math is enabled to preserve LaTeX syntax
+    if (!useMath) {
+      content = preprocessMarkdownContent(content);
+    }
 
     // Only apply math-safe processing if useMath is enabled
     if (useMath) {
-      // Comprehensive cleanup of standalone $ symbols
-      // Remove lines that contain only a $ symbol (with any whitespace)
-      content = content.replace(/^\s*\$\s*$/gm, '');
-
-      // Remove $ symbols that appear at the beginning of lines followed by whitespace
-      content = content.replace(/^\s*\$\s+/gm, '');
-
-      // Remove $ symbols that appear alone before formulas
-      content = content.replace(/\$\s*\n/g, '\n');
-
-      // Remove $ symbols followed by newlines and any content
-      content = content.replace(/\$\n/g, '\n');
-
-      // Remove $ symbols that appear in their own paragraph
-      content = content.replace(/\n\s*\$\s*\n/g, '\n\n');
-
-      // Remove any remaining isolated $ symbols
-      content = content.replace(/(?:^|\n)\s*\$\s*(?=\n|$)/g, '');
-
-      // Clean up multiple consecutive newlines after removing $ symbols
-      content = content.replace(/\n\s*\n\s*\n+/g, '\n\n');
-
-      // For math rendering, we need to preserve $ symbols and LaTeX syntax
-      // Convert display math from \[ \] to $$ $$ format for better compatibility
+      // Minimal math preprocessing - preserve $ symbols for KaTeX
+      // Only clean up obvious malformed math delimiters
       content = content
+        // Remove lines that contain only a $ symbol
+        .replace(/^\s*\$\s*$/gm, '')
+        // Remove standalone $ symbols between newlines
+        .replace(/\n\s*\$\s*\n/g, '\n\n')
+        // Convert \[ \] to $$ $$ for better KaTeX compatibility
         .replace(/\\\[([\s\S]*?)\\\]/g, '$$\n$1\n$$')
+        // Ensure display math has proper spacing
         .replace(/\$\$([\s\S]*?)\$\$/g, (_, mathContent) => {
-          // Ensure display math is on its own lines
-          return `\n$$${mathContent}$$\n`;
-        });
-
-      // Auto-detect and wrap mathematical expressions that aren't already wrapped
-      // Look for patterns like "FV = PV \times (1 + r)^n" and wrap them in math delimiters
-      content = content.replace(
-        /^(\s*)([\w\s]*?=[\s]*[^\n$]*(?:\\[a-zA-Z]+|[\^_{}]|\\frac|\\sum|\\times|\\cdot)[^\n$]*?)(\s*)$/gm,
-        (match, leading, mathExpr, trailing) => {
-          // Only wrap if not already wrapped in $ delimiters
-          if (mathExpr.includes('$') || mathExpr.match(/^\s*[\w\s]*:\s*$/)) {
-            return match;
-          }
-          return `${leading}$${mathExpr}$${trailing}`;
-        },
-      );
-
-      // Also detect standalone mathematical expressions with LaTeX commands
-      content = content.replace(
-        /(?:^|\n)(\s*)((?:\\[a-zA-Z]+(?:\{[^}]*\})*[\s]*)+[^\n$]*?)(?=\n|$)/gm,
-        (match, leading, mathExpr) => {
-          // Skip if already has $ delimiters or is clearly not math
-          if (
-            mathExpr.includes('$') ||
-            mathExpr.match(/^\s*[a-zA-Z\s]*:\s*$/) ||
-            mathExpr.length < 3
-          ) {
-            return match;
-          }
-          return `\n${leading}$$${mathExpr.trim()}$$\n`;
-        },
-      );
+          return `\n$$${mathContent.trim()}$$\n`;
+        })
+        // Clean up multiple consecutive newlines
+        .replace(/\n\s*\n\s*\n+/g, '\n\n');
     } else {
-      // Only escape dollars if math is disabled
+      // Escape dollars if math is disabled
       content = content.replaceAll('$', '\\$');
     }
 
@@ -361,9 +339,7 @@ export const MarkdownViewerSmall = ({
   return (
     <div
       className={cn(
-        styles['content'],
-        styles['content-small'],
-        'w-full text-sm xl:text-base',
+        `markdown-body markdown-body-${theme} markdown-body-${backgroundContext} w-full ${textSizeClasses}`,
         classname,
       )}
     >
@@ -398,7 +374,7 @@ export const MarkdownViewerSmall = ({
               return (
                 <code
                   className={cn(
-                    'font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base',
+                    `font-mono font-normal px-1.5 py-0.5 rounded ${textSizeClasses}`,
                     isHook
                       ? 'bg-purple-100 text-purple-800'
                       : isType
@@ -428,6 +404,12 @@ export const MarkdownViewerSmall = ({
             return <CodeBlock content={content} language={language} />;
           },
 
+          ul: ({ children }: any) => (
+            <ul className={`${textSizeClasses} text-gray-900`}>{children}</ul>
+          ),
+          li: ({ children }: any) => (
+            <li className={`${textSizeClasses} text-gray-900 list-disc`}>{children}</li>
+          ),
           p: ({ children }: ParagraphProps) => {
             // Helper function to enhance financial terms
             const enhanceFinancialTerms = (text: string) => {
@@ -466,7 +448,7 @@ export const MarkdownViewerSmall = ({
 
               if (hasAtMention) {
                 return (
-                  <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                  <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                     {children.map((child, index) => {
                       if (typeof child === 'string' && child.includes('@')) {
                         const parts = child.split(regex);
@@ -509,7 +491,7 @@ export const MarkdownViewerSmall = ({
 
               // Handle array children without @ mentions
               return (
-                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                   {children.map((child, index) => {
                     if (typeof child === 'string') {
                       // Skip rendering if the child only contains a $ symbol
@@ -535,7 +517,7 @@ export const MarkdownViewerSmall = ({
             if (typeof children === 'string' && children.includes('@')) {
               const parts = children.split(regex);
               return (
-                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
                   {parts.map((part, index) => {
                     if (part.startsWith('@')) {
                       // Use the enhanced MentionSpan component
@@ -562,14 +544,14 @@ export const MarkdownViewerSmall = ({
 
               return (
                 <p
-                  className={`py-1 text-sm text-gray-900 xl:text-base`}
+                  className={`py-1 ${textSizeClasses} text-gray-900`}
                   dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(children) }}
                 />
               );
             }
 
             // For non-string children (React elements), render normally without financial term enhancement
-            return <p className={`py-1 text-sm text-gray-900 xl:text-base`}>{children}</p>;
+            return <p className={`py-1 ${textSizeClasses} text-gray-900`}>{children}</p>;
           },
 
           table: ({ children }: TableProps) => (

@@ -56,10 +56,18 @@ class RAGResource(BaseSysResource):
     ):
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
-        danapath = os.environ.get("DANAPATH")
+        danapaths = os.environ.get("DANAPATH")
 
-        if danapath and danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
-            danapath = None
+        danapaths = danapaths.split(":")
+
+        danapath = None
+
+        for _path in danapaths:
+            if _path.endswith("stdlib") and "libs" in _path and "dana" in _path:
+                continue
+            if "agents" in _path:
+                danapath = _path
+                break
 
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
@@ -67,7 +75,7 @@ class RAGResource(BaseSysResource):
         self.debug = debug
         self.reranking = reranking
         self.initial_multiplier = initial_multiplier
-        self.sources = sources
+        self.sources = self._resolve_sources(sources, danapath)
 
         cache_dir = self._resolve_cache_dir(cache_dir, danapath)
 

@@ -182,7 +182,7 @@ class LLMToolCallManager(Loggable):
                 # Truncate response if needed
                 if self.max_response_length and isinstance(response, str):
                     response = response[
-                        : self.max_response_length
+                        : self.max_response_length*4
                     ]  # NOTE : This may reduce our LLM performance because we are truncating the tool response naively
 
             except Exception as e:
