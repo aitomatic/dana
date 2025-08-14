@@ -96,40 +96,40 @@ try:
 except Exception as e:
     log(f"✗ Image processing with custom prompt failed: {e}")
 
-# # Test 5: Video Processing
-# log("Test 5: Video Processing")
+# Test 5: Video Processing
+log("Test 5: Video Processing")
 
-# try:
-#     video_result = vision_extract(test_video_path)
+try:
+    video_result = vision_extract(test_video_path)
     
-#     assert video_result is not null, "✗ Video processing should return a result"
-#     assert type(video_result) == "dict", "✗ Video result should be a dictionary"
-#     assert "file_object" in video_result, "✗ Video result should contain file_object"
-#     assert "file_name" in video_result["file_object"], "✗ Video result should contain file_name"
-#     assert "file_type" in video_result["file_object"], "✗ Video result should contain file_type"
-#     assert video_result["file_object"]["file_type"] == "video", "✗ File type should be 'video'"
-#     assert "content" in video_result["file_object"], "✗ Video result should contain content"
+    assert video_result is not null, "✗ Video processing should return a result"
+    assert type(video_result) == "dict", "✗ Video result should be a dictionary"
+    assert "file_object" in video_result, "✗ Video result should contain file_object"
+    assert "file_name" in video_result["file_object"], "✗ Video result should contain file_name"
+    assert "file_type" in video_result["file_object"], "✗ Video result should contain file_type"
+    assert video_result["file_object"]["file_type"] == "video", "✗ File type should be 'video'"
+    assert "content" in video_result["file_object"], "✗ Video result should contain content"
     
-#     log("✓ Basic video processing working")
-#     log(f"  - File: {video_result['file_object']['file_name']}")
+    log("✓ Basic video processing working")
+    log(f"  - File: {video_result['file_object']['file_name']}")
     
-# except Exception as e:
-#     log(f"✗ Video processing failed: {e}")
+except Exception as e:
+    log(f"✗ Video processing failed: {e}")
 
-# # Test 6: Video Processing with Custom Prompt
-# log("Test 6: Video Processing with Custom Prompt")
+# Test 6: Video Processing with Custom Prompt
+log("Test 6: Video Processing with Custom Prompt")
 
-# video_prompt = "Describe the activities and interactions shown in this video."
-# try:
-#     video_custom_result = vision_extract(test_video_path, prompt=video_prompt)
+video_prompt = "Describe the activities and interactions shown in this video."
+try:
+    video_custom_result = vision_extract(test_video_path, prompt=video_prompt)
     
-#     assert video_custom_result is not null, "✗ Video processing with custom prompt should return a result"
-#     assert type(video_custom_result) == "dict", "✗ Video result should be a dictionary"
+    assert video_custom_result is not null, "✗ Video processing with custom prompt should return a result"
+    assert type(video_custom_result) == "dict", "✗ Video result should be a dictionary"
     
-#     log("✓ Video processing with custom prompt working")
+    log("✓ Video processing with custom prompt working")
     
-# except Exception as e:
-#     log(f"✗ Video processing with custom prompt failed: {e}")
+except Exception as e:
+    log(f"✗ Video processing with custom prompt failed: {e}")
 
 # Test 7: Configuration Options
 log("Test 7: Configuration Options")
@@ -217,7 +217,7 @@ try:
         assert type(analysis) == "str", "✗ AI analysis should return string"
         
         log("✓ Vision-AI integration working")
-        print(f"  - Test Analysis: {analysis}...")
+        log(f"  - Analysis: {analysis}...")
     
 except Exception as e:
     log(f"✗ Vision-AI integration failed: {e}")
