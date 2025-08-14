@@ -6,14 +6,15 @@ MIT License
 """
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
-from textual.widgets import Input, RichLog, Static
+from textual.containers import Horizontal, Vertical
+from textual.widgets import RichLog, Static
 
 from dana.core.concurrency import is_promise
 from dana.core.concurrency.base_promise import BasePromise
 
-from ..core.completion import DanaInput
+from ..core.prompt_input import PromptStyleInput
 from ..core.runtime import DanaSandbox
+from .syntax_highlighter import dana_highlighter
 
 
 class TerminalREPL(Vertical):
@@ -23,20 +24,27 @@ class TerminalREPL(Vertical):
         super().__init__(**kwargs)
         self.sandbox = sandbox
         self._output: RichLog | None = None
-        self._input: DanaInput | None = None
+        self._input: PromptStyleInput | None = None
+        self._prompt: Static | None = None
 
     def compose(self) -> ComposeResult:
         """Create the terminal REPL UI."""
         # Header
-        yield Static("Dana REPL", classes="panel-title", id="terminal-title")
+        yield Static("Aitomatic Dana REPL", classes="panel-title", id="terminal-title")
 
         # Output area (history of commands and results)
         self._output = RichLog(highlight=True, markup=True, wrap=True, id="terminal-output")
         yield self._output
 
-        # Dana autocomplete input for expressions
-        self._input = DanaInput(sandbox=self.sandbox, placeholder="Enter Dana expression...", id="terminal-input")
-        yield self._input
+        # Input container with prompt symbol
+        with Horizontal(id="terminal-input-container"):
+            # Prompt symbol (static)
+            self._prompt = Static("⏵", id="terminal-prompt")
+            yield self._prompt
+
+            # Enhanced prompt-style input for Dana expressions
+            self._input = PromptStyleInput(sandbox=self.sandbox, id="terminal-input")
+            yield self._input
 
     def on_mount(self) -> None:
         """Initialize the terminal when mounted."""
@@ -44,36 +52,51 @@ class TerminalREPL(Vertical):
         if self._output:
             self._output.write("Welcome to Dana REPL!")
             self._output.write("Enter Dana expressions and press Enter to execute.")
+            self._output.write("Use \\ for multi-line input, ↑↓ for history.")
             self._output.write("")  # Empty line
 
         # Focus the input
         if self._input:
             self._input.focus()
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handle when user submits input (presses Enter)."""
+    def on_prompt_style_input_text_changed(self, event: PromptStyleInput.TextChanged) -> None:
+        """Handle when input text changes - apply live Dana syntax highlighting."""
+        if not self._input:
+            return
+
+        # TextArea uses its built-in syntax highlighting based on the language setting
+        # Since we set language="python" in PromptStyleInput, Python syntax highlighting
+        # is automatically applied as the user types. Dana syntax is similar enough
+        # to Python that most keywords, strings, and numbers will be highlighted correctly.
+        #
+        # We also have a DanaSyntaxHighlighter class for output display and future enhancements.
+        # The input area uses Python highlighting for real-time feedback, while the output
+        # uses our custom DanaSyntaxHighlighter for accurate Dana syntax highlighting.
+        pass
+
+    def on_prompt_style_input_submitted(self, event: PromptStyleInput.Submitted) -> None:
+        """Handle when user submits input from PromptStyleInput."""
         command = event.value.strip()
 
         if not command:
             return
 
-        # Add command to history
-        if self._input and hasattr(self._input, "add_to_history"):
-            self._input.add_to_history(command)
-
-        # Show the command in output (like a real REPL)
+        # Show the command in output (like a real REPL) with syntax highlighting
         if self._output:
-            self._output.write(f"[bold]>>> {command}[/bold]")
+            # Format multi-line commands nicely
+            if "\\n" in command:
+                lines = command.split("\\n")
+                highlighted_first = dana_highlighter.highlight_code(lines[0])
+                self._output.write(f"[bold]⏵[/bold] {highlighted_first}")
+                for line in lines[1:]:
+                    highlighted_line = dana_highlighter.highlight_code(line)
+                    self._output.write(f"[bold].......[/bold] {highlighted_line}")
+            else:
+                highlighted_command = dana_highlighter.highlight_code(command)
+                self._output.write(f"[bold]⏵[/bold] {highlighted_command}")
 
         # Execute the command
         self._execute_dana_code(command)
-
-        # Clear the input for next command
-        if self._input:
-            if hasattr(self._input, "value"):
-                self._input.value = ""
-            elif hasattr(self._input, "clear"):
-                self._input.clear()
 
     def set_focused_agent(self, agent_name: str | None) -> None:
         """No-op for compatibility - agents not used in simple REPL."""
@@ -81,6 +104,8 @@ class TerminalREPL(Vertical):
 
     def _execute_dana_code(self, code: str) -> None:
         """Execute Dana code directly using the sandbox."""
+        assert self._output is not None
+
         try:
             # Execute the Dana code
             result = self.sandbox.execute_string(code)
@@ -96,23 +121,41 @@ class TerminalREPL(Vertical):
                     if is_promise(result.result):
                         self._handle_promise_result(result.result)
                     else:
-                        # Direct result
-                        self._output.write(str(result.result))
+                        # Direct result with syntax highlighting
+                        result_str = str(result.result)
+                        highlighted_result = self._highlight_result(result_str)
+                        self._output.write(highlighted_result)
 
             else:
                 # Handle error
                 if result.error:
-                    self._output.write(f"[red]Error: {result.error}[/red]")
+                    safe_error = dana_highlighter.escape_markup(str(result.error))
+                    self._output.write(f"[red]Error: {safe_error}[/red]")
                 else:
                     self._output.write("[red]Unknown execution error[/red]")
 
         except Exception as e:
-            self._output.write(f"[red]Execution error: {str(e)}[/red]")
+            safe_error = dana_highlighter.escape_markup(str(e))
+            self._output.write(f"[red]Execution error: {safe_error}[/red]")
 
         # No need to add empty line - RichLog handles spacing
 
+    def _highlight_result(self, result_str: str) -> str:
+        """
+        Apply appropriate highlighting to Dana result values.
+
+        Args:
+            result_str: String representation of the result
+
+        Returns:
+            Highlighted result string with Rich markup
+        """
+        return dana_highlighter.highlight_result(result_str)
+
     def _handle_promise_result(self, promise_result: BasePromise) -> None:
         """Handle Promise result by displaying safe Promise information."""
+        assert self._output is not None
+
         try:
             if hasattr(promise_result, "get_display_info"):
                 promise_info = promise_result.get_display_info()
@@ -131,7 +174,9 @@ class TerminalREPL(Vertical):
                 """Callback to print the delivered promise result."""
                 try:
                     if self._output:
-                        self._output.write(f"Promise resolved: {result}")
+                        result_str = str(result)
+                        highlighted_result = self._highlight_result(result_str)
+                        self._output.write(f"[dim]Promise resolved:[/dim] {highlighted_result}")
                 except Exception:
                     pass  # Safe fallback
 
@@ -179,13 +224,15 @@ class TerminalREPL(Vertical):
 
     def show_history(self) -> None:
         """Display the command history."""
-        if self._input and hasattr(self._input, "get_history"):
+        if self._input:
             history = self._input.get_history()
             if history:
                 if self._output:
                     self._output.write("[dim]Command History:[/dim]")
                     for i, command in enumerate(history[-20:], 1):  # Show last 20 commands
-                        self._output.write(f"[dim]{i:2d}[/dim] {command}")
+                        # Format multi-line commands for display
+                        display_command = command.replace("\\n", " ⏎ ") if "\\n" in command else command
+                        self._output.write(f"[dim]{i:2d}[/dim] {display_command}")
                     self._output.write("")
             else:
                 if self._output:
@@ -196,7 +243,7 @@ class TerminalREPL(Vertical):
 
     def clear_command_history(self) -> None:
         """Clear the command history."""
-        if self._input and hasattr(self._input, "clear_history"):
+        if self._input:
             self._input.clear_history()
             if self._output:
                 self._output.write("[dim]Command history cleared.[/dim]")

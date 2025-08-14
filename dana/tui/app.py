@@ -63,17 +63,50 @@ class DanaTUI(App):
     #terminal-output {
         border: round $border;
         height: 1fr;
-        margin: 0 0 1 0;
+        margin: 0;
         background: $surface;
         color: $text;
         overflow: auto;
         scrollbar-size: 0 0;
     }
     
-    #terminal-input {
+    
+    #terminal-input-container {
         border: round $border;
         background: $surface;
+        height: 5;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #terminal-prompt {
+        width: 2;
+        border: none;
+        background: $surface;
+        color: $accent;
+        padding: 0;
+    }
+    
+    #terminal-input {
+        border: none;
+        background: $surface;
         color: $text;
+        width: 1fr;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Overlay autocomplete input */
+    .overlay-input {
+        display: block;
+        background: $surface;
+        border: none;
+        color: $text;
+        width: 100%;
+        height: auto;
+        margin: 0 0 0 0;
+        padding: 0;
+        position: relative;
     }
     
     /* Agents list - use design system */
