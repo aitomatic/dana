@@ -6,7 +6,7 @@ import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
-import { ArrowUp } from 'iconoir-react';
+import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
@@ -97,6 +97,74 @@ const ResizeHandle: React.FC<{
   );
 };
 
+// Processing status message type
+interface ProcessingStatusMessage {
+  id: string;
+  toolName: string;
+  message: string;
+  status: 'init' | 'in_progress' | 'finish' | 'error';
+  progression?: number;
+  timestamp: Date;
+}
+
+// Collapsible processing status history component
+const ProcessingStatusHistory: React.FC<{
+  messages: ProcessingStatusMessage[];
+  isExpanded: boolean;
+  onToggle: () => void;
+}> = ({ messages, isExpanded, onToggle }) => {
+  if (messages.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border border-gray-200 rounded-lg bg-gray-50">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+      >
+        {isExpanded ? <Collapse className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+        Reasoning ({messages.length})
+      </button>
+      
+      {isExpanded && (
+        <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
+          {messages.map((msg) => (
+            <div key={msg.id} className="flex flex-col gap-2 p-2 border border-gray-200 rounded bg-white">
+              <div className="flex gap-2 items-center">
+                {msg.status === 'in_progress' && (
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+                )}
+                {msg.status === 'finish' && (
+                  <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                )}
+                {msg.status === 'error' && (
+                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                )}
+                <span className="text-sm font-medium text-gray-600">{msg.toolName}</span>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {msg.timestamp.toLocaleTimeString()}
+                </span>
+              </div>
+              <span className="text-sm text-gray-600">{msg.message}</span>
+              {msg.progression !== undefined && (
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gray-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${msg.progression * 100}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SmartAgentChat: React.FC<{
   agentName?: string;
   onConnectionStateChange?: (state: string) => void;
@@ -115,28 +183,41 @@ const SmartAgentChat: React.FC<{
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingMessage, setThinkingMessage] = useState('Thinking...');
-  const [processingStatus, setProcessingStatus] = useState<{
-    toolName: string;
-    message: string;
-    status: 'init' | 'in_progress' | 'finish' | 'error';
-    progression?: number;
-  } | null>(null);
+  const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>([]);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
   // WebSocket integration for real-time updates
   const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
-    setProcessingStatus({
+    const newStatusMessage: ProcessingStatusMessage = {
+      id: `${Date.now()}-${Math.random()}`,
       toolName: message.tool_name,
       message: message.content,
       status: message.status,
       progression: message.progression,
+      timestamp: new Date(),
+    };
+
+    setProcessingStatusHistory(prev => {
+      // If this is an update to an existing tool, replace it
+      const existingIndex = prev.findIndex(msg => msg.toolName === message.tool_name);
+      if (existingIndex !== -1) {
+        const updated = [...prev];
+        updated[existingIndex] = newStatusMessage;
+        return updated;
+      }
+      // Otherwise add as new message
+      return [...prev, newStatusMessage];
     });
 
-    // Clear processing status when finished or error
-    if (message.status === 'finish' || message.status === 'error') {
-      setTimeout(() => {
-        setProcessingStatus(null);
-      }, 2000);
-    }
+    // Don't clear processing status - keep it in history
+    // Only remove very old messages (older than 1 hour) to prevent memory issues
+    setTimeout(() => {
+      setProcessingStatusHistory(prev => 
+        prev.filter(msg => 
+          Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000 // 1 hour
+        )
+      );
+    }, 60 * 60 * 1000);
   }, []);
 
   const { connectionState } = useSmartChatWebSocket({
@@ -387,35 +468,11 @@ const SmartAgentChat: React.FC<{
               <span className="text-sm text-gray-700">{thinkingMessage}</span>
             </div>
           )}
-          {processingStatus && (
-            <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border text-gray-500 rounded-lg">
-              <div className="flex gap-2 items-center">
-                {processingStatus.status === 'in_progress' && (
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                )}
-                {processingStatus.status === 'finish' && (
-                  <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                )}
-                {processingStatus.status === 'error' && (
-                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                )}
-                <span className="text-sm font-medium text-gray-500">{processingStatus.toolName}</span>
-              </div>
-              <span className="text-sm text-gray-500">{processingStatus.message}</span>
-              {processingStatus.progression !== undefined && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-gray-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${processingStatus.progression * 100}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-          )}
+          <ProcessingStatusHistory
+            messages={processingStatusHistory}
+            isExpanded={isHistoryExpanded}
+            onToggle={() => setIsHistoryExpanded(!isHistoryExpanded)}
+          />
           <div ref={bottomRef} />
         </div>
         <div className="p-3">
@@ -514,15 +571,7 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
-          <div className="flex items-center gap-1">
-            <div
-              className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
-                connectionState === 'connecting' || connectionState === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-gray-400'
-                }`}
-              title={`WebSocket ${connectionState}`}
-            />
-          </div>
+         
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat
