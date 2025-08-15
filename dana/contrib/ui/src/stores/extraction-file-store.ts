@@ -39,7 +39,8 @@ export interface ExtractionFile {
   file_size: number;
   mime_type: string;
   document_id?: number; // Database document ID from upload response
-  topic_id?: number; // Topic ID when saved
+  topic_id?: number; // Topic ID when saved (deprecated - not used anymore)
+  extraction_file_id?: number; // ID of the saved JSON extraction file
   is_deep_extracted?: boolean;
   prompt?: string;
   documents?: Array<{
@@ -397,18 +398,17 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
 
       for (const extractedFile of successfulFiles) {
         try {
-          // Create topic with filename (without extension) as title
-          const topicTitle = extractedFile.original_filename.replace(/\.[^/.]+$/, '');
-          console.log(
-            `Creating topic "${topicTitle}" for file "${extractedFile.original_filename}"`,
-          );
-          const topic = await apiService.createTopic({
-            name: topicTitle,
-            description: `Auto-generated topic for file: ${extractedFile.original_filename}`,
-          });
-          console.log(`Created topic "${topic.name}" with ID: ${topic.id}`);
+          // Ensure we have a document ID for the source file
+          if (!extractedFile.document_id) {
+            console.error(`No document ID found for file ${extractedFile.original_filename}`);
+            continue;
+          }
 
-          // Create JSON file with extraction results
+          console.log(
+            `Saving extraction data for file "${extractedFile.original_filename}" (Document ID: ${extractedFile.document_id})`,
+          );
+
+          // Prepare extraction results
           const extractionResults = {
             original_filename: extractedFile.original_filename,
             extraction_date: new Date().toISOString(),
@@ -416,45 +416,19 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
             documents: extractedFile.documents || [],
           };
 
-          const jsonContent = JSON.stringify(extractionResults, null, 2);
-          const jsonBlob = new Blob([jsonContent], { type: 'application/json' });
-          const jsonFileName = `${topicTitle}_extraction_results.json`;
-          const jsonFile = new File([jsonBlob], jsonFileName, { type: 'application/json' });
-
-          // Upload original file to the topic
-          if (extractedFile.document_id) {
-            // If we have the document ID, we need to update it to be linked to the topic
-            console.log(
-              `Linking existing document (ID: ${extractedFile.document_id}) to topic "${topic.name}"`,
-            );
-            await apiService.updateDocument(extractedFile.document_id, {
-              topic_id: topic.id,
-            });
-            console.log(`Successfully linked original file to topic "${topic.name}"`);
-          } else {
-            // Fallback: re-upload the original file to the topic
-            console.log(
-              `Re-uploading original file "${extractedFile.original_filename}" to topic "${topic.name}"`,
-            );
-            await apiService.uploadDocumentRaw(extractedFile.file, {
-              topic_id: topic.id,
-            });
-            console.log(`Successfully uploaded original file to topic "${topic.name}"`);
-          }
-
-          // Upload JSON extraction results to the same topic
-          console.log(
-            `Uploading JSON file "${jsonFileName}" to topic "${topic.name}" (ID: ${topic.id})`,
-          );
-          await apiService.uploadDocumentRaw(jsonFile, {
-            topic_id: topic.id,
+          // Save extraction data via the new API endpoint
+          const savedExtraction = await apiService.saveExtractionData({
+            original_filename: extractedFile.original_filename,
+            extraction_results: extractionResults,
+            source_document_id: extractedFile.document_id,
           });
-          console.log(`Successfully uploaded JSON file to topic "${topic.name}"`);
 
-          // Store the topic ID in the file for potential cleanup
+          console.log(`Successfully saved extraction JSON file with ID: ${savedExtraction.id}`);
+
+          // Update the file state with the extraction file ID
           set((state) => ({
             extractedFiles: state.extractedFiles.map((f) =>
-              f.id === extractedFile.id ? { ...f, topic_id: topic.id } : f,
+              f.id === extractedFile.id ? { ...f, extraction_file_id: savedExtraction.id } : f,
             ),
           }));
 

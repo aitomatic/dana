@@ -10,10 +10,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy.orm import Session
-
-from dana.api.core.models import Document
-from dana.api.core.schemas import DeepExtractionRequest, DeepExtractionResponse, FileObject, PageContent
+from dana.api.core.schemas import DeepExtractionResponse, FileObject, PageContent
 
 logger = logging.getLogger(__name__)
 
@@ -186,30 +183,19 @@ class DeepExtractionService:
 
         return DeepExtractionResponse(file_object=file_object)
 
-    async def deep_extract(self, request: DeepExtractionRequest, db_session: Session) -> DeepExtractionResponse:
+    async def deep_extract(self, file_path: str, prompt: str | None = None, config: dict | None = None) -> DeepExtractionResponse:
         """
         Extract data from a visual document using aicapture.
 
         Args:
-            request: Extraction request containing document_id, prompt, and config
-            db_session: Database session for querying document
+            file_path: Path to the file to process
+            prompt: Optional custom prompt for processing
+            config: Optional configuration dictionary for the processor
 
         Returns:
             DeepExtractionResponse with extracted data
         """
         try:
-            # Get document from database
-            document = db_session.query(Document).filter(Document.id == request.document_id).first()
-            if not document:
-                raise FileNotFoundError(f"Document not found with ID: {request.document_id}")
-
-            if not document.file_path:
-                raise FileNotFoundError(f"Document {request.document_id} has no file path")
-
-            file_path = document.file_path
-            prompt = request.prompt
-            config = request.config or {}
-
             # Validate file exists
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -218,15 +204,15 @@ class DeepExtractionService:
             if not self.is_supported_file_type(file_path):
                 raise ValueError(f"Unsupported file type: {Path(file_path).suffix}")
 
-            logger.info(f"Processing file with aicapture: {file_path}")
+            logger.info("Processing file with aicapture: %s", file_path)
 
             # Process with aicapture
-            aicapture_result = await self._process_with_aicapture(file_path, prompt, config)
+            aicapture_result = await self._process_with_aicapture(file_path, prompt, config or {})
 
             # Convert to our API response format
             result = self._convert_aicapture_response(aicapture_result, file_path, prompt)
 
-            logger.info(f"Successfully processed file: {file_path}")
+            logger.info("Successfully processed file: %s", file_path)
             return result
 
         except ImportError as e:

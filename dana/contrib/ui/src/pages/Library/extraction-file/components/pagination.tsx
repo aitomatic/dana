@@ -16,19 +16,19 @@ export const Pagination = ({
   isDisabled?: boolean;
 }) => {
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex gap-2 justify-center items-center">
       <IconButton
         aria-label="Previous"
         variant="secondary"
         size="sm"
-        className="flex items-center gap-1 text-gray-700 border-none"
+        className="flex gap-1 items-center text-gray-700 border-none"
         onClick={onBack}
         disabled={isDisabled || currentPage <= 1}
       >
         <IconChevronLeft className="w-4 h-4" />
       </IconButton>
-      <div className="flex items-center gap-2">
-        <span className="flex items-center justify-center text-sm text-gray-700 border border-gray-200 rounded-md size-8">
+      <div className="flex gap-2 items-center">
+        <span className="flex justify-center items-center text-sm text-gray-700 rounded-md border border-gray-200 size-8">
           {currentPage}
         </span>
         <span className="text-sm text-gray-700">of</span>
@@ -38,7 +38,7 @@ export const Pagination = ({
         aria-label="Next"
         variant="secondary"
         size="sm"
-        className="flex items-center gap-1 text-gray-700 border-none"
+        className="flex gap-1 items-center text-gray-700 border-none"
         onClick={onNext}
         disabled={isDisabled || currentPage >= totalPages}
       >

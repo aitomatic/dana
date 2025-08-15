@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
+from dana.api.core.models import Document
 from dana.api.core.schemas import DeepExtractionRequest, DeepExtractionResponse
 from dana.api.services.deep_extraction_service import DeepExtractionService
 
@@ -33,15 +34,27 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
         DeepExtractionResponse with extracted data
     """
     try:
-        logger.info(f"Received deep extraction request for document ID: {request.document_id}")
+        logger.info("Received deep extraction request for document ID: %s", request.document_id)
+
+        # Get document from database
+        document = db.query(Document).filter(Document.id == request.document_id).first()
+        if not document:
+            raise FileNotFoundError(f"Document not found with ID: {request.document_id}")
+
+        if not document.file_path:
+            raise FileNotFoundError(f"Document {request.document_id} has no file path")
 
         # Create service instance
         service = DeepExtractionService()
 
-        # Extract document
-        result = await service.deep_extract(request, db)
+        # Extract document - now just handles the extraction logic
+        result = await service.deep_extract(
+            file_path=str(document.file_path),
+            prompt=request.prompt,
+            config=request.config
+        )
 
-        logger.info(f"Successfully extracted document ID: {request.document_id}")
+        logger.info("Successfully extracted document ID: %s", request.document_id)
         return result
 
     except ImportError as e:

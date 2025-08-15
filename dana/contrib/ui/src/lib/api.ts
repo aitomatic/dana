@@ -479,6 +479,16 @@ class ApiService {
     return response.data;
   }
 
+  // Save extraction results as JSON file
+  async saveExtractionData(request: {
+    original_filename: string;
+    extraction_results: Record<string, any>;
+    source_document_id: number;
+  }): Promise<DocumentRead> {
+    const response = await this.client.post<DocumentRead>('/documents/save-extraction', request);
+    return response.data;
+  }
+
   async downloadDocument(documentId: number): Promise<Blob> {
     const response = await this.client.get(`/documents/${documentId}/download`, {
       responseType: 'blob',

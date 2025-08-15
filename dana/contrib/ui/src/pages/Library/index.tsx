@@ -204,7 +204,17 @@ export default function LibraryPage() {
     } catch (error: any) {
       // Extract error message from the error object (handles both Error and ApiError)
       const errorMessage = error?.message || 'Failed to delete item';
-      toast.error(errorMessage);
+
+      // For topics with documents, the store automatically retries with force=true
+      // So we should only see an error if the retry also failed
+      console.log('Delete error in UI:', errorMessage);
+
+      // If it's still about associated documents, that means the force delete also failed
+      if (errorMessage.includes('associated documents')) {
+        toast.error('Unable to delete topic and its associated documents. Please try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setShowDeleteConfirm(false);
       setSelectedItem(null);

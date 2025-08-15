@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 
 from dana.api.core.database import get_db
-from dana.api.core.schemas import DocumentRead, DocumentUpdate
+from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRequest
 from dana.api.services.document_service import get_document_service, DocumentService
+from dana.api.services.extraction_service import get_extraction_service, ExtractionService
 
 logger = logging.getLogger(__name__)
 
@@ -176,4 +177,31 @@ async def rebuild_agent_index(agent_id: int, db: Session = Depends(get_db), docu
 
     except Exception as e:
         logger.error(f"Error rebuilding index for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/save-extraction", response_model=DocumentRead)
+async def save_extraction_data(
+    request: ExtractionDataRequest,
+    db: Session = Depends(get_db),
+    extraction_service: ExtractionService = Depends(get_extraction_service),
+):
+    """Save extraction results as JSON file and create database relationship with source document."""
+    try:
+        logger.info(f"Saving extraction data for {request.original_filename}, source document ID: {request.source_document_id}")
+
+        document = await extraction_service.save_extraction_json(
+            original_filename=request.original_filename,
+            extraction_results=request.extraction_results,
+            source_document_id=request.source_document_id,
+            db_session=db
+        )
+
+        logger.info(f"Successfully saved extraction JSON file with ID: {document.id}")
+        return document
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in save extraction data endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))

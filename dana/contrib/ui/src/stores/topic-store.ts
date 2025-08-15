@@ -109,18 +109,46 @@ export const useTopicStore = create<TopicStore>((set) => ({
     }
   },
 
-  deleteTopic: async (topicId: number) => {
+  deleteTopic: async (topicId: number, force: boolean = false) => {
     set({ isDeleting: true, error: null });
 
     try {
-      await apiService.deleteTopic(topicId);
+      await apiService.deleteTopic(topicId, force);
       set((state) => ({
         topics: state.topics.filter((t) => t.id !== topicId),
         selectedTopic: state.selectedTopic?.id === topicId ? null : state.selectedTopic,
         isDeleting: false,
       }));
     } catch (error: any) {
+      console.log('Delete topic error:', error);
+
+      // The API service transforms errors, so we check the transformed error structure
       const errorMessage = error?.message || 'Failed to delete topic';
+      const errorStatus = error?.status;
+
+      // If deletion failed due to associated documents, try with force=true
+      if (errorStatus === 400 && errorMessage.includes('associated documents') && !force) {
+        console.log('Topic has associated documents, retrying with force=true');
+        try {
+          await apiService.deleteTopic(topicId, true);
+          // Success - update the state
+          set((state) => ({
+            topics: state.topics.filter((t) => t.id !== topicId),
+            selectedTopic: state.selectedTopic?.id === topicId ? null : state.selectedTopic,
+            isDeleting: false,
+          }));
+          return; // Exit successfully
+        } catch (retryError: any) {
+          // Force delete also failed
+          const retryErrorMessage = retryError?.message || 'Failed to delete topic';
+          set({
+            isDeleting: false,
+            error: retryErrorMessage,
+          });
+          throw retryError;
+        }
+      }
+
       set({
         isDeleting: false,
         error: errorMessage,

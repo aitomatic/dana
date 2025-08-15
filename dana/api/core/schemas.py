@@ -91,6 +91,7 @@ class DocumentRead(DocumentBase):
     filename: str
     file_size: int
     mime_type: str
+    source_document_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -101,6 +102,12 @@ class DocumentUpdate(BaseModel):
     original_filename: str | None = None
     topic_id: int | None = None
     agent_id: int | None = None
+
+
+class ExtractionDataRequest(BaseModel):
+    original_filename: str
+    extraction_results: dict
+    source_document_id: int  # ID of the raw PDF file
 
 
 class RunNAFileRequest(BaseModel):
