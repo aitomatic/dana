@@ -7,7 +7,19 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from .app import main
+from dana.common.utils.logging import DANA_LOGGER
+
+
+def main():
+    """Main entry point for the Dana TUI."""
+    # Disable console logging when running TUI to avoid duplicate output
+    # The TUI log panel will capture all logs instead
+    DANA_LOGGER.disable_console_logging()
+
+    from .app import main as app_main
+
+    app_main()
+
 
 if __name__ == "__main__":
     main()

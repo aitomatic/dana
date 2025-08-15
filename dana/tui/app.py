@@ -16,6 +16,7 @@ from .core.runtime import DanaSandbox
 from .core.taskman import task_manager
 from .ui.agent_detail import AgentDetail
 from .ui.agents_list import AgentFocused, AgentSelected, AgentsList
+from .ui.log_panel import LogPanel
 from .ui.repl_panel import TerminalREPL
 
 
@@ -32,6 +33,10 @@ class DanaTUI(App):
     /* Layout containers */
     .main-container {
         height: 100%;
+    }
+    
+    .content-area {
+        height: 1fr;
     }
     
     .right-panel {
@@ -134,6 +139,25 @@ class DanaTUI(App):
         background: $accent;
         color: $text;
     }
+    
+    /* Log panel - use design system */
+    #log-panel {
+        border: round $border;
+        background: $surface;
+        color: $text;
+        height: 30;
+        min-height: 8;
+        display: none;
+    }
+    
+    #log-output {
+        border: none;
+        height: 27;
+        background: $surface;
+        color: $text;
+        overflow: auto;
+        scrollbar-size: 0 0;
+    }
     """
 
     BINDINGS = [
@@ -142,10 +166,11 @@ class DanaTUI(App):
         Binding("tab", "next_agent", "Next Agent", show=False),
         Binding("shift+tab", "prev_agent", "Prev Agent", show=False),
         Binding("f1", "help", "Help", show=True),
-        Binding("ctrl+l", "clear_transcript", "Clear", show=False),
+        Binding("ctrl+x", "clear_transcript", "Clear", show=False),
         Binding("ctrl+h", "show_history", "History", show=False),
         Binding("ctrl+shift+h", "clear_history", "Clear History", show=False),
         Binding("ctrl+s", "save_logs", "Save Logs", show=False),
+        Binding("ctrl+l", "toggle_logs", "Toggle Logs", show=False),
         Binding("ctrl+c", "quit", "Quit", show=True),
     ]
 
@@ -169,6 +194,7 @@ class DanaTUI(App):
         self.repl_panel: TerminalREPL | None = None
         self.agents_list: AgentsList | None = None
         self.agent_detail: AgentDetail | None = None
+        self.log_panel: LogPanel | None = None
 
         # Create initial mock agents
         self._setup_initial_agents()
@@ -182,23 +208,29 @@ class DanaTUI(App):
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
-        with Horizontal(classes="main-container"):
-            # Left panel: Unified REPL (input/output + execution)
-            with Vertical(classes="left-panel"):
-                self.repl_panel = TerminalREPL(self.sandbox)
-                yield self.repl_panel
+        with Vertical(classes="main-container"):
+            # Main content area
+            with Horizontal(classes="content-area"):
+                # Left panel: Unified REPL (input/output + execution)
+                with Vertical(classes="left-panel"):
+                    self.repl_panel = TerminalREPL(self.sandbox)
+                    yield self.repl_panel
 
-            # Right panel: Agents list + Agent detail
-            with Vertical(classes="right-panel"):
-                # Top: Agents list
-                with Vertical(classes="agents-section"):
-                    self.agents_list = AgentsList(self.sandbox)
-                    yield self.agents_list
+                # Right panel: Agents list + Agent detail
+                with Vertical(classes="right-panel"):
+                    # Top: Agents list
+                    with Vertical(classes="agents-section"):
+                        self.agents_list = AgentsList(self.sandbox)
+                        yield self.agents_list
 
-                # Bottom: Agent detail
-                with Vertical(classes="detail-section"):
-                    self.agent_detail = AgentDetail(self.sandbox)
-                    yield self.agent_detail
+                    # Bottom: Agent detail
+                    with Vertical(classes="detail-section"):
+                        self.agent_detail = AgentDetail(self.sandbox)
+                        yield self.agent_detail
+
+            # Log panel (initially hidden)
+            self.log_panel = LogPanel(id="log-panel")
+            yield self.log_panel
 
         # Footer with key hints
         yield Footer()
@@ -326,8 +358,36 @@ class DanaTUI(App):
         if self.repl_panel:
             self.repl_panel.add_system_message("Log saving not yet implemented.", "yellow")
 
+    def action_toggle_logs(self) -> None:
+        """Toggle the log panel visibility."""
+        if self.log_panel:
+            if self.log_panel.is_visible():
+                self.log_panel.hide()
+                if self.repl_panel:
+                    self.repl_panel.add_system_message("Log panel hidden. Press Ctrl+L to show.", "dim")
+            else:
+                self.log_panel.show()
+                if self.repl_panel:
+                    self.repl_panel.add_system_message("Log panel visible. Press Ctrl+L to hide.", "green")
+
 
 def main():
     """Main entry point for the Dana TUI."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Dana TUI - Textual User Interface")
+    parser.add_argument("--no-console-logging", action="store_true", help="Disable console logging (logs only appear in TUI log panel)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+
+    args = parser.parse_args()
+
+    # Configure logging based on arguments
+    from dana.common.utils.logging import DANA_LOGGER
+
+    if args.no_console_logging:
+        DANA_LOGGER.disable_console_logging()
+    if args.debug:
+        DANA_LOGGER.configure(level=DANA_LOGGER.DEBUG, force=True)
+
     app = DanaTUI()
     app.run()
