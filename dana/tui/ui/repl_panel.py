@@ -9,11 +9,12 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import RichLog, Static
 
+from dana.common import DANA_LOGGER
 from dana.core.concurrency import is_promise
 from dana.core.concurrency.base_promise import BasePromise
+from dana.tui.core.runtime import DanaSandbox
 
-from ..core.prompt_input import PromptStyleInput
-from ..core.runtime import DanaSandbox
+from .prompt_textarea import PromptStyleTextArea
 from .syntax_highlighter import dana_highlighter
 
 
@@ -24,7 +25,7 @@ class TerminalREPL(Vertical):
         super().__init__(**kwargs)
         self.sandbox = sandbox
         self._output: RichLog | None = None
-        self._input: PromptStyleInput | None = None
+        self._input: PromptStyleTextArea | None = None
         self._prompt: Static | None = None
 
     def compose(self) -> ComposeResult:
@@ -43,7 +44,7 @@ class TerminalREPL(Vertical):
             yield self._prompt
 
             # Enhanced prompt-style input for Dana expressions
-            self._input = PromptStyleInput(sandbox=self.sandbox, id="terminal-input")
+            self._input = PromptStyleTextArea(sandbox=self.sandbox, id="terminal-input")
             yield self._input
 
     def on_mount(self) -> None:
@@ -59,7 +60,7 @@ class TerminalREPL(Vertical):
         if self._input:
             self._input.focus()
 
-    def on_prompt_style_input_text_changed(self, event: PromptStyleInput.TextChanged) -> None:
+    def on_prompt_style_text_area_text_changed(self, event: PromptStyleTextArea.TextChanged) -> None:
         """Handle when input text changes - apply live Dana syntax highlighting."""
         if not self._input:
             return
@@ -74,9 +75,11 @@ class TerminalREPL(Vertical):
         # uses our custom DanaSyntaxHighlighter for accurate Dana syntax highlighting.
         pass
 
-    def on_prompt_style_input_submitted(self, event: PromptStyleInput.Submitted) -> None:
+    def on_prompt_style_text_area_submitted(self, event: PromptStyleTextArea.Submitted) -> None:
         """Handle when user submits input from PromptStyleInput."""
         command = event.value.strip()
+
+        DANA_LOGGER.debug(f"Input submitted: {command}")
 
         if not command:
             return
@@ -97,6 +100,10 @@ class TerminalREPL(Vertical):
 
         # Execute the command
         self._execute_dana_code(command)
+
+        # Add command to history after execution
+        if self._input:
+            self._input.add_to_history(command)
 
     def set_focused_agent(self, agent_name: str | None) -> None:
         """No-op for compatibility - agents not used in simple REPL."""

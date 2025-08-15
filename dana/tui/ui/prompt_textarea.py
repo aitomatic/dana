@@ -14,7 +14,10 @@ from textual.message import Message
 from textual.widgets import Input, TextArea
 from textual_autocomplete import AutoComplete, DropdownItem, TargetState
 
-from .runtime import DanaSandbox
+from dana.common import DANA_LOGGER
+from dana.core.lang.dana_sandbox import DanaSandbox
+
+from ..ui.syntax_highlighter import dana_highlighter
 
 _DANA_KEYWORDS = [
     # Control flow
@@ -109,7 +112,7 @@ _DANA_FUNCTIONS = [
 class _DanaInput(Input):
     """A custom Input widget to reliably handle key events for the REPL."""
 
-    def __init__(self, owner: "PromptStyleInput", index: int = -1, **kwargs):
+    def __init__(self, owner: "PromptStyleTextArea", index: int = -1, **kwargs):
         super().__init__(**kwargs)
         self._owner = owner
         self._index = index
@@ -120,7 +123,7 @@ class _DanaInput(Input):
         # await self._handle_input_key(event)
 
 
-class PromptStyleInput(TextArea):
+class PromptStyleTextArea(TextArea):
     """
     Enhanced input widget inspired by prompt-toolkit.
 
@@ -182,7 +185,7 @@ class PromptStyleInput(TextArea):
         # Create and set up the first input line
         self._focus_on_input_line(0)
 
-    def focus(self, scroll_visible: bool = True) -> "PromptStyleInput":
+    def focus(self, scroll_visible: bool = True) -> "PromptStyleTextArea":
         """Focus the last input line."""
         if self._input_lines:
             self._input_lines[-1].focus()
@@ -202,7 +205,7 @@ class PromptStyleInput(TextArea):
 
     def _add_new_input_line(self, placeholder: str = "", index: int = -1) -> None:
         """Creates, mounts, and focuses a new _DanaInput widget."""
-        new_input = _DanaInput(owner=self, placeholder="", classes="overlay-input", index=index)
+        new_input = _DanaInput(owner=self, placeholder="", classes="overlay-input", index=index, highlighter=dana_highlighter)
         self._input_lines.append(new_input)
         self.mount(new_input)
         # new_input.focus()
@@ -315,7 +318,7 @@ class PromptStyleInput(TextArea):
 
     @on(Input.Changed)
     def _on_input_changed(self, event: Input.Changed) -> None:
-        """Handle input changes to update autocomplete."""
+        """Handle input changes to update autocomplete and sync text for syntax highlighting."""
         if event.input in self._input_lines:
             self._update_autocomplete_candidates()
 
@@ -333,6 +336,8 @@ class PromptStyleInput(TextArea):
 
         # Combine text from all input lines to form the complete command.
         full_command = "\n".join(line.value for line in self._input_lines)
+
+        DANA_LOGGER.debug(f"posting message: {full_command}")
 
         # Post the submission message to the REPL.
         self.post_message(self.Submitted(full_command))
@@ -418,7 +423,7 @@ class PromptStyleInput(TextArea):
 
         # Save current content when starting history navigation
         if self._history_index == -1:
-            self._temp_content = self.text
+            self._temp_content = self._get_current_input_content()
 
         # Calculate new index
         new_index = self._history_index + direction
@@ -433,19 +438,47 @@ class PromptStyleInput(TextArea):
         # Update content
         if self._history_index == -1:
             # Back to current/temp content
-            self.text = self._temp_content
+            content = self._temp_content
         else:
             # Show history item
-            self.text = self._history[self._history_index]
+            content = self._history[self._history_index]
 
-        # Move cursor to end of the last line
-        if self.text:
-            lines = self.text.split("\n")
+        # Update input lines with the content
+        self._set_input_content(content)
+
+    def _get_current_input_content(self) -> str:
+        """Get the current content from all input lines."""
+        if not self._input_lines:
+            return ""
+        return "\n".join(line.value for line in self._input_lines)
+
+    def _set_input_content(self, content: str) -> None:
+        """Set the content of input lines."""
+        if not self._input_lines:
+            return
+
+        lines = content.split("\n") if content else [""]
+
+        # Clear existing input lines
+        for line in self._input_lines:
+            line.value = ""
+
+        # Set content in existing lines and create new ones if needed
+        for i, line_content in enumerate(lines):
+            if i < len(self._input_lines):
+                self._input_lines[i].value = line_content
+            else:
+                # Need to create a new input line
+                self._focus_on_input_line(i)
+                self._input_lines[i].value = line_content
+
+        # Focus the last line and move cursor to end
+        if lines:
             last_line_index = len(lines) - 1
-            last_line_length = len(lines[last_line_index])
-            self.cursor_location = (last_line_index, last_line_length)
-        else:
-            self.cursor_location = (0, 0)
+            if last_line_index < len(self._input_lines):
+                self._input_lines[last_line_index].focus()
+                # Move cursor to end of line
+                self._input_lines[last_line_index].cursor_position = len(lines[last_line_index])
 
     async def _handle_input_key(self, event: Key, line_index: int) -> None:
         """Handle key events forwarded from the _DanaInput widget."""
@@ -458,7 +491,8 @@ class PromptStyleInput(TextArea):
 
         # Up/Down arrows - navigate history (basic implementation)
         elif event.key in ("up", "down", "pageup", "pagedown"):
-            if self.value == "" or self._history_index != -1:
+            current_input = self._get_current_input_content()
+            if current_input == "" or self._history_index != -1:
                 if event.key in ("up", "pageup"):
                     self._navigate_history(-1)
                 else:

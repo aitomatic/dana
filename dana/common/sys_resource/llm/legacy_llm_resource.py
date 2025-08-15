@@ -170,7 +170,7 @@ class LegacyLLMResource(BaseSysResource):
 
         # --- Determine the model ---
         # Priority: constructor arg -> find available -> None (let user figure it out)
-        if model:
+        if model and model != "auto":
             # Accept any explicitly provided model without validation
             self._model = model
             self.debug(f"Using explicitly set model: {self._model}")

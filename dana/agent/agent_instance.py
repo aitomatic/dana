@@ -382,8 +382,6 @@ class AgentInstance(StructInstance):
                 **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens"]},
             )
 
-            print(f"CTN >>> LLM resource: {self._llm_resource}")
-
             # Create the LLM resource instance
             self._llm_resource_instance = LLMResourceType.create_instance(
                 self._llm_resource,
@@ -406,10 +404,8 @@ class AgentInstance(StructInstance):
             # First, try to use the agent's own LLM resource
             if self._llm_resource_instance is None:
                 self._initialize_llm_resource()
-                print(f"CTN >>> Initialized agent's own LLM resource: {self._llm_resource_instance}")
 
             if self._llm_resource_instance and self._llm_resource_instance.is_available:
-                print(f"CTN >>> Using agent's own LLM resource: {self._llm_resource_instance}")
                 return self._llm_resource_instance
 
             # Fallback to sandbox context if agent's LLM is not available
