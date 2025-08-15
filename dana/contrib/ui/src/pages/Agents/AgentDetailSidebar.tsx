@@ -122,7 +122,7 @@ const ProcessingStatusHistory: React.FC<{
         className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
       >
         {isExpanded ? <Collapse className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
-        Reasoning ({messages.length})
+        Show thinking ({messages.length})
       </button>
       
       {isExpanded && (

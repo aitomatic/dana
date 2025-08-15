@@ -75,6 +75,6 @@ class AttemptCompletionTool(BaseTool):
 The knowledge generation workflow is now complete. Your agent has been enhanced with new domain expertise!"""
         else:
             # Format as direct information response
-            content = f"""ℹ️ {summary}"""
+            content = f"""{summary}"""
 
         return ToolResult(name="attempt_completion", result=content, require_user=True)
