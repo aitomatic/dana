@@ -138,8 +138,25 @@ class LoopHandler(Loggable):
         self.debug(f"Starting for loop execution over {type(iterable).__name__}")
 
         for item in iterable:
-            # Set the loop variable in the context with scope optimization
-            context.set(node.target.name, item)
+            # Set the loop variable(s) in the context with scope optimization
+            if isinstance(node.target, list):
+                # Tuple unpacking: unpack item into multiple variables
+                if hasattr(item, "__iter__") and not isinstance(item, str | bytes):
+                    try:
+                        unpacked_values = list(item)
+                        if len(unpacked_values) != len(node.target):
+                            raise ValueError(f"Cannot unpack {len(unpacked_values)} values into {len(node.target)} variables")
+
+                        # Set each variable
+                        for target_id, value in zip(node.target, unpacked_values, strict=False):
+                            context.set(target_id.name, value)
+                    except (TypeError, ValueError) as e:
+                        raise TypeError(f"For loop tuple unpacking failed: {e}")
+                else:
+                    raise TypeError(f"Cannot unpack non-iterable {type(item).__name__} in for loop")
+            else:
+                # Single target
+                context.set(node.target.name, item)
 
             iteration_count += 1
             self._loop_iterations += 1

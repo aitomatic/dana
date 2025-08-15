@@ -9,8 +9,8 @@ This test suite covers Steps 5.1 and 5.2 with WORKING function names:
 import os
 from pathlib import Path
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestImportIntegrationWorking:
@@ -36,101 +36,101 @@ class TestImportIntegrationWorking:
     def test_large_program_with_multiple_dana_imports(self):
         """Test a larger Dana program that uses multiple imported modules together."""
         # Import modules
-        import_result1 = self.sandbox.eval("import simple_math")
-        import_result2 = self.sandbox.eval("import string_utils")
-        import_result3 = self.sandbox.eval("from data_types import create_point")
+        import_result1 = self.sandbox.execute_string("import simple_math")
+        import_result2 = self.sandbox.execute_string("import string_utils")
+        import_result3 = self.sandbox.execute_string("from data_types import create_point")
 
         assert import_result1.success is True
         assert import_result2.success is True
         assert import_result3.success is True
 
         # Mathematical calculations
-        base_result = self.sandbox.eval("base_value = simple_math.add(10, 5)")
+        base_result = self.sandbox.execute_string("base_value = simple_math.add(10, 5)")
         assert base_result.success is True
 
-        squared_result = self.sandbox.eval("squared = simple_math.square(base_value)")
+        squared_result = self.sandbox.execute_string("squared = simple_math.square(base_value)")
         assert squared_result.success is True
 
-        area_result = self.sandbox.eval("area = simple_math.multiply(squared, simple_math.PI)")
+        area_result = self.sandbox.execute_string("area = simple_math.multiply(squared, simple_math.PI)")
         assert area_result.success is True
 
         # String processing using ACTUAL available functions
-        text_result = self.sandbox.eval('text = "integration test example"')
+        text_result = self.sandbox.execute_string('text = "integration test example"')
         assert text_result.success is True
 
-        processed_result = self.sandbox.eval("processed = string_utils.to_upper(text)")
+        processed_result = self.sandbox.execute_string("processed = string_utils.to_upper(text)")
         assert processed_result.success is True
 
-        word_count_result = self.sandbox.eval("word_count = string_utils.word_count(processed)")
+        word_count_result = self.sandbox.execute_string("word_count = string_utils.word_count(processed)")
         assert word_count_result.success is True
 
         # Data structure creation
-        point_result = self.sandbox.eval("point = create_point(area, word_count)")
+        point_result = self.sandbox.execute_string("point = create_point(area, word_count)")
         assert point_result.success is True
 
         # Complex computation combining all imports
-        result_add = self.sandbox.eval("result = simple_math.add(point.x, point.y)")
+        result_add = self.sandbox.execute_string("result = simple_math.add(point.x, point.y)")
         assert result_add.success is True
 
         # Verification - get final values
-        base_check = self.sandbox.eval("base_value")
+        base_check = self.sandbox.execute_string("base_value")
         assert base_check.success is True
         assert base_check.result == 15  # 10 + 5
 
-        squared_check = self.sandbox.eval("squared")
+        squared_check = self.sandbox.execute_string("squared")
         assert squared_check.success is True
         assert squared_check.result == 225  # 15^2
 
-        processed_check = self.sandbox.eval("processed")
+        processed_check = self.sandbox.execute_string("processed")
         assert processed_check.success is True
         assert processed_check.result == "INTEGRATION TEST EXAMPLE"
 
     def test_mixed_python_dana_imports_working(self):
         """Test mixing Python and Dana module imports with working functions."""
         # Python imports
-        math_result = self.sandbox.eval("import math.py")
+        math_result = self.sandbox.execute_string("import math.py")
         assert math_result.success is True
 
         # Dana imports
-        simple_math_result = self.sandbox.eval("import simple_math")
+        simple_math_result = self.sandbox.execute_string("import simple_math")
         assert simple_math_result.success is True
 
         # Python operations
-        pi_python_result = self.sandbox.eval("pi_python = math.pi")
+        pi_python_result = self.sandbox.execute_string("pi_python = math.pi")
         assert pi_python_result.success is True
 
-        sin_result = self.sandbox.eval("sin_value = math.sin(math.pi / 2)")
+        sin_result = self.sandbox.execute_string("sin_value = math.sin(math.pi / 2)")
         assert sin_result.success is True
 
         # Dana operations
-        pi_dana_result = self.sandbox.eval("pi_dana = simple_math.PI")
+        pi_dana_result = self.sandbox.execute_string("pi_dana = simple_math.PI")
         assert pi_dana_result.success is True
 
-        dana_squared_result = self.sandbox.eval("dana_squared = simple_math.square(10)")
+        dana_squared_result = self.sandbox.execute_string("dana_squared = simple_math.square(10)")
         assert dana_squared_result.success is True
 
         # Verify results
-        pi_python_check = self.sandbox.eval("pi_python")
+        pi_python_check = self.sandbox.execute_string("pi_python")
         assert pi_python_check.success is True
         assert abs(pi_python_check.result - 3.14159) < 0.001
 
-        sin_check = self.sandbox.eval("sin_value")
+        sin_check = self.sandbox.execute_string("sin_value")
         assert sin_check.success is True
         assert sin_check.result == 1.0
 
-        pi_dana_check = self.sandbox.eval("pi_dana")
+        pi_dana_check = self.sandbox.execute_string("pi_dana")
         assert pi_dana_check.success is True
         assert abs(pi_dana_check.result - 3.14159) < 0.001
 
-        dana_squared_check = self.sandbox.eval("dana_squared")
+        dana_squared_check = self.sandbox.execute_string("dana_squared")
         assert dana_squared_check.success is True
         assert dana_squared_check.result == 100
 
     def test_sequential_imports_and_usage_working(self):
         """Test using imports in sequential operations with working functions."""
         # Sequential imports
-        result1 = self.sandbox.eval("import simple_math")
-        result2 = self.sandbox.eval("import string_utils")
+        result1 = self.sandbox.execute_string("import simple_math")
+        result2 = self.sandbox.execute_string("import string_utils")
         assert result1.success is True
         assert result2.success is True
 
@@ -147,7 +147,7 @@ class TestImportIntegrationWorking:
         ]
 
         for op, _ in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
         # Verify results
@@ -160,7 +160,7 @@ class TestImportIntegrationWorking:
         ]
 
         for var, expected in verifications:
-            check = self.sandbox.eval(var)
+            check = self.sandbox.execute_string(var)
             assert check.success is True
             assert check.result == expected
 
@@ -176,7 +176,7 @@ class TestImportIntegrationWorking:
         ]
 
         for import_stmt in imports:
-            result = self.sandbox.eval(import_stmt)
+            result = self.sandbox.execute_string(import_stmt)
             assert result.success is True
 
         # Use all imported functions
@@ -190,28 +190,28 @@ class TestImportIntegrationWorking:
         ]
 
         for op, expected in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
             # Verify the assigned variable
             var_name = op.split(" = ")[0]
-            check = self.sandbox.eval(var_name)
+            check = self.sandbox.execute_string(var_name)
             assert check.success is True
             assert check.result == expected
 
     def test_package_imports_working(self):
         """Test package imports in integration scenarios with working functions."""
         # Package imports using ACTUAL available functions
-        result1 = self.sandbox.eval("from utils.numbers import factorial")  # Updated to correct location
+        result1 = self.sandbox.execute_string("from utils.numbers import factorial")  # Updated to correct location
         assert result1.success is True
 
-        result2 = self.sandbox.eval("import utils")
+        result2 = self.sandbox.execute_string("import utils")
         assert result2.success is True
 
         # Use package functions that actually exist (corrected syntax)
         # First import what we need
-        self.sandbox.eval("from utils import get_package_info, PACKAGE_VERSION")
-        self.sandbox.eval("from utils.numbers import factorial")
+        self.sandbox.execute_string("from utils import get_package_info, PACKAGE_VERSION")
+        self.sandbox.execute_string("from utils.numbers import factorial")
 
         operations = [
             ("factorial_result = factorial(5)", 120),
@@ -220,21 +220,21 @@ class TestImportIntegrationWorking:
         ]
 
         for op, expected in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
             var_name = op.split(" = ")[0]
-            check = self.sandbox.eval(var_name)
+            check = self.sandbox.execute_string(var_name)
             assert check.success is True
             assert check.result == expected
 
     def test_submodule_imports_working(self):
         """Test submodule imports with working functions."""
         # Submodule imports using actual available functions
-        result1 = self.sandbox.eval("from utils.text import title_case")
+        result1 = self.sandbox.execute_string("from utils.text import title_case")
         assert result1.success is True
 
-        result2 = self.sandbox.eval("from utils.numbers import factorial")
+        result2 = self.sandbox.execute_string("from utils.numbers import factorial")
         assert result2.success is True
 
         # Use submodule functions
@@ -244,11 +244,11 @@ class TestImportIntegrationWorking:
         ]
 
         for op, expected in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
             var_name = op.split(" = ")[0]
-            check = self.sandbox.eval(var_name)
+            check = self.sandbox.execute_string(var_name)
             assert check.success is True
             assert check.result == expected
 
@@ -262,7 +262,7 @@ class TestImportIntegrationWorking:
         ]
 
         for alias_stmt in aliases:
-            result = self.sandbox.eval(alias_stmt)
+            result = self.sandbox.execute_string(alias_stmt)
             assert result.success is True
 
         # Use aliased imports with working functions
@@ -274,37 +274,37 @@ class TestImportIntegrationWorking:
         ]
 
         for op, expected in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
             var_name = op.split(" = ")[0]
-            check = self.sandbox.eval(var_name)
+            check = self.sandbox.execute_string(var_name)
             assert check.success is True
             assert check.result == expected
 
         # Test point creation with alias
-        point_op = self.sandbox.eval("point_obj = point(val2, word_count)")
+        point_op = self.sandbox.execute_string("point_obj = point(val2, word_count)")
         assert point_op.success is True
 
     def test_error_handling_in_complex_imports(self):
         """Test error handling when imports are used in complex scenarios."""
         # Test valid import and usage
-        import_result = self.sandbox.eval("import simple_math")
+        import_result = self.sandbox.execute_string("import simple_math")
         assert import_result.success is True
 
-        valid_result = self.sandbox.eval("result1 = simple_math.add(5, 10)")
+        valid_result = self.sandbox.execute_string("result1 = simple_math.add(5, 10)")
         assert valid_result.success is True
 
         # Test invalid function call
-        invalid_result = self.sandbox.eval("result2 = simple_math.nonexistent_function(5)")
+        invalid_result = self.sandbox.execute_string("result2 = simple_math.nonexistent_function(5)")
         assert invalid_result.success is False
 
         # Test invalid import
-        invalid_import = self.sandbox.eval("import nonexistent_module")
+        invalid_import = self.sandbox.execute_string("import nonexistent_module")
         assert invalid_import.success is False
 
         # Verify the valid result still works
-        check = self.sandbox.eval("result1")
+        check = self.sandbox.execute_string("result1")
         assert check.success is True
         assert check.result == 15
 
@@ -320,7 +320,7 @@ class TestImportIntegrationWorking:
         ]
 
         for import_stmt in setup_imports:
-            result = self.sandbox.eval(import_stmt)
+            result = self.sandbox.execute_string(import_stmt)
             assert result.success is True
 
         # Simulate processing data entries
@@ -345,16 +345,16 @@ class TestImportIntegrationWorking:
         ]
 
         for op, expected in operations:
-            result = self.sandbox.eval(op)
+            result = self.sandbox.execute_string(op)
             assert result.success is True
 
             if expected is not None:
                 var_name = op.split(" = ")[0]
-                check = self.sandbox.eval(var_name)
+                check = self.sandbox.execute_string(var_name)
                 assert check.success is True
                 assert check.result == expected
 
         # Verify final computation
-        final_check = self.sandbox.eval("final_score")
+        final_check = self.sandbox.execute_string("final_score")
         assert final_check.success is True
         assert final_check.result == 36600  # (625 + 900) * 24 = 1525 * 24

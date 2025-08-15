@@ -1,0 +1,22 @@
+from workflows import workflow_using_doc_kb
+from workflows import workflow_using_web
+from common import RetrievalPackage
+from methods import should_use_document
+
+
+agent RetrievalExpertAgent:
+    name: str = "RetrievalExpertAgent"
+    description: str = "A retrieval expert agent that can answer questions about documents"
+
+def solve(self : RetrievalExpertAgent, query: str) -> str:
+    package = RetrievalPackage(query=query)
+    package = should_use_document(package)
+    if package.should_use_document:
+        answer = workflow_using_doc_kb(package)
+    else:
+        answer = workflow_using_web(package)
+    return answer
+
+this_agent = RetrievalExpertAgent()
+
+# print(this_agent.solve("Are Registered Investment Advisers (RIAs) required to file SARs? Be concise"))

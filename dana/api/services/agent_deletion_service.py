@@ -5,11 +5,9 @@ Agent Deletion Service for handling comprehensive agent cleanup operations.
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional
 from sqlalchemy.orm import Session
 
 from dana.api.core.models import Agent, Document, Conversation, AgentChatHistory
-from dana.api.core.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +26,7 @@ class AgentDeletionService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    async def delete_agent_comprehensive(
-        self,
-        agent_id: int,
-        db: Session,
-        force: bool = False
-    ) -> dict:
+    async def delete_agent_comprehensive(self, agent_id: int, db: Session, force: bool = False) -> dict:
         """
         Comprehensive agent deletion with all associated resources cleanup.
 
@@ -69,7 +62,7 @@ class AgentDeletionService:
                 "conversations_deleted": 0,
                 "chat_history_deleted": 0,
                 "files_deleted": 0,
-                "folder_deleted": False
+                "folder_deleted": False,
             }
 
             # Delete associated documents
@@ -126,21 +119,14 @@ class AgentDeletionService:
 
             self.logger.info(f"Successfully deleted agent {agent_id}: {db_agent.name}")
 
-            return {
-                "message": "Agent deleted successfully",
-                "deletion_stats": deletion_stats
-            }
+            return {"message": "Agent deleted successfully", "deletion_stats": deletion_stats}
 
         except Exception as e:
             self.logger.error(f"Error deleting agent {agent_id}: {e}")
             db.rollback()
             raise e
 
-    async def soft_delete_agent(
-        self,
-        agent_id: int,
-        db: Session
-    ) -> dict:
+    async def soft_delete_agent(self, agent_id: int, db: Session) -> dict:
         """
         Soft delete an agent by marking it as deleted without removing files.
 
@@ -184,10 +170,7 @@ class AgentDeletionService:
             dict: Cleanup statistics
         """
         try:
-            cleanup_stats = {
-                "orphaned_files_removed": 0,
-                "orphaned_folders_removed": 0
-            }
+            cleanup_stats = {"orphaned_files_removed": 0, "orphaned_folders_removed": 0}
 
             # Get all document file paths from database
             documents = db.query(Document).all()

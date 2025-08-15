@@ -124,11 +124,20 @@ class MCPClient(Loggable):
 
             return True
 
-        except Exception:
+        except BaseException:
+            # Catch all exceptions including CancelledError during validation
             return False
         finally:
-            # Clean up test connection
-            if session_context:
-                await session_context.__aexit__(None, None, None)
-            if streams_context:
-                await streams_context.__aexit__(None, None, None)
+            # Clean up test connection - guard against cancellation during cleanup
+            try:
+                if session_context:
+                    await session_context.__aexit__(None, None, None)
+            except BaseException:
+                # Swallow any exceptions during cleanup to prevent them from escaping
+                pass
+            try:
+                if streams_context:
+                    await streams_context.__aexit__(None, None, None)
+            except BaseException:
+                # Swallow any exceptions during cleanup to prevent them from escaping
+                pass

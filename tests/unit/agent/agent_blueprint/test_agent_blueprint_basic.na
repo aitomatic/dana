@@ -1,0 +1,198 @@
+# Agent Blueprint Basic Tests
+# Tests for basic agent_blueprint functionality
+
+log_level("INFO")
+
+# Test 1: Basic agent definition
+agent_blueprint TestAgent:
+    name: str = "test_agent"
+    age: int = 25
+    skills: list = ["python", "dana"]
+
+def test_basic_agent_definition():
+    agent_instance = TestAgent()
+    
+    # Check that agent was created with correct fields
+    if agent_instance.name != "test_agent":
+        return "❌ Agent name field not set correctly"
+    if agent_instance.age != 25:
+        return "❌ Agent age field not set correctly"
+    if len(agent_instance.skills) != 2:
+        return "❌ Agent skills field not set correctly"
+    
+    return "✅ Basic agent definition works"
+
+# Test 2: Agent with custom fields
+agent_blueprint CustomAgent:
+    role: str = "developer"
+    experience_years: int = 5
+    is_active: bool = true
+    preferences: dict = {"language": "python", "framework": "dana"}
+
+def test_custom_agent_fields():
+    agent_instance = CustomAgent()
+    
+    # Check custom field types and values
+    if agent_instance.role != "developer":
+        return "❌ Custom agent role field not set correctly"
+    if agent_instance.experience_years != 5:
+        return "❌ Custom agent experience field not set correctly"
+    if agent_instance.is_active != true:
+        return "❌ Custom agent boolean field not set correctly"
+    if agent_instance.preferences.get("language") != "python":
+        return "❌ Custom agent dict field not set correctly"
+    
+    return "✅ Custom agent fields work"
+
+# Test 3: Complex agent fields
+agent_blueprint ComplexAgent:
+    name: str = "complex"
+    config: dict = {"retries": 3, "timeout": 30}
+    flags: list = ["A", "B", "C"]
+
+def test_complex_agent_fields():
+    agent_instance = ComplexAgent()
+    
+    # Test complex field types
+    if agent_instance.name != "complex":
+        return "❌ Complex agent name field not set correctly"
+    if agent_instance.config.get("timeout") != 30:
+        return "❌ Complex agent config field not set correctly"
+    if len(agent_instance.flags) != 3:
+        return "❌ Complex agent flags field not set correctly"
+    
+    return "✅ Complex agent fields work"
+
+# Test 4: Multiple agent types
+agent_blueprint AgentA:
+    name: str = "A"
+
+agent_blueprint AgentB:
+    name: str = "B"
+
+def test_multiple_agent_types():
+    agent_a = AgentA()
+    agent_b = AgentB()
+    
+    # Test that different agent types work independently
+    if agent_a.name != "A":
+        return "❌ AgentA name field not set correctly"
+    if agent_b.name != "B":
+        return "❌ AgentB name field not set correctly"
+    
+    return "✅ Multiple agent types work"
+
+# Test 5: Agent with no default values
+agent_blueprint MinimalAgent:
+    name: str
+    role: str
+
+def test_minimal_agent():
+    # Test agent with required fields (no defaults)
+    agent_instance = MinimalAgent(name="minimal", role="tester")
+    
+    if agent_instance.name != "minimal":
+        return "❌ Minimal agent name not set correctly"
+    if agent_instance.role != "tester":
+        return "❌ Minimal agent role not set correctly"
+    
+    return "✅ Minimal agent works"
+
+# Test 6: Agent field access
+def test_agent_field_access():
+    agent_instance = TestAgent()
+    
+    # Test direct field access
+    if agent_instance.name != "test_agent":
+        return "❌ Direct field access failed for name"
+    if agent_instance.age != 25:
+        return "❌ Direct field access failed for age"
+    if len(agent_instance.skills) != 2:
+        return "❌ Direct field access failed for skills"
+    
+    return "✅ Agent field access works"
+
+# Test 7: Agent inheritance and type checking
+def test_agent_inheritance():
+    agent_instance = TestAgent()
+    
+    # Test that agent methods work (which proves inheritance)
+    try:
+        plan_result = agent_instance.plan("test task")
+        if "planning" not in plan_result.lower():
+            return "❌ Agent plan method not working"
+        
+        solve_result = agent_instance.solve("test problem")
+        if "solving" not in solve_result.lower():
+            return "❌ Agent solve method not working"
+        
+        agent_instance.remember("test_key", "test_value")
+        memory_result = agent_instance.recall("test_key")
+        if memory_result != "test_value":
+            return "❌ Agent memory methods not working"
+        
+        return "✅ Agent inheritance works"
+    except Exception as e:
+        return f"❌ Agent inheritance test failed: {e}"
+
+# Test 8: Agent method dispatch
+def test_agent_method_dispatch():
+    agent_instance = TestAgent()
+    
+    # Test that method calls work through dispatch
+    result = agent_instance.plan("test task")
+    if "planning" not in result.lower():
+        return "❌ Agent method dispatch failed"
+    if "TestAgent" not in result:
+        return "❌ Agent name not in dispatch result"
+    
+    return "✅ Agent method dispatch works"
+
+# Run basic tests
+log("=== Agent Blueprint Basic Tests ===")
+
+tests = [
+    test_basic_agent_definition,
+    test_custom_agent_fields,
+    test_complex_agent_fields,
+    test_multiple_agent_types,
+    test_minimal_agent,
+    test_agent_field_access,
+    test_agent_inheritance,
+    test_agent_method_dispatch
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Basic Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All basic agent_blueprint tests passed!")
+else:
+    log(f"⚠️  {failed} basic tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}

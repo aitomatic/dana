@@ -5,6 +5,7 @@ import socket
 import subprocess
 import sys
 import time
+from contextlib import asynccontextmanager
 from typing import Any, cast
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -61,9 +62,27 @@ async def knowledge_status_ws(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application startup and shutdown events"""
+    # Startup
+    from ..core.migrations import run_migrations
+
+    # Create base tables first
+    Base.metadata.create_all(bind=engine)
+
+    # Run any pending migrations
+    run_migrations()
+
+    yield
+
+    # Shutdown (if needed in the future)
+    pass
+
+
 def create_app():
     """Create FastAPI app with routers and static file serving"""
-    app = FastAPI(title="Dana API Server", version="1.0.0")
+    app = FastAPI(title="Dana API Server", version="1.0.0", lifespan=lifespan)
 
     # Add CORS middleware
     app.add_middleware(
@@ -103,9 +122,12 @@ def create_app():
     app.include_router(domain_knowledge_router, prefix="/api")
     if os.getenv("USE_SMART_CHAT_V2", "false").lower() == "true":
         from ..routers.smart_chat_v2 import router as smart_chat_v2_router
+
         app.include_router(smart_chat_v2_router, prefix="/api")
+        print("\033[92mInitializing smart chat v2 router\033[0m")
     else:
         app.include_router(smart_chat_router, prefix="/api")
+        print("\033[96mInitializing smart chat router\033[0m")
     app.include_router(extract_documents_router, prefix="/api")
     app.include_router(ws_router)
 
@@ -124,17 +146,6 @@ def create_app():
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-    # Create tables and run migrations on startup
-    @app.on_event("startup")
-    def on_startup():
-        from ..core.migrations import run_migrations
-
-        # Create base tables first
-        Base.metadata.create_all(bind=engine)
-
-        # Run any pending migrations
-        run_migrations()
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")

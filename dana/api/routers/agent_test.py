@@ -1,22 +1,22 @@
-from pathlib import Path
-from typing import Any
-import os
-import logging
 import asyncio
+import json
+import logging
+import os
 import uuid
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-import json
 
-from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
 from dana.api.utils.streaming_function_override import streaming_print_override
 from dana.api.utils.streaming_stdout import StdoutContextManager
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 logger = logging.getLogger(__name__)
 
@@ -471,8 +471,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
         # Add the response line at the end
         escaped_message = request.message.replace("\\", "\\\\").replace('"', '\\"')
+        # NOTE : REMEBER TO PUT escaped_message in triple quotes
         additional_code = (
-            f'\n\n# Test execution\nuser_query = "{escaped_message}"\nresponse = this_agent.solve(user_query)\nprint(response)\n'
+            f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = this_agent.solve(user_query)\nprint(response)\n'
         )
         temp_content = original_content + additional_code
 
@@ -508,13 +509,16 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     sandbox._ensure_initialized()  # Make sure function registry is available
 
                     # Override both Dana print function and Python stdout for complete coverage
+                    # with streaming_print_override(sandbox.function_registry, log_streamer):
                     with streaming_print_override(sandbox.function_registry, log_streamer):
                         with StdoutContextManager(log_streamer):
-                            result = sandbox.run_file(temp_file_path)
+                            # result = DanaSandbox.execute_file_once(temp_file_path, context=sandbox_context)
+                            result = sandbox.execute_file(temp_file_path)
 
-                    if hasattr(result, "error"):
+                    if hasattr(result, "error") and result.error is not None:
                         logger.error(f"Error: {result.error}")
                         logger.exception(result.error)
+                        print(f"\033[31mSandbox error: {result.error}\033[0m")
 
                     state = sandbox_context.get_state()
                     response_text = state.get("local", {}).get("response", "")
@@ -543,8 +547,8 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     sandbox_context.shutdown()
 
                     # Clear global registries to prevent struct/module conflicts between runs
+                    from dana.__init__.init_modules import reset_module_system
                     from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-                    from dana.core.runtime.modules.core import reset_module_system
 
                     StructTypeRegistry.clear()
                     reset_module_system()
@@ -637,7 +641,7 @@ async def _llm_fallback(agent_name: str, agent_description: str, message: str) -
         logger.info(f"Using LLM fallback for agent '{agent_name}' with message: {message}")
 
         # Create LLM resource
-        llm = LLMResource(
+        llm = LegacyLLMResource(
             name="agent_test_fallback_llm",
             description="LLM fallback for agent testing when Dana code is not available",
         )
@@ -765,8 +769,8 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
                 sandbox_context.shutdown()
 
                 # Clear global registries to prevent struct/module conflicts between runs
+                from dana.__init__.init_modules import reset_module_system
                 from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-                from dana.core.runtime.modules.core import reset_module_system
 
                 StructTypeRegistry.clear()
                 reset_module_system()

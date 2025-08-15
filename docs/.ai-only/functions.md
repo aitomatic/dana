@@ -82,7 +82,7 @@ Dana's built-in functions use a **Dynamic Function Factory** pattern for securit
 
 #### Security Architecture
 ```python
-class PythonicFunctionFactory:
+class PythonicBuiltinsFactory:
     def __init__(self):
         # 15+ supported functions: len, sum, max, min, abs, round, int, float, bool, etc.
         self.supported_functions = {...}

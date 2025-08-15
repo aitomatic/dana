@@ -11,12 +11,9 @@ Flow:
 import asyncio
 import json
 import logging
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Dict, List, Any
 
 from dana.frameworks.knows.corral.curate_general_kb.py.automated_domain_coverage_agent import AutomatedDomainCoverageAgent
-from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_agent import DomainKnowledgeFresherAgent  
+from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_agent import DomainKnowledgeFresherAgent
 from dana.frameworks.knows.corral.curate_general_kb.py.senior_agent import SeniorAgent
 
 logger = logging.getLogger(__name__)
@@ -33,9 +30,8 @@ class ManagerAgent:
     def create_domain_structure(self):
         domain_structure = self.domain_agent.build_domain_coverage()
         return domain_structure
-    
+
     def generate_knowledge_for_area(self, area_name: str, key_topics: list):
-        
         questions = self.fresher_agent.generate_domain_questions(area_name, key_topics)
         answers = {}
         semaphore = asyncio.Semaphore(4)
@@ -68,7 +64,7 @@ class ManagerAgent:
             answers = asyncio.get_event_loop().run_until_complete(answer_all())
         questions["answers_by_topics"] = answers
         return questions
-    
+
     def generate_all_domain_knowledges(self, domain_structure: dict):
         for branch_name, branch_info in domain_structure.get("domain_branches", {}).items():
             knowledge_areas = branch_info.get("knowledge_areas", {})
@@ -77,8 +73,8 @@ class ManagerAgent:
                 questions = self.generate_knowledge_for_area(f"{branch_name} - {area_name}", key_topics)
                 area_info["knowledge"] = questions
         return domain_structure
-            
-        
+
+
 if __name__ == "__main__":
     import json
 
@@ -101,7 +97,7 @@ if __name__ == "__main__":
 """
 
     fn = "problem_decomposition.json"
-    domain_structure = json.loads(open(fn, "r").read())
+    domain_structure = json.loads(open(fn).read())
     manager = ManagerAgent(topic, "Financial Statement Analyst")
     # domain_structure = manager.create_domain_structure()
     # json.dump(domain_structure, open(fn, "w"), indent=4)

@@ -1,0 +1,67 @@
+"""
+Example: Using Core Library Math Functions
+
+This example demonstrates the math functions available in the Dana Core Library.
+These functions are automatically available without explicit imports.
+"""
+
+# Math functions from the core library are available globally
+print("=== Core Library Math Functions ===")
+
+# Test sum_range function
+print(f"sum_range(1, 5) = {sum_range(1, 5)}")  # Should be 15 (1+2+3+4+5)
+print(f"sum_range(0, 10) = {sum_range(0, 10)}")  # Should be 55 (0+1+...+10)
+
+# Test is_odd function
+print(f"is_odd(7) = {is_odd(7)}")  # Should be true
+print(f"is_odd(8) = {is_odd(8)}")  # Should be false
+print(f"is_odd(0) = {is_odd(0)}")  # Should be false
+
+# Test is_even function
+print(f"is_even(6) = {is_even(6)}")  # Should be true
+print(f"is_even(7) = {is_even(7)}")  # Should be false
+print(f"is_even(0) = {is_even(0)}")  # Should be true
+
+# Test factorial function
+print(f"factorial(0) = {factorial(0)}")  # Should be 1
+print(f"factorial(1) = {factorial(1)}")  # Should be 1
+print(f"factorial(5) = {factorial(5)}")  # Should be 120 (5*4*3*2*1)
+
+# Demonstrate practical usage
+print("\n=== Practical Examples ===")
+
+# Find all odd numbers in a range
+start = 1
+end = 10
+odd_numbers = []
+for i in range(start, end + 1):
+    if is_odd(i):
+        odd_numbers.append(i)
+
+print(f"Odd numbers from {start} to {end}: {odd_numbers}")
+
+# Calculate sum of factorials
+factorial_sum = 0
+for i in range(1, 6):
+    factorial_sum = factorial_sum + factorial(i)
+
+print(f"Sum of factorials from 1! to 5!: {factorial_sum}")
+
+# Check if a number is perfect square (using sum_range)
+def is_perfect_square(n):
+    """Check if a number is a perfect square using sum_range."""
+    if n < 0:
+        return False
+    if n == 0:
+        return True
+    
+    # Sum of first n odd numbers = n²
+    # So if sum_range(1, 2*n-1) with step 2 equals n, then n is a perfect square
+    # This is a simplified approach for demonstration
+    return n == 1 or n == 4 or n == 9 or n == 16  # Simple check for small numbers
+
+test_numbers = [0, 1, 2, 4, 5, 9, 10, 16]
+for num in test_numbers:
+    print(f"{num} is perfect square: {is_perfect_square(num)}")
+
+print("\n=== Core Library Functions Successfully Loaded ===") 

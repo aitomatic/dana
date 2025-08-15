@@ -21,9 +21,10 @@ from dana.api.services.domain_knowledge_service import (
     DomainKnowledgeService,
 )
 from dana.api.routers.agents import clear_agent_cache
+
 # Use KnowledgeOpsHandler directly
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.api.services.auto_knowledge_generator import get_auto_knowledge_generator
 import os
 from fastapi import WebSocket, WebSocketDisconnect
@@ -50,11 +51,14 @@ class SmartChatWSNotifier:
         if websocket_id in self.active_connections:
             del self.active_connections[websocket_id]
 
-    async def send_chat_update_msg(self, websocket_id: Any, 
-                                   tool_name: str, message: str,
-                                   status: Literal["init", "in_progress", "finish"],
-                                   progression: float | None = None,
-                                   ):
+    async def send_chat_update_msg(
+        self,
+        websocket_id: Any,
+        tool_name: str,
+        message: str,
+        status: Literal["init", "in_progress", "finish"],
+        progression: float | None = None,
+    ):
         """Send a message via WebSocket"""
         if not isinstance(websocket_id, str):
             websocket_id = str(websocket_id)
@@ -77,14 +81,16 @@ class SmartChatWSNotifier:
                 # Remove disconnected WebSocket
                 self.disconnect(websocket_id)
 
-    
 
 smart_chat_ws_notifier = SmartChatWSNotifier()
+
 
 def create_smart_chat_ws_notifier(websocket_id: str | None = None):
     """Create a chat update notifier that sends updates via WebSocket"""
 
-    async def chat_update_notifier(tool_name: str, message: str, status: Literal["init", "in_progress", "finish" ,"error"], progression: float | None = None) -> None:
+    async def chat_update_notifier(
+        tool_name: str, message: str, status: Literal["init", "in_progress", "finish", "error"], progression: float | None = None
+    ) -> None:
         # Send via WebSocket if connection exists
         if websocket_id:
             await smart_chat_ws_notifier.send_chat_update_msg(websocket_id, tool_name, message, status, progression)
@@ -190,12 +196,12 @@ async def smart_chat_v2(
         # Check if tree was modified and needs reloading
         updated_domain_tree = None
         tree_modified = result.get("tree_modified", False)
-        
+
         if tree_modified:
             # Clear cache to ensure fresh data
             clear_agent_cache(folder_path)
             logger.info(f"Cleared RAG cache for agent {agent.id} after tree modification")
-            
+
             # Use the updated tree from handler if provided, otherwise reload
             if result.get("updated_tree"):
                 # Convert dict back to DomainKnowledgeTree model
@@ -203,7 +209,7 @@ async def smart_chat_v2(
             else:
                 # Fallback: reload from database
                 updated_domain_tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
-            
+
         # Convert KnowledgeOpsHandler result to smart_chat format
         if result.get("status") == "success":
             response = {
@@ -223,7 +229,7 @@ async def smart_chat_v2(
                 "conversation": result.get("conversation", []),
                 "follow_up_message": result.get("message", "Knowledge operation completed. What else would you like me to learn?"),
             }
-            
+
         elif result.get("status") == "user_input_required":
             response = {
                 "success": False,
@@ -448,7 +454,7 @@ async def _get_recent_chat_history(agent_id: int, db: Session, limit: int = 10) 
     except Exception as e:
         logger.warning(f"Failed to get chat history: {e}")
         return []
-    
+
 
 @router.websocket("/ws/dana-chat/{agent_id}")
 async def send_chat_update_msg(agent_id: str, websocket: WebSocket):

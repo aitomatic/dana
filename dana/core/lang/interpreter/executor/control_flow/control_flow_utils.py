@@ -69,17 +69,22 @@ class ControlFlowUtils(Loggable):
         raise ContinueException()
 
     def execute_return_statement(self, node: ReturnStatement, context: SandboxContext) -> None:
-        """Execute a return statement (lazy execution with Promise[T] creation).
+        """Execute a return statement with intelligent Promise creation.
+
+        Uses PromiseFactory to determine optimal execution strategy:
+        - Nested contexts → synchronous execution (prevents deadlock)
+        - Simple expressions → synchronous execution (avoids overhead)
+        - Complex expressions → EagerPromise creation (enables concurrency)
 
         Args:
             node: The return statement to execute
             context: The execution context
 
         Returns:
-            Never returns normally, raises a ReturnException with Promise[T] value
+            Never returns normally, raises a ReturnException
 
         Raises:
-            ReturnException: With the Promise[T] value for lazy evaluation
+            ReturnException: With either direct value or Promise[T] based on strategy
         """
         self._statements_executed += 1
 
@@ -87,49 +92,38 @@ class ControlFlowUtils(Loggable):
             if self.parent_executor is None:
                 raise RuntimeError("Parent executor not available for return value evaluation")
 
-            self.debug("About to create Promise for return statement")
+            self.debug("Processing return statement with intelligent Promise creation")
 
-            # Create a Promise[T] for eager evaluation (concurrent by default)
-            from dana.core.concurrency import EagerPromise
+            # Import the Promise factory
+            from dana.core.concurrency.promise_factory import PromiseFactory
 
-            # Create a computation function that will evaluate the return value when accessed
-            # Capture a copy of the current context to preserve function arguments and local variables
-            # This prevents the context from being modified by restore_context later
+            # Create a computation function that will evaluate the return value
             captured_context = context.copy()
             captured_node_value = node.value
 
             def return_computation():
                 self.debug("Return computation function called")
-                self.debug(f"Using captured context: {type(captured_context)}")
-                # Debug: Check what's in the captured context
                 try:
-                    local_vars = captured_context.get_scope("local")
-                    self.debug(f"Captured context local vars: {list(local_vars.keys())}")
-                    # Check if Point struct is available
-                    if "Point" in local_vars:
-                        self.debug(f"Point struct found: {type(local_vars['Point'])}")
-                    else:
-                        self.debug("Point struct NOT found in captured context")
-                    # Debug: Check function arguments
-                    for key, value in local_vars.items():
-                        if key in ["street", "city", "state", "zip_code", "country"]:
-                            self.debug(f"Function arg {key}: {value}")
-                except Exception as e:
-                    self.debug(f"Error accessing captured context: {e}")
-                try:
-                    result = self.parent_executor.execute(captured_node_value, captured_context)
+                    result = self.parent_executor.execute(captured_node_value, captured_context)  # type: ignore
                     self.debug(f"Return computation result: {result}")
                     return result
                 except Exception as e:
                     self.debug(f"Return computation failed with error: {e}")
                     raise
 
-            # Create Promise[T] wrapper for eager evaluation (concurrent by default)
-            self.debug("Calling EagerPromise.create...")
-            self.debug(f"Return computation function: {return_computation}")
-            promise_value = EagerPromise.create(return_computation, captured_context)
-            self.debug(f"Promise created: {type(promise_value)}")
-            self.debug(f"Executing return statement with Promise[T] value: {type(promise_value)}")
+            # Use PromiseFactory to create optimal execution strategy
+            from dana.core.runtime import DanaThreadPool
+
+            executor = DanaThreadPool.get_instance().get_executor()
+
+            # The factory will decide: synchronous execution or EagerPromise creation
+            promise_value = PromiseFactory.create_promise(
+                return_computation,
+                executor,
+                node.value,  # type: ignore # Pass AST node for complexity analysis
+            )
+
+            self.debug(f"Promise factory returned: {type(promise_value)}")
         else:
             promise_value = None
             self.debug("Executing return statement with no value")

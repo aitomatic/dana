@@ -7,13 +7,13 @@ This module provides business logic for document management and processing.
 import logging
 import os
 import asyncio
-from datetime import datetime, timezone, UTC
+from datetime import datetime, UTC
 import uuid
 from typing import BinaryIO
 
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
-from dana.common.resource.rag.rag_resource import RAGResource
+from dana.common.sys_resource.rag.rag_resource import RAGResource
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class DocumentService:
             # If file exists, append timestamp to avoid conflicts
             if os.path.exists(file_path):
                 name_without_ext, file_extension = os.path.splitext(filename)
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                 filename_with_timestamp = f"{name_without_ext}_{timestamp}{file_extension}"
                 file_path = os.path.join(target_dir, filename_with_timestamp)
 
@@ -425,7 +425,8 @@ class DocumentService:
                 logger.info(f"Building RAG index for agent {agent_id} with {len(source_paths)} documents")
 
                 # Create agent-specific cache directory
-                cache_dir = os.path.join(folder_path, ".rag_cache")
+                cache_dir = os.path.abspath(os.path.join(folder_path, ".cache/rag"))
+                
 
                 # Create RAG resource with force_reload to rebuild index
                 rag_resource = RAGResource(

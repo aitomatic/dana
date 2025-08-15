@@ -1,0 +1,1 @@
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")

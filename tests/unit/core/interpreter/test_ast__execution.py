@@ -294,6 +294,25 @@ def test_modulo():
     assert context.get("private:result") == 3
 
 
+def test_floor_division():
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    program = Program(
+        [
+            Assignment(
+                target=Identifier("private:result"),
+                value=BinaryExpression(
+                    left=LiteralExpression(20),
+                    operator=BinaryOperator.FLOOR_DIVIDE,
+                    right=LiteralExpression(3),
+                ),
+            )
+        ]
+    )
+    interpreter.execute_program(program, context)
+    assert context.get("private:result") == 6
+
+
 def test_power():
     interpreter = DanaInterpreter()
     context = SandboxContext()

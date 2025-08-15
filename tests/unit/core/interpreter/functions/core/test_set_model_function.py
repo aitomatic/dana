@@ -2,12 +2,12 @@
 
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from dana.common.exceptions import SandboxError
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.set_model_function import set_model_function
+from dana.libs.corelib.py_wrappers.py_set_model import py_set_model as set_model_function
 
 
 class TestSetModelFunction(unittest.TestCase):
@@ -41,9 +41,11 @@ class TestSetModelFunction(unittest.TestCase):
         self.assertEqual(result, "openai:gpt-4o")
 
         # Verify LLM resource was created and set in context
-        llm_resource = self.context.get("system:llm_resource")
+        llm_resource = self.context.get_system_llm_resource()
         self.assertIsNotNone(llm_resource)
-        self.assertIsInstance(llm_resource, LLMResource)
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+
+        self.assertIsInstance(llm_resource, LLMResourceInstance)
         self.assertEqual(llm_resource.model, "openai:gpt-4o")
 
     def test_set_model_with_existing_llm_resource(self):
@@ -52,9 +54,12 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "test-key"
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
-        # Create existing LLM resource
-        existing_llm = LLMResource(name="existing_llm", model="openai:gpt-4o-mini")
-        self.context.set("system:llm_resource", existing_llm)
+        # Create existing LLM resource using the new system
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="existing_llm", model="openai:gpt-4o-mini"))
+        self.context.set_system_llm_resource(existing_llm)
 
         result = set_model_function(self.context, "anthropic:claude-3-5-sonnet-20241022")
 
@@ -62,7 +67,7 @@ class TestSetModelFunction(unittest.TestCase):
         self.assertEqual(result, "anthropic:claude-3-5-sonnet-20241022")
 
         # Verify the same LLM resource was updated (not replaced)
-        updated_llm = self.context.get("system:llm_resource")
+        updated_llm = self.context.get_system_llm_resource()
         self.assertIs(updated_llm, existing_llm)  # Same object
         self.assertEqual(updated_llm.model, "anthropic:claude-3-5-sonnet-20241022")
 
@@ -89,7 +94,7 @@ class TestSetModelFunction(unittest.TestCase):
             self.assertEqual(result, "invalid:model-name")
 
             # Verify LLM resource was created despite no API keys
-            llm_resource = self.context.get("system:llm_resource")
+            llm_resource = self.context.get_system_llm_resource()
             self.assertIsNotNone(llm_resource)
             self.assertEqual(llm_resource.model, "invalid:model-name")
 
@@ -109,11 +114,11 @@ class TestSetModelFunction(unittest.TestCase):
 
         self.assertEqual(result, "openai:gpt-4o")
 
-    @patch("dana.core.stdlib.core.set_model_function.LLMResource")
-    def test_set_model_llm_resource_creation_error(self, mock_llm_resource):
-        """Test error handling when LLMResource creation fails."""
-        # Mock LLMResource to raise an exception
-        mock_llm_resource.side_effect = Exception("Resource creation failed")
+    @patch("dana.core.resource.builtins.llm_resource_type.LLMResourceType.create_default_instance")
+    def test_set_model_llm_resource_creation_error(self, mock_create_default_instance):
+        """Test error handling when LLMResourceType creation fails."""
+        # Mock create_default_instance to raise an exception
+        mock_create_default_instance.side_effect = Exception("Resource creation failed")
 
         with self.assertRaises(SandboxError) as context:
             set_model_function(self.context, "openai:gpt-4o")
@@ -125,14 +130,18 @@ class TestSetModelFunction(unittest.TestCase):
         """Test that updating model preserves the existing LLM resource name."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        # Create existing LLM resource with custom name
-        existing_llm = LLMResource(name="custom_llm_name", model="openai:gpt-4o-mini")
-        self.context.set("system:llm_resource", existing_llm)
+        # Create existing LLM resource with custom name using the new system
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="custom_llm_name", model="openai:gpt-4o-mini"))
+        self.context.set_system_llm_resource(existing_llm)
 
         set_model_function(self.context, "openai:gpt-4o")
 
         # Verify the name is preserved
-        updated_llm = self.context.get("system:llm_resource")
+        updated_llm = self.context.get_system_llm_resource()
         self.assertEqual(updated_llm.name, "custom_llm_name")
         self.assertEqual(updated_llm.model, "openai:gpt-4o")
 
@@ -184,11 +193,17 @@ class TestSetModelFunction(unittest.TestCase):
         """Test exact match only option disables fuzzy matching."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
-        # With exact_match_only=True, partial matches should not work
-        result = set_model_function(self.context, "gpt-4", options={"exact_match_only": True})
+        # Mock the context to return an LLM resource
+        mock_llm_resource = Mock()
+        mock_llm_resource.kind = "llm"
+        mock_llm_resource.model = "openai:gpt-4"
 
-        # Should use the input as-is
-        self.assertEqual(result, "gpt-4")
+        with patch.object(self.context, "get_resources", return_value={"test_llm": mock_llm_resource}):
+            # With exact_match_only=True, partial matches should not work
+            result = set_model_function(self.context, "gpt-4", options={"exact_match_only": True})
+
+            # Should use the input as-is
+            self.assertEqual(result, "gpt-4")
 
     def test_fuzzy_matching_case_insensitive(self):
         """Test that fuzzy matching is case insensitive."""
@@ -236,9 +251,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_get_available_model_names_helper(self):
         """Test the helper function that gets available model names."""
-        from dana.core.stdlib.core.set_model_function import (
-            _get_available_model_names,
-        )
+        from dana.libs.corelib.py_wrappers.py_set_model import _get_available_model_names
 
         models = _get_available_model_names()
 
@@ -253,9 +266,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_find_closest_model_match_helper(self):
         """Test the fuzzy matching helper function directly."""
-        from dana.core.stdlib.core.set_model_function import (
-            _find_closest_model_match,
-        )
+        from dana.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
 
         available_models = [
             "openai:gpt-4o",
@@ -384,7 +395,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_bug_fixes_model_matching(self):
         """Test specific bug fixes for model matching logic."""
-        from dana.core.stdlib.core.set_model_function import _find_closest_model_match
+        from dana.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
 
         # Test Bug Fix 1: Groq model pattern should match llama-3.1-70b-versatile
         available_models = ["groq:llama-3.1-70b-versatile", "groq:llama-3.1-8b-instant", "openai:gpt-4o"]

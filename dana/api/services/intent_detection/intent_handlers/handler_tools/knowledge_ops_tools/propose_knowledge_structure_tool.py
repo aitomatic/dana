@@ -5,7 +5,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool 
     BaseArgument,
     ToolResult,
 )
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 import logging
@@ -57,15 +57,15 @@ class ProposeKnowledgeStructureTool(BaseTool):
     async def _execute(self, topic: str, focus_areas: str = "", depth_level: str = "comprehensive") -> ToolResult:
         """
         Generate hierarchical knowledge structure for a new topic domain.
-        
+
         Returns: ToolResult with proposed structure for user review and refinement
         """
         try:
             logger.info(f"Proposing knowledge structure for topic: {topic}")
-            
+
             # Generate comprehensive topic structure using LLM
             structure_content = self._generate_topic_structure(topic, focus_areas, depth_level)
-            
+
             # Format the response for user review
             content = f"""🏗️ Proposed Knowledge Structure: {topic.title()}
 
@@ -89,23 +89,21 @@ class ProposeKnowledgeStructureTool(BaseTool):
         except Exception as e:
             logger.error(f"Failed to propose knowledge structure: {e}")
             return ToolResult(
-                name="propose_knowledge_structure", 
-                result=f"❌ Error proposing structure for '{topic}': {str(e)}", 
-                require_user=True
+                name="propose_knowledge_structure", result=f"❌ Error proposing structure for '{topic}': {str(e)}", require_user=True
             )
 
     def _generate_topic_structure(self, topic: str, focus_areas: str, depth_level: str) -> str:
         """Generate hierarchical topic structure using LLM."""
-        
+
         # Determine structure parameters based on depth level
         depth_params = {
             "basic": {"levels": "2-3", "subtopics_per_category": "3-4", "detail": "essential topics only"},
             "comprehensive": {"levels": "3-4", "subtopics_per_category": "4-6", "detail": "comprehensive coverage"},
-            "detailed": {"levels": "4-5", "subtopics_per_category": "5-8", "detail": "detailed and specialized topics"}
+            "detailed": {"levels": "4-5", "subtopics_per_category": "5-8", "detail": "detailed and specialized topics"},
         }
-        
+
         params = depth_params.get(depth_level.lower(), depth_params["comprehensive"])
-        
+
         structure_prompt = f"""You are a domain expert creating a comprehensive knowledge structure for: {topic}
 
 TASK: Create a hierarchical knowledge structure with {params['levels']} levels of depth.
@@ -140,19 +138,18 @@ EXAMPLE FORMAT:
 Generate the complete knowledge structure now:"""
 
         try:
-            response = Misc.safe_asyncio_run(self.llm.query, BaseRequest(
-                arguments={
-                    "messages": [{"role": "user", "content": structure_prompt}],
-                    "temperature": 0.3,
-                    "max_tokens": 1500
-                }
-            ))
-            
+            response = Misc.safe_asyncio_run(
+                self.llm.query,
+                BaseRequest(
+                    arguments={"messages": [{"role": "user", "content": structure_prompt}], "temperature": 0.3, "max_tokens": 1500}
+                ),
+            )
+
             structure_content = Misc.get_response_content(response)
             logger.info(f"Generated structure content: {structure_content[:200]}...")
-            
+
             return structure_content
-            
+
         except Exception as e:
             logger.error(f"Failed to generate topic structure: {e}")
             # Fallback structure
@@ -195,16 +192,15 @@ TASK: Modify the structure according to the user's request while maintaining:
 Generate the refined structure:"""
 
         try:
-            response = Misc.safe_asyncio_run(self.llm.query, BaseRequest(
-                arguments={
-                    "messages": [{"role": "user", "content": refinement_prompt}],
-                    "temperature": 0.2,
-                    "max_tokens": 1200
-                }
-            ))
-            
+            response = Misc.safe_asyncio_run(
+                self.llm.query,
+                BaseRequest(
+                    arguments={"messages": [{"role": "user", "content": refinement_prompt}], "temperature": 0.2, "max_tokens": 1200}
+                ),
+            )
+
             return Misc.get_response_content(response)
-            
+
         except Exception as e:
             logger.error(f"Failed to refine structure: {e}")
             return f"❌ Error refining structure: {str(e)}\n\nOriginal structure:\n{current_structure}"

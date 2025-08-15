@@ -6,7 +6,7 @@ from typing import Any
 
 from dana.api.core.schemas import DomainKnowledgeTree, DomainNode, DomainKnowledgeUpdateResponse
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
@@ -480,7 +480,7 @@ Agent Context: {agent_context}
 Current Tree:
 {tree_json}
 
-Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
+Task: Add "{new_topic}" under parent "{suggested_parent or "auto-detect"}"
 Additional Context: {context_details or "None"}{chat_context}
 
 CRITICAL REQUIREMENT: When adding "{new_topic}", you MUST automatically generate:
@@ -537,7 +537,7 @@ RESPOND WITH ONLY VALID JSON including multi-level child topics:
   "changes_to_apply": [
     {{
       "action": "add_node_with_hierarchical_children",
-      "parent_path": ["Untitled", "{suggested_parent or 'Untitled'}"],
+      "parent_path": ["Untitled", "{suggested_parent or "Untitled"}"],
       "new_topic": "{new_topic}",
       "hierarchical_structure": {{
         "topic": "{new_topic}",
