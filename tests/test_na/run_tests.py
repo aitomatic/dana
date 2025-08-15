@@ -17,7 +17,6 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 from dana.core.lang.parser.dana_parser import parse_program
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -57,8 +56,17 @@ def run_test(na_file):
     print(f"Running test: {Path(na_file).name}")
 
     # Clear registries for test isolation
-    StructTypeRegistry.clear()
-    MethodRegistry.clear()
+    from dana.registry import get_global_registry
+
+    registry = get_global_registry()
+    registry.clear_all()
+
+    # Reload core functions after clearing
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+    do_register_py_builtins(registry.functions)
+    register_py_wrappers(registry.functions)
 
     try:
         # Read the .na file

@@ -7,7 +7,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.core.resource.resource_registry import ResourceTypeRegistry
+from dana.registries.type_registry import global_resource_type_registry
 
 
 def initialize_resource_system() -> None:
@@ -27,7 +27,7 @@ def reset_resource_system() -> None:
     This is primarily useful for testing when you need to reinitialize
     the resource system.
     """
-    ResourceTypeRegistry.clear()
+    global_resource_type_registry.types.clear()
 
 
 __all__ = [

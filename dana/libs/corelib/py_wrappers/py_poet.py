@@ -132,7 +132,7 @@ def py_poet_call(
     registry = interpreter.function_registry
 
     # Resolve the original function
-    original_func, func_type, metadata = registry.resolve(func_name)
+    original_func, func_type, metadata = registry.resolve_with_type(func_name)
 
     # TODO: Create POET executor and wrap the function (Alpha: deferred)
     # poe_executor = POETExecutor(config)

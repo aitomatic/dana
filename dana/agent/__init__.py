@@ -14,22 +14,25 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from .agent_instance import (
-    AgentType,
+from dana.registries.type_registry import (
     AgentTypeRegistry,
-    AgentInstance,
-    agent_type_registry,
     create_agent_instance,
     get_agent_type,
+    global_agent_type_registry,
     register_agent_type,
 )
 
+from .agent_instance import (
+    AgentInstance,
+    AgentType,
+)
+
 __all__ = [
-    "AgentType",
     "AgentInstance",
+    "AgentType",
     "AgentTypeRegistry",
-    "agent_type_registry",
-    "register_agent_type",
-    "get_agent_type",
+    "global_agent_type_registry",
     "create_agent_instance",
+    "get_agent_type",
+    "register_agent_type",
 ]

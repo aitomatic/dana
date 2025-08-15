@@ -6,8 +6,8 @@ from dana.core.runtime.modules.errors import (
     CircularImportError,
     ModuleNotFoundError,
 )
-from dana.core.runtime.modules.registry import ModuleRegistry
 from dana.core.runtime.modules.types import Module, ModuleSpec
+from dana.registries.module_registry import ModuleRegistry
 
 
 def test_registry_singleton():

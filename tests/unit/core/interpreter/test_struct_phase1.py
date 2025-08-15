@@ -19,7 +19,6 @@ from dana.core.lang.ast import (
 )
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
     create_struct_instance,
     create_struct_type_from_ast,
     register_struct_from_ast,
@@ -32,7 +31,17 @@ class TestStructParsing:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.clear_all()
+
+        # Reload core functions after clearing
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+        do_register_py_builtins(registry.functions)
+        register_py_wrappers(registry.functions)
 
     def test_struct_definition_parsing(self):
         """Test parsing basic struct definition."""
@@ -146,7 +155,17 @@ class TestStructTypeSystem:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.clear_all()
+
+        # Reload core functions after clearing
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+        do_register_py_builtins(registry.functions)
+        register_py_wrappers(registry.functions)
 
     def test_struct_type_creation(self):
         """Test creating StructType from AST."""
@@ -174,10 +193,13 @@ class TestStructTypeSystem:
         register_struct_from_ast(struct_def)
 
         # Verify registration
-        assert StructTypeRegistry.exists("Person")
-        assert "Person" in StructTypeRegistry.list_types()
+        from dana.registry import get_global_registry
 
-        retrieved_type = StructTypeRegistry.get("Person")
+        registry = get_global_registry()
+        assert registry.types.has_struct_type("Person")
+        assert "Person" in registry.types.list_struct_types()
+
+        retrieved_type = registry.types.get_struct_type("Person")
         assert retrieved_type is not None
         assert retrieved_type.name == "Person"
 
@@ -201,8 +223,11 @@ class TestStructTypeSystem:
         register_struct_from_ast(struct_def1)
 
         # Verify the struct is still registered
-        assert StructTypeRegistry.exists("Test")
-        retrieved_type = StructTypeRegistry.get("Test")
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        assert registry.types.has_struct_type("Test")
+        retrieved_type = registry.types.get_struct_type("Test")
         assert retrieved_type is not None
         assert retrieved_type.name == "Test"
 
@@ -317,7 +342,17 @@ class TestStructIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.clear_all()
+
+        # Reload core functions after clearing
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+        do_register_py_builtins(registry.functions)
+        register_py_wrappers(registry.functions)
 
     def test_parse_and_register_struct(self):
         """Test parsing struct definition and registering it."""
@@ -333,7 +368,10 @@ struct Temperature:
         register_struct_from_ast(struct_def)
 
         # Verify registration worked
-        assert StructTypeRegistry.exists("Temperature")
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        assert registry.types.has_struct_type("Temperature")
 
         # Create instance
         temp = create_struct_instance("Temperature", celsius=25.0, fahrenheit=77.0)
@@ -371,5 +409,8 @@ struct Circle:
         register_struct_from_ast(point_def)
         register_struct_from_ast(circle_def)
 
-        assert StructTypeRegistry.exists("Point")
-        assert StructTypeRegistry.exists("Circle")
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        assert registry.types.has_struct_type("Point")
+        assert registry.types.has_struct_type("Circle")

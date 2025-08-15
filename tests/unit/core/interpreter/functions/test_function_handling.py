@@ -299,7 +299,7 @@ def test_enhanced_function_registry_operations():
     assert not registry.has("bar")
 
     # Resolve the function
-    func, func_type, metadata = registry.resolve("foo")
+    func, func_type, metadata = registry.resolve_with_type("foo")
     assert callable(func)
     assert func_type == FunctionType.PYTHON  # Registry now returns enum correctly
     assert isinstance(metadata, FunctionMetadata)

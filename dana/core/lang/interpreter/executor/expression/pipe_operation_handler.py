@@ -446,7 +446,7 @@ class PipeOperationHandler(Loggable):
         ):
             registry = self.parent_executor.parent._function_executor.function_registry
             if registry.has(identifier.name):
-                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                resolved_func, func_type, metadata = registry.resolve_with_type(identifier.name)
                 # Registry should only contain callable functions, but validate to be safe
                 if not callable(resolved_func):
                     raise SandboxError(f"Registry contains non-callable for '{identifier.name}': {type(resolved_func).__name__}")

@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dana.agent import AgentType, register_agent_type
+from dana.agent import AgentType
+from dana.registries import register_agent_type
 from dana.common.utils.misc import Misc
 from dana.integrations.a2a.client.a2a_client import BaseA2AClient
 

@@ -187,7 +187,8 @@ class AgentHandler(Loggable):
                     default_value = self.parent_executor.parent.execute(field.default_value, context)
                     field_defaults[field.name] = default_value
 
-            from dana.agent import AgentType, register_agent_type
+            from dana.agent import AgentType
+            from dana.registries import register_agent_type
 
             agent_type = AgentType(
                 name=node.name,
@@ -220,7 +221,8 @@ class AgentHandler(Loggable):
         """Create and bind a singleton agent instance from a blueprint with optional overrides."""
         try:
             # Find the blueprint type
-            from dana.agent import AgentInstance, AgentType, get_agent_type, register_agent_type
+            from dana.agent import AgentInstance, AgentType
+            from dana.registries import get_agent_type, register_agent_type
 
             blueprint_type = get_agent_type(node.blueprint_name)
             if blueprint_type is None:
@@ -243,8 +245,7 @@ class AgentHandler(Loggable):
             instance_type = blueprint_type
             if node.alias_name:
                 derived = AgentType(
-                    # name=node.alias_name,
-                    name=node.blueprint_name,
+                    name=node.alias_name,
                     fields=dict(getattr(blueprint_type, "fields", {})),
                     field_order=list(getattr(blueprint_type, "field_order", [])),
                     field_defaults=dict(merged_defaults) if merged_defaults else {},
@@ -275,7 +276,8 @@ class AgentHandler(Loggable):
     def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
         """Create a base AgentType with default methods and bind an instance to the alias name."""
         try:
-            from dana.agent import AgentInstance, AgentType, register_agent_type
+            from dana.agent import AgentInstance, AgentType
+            from dana.registries import register_agent_type
 
             # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
             base_type = AgentType(

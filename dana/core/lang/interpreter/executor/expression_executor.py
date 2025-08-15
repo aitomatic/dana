@@ -914,7 +914,7 @@ class ExpressionExecutor(BaseExecutor):
         if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
             registry = context._interpreter.function_registry  # type: ignore
             if registry.has(identifier.name):
-                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                resolved_func, func_type, metadata = registry.resolve_with_type(identifier.name)
                 return resolved_func
 
         # Return None if not found (will be handled by caller)

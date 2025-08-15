@@ -1,7 +1,8 @@
 import pytest
 
 from dana.core.runtime.modules.loader import ModuleLoader
-from dana.core.runtime.modules.registry import ModuleRegistry
+
+# ModuleRegistry is imported in the registry fixture
 
 
 def pytest_addoption(parser):
@@ -74,4 +75,9 @@ def loader(search_paths, registry):
 @pytest.fixture
 def registry():
     """Create a ModuleRegistry instance for testing."""
-    return ModuleRegistry()
+    from dana.registries.module_registry import ModuleRegistry
+
+    registry = ModuleRegistry()
+    # Clear the registry before each test to ensure clean state
+    registry.clear()
+    return registry

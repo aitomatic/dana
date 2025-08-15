@@ -139,7 +139,7 @@ class ComposedFunction(SandboxFunction):
             # Try to use the stored function registry
             if self._function_registry:
                 try:
-                    resolved_func, func_type, metadata = self._function_registry.resolve(func, None)
+                    resolved_func, func_type, metadata = self._function_registry.resolve_with_type(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
                     elif callable(resolved_func):
@@ -152,7 +152,7 @@ class ComposedFunction(SandboxFunction):
             interpreter = getattr(context, "_interpreter", None)
             if interpreter and hasattr(interpreter, "function_registry"):
                 try:
-                    resolved_func, func_type, metadata = interpreter.function_registry.resolve(func, None)
+                    resolved_func, func_type, metadata = interpreter.function_registry.resolve_with_type(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
                     elif callable(resolved_func):

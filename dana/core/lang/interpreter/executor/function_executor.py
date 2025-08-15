@@ -37,8 +37,8 @@ from dana.core.lang.interpreter.executor.function_name_utils import FunctionName
 from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import (
     UnifiedFunctionDispatcher,
 )
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class FunctionExecutor(BaseExecutor):
@@ -256,11 +256,29 @@ class FunctionExecutor(BaseExecutor):
                     evaluated_kwargs[key] = self._evaluate_expression(value_expr, context)
 
                 # Call the decorator factory with arguments
-                actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                try:
+                    actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                except TypeError as e:
+                    # Check if the function expects a context parameter
+                    if "context" in str(e) and "missing" in str(e):
+                        actual_decorator = decorator_func(context, *evaluated_args, **evaluated_kwargs)
+                    elif "multiple values for argument" in str(e):
+                        # Handle case where arguments are passed both positionally and as keywords
+                        # Try calling with context as first argument and only keyword arguments
+                        actual_decorator = decorator_func(context, **evaluated_kwargs)
+                    else:
+                        raise
                 result = actual_decorator(result)
             else:
                 # Simple decorator (no arguments)
-                result = decorator_func(result)
+                try:
+                    result = decorator_func(result)
+                except TypeError as e:
+                    # Check if the function expects a context parameter
+                    if "context" in str(e) and "missing" in str(e):
+                        result = decorator_func(context, result)
+                    else:
+                        raise
 
         return result
 
@@ -286,12 +304,12 @@ class FunctionExecutor(BaseExecutor):
 
             for namespace in namespaces_to_check:
                 if self.function_registry.has(decorator_name, namespace):
-                    func, _, _ = self.function_registry.resolve(decorator_name, namespace)
+                    func, _, _ = self.function_registry.resolve_with_type(decorator_name, namespace)
                     return func
 
             # Fallback: search without specifying namespace (searches all namespaces)
             if self.function_registry.has(decorator_name):
-                func, _, _ = self.function_registry.resolve(decorator_name)
+                func, _, _ = self.function_registry.resolve_with_type(decorator_name)
                 return func
 
         # Try context lookups - search all scopes systematically

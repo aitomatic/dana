@@ -49,11 +49,11 @@ class DanaTUI(App):
     }
     
     .agents-section {
-        height: 50%;
+        height: 30%;
     }
     
     .detail-section {
-        height: 50%;
+        height: 1fr;
     }
     
     /* Panel titles - minimal styling to respect terminal theme */
@@ -117,7 +117,6 @@ class DanaTUI(App):
     /* Agents list - use design system */
     #agents-list {
         border: round $border;
-        height: 1fr;
         background: $surface;
         color: $text;
         overflow: auto;
@@ -127,7 +126,6 @@ class DanaTUI(App):
     /* Agent detail - use design system */
     #detail-log {
         border: round $border;
-        height: 1fr;
         background: $surface;
         color: $text;
         overflow: auto;
