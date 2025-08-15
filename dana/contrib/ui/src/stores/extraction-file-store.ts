@@ -196,7 +196,10 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
             ),
           }));
 
-          const extractParams = { document_id: documentId };
+          const extractParams = {
+            document_id: documentId,
+            use_deep_extraction: true, // Enable deep extraction for auto-extraction
+          };
           const deep = await apiService.deepExtract(extractParams);
           const docs = (deep.file_object?.pages || []).map((p) => {
             return {
@@ -300,6 +303,7 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
           const deep = await apiService.deepExtract({
             document_id: documentId,
             prompt: fileItem.prompt,
+            use_deep_extraction: true, // Enable deep extraction for batch processing
           });
           const docs = (deep.file_object?.pages || []).map((p) => {
             return {
