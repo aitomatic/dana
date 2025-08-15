@@ -133,9 +133,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
 
   // Get documents from either deep extraction or original data
   const documents =
-    deepExtractedDocuments?.length > 0
-      ? deepExtractedDocuments
-      : selectedFile?.data?.documents || [];
+    deepExtractedDocuments?.length > 0 ? deepExtractedDocuments : selectedFile?.documents || [];
 
   // Navigation functions
   const goBack = (): void => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
@@ -211,7 +209,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                 {/* Header */}
                 <div className="flex gap-2 justify-between items-center p-4 border-b border-gray-200">
                   <span className="text-sm font-semibold text-gray-600">
-                    {isDeepExtracted ? 'Deep Extract' : 'Standard Extract'}
+                    Extract {documents.length > 0 && `(${documents.length} pages)`}
                   </span>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls
@@ -250,7 +248,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                       onSave={handleSave}
                       onEdit={handleEdit}
                       isUploading={selectedFile?.status === 'uploading'}
-                      isDeepExtracting={isDeepExtracting}
+                      isDeepExtracting={isDeepExtracting || selectedFile?.status === 'extracting'}
                     />
                   </div>
                 </div>
@@ -298,6 +296,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
             totalPages={documents.length}
             onBack={goBack}
             onNext={goNext}
+            isDisabled={isDeepExtracting}
           />
         </div>
       )}

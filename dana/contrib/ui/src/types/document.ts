@@ -14,6 +14,7 @@ export interface DocumentRead extends DocumentBase {
   filename: string;
   file_size: number;
   mime_type: string;
+  source_document_id?: number; // For JSON extraction files, links to original PDF
   created_at: string; // ISO datetime string
   updated_at: string; // ISO datetime string
 }

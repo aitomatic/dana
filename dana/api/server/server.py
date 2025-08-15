@@ -7,10 +7,9 @@ import sys
 import time
 from typing import Any, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi import WebSocket, WebSocketDisconnect
 
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
@@ -77,19 +76,20 @@ def create_app():
 
     # Include routers under /api
     # New consolidated routers (preferred)
+    from ..routers.agent_test import router as agent_test_router
     from ..routers.agents import router as agents_router
-    from ..routers.chat import router as new_chat_router
-    from ..routers.conversations import router as new_conversations_router
-    from ..routers.documents import router as new_documents_router
-    from ..routers.topics import router as new_topics_router
-    from ..routers.poet import router as poet_router
-    from ..routers.domain_knowledge import router as domain_knowledge_router
-    from ..routers.smart_chat import router as smart_chat_router
 
     # Legacy routers (for endpoints not yet migrated)
     from ..routers.api import router as api_router
+    from ..routers.chat import router as new_chat_router
+    from ..routers.conversations import router as new_conversations_router
+    from ..routers.documents import router as new_documents_router
+    from ..routers.domain_knowledge import router as domain_knowledge_router
+    from ..routers.extract_documents import router as extract_documents_router
     from ..routers.main import router as main_router
-    from ..routers.agent_test import router as agent_test_router
+    from ..routers.poet import router as poet_router
+    from ..routers.smart_chat import router as smart_chat_router
+    from ..routers.topics import router as new_topics_router
 
     app.include_router(main_router)
 
@@ -106,6 +106,7 @@ def create_app():
         app.include_router(smart_chat_v2_router, prefix="/api")
     else:
         app.include_router(smart_chat_router, prefix="/api")
+    app.include_router(extract_documents_router, prefix="/api")
     app.include_router(ws_router)
 
     # Keep legacy api router for endpoints not yet migrated:

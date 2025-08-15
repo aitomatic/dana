@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -91,6 +91,7 @@ class DocumentRead(DocumentBase):
     filename: str
     file_size: int
     mime_type: str
+    source_document_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -101,6 +102,12 @@ class DocumentUpdate(BaseModel):
     original_filename: str | None = None
     topic_id: int | None = None
     agent_id: int | None = None
+
+
+class ExtractionDataRequest(BaseModel):
+    original_filename: str
+    extraction_results: dict
+    source_document_id: int  # ID of the raw PDF file
 
 
 class RunNAFileRequest(BaseModel):
@@ -455,7 +462,7 @@ class DomainNode(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     topic: str
-    children: list["DomainNode"] = []
+    children: list[DomainNode] = []
 
 
 class DomainKnowledgeTree(BaseModel):
@@ -562,3 +569,38 @@ class ChatWithIntentResponse(BaseModel):
     updated_tree: DomainKnowledgeTree | None = None
 
     error: str | None = None
+
+
+# Visual Document Extraction schemas
+class DeepExtractionRequest(BaseModel):
+    """Request schema for visual document extraction endpoint"""
+
+    document_id: int
+    prompt: str | None = None
+    use_deep_extraction: bool = False
+    config: dict[str, Any] | None = None
+
+
+class PageContent(BaseModel):
+    """Schema for a single page content"""
+
+    page_number: int
+    page_content: str
+    page_hash: str
+
+
+class FileObject(BaseModel):
+    """Schema for file object in extraction response"""
+
+    file_name: str
+    cache_key: str
+    total_pages: int
+    total_words: int
+    file_full_path: str
+    pages: list[PageContent]
+
+
+class ExtractionResponse(BaseModel):
+    """Response schema for deep extraction endpoint"""
+
+    file_object: FileObject
