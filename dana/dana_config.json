@@ -30,12 +30,12 @@
         "provider_configs": {
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
-                "base_url": "http://localhost:8000/v1",
-                "model_name": "microsoft/Phi-3.5-mini-instruct"
+                "base_url": "env:LOCAL_BASE_URL",
+		"model_name": "env:LOCAL_MODEL_NAME"
             },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
-                "base_url": "https://api.openai.com/v1"
+                "base_url": "env:OPENAI_BASE_URL"
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",

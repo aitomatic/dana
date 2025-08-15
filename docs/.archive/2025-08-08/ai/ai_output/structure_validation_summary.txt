@@ -1,0 +1,7 @@
+=== AI STRUCTURE VALIDATION SUMMARY ===
+Date: Tue Aug  5 12:32:11 PDT 2025
+Navigation files: 0
+Missing nav files:        2
+Orphaned files:      326
+Internal links:        0
+MkDocs config valid: YES
