@@ -124,8 +124,10 @@ def create_app():
         from ..routers.smart_chat_v2 import router as smart_chat_v2_router
 
         app.include_router(smart_chat_v2_router, prefix="/api")
+        print("\033[92mInitializing smart chat v2 router\033[0m")
     else:
         app.include_router(smart_chat_router, prefix="/api")
+        print("\033[96mInitializing smart chat router\033[0m")
     app.include_router(ws_router)
 
     # Keep legacy api router for endpoints not yet migrated:

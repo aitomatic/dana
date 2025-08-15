@@ -471,8 +471,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
         # Add the response line at the end
         escaped_message = request.message.replace("\\", "\\\\").replace('"', '\\"')
+        # NOTE : REMEBER TO PUT escaped_message in triple quotes
         additional_code = (
-            f'\n\n# Test execution\nuser_query = "{escaped_message}"\nresponse = this_agent.solve(user_query)\nprint(response)\n'
+            f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = this_agent.solve(user_query)\nprint(response)\n'
         )
         temp_content = original_content + additional_code
 
@@ -504,18 +505,20 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
                 try:
                     # Create sandbox and override print function for streaming
-                    # sandbox = DanaSandbox(context=sandbox_context)
-                    # sandbox._ensure_initialized()  # Make sure function registry is available
+                    sandbox = DanaSandbox(context=sandbox_context)
+                    sandbox._ensure_initialized()  # Make sure function registry is available
 
                     # Override both Dana print function and Python stdout for complete coverage
                     # with streaming_print_override(sandbox.function_registry, log_streamer):
-                    with StdoutContextManager(log_streamer):
-                        # result = sandbox.execute_file(temp_file_path)
-                        result = DanaSandbox.execute_file_once(temp_file_path, context=sandbox_context)
+                    with streaming_print_override(sandbox.function_registry, log_streamer):
+                        with StdoutContextManager(log_streamer):
+                            # result = DanaSandbox.execute_file_once(temp_file_path, context=sandbox_context)
+                            result = sandbox.execute_file(temp_file_path)
 
-                    if hasattr(result, "error"):
+                    if hasattr(result, "error") and result.error is not None:
                         logger.error(f"Error: {result.error}")
                         logger.exception(result.error)
+                        print(f"\033[31mSandbox error: {result.error}\033[0m")
 
                     state = sandbox_context.get_state()
                     response_text = state.get("local", {}).get("response", "")

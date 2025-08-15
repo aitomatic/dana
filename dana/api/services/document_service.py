@@ -387,7 +387,8 @@ class DocumentService:
                 logger.info(f"Building RAG index for agent {agent_id} with {len(source_paths)} documents")
 
                 # Create agent-specific cache directory
-                cache_dir = os.path.join(folder_path, ".rag_cache")
+                cache_dir = os.path.abspath(os.path.join(folder_path, ".cache/rag"))
+                
 
                 # Create RAG resource with force_reload to rebuild index
                 rag_resource = RAGResource(

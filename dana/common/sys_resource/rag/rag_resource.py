@@ -114,6 +114,11 @@ class RAGResource(BaseSysResource):
         return new_sources
 
     def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
+        # If cache_dir is absolute, use it as is
+        if cache_dir and os.path.isabs(cache_dir):
+            return cache_dir
+        
+        # If cache_dir is relative, try to combine it with DANAPATH
         if danapath:
             if cache_dir:
                 return os.path.join(danapath, cache_dir)
