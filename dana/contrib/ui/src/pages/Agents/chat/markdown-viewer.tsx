@@ -1,4 +1,4 @@
-import { useMemo, useState, Fragment } from 'react';
+import { useMemo, Fragment } from 'react';
 import type { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -6,22 +6,148 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 
+// Import KaTeX CSS directly
+import 'katex/dist/katex.min.css';
 
-let defaultStyle: any;
+let codeStyle: any;
 try {
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  defaultStyle = require('react-syntax-highlighter/dist/styles/default').default;
+  codeStyle = require('react-syntax-highlighter/dist/styles/hljs/vs2015').default;
 } catch (e) {
-  defaultStyle = {};
+  try {
+    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    codeStyle = require('react-syntax-highlighter/dist/styles/default').default;
+  } catch (e2) {
+    codeStyle = {};
+  }
 }
 import 'katex/dist/katex.min.css';
 
 import { cn } from '@/lib/utils';
-import { IconCheck, IconCopy, IconPlayerPlay } from '@tabler/icons-react';
 
 import styles from './MarkdownViewer.module.css';
 import ReactCodeBlock from './react-code-block';
+
+// Comprehensive markdown pre-processing function
+const preprocessMarkdownContent = (content: string): string => {
+  let processed = content;
+
+  // 1. NUMBERED LIST TRANSFORMATION
+  // Convert numbered lists to headers for better visual hierarchy
+  // Example: "1. **Future Value (FV):**" -> "## 1. Future Value (FV)"
+  processed = processed.replace(/^(\d+)\.\s+\*\*(.*?)\*\*:?\s*$/gm, (_, number, title) => {
+    return `## ${number}. ${title}`;
+  });
+
+  // 2. LATEX TO CODE BLOCK TRANSFORMATION
+  // Convert LaTeX notation to code blocks for better readability
+  // Convert \\[ ... \\] to code blocks
+  processed = processed.replace(/\\\[\s*\n?([\s\S]*?)\n?\s*\\\]/g, (_, mathContent) => {
+    const cleanMath = mathContent
+      .replace(/\\times/g, '×')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1 / $2)')
+      .replace(/\\sum/g, 'Σ')
+      .replace(/\\\(/g, '')
+      .replace(/\\\)/g, '')
+      .trim();
+    return `\n\`\`\`\n${cleanMath}\n\`\`\`\n`;
+  });
+
+  // Convert \\( ... \\) to inline code
+  processed = processed.replace(/\\\((.*?)\\\)/g, (_, mathContent) => {
+    const cleanMath = mathContent
+      .replace(/\\times/g, '×')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1 / $2)')
+      .trim();
+    return `\`${cleanMath}\``;
+  });
+
+  // 3. HORIZONTAL RULES ENHANCEMENT - REMOVED
+  // No longer adding horizontal rules between sections
+
+  // 4. VARIABLE DEFINITION ENHANCEMENT
+  // Enhance "Where:" sections with better formatting
+  processed = processed.replace(/^(\s*)-\s+Where\s+\\\(([^)]+)\\\)\s*=\s*(.+)$/gm, '- **$2** = $3');
+
+  // Handle regular variable definitions
+  processed = processed.replace(/^(\s*)-\s+\*\*([^*]+)\*\*\s*=\s*(.+)$/gm, '$1- **$2** = $3');
+
+  // Split comma-separated variable definitions into separate list items
+  // Handle patterns like "Where PV = Present Value, r = interest rate, n = number of periods"
+  processed = processed.replace(/^(\s*)[-*]\s*Where\s+(.+)$/gm, (_, indent, definitions) => {
+    // Split by comma and create separate list items
+    const items = definitions.split(',').map((item: string) => {
+      const trimmed = item.trim();
+      // Match pattern like "PV = Present Value" or "r = interest rate"
+      const varMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+      if (varMatch) {
+        return `${indent}- **${varMatch[1]}** = ${varMatch[2]}`;
+      }
+      return `${indent}- ${trimmed}`;
+    });
+    return items.join('\n');
+  });
+
+  // Also handle comma-separated variable definitions in regular list items
+  // Handle patterns like "- PV = Present Value, r = interest rate, n = number of periods"
+  processed = processed.replace(
+    /^(\s*)[-*]\s*([A-Z]+\s*=\s*[^,]+(?:,\s*[A-Z]+\s*=\s*[^,]+)+)\.?\s*$/gm,
+    (_, indent, definitions) => {
+      // Split by comma and create separate list items
+      const items = definitions.split(',').map((item: string) => {
+        const trimmed = item.trim().replace(/\.$/, ''); // Remove trailing period
+        // Match pattern like "PV = Present Value" or "r = interest rate"
+        const varMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+        if (varMatch) {
+          return `${indent}- **${varMatch[1]}** = ${varMatch[2]}`;
+        }
+        return `${indent}- ${trimmed}`;
+      });
+      return items.join('\n');
+    },
+  );
+
+  // 5. CLEAN UP EXTRA WHITESPACE
+  // Remove excessive newlines
+  processed = processed.replace(/\n{4,}/g, '\n\n\n');
+
+  // Clean up whitespace around headers
+  processed = processed.replace(/^(#{1,6}\s+.*?)(\n{2,})/gm, '$1\n\n');
+
+  // 6. MATH SYMBOL STANDARDIZATION
+  // Replace common LaTeX symbols with Unicode
+  processed = processed
+    .replace(/\\times/g, '×')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\pm/g, '±')
+    .replace(/\\infty/g, '∞')
+    .replace(/\\alpha/g, 'α')
+    .replace(/\\beta/g, 'β')
+    .replace(/\\gamma/g, 'γ')
+    .replace(/\\Delta/g, 'Δ')
+    .replace(/\\sum/g, 'Σ');
+
+  // 7. CODE BLOCK FORMATTING
+  // Ensure formulas in code blocks are properly formatted
+  processed = processed.replace(/```\n([^`]+)\n```/g, (_, codeContent) => {
+    const formattedCode = codeContent
+      .trim()
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/\s*=\s*/g, ' = ') // Standardize equals spacing
+      .replace(/\s*\+\s*/g, ' + ') // Standardize plus spacing
+      .replace(/\s*-\s*/g, ' - ') // Standardize minus spacing
+      .replace(/\s*\*\s*/g, ' × ') // Use multiplication symbol
+      .replace(/\s*\/\s*/g, ' / '); // Standardize division spacing
+
+    return `\`\`\`\n${formattedCode}\n\`\`\``;
+  });
+
+  return processed;
+};
 
 // Type definitions for markdown components
 interface CodeProps {
@@ -49,13 +175,12 @@ const regex = /(@[^@]*?\.(?:\w+))/g;
 
 // Enhanced @ mention formatting with better styling and interaction
 const MentionSpan = ({ mention }: { mention: string }) => {
-  const [_, setIsShowSources] = useState(false);
   const handleMentionClick = () => {
-    setIsShowSources(true);
+    // Future implementation for showing sources
   };
   return (
     <span
-      className="font-medium text-brand-600 bg-brand-50 rounded-md px-1.5 py-0.5 cursor-pointer hover:bg-brand-100 transition-colors"
+      className="font-medium text-brand-600 bg-brand-50 rounded-md px-1.5 py-0.5 cursor-pointer"
       onClick={handleMentionClick}
     >
       {mention}
@@ -63,124 +188,29 @@ const MentionSpan = ({ mention }: { mention: string }) => {
   );
 };
 
-// export const CitationName = ({ name, index }: { name: string; index: number }) => {
-//   const fileName = name.split("/").at(-1);
-//   return (
-//     <Tooltip key={name}>
-//       <TooltipTrigger type="button">
-//         <div className="grid grid-cols-1 px-1 py-1 text-xs truncate rounded-full text-brand-700 bg-brand-50">
-//           {fileName} [{index + 1}]
-//         </div>
-//       </TooltipTrigger>
-//       <TooltipPortal>
-//         <TooltipContent className="cursor-pointer">
-//           <div className="flex-1 text-sm font-normal">{name}</div>
-//         </TooltipContent>
-//       </TooltipPortal>
-//     </Tooltip>
-//   );
-// };
-
-// export const RenderCitations = ({ citations, index }: { citations: any[]; index: number }) => {
-//   const item = useMemo(() => {
-//     if (index > citations.length - 1) return null;
-
-//     const citation = citations[index];
-//     if (!citation) return null;
-
-//     if (Array.isArray(citation.resources) && citation.resources.length > 0) {
-//       return {
-//         id: index,
-//         name: citation.resources[0].name,
-//         resources: citation.resources,
-//       };
-//     }
-
-//     if (citation.source) {
-//       return {
-//         id: index,
-//         name: citation.source.split("/").at(-1),
-//       };
-//     }
-
-//     if (Array.isArray(citation.retrievals) && citation.retrievals.length > 0) {
-//       return {
-//         id: index,
-//         name: citation.retrievals,
-//       };
-//     }
-
-//     return {
-//       id: index,
-//       name: citation.name ?? "",
-//     };
-//   }, [citations, index]);
-
-//   if (!item || item.name === "") return null;
-
-//   if (Array.isArray(item.name)) {
-//     return (
-//       <div className="flex flex-wrap items-center gap-1 truncate">
-//         {item.name.map((name, idx) => (
-//           <CitationName key={name} name={name} index={idx} />
-//         ))}
-//       </div>
-//     );
-//   }
-
-//   return <CitationName name={item.name} index={index} />;
-// };
-
-// MermaidBlock Component - Extracted for better organization
 const MermaidBlock = ({ content }: { content: string }) => {
-  const [copiedContent, setCopiedContent] = useState(false);
   const blockId = `mermaid-block-${Math.random().toString(36).substr(2, 9)}`;
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(content);
-    setCopiedContent(true);
-    setTimeout(() => setCopiedContent(false), 2000);
-  };
 
   return (
     <div
-      className="relative grid w-full grid-cols-1 mt-2 mb-4 overflow-hidden border border-gray-200 rounded-lg"
+      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
-      <div className="absolute z-10 flex gap-2 top-2 right-2">
-        <button
-          className="px-2.5 py-1 text-xs bg-background/90 text-gray-900 border border-gray-200 rounded-md shadow-xs hover:bg-gray-50 flex items-center gap-1.5 backdrop-blur-sm"
-          onClick={handleCopyCode}
-          aria-label="Copy code to clipboard"
-        >
-          {copiedContent ? (
-            <IconCheck className="w-4 h-4 text-success-500" />
-          ) : (
-            <IconCopy className="w-4 h-4 text-gray-500" />
-          )}
-          <span>Copy</span>
-        </button>
-        <button
-          className="px-2.5 py-1 text-xs bg-background/90 text-brand-700 border border-gray-200 rounded-md shadow-xs hover:bg-gray-50 flex items-center gap-1.5 backdrop-blur-sm"
-          onClick={() => { }}
-          aria-label="Run Mermaid diagram"
-        >
-          <IconPlayerPlay className="w-4 h-4 text-brand-700" />
-          <span>Preview</span>
-        </button>
-      </div>
       <SyntaxHighlighter
         className="text-sm xl:text-base"
         language="mermaid"
-        style={defaultStyle}
+        style={codeStyle}
         customStyle={{
           margin: 0,
           borderRadius: 0,
-          lineHeight: 1.5,
+          lineHeight: 1.6,
           padding: '1rem',
+          background: 'rgb(30, 30, 30)',
+          fontSize: '0.875rem',
         }}
         showLineNumbers={true}
         wrapLines={true}
+        wrapLongLines={true}
       >
         {content}
       </SyntaxHighlighter>
@@ -190,44 +220,29 @@ const MermaidBlock = ({ content }: { content: string }) => {
 
 // Standard Code Block Component
 export const CodeBlock = ({ content, language }: { content: string; language: string }) => {
-  const [copiedContent, setCopiedContent] = useState(false);
   const blockId = `code-block-${Math.random().toString(36).substr(2, 9)}`;
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(content);
-    setCopiedContent(true);
-    setTimeout(() => setCopiedContent(false), 2000);
-  };
 
   return (
     <div
-      className="relative grid w-full grid-cols-1 mt-2 mb-4 overflow-hidden border border-gray-200 rounded-lg"
+      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
-      <button
-        className="absolute top-2 right-2 z-10 px-2.5 py-1 text-xs bg-background/90 text-gray-900 border border-gray-200 rounded-md shadow-xs hover:bg-gray-50 flex items-center gap-1.5 backdrop-blur-sm"
-        onClick={handleCopyCode}
-        aria-label="Copy code to clipboard"
-      >
-        {copiedContent ? (
-          <IconCheck className="w-4 h-4 text-success-500" />
-        ) : (
-          <IconCopy className="w-4 h-4 text-gray-500" />
-        )}
-        <span>Copy</span>
-      </button>
       <SyntaxHighlighter
         className="text-sm xl:text-base"
         language={language || 'text'}
-        style={defaultStyle}
+        style={codeStyle}
         customStyle={{
           margin: 0,
           borderRadius: 0,
-          lineHeight: 1.5,
+          lineHeight: 1.6,
           padding: '1rem',
+          background: 'rgb(30, 30, 30)',
+          fontSize: '0.875rem',
         }}
         showLineNumbers={true}
         wrapLines={true}
+        wrapLongLines={true}
+        lineNumberStyle={{ color: '#6b7280', fontSize: '0.75rem' }}
       >
         {content}
       </SyntaxHighlighter>
@@ -246,29 +261,100 @@ export const MarkdownViewerSmall = ({
   citations?: any[];
 }) => {
   const refinedContent = useMemo(() => {
-    if (children.startsWith('```markdown')) {
-      children = children.substring(12);
+    let content = children;
+
+    // Handle markdown code block wrapping
+    if (content.startsWith('```markdown')) {
+      content = content.substring(12);
     }
-    if (children.startsWith('```') && !children.startsWith('```c')) {
-      children = children.substring(3);
-      if (children.endsWith('```')) {
-        children = children.slice(0, -3);
+    if (content.startsWith('```') && !content.startsWith('```c')) {
+      content = content.substring(3);
+      if (content.endsWith('```')) {
+        content = content.slice(0, -3);
       }
     }
-    return (
-      (children ?? '')
-        // eslint-disable-next-line
-        // @ts-ignore
-        .replaceAll('$', '\\$')
-        .replace(/\\\[/g, '\n \n \n $ \n ')
-        .replace(/\\\]/g, '\n $ \n\n')
-        .replaceAll('\n', ' \n ')
-    );
-  }, [children]);
+
+    // PRE-PROCESSING: Transform content for better rendering
+    content = preprocessMarkdownContent(content);
+
+    // Only apply math-safe processing if useMath is enabled
+    if (useMath) {
+      // Comprehensive cleanup of standalone $ symbols
+      // Remove lines that contain only a $ symbol (with any whitespace)
+      content = content.replace(/^\s*\$\s*$/gm, '');
+
+      // Remove $ symbols that appear at the beginning of lines followed by whitespace
+      content = content.replace(/^\s*\$\s+/gm, '');
+
+      // Remove $ symbols that appear alone before formulas
+      content = content.replace(/\$\s*\n/g, '\n');
+
+      // Remove $ symbols followed by newlines and any content
+      content = content.replace(/\$\n/g, '\n');
+
+      // Remove $ symbols that appear in their own paragraph
+      content = content.replace(/\n\s*\$\s*\n/g, '\n\n');
+
+      // Remove any remaining isolated $ symbols
+      content = content.replace(/(?:^|\n)\s*\$\s*(?=\n|$)/g, '');
+
+      // Clean up multiple consecutive newlines after removing $ symbols
+      content = content.replace(/\n\s*\n\s*\n+/g, '\n\n');
+
+      // For math rendering, we need to preserve $ symbols and LaTeX syntax
+      // Convert display math from \[ \] to $$ $$ format for better compatibility
+      content = content
+        .replace(/\\\[([\s\S]*?)\\\]/g, '$$\n$1\n$$')
+        .replace(/\$\$([\s\S]*?)\$\$/g, (_, mathContent) => {
+          // Ensure display math is on its own lines
+          return `\n$$${mathContent}$$\n`;
+        });
+
+      // Auto-detect and wrap mathematical expressions that aren't already wrapped
+      // Look for patterns like "FV = PV \times (1 + r)^n" and wrap them in math delimiters
+      content = content.replace(
+        /^(\s*)([\w\s]*?=[\s]*[^\n$]*(?:\\[a-zA-Z]+|[\^_{}]|\\frac|\\sum|\\times|\\cdot)[^\n$]*?)(\s*)$/gm,
+        (match, leading, mathExpr, trailing) => {
+          // Only wrap if not already wrapped in $ delimiters
+          if (mathExpr.includes('$') || mathExpr.match(/^\s*[\w\s]*:\s*$/)) {
+            return match;
+          }
+          return `${leading}$${mathExpr}$${trailing}`;
+        },
+      );
+
+      // Also detect standalone mathematical expressions with LaTeX commands
+      content = content.replace(
+        /(?:^|\n)(\s*)((?:\\[a-zA-Z]+(?:\{[^}]*\})*[\s]*)+[^\n$]*?)(?=\n|$)/gm,
+        (match, leading, mathExpr) => {
+          // Skip if already has $ delimiters or is clearly not math
+          if (
+            mathExpr.includes('$') ||
+            mathExpr.match(/^\s*[a-zA-Z\s]*:\s*$/) ||
+            mathExpr.length < 3
+          ) {
+            return match;
+          }
+          return `\n${leading}$$${mathExpr.trim()}$$\n`;
+        },
+      );
+    } else {
+      // Only escape dollars if math is disabled
+      content = content.replaceAll('$', '\\$');
+    }
+
+    return content;
+  }, [children, useMath]);
 
   const remarkPlugins = useMemo(() => {
     const plugins: any[] = [remarkGfm];
     if (useMath) plugins.push(remarkMath);
+    return plugins;
+  }, [useMath]);
+
+  const rehypePlugins = useMemo(() => {
+    const plugins: any[] = [];
+    if (useMath) plugins.push(rehypeKatex);
     return plugins;
   }, [useMath]);
 
@@ -283,7 +369,7 @@ export const MarkdownViewerSmall = ({
     >
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
-        rehypePlugins={[rehypeKatex as any]}
+        rehypePlugins={rehypePlugins}
         components={{
           code: ({ className, children }: CodeProps) => {
             const content = String(children).trim();
@@ -343,6 +429,35 @@ export const MarkdownViewerSmall = ({
           },
 
           p: ({ children }: ParagraphProps) => {
+            // Helper function to enhance financial terms
+            const enhanceFinancialTerms = (text: string) => {
+              const financialTerms = [
+                'Future Value',
+                'FV',
+                'Present Value',
+                'PV',
+                'Net Present Value',
+                'NPV',
+                'Internal Rate of Return',
+                'IRR',
+                'Return on Investment',
+                'ROI',
+                'Debt-to-Income Ratio',
+                'DTI',
+                'Savings Rate',
+                'interest rate',
+                'discount rate',
+                'cash flow',
+              ];
+
+              let result = text;
+              financialTerms.forEach((term) => {
+                const regex = new RegExp(`\\b(${term})\\b`, 'gi');
+                result = result.replace(regex, `<span class="financial-term">$1</span>`);
+              });
+              return result;
+            };
+
             if (Array.isArray(children)) {
               // Check if any of the children items contain @ mentions
               const hasAtMention = children.some(
@@ -351,7 +466,7 @@ export const MarkdownViewerSmall = ({
 
               if (hasAtMention) {
                 return (
-                  <p className={`py-1 text-sm xl:text-base text-gray-900`}>
+                  <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
                     {children.map((child, index) => {
                       if (typeof child === 'string' && child.includes('@')) {
                         const parts = child.split(regex);
@@ -362,9 +477,28 @@ export const MarkdownViewerSmall = ({
                                 // Use the enhanced MentionSpan component
                                 return <MentionSpan key={partIndex} mention={part} />;
                               }
-                              return <span key={partIndex}>{part}</span>;
+                              return (
+                                <span
+                                  key={partIndex}
+                                  dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(part) }}
+                                />
+                              );
                             })}
                           </Fragment>
+                        );
+                      }
+                      if (typeof child === 'string') {
+                        // Skip rendering if the child only contains a $ symbol
+                        const trimmedContent = child.trim();
+                        if (trimmedContent === '$' || trimmedContent === '') {
+                          return null;
+                        }
+
+                        return (
+                          <span
+                            key={index}
+                            dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(child) }}
+                          />
                         );
                       }
                       return child;
@@ -372,31 +506,75 @@ export const MarkdownViewerSmall = ({
                   </p>
                 );
               }
+
+              // Handle array children without @ mentions
+              return (
+                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
+                  {children.map((child, index) => {
+                    if (typeof child === 'string') {
+                      // Skip rendering if the child only contains a $ symbol
+                      const trimmedContent = child.trim();
+                      if (trimmedContent === '$' || trimmedContent === '') {
+                        return null;
+                      }
+
+                      return (
+                        <span
+                          key={index}
+                          dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(child) }}
+                        />
+                      );
+                    }
+                    return child;
+                  })}
+                </p>
+              );
             }
 
             // Handle string children with @ mentions
             if (typeof children === 'string' && children.includes('@')) {
               const parts = children.split(regex);
               return (
-                <p className={`py-1 text-sm xl:text-base text-gray-900`}>
+                <p className={`py-1 text-sm text-gray-900 xl:text-base`}>
                   {parts.map((part, index) => {
                     if (part.startsWith('@')) {
                       // Use the enhanced MentionSpan component
                       return <MentionSpan key={index} mention={part} />;
                     }
-                    return <span key={index}>{part}</span>;
+                    return (
+                      <span
+                        key={index}
+                        dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(part) }}
+                      />
+                    );
                   })}
                 </p>
               );
             }
 
-            // Default paragraph rendering
-            return <p className={`py-1 text-sm xl:text-base text-gray-900`}>{children}</p>;
+            // Default paragraph rendering with financial term enhancement
+            if (typeof children === 'string') {
+              // Skip rendering if the paragraph only contains a $ symbol
+              const trimmedContent = children.trim();
+              if (trimmedContent === '$' || trimmedContent === '') {
+                return null;
+              }
+
+              return (
+                <p
+                  className={`py-1 text-sm text-gray-900 xl:text-base`}
+                  dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(children) }}
+                />
+              );
+            }
+
+            // For non-string children (React elements), render normally without financial term enhancement
+            return <p className={`py-1 text-sm text-gray-900 xl:text-base`}>{children}</p>;
           },
 
           table: ({ children }: TableProps) => (
-            <div className="w-full my-4 overflow-x-auto">
-              <table className="w-full overflow-hidden border border-collapse border-gray-200 rounded">
+            <div className="overflow-x-auto my-4 w-full">
+              <table className="overflow-hidden w-full rounded border border-gray-200 border-collapse">
                 {children}
               </table>
             </div>
@@ -409,7 +587,7 @@ export const MarkdownViewerSmall = ({
           th: ({ children }: TableCellProps) => {
             return (
               <th
-                className={`px-4 py-3 font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr text-sm`}
+                className={`px-4 py-3 text-sm font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr`}
               >
                 {children}
               </th>
@@ -424,7 +602,7 @@ export const MarkdownViewerSmall = ({
               children.$$typeof === Symbol.for('react.element')
             ) {
               return (
-                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
               );
             }
 
@@ -439,7 +617,7 @@ export const MarkdownViewerSmall = ({
 
               if (hasReactElements) {
                 return (
-                  <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                  <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
                 );
               }
             }
@@ -458,13 +636,13 @@ export const MarkdownViewerSmall = ({
 
             if (parts?.length === 1) {
               return (
-                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
               );
             }
 
             return (
-              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>
-                <span className="inline-flex flex-wrap items-center gap-1">
+              <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>
+                <span className="inline-flex flex-wrap gap-1 items-center">
                   {parts?.map((part, index) => {
                     return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                   })}
@@ -505,7 +683,7 @@ export const MarkdownViewerSmall = ({
             }
 
             return (
-              <span className="inline-flex flex-wrap items-center gap-1">
+              <span className="inline-flex flex-wrap gap-1 items-center">
                 {parts.map((part, index) => {
                   return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                 })}

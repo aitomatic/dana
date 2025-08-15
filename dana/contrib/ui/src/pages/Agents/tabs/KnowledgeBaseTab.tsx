@@ -70,7 +70,7 @@ const KnowledgeBaseTab: React.FC = () => {
       </div>
 
       {/* Sub-tab content */}
-      <div className="overflow-auto flex-1">{renderSubTabContent()}</div>
+      <div className="overflow-auto flex-1 custom-scrollbar">{renderSubTabContent()}</div>
     </div>
   );
 };

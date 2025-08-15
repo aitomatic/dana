@@ -4,7 +4,7 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { CheckCircleSolid, SystemRestart, Xmark, NavArrowRight, NavArrowDown } from 'iconoir-react';
+import { SystemRestart, Xmark, NavArrowRight } from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
@@ -26,10 +26,10 @@ const nodeStyles = `
 
   @keyframes selectedPulse {
     0%, 100% {
-      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.1);
     }
     50% {
-      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.1);
     }
   }
 `;
@@ -76,7 +76,7 @@ const getStatusIcon = (status?: string) => {
     case 'in_progress':
       return <SystemRestart className="animate-spin" />;
     case 'success':
-      return <CheckCircleSolid className="text-green-600" />;
+      return '';
     case 'failed':
       return <Xmark />;
     default:
@@ -228,12 +228,12 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       return {
         ...baseStyle,
         ...selectionStyle,
-        background: hasChildren ? (isExpanded ? '#EBF8FF' : '#F6FAFF') : '#F6FAFF',
+        background: hasChildren ? (isExpanded ? '#F6FAFF' : '#F6FAFF') : '#F6FAFF',
         border: hasChildren
           ? isExpanded
-            ? '2px solid #3B82F6'
-            : '2px solid #93C5FD'
-          : '2px solid #E0E0E0',
+            ? '1px solid #aac5e6'
+            : '1px solid #aac5e6'
+          : '1px solid #aac5e6',
         fontWeight: hasChildren ? 'bold' : 'normal',
       };
     }
@@ -250,29 +250,29 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#DBEAFE', // Light blue
-          border: '2px solid #3B82F6', // Blue border
+          background: '#E1EBFE', // Light blue
+          border: '2px solid #aac5e6', // Blue border
         };
       case 'success':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#D1FAE5', // Light green
-          border: '2px solid #10B981', // Green border
+          background: '#E1EBFE', // Light green
+          border: '2px solid #aac5e6', // Green border
         };
       case 'failed':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#FEE2E2', // Light red
+          background: '#E1EBFE', // Light red
           border: '2px solid #EF4444', // Red border
         };
       default:
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#F3F4F6', // Light gray
-          border: '2px solid #9CA3AF', // Gray border
+          background: '#E1EBFE', // Light gray
+          // border: '2px solid #9CA3AF', // Gray border
         };
     }
   };
@@ -284,22 +284,23 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           width: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
+          justifyContent: 'space-between',
         }}
       >
-        <span>{nodeData.label}</span>
-        {/* Show expand/collapse icon for nodes with children - moved to the right */}
-        {hasChildren && (
-          <span style={{ fontSize: '16px', marginLeft: 8 }}>
-            {isExpanded ? <NavArrowDown /> : <NavArrowRight />}
-          </span>
-        )}
-        {isLeafNode && knowledgeStatus && (
-          <span style={{ fontSize: '16px', marginLeft: 8 }}>
-            {getStatusIcon(knowledgeStatus.status)}
-          </span>
-        )}
+        <span style={{ textAlign: 'left', flex: 1 }}>{nodeData.label}</span>
+        {/* Icons positioned on the right edge */}
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
+          {hasChildren && (
+            <span style={{ fontSize: '16px' }}>
+              {isExpanded ? '' : <NavArrowRight />}
+            </span>
+          )}
+          {isLeafNode && knowledgeStatus && (
+            <span style={{ fontSize: '16px' }}>
+              {getStatusIcon(knowledgeStatus.status)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Handles can be hidden or removed if not needed */}
