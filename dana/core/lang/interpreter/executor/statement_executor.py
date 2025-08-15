@@ -643,7 +643,7 @@ class StatementExecutor(BaseExecutor):
                 self._bind_declarative_function_parameters(node.parameters, args, kwargs, func_context)
 
                 # Execute the composition expression
-                return self._execute_composition(node.composition, func_context, args)
+                return self._execute_composition(node.composition, func_context, args, kwargs)
 
             return wrapper
 
@@ -737,24 +737,44 @@ class StatementExecutor(BaseExecutor):
         if len(args) > len(param_names):
             raise TypeError(f"Too many positional arguments: expected {len(param_names)}, got {len(args)}")
 
-    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple) -> Any:
+    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple, kwargs: dict = None) -> Any:
         """Execute the composition expression and handle the result appropriately.
 
         Args:
             composition: The composition expression to execute
             func_context: The function execution context
             args: The arguments passed to the function
+            kwargs: The keyword arguments passed to the function
 
         Returns:
             The result of executing the composition
         """
-        # Execute the composition expression in the function context
-        composed_func = self.parent.execute(composition, func_context)
+        # Special handling for ListLiteral in declarative function definitions
+        from dana.core.lang.ast import ListLiteral
 
-        # If the composition is a callable, call it with all arguments
-        if callable(composed_func):
-            if args:
-                return composed_func(*args)  # Pass all arguments, not just the first
+        if isinstance(composition, ListLiteral):
+            # Convert ListLiteral to ParallelFunction for parallel composition
+            from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+
+            pipe_handler = PipeOperationHandler(self.parent)
+            composed_func = pipe_handler._resolve_list_literal(composition, func_context)
+        else:
+            # Execute the composition expression in the function context
+            composed_func = self.parent.execute(composition, func_context)
+
+        # Handle SandboxFunction objects (like ParallelFunction, ComposedFunction)
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+
+        if isinstance(composed_func, SandboxFunction):
+            if args or kwargs:
+                return composed_func.execute(func_context, *args, **(kwargs or {}))
+            else:
+                return composed_func.execute(func_context)
+
+        # If the composition is a regular callable, call it with all arguments
+        elif callable(composed_func):
+            if args or kwargs:
+                return composed_func(*args, **(kwargs or {}))
             else:
                 return composed_func()
         else:

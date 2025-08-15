@@ -203,12 +203,12 @@ class ComposedFunction(SandboxFunction):
                         # Function doesn't expect context - call normally
                         return self.wrapped_func(*args, **kwargs)
                 except (AttributeError, OSError, ValueError):
-                    # Fallback: try calling with context first, then without if it fails
+                    # Fallback: try calling without context first, then with context if it fails
                     try:
-                        return self.wrapped_func(context, *args, **kwargs)
-                    except TypeError:
-                        # If that fails, try without context
                         return self.wrapped_func(*args, **kwargs)
+                    except TypeError:
+                        # If that fails, try with context
+                        return self.wrapped_func(context, *args, **kwargs)
 
             def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
                 # No special context restoration needed for wrapped callables
