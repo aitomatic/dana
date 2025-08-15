@@ -4,28 +4,32 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { CheckIcon, Loader2Icon, XIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { SystemRestart, Xmark, NavArrowRight } from 'iconoir-react';
+// import { XCircle } from 'lucide-react';
+
+// Single transition definition for consistency (matching DomainKnowledgeTree)
+const TRANSITION_DURATION = '0.5s';
+const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
+const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
 // Add CSS styles for node selection
 const nodeStyles = `
   .custom-node {
-    transition: all 0.2s ease;
+    transition: ${TRANSITION_ALL};
   }
 
   .custom-node.selected {
-
     transform: scale(1.02) !important;
     z-index: 10 !important;
     animation: selectedPulse 2s ease-in-out infinite;
   }
 
-
   @keyframes selectedPulse {
     0%, 100% {
-      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.1);
     }
     50% {
-      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.1);
     }
   }
 `;
@@ -67,13 +71,14 @@ const getStatusColor = (status?: string) => {
 };
 
 const getStatusIcon = (status?: string) => {
+  console.log('🧠 status: ', status);
   switch (status) {
     case 'in_progress':
-      return <Loader2Icon className="animate-spin" />;
+      return <SystemRestart className="animate-spin" />;
     case 'success':
-      return <CheckIcon />;
+      return '';
     case 'failed':
-      return <XIcon />;
+      return <Xmark />;
     default:
       return '';
   }
@@ -108,6 +113,7 @@ export const FilePopup = ({
   <PortalPopup
     style={{
       position: 'absolute',
+      display: 'none',
       left: x,
       top: y,
       zIndex: 9999,
@@ -194,29 +200,27 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     const baseStyle = {
       padding: 16,
       borderRadius: 8,
-      minWidth: 120,
-      maxWidth: 220,
-      width: 220,
-      textAlign: 'center' as const,
+      width: 280,
+      textAlign: 'left' as const,
       wordBreak: 'break-word' as const,
       whiteSpace: 'pre-line' as const,
       overflowWrap: 'break-word' as const,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
       position: 'relative' as const,
       cursor: hasChildren ? 'pointer' : 'default',
-      transition: 'all 0.2s ease', // Add smooth transitions
+      transition: TRANSITION_ALL, // Enhanced smooth transitions
+      transform: 'scale(1)',
+      opacity: 1,
     };
 
     // Add selection highlighting
     const selectionStyle = isSelected
       ? {
-        // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-        border: 'none',
-        transform: 'scale(1.02)',
-        zIndex: 10,
-      }
+          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+          border: 'none',
+          transform: 'scale(1.02)',
+          zIndex: 10,
+        }
       : {};
 
     if (!isLeafNode) {
@@ -224,12 +228,12 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       return {
         ...baseStyle,
         ...selectionStyle,
-        background: hasChildren ? (isExpanded ? '#EBF8FF' : '#F6FAFF') : '#F6FAFF',
+        background: hasChildren ? (isExpanded ? '#F6FAFF' : '#F6FAFF') : '#F6FAFF',
         border: hasChildren
           ? isExpanded
-            ? '2px solid #3B82F6'
-            : '2px solid #93C5FD'
-          : '2px solid #E0E0E0',
+            ? '1px solid #aac5e6'
+            : '1px solid #aac5e6'
+          : '1px solid #aac5e6',
         fontWeight: hasChildren ? 'bold' : 'normal',
       };
     }
@@ -246,29 +250,29 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#DBEAFE', // Light blue
-          border: '2px solid #3B82F6', // Blue border
+          background: '#E1EBFE', // Light blue
+          border: '2px solid #aac5e6', // Blue border
         };
       case 'success':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#D1FAE5', // Light green
-          border: '2px solid #10B981', // Green border
+          background: '#E1EBFE', // Light green
+          border: '2px solid #aac5e6', // Green border
         };
       case 'failed':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#FEE2E2', // Light red
+          background: '#E1EBFE', // Light red
           border: '2px solid #EF4444', // Red border
         };
       default:
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#F3F4F6', // Light gray
-          border: '2px solid #9CA3AF', // Gray border
+          background: '#E1EBFE', // Light gray
+          // border: '2px solid #9CA3AF', // Gray border
         };
     }
   };
@@ -280,22 +284,23 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           width: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
+          justifyContent: 'space-between',
         }}
       >
-        {/* Show expand/collapse icon for nodes with children */}
-        {hasChildren && (
-          <span style={{ fontSize: '16px', marginRight: 8 }}>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </span>
-        )}
-        <span>{nodeData.label}</span>
-        {isLeafNode && knowledgeStatus && (
-          <span style={{ fontSize: '16px', marginLeft: 8 }}>
-            {getStatusIcon(knowledgeStatus.status)}
-          </span>
-        )}
+        <span style={{ textAlign: 'left', flex: 1 }}>{nodeData.label}</span>
+        {/* Icons positioned on the right edge */}
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
+          {hasChildren && (
+            <span style={{ fontSize: '16px' }}>
+              {isExpanded ? '' : <NavArrowRight />}
+            </span>
+          )}
+          {isLeafNode && knowledgeStatus && (
+            <span style={{ fontSize: '16px' }}>
+              {getStatusIcon(knowledgeStatus.status)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Handles can be hidden or removed if not needed */}

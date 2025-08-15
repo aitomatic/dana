@@ -7,8 +7,6 @@ import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-// import { Button } from './ui/button';
-// import { apiService } from '@/lib/api';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,8 +23,6 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   // Fetch agent data when on chat pages
   useEffect(() => {
     if (agent_id && location.pathname.includes('/chat')) {
-      // Only fetch agent details for numeric IDs (regular agents)
-      // Prebuilt agents with string IDs will be handled differently
       if (!isNaN(Number(agent_id))) {
         fetchAgent(parseInt(agent_id)).catch(console.error);
       } else {
@@ -76,15 +72,11 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     }
   }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name]);
 
-  // Check if we're on a chat page
   const isChatPage = location.pathname.includes('/chat');
 
-  // If hideLayout is true, render children without layout
   if (hideLayout) {
     return <>{children}</>;
   }
-
-  console.log(selectedAgent, '-----------------selectedAgent');
 
   return (
     <SidebarProvider>
@@ -96,8 +88,8 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
             <div className="flex gap-2 items-center">
               {isChatPage && (
                 <button
-                  onClick={() => navigate('/agents')}
-                  className="flex justify-center items-center w-8 h-8 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
+                  onClick={() => navigate(-1)}
+                  className="flex justify-center items-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-gray-100"
                   aria-label="Back to agents"
                 >
                   <ArrowLeft width={18} height={18} className="text-gray-500" />

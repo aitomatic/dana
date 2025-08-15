@@ -13,7 +13,7 @@ MIT License
 import logging
 from typing import Any
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 from .domains.default_domain import DefaultDomain
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from common import PLAN_PROMPT
 from knowledge import knowledge
 from knowledge import doc
 
-agent Sofia:
+agent_blueprint Sofia:
     name: str = "Sofia"
     description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
 

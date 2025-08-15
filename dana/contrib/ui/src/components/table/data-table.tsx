@@ -2,6 +2,7 @@ import * as React from 'react';
 import {
   type ColumnDef,
   type ColumnFiltersState,
+  type PaginationState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -38,6 +39,10 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting);
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10, // Set to 10 to ensure pagination shows with 14 items
+  });
 
   const table = useReactTable({
     data,
@@ -46,10 +51,12 @@ export function DataTable<TData, TValue>({
       sorting,
       columnVisibility,
       columnFilters,
+      pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -59,15 +66,15 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="flex flex-col h-full rounded-lg border">
+    <div className="flex flex-col h-full max-h-full rounded-lg border">
       <div
         className={cn(
-          'flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg',
+          'flex flex-1 overflow-auto bg-background scrollbar-hide rounded-t-lg min-h-0',
           is_border && '',
         )}
       >
         <Table>
-          <TableHeader className="sticky top-0 bg-gray-50 rounded-t-lg">
+          <TableHeader className="sticky top-0 bg-gray-50 rounded-t-lg z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -82,7 +89,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="overflow-scroll cursor-pointer scrollbar-hide">
+          <TableBody className="cursor-pointer">
             {loading ? (
               <TableRow>
                 <TableCell
@@ -121,7 +128,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center p-3">
+      <div className="flex items-center p-3 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
         <DataTablePagination table={table} />
       </div>
     </div>
