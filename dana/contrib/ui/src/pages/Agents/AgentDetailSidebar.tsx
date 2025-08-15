@@ -116,43 +116,46 @@ const ProcessingStatusHistory: React.FC<{
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border border-gray-200 rounded-lg bg-gray-50">
+    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+        className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
       >
         {isExpanded ? <Collapse className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
         Reasoning ({messages.length})
       </button>
-      
+
       {isExpanded && (
-        <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
+        <div className="flex overflow-y-auto flex-col gap-3 max-h-60">
           {messages.map((msg) => (
-            <div key={msg.id} className="flex flex-col gap-2 p-2 border border-gray-200 rounded bg-white">
+            <div
+              key={msg.id}
+              className="flex flex-col gap-2 p-2 bg-white rounded border border-gray-200"
+            >
               <div className="flex gap-2 items-center">
                 {msg.status === 'in_progress' && (
                   <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
                 )}
                 {msg.status === 'finish' && (
-                  <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-green-500 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
                 {msg.status === 'error' && (
-                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-red-500 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
                 <span className="text-sm font-medium text-gray-600">{msg.toolName}</span>
-                <span className="text-xs text-gray-400 ml-auto">
+                <span className="ml-auto text-xs text-gray-400">
                   {msg.timestamp.toLocaleTimeString()}
                 </span>
               </div>
               <span className="text-sm text-gray-600">{msg.message}</span>
               {msg.progression !== undefined && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full h-2 bg-gray-200 rounded-full">
                   <div
-                    className="bg-gray-600 h-2 rounded-full transition-all duration-300"
+                    className="h-2 bg-gray-600 rounded-full transition-all duration-300"
                     style={{ width: `${msg.progression * 100}%` }}
                   ></div>
                 </div>
@@ -183,7 +186,9 @@ const SmartAgentChat: React.FC<{
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingMessage, setThinkingMessage] = useState('Thinking...');
-  const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>([]);
+  const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>(
+    [],
+  );
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
   // WebSocket integration for real-time updates
@@ -197,9 +202,9 @@ const SmartAgentChat: React.FC<{
       timestamp: new Date(),
     };
 
-    setProcessingStatusHistory(prev => {
+    setProcessingStatusHistory((prev) => {
       // If this is an update to an existing tool, replace it
-      const existingIndex = prev.findIndex(msg => msg.toolName === message.tool_name);
+      const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
       if (existingIndex !== -1) {
         const updated = [...prev];
         updated[existingIndex] = newStatusMessage;
@@ -211,13 +216,16 @@ const SmartAgentChat: React.FC<{
 
     // Don't clear processing status - keep it in history
     // Only remove very old messages (older than 1 hour) to prevent memory issues
-    setTimeout(() => {
-      setProcessingStatusHistory(prev => 
-        prev.filter(msg => 
-          Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000 // 1 hour
-        )
-      );
-    }, 60 * 60 * 1000);
+    setTimeout(
+      () => {
+        setProcessingStatusHistory((prev) =>
+          prev.filter(
+            (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
+          ),
+        );
+      },
+      60 * 60 * 1000,
+    );
   }, []);
 
   const { connectionState } = useSmartChatWebSocket({
@@ -422,12 +430,13 @@ const SmartAgentChat: React.FC<{
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
-                  ? 'border border-gray-100 bg-gray-50'
-                  : isThinking
-                    ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left bg-white'
-                  }`}
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
+                    ? 'border border-gray-100 bg-gray-50'
+                    : isThinking
+                      ? ' self-start text-left border border-gray-100'
+                      : ' self-start text-left bg-white'
+                }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center px-3 py-2">
@@ -436,7 +445,7 @@ const SmartAgentChat: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <MarkdownViewerSmall 
+                    <MarkdownViewerSmall
                       backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
                     >
                       {msg.text}
@@ -571,7 +580,18 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
-         
+          <div className="flex gap-1 items-center">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                connectionState === 'connected'
+                  ? 'bg-green-500'
+                  : connectionState === 'connecting'
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
+              }`}
+            />
+            <span className="text-xs text-gray-500 capitalize">{connectionState}</span>
+          </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat
