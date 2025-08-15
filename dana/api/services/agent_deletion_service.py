@@ -191,7 +191,17 @@ class AgentDeletionService:
 
             # Get all document file paths from database
             documents = db.query(Document).all()
-            db_file_paths = {doc.file_path for doc in documents if doc.file_path}
+
+            # Handle path inconsistencies: main documents store absolute paths, extraction files store relative paths
+            db_file_paths = set()
+            for doc in documents:
+                if doc.file_path:
+                    if doc.source_document_id is not None:
+                        # Extraction files store relative paths, need to join with upload directory
+                        db_file_paths.add(str(Path("uploads") / doc.file_path))
+                    else:
+                        # Main documents store absolute paths
+                        db_file_paths.add(doc.file_path)
 
             # Check for orphaned files in common document directories
             document_dirs = ["uploads", "documents", "files"]

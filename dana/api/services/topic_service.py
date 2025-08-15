@@ -209,17 +209,26 @@ class TopicService:
 
                 # Force delete: remove associated documents first
                 logger.info(f"Force deleting {len(documents)} documents associated with topic '{topic.name}'")
-                for document in documents:
-                    # Delete physical file if it exists
-                    if document.file_path and os.path.exists(document.file_path):
-                        try:
-                            os.remove(document.file_path)
-                            logger.info(f"Deleted file: {document.file_path}")
-                        except Exception as file_error:
-                            logger.warning(f"Could not delete file {document.file_path}: {file_error}")
 
-                    # Delete database record
-                    db_session.delete(document)
+                # Import DocumentService to use its delete method which handles extraction files
+                from dana.api.services.document_service import DocumentService
+                document_service = DocumentService()
+
+                for document in documents:
+                    # Use document service delete method which handles extraction files cascade
+                    try:
+                        await document_service.delete_document(document.id, db_session)
+                        logger.info(f"Deleted document {document.id} and its extraction files")
+                    except Exception as doc_error:
+                        logger.warning(f"Could not delete document {document.id}: {doc_error}")
+                        # Fallback to manual deletion
+                        if document.file_path and os.path.exists(document.file_path):
+                            try:
+                                os.remove(document.file_path)
+                                logger.info(f"Manually deleted file: {document.file_path}")
+                            except Exception as file_error:
+                                logger.warning(f"Could not delete file {document.file_path}: {file_error}")
+                        db_session.delete(document)
 
                 logger.info(f"Deleted {len(documents)} documents for topic '{topic.name}'")
 

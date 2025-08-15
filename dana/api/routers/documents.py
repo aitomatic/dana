@@ -12,6 +12,7 @@ from dana.api.core.database import get_db
 from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRequest
 from dana.api.services.document_service import get_document_service, DocumentService
 from dana.api.services.extraction_service import get_extraction_service, ExtractionService
+from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
 
 logger = logging.getLogger(__name__)
 
@@ -204,4 +205,67 @@ async def save_extraction_data(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error in save extraction data endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{document_id}/extractions", response_model=list[DocumentRead])
+async def get_document_extractions(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    """Get all extraction files for a specific document."""
+    try:
+        from dana.api.core.models import Document
+
+        # Verify the source document exists
+        source_document = db.query(Document).filter(Document.id == document_id).first()
+        if not source_document:
+            raise HTTPException(status_code=404, detail="Source document not found")
+
+        # Get all extraction files for this document
+        extraction_files = db.query(Document).filter(Document.source_document_id == document_id).all()
+
+        result = []
+        for doc in extraction_files:
+            result.append(DocumentRead(
+                id=doc.id,
+                filename=doc.filename,
+                original_filename=doc.original_filename,
+                file_size=doc.file_size,
+                mime_type=doc.mime_type,
+                source_document_id=doc.source_document_id,
+                topic_id=doc.topic_id,
+                agent_id=doc.agent_id,
+                created_at=doc.created_at,
+                updated_at=doc.updated_at
+            ))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting document extractions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cleanup-orphaned-files")
+async def cleanup_orphaned_files(
+    db: Session = Depends(get_db),
+    deletion_service: AgentDeletionService = Depends(get_agent_deletion_service),
+):
+    """Clean up orphaned files that don't have corresponding database records."""
+    try:
+        logger.info("Starting cleanup of orphaned files")
+
+        result = await deletion_service.cleanup_orphaned_files(db)
+
+        logger.info(f"Cleanup completed: {result}")
+        return {
+            "message": "Cleanup completed successfully",
+            "cleanup_stats": result
+        }
+
+    except Exception as e:
+        logger.error(f"Error in cleanup orphaned files endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
