@@ -67,7 +67,11 @@ def old_reason_function(
     llm_resource = context.get_system_llm_resource(use_mock=should_mock)
 
     if llm_resource is None:
-        raise SandboxError("No LLM resource available in context")
+        # raise SandboxError("No LLM resource available in context")
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceType.create_instance_from_values({"model": "openai:gpt-4o"})
+        context.set_system_llm_resource(llm_resource)
 
     logger.info(f"LLMResource: {llm_resource.name} (model: {llm_resource.model})")
 
