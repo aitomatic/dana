@@ -39,22 +39,44 @@ def default_plan_method(
 
 
 def default_solve_method(
-    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
+    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
+    resources: dict[str, Any] | None = None
 ) -> Any:
-    """Default solve method for agent structs."""
-    agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
-    # TODO: Implement actual solving logic with prompt
-    # context_info = f" with context: {user_context}" if user_context else ""
-    # prompt = f"""You are an agent with fields: {agent_fields}.
-    #
-    # Problem: {problem}{context_info}
-    #
-    # Please provide a solution to this problem. Use the agent's capabilities and context to formulate an effective response.
-    #
-    # Return a comprehensive solution."""
+    """Default solve method for agent structs.
 
-    # For now, return a simple response since we don't have context access
-    return f"Agent {agent_instance.agent_type.name} solving: {problem} (fields: {agent_fields})"
+    Args:
+        agent_instance: The agent instance
+        sandbox_context: The sandbox context
+        problem: The problem to solve
+        context: Optional context dictionary
+        resources: Dictionary mapping string keys to resource values. Must be a dict with string keys.
+
+    Returns:
+        The solution to the problem
+
+    Raises:
+        TypeError: If resources is not None and not a dict with string keys
+    """
+    from dana.agent.general_solver_with_expert_workflows import solve
+
+    expertise_modules: list = getattr(agent_instance, 'expertise', [])
+
+    # Validate resources parameter
+    if resources is not None:
+        if not isinstance(resources, dict):
+            raise TypeError(f"resources must be a dict, got {type(resources).__name__}")
+
+        # Check that all keys are strings
+        for key in resources.keys():
+            if not isinstance(key, str):
+                raise TypeError(f"resources keys must be strings, got {type(key).__name__} for key {key}")
+
+    # Use empty dict if resources is None
+    if resources is None:
+        resources = {}
+
+    # Use the general solver
+    return solve(problem, expertise_modules, resources)
 
 
 def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
@@ -281,12 +303,12 @@ class AgentInstance(StructInstance):
             return method(self, sandbox_context, task, context)
         return default_plan_method(self, sandbox_context, task, context)
 
-    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
+    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None, resources: dict[str, Any] | None = None) -> Any:
         """Execute agent problem-solving method."""
         method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "solve")
         if method:
-            return method(self, sandbox_context, problem, context)
-        return default_solve_method(self, sandbox_context, problem, context)
+            return method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
+        return default_solve_method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
         """Execute agent memory storage method."""
