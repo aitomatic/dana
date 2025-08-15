@@ -179,13 +179,14 @@ class TopicService:
             logger.error(f"Error updating topic {topic_id}: {e}")
             raise
 
-    async def delete_topic(self, topic_id: int, db_session) -> bool:
+    async def delete_topic(self, topic_id: int, db_session, force: bool = False) -> bool:
         """
         Delete a topic.
 
         Args:
             topic_id: The topic ID
             db_session: Database session
+            force: If True, delete associated documents first
 
         Returns:
             True if deleted successfully, False otherwise
@@ -198,15 +199,35 @@ class TopicService:
 
             # Check if topic has associated documents
             from dana.api.core.models import Document
+            import os
 
-            document_count = db_session.query(Document).filter(Document.topic_id == topic_id).count()
+            documents = db_session.query(Document).filter(Document.topic_id == topic_id).all()
 
-            if document_count > 0:
-                raise ValueError(f"Cannot delete topic '{topic.name}' because it has {document_count} associated documents")
+            if documents:
+                if not force:
+                    raise ValueError(f"Cannot delete topic '{topic.name}' because it has {len(documents)} associated documents")
 
+                # Force delete: remove associated documents first
+                logger.info(f"Force deleting {len(documents)} documents associated with topic '{topic.name}'")
+                for document in documents:
+                    # Delete physical file if it exists
+                    if document.file_path and os.path.exists(document.file_path):
+                        try:
+                            os.remove(document.file_path)
+                            logger.info(f"Deleted file: {document.file_path}")
+                        except Exception as file_error:
+                            logger.warning(f"Could not delete file {document.file_path}: {file_error}")
+
+                    # Delete database record
+                    db_session.delete(document)
+
+                logger.info(f"Deleted {len(documents)} documents for topic '{topic.name}'")
+
+            # Delete the topic
             db_session.delete(topic)
             db_session.commit()
 
+            logger.info(f"Successfully deleted topic '{topic.name}' (ID: {topic_id})")
             return True
 
         except Exception as e:

@@ -119,12 +119,13 @@ export const useTopicStore = create<TopicStore>((set) => ({
         selectedTopic: state.selectedTopic?.id === topicId ? null : state.selectedTopic,
         isDeleting: false,
       }));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete topic';
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to delete topic';
       set({
         isDeleting: false,
         error: errorMessage,
       });
+      throw error; // Re-throw the error so the UI can handle it
     }
   },
 

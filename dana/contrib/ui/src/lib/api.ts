@@ -395,8 +395,9 @@ class ApiService {
     return response.data;
   }
 
-  async deleteTopic(topicId: number): Promise<{ message: string }> {
-    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}`);
+  async deleteTopic(topicId: number, force: boolean = false): Promise<{ message: string }> {
+    const params = force ? '?force=true' : '';
+    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}${params}`);
     return response.data;
   }
 

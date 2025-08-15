@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,11 @@ import { ExtractedFile } from './extracted-file';
 import { Pagination } from './components/pagination';
 import { cn } from '@/lib/utils';
 
-export const ExtractionFilePopup = () => {
+interface ExtractionFilePopupProps {
+  onSaveCompleted?: () => void;
+}
+
+export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
@@ -24,14 +28,23 @@ export const ExtractionFilePopup = () => {
     selectedFile,
     extractedFiles,
     isExtracting,
+    currentExtractionStep,
     showConfirmDiscard,
     closeExtractionPopup,
     setSelectedFile,
     addFile,
     setShowConfirmDiscard,
-
+    saveAndFinish,
     clearFiles,
+    setOnSaveCompletedCallback,
   } = useExtractionFileStore();
+
+  // Set the callback when component mounts
+  useEffect(() => {
+    setOnSaveCompletedCallback(onSaveCompleted);
+    // Cleanup: remove callback when component unmounts
+    return () => setOnSaveCompletedCallback(undefined);
+  }, [onSaveCompleted]); // Remove setOnSaveCompletedCallback from dependencies
 
   // Determine if all files are uploaded
   const isDisabled = isExtracting;
@@ -55,13 +68,13 @@ export const ExtractionFilePopup = () => {
     fileInputRef.current?.click();
   };
 
-  const handleSaveAndFinish = () => {
-    // Save the current extraction state
-    closeExtractionPopup();
+  const handleSaveAndFinish = async () => {
+    await saveAndFinish();
   };
 
-  const handleDeleteFile = () => {
-    clearFiles();
+  const handleDeleteFile = async () => {
+    // Clear the files (this will also delete any topics)
+    await clearFiles();
     setShowConfirmDiscard(false);
   };
 
@@ -217,7 +230,10 @@ export const ExtractionFilePopup = () => {
                 disabled={isDisabled || extractedFiles.length === 0}
                 onClick={handleSaveAndFinish}
               >
-                Save & Finish
+                {currentExtractionStep === 'saving' && (
+                  <IconLoader2 className="mr-2 animate-spin size-4" />
+                )}
+                {currentExtractionStep === 'saving' ? 'Saving...' : 'Save & Finish'}
               </Button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { convertTopicToFolderItem, convertDocumentToFileItem } from '@/components/library';
 import { LibraryTable } from '@/components/library';
 import { PdfViewer } from '@/components/library/pdf-viewer';
+import { JsonViewer } from '@/components/library/json-viewer';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import { ExtractionFilePopup } from './extraction-file';
 
@@ -80,6 +81,9 @@ export default function LibraryPage() {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
+  const [jsonViewerOpen, setJsonViewerOpen] = useState(false);
+  const [jsonFileUrl, setJsonFileUrl] = useState<string | null>(null);
+  const [jsonFileName, setJsonFileName] = useState<string | undefined>(undefined);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -139,8 +143,12 @@ export default function LibraryPage() {
       setPdfFileUrl(item.path);
       setPdfFileName(item.name);
       setPdfViewerOpen(true);
+    } else if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'json') {
+      setJsonFileUrl(item.path);
+      setJsonFileName(item.name);
+      setJsonViewerOpen(true);
     } else {
-      // Open document preview (non-PDF)
+      // Open document preview (other file types)
       console.log('View document:', item);
     }
   };
@@ -193,8 +201,10 @@ export default function LibraryPage() {
         await deleteDocument(documentId);
         toast.success('Document deleted successfully');
       }
-    } catch {
-      toast.error('Failed to delete item');
+    } catch (error: any) {
+      // Extract error message from the error object (handles both Error and ApiError)
+      const errorMessage = error?.message || 'Failed to delete item';
+      toast.error(errorMessage);
     } finally {
       setShowDeleteConfirm(false);
       setSelectedItem(null);
@@ -239,10 +249,10 @@ export default function LibraryPage() {
     setTypeFilter(type);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchTopics();
     fetchDocuments();
-  };
+  }, [fetchTopics, fetchDocuments]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -450,8 +460,15 @@ export default function LibraryPage() {
           fileName={pdfFileName}
         />
 
+        <JsonViewer
+          open={jsonViewerOpen}
+          onClose={() => setJsonViewerOpen(false)}
+          fileUrl={jsonFileUrl || ''}
+          fileName={jsonFileName}
+        />
+
         {/* Extraction File Popup */}
-        {isExtractionPopupOpen && <ExtractionFilePopup />}
+        {isExtractionPopupOpen && <ExtractionFilePopup onSaveCompleted={handleRefresh} />}
       </div>
     </div>
   );

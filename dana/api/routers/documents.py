@@ -20,9 +20,9 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 @router.post("/upload", response_model=DocumentRead)
 async def upload_document(
     file: UploadFile = File(...),
-    topic_id: int | None = None,
-    agent_id: int | None = None,
-    build_index: bool = True,
+    topic_id: int | None = Form(None),
+    agent_id: int | None = Form(None),
+    build_index: bool = Form(True),
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
 ):
