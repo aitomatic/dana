@@ -312,7 +312,7 @@ class KnowledgeOpsHandler(AbstractHandler):
             # Convert ToolResult to MessageData
             content = result.result
             if tool_name in ("attempt_completion", "ask_question"):
-                content = f"{thinking_content}\n\n{content}"
+                content = f"{content}"
             message_data = MessageData(role="user", content=content, require_user=result.require_user, treat_as_tool=True)
 
             # If this was a modify_tree operation, reload the tree structure

@@ -81,8 +81,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
 - Main categories (📁) represent broad topic areas
 - Subtopics (📄) are specific knowledge areas for content generation
 - Structure can be refined iteratively before adding to tree
-
-**Please respond with your feedback or say "continue" to proceed to the next step.**"""
+"""
 
             return ToolResult(name="propose_knowledge_structure", result=content, require_user=True)
 
