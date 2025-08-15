@@ -136,7 +136,7 @@ class GeneralProblemSolver:
                 workflow_names = module.__all__
                 for workflow_name in workflow_names:
                     if hasattr(module, workflow_name):
-                                                workflow_function = getattr(module, workflow_name)
+                        workflow_function = getattr(module, workflow_name)
 
                         # Create workflow info (with placeholder metadata for now)
                         workflow_info = WorkflowInfo(
@@ -273,7 +273,7 @@ class GeneralProblemSolver:
         return resource_analysis
 
     def _match_workflows(self, problem_analysis: dict[str, Any],
-                        resource_analysis: dict[str, Any]) -> list[ResourceMatch]:
+                         resource_analysis: dict[str, Any]) -> list[ResourceMatch]:
         """
         Phase 3: Expertise Matching
 
@@ -292,8 +292,8 @@ class GeneralProblemSolver:
         return matches
 
     def _evaluate_workflow_match(self, workflow: WorkflowInfo,
-                                problem_analysis: dict[str, Any],
-                                resource_analysis: dict[str, Any]) -> ResourceMatch:
+                                 problem_analysis: dict[str, Any],
+                                 resource_analysis: dict[str, Any]) -> ResourceMatch:
         """
         Evaluate how well a workflow matches the problem and available resources.
         """
@@ -319,7 +319,7 @@ class GeneralProblemSolver:
         )
 
     def _calculate_conceptual_match(self, workflow: WorkflowInfo,
-                                   problem_analysis: dict[str, Any]) -> float:
+                                    problem_analysis: dict[str, Any]) -> float:
         """
         Calculate how well the workflow conceptually matches the problem.
         """
@@ -339,7 +339,7 @@ class GeneralProblemSolver:
         return min(overlap / len(problem_words), 1.0)
 
     def _calculate_resource_compatibility(self, workflow: WorkflowInfo,
-                                        resource_analysis: dict[str, Any]) -> tuple[float, dict[str, Any], list[str]]:
+                                          resource_analysis: dict[str, Any]) -> tuple[float, dict[str, Any], list[str]]:
         """
         Calculate how well available resources match workflow input requirements.
         """
@@ -365,7 +365,7 @@ class GeneralProblemSolver:
         return compatibility_score, matched_resources, list(missing_keys)
 
     def _calculate_output_relevance(self, workflow: WorkflowInfo,
-                                   problem_analysis: dict[str, Any]) -> float:
+                                    problem_analysis: dict[str, Any]) -> float:
         """
         Calculate how relevant the workflow output is to the problem.
         """
@@ -510,8 +510,8 @@ def solve(problem: str, expertise_modules: list[ModuleType] = None, resources: d
 
 
 def register_workflow(name: str, description: str, input_signature: dict[str, type],
-                     output_signature: dict[str, type], workflow_function: callable,
-                     expertise_domain: str = "general") -> None:
+                      output_signature: dict[str, type], workflow_function: callable,
+                      expertise_domain: str = "general") -> None:
     """
     Register a workflow for problem-solving.
 
