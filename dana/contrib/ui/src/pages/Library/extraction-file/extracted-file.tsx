@@ -135,31 +135,8 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
   const documents =
     deepExtractedDocuments?.length > 0 ? deepExtractedDocuments : selectedFile?.documents || [];
 
-  console.log('[ExtractedFile] selectedFile:', selectedFile);
-  console.log('[ExtractedFile] selectedFile?.documents:', selectedFile?.documents);
-  console.log('[ExtractedFile] selectedFile?.documents?.length:', selectedFile?.documents?.length);
-  console.log(
-    '[ExtractedFile] selectedFile?.documents[0]?.page_content:',
-    selectedFile?.documents?.[0]?.page_content?.substring(0, 100),
-  );
-  console.log('[ExtractedFile] deepExtractedDocuments:', deepExtractedDocuments);
-  console.log('[ExtractedFile] deepExtractedDocuments?.length:', deepExtractedDocuments?.length);
-  console.log(
-    '[ExtractedFile] deepExtractedDocuments[0]?.page_content:',
-    deepExtractedDocuments?.[0]?.page_content?.substring(0, 100),
-  );
-  console.log(
-    '[ExtractedFile] Using documents from:',
-    deepExtractedDocuments?.length > 0 ? 'deepExtractedDocuments' : 'selectedFile.documents',
-  );
-  console.log('[ExtractedFile] final documents array:', documents);
-  console.log('[ExtractedFile] final documents.length:', documents.length);
-  console.log('[ExtractedFile] currentPage:', currentPage);
-  console.log('[ExtractedFile] current document:', documents[currentPage - 1]);
-  console.log(
-    '[ExtractedFile] current document page_content:',
-    documents[currentPage - 1]?.page_content?.substring(0, 100),
-  );
+
+
 
   // Navigation functions
   const goBack = (): void => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));

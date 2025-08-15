@@ -57,7 +57,6 @@ export const ExtractionFilePopup = () => {
 
   const handleSaveAndFinish = () => {
     // Save the current extraction state
-    console.log('Extraction completed');
     closeExtractionPopup();
   };
 

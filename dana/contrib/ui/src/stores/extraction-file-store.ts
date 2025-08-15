@@ -38,6 +38,7 @@ export interface ExtractionFile {
   filename: string;
   file_size: number;
   mime_type: string;
+  document_id?: number; // Database document ID from upload response
   is_deep_extracted?: boolean;
   prompt?: string;
   documents?: Array<{
@@ -190,6 +191,7 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
               f.id === fileId
                 ? {
                     ...f,
+                    document_id: documentId, // Store the database document ID
                     is_deep_extracted: true,
                     documents: docs,
                     updated_at: new Date().toISOString(),
@@ -278,6 +280,7 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
               f.id === fileItem.id
                 ? {
                     ...f,
+                    document_id: documentId, // Store the database document ID
                     is_deep_extracted: true,
                     documents: docs,
                     updated_at: new Date().toISOString(),
