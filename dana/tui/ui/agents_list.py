@@ -100,7 +100,7 @@ class AgentsList(Vertical):
 
     def compose(self) -> ComposeResult:
         """Create the agents list UI."""
-        yield Static("Agents", classes="panel-title")
+        yield Static("🤖 Agents", classes="panel-title")
         self._list_view = ListView(id="agents-list")
         yield self._list_view
 

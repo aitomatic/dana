@@ -52,7 +52,7 @@ class AgentDetail(Vertical):
 
     def compose(self) -> ComposeResult:
         """Create the agent detail UI."""
-        yield Static("Agent Detail", classes="panel-title", id="detail-title")
+        yield Static("🔍 Agent Detail", classes="panel-title", id="detail-title")
         self._text_log = RichLog(highlight=True, markup=True, id="detail-log", auto_scroll=True)
         yield self._text_log
 
@@ -95,9 +95,9 @@ class AgentDetail(Vertical):
                 elapsed = metrics.get("elapsed_time", 0.0)
 
                 if elapsed > 0:
-                    title_text = f"{focused_name} • {step} • {elapsed:.1f}s"
+                    title_text = f"🔍 {focused_name} • {step} • {elapsed:.1f}s"
                 else:
-                    title_text = f"{focused_name} • {step}"
+                    title_text = f"🔍 {focused_name} • {step}"
 
                 title_widget.update(title_text)
                 self.focused_agent = focused_name

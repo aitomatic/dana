@@ -30,7 +30,7 @@ class TerminalREPL(Vertical):
     def compose(self) -> ComposeResult:
         """Create the terminal REPL UI."""
         # Header
-        yield Static("Aitomatic Dana REPL", classes="panel-title", id="terminal-title")
+        yield Static("💻 Aitomatic Dana REPL", classes="panel-title", id="terminal-title")
 
         # Output area (history of commands and results)
         self._output = RichLog(highlight=True, markup=True, wrap=True, id="terminal-output")
