@@ -36,7 +36,7 @@ def streaming_print_override(
     try:
         # Get the original print function if it exists
         original_print = registry.get_function("print")
-    except:
+    except Exception:
         pass  # No existing print function
     
     # Set the log streamer
