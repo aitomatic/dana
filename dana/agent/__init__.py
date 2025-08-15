@@ -14,13 +14,28 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.registries.type_registry import (
-    AgentTypeRegistry,
-    create_agent_instance,
+# For backward compatibility, create aliases
+from dana.registry import TypeRegistry as AgentTypeRegistry
+from dana.registry import (
     get_agent_type,
-    global_agent_type_registry,
+    get_global_registry,
     register_agent_type,
 )
+
+
+# Create backward compatibility functions and instances
+def create_agent_instance(agent_type_name: str, **kwargs):
+    """Create an agent instance (backward compatibility)."""
+    from dana.agent.agent_instance import AgentInstance
+
+    agent_type = get_agent_type(agent_type_name)
+    if agent_type is None:
+        raise ValueError(f"Agent type '{agent_type_name}' not found")
+    return AgentInstance(agent_type, **kwargs)
+
+
+# Global registry instance for backward compatibility
+global_agent_type_registry = get_global_registry().types
 
 from .agent_instance import (
     AgentInstance,

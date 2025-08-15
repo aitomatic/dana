@@ -1,60 +1,42 @@
 """
-Type Registry for Dana
+DEPRECATED: Type Registry for Dana
 
-This module re-exports type registry functionality from the new global registry system.
+This module has been deprecated and moved to dana.registry.type_registry.
+Please update your imports to use the new unified registry system.
+
+Migration guide:
+- Replace 'from dana.registries.type_registry import *' with 'from dana.registry.type_registry import *'
+- Replace 'from dana.registries.type_registry import global_agent_type_registry' with 'from dana.registry import get_global_registry; global_agent_type_registry = get_global_registry().types'
+- Replace 'from dana.registries.type_registry import create_agent_instance' with 'from dana.agent import create_agent_instance'
+
+This module will be removed in a future version.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-# Re-export from the new global registry system
-from dana.registry import (
-    TypeRegistry,
-    get_agent_type,
-    get_global_registry,
-    get_resource_type,
-    get_struct_type,
-    register_agent_type,
-    register_resource_type,
-    register_struct_type,
+import sys
+import warnings
+from pathlib import Path
+
+# Add the deprecated directory to the path so we can import from it
+deprecated_path = Path(__file__).parent.parent / ".deprecated" / "registries"
+if deprecated_path.exists():
+    sys.path.insert(0, str(deprecated_path.parent.parent))
+
+warnings.warn(
+    "dana.registries.type_registry is deprecated. Please use dana.registry.type_registry instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
-# Create convenience instances for backward compatibility
-global_agent_type_registry = get_global_registry()
-global_resource_type_registry = get_global_registry()
-global_struct_type_registry = get_global_registry()
-agent_type_registry = global_agent_type_registry
+# Import from the deprecated module
+try:
+    from .deprecated.registries.type_registry import *
+except ImportError:
+    # Fallback to direct import if the path structure doesn't work
+    import sys
 
-# Re-export the registry classes from the new system
-AgentTypeRegistry = TypeRegistry
-ResourceTypeRegistry = TypeRegistry
-StructTypeRegistry = TypeRegistry
-
-
-# Backward compatibility function
-def create_agent_instance(name, field_values=None, context=None):
-    """Create an agent instance (backward compatibility)."""
-    from dana.agent import AgentInstance
-
-    agent_type = get_agent_type(name)
-    if agent_type is None:
-        raise ValueError(f"Agent type '{name}' not found")
-    return AgentInstance(agent_type, field_values or {})
-
-
-__all__ = [
-    "AgentTypeRegistry",
-    "ResourceTypeRegistry",
-    "StructTypeRegistry",
-    "global_agent_type_registry",
-    "global_resource_type_registry",
-    "global_struct_type_registry",
-    "agent_type_registry",
-    "register_agent_type",
-    "get_agent_type",
-    "create_agent_instance",
-    "register_resource_type",
-    "get_resource_type",
-    "register_struct_type",
-    "get_struct_type",
-]
+    sys.path.insert(0, str(Path(__file__).parent / ".deprecated"))
+    from registries.type_registry import *

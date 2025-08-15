@@ -188,7 +188,7 @@ class AgentHandler(Loggable):
                     field_defaults[field.name] = default_value
 
             from dana.agent import AgentType
-            from dana.registries import register_agent_type
+            from dana.registry import register_agent_type
 
             agent_type = AgentType(
                 name=node.name,
@@ -222,7 +222,7 @@ class AgentHandler(Loggable):
         try:
             # Find the blueprint type
             from dana.agent import AgentInstance, AgentType
-            from dana.registries import get_agent_type, register_agent_type
+            from dana.registry import get_agent_type, register_agent_type
 
             blueprint_type = get_agent_type(node.blueprint_name)
             if blueprint_type is None:
@@ -277,7 +277,7 @@ class AgentHandler(Loggable):
         """Create a base AgentType with default methods and bind an instance to the alias name."""
         try:
             from dana.agent import AgentInstance, AgentType
-            from dana.registries import register_agent_type
+            from dana.registry import register_agent_type
 
             # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
             base_type = AgentType(

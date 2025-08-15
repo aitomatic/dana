@@ -510,21 +510,115 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
-# DEPRECATED: Registries have been moved to dana.registries
+# DEPRECATED: Registries have been moved to dana.registry
 # Import them from the new location for backward compatibility
-from dana.registries.method_registry import MethodRegistry as _MethodRegistry
-from dana.registries.method_registry import TypeAwareMethodRegistry as _TypeAwareMethodRegistry
-from dana.registries.method_registry import universal_dana_method_registry
-from dana.registries.type_registry import StructTypeRegistry as _StructTypeRegistry
+from dana.registry.struct_function_registry import StructFunctionRegistry as _StructFunctionRegistry
+from dana.registry.type_registry import TypeRegistry as _TypeRegistry
 
 # Re-export for backward compatibility
-TypeAwareMethodRegistry = _TypeAwareMethodRegistry
-MethodRegistry = _MethodRegistry
-StructTypeRegistry = _StructTypeRegistry
+# Note: The new system consolidates method and type registries
+StructTypeRegistry = _TypeRegistry
+
+
+# Create a wrapper class for MethodRegistry backward compatibility
+class MethodRegistry:
+    """Legacy method registry for backward compatibility."""
+
+    @classmethod
+    def register_method(cls, receiver_types: list[str], method_name: str, func, source_info: str = "") -> None:
+        """Register a method for multiple receiver types.
+
+        Args:
+            receiver_types: List of receiver type names
+            method_name: The name of the method
+            func: The callable function/method to register
+            source_info: Optional source information for debugging (ignored in new system)
+        """
+        from dana.registry import register_struct_function
+
+        # Register for each receiver type
+        for receiver_type in receiver_types:
+            register_struct_function(receiver_type, method_name, func)
+
+    @classmethod
+    def get_method(cls, receiver_type: str, method_name: str):
+        """Get a method for a specific receiver type."""
+        from dana.registry import lookup_struct_function
+
+        return lookup_struct_function(receiver_type, method_name)
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered methods (for testing)."""
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.struct_functions.clear()
+
+
+# Create a wrapper class that provides class methods for backward compatibility
+class TypeAwareMethodRegistry:
+    """Type-aware method registry with class methods for backward compatibility."""
+
+    @classmethod
+    def register_method(cls, receiver_type: str, method_name: str, func) -> None:
+        """Register a method for a receiver type."""
+        from dana.registry import register_struct_function
+
+        register_struct_function(receiver_type, method_name, func)
+
+    @classmethod
+    def lookup_method(cls, receiver_type: str, method_name: str):
+        """Lookup a method for a receiver type."""
+        from dana.registry import lookup_struct_function
+
+        return lookup_struct_function(receiver_type, method_name)
+
+    @classmethod
+    def has_method(cls, receiver_type: str, method_name: str) -> bool:
+        """Check if a method exists for a receiver type."""
+        from dana.registry import has_struct_function
+
+        return has_struct_function(receiver_type, method_name)
+
+    @classmethod
+    def lookup_method_for_instance(cls, instance, method_name: str):
+        """Lookup method for a specific instance (extracts type automatically)."""
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        return registry.struct_functions.lookup_method_for_instance(instance, method_name)
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered methods (for testing)."""
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.struct_functions.clear()
+
+    def __init__(self):
+        """Initialize the wrapper instance."""
+        # This is needed for backward compatibility when code creates an instance
+        pass
+
+    @property
+    def _storage(self):
+        """Backward compatibility property for accessing the internal storage."""
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        return registry.struct_functions._methods
+
+
+# Create global instances for compatibility
+struct_function_registry = _StructFunctionRegistry()
+type_registry = _TypeRegistry()
 
 # Keep the old global instances for compatibility
-type_aware_method_registry = universal_dana_method_registry
-method_registry = MethodRegistry()
+type_aware_method_registry = struct_function_registry
+method_registry = struct_function_registry
+universal_dana_method_registry = struct_function_registry
 
 
 # === Utility Functions (restored for backward compatibility) ===

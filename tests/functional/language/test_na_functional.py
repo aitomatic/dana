@@ -32,9 +32,9 @@ def pytest_configure(config):
 def test_na_file(na_file):
     """Test that a .na file can be parsed and executed without errors."""
     # Clear struct registry to ensure test isolation
-    from dana.registries.type_registry import global_struct_type_registry
+    from dana.registry import get_global_registry
 
-    global_struct_type_registry.types.clear()
+    get_global_registry().types.clear()
 
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"

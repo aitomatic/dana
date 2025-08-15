@@ -12,7 +12,7 @@ MIT License
 
 # Backward compatibility imports - import everything from the new location
 # For any modules that still import from the old location, keep the preloaded functions functionality
-import dana.registries.function_registry as new_module
+import dana.registry.function_registry as new_module
 
 # Initialize _preloaded_functions for backward compatibility
 _preloaded_functions = {}
@@ -22,13 +22,16 @@ if hasattr(globals(), "_preloaded_functions"):
     new_module._preloaded_functions = globals()["_preloaded_functions"]
 
 # Explicit imports to avoid F405 errors
-from dana.registries.function_registry import (
-    FunctionRegistry,
+# Import FunctionType from the correct location
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.registry.function_registry import (
     FunctionMetadata,
-    FunctionType,
+    FunctionRegistry,
     RegistryAdapter,
-    PreloadedFunctionRegistry,
 )
+
+# For backward compatibility, create PreloadedFunctionRegistry alias
+PreloadedFunctionRegistry = FunctionRegistry
 
 # Re-export everything to maintain compatibility
 __all__ = [

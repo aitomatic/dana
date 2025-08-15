@@ -14,14 +14,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import sys
 import warnings
-from pathlib import Path
-
-# Add the deprecated directory to the path so we can import from it
-deprecated_path = Path(__file__).parent.parent / ".deprecated" / "registries"
-if deprecated_path.exists():
-    sys.path.insert(0, str(deprecated_path.parent.parent))
 
 warnings.warn(
     "dana.registries.function_registry is deprecated. Please use dana.registry.function_registry instead. "
@@ -30,12 +23,34 @@ warnings.warn(
     stacklevel=2,
 )
 
-# Import from the deprecated module
-try:
-    from .deprecated.registries.function_registry import *
-except ImportError:
-    # Fallback to direct import if the path structure doesn't work
-    import sys
+from typing import TYPE_CHECKING
 
-    sys.path.insert(0, str(Path(__file__).parent / ".deprecated"))
-    from registries.function_registry import *
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+
+# Import from new system
+from dana.registry import get_global_registry
+from dana.registry.function_registry import (
+    FunctionMetadata,
+    RegistryAdapter,
+)
+from dana.registry.function_registry import (
+    FunctionRegistry as NewFunctionRegistry,
+)
+
+if TYPE_CHECKING:
+    pass
+
+# Create global instance for backward compatibility
+global_registry = get_global_registry()
+global_function_registry = global_registry.functions
+
+# Re-export classes
+FunctionRegistry = NewFunctionRegistry
+
+__all__ = [
+    "FunctionRegistry",
+    "FunctionMetadata",
+    "FunctionType",
+    "RegistryAdapter",
+    "global_function_registry",
+]

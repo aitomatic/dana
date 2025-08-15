@@ -7,7 +7,10 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.registries.type_registry import global_resource_type_registry
+from dana.registry import get_global_registry
+
+# Get the global registry for resource types
+global_resource_type_registry = get_global_registry().types
 
 
 def initialize_resource_system() -> None:

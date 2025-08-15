@@ -75,7 +75,7 @@ def loader(search_paths, registry):
 @pytest.fixture
 def registry():
     """Create a ModuleRegistry instance for testing."""
-    from dana.registries.module_registry import ModuleRegistry
+    from dana.registry.module_registry import ModuleRegistry
 
     registry = ModuleRegistry()
     # Clear the registry before each test to ensure clean state

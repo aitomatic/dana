@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, cast
 
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
-from dana.registries.module_registry import ModuleRegistry
+from dana.registry.module_registry import ModuleRegistry
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
 from .types import Module, ModuleSpec

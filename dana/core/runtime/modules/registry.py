@@ -11,7 +11,7 @@ MIT License
 """
 
 # Backward compatibility imports
-from dana.registries.module_registry import ModuleRegistry
+from dana.registry.module_registry import ModuleRegistry
 
 # Re-export for backward compatibility
 __all__ = ["ModuleRegistry"]
