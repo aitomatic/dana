@@ -153,7 +153,7 @@ class LambdaExpression:
 
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
-    body: Expression = None  # Lambda body expression
+    body: Expression | None = None  # Lambda body expression
     location: Location | None = None
 
 

@@ -65,7 +65,7 @@ import time
 
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.terminal_utils import ColorScheme
 from dana.core.concurrency.base_promise import BasePromise
 from dana.core.lang.log_manager import LogLevel
@@ -83,11 +83,19 @@ async def dana_repl_main(debug: bool = False) -> None:
     """Main entry point for the Dana REPL."""
     import argparse
 
+    # Initialize args and use_fullscreen with defaults
+    args = None
+    use_fullscreen = False
+
     # When called from dana.py, debug parameter is passed directly
     # When called as module (__main__.py), parse command line arguments
     if debug is not False or len(sys.argv) == 1:
         # Called from dana.py with debug parameter
         log_level = LogLevel.DEBUG if debug else LogLevel.WARN
+        # Check for environment variable to enable fullscreen mode
+        import os
+
+        use_fullscreen = os.getenv("DANA_FULLSCREEN", "").lower() in ("1", "true", "yes")
     else:
         # Called as module, parse command line arguments
         parser = argparse.ArgumentParser(description="Dana Interactive REPL")
@@ -96,6 +104,11 @@ async def dana_repl_main(debug: bool = False) -> None:
             choices=["DEBUG", "INFO", "WARNING", "ERROR"],
             default="WARNING",
             help="Set the logging level (default: WARNING)",
+        )
+        parser.add_argument(
+            "--fullscreen",
+            action="store_true",
+            help="Use full-screen mode with persistent status bar",
         )
 
         args = parser.parse_args()
@@ -108,14 +121,30 @@ async def dana_repl_main(debug: bool = False) -> None:
             "ERROR": LogLevel.ERROR,
         }
         log_level = log_level_map[args.log_level]
+        use_fullscreen = args.fullscreen
 
     try:
         # Handle Windows event loop policy
         if sys.platform == "win32":
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-        app = DanaREPLApp(log_level=log_level)
-        await app.run()
+        # use_fullscreen is already set above based on how we were called
+
+        if use_fullscreen:
+            # Use full-screen REPL with persistent status bar
+            from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+            from dana.common.terminal_utils import ColorScheme
+            from dana.core.repl.repl import REPL
+            from dana.core.repl.ui.fullscreen_repl import FullScreenREPL
+
+            repl = REPL(llm_resource=LegacyLLMResource(), log_level=log_level)
+            colors = ColorScheme()
+            fullscreen_app = FullScreenREPL(repl, colors)
+            await fullscreen_app.run_async()
+        else:
+            # Use regular REPL
+            app = DanaREPLApp(log_level=log_level)
+            await app.run()
     except KeyboardInterrupt:
         print("\nGoodbye! Dana REPL terminated.")
     except Exception as e:
@@ -151,16 +180,18 @@ class DanaREPLApp(Loggable):
         self.output_formatter = OutputFormatter(self.colors)
         self.input_processor = InputProcessor()
         self.prompt_manager = PromptSessionManager(self.repl, self.colors)
-        self.command_handler = CommandHandler(self.repl, self.colors)
+        self.command_handler = CommandHandler(self.repl, self.colors, self.prompt_manager)
 
     def _setup_repl(self, log_level: LogLevel) -> REPL:
         """Set up the Dana REPL."""
-        return REPL(llm_resource=LLMResource(), log_level=log_level)
+        return REPL(llm_resource=LegacyLLMResource(), log_level=log_level)
 
     async def run(self) -> None:
         """Run the interactive Dana REPL session."""
         self.info("Starting Dana REPL")
         self.welcome_display.show_welcome()
+
+        # Status display available but not shown by default to avoid output interference
 
         last_executed_program = None  # Track last executed program for continuation
 

@@ -18,10 +18,12 @@ from typing import Any
 from dana.api.client import APIClient
 from dana.api.server import APIServiceManager
 from dana.common.mixins.loggable import Loggable
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
@@ -64,7 +66,7 @@ class DanaSandbox(Loggable):
     # Resource pooling for better leak resistance and performance
     _shared_api_service: APIServiceManager | None = None
     _shared_api_client: APIClient | None = None
-    _shared_llm_resource: LLMResource | None = None
+    _shared_llm_resource: LegacyLLMResource | None = None
     _resource_users = 0  # Count of instances using shared resources
 
     def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
@@ -85,6 +87,10 @@ class DanaSandbox(Loggable):
 
         # Set interpreter in context
         self._context.interpreter = self._interpreter
+
+        # Store module search paths in context for import handler access
+        if module_search_paths:
+            self._context.set("system:module_search_paths", module_search_paths)
 
         # Add system functions to local context for easy access
         if "system" in self._interpreter.function_registry._functions:
@@ -114,7 +120,7 @@ class DanaSandbox(Loggable):
         self._using_shared = False  # Track if using shared resources
         self._api_service: APIServiceManager | None = None
         self._api_client: APIClient | None = None
-        self._llm_resource: LLMResource | None = None
+        self._llm_resource: LLMResourceInstance | None = None
 
         # Track instances for cleanup with weakref callback
         DanaSandbox._instances.add(self)
@@ -159,7 +165,15 @@ class DanaSandbox(Loggable):
             # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
-            # self._context.set_system_llm_resource(self._llm_resource)  # Removed - system resources managed directly by DanaSandbox
+
+            # Set LLM resource in context so reason() function can access it
+            self._context.set_system_llm_resource(self._llm_resource)
+
+            # Enable mock mode for tests (check environment variable)
+            import os
+
+            if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
+                self._llm_resource.with_mock_llm_call(True)
 
             # Load Dana startup file that handles all Dana resource loading and initialization
             try:
@@ -169,36 +183,14 @@ class DanaSandbox(Loggable):
                     with open(startup_file, encoding="utf-8") as f:
                         startup_code = f.read()
 
-                    self._interpreter._eval(
+                    self._interpreter._eval_source_code(
                         startup_code,
                         context=self._context,
-                        filename="<dana-core-libraries>",
+                        filename="<dana-init-na>",
                     )
                     self.info("Dana startup file loaded successfully")
                 else:
                     self.warning(f"Dana startup file not found at {startup_file}")
-
-                # Load stdlib resources by executing the .na files
-                stdlib_resources_path = Path(__file__).parent.parent.parent / "libs" / "stdlib" / "resources"
-                if stdlib_resources_path.exists():
-                    # Clear method registry before loading resources to prevent duplicate method errors
-                    from dana.core.lang.interpreter.struct_system import MethodRegistry
-
-                    MethodRegistry.clear()
-
-                    for na_file in stdlib_resources_path.glob("*.na"):
-                        try:
-                            with open(na_file, encoding="utf-8") as f:
-                                resource_code = f.read()
-
-                            self._interpreter._eval(
-                                resource_code,
-                                context=self._context,
-                                filename="<stdlib-resource>",
-                            )
-                            self.info(f"Loaded Dana resource: {na_file.name}")
-                        except Exception as resource_err:
-                            self.error(f"Failed to load Dana resource {na_file.name}: {resource_err}")
 
             except Exception as startup_err:
                 # Non-fatal: if startup fails, continue without it
@@ -245,36 +237,10 @@ class DanaSandbox(Loggable):
         # self._api_client.startup()
 
         # Initialize LLM resource (required for core Dana functionalities involving language model operations)
-        self._llm_resource = LLMResource()
-        self._llm_resource.startup()
-
-        # Create BaseLLMResource for context access
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
-
-        base_llm_resource = BaseLLMResource(name="system_llm", model="openai:gpt-4o-mini")
-        if not base_llm_resource.initialize():
-            self.warning("Failed to initialize BaseLLMResource")
-
-        # Enable mock mode for testing if DANA_MOCK_LLM is set
-        if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
-            import os
-
-            if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
-                base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
-
-        # Set LLM resource in context for reason function access
-        try:
-            self._context.set_system_llm_resource(base_llm_resource)
-        except Exception as e:
-            self.error(f"Failed to set system LLM resource: {e}")
-
-        # Initialize module system
-        from dana.core.runtime.modules.core import initialize_module_system
-
-        if self._module_search_paths is not None:
-            initialize_module_system(self._module_search_paths)
-        else:
-            initialize_module_system()
+        self._llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource())
+        # self._llm_resource = LLMResource()
+        self._llm_resource.initialize()
+        self._llm_resource.start()
 
         self._using_shared = False
 
@@ -505,7 +471,7 @@ class DanaSandbox(Loggable):
             file_path = Path(file_path).resolve()
 
             # Add the file's directory to the module search path temporarily
-            from dana.core.runtime.modules.core import get_module_loader
+            from dana.__init__.init_modules import get_module_loader
 
             loader = get_module_loader()
             file_dir = file_path.parent
@@ -523,7 +489,7 @@ class DanaSandbox(Loggable):
                 source_code = f.read()
 
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=str(file_path))
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
@@ -593,7 +559,7 @@ class DanaSandbox(Loggable):
 
         try:
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=filename)
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=filename)
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()

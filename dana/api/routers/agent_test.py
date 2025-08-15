@@ -1,19 +1,19 @@
-from pathlib import Path
-from typing import Any
-import os
-import logging
 import asyncio
+import json
+import logging
+import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-import json
 
-from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 logger = logging.getLogger(__name__)
 
@@ -189,8 +189,8 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     sandbox_context.shutdown()
 
                     # Clear global registries to prevent struct/module conflicts between runs
+                    from dana.__init__.init_modules import reset_module_system
                     from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-                    from dana.core.runtime.modules.core import reset_module_system
 
                     StructTypeRegistry.clear()
                     reset_module_system()
@@ -257,7 +257,7 @@ async def _llm_fallback(agent_name: str, agent_description: str, message: str) -
         logger.info(f"Using LLM fallback for agent '{agent_name}' with message: {message}")
 
         # Create LLM resource
-        llm = LLMResource(
+        llm = LegacyLLMResource(
             name="agent_test_fallback_llm",
             description="LLM fallback for agent testing when Dana code is not available",
         )
@@ -385,8 +385,8 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
                 sandbox_context.shutdown()
 
                 # Clear global registries to prevent struct/module conflicts between runs
+                from dana.__init__.init_modules import reset_module_system
                 from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-                from dana.core.runtime.modules.core import reset_module_system
 
                 StructTypeRegistry.clear()
                 reset_module_system()

@@ -1,7 +1,7 @@
 import pytest
 
-from dana.core.runtime.modules.core.loader import ModuleLoader
-from dana.core.runtime.modules.core.registry import ModuleRegistry
+from dana.core.runtime.modules.loader import ModuleLoader
+from dana.core.runtime.modules.registry import ModuleRegistry
 
 
 def pytest_addoption(parser):

@@ -5,7 +5,7 @@ These provide pre-structured financial knowledge including regulations,
 risk metrics, compliance frameworks, and market data structures.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -28,11 +28,11 @@ class KnowledgeAsset:
     domain: str
     version: str
     description: str
-    content: Dict[str, Any]
-    metadata: Dict[str, Any]
+    content: dict[str, Any]
+    metadata: dict[str, Any]
     freshness_ttl: int  # Time-to-live in hours
     trust_tier: str  # "high", "medium", "low"
-    provenance: List[str]  # Source citations
+    provenance: list[str]  # Source citations
 
 
 class FinancialRegulations(KnowledgeAsset):
@@ -57,7 +57,7 @@ class FinancialRegulations(KnowledgeAsset):
             provenance=["sec.gov", "cftc.gov", "finra.org", "fca.org.uk", "esma.europa.eu"],
         )
 
-    def _build_regulations_content(self) -> Dict[str, Any]:
+    def _build_regulations_content(self) -> dict[str, Any]:
         """Build comprehensive financial regulations content"""
         return {
             "us_regulations": {
@@ -175,7 +175,7 @@ class RiskMetrics(KnowledgeAsset):
             provenance=["risk_management_association", "basel_committee", "academic_research"],
         )
 
-    def _build_risk_metrics_content(self) -> Dict[str, Any]:
+    def _build_risk_metrics_content(self) -> dict[str, Any]:
         """Build risk metrics and models content"""
         return {
             "value_at_risk": {
@@ -304,7 +304,7 @@ class ComplianceFrameworks(KnowledgeAsset):
             provenance=["regulatory_authorities", "industry_associations", "compliance_standards"],
         )
 
-    def _build_compliance_content(self) -> Dict[str, Any]:
+    def _build_compliance_content(self) -> dict[str, Any]:
         """Build compliance frameworks content"""
         return {
             "aml_framework": {
@@ -447,7 +447,7 @@ class MarketDataStructures(KnowledgeAsset):
             provenance=["market_data_vendors", "exchanges", "industry_standards"],
         )
 
-    def _build_market_data_content(self) -> Dict[str, Any]:
+    def _build_market_data_content(self) -> dict[str, Any]:
         """Build market data structures content"""
         return {
             "equity_data": {

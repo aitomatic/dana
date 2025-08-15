@@ -1,11 +1,11 @@
 {
     "llm": {
         "preferred_models": [
-            "azure:gpt-4o",
-	        "anthropic:kimi-k2-0711-preview",
-            "azure:gpt-4o-mini",
-            "openai:gpt-4.1-mini",
             "openai:gpt-4o-mini",
+	    "anthropic:kimi-k2-0711-preview",
+            "azure:gpt-4o-mini",
+            "azure:gpt-4o",
+            "openai:gpt-4.1-mini",
             "local",
             "openai:gpt-4.1",
             "openai:gpt-4.1-nano",

@@ -39,11 +39,13 @@ class DanaTypeWrapper:
         else:
             self._underlying_type_name = None
 
-        # Determine if this is a resource or struct instance
+        # Determine if this is a resource, agent, or struct instance
         if hasattr(self._obj, "start"):  # ResourceInstance has start() method
-            self._instance_type = "ResourceInstance"
+            self._instance_type = "Resource"
+        elif hasattr(self._obj, "plan") and hasattr(self._obj, "solve") and hasattr(self._obj, "chat"):  # AgentInstance has agent methods
+            self._instance_type = "Agent"
         elif hasattr(self._obj, "_type") and hasattr(self._obj._type, "fields"):
-            self._instance_type = "StructInstance"
+            self._instance_type = "Struct"
         else:
             self._instance_type = None
 

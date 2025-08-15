@@ -1,17 +1,19 @@
 import os
-from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.sys_resource.llm.llm_resource import LLMResource
-from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
-from dana.common.sys_resource.rag.pipeline.knowledge_loader import KnowledgeLoader
-from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+
 from llama_index.core import Settings
-from dana.common.sys_resource.rag.rag_resource import RAGResource
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import (
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    FilterOperator,
 )
+
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.sys_resource.rag.pipeline.knowledge_loader import KnowledgeLoader
+from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
+from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.common.sys_resource.rag.rag_resource import RAGResource
 
 
 class KnowledgeResource(RAGResource):
@@ -81,7 +83,7 @@ class KnowledgeResource(RAGResource):
 
         # Initialize LLM resource for reranking if enabled
         if self.reranking:
-            self._llm_reranker = LLMResource(
+            self._llm_reranker = LegacyLLMResource(
                 name=f"{name}_reranker",
                 temperature=0.0,  # Use deterministic settings for reranking
             )

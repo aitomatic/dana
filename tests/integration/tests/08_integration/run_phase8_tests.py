@@ -142,7 +142,7 @@ class Phase8TestRunner:
 
             # Count test assertions/checks from output
             output_lines = result.stdout.split("\n") if result.stdout else []
-            error_lines = result.stderr.split("\n") if result.stderr else []
+            result.stderr.split("\n") if result.stderr else []
 
             # Count success/failure indicators
             success_count = sum(1 for line in output_lines if "✓" in line)

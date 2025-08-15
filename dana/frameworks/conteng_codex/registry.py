@@ -5,8 +5,7 @@ In‑memory Domain Registry and Knowledge Asset schema.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .templates import ContextTemplate
 
@@ -14,7 +13,7 @@ from .templates import ContextTemplate
 @dataclass
 class KnowledgeAsset:
     domain: str
-    tasks: List[str]
+    tasks: list[str]
     source: str
     content: str
     trust_score: float = 0.8  # 0..1
@@ -43,14 +42,14 @@ class DomainRegistry:
     """
 
     def __init__(self) -> None:
-        self._templates: Dict[str, Dict[str, "ContextTemplate"]] = {}
-        self._assets: List[KnowledgeAsset] = []
+        self._templates: dict[str, dict[str, ContextTemplate]] = {}
+        self._assets: list[KnowledgeAsset] = []
 
     # -- Templates --
-    def register_template(self, template: "ContextTemplate") -> None:
+    def register_template(self, template: ContextTemplate) -> None:
         self._templates.setdefault(template.name, {})[template.version] = template
 
-    def get_template(self, name: str, version: str = "latest") -> Optional["ContextTemplate"]:
+    def get_template(self, name: str, version: str = "latest") -> ContextTemplate | None:
         versions = self._templates.get(name, {})
         if not versions:
             return None
@@ -64,7 +63,7 @@ class DomainRegistry:
     def register_asset(self, asset: KnowledgeAsset) -> None:
         self._assets.append(asset)
 
-    def get_knowledge_assets(self, domain: Optional[str] = None, task: Optional[str] = None) -> List[KnowledgeAsset]:
+    def get_knowledge_assets(self, domain: str | None = None, task: str | None = None) -> list[KnowledgeAsset]:
         items = [a for a in self._assets if (domain is None or a.domain == domain)]
         if task is not None:
             items = [a for a in items if task in a.tasks]

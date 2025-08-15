@@ -1,0 +1,45 @@
+# Test script for Dana TUI log panel
+# Run this with: dana demos/test_log_panel.na
+
+# Import logging functions
+from stdlib:py_log import py_log
+from stdlib:py_log_level import py_log_level
+
+# Test different log levels
+py_log("This is a DEBUG message", "DEBUG")
+py_log("This is an INFO message", "INFO")
+py_log("This is a WARNING message", "WARNING")
+py_log("This is an ERROR message", "ERROR")
+py_log("This is a CRITICAL message", "CRITICAL")
+
+# Change log level to show all messages
+py_log_level("DEBUG")
+
+# Test again with DEBUG level enabled
+py_log("Now this DEBUG message should show", "DEBUG")
+py_log("And this INFO message should show", "INFO")
+
+# Test with different data types
+py_log("Testing with a number: " + str(42), "INFO")
+py_log("Testing with a list: " + str([1, 2, 3, 4, 5]), "DEBUG")
+
+# Simulate some processing with logging
+py_log("Starting data processing...", "INFO")
+
+for i in range(1, 6):
+    py_log("Processing item " + str(i) + "/5", "DEBUG")
+    # Simulate some work
+    if i == 3:
+        py_log("Warning: Item 3 took longer than expected", "WARNING")
+    elif i == 5:
+        py_log("Error: Failed to process item 5", "ERROR")
+
+py_log("Data processing completed", "INFO")
+
+print("Test completed! Press Ctrl+L in the TUI to see the log panel.")
+print("You should see all these log messages with color coding:")
+print("- DEBUG: cyan")
+print("- INFO: green") 
+print("- WARNING: yellow")
+print("- ERROR: red")
+print("- CRITICAL: magenta")

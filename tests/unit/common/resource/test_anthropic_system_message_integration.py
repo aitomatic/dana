@@ -8,7 +8,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 
 
@@ -23,7 +23,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_aisuite_handles_anthropic_automatically(self):
         """Test that AISuite automatically handles Anthropic system message transformation."""
-        llm = LLMResource(model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
 
         request = BaseRequest(
             arguments={
@@ -79,7 +79,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_no_manual_transformation_for_anthropic(self):
         """Test that we don't manually transform Anthropic system messages."""
-        llm = LLMResource(model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
 
         request = {"messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is pi?"}]}
 
@@ -95,7 +95,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_openai_system_messages_unchanged(self):
         """Test that OpenAI system messages remain unchanged (no transformation needed)."""
-        llm = LLMResource(model="openai:gpt-4")
+        llm = LegacyLLMResource(model="openai:gpt-4")
 
         request = BaseRequest(
             arguments={
@@ -147,7 +147,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_multiple_system_messages_handling(self):
         """Test handling of multiple system messages."""
-        llm = LLMResource(model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
 
         request = {
             "messages": [
@@ -168,7 +168,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_no_system_messages_no_issues(self):
         """Test that requests without system messages work normally."""
-        llm = LLMResource(model="anthropic:claude-3-5-sonnet-20240620")
+        llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
 
         request = {"messages": [{"role": "user", "content": "What is pi?"}]}
 

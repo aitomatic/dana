@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.translator.translator import Translator
 
 
@@ -21,7 +21,7 @@ async def test_transcoder():
     preferred_models = [{"name": "openai:gpt-4", "required_api_keys": ["OPENAI_API_KEY"]}]
 
     # Create LLM resource with explicit model and API key
-    llm = LLMResource(
+    llm = LegacyLLMResource(
         name="test_llm",
         model="openai:gpt-4",
         preferred_models=preferred_models,

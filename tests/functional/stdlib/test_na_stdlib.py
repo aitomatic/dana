@@ -28,16 +28,18 @@ class TestStdlib:
         self.context = SandboxContext()
 
         # Set up LLM resource for tests that use reason function
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
-        base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
-        base_llm_resource.initialize()
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
 
         # Enable mock mode for testing
-        if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
-            base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+        # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+        llm_resource.with_mock_llm_call(True)
 
-        self.context.set_system_llm_resource(base_llm_resource)
+        self.context.set_system_llm_resource(llm_resource)
 
     def run_dana_test_file(self, file_path: str) -> Any:
         """Run a .na test file and return the result."""
@@ -48,7 +50,7 @@ class TestStdlib:
         with open(file_path) as f:
             code = f.read()
 
-        return self.interpreter._eval(code, self.context)
+        return self.interpreter._eval_source_code(code, self.context)
 
     @pytest.mark.parametrize("na_file", get_na_files())
     def test_stdlib_files(self, na_file: Path):

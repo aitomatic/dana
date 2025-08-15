@@ -4,319 +4,214 @@ Tests for Resource Keyword Implementation
 This module tests the resource keyword functionality including:
 - Grammar parsing
 - AST node creation
-- Resource blueprint creation
-- Agent-only access validation
+- Resource type creation
 - Resource registry operations
 """
 
 import pytest
-from unittest.mock import Mock, patch
 
-from dana.core.resource import (
-    BaseResource,
-    ResourceState,
-    ResourceHandle,
-    ResourceRegistry,
-    ResourceError,
-    MCPResource,
-    RAGResource,
-)
-from dana.core.resource.context_integration import (
-    ResourceContextIntegrator,
-    AgentAccessError,
-    get_resource_integrator,
-)
 from dana.core.lang.ast import (
     ResourceDefinition,
     ResourceField,
-    ResourceMethod,
     TypeHint,
+)
+from dana.core.resource import (
+    ResourceInstance,
+    ResourceType,
+    ResourceTypeRegistry,
 )
 
 
-class TestBaseResource:
-    """Test the base resource functionality."""
+class TestResourceType:
+    """Test the resource type functionality."""
 
-    def test_resource_creation(self):
-        """Test creating a basic resource."""
-        resource = BaseResource(kind="test", name="test_resource", description="A test resource")
+    def test_resource_type_creation(self):
+        """Test creating a basic resource type."""
+        resource_type = ResourceType(
+            name="TestResource",
+            fields={"name": "str", "kind": "str"},
+            field_order=["name", "kind"],
+            field_defaults={"kind": "test"},
+        )
 
-        assert resource.kind == "test"
-        assert resource.name == "test_resource"
-        assert resource.description == "A test resource"
-        assert resource.state == ResourceState.CREATED
-        assert not resource.is_running()
+        assert resource_type.name == "TestResource"
+        assert resource_type.fields["name"] == "str"
+        assert resource_type.fields["kind"] == "str"
+        assert resource_type.field_order == ["state", "name", "kind"]
+        assert resource_type.field_defaults["kind"] == "test"
+        assert resource_type.field_defaults["state"] == "CREATED"
+
+    def test_resource_type_composition(self):
+        """Test resource type composition without inheritance."""
+        # Create independent resource types
+        extended_type = ResourceType(
+            name="ExtendedResource",
+            fields={"name": "str", "kind": "str", "extra_field": "int"},
+            field_order=["name", "kind", "extra_field"],
+            field_defaults={"kind": "extended", "extra_field": 42},
+        )
+
+        # Check that they are independent (no inheritance)
+        assert "name" in extended_type.fields
+        assert "kind" in extended_type.fields
+        assert "extra_field" in extended_type.fields
+        assert extended_type.field_order == ["state", "name", "kind", "extra_field"]
+        assert extended_type.field_defaults["kind"] == "extended"
+        assert extended_type.field_defaults["extra_field"] == 42
+        assert extended_type.field_defaults["state"] == "CREATED"
+
+
+class TestResourceInstance:
+    """Test the resource instance functionality."""
+
+    def test_resource_instance_creation(self):
+        """Test creating a resource instance."""
+        resource_type = ResourceType(
+            name="TestResource",
+            fields={"name": "str", "kind": "str"},
+            field_order=["name", "kind"],
+            field_defaults={"kind": "test"},
+        )
+
+        instance = ResourceInstance(resource_type, {"name": "test_instance"})
+
+        assert instance.name == "test_instance"
+        assert instance.kind == "test"  # Default value
+        assert instance.state == "CREATED"
 
     def test_resource_lifecycle(self):
         """Test resource lifecycle management."""
-        resource = BaseResource(kind="test", name="test_resource")
+        resource_type = ResourceType(
+            name="TestResource",
+            fields={"name": "str"},
+            field_order=["name"],
+        )
+
+        instance = ResourceInstance(resource_type, {"name": "test_resource"})
+
+        # Test initialize
+        assert instance.initialize()
+        assert instance.state == "INITIALIZED"
 
         # Test start
-        assert resource.start()
-        assert resource.is_running()
-        assert resource.state == ResourceState.RUNNING
-
-        # Test suspend
-        assert resource.suspend()
-        assert resource.state == ResourceState.SUSPENDED
-        assert not resource.is_running()
-
-        # Test resume
-        assert resource.resume()
-        assert resource.is_running()
+        assert instance.start()
+        assert instance.state == "RUNNING"
+        assert instance.is_running()
 
         # Test stop
-        assert resource.stop()
-        assert resource.state == ResourceState.TERMINATED
-        assert not resource.is_running()
+        assert instance.stop()
+        assert instance.state == "TERMINATED"
+        assert not instance.is_running()
 
-    def test_resource_metadata(self):
-        """Test resource metadata generation."""
-        resource = BaseResource(
-            kind="test",
-            name="test_resource",
-            version="2.0.0",
-            domain="testing",
-            tags=["unit", "test"],
-            capabilities=["test", "validate"],
-            permissions=["read"],
+        # Test cleanup
+        assert instance.cleanup()
+        assert instance.state == "TERMINATED"
+
+    def test_composition_and_delegation(self):
+        """Test composition and delegation in resource instances."""
+        # Create resource type
+        resource_type = ResourceType(
+            name="ComposedResource",
+            fields={"name": "str"},
+            field_order=["name"],
         )
 
-        metadata = resource.get_metadata()
-        assert metadata["kind"] == "test"
-        assert metadata["name"] == "test_resource"
-        assert metadata["version"] == "2.0.0"
-        assert metadata["domain"] == "testing"
-        assert metadata["tags"] == ["unit", "test"]
-        assert metadata["capabilities"] == ["test", "validate"]
-        assert metadata["permissions"] == ["read"]
+        # Create instance
+        instance = ResourceInstance(resource_type, {"name": "test"})
+
+        # Create a backend object
+        class Backend:
+            def process(self):
+                return "processed"
+
+            def compute(self, value):
+                return value * 2
+
+        backend = Backend()
+        instance.set_backend(backend)
+
+        # Test backend delegation
+        assert instance.has_method("process")
+        assert instance.call_method("process") == "processed"
+        assert instance.call_method("compute", 5) == 10
+
+        # Create a delegate object
+        class Logger:
+            def log(self, message):
+                return f"logged: {message}"
+
+        logger = Logger()
+        instance.add_delegate("logger", logger)
+
+        # Test delegate methods
+        assert instance.has_method("log")
+        assert instance.call_method("log", "test message") == "logged: test message"
+
+        # Test delegate management
+        assert instance.get_delegate("logger") == logger
+        instance.remove_delegate("logger")
+        assert instance.get_delegate("logger") is None
+        assert not instance.has_method("log")
 
 
-class TestResourceHandle:
-    """Test resource handle functionality for transfers."""
+class TestResourceTypeRegistry:
+    """Test the resource type registry functionality."""
 
-    def test_handle_creation(self):
-        """Test creating a resource handle."""
-        handle = ResourceHandle(
-            kind="mcp",
-            name="test_mcp",
-            version="1.0.0",
-            description="Test MCP resource",
-            domain="general",
-            capabilities=["query", "call_tool"],
+    def setup_method(self):
+        """Clear registry before each test."""
+        ResourceTypeRegistry.clear()
+
+    def test_resource_type_registration(self):
+        """Test registering resource types."""
+        resource_type = ResourceType(
+            name="TestResource",
+            fields={"name": "str"},
+            field_order=["name"],
         )
 
-        assert handle.kind == "mcp"
-        assert handle.name == "test_mcp"
-        assert handle.validate()
+        ResourceTypeRegistry.register_resource(resource_type)
+        assert ResourceTypeRegistry.exists("TestResource")
+        assert ResourceTypeRegistry.get_resource_type("TestResource") == resource_type
 
-    def test_handle_serialization(self):
-        """Test handle serialization to/from dict."""
-        original = ResourceHandle(
-            kind="rag",
-            name="test_rag",
-            version="1.0.0",
-            description="Test RAG",
-            domain="testing",
-            tags=["test"],
-            config={"sources": ["test.pdf"]},
+    def test_resource_instance_creation(self):
+        """Test creating resource instances through the registry."""
+        resource_type = ResourceType(
+            name="TestResource",
+            fields={"name": "str", "kind": "str"},
+            field_order=["name", "kind"],
+            field_defaults={"kind": "test"},
         )
 
-        # Serialize
-        data = original.to_dict()
-        assert isinstance(data, dict)
-        assert data["kind"] == "rag"
-        assert data["config"]["sources"] == ["test.pdf"]
+        ResourceTypeRegistry.register_resource(resource_type)
 
-        # Deserialize
-        recreated = ResourceHandle.from_dict(data)
-        assert recreated.kind == original.kind
-        assert recreated.name == original.name
-        assert recreated.config == original.config
+        instance = ResourceTypeRegistry.create_resource_instance("TestResource", {"name": "test_instance"})
 
-    def test_handle_compatibility(self):
-        """Test handle compatibility checking."""
-        handle = ResourceHandle(kind="mcp", name="test", version="1.0.0", description="Test handle", domain="general")
+        assert instance.name == "test_instance"
+        assert instance.kind == "test"
+        assert isinstance(instance, ResourceInstance)
 
-        assert handle.is_compatible_with("mcp")
-        assert not handle.is_compatible_with("rag")
+    def test_resource_composition_queries(self):
+        """Test resource type queries for composition-based resources."""
+        # Create independent resource types
+        base_type = ResourceType(name="BaseResource", fields={"id": "str"}, field_order=["id"])
+        extended_type = ResourceType(name="ExtendedResource", fields={"id": "str", "name": "str"}, field_order=["id", "name"])
+        specialized_type = ResourceType(
+            name="SpecializedResource", fields={"id": "str", "name": "str", "value": "int"}, field_order=["id", "name", "value"]
+        )
 
+        ResourceTypeRegistry.register_resource(base_type)
+        ResourceTypeRegistry.register_resource(extended_type)
+        ResourceTypeRegistry.register_resource(specialized_type)
 
-class TestResourceRegistry:
-    """Test the resource registry functionality."""
+        # Test that types are registered independently
+        assert ResourceTypeRegistry.exists("BaseResource")
+        assert ResourceTypeRegistry.exists("ExtendedResource")
+        assert ResourceTypeRegistry.exists("SpecializedResource")
 
-    def test_blueprint_registration(self):
-        """Test registering resource blueprints."""
-        registry = ResourceRegistry()
-
-        registry.register_blueprint("test", BaseResource)
-        assert "test" in registry._blueprints
-        assert registry._blueprints["test"] == BaseResource
-
-    def test_resource_creation(self):
-        """Test creating resources through the registry."""
-        registry = ResourceRegistry()
-        registry.register_blueprint("test", BaseResource)
-
-        resource = registry.create_resource("test", "test_resource", "test_agent")
-
-        assert resource.name == "test_resource"
-        assert resource.kind == "test"
-        assert resource.owner_agent == "test_agent"
-        assert registry.get_resource("test_resource") is resource
-
-    def test_resource_transfer(self):
-        """Test transferring resources between agents."""
-        registry = ResourceRegistry()
-        registry.register_blueprint("test", BaseResource)
-
-        # Create resource owned by agent1
-        resource = registry.create_resource("test", "test_resource", "agent1")
-        assert resource.owner_agent == "agent1"
-
-        # Transfer to agent2
-        success = registry.transfer_resource("test_resource", "agent1", "agent2")
-        assert success
-        assert resource.owner_agent == "agent2"
-
-        # Verify agent tracking
-        agent1_resources = registry.list_resources("agent1")
-        agent2_resources = registry.list_resources("agent2")
-        assert len(agent1_resources) == 0
-        assert len(agent2_resources) == 1
-        assert agent2_resources[0] is resource
-
-    def test_handle_creation_and_reconstruction(self):
-        """Test creating handles and reconstructing resources."""
-        registry = ResourceRegistry()
-        registry.register_blueprint("test", BaseResource)
-
-        # Create original resource
-        original = registry.create_resource("test", "test_resource", "agent1", description="Test resource", tags=["test"])
-
-        # Create handle
-        handle = registry.create_handle("test_resource")
-        assert handle.kind == "test"
-        assert handle.name == "test_resource"
-        assert handle.source_agent == "agent1"
-
-        # Reconstruct from handle with different name to avoid conflict
-        handle.name = "test_resource_copy"
-        reconstructed = registry.create_from_handle(handle, "agent2")
-        assert reconstructed.kind == original.kind
-        assert reconstructed.name == "test_resource_copy"
-        assert reconstructed.owner_agent == "agent2"  # Different agent
-
-    def test_agent_cleanup(self):
-        """Test cleaning up agent resources."""
-        registry = ResourceRegistry()
-        registry.register_blueprint("test", BaseResource)
-
-        # Create resources for agent
-        resource1 = registry.create_resource("test", "resource1", "agent1")
-        resource2 = registry.create_resource("test", "resource2", "agent1")
-
-        # Verify created
-        agent_resources = registry.list_resources("agent1")
-        assert len(agent_resources) == 2
-
-        # Cleanup agent
-        registry.cleanup_agent_resources("agent1")
-
-        # Verify cleanup
-        agent_resources = registry.list_resources("agent1")
-        assert len(agent_resources) == 0
-        assert registry.get_resource("resource1") is None
-        assert registry.get_resource("resource2") is None
-
-
-class TestAgentOnlyAccess:
-    """Test agent-only access validation."""
-
-    def test_agent_context_validation(self):
-        """Test that resources can only be accessed in agent context."""
-        integrator = ResourceContextIntegrator()
-
-        # No agent context - should fail
-        with pytest.raises(AgentAccessError):
-            integrator.validate_agent_access()
-
-        # Set agent context - should succeed
-        integrator.set_agent_context("test_agent")
-        agent_name = integrator.validate_agent_access()
-        assert agent_name == "test_agent"
-
-        # Clear context - should fail again
-        integrator.clear_agent_context()
-        with pytest.raises(AgentAccessError):
-            integrator.validate_agent_access()
-
-    def test_resource_creation_with_agent_validation(self):
-        """Test creating resources requires agent context."""
-        integrator = ResourceContextIntegrator()
-        mock_sandbox = Mock()
-
-        # No agent context - should fail
-        with pytest.raises(AgentAccessError):
-            integrator.create_resource("mcp", "test_mcp", mock_sandbox)
-
-        # Set agent context - should succeed
-        integrator.set_agent_context("test_agent")
-        resource = integrator.create_resource("mcp", "test_mcp", mock_sandbox)
-
-        assert isinstance(resource, MCPResource)
-        assert resource.owner_agent == "test_agent"
-        mock_sandbox.set_resource.assert_called_once_with("test_mcp", resource)
-
-    def test_resource_method_invocation_validation(self):
-        """Test that resource methods validate agent access."""
-        integrator = ResourceContextIntegrator()
-        mock_sandbox = Mock()
-
-        # Create resource
-        integrator.set_agent_context("agent1")
-        resource = integrator.create_resource("mcp", "test_mcp", mock_sandbox)
-        mock_sandbox.get_resource.return_value = resource
-
-        # Same agent can invoke methods
-        result = integrator.invoke_resource_method("test_mcp", "initialize", mock_sandbox)
-        assert result is not None  # initialize returns something
-
-        # Different agent cannot invoke methods
-        integrator.set_agent_context("agent2")
-        with pytest.raises(AgentAccessError):
-            integrator.invoke_resource_method("test_mcp", "initialize", mock_sandbox)
-
-
-class TestStandardResourceBlueprints:
-    """Test the standard resource blueprint implementations."""
-
-    def test_mcp_resource(self):
-        """Test MCP resource blueprint."""
-        mcp = MCPResource(name="test_mcp", endpoint="http://localhost:8080", auth={"token": "test"})
-
-        assert mcp.kind == "mcp"
-        assert mcp.endpoint == "http://localhost:8080"
-        assert mcp.auth["token"] == "test"
-
-        # Test methods exist
-        assert hasattr(mcp, "list_tools")
-        assert hasattr(mcp, "call_tool")
-        assert callable(mcp.list_tools)
-        assert callable(mcp.call_tool)
-
-    def test_rag_resource(self):
-        """Test RAG resource blueprint."""
-        rag = RAGResource(name="test_rag", sources=["doc1.pdf", "doc2.txt"], chunk_size=512, reranking=True)
-
-        assert rag.kind == "rag"
-        assert rag.sources == ["doc1.pdf", "doc2.txt"]
-        assert rag.chunk_size == 512
-        assert rag.reranking is True
-
-        # Test query method exists
-        assert hasattr(rag, "query")
-        assert callable(rag.query)
+        # Test getting resource types
+        assert ResourceTypeRegistry.get_resource_type("BaseResource") == base_type
+        assert ResourceTypeRegistry.get_resource_type("ExtendedResource") == extended_type
+        assert ResourceTypeRegistry.get_resource_type("SpecializedResource") == specialized_type
 
 
 class TestAST:
@@ -324,10 +219,11 @@ class TestAST:
 
     def test_resource_definition(self):
         """Test ResourceDefinition AST node."""
-        definition = ResourceDefinition(name="MyMCP", parent_name="MCPResource", fields=[], methods=[])
+        # Without parent (composition-based)
+        definition = ResourceDefinition(name="MyResource", parent_name=None, fields=[], methods=[])
 
-        assert definition.name == "MyMCP"
-        assert definition.parent_name == "MCPResource"
+        assert definition.name == "MyResource"
+        assert definition.parent_name is None
 
     def test_resource_field(self):
         """Test ResourceField AST node."""

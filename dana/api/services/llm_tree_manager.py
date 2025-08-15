@@ -4,9 +4,9 @@ import json
 import logging
 from typing import Any
 
-from dana.api.core.schemas import DomainKnowledgeTree, DomainNode, DomainKnowledgeUpdateResponse
+from dana.api.core.schemas import DomainKnowledgeTree, DomainKnowledgeUpdateResponse, DomainNode
 from dana.common.mixins.loggable import Loggable
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class LLMTreeManager(Loggable):
 
     def __init__(self):
         super().__init__()
-        self.llm = LLMResource()
+        self.llm = LegacyLLMResource()
 
     async def add_topic_to_knowledge(
         self,

@@ -12,7 +12,6 @@ from dana.core.lang.parser.utils.transformer_utils import flatten_items as utils
 from dana.core.lang.parser.utils.transformer_utils import get_leaf_node as utils_get_leaf_node
 from dana.core.lang.parser.utils.transformer_utils import unwrap_single_child_tree as utils_unwrap_single
 from dana.core.lang.parser.utils.tree_utils import TreeTraverser
-from dana.core.lang.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
 
 
 class BaseTransformer(Loggable, Transformer):
@@ -61,14 +60,9 @@ class BaseTransformer(Loggable, Transformer):
         Recursively unwrap single-child Tree nodes, stopping at rule names in stop_at.
         If stop_at is None, unwrap all single-child Trees.
 
-        This method now delegates to the transformer_utils implementation for consistency.
+        This method delegates to the transformer_utils implementation for consistency.
         """
-        # For backward compatibility, handle stop_at parameter
-        if stop_at:
-            return utils_unwrap_single(item, stop_at)
-        else:
-            # Use the tree_utils implementation when no stop_at is provided
-            return utils_unwrap(item)
+        return utils_unwrap_single(item, stop_at)
 
     def get_location(self, item: Any) -> tuple[int, int] | None:
         """Get line and column from a token or tree."""

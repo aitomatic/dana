@@ -47,7 +47,7 @@ class TestDatabase:
             mock_session_local.return_value = mock_session
 
             db_gen = get_db()
-            db = next(db_gen)
+            next(db_gen)
 
             # Simulate the generator being closed
             try:
@@ -135,7 +135,7 @@ class TestDatabase:
             mock_session_local.return_value = mock_session
 
             db_gen = get_db()
-            db = next(db_gen)
+            next(db_gen)
 
             # Simulate an error during session usage
             try:

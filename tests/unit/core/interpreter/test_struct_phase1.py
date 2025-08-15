@@ -258,7 +258,7 @@ class TestStructTypeSystem:
         container = create_struct_instance("Container", value=42)
 
         # Try to access non-existent field
-        with pytest.raises(AttributeError, match="has no field 'nonexistent'"):
+        with pytest.raises(AttributeError, match="has no field or delegated access 'nonexistent'"):
             _ = container.nonexistent
 
     def test_struct_instance_validation(self):

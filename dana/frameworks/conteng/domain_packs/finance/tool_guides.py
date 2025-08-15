@@ -5,7 +5,7 @@ Integrates with Agent.use() to provide contextual tool recommendations
 based on domain expertise, security policies, and task requirements.
 """
 
-from typing import Dict, List, Optional, Any, Set
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -45,8 +45,8 @@ class ToolMetadata:
     data_sensitivity: str  # "public", "sensitive", "confidential"
     regulatory_impact: bool
     audit_required: bool
-    supported_regions: List[str]
-    rate_limits: Optional[Dict[str, int]] = None
+    supported_regions: list[str]
+    rate_limits: dict[str, int] | None = None
 
 
 @dataclass
@@ -56,8 +56,8 @@ class ToolRecommendation:
     tool_name: str
     confidence_score: float  # 0.0 to 1.0
     reason: str
-    prerequisites: List[str]
-    alternatives: List[str]
+    prerequisites: list[str]
+    alternatives: list[str]
     cost_benefit_ratio: float
 
 
@@ -69,7 +69,7 @@ class FinancialToolSelector:
         self.method_tool_mapping = self._build_method_mappings()
         self.security_policies = self._build_security_policies()
 
-    def _build_tool_catalog(self) -> Dict[str, ToolMetadata]:
+    def _build_tool_catalog(self) -> dict[str, ToolMetadata]:
         """Build comprehensive financial tool catalog"""
         return {
             # Market Data Tools
@@ -273,7 +273,7 @@ class FinancialToolSelector:
             ),
         }
 
-    def _build_method_mappings(self) -> Dict[str, Dict[str, List[str]]]:
+    def _build_method_mappings(self) -> dict[str, dict[str, list[str]]]:
         """Build mappings of agent methods to recommended tools"""
         return {
             "plan": {
@@ -304,7 +304,7 @@ class FinancialToolSelector:
             },
         }
 
-    def _build_security_policies(self) -> Dict[str, Any]:
+    def _build_security_policies(self) -> dict[str, Any]:
         """Build security policies for tool access"""
         return {
             "access_control": {
@@ -343,8 +343,8 @@ class FinancialToolSelector:
         }
 
     def get_tools_for_method(
-        self, method: str, specialization: Optional[str] = None, risk_level: str = "medium", regulatory_framework: str = "US"
-    ) -> List[ToolRecommendation]:
+        self, method: str, specialization: str | None = None, risk_level: str = "medium", regulatory_framework: str = "US"
+    ) -> list[ToolRecommendation]:
         """Get tool recommendations for a specific agent method"""
 
         if method not in self.method_tool_mapping:
@@ -368,7 +368,7 @@ class FinancialToolSelector:
         recommendations.sort(key=lambda r: r.confidence_score, reverse=True)
         return recommendations
 
-    def _is_tool_suitable(self, tool: ToolMetadata, specialization: Optional[str], risk_level: str, regulatory_framework: str) -> bool:
+    def _is_tool_suitable(self, tool: ToolMetadata, specialization: str | None, risk_level: str, regulatory_framework: str) -> bool:
         """Check if tool is suitable for the given context"""
 
         # Check regional support
@@ -387,7 +387,7 @@ class FinancialToolSelector:
 
         return True
 
-    def _get_specialization_tools(self, specialization: str) -> Set[str]:
+    def _get_specialization_tools(self, specialization: str) -> set[str]:
         """Get tools suitable for specific financial specialization"""
 
         specialization_mappings = {
@@ -487,7 +487,7 @@ class FinancialToolSelector:
         key = (method, tool.category.value)
         return reasons.get(key, f"Recommended {tool.category.value} tool: {tool.description}")
 
-    def _find_alternative_tools(self, tool: ToolMetadata) -> List[str]:
+    def _find_alternative_tools(self, tool: ToolMetadata) -> list[str]:
         """Find alternative tools in the same category"""
         alternatives = []
 
@@ -497,7 +497,7 @@ class FinancialToolSelector:
 
         return alternatives[:3]  # Limit to top 3 alternatives
 
-    def _get_tool_prerequisites(self, tool: ToolMetadata) -> List[str]:
+    def _get_tool_prerequisites(self, tool: ToolMetadata) -> list[str]:
         """Get prerequisites for using a tool"""
         prerequisites = []
 
@@ -533,7 +533,7 @@ class FinancialToolSelector:
 
         return benefit / cost
 
-    def get_tool_security_policy(self, tool_name: str) -> Dict[str, Any]:
+    def get_tool_security_policy(self, tool_name: str) -> dict[str, Any]:
         """Get security policy for a specific tool"""
 
         if tool_name not in self.tool_catalog:
@@ -552,7 +552,7 @@ class FinancialToolSelector:
             "regulatory_impact": tool.regulatory_impact,
         }
 
-    def get_method_tool_summary(self, method: str) -> Dict[str, Any]:
+    def get_method_tool_summary(self, method: str) -> dict[str, Any]:
         """Get summary of available tools for a method"""
 
         tools = self.get_tools_for_method(method)

@@ -16,12 +16,13 @@ from dana.core.repl.repl import REPL
 class CommandHandler(Loggable):
     """Handles special commands in the Dana REPL."""
 
-    def __init__(self, repl: REPL, colors: ColorScheme):
+    def __init__(self, repl: REPL, colors: ColorScheme, prompt_manager=None):
         """Initialize the command handler."""
         super().__init__()
         self.repl = repl
         self.colors = colors
         self.help_formatter = HelpFormatter(self.repl, self.colors)
+        self.prompt_manager = prompt_manager
 
     async def handle_command(self, line: str) -> tuple[bool, str]:
         """
@@ -48,6 +49,10 @@ class CommandHandler(Loggable):
         if line_stripped in ["help", "?", "/help"]:
             self.help_formatter.show_help()
             return True, "Help displayed"
+
+        # Handle status command
+        if line_stripped in ["/status", "status"]:
+            return await self._handle_status_command()
 
         return False, ""
 
@@ -102,3 +107,52 @@ class CommandHandler(Loggable):
             self.repl.set_nlp_mode(original_mode)
 
         return True, "NLP test completed"
+
+    async def _handle_status_command(self) -> tuple[bool, str]:
+        """Handle the /status command to show current REPL status."""
+        if self.prompt_manager and hasattr(self.prompt_manager, "status_display"):
+            print_formatted_text(ANSI(f"\n{self.colors.bold('Current Dana REPL Status:')}"))
+
+            # Get context information
+            status_display = self.prompt_manager.status_display
+            context_info = status_display.get_context_info()
+
+            # Count variables in different scopes
+            var_details = []
+            try:
+                context = self.repl.context
+                for scope in ["private", "public", "local", "system"]:
+                    scope_vars = context._state.get(scope, {})
+                    scope_count = 0
+                    for var_name in scope_vars.keys():
+                        if not var_name.startswith("_"):  # Skip internal variables
+                            scope_count += 1
+                    if scope_count > 0:
+                        var_details.append(f"{scope}: {scope_count}")
+            except Exception:
+                var_details = ["Unable to read context"]
+
+            # Display status information
+            print_formatted_text(ANSI(f"  {self.colors.accent('Context:')} {context_info}"))
+            print_formatted_text(ANSI(f"  {self.colors.accent('Variable breakdown:')} {', '.join(var_details) if var_details else 'None'}"))
+
+            # Show NLP status
+            nlp_status = "enabled" if self.repl.get_nlp_mode() else "disabled"
+            print_formatted_text(ANSI(f"  {self.colors.accent('NLP mode:')} {nlp_status}"))
+
+            # Show available core functions count
+            try:
+                registry = self.repl.interpreter.function_registry
+                core_functions = registry.list("system") or []
+                print_formatted_text(ANSI(f"  {self.colors.accent('Core functions:')} {len(core_functions)} available"))
+            except Exception:
+                print_formatted_text(ANSI(f"  {self.colors.accent('Core functions:')} Unable to count"))
+
+            print_formatted_text(
+                ANSI(f"\n{self.colors.dim('💡 Tip: The status bar can be shown at the bottom with appropriate terminal support')}")
+            )
+
+            return True, "Status displayed"
+        else:
+            print_formatted_text(ANSI(self.colors.error("❌ Status display not available")))
+            return True, "Status unavailable"

@@ -92,7 +92,7 @@ from dana.common.sys_resource.base_sys_resource import BaseSysResource, Resource
 from dana.common.sys_resource.embedding import EmbeddingResource
 
 # HumanResource moved to core resource plugins
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import (
     BaseRequest,
     BaseResponse,
@@ -149,7 +149,7 @@ __all__ = [
     # Resource (from resource/)
     "BaseSysResource",
     "ResourceUnavailableError",
-    "LLMResource",
+    "LegacyLLMResource",
     "HumanResource",
     "KBResource",
     "MemoryResource",

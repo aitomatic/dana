@@ -1,1 +1,0 @@
-This is a potentially large text input stored in a text file

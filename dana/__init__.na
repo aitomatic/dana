@@ -25,4 +25,5 @@ from dana.libs.corelib import *
 # - ConfigResource (from config_resource.na)
 # - CodingResource (from coding_resource.na)
 #
-from dana.libs.stdlib import *
+# Actually, we don't auto-import stdlib resources.
+# from dana.libs.stdlib import *

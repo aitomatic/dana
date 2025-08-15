@@ -232,7 +232,7 @@ class ImportHandler(Loggable):
             context_name: Name to use in context
             context: The execution context
         """
-        self._ensure_module_system_initialized()
+        self._ensure_module_system_initialized(context)
 
         # Handle relative imports
         absolute_module_name = self._resolve_relative_import(module_name, context)
@@ -249,7 +249,7 @@ class ImportHandler(Loggable):
             return
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader, get_module_registry
+        from dana.__init__.init_modules import get_module_loader, get_module_registry
 
         loader = get_module_loader()
 
@@ -345,7 +345,7 @@ class ImportHandler(Loggable):
             ``from core.math import add, sub as subtract``  -> binds ``local:add`` and ``local:subtract``
             ``from dana.libs.corelib.na_modules import *``  -> imports all exported names
         """
-        self._ensure_module_system_initialized()
+        self._ensure_module_system_initialized(context)
         module, absolute_module_name = self._get_module(kind="dana", module_name=module_name, context=context)
 
         if is_star:
@@ -423,21 +423,26 @@ class ImportHandler(Loggable):
             # This is not fatal - function can still be accessed as module attribute
             self.warning(f"Failed to register imported function '{context_name}': {reg_err}")
 
-    def _ensure_module_system_initialized(self) -> None:
+    def _ensure_module_system_initialized(self, context: SandboxContext | None = None) -> None:
         """Ensure the Dana module system is initialized with caching."""
 
         if self._module_loader_initialized:
             return
 
-        from dana.core.runtime.modules.core import get_module_loader, initialize_module_system
+        from dana.__init__.init_modules import get_module_loader, initialize_module_system
 
         try:
             # Try to get the loader (this will raise if not initialized)
             get_module_loader()
             self._module_loader_initialized = True
         except Exception:
+            # Get custom search paths from context if provided
+            search_paths = None
+            if context:
+                search_paths = context.get("system:module_search_paths")
+
             # Initialize the module system if not already done
-            initialize_module_system()
+            initialize_module_system(search_paths=search_paths)
             self._module_loader_initialized = True
 
     def _create_parent_namespaces(self, context_name: str, module: Any, context: SandboxContext) -> None:
@@ -657,7 +662,7 @@ class ImportHandler(Loggable):
             if cache_key in self._module_cache:
                 return self._module_cache[cache_key], absolute_module_name
             try:
-                from dana.core.runtime.modules.core import get_module_loader
+                from dana.__init__.init_modules import get_module_loader
 
                 loader = get_module_loader()
                 spec = loader.find_spec(absolute_module_name)

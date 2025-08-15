@@ -4,13 +4,12 @@ Provides financial domain-specific context engineering capabilities
 for enhanced agent performance in financial applications.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
 from ..base import BaseDomainPack
 from ...templates import ContextTemplate
-from ...tokenizer import get_tokenizer, count_tokens_financial
 from .workflow_templates import RiskAssessmentTemplate, ComplianceCheckTemplate, PortfolioAnalysisTemplate, ReportingTemplate
 from .knowledge_assets import FinancialRegulations, RiskMetrics, ComplianceFrameworks, MarketDataStructures
 from .conditional_templates import RiskToleranceRouter, ComplianceThresholds, InvestmentDecisionTree
@@ -37,7 +36,7 @@ class FinanceContextConfig:
     regulatory_framework: str  # "US", "EU", "UK", "GLOBAL"
     risk_tolerance: str  # "conservative", "moderate", "aggressive"
     compliance_level: str  # "basic", "enhanced", "strict"
-    market_focus: List[str]  # ["equity", "fixed_income", "derivatives", "fx"]
+    market_focus: list[str]  # ["equity", "fixed_income", "derivatives", "fx"]
     include_calculations: bool = True
     include_regulations: bool = True
     enable_risk_warnings: bool = True
@@ -114,7 +113,7 @@ class FinanceDomainPack(BaseDomainPack):
             },
         }
 
-    def get_context_template(self, method: str, config: Optional[FinanceContextConfig] = None) -> ContextTemplate:
+    def get_context_template(self, method: str, config: FinanceContextConfig | None = None) -> ContextTemplate:
         """Get finance-specific context template for agent method
 
         Args:
@@ -136,7 +135,7 @@ class FinanceDomainPack(BaseDomainPack):
         template_config = self._build_template_config(method, config)
         return ContextTemplate(**template_config)
 
-    def _build_template_config(self, method: str, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _build_template_config(self, method: str, config: FinanceContextConfig) -> dict[str, Any]:
         """Build template configuration for specific method and finance config"""
 
         from ...templates import KnowledgeSelector, TokenBudget
@@ -176,7 +175,7 @@ class FinanceDomainPack(BaseDomainPack):
 
         return base_config
 
-    def _get_token_budgets(self, method: str) -> Dict[str, int]:
+    def _get_token_budgets(self, method: str) -> dict[str, int]:
         """Get token budgets by method"""
         budgets = {
             "plan": {"frameworks": 800, "domain_knowledge": 600, "history": 400, "constraints": 200},
@@ -187,7 +186,7 @@ class FinanceDomainPack(BaseDomainPack):
         }
         return budgets.get(method, {"default": 1000})
 
-    def _select_knowledge_assets(self, config: FinanceContextConfig) -> List[str]:
+    def _select_knowledge_assets(self, config: FinanceContextConfig) -> list[str]:
         """Select relevant knowledge assets based on configuration"""
         assets = []
 
@@ -208,7 +207,7 @@ class FinanceDomainPack(BaseDomainPack):
 
         return assets
 
-    def _get_safety_constraints(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_safety_constraints(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get safety constraints based on configuration"""
         return {
             "compliance_level": config.compliance_level,
@@ -218,7 +217,7 @@ class FinanceDomainPack(BaseDomainPack):
             "data_sensitivity": "high",
         }
 
-    def _get_plan_config(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_plan_config(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get plan()-specific configuration"""
         return {
             "planning_frameworks": ["risk_assessment_checklist", "regulatory_compliance_checklist", "stakeholder_analysis"],
@@ -229,7 +228,7 @@ class FinanceDomainPack(BaseDomainPack):
             "constraints": ["regulatory_compliance_required", "risk_management_mandatory", "audit_trail_necessary"],
         }
 
-    def _get_solve_config(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_solve_config(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get solve()-specific configuration"""
         return {
             "calculation_libraries": ["quantitative_models", "risk_calculations", "valuation_methods"],
@@ -237,7 +236,7 @@ class FinanceDomainPack(BaseDomainPack):
             "evidence_requirements": ["data_sources", "methodology_documentation", "assumption_justification"],
         }
 
-    def _get_chat_config(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_chat_config(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get chat()-specific configuration"""
         return {
             "vocabulary": "financial_terminology",
@@ -246,7 +245,7 @@ class FinanceDomainPack(BaseDomainPack):
             "formatting_preferences": ["financial_notation", "regulatory_citations", "risk_disclosures"],
         }
 
-    def _get_use_config(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_use_config(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get use()-specific configuration"""
         return {
             "tool_categories": {
@@ -259,7 +258,7 @@ class FinanceDomainPack(BaseDomainPack):
             "data_classification": "financial_sensitive",
         }
 
-    def _get_memory_config(self, config: FinanceContextConfig) -> Dict[str, Any]:
+    def _get_memory_config(self, config: FinanceContextConfig) -> dict[str, Any]:
         """Get remember/recall-specific configuration"""
         return {
             "memory_namespaces": [
@@ -273,7 +272,7 @@ class FinanceDomainPack(BaseDomainPack):
             "privacy_constraints": "financial_data_protection",
         }
 
-    def get_workflow_template(self, workflow_type: str, variant: Optional[str] = None) -> Any:
+    def get_workflow_template(self, workflow_type: str, variant: str | None = None) -> Any:
         """Get workflow template by type and variant"""
         template_key = workflow_type
         if variant:
@@ -298,7 +297,7 @@ class FinanceDomainPack(BaseDomainPack):
         method_instructions = {
             "plan": f"""Your task is to create comprehensive plans for {config.specialization.value} operations.
 Focus on regulatory compliance, risk management, and systematic approaches.
-Consider {', '.join(config.market_focus)} market factors.""",
+Consider {", ".join(config.market_focus)} market factors.""",
             "solve": f"""Your task is to solve {config.specialization.value} problems using quantitative methods and domain expertise.
 Apply appropriate risk metrics, calculations, and validation procedures.
 Ensure all solutions meet {config.regulatory_framework} regulatory requirements.""",
@@ -315,7 +314,7 @@ Maintain audit trails for compliance purposes.""",
 
         return f"{base_context}\n\n{method_instructions.get(method, 'Perform the requested financial operation.')}"
 
-    def _get_example_templates(self, method: str, config: FinanceContextConfig) -> List[str]:
+    def _get_example_templates(self, method: str, config: FinanceContextConfig) -> list[str]:
         """Get method-specific example templates"""
 
         examples = {
@@ -348,7 +347,7 @@ Maintain audit trails for compliance purposes.""",
 
         return examples.get(method, [])
 
-    def _get_output_schema(self, method: str, config: FinanceContextConfig) -> Optional[Dict[str, Any]]:
+    def _get_output_schema(self, method: str, config: FinanceContextConfig) -> dict[str, Any] | None:
         """Get method-specific output schema"""
 
         schemas = {

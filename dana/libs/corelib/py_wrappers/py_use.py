@@ -14,7 +14,7 @@ from typing import Union
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.resource.base_resource import BaseResource
+from dana.core.resource import ResourceInstance
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
@@ -36,7 +36,9 @@ def create_function_with_better_doc_string(func: Callable, doc_string: str) -> C
         return wrapper
 
 
-def py_use(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> Union[BaseSysResource, BaseResource]:
+def py_use(
+    context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs
+) -> Union[BaseSysResource, ResourceInstance]:
     """Use a function to create and manage resources.
 
     This function is used to create various types of resources like MCP and RAG.
@@ -78,10 +80,15 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         return resource
 
     elif function_name.lower() == "knowledge":
-        # Use knowledge_base instead of the old knowledge resource
-        from dana.core.resource.plugins.knowledge_base_resource import KnowledgeBaseResource
+        # Use ResourceInstance with knowledge backend
+        from dana.core.resource import ResourceTypeRegistry
+        from dana.core.resource.plugins.knowledge_base_resource import get_knowledge_base_resource_type
 
-        resource = KnowledgeBaseResource(*args, name=_name, **kwargs)
+        resource_type = get_knowledge_base_resource_type()
+        values = {"name": _name}
+        values.update(kwargs)
+
+        resource = ResourceTypeRegistry.create_resource_instance(resource_type.name, values)
         context.set_resource(_name, resource)
         return resource
 
@@ -102,9 +109,15 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         return resource
 
     elif function_name.lower() == "knowledge_base":
-        from dana.core.resource.plugins.knowledge_base_resource import KnowledgeBaseResource
+        # Use ResourceInstance with knowledge backend
+        from dana.core.resource import ResourceTypeRegistry
+        from dana.core.resource.plugins.knowledge_base_resource import get_knowledge_base_resource_type
 
-        resource = KnowledgeBaseResource(*args, name=_name, **kwargs)
+        resource_type = get_knowledge_base_resource_type()
+        values = {"name": _name}
+        values.update(kwargs)
+
+        resource = ResourceTypeRegistry.create_resource_instance(resource_type.name, values)
         context.set_resource(_name, resource)
         return resource
 

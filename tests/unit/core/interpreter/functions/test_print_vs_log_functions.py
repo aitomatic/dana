@@ -387,13 +387,13 @@ class TestDynamicHelp:
         from io import StringIO
         from unittest.mock import patch
 
-        from dana.common.sys_resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
         from dana.common.terminal_utils import ColorScheme
         from dana.core.repl.commands.command_handler import CommandHandler
         from dana.core.repl.repl import REPL
 
         # Create a REPL with normal setup
-        repl = REPL(llm_resource=LLMResource())
+        repl = REPL(llm_resource=LegacyLLMResource())
         colors = ColorScheme(use_colors=False)
         command_handler = CommandHandler(repl, colors)
 

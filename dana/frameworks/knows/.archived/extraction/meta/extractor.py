@@ -8,7 +8,7 @@ import json
 import uuid
 from typing import Any
 
-from dana.common.sys_resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import Document, KnowledgePoint, ProcessorBase
@@ -22,7 +22,7 @@ class MetaKnowledgeExtractor(ProcessorBase):
 
     def __init__(
         self,
-        llm_resource: LLMResource | None = None,
+        llm_resource: LegacyLLMResource | None = None,
         confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
         max_knowledge_points: int = 10,
     ):
@@ -33,7 +33,7 @@ class MetaKnowledgeExtractor(ProcessorBase):
             confidence_threshold: Minimum confidence for knowledge points
             max_knowledge_points: Maximum number of knowledge points to extract
         """
-        self.llm_resource = llm_resource or LLMResource()
+        self.llm_resource = llm_resource or LegacyLLMResource()
         self.confidence_threshold = confidence_threshold
         self.max_knowledge_points = max_knowledge_points
         DANA_LOGGER.info(f"Initialized MetaKnowledgeExtractor with threshold: {confidence_threshold}")

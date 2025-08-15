@@ -5,7 +5,7 @@ These templates work with Dana's case() function to provide structured
 decision trees, routing logic, and business rule templates.
 """
 
-from typing import Dict, List, Optional, Any, Callable
+from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -38,9 +38,9 @@ class ConditionalTemplate:
     template_name: str
     condition_type: ConditionType
     description: str
-    branches: List[ConditionalBranch]
+    branches: list[ConditionalBranch]
     fallback_action: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class RiskToleranceRouter(ConditionalTemplate):
@@ -64,7 +64,7 @@ class RiskToleranceRouter(ConditionalTemplate):
             },
         )
 
-    def _build_risk_tolerance_branches(self) -> List[ConditionalBranch]:
+    def _build_risk_tolerance_branches(self) -> list[ConditionalBranch]:
         """Build risk tolerance routing branches"""
         return [
             ConditionalBranch(
@@ -91,7 +91,7 @@ class RiskToleranceRouter(ConditionalTemplate):
             ),
         ]
 
-    def generate_dana_case_expression(self, context_vars: Dict[str, str]) -> str:
+    def generate_dana_case_expression(self, context_vars: dict[str, str]) -> str:
         """Generate Dana case() expression for risk tolerance routing"""
 
         # Build case expression with proper Dana syntax
@@ -132,7 +132,7 @@ class ComplianceThresholds(ConditionalTemplate):
             },
         )
 
-    def _build_compliance_branches(self) -> List[ConditionalBranch]:
+    def _build_compliance_branches(self) -> list[ConditionalBranch]:
         """Build compliance threshold branches"""
         return [
             ConditionalBranch(
@@ -177,7 +177,7 @@ class ComplianceThresholds(ConditionalTemplate):
             ),
         ]
 
-    def get_threshold_values(self, jurisdiction: str = "US") -> Dict[str, Any]:
+    def get_threshold_values(self, jurisdiction: str = "US") -> dict[str, Any]:
         """Get threshold values for specific jurisdiction"""
         thresholds = {
             "US": {
@@ -226,7 +226,7 @@ class InvestmentDecisionTree(ConditionalTemplate):
             },
         )
 
-    def _build_investment_decision_branches(self) -> List[ConditionalBranch]:
+    def _build_investment_decision_branches(self) -> list[ConditionalBranch]:
         """Build investment decision tree branches"""
         return [
             # Level 1: Risk and Time Horizon
@@ -319,7 +319,7 @@ class InvestmentDecisionTree(ConditionalTemplate):
 )"""
         return nested_expr
 
-    def _build_case_section(self, branches: List[ConditionalBranch]) -> str:
+    def _build_case_section(self, branches: list[ConditionalBranch]) -> str:
         """Build a section of case conditions"""
         case_lines = []
         for branch in branches:
@@ -347,7 +347,7 @@ class CreditRiskDecisionTree(ConditionalTemplate):
             },
         )
 
-    def _build_credit_decision_branches(self) -> List[ConditionalBranch]:
+    def _build_credit_decision_branches(self) -> list[ConditionalBranch]:
         """Build credit risk decision branches"""
         return [
             ConditionalBranch(
@@ -413,7 +413,7 @@ class TradingRiskLimits(ConditionalTemplate):
             },
         )
 
-    def _build_trading_limit_branches(self) -> List[ConditionalBranch]:
+    def _build_trading_limit_branches(self) -> list[ConditionalBranch]:
         """Build trading risk limit branches"""
         return [
             ConditionalBranch(
@@ -478,7 +478,7 @@ class TradingRiskLimits(ConditionalTemplate):
 
 
 # Utility functions for conditional template usage
-def get_template_by_name(template_name: str) -> Optional[ConditionalTemplate]:
+def get_template_by_name(template_name: str) -> ConditionalTemplate | None:
     """Get conditional template by name"""
     templates = {
         "risk_tolerance_router": RiskToleranceRouter(),
@@ -490,7 +490,7 @@ def get_template_by_name(template_name: str) -> Optional[ConditionalTemplate]:
     return templates.get(template_name)
 
 
-def list_available_templates() -> Dict[str, str]:
+def list_available_templates() -> dict[str, str]:
     """List all available conditional templates"""
     return {
         "risk_tolerance_router": "Route investment decisions based on risk tolerance",

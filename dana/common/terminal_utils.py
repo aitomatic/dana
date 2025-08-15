@@ -57,6 +57,13 @@ class ColorScheme:
         """Reset formatting and optionally add text."""
         return f"{self.RESET}{text}"
 
+    def dim(self, text: str) -> str:
+        """Format text as dimmed/faded."""
+        if self.use_colors:
+            return f"\033[2m{text}{self.RESET}"  # Dim/faded text
+        else:
+            return text
+
 
 # Define a Pygments lexer for Dana
 class DanaLexer(RegexLexer):
