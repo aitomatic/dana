@@ -495,7 +495,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
 
     def _execute_ast(self, interpreter: DanaInterpreter, ast, context: SandboxContext) -> None:
         """Execute parsed AST inside the given context."""
-        interpreter._execute(ast, context)
+        interpreter.execute_program(ast, context)
 
     def _collect_public_vars(self, context: SandboxContext) -> dict[str, object]:
         """Collect public scope variables from the execution context."""

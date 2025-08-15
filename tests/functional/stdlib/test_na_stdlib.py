@@ -50,7 +50,7 @@ class TestStdlib:
         with open(file_path) as f:
             code = f.read()
 
-        return self.interpreter._eval(code, self.context)
+        return self.interpreter._eval_source_code(code, self.context)
 
     @pytest.mark.parametrize("na_file", get_na_files())
     def test_stdlib_files(self, na_file: Path):
