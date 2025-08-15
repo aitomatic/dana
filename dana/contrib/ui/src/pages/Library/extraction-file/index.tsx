@@ -148,7 +148,6 @@ export const ExtractionFilePopup = () => {
                         />
                       </div>
                       <div className="flex flex-col gap-1 w-full">
-                        1
                         <span className="text-sm font-medium text-gray-900">
                           {file?.original_filename}
                         </span>
