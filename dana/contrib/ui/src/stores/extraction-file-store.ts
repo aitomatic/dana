@@ -151,16 +151,10 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
     }));
 
     // Auto-extract supported types
-    console.log('[Extraction] Checking if file is auto-extract candidate:', file.name);
-    console.log('[Extraction] File extension:', file.name.split('.').pop()?.toLowerCase());
-    console.log('[Extraction] Is auto-extract candidate:', isAutoExtractCandidate(file.name));
     if (isAutoExtractCandidate(file.name)) {
-      console.log('[Extraction] File is auto-extract candidate:', file.name);
       const fileId = newExtractionFile.id;
       (async () => {
         try {
-          console.info('[Extraction] Starting auto-extraction for:', file.name);
-          console.info('[Extraction] File ID:', fileId);
           // Mark as uploading
           set((state) => ({
             extractedFiles: state.extractedFiles.map((f) =>
@@ -169,14 +163,9 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
           }));
 
           const uploaded = await apiService.uploadDocumentRaw(file);
-          console.info('[Extraction] Upload response:', uploaded);
-          console.info('[Extraction] uploaded.filename:', uploaded.filename);
-          console.info('[Extraction] uploaded.original_filename:', uploaded.original_filename);
 
-          // Try using the filename directly instead of uploads/ prefix
-          const serverFilePath = uploaded.filename;
-          console.info('[Extraction] Server file path (filename only):', serverFilePath);
-          console.info('[Extraction] Calling deep-extract with:', { file_path: serverFilePath });
+          // Use the document ID returned by the upload API
+          const documentId = uploaded.id;
 
           // Mark as extracting
           set((state) => ({
@@ -185,32 +174,15 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
             ),
           }));
 
-          const extractParams = { file_path: serverFilePath };
-          console.info('[Extraction] Calling deep extract API with params:', extractParams);
-          console.info('[Extraction] Server file path being sent:', serverFilePath);
-          console.info('[Extraction] Uploaded file response was:', uploaded);
-
+          const extractParams = { document_id: documentId };
           const deep = await apiService.deepExtract(extractParams);
-          console.info('[Extraction] Deep extract API response:', deep);
-          console.info('[Extraction] API response file_object:', deep.file_object);
-          console.info('[Extraction] API response pages:', deep.file_object?.pages);
           const docs = (deep.file_object?.pages || []).map((p) => {
-            console.log('[Extraction Store] Raw page data:', {
-              page_number: p.page_number,
-              page_content_length: p.page_content?.length,
-              page_content_preview: p.page_content?.substring(0, 100),
-            });
             return {
               text: unwrapMarkdownFences(p.page_content),
               page_content: p.page_content,
               page_number: p.page_number,
             };
           });
-          console.info('[Extraction] Processed docs:', docs);
-          console.info(
-            '[Extraction] First doc page_content:',
-            docs[0]?.page_content?.substring(0, 200),
-          );
 
           // Store results
           set((state) => {
@@ -225,49 +197,18 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
                   }
                 : f,
             );
-            console.info('[Extraction] Updated files array:', updatedFiles);
             const updatedFile = updatedFiles.find((f) => f.id === fileId);
-            console.info('[Extraction] Updated specific file:', updatedFile);
-            console.info('[Extraction] Updated file documents:', updatedFile?.documents);
 
             // Also update selectedFile if it's the same file
             const updatedSelectedFile =
               state.selectedFile?.id === fileId ? updatedFile : state.selectedFile;
-            console.info('[Extraction] Updated selectedFile:', updatedSelectedFile);
-            console.info(
-              '[Extraction] Updated selectedFile documents:',
-              updatedSelectedFile?.documents,
-            );
 
             return {
               extractedFiles: updatedFiles,
               selectedFile: updatedSelectedFile,
             };
           });
-
-          console.info('[Extraction] Updated file entry for ID:', fileId);
-
-          // Verify the store state after update
-          const currentState = get();
-          const fileInStore = currentState.extractedFiles.find((f) => f.id === fileId);
-          console.info('[Extraction] File in store after update:', fileInStore);
-          console.info('[Extraction] Documents in store:', fileInStore?.documents);
         } catch (err: any) {
-          console.error('[Extraction] Auto extraction failed for file:', file.name);
-          console.error('[Extraction] Error details:', err);
-          console.error('[Extraction] Error status:', err.status);
-          console.error('[Extraction] Error response data:', err.details);
-          console.error(
-            '[Extraction] Error message:',
-            err instanceof Error ? err.message : 'Auto extraction failed',
-          );
-
-          // For 422 errors, log the validation details
-          if (err.status === 422) {
-            console.error('[Extraction] 422 Validation Error - Details:', err.details);
-            console.error('[Extraction] 422 Error - This usually means invalid request parameters');
-          }
-
           set({ error: err instanceof Error ? err.message : 'Auto extraction failed' });
           // Clear status on error
           set((state) => ({
@@ -277,8 +218,6 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
           }));
         }
       })();
-    } else {
-      console.log('[Extraction] File skipped - not an auto-extract candidate:', file.name);
     }
   },
 
@@ -317,31 +256,22 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
 
       for (const fileItem of extractedFiles) {
         try {
-          console.info('[Extraction] Uploading file:', fileItem.filename);
           const uploaded = await apiService.uploadDocumentRaw(fileItem.file);
-          const serverFilePath = `uploads/${uploaded.filename}`;
-          console.info('[Extraction] deep-extract payload:', {
-            file_path: serverFilePath,
-            prompt: fileItem.prompt,
-          });
+
+          // Use the document ID returned by the upload API
+          const documentId = uploaded.id;
 
           const deep = await apiService.deepExtract({
-            file_path: serverFilePath,
+            document_id: documentId,
             prompt: fileItem.prompt,
           });
           const docs = (deep.file_object?.pages || []).map((p) => {
-            console.log('[Extraction Store Manual] Raw page data:', {
-              page_number: p.page_number,
-              page_content_length: p.page_content?.length,
-              page_content_preview: p.page_content?.substring(0, 100),
-            });
             return {
               text: unwrapMarkdownFences(p.page_content),
               page_content: p.page_content,
               page_number: p.page_number,
             };
           });
-          console.info('[Extraction Manual] Processed docs:', docs);
 
           set((state) => {
             const updatedFiles = state.extractedFiles.map((f) =>
@@ -367,7 +297,6 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
             };
           });
         } catch (innerErr) {
-          console.error('[Extraction] Extraction failed:', innerErr);
           set({
             error: innerErr instanceof Error ? innerErr.message : 'Extraction failed for a file',
           });
@@ -379,7 +308,6 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
 
       set({ currentExtractionStep: 'review', isExtracting: false });
     } catch (error) {
-      console.error('[Extraction] Extraction run failed:', error);
       set({
         error: error instanceof Error ? error.message : 'Extraction failed',
         isExtracting: false,

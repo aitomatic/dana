@@ -10,6 +10,9 @@ import os
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy.orm import Session
+
+from dana.api.core.models import Document
 from dana.api.core.schemas import DeepExtractionRequest, DeepExtractionResponse, FileObject, PageContent
 
 logger = logging.getLogger(__name__)
@@ -183,18 +186,27 @@ class DeepExtractionService:
 
         return DeepExtractionResponse(file_object=file_object)
 
-    async def deep_extract(self, request: DeepExtractionRequest) -> DeepExtractionResponse:
+    async def deep_extract(self, request: DeepExtractionRequest, db_session: Session) -> DeepExtractionResponse:
         """
         Extract data from a visual document using aicapture.
 
         Args:
-            request: Extraction request containing file_path, prompt, and config
+            request: Extraction request containing document_id, prompt, and config
+            db_session: Database session for querying document
 
         Returns:
             DeepExtractionResponse with extracted data
         """
         try:
-            file_path = request.file_path
+            # Get document from database
+            document = db_session.query(Document).filter(Document.id == request.document_id).first()
+            if not document:
+                raise FileNotFoundError(f"Document not found with ID: {request.document_id}")
+
+            if not document.file_path:
+                raise FileNotFoundError(f"Document {request.document_id} has no file path")
+
+            file_path = document.file_path
             prompt = request.prompt
             config = request.config or {}
 

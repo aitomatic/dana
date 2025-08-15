@@ -451,7 +451,7 @@ class ApiService {
 
   // Visual Document Deep Extraction
   async deepExtract(request: {
-    file_path: string;
+    document_id: number;
     prompt?: string;
     config?: Record<string, any>;
   }): Promise<{

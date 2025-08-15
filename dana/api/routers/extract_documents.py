@@ -4,8 +4,10 @@ Deep Document Extraction routers - routing for document extraction endpoints usi
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
+from dana.api.core.database import get_db
 from dana.api.core.schemas import DeepExtractionRequest, DeepExtractionResponse
 from dana.api.services.deep_extraction_service import DeepExtractionService
 
@@ -15,7 +17,7 @@ router = APIRouter(prefix="/extract-documents", tags=["extract-documents"])
 
 
 @router.post("/deep-extract", response_model=DeepExtractionResponse)
-async def deep_extract(request: DeepExtractionRequest):
+async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get_db)):
     """
     Extract data from a visual document using aicapture.
 
@@ -24,21 +26,22 @@ async def deep_extract(request: DeepExtractionRequest):
     - Documents: PDF
 
     Args:
-        request: Extraction request containing file_path, prompt, and config
+        request: Extraction request containing document_id, prompt, and config
+        db: Database session
 
     Returns:
         DeepExtractionResponse with extracted data
     """
     try:
-        logger.info(f"Received deep extraction request: {request.file_path}")
+        logger.info(f"Received deep extraction request for document ID: {request.document_id}")
 
         # Create service instance
         service = DeepExtractionService()
 
         # Extract document
-        result = await service.deep_extract(request)
+        result = await service.deep_extract(request, db)
 
-        logger.info(f"Successfully extracted document: {request.file_path}")
+        logger.info(f"Successfully extracted document ID: {request.document_id}")
         return result
 
     except ImportError as e:

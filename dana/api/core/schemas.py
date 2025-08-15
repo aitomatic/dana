@@ -568,7 +568,7 @@ class ChatWithIntentResponse(BaseModel):
 class DeepExtractionRequest(BaseModel):
     """Request schema for visual document extraction endpoint"""
 
-    file_path: str
+    document_id: int
     prompt: str | None = None
     config: dict[str, Any] | None = None
 
