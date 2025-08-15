@@ -6,6 +6,9 @@ from pathlib import Path
 
 import pytest
 
+pytest_plugins = ["pytest_asyncio"]
+
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
