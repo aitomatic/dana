@@ -139,7 +139,9 @@ def test_semicolon_no_space_before():
     context = SandboxContext()
     interpreter = DanaInterpreter()
     # This should fail to parse because Dana doesn't support semicolons without spaces
-    with pytest.raises(SyntaxError):
+    from lark.exceptions import UnexpectedCharacters
+
+    with pytest.raises(UnexpectedCharacters):
         interpreter.execute_statement("x = 1; y = 2", context)
 
 
@@ -184,7 +186,9 @@ def test_semicolon_return_value_with_expressions():
 # --- Error Handling ---
 def test_semicolon_with_syntax_error():
     """Test semicolon separation with syntax errors."""
-    with pytest.raises(SyntaxError):
+    from lark.exceptions import UnexpectedToken
+
+    with pytest.raises(UnexpectedToken):
         run_semicolon_code("x = 1 ; y = ; z = 3")
 
 

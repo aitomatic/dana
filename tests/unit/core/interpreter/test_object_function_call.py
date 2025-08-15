@@ -285,7 +285,7 @@ class TestObjectFunctionCallEdgeCases:
 
     def test_nonexistent_object(self):
         """Test calling a method on an object that doesn't exist."""
-        with pytest.raises((KeyError, NameError)):
+        with pytest.raises(AttributeError):
             self.interpreter._eval_source_code("nonexistent_obj.method()", self.context)
 
     def test_method_call_wrong_args(self):

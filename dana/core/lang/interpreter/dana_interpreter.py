@@ -159,26 +159,26 @@ class DanaInterpreter(Loggable):
         Returns:
             The reformatted string with newline-separated statements
         """
-        # Split by " ;" or "\t;" and normalize indentation
-        statements = []
-        # Replace tab-semicolon with space-semicolon for consistent splitting
-        normalized_statement = statement.replace("\t; ", " ; ")
-        parts = normalized_statement.split(" ; ")
+        import re
 
-        for i, part in enumerate(parts):
-            if i == 0:
-                # First part: just strip leading/trailing whitespace
-                if part.strip():
-                    statements.append(part.strip())
-            else:
-                # Subsequent parts: just strip whitespace (no indentation for separate statements)
-                if part.strip():
-                    statements.append(part.strip())
+        # Only process statements that have at least one semicolon with space before it
+        if not re.search(r"\s+;", statement):
+            return statement
+
+        # Split by semicolon with optional whitespace after (handles all semicolon cases)
+        parts = re.split(r";\s*", statement)
+
+        statements = []
+        for part in parts:
+            # Strip leading/trailing whitespace and add if not empty
+            stripped = part.strip()
+            if stripped:  # Only add non-empty parts
+                statements.append(stripped)
 
         if statements:
-            return "\n".join(statements) + "\n"
+            return "\n".join(statements)
 
-        return ""
+        return statement
 
     # ============================================================================
     # LEVEL 2: CORE EXECUTION ENGINE (DEPENDS ON FOUNDATION & UTILITIES)
@@ -237,9 +237,34 @@ class DanaInterpreter(Loggable):
         Returns:
             Raw execution result
         """
-        # Only reformat if the source code is a single line and contains " ; "
-        if "\n" not in source_code and " ; " in source_code:
-            source_code = self._reformat_semicolon_separated_statements(source_code)
+        # Reformat semicolon-separated statements if they exist
+        # Check for semicolons that could be valid statement separators (with space before them)
+        import re
+
+        if re.search(r"\s+;", source_code):  # Only process if there's space before semicolon
+            # Process line by line to handle mixed semicolon and multiline code
+            lines = source_code.split("\n")
+            processed_lines = []
+
+            for line in lines:
+                if re.search(r"\s+;", line) and not line.strip().startswith("#"):  # Don't process comments
+                    # This line has valid semicolons, preprocess it
+                    reformatted = self._reformat_semicolon_separated_statements(line)
+                    # Split the reformatted line back into individual lines and add them (filter out empty lines)
+                    for reformatted_line in reformatted.split("\n"):
+                        if reformatted_line.strip():  # Only add non-empty lines
+                            processed_lines.append(reformatted_line)
+                else:
+                    # Regular line, add as-is
+                    processed_lines.append(line)
+
+            # Remove empty lines at the end
+            while processed_lines and not processed_lines[-1].strip():
+                processed_lines.pop()
+
+            source_code = "\n".join(processed_lines)
+            if source_code and not source_code.endswith("\n"):
+                source_code += "\n"
 
         parser = ParserCache.get_parser("dana")
         ast = parser.parse(source_code, filename=filename, do_transform=do_transform)
