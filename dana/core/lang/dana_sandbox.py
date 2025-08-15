@@ -183,7 +183,7 @@ class DanaSandbox(Loggable):
                     with open(startup_file, encoding="utf-8") as f:
                         startup_code = f.read()
 
-                    self._interpreter._eval(
+                    self._interpreter._eval_source_code(
                         startup_code,
                         context=self._context,
                         filename="<dana-init-na>",
@@ -489,7 +489,7 @@ class DanaSandbox(Loggable):
                 source_code = f.read()
 
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=str(file_path))
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
@@ -559,7 +559,7 @@ class DanaSandbox(Loggable):
 
         try:
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=filename)
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=filename)
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()

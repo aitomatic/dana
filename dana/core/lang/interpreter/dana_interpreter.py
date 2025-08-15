@@ -21,25 +21,15 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import re
-from pathlib import Path
 from typing import Any
 
 from dana.common.error_utils import ErrorUtils
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import FunctionDefinition, Program
+from dana.core.lang.ast import Expression, Program, Statement
 from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import ExecutionStatus, SandboxContext
-
-# Map Dana LogLevel to Python logging levels
-Dana_TO_PYTHON_LOG_LEVELS = {
-    "debug": "DEBUG",
-    "info": "INFO",
-    "warning": "WARNING",
-    "error": "ERROR",
-    "critical": "CRITICAL",
-}
 
 # Patch ErrorUtils.format_user_error to improve parser error messages
 _original_format_user_error = ErrorUtils.format_user_error
@@ -105,6 +95,10 @@ ErrorUtils.format_user_error = _patched_format_user_error
 class DanaInterpreter(Loggable):
     """Interpreter for executing Dana programs."""
 
+    # ============================================================================
+    # LEVEL 0: CORE FOUNDATION (NO DEPENDENCIES)
+    # ============================================================================
+
     def __init__(self):
         """Initialize the interpreter."""
         super().__init__()
@@ -148,44 +142,49 @@ class DanaInterpreter(Loggable):
             self._init_function_registry()
         return self._function_registry
 
+    def get_and_clear_output(self) -> str:
+        """Retrieve and clear the output buffer from the executor."""
+        return self._executor.get_and_clear_output()
+
     # ============================================================================
-    # Internal API Methods (used by DanaSandbox and advanced tools)
+    # LEVEL 1: UTILITY METHODS (DEPEND ON FOUNDATION ONLY)
     # ============================================================================
 
-    def _run(self, file_path: str | Path, source_code: str, context: SandboxContext) -> Any:
-        """
-        Internal: Run Dana file with pre-read source code.
+    def _reformat_semicolon_separated_statements(self, statement: str) -> str:
+        """Reformat semicolon-separated statements into newline-separated format.
 
         Args:
-            file_path: Path to the file (for error reporting)
-            source_code: Dana source code to execute
-            context: Execution context
+            statement: The semicolon-separated statement string
 
         Returns:
-            Raw execution result
+            The reformatted string with newline-separated statements
         """
-        return self._eval(source_code, context=context, filename=str(file_path))
+        # Split by " ;" or "\t;" and normalize indentation
+        statements = []
+        # Replace tab-semicolon with space-semicolon for consistent splitting
+        normalized_statement = statement.replace("\t; ", " ; ")
+        parts = normalized_statement.split(" ; ")
 
-    def _eval(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
-        """
-        Internal: Evaluate Dana source code.
+        for i, part in enumerate(parts):
+            if i == 0:
+                # First part: just strip leading/trailing whitespace
+                if part.strip():
+                    statements.append(part.strip())
+            else:
+                # Subsequent parts: just strip whitespace (no indentation for separate statements)
+                if part.strip():
+                    statements.append(part.strip())
 
-        Args:
-            source_code: Dana code to execute
-            filename: Optional filename for error reporting
-            context: Execution context
+        if statements:
+            return "\n".join(statements) + "\n"
 
-        Returns:
-            Raw execution result
-        """
-        # Parse the source code with filename for error reporting
-        parser = ParserCache.get_parser("dana")
-        ast = parser.parse(source_code, filename=filename)
+        return ""
 
-        # Execute through _execute (convergent path)
-        return self._execute(ast, context)
+    # ============================================================================
+    # LEVEL 2: CORE EXECUTION ENGINE (DEPENDS ON FOUNDATION & UTILITIES)
+    # ============================================================================
 
-    def _execute(self, ast: Program, context: SandboxContext) -> Any:
+    def _execute_program(self, ast: Program, context: SandboxContext) -> Any:
         """
         Internal: Execute pre-parsed AST.
 
@@ -220,11 +219,63 @@ class DanaInterpreter(Loggable):
         return result
 
     # ============================================================================
-    # Legacy API Methods (kept for backward compatibility during transition)
+    # LEVEL 3: PARSING AND EXECUTION (DEPENDS ON CORE ENGINE & UTILITIES)
     # ============================================================================
 
-    def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
+    def _parse_and_execute(self, source_code: str, context: SandboxContext, filename: str | None = None, do_transform: bool = True) -> Any:
+        """
+        Internal: Parse and execute Dana source code.
+
+        Handles all parsing logic including semicolon-separated statements.
+
+        Args:
+            source_code: Dana code to execute
+            context: Execution context
+            filename: Optional filename for error reporting
+            do_transform: Whether to transform the AST
+
+        Returns:
+            Raw execution result
+        """
+        # Only reformat if the source code is a single line and contains " ; "
+        if "\n" not in source_code and " ; " in source_code:
+            source_code = self._reformat_semicolon_separated_statements(source_code)
+
+        parser = ParserCache.get_parser("dana")
+        ast = parser.parse(source_code, filename=filename, do_transform=do_transform)
+
+        # Execute through _execute (convergent path)
+        return self._execute_program(ast, context)
+
+    # ============================================================================
+    # LEVEL 4: HIGH-LEVEL SOURCE CODE EVALUATION (DEPENDS ON PARSING)
+    # ============================================================================
+
+    def _eval_source_code(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
+        """
+        Internal: Evaluate Dana source code.
+
+        Simple entry point that delegates to _parse_and_execute.
+
+        Args:
+            source_code: Dana code to execute
+            filename: Optional filename for error reporting
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        # Delegate to _parse_and_execute which handles all parsing logic
+        return self._parse_and_execute(source_code, context, filename, do_transform=True)
+
+    # ============================================================================
+    # LEVEL 5: PUBLIC API METHODS (DEPEND ON ALL LOWER LEVELS)
+    # ============================================================================
+
+    def evaluate_expression(self, expression: Expression, context: SandboxContext) -> Any:
         """Evaluate an expression.
+
+        Used by lambda expressions, pipeline operations, and testing.
 
         Args:
             expression: The expression to evaluate
@@ -233,54 +284,8 @@ class DanaInterpreter(Loggable):
         Returns:
             The result of evaluating the expression
         """
-        return self._executor.execute(expression, context)
-
-    def execute_program(self, program: Program, context: SandboxContext) -> Any:
-        """Execute a Dana program.
-
-        Args:
-            program: The program to execute
-            context: The execution context to use
-
-        Returns:
-            The result of executing the program
-        """
-        # Route through new _execute method for convergent code path
-        result = self._execute(program, context)
-        return result
-
-    def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
-        """Execute a single statement.
-
-        Args:
-            statement: The statement to execute
-            context: The context to execute the statement in
-
-        Returns:
-            The result of executing the statement
-        """
-        # All execution goes through the unified executor
-        return self._executor.execute(statement, context)
-
-    def get_and_clear_output(self) -> str:
-        """Retrieve and clear the output buffer from the executor."""
-        return self._executor.get_and_clear_output()
-
-    def get_evaluated(self, key: str, context: SandboxContext) -> Any:
-        """Get a value from the context and evaluate it if it's an AST node.
-
-        Args:
-            key: The key to get
-            context: The context to get from
-
-        Returns:
-            The evaluated value
-        """
-        # Get the raw value from the context
-        value = context.get(key)
-
-        # Return it through the executor to ensure AST nodes are evaluated
-        return self._executor.execute(value, context)
+        # Route through _execute for convergent code path
+        return self._execute_program(expression, context)
 
     def call_function(
         self,
@@ -290,6 +295,8 @@ class DanaInterpreter(Loggable):
         context: SandboxContext | None = None,
     ) -> Any:
         """Call a function by name with the given arguments.
+
+        Used by tests and programmatic function calls.
 
         Args:
             function_name: The name of the function to call
@@ -310,109 +317,32 @@ class DanaInterpreter(Loggable):
         # Use the function registry to call the function
         return self.function_registry.call(function_name, context, args=args, kwargs=kwargs)
 
-    def evaluate_ast(self, ast: Program, context: SandboxContext) -> Any:
-        """Evaluate a Program AST and return the result."""
-        last_value = None
-        for statement in ast.statements:
-            try:
-                result = self._executor.execute_statement(statement, context)
-                if result is not None:
-                    last_value = result
-                    context.set("system:__last_value", result)
-            except Exception as e:
-                self.log_error(f"Error executing statement: {e}")
-                # Pass through the exception for higher-level handling
-                raise
-
-        return last_value
-
-    def _process_function_definition(self, func_def: FunctionDefinition, context: SandboxContext) -> None:
-        """
-        Process a function definition, handling decorators and registration.
+    def execute_program(self, program: Program, context: SandboxContext) -> Any:
+        """Execute a Dana program.
 
         Args:
-            func_def: The function definition to process
-            context: The sandbox context
-        """
-        # Create the base Dana function
-        base_func = self._create_dana_function(func_def, context, register=False)
-
-        # Check for decorators
-        if func_def.decorators:
-            # Apply decorators in bottom-up order (last decorator wraps first)
-            wrapped_func = base_func
-            for decorator_node in reversed(func_def.decorators):
-                decorator_func = self.evaluate_expression(decorator_node, context)
-                if not callable(decorator_func):
-                    raise TypeError(f"Decorator {decorator_func} is not callable")
-                try:
-                    wrapped_func = decorator_func(wrapped_func)
-                except Exception as e:
-                    raise RuntimeError(f"Error applying decorator {decorator_func}: {e}")
-
-            # Store the decorated function (Python wrapper) in the context
-            context.set(f"local:{func_def.name.name}", wrapped_func)
-        else:
-            # No decorators, store the DanaFunction directly
-            context.set(f"local:{func_def.name.name}", base_func)
-            return
-
-    def _create_dana_function(self, func_def: FunctionDefinition, context: SandboxContext, register: bool = True):
-        """
-        Create a callable Dana function from a FunctionDefinition.
-
-        Args:
-            func_def: The function definition AST node
-            context: The sandbox context
-            register: Whether to register the function in the function registry
+            program: The program to execute
+            context: The execution context to use
 
         Returns:
-            The callable Dana function
+            The result of executing the program
         """
-        func_name = func_def.name.name
+        # Route through new _execute method for convergent code path
+        return self._execute_program(program, context)
 
-        def dana_function(*args, **kwargs):
-            # Create new context for function execution
-            function_context = context.create_child_context()
-            # Bind parameters to arguments
-            self._bind_function_parameters(func_def.parameters, args, kwargs, function_context)
+    def execute_statement(self, statement: Statement, context: SandboxContext) -> Any:
+        """Execute a single statement.
 
-            # Execute the function body
-            function_context.set_execution_status(ExecutionStatus.RUNNING)
-            result = self._executor.execute(func_def.body, function_context)
-            function_context.set_execution_status(ExecutionStatus.COMPLETED)
-            return result
+        Args:
+            statement: The statement to execute
+            context: The context to execute the statement in
 
-        # Set function metadata
-        dana_function.__name__ = func_name
-        dana_function.__qualname__ = func_name
-        if hasattr(func_def, "docstring") and func_def.docstring:
-            dana_function.__doc__ = func_def.docstring
+        Returns:
+            The result of executing the statement
+        """
+        # For string statements, use _eval which handles semicolon-separated statements
+        if isinstance(statement, str):
+            return self._eval_source_code(statement, context)
 
-        if register:
-            self._register_function_normally(func_def, context)
-
-        return dana_function
-
-    def _bind_function_parameters(self, parameters: list, args: tuple, kwargs: dict, context: SandboxContext) -> None:
-        """Bind function parameters to arguments in the context."""
-        for i, param in enumerate(parameters):
-            if i < len(args):
-                context.set(f"local:{param.name}", args[i])
-            elif param.name in kwargs:
-                context.set(f"local:{param.name}", kwargs[param.name])
-            elif param.default_value is not None:
-                # Evaluate default value
-                default_val = self._executor.execute(param.default_value, context)
-                context.set(f"local:{param.name}", default_val)
-            else:
-                raise TypeError(f"Missing required argument: {param.name}")
-
-    def _register_function_normally(self, func_def: FunctionDefinition, context: SandboxContext) -> None:
-        """Create and register a normal Dana function."""
-        dana_func = self._create_dana_function(func_def, context, register=False)
-        context.set(f"local:{func_def.name.name}", dana_func)
-
-    def is_repl_mode(self) -> bool:
-        """Check if running in REPL mode."""
-        return getattr(self, "_repl_mode", False)
+        # Route through _execute for convergent code path
+        return self._execute_program(statement, context)
