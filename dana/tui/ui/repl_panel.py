@@ -101,6 +101,10 @@ class TerminalREPL(Vertical):
         # Execute the command
         self._execute_dana_code(command)
 
+        # Add command to history after execution
+        if self._input:
+            self._input.add_to_history(command)
+
     def set_focused_agent(self, agent_name: str | None) -> None:
         """No-op for compatibility - agents not used in simple REPL."""
         pass
