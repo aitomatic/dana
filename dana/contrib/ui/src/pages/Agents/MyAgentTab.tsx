@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Settings, Play, MoreVert, Trash } from 'iconoir-react';
+import { Settings, Play, MoreVert, Trash, Plus } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import { toast } from 'sonner';
@@ -43,7 +43,9 @@ const getRandomAvatarColor = (agentId: string | number): string => {
 export const MyAgentTab: React.FC<{
   agents: any[];
   navigate: (url: string) => void;
-}> = ({ agents, navigate }) => {
+  handleCreateAgent: () => Promise<void>;
+  creating: boolean;
+}> = ({ agents, navigate, handleCreateAgent, creating }) => {
   const { deleteAgent, isDeleting } = useAgentStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<any>(null);
@@ -139,7 +141,7 @@ export const MyAgentTab: React.FC<{
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-1 w-8 h-8"
+                            className="p-0 transform translate-x-4 -translate-y-2"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVert className="text-gray-700 size-4" strokeWidth={2} />
@@ -215,8 +217,29 @@ export const MyAgentTab: React.FC<{
               </div>
             ))
         ) : (
-          <div className="col-span-3 py-12 text-lg text-center text-gray-400">
-            No agents found. Click "+ New Agent" to create your first agent.
+          <div className="col-span-3">
+            <div className="flex flex-col gap-2 items-center justify-center p-12 rounded-lg">
+              <img 
+                src="/images/empty-agent.svg" 
+                alt="No agents" 
+                className="w-24 h-24 mb-4"
+              />
+              <div className="text-lg text-center font-semibold text-gray-900">
+                You haven't created any agents yet.
+              </div>
+              <div className="text-sm text-gray-700">
+                Train your own agent with support from <b>Dana</b>, our training expert.
+              </div>
+              <Button
+                variant="default"
+                className="w-[200px] px-4 py-1 mt-2 font-semibold"
+                onClick={handleCreateAgent}
+                disabled={creating}
+              >
+                <Plus style={{ width: '20', height: '20' }} />
+                Train Your Own Agent
+              </Button>
+            </div>
           </div>
         )}
       </div>

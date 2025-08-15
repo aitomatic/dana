@@ -61,7 +61,7 @@ def py_use(
         _name = Misc.generate_base64_uuid(length=6)
 
     if function_name.lower() == "mcp":
-        from dana.core.resource.plugins.mcp_resource import MCPResource
+        from dana.integrations.mcp import MCPResource
 
         # MCPResource expects name as first argument, then client args
         if args:
@@ -73,7 +73,7 @@ def py_use(
         return resource
 
     elif function_name.lower() == "rag":
-        from dana.core.resource.plugins.rag_resource import RAGResource
+        from dana.common.sys_resource.rag.rag_resource import RAGResource
 
         resource = RAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
@@ -81,81 +81,24 @@ def py_use(
 
     elif function_name.lower() == "knowledge":
         # Use ResourceInstance with knowledge backend
-        from dana.core.resource import ResourceTypeRegistry
-        from dana.core.resource.plugins.knowledge_base_resource import get_knowledge_base_resource_type
+        from dana.common.sys_resource.rag.knowledge_resource import KnowledgeResource
 
-        resource_type = get_knowledge_base_resource_type()
-        values = {"name": _name}
-        values.update(kwargs)
-
-        resource = ResourceTypeRegistry.create_resource_instance(resource_type.name, values)
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "human":
-        # HumanResource moved to core resource plugins
-
-        from dana.core.resource.plugins.human_resource import HumanResource
-
-        resource = HumanResource(*args, name=_name, **kwargs)
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "memory":
-        from dana.core.resource.plugins.memory_resource import MemoryResource
-
-        resource = MemoryResource(*args, name=_name, **kwargs)
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "knowledge_base":
-        # Use ResourceInstance with knowledge backend
-        from dana.core.resource import ResourceTypeRegistry
-        from dana.core.resource.plugins.knowledge_base_resource import get_knowledge_base_resource_type
-
-        resource_type = get_knowledge_base_resource_type()
-        values = {"name": _name}
-        values.update(kwargs)
-
-        resource = ResourceTypeRegistry.create_resource_instance(resource_type.name, values)
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "coding":
-        from dana.core.resource.plugins.coding_resource import CodingResource
-
-        resource = CodingResource(*args, name=_name, **kwargs)
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "finance_coding":
-        from dana.core.resource.plugins.financial_coding_resource import FinancialCodingResource
-
-        resource = FinancialCodingResource(*args, name=_name, **kwargs)
-        resource.initialize()
-        context.set_resource(_name, resource)
-        return resource
-
-    elif function_name.lower() == "financial_tools":
-        from dana.core.resource.plugins.financial_statement_tools_resource import FinancialStatementToolsResource
-
-        resource = FinancialStatementToolsResource(*args, name=_name, **kwargs)
-        resource.initialize()
+        resource = KnowledgeResource(name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
 
     elif function_name.lower() == "finance_rag":
-        from dana.core.resource.plugins.financial_statement_rag_resource import FinancialStatementRAGResource
+        from dana.common.sys_resource.rag.financial_statement_rag_resource import FinancialStatementRAGResource
 
-        resource = FinancialStatementRAGResource(*args, name=_name, **kwargs)
-        resource.initialize()
+        resource = FinancialStatementRAGResource(name=_name, **kwargs)
+        Misc.safe_asyncio_run(resource.initialize)
         context.set_resource(_name, resource)
         return resource
 
-    elif function_name.lower() == "llm":
-        from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+    elif function_name.lower() == "coding":
+        from dana.common.sys_resource.coding.coding_resource import CodingResource
 
-        resource = BaseLLMResource(*args, name=_name, **kwargs)
+        resource = CodingResource(name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
 

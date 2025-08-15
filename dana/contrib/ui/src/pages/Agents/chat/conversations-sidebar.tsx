@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { ChatPlusIn, Settings } from 'iconoir-react';
+import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,7 +89,10 @@ interface ConversationsSidebarProps {
   agentId?: string;
 }
 
-const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) => {
+const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
+  setIsSidebarCollapsed,
+  agentId,
+}) => {
   const navigate = useNavigate();
   const { conversation_id } = useParams();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -208,20 +211,36 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
 
   return (
     <div className="flex flex-col h-full border-r border-gray-200 bg-background dark:border-gray-300">
-      <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-300">
-        <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
+      <div className="flex justify-between items-center px-2 py-3 border-b border-gray-200 dark:border-gray-300">
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
+                <Menu
+                  onClick={() => setIsSidebarCollapsed(true)}
+                  width={18}
+                  height={18}
+                  className="text-gray-600 dark:text-gray-300 cursor-pointer"
+                  strokeWidth={1.5}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Collapse Panel</TooltipContent>
+          </Tooltip>
+          <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
+        </div>
         <div className="flex flex-row items-center">
           {agentId && !isNaN(Number(agentId)) && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+                <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
                   <Settings
                     onClick={() => {
                       navigate(`/agents/${agentId}`);
                     }}
                     width={18}
                     height={18}
-                    className="text-gray-600 cursor-pointer"
+                    className="text-gray-600 dark:text-gray-300 cursor-pointer"
                     strokeWidth={1.5}
                   />
                 </div>
@@ -231,12 +250,12 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
           )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
                 <ChatPlusIn
                   onClick={handleNewChat}
                   width={18}
                   height={18}
-                  className="text-gray-600"
+                  className="text-gray-600 dark:text-gray-300"
                 />
               </div>
             </TooltipTrigger>
@@ -245,7 +264,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
+      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll custom-scrollbar">
         <div className="flex flex-col gap-3 px-2 mt-3">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">

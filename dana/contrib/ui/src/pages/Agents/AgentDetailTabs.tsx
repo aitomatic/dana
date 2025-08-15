@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import OverviewTab from './tabs/OverviewTab';
 import KnowledgeBaseTab from './tabs/KnowledgeBaseTab';
 import ToolsTab from './tabs/ToolsTab';
@@ -8,6 +8,7 @@ import { Code2, List, BookOpen } from 'lucide-react';
 import { Tools } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
+import { useUIStore } from '@/stores/ui-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 
@@ -26,33 +27,53 @@ export const AgentDetailTabs: React.FC<{
   setActiveTab: (tab: string) => void;
   navigate: NavigateFunction;
 }> = ({ children, activeTab, setActiveTab, navigate }) => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
+  const {
+    isChatSidebarOpen,
+    openChatSidebar,
+    closeChatSidebar,
+    agentDetailActiveTab,
+    setAgentDetailActiveTab,
+  } = useUIStore();
+
+  // Use global state if available, otherwise fall back to props
+  const currentActiveTab = agentDetailActiveTab || activeTab || 'Overview';
+  const handleTabChange = (tab: string) => {
+    setAgentDetailActiveTab(tab);
+    if (setActiveTab) {
+      setActiveTab(tab);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-[1fr_max-content] h-full relative ">
+    <div className="grid grid-cols-[1fr_max-content] h-full relative overflow-hidden">
       {/* Main content area */}
-      <div className="flex overflow-auto flex-col flex-1 gap-2 p-2 h-full">
+      <div className="overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 h-full custom-scrollbar">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen h-[40px]">
-          <div className="flex gap-2">
+        <div className="flex justify-between items-center border-b border-gray-200 max-w-screen">
+          <div className="flex">
             {TABS.map((tab) => (
               <button
                 key={tab}
-                className={`cursor-pointer px-4 py-2 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
-                onClick={() => setActiveTab(tab)}
+                className={`cursor-pointer px-4 py-4 h-14 font-medium text-sm flex items-center gap-2 transition-colors relative ${
+                  currentActiveTab === tab
+                    ? 'text-primary bg-white before:absolute before:bottom-[-1px] before:left-0 before:right-0 before:h-1 before:bg-white before:content-[""]'
+                    : 'text-gray-500'
+                }`}
+                onClick={() => handleTabChange(tab)}
               >
                 {TAB_ICONS[tab as keyof typeof TAB_ICONS]}
                 {tab}
               </button>
             ))}
           </div>
-          <div className="flex gap-2 items-center">
-            {!isChatOpen && (
+          <div className="flex gap-2 items-center pr-2">
+            {!isChatSidebarOpen && (
               <Button
-                variant="outline"
+                variant="link"
                 // size="sm"
-                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
-                onClick={() => setIsChatOpen(!isChatOpen)}
+                className="flex gap-2 items-center px-2 py-2 text-gray-700 border-gray-200 hover:bg-brand-100 hover:text-gray-900"
+                onClick={() => openChatSidebar()}
               >
                 {/* Agent Avatar */}
                 <div className="flex overflow-hidden justify-center items-center w-6 h-6 rounded-full">
@@ -74,27 +95,27 @@ export const AgentDetailTabs: React.FC<{
                 </div>
 
                 {/* Chat Text */}
-                <span className="text-sm font-medium">
-                  Chat with {selectedAgent?.name || 'Agent'}
+                <span className="text-sm font-semibold">
+                  {selectedAgent?.name || 'Agent'} Playground
                 </span>
               </Button>
             )}
           </div>
         </div>
         {/* Tab content */}
-        {activeTab === 'Overview' && <OverviewTab navigate={navigate} />}
-        {activeTab === 'Knowledge Base' && <KnowledgeBaseTab />}
-        {activeTab === 'Tools' && <ToolsTab />}
-        {activeTab === 'Code' && <CodeTab />}
+        {currentActiveTab === 'Overview' && <OverviewTab navigate={navigate} />}
+        {currentActiveTab === 'Knowledge Base' && <KnowledgeBaseTab />}
+        {currentActiveTab === 'Tools' && <ToolsTab />}
+        {currentActiveTab === 'Code' && <CodeTab />}
         {children}
       </div>
 
       {/* Chat pane */}
-      {isChatOpen && (
+      {isChatSidebarOpen && (
         <ChatPane
           agentName={selectedAgent?.name || 'Agent'}
-          isVisible={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
+          isVisible={isChatSidebarOpen}
+          onClose={() => closeChatSidebar()}
         />
       )}
     </div>

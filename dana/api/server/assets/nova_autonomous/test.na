@@ -1,0 +1,24 @@
+set_model("openai:gpt-4o-mini")
+log_level("info")
+
+from tools import websearch
+
+query = "Plan me a trip to the moon"
+
+prompt = f"""
+Create an execution plan for the following query. Return a list of 3-5 specific, actionable tasks.
+
+Query: {query}
+
+Requirements:
+- Each task should be concrete and measurable
+- Tasks should build upon each other logically
+- Focus on gathering information, analysis, and synthesis
+- Avoid overly broad or vague tasks
+
+Return the tasks as a JSON array of strings.
+"""
+
+search_results = websearch.openai_websearch(query="Plan me a trip to the moon")
+print(f"Web Search Results: {search_results}")
+
