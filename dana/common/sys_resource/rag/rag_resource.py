@@ -54,21 +54,8 @@ class RAGResource(BaseSysResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        # Use DANAPATH if set, otherwise default to .cache/rag
-        # if cache_dir is None:
-        danapaths = os.environ.get("DANAPATH")
-
-        danapaths = danapaths.split(":")
-
-        danapath = None
-
-        for _path in danapaths:
-            if _path.endswith("stdlib") and "libs" in _path and "dana" in _path:
-                continue
-            if "agents" in _path:
-                danapath = _path
-                break
-
+        
+        danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
         self.force_reload = force_reload
@@ -95,6 +82,24 @@ class RAGResource(BaseSysResource):
             )
         else:
             self._llm_reranker = None
+
+    def _get_danapath(self) -> str:
+        # Use DANAPATH if set, otherwise default to .cache/rag
+        # if cache_dir is None:
+        danapaths = os.environ.get("DANAPATH")
+
+        danapaths = danapaths.split(":")
+
+        danapath = None
+
+        for _path in danapaths:
+            if _path.endswith("stdlib") and "libs" in _path and "dana" in _path:
+                continue
+            if "agents" in _path:
+                danapath = _path
+                break
+
+        return danapath
 
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
