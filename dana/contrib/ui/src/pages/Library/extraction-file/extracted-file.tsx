@@ -135,9 +135,6 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
   const documents =
     deepExtractedDocuments?.length > 0 ? deepExtractedDocuments : selectedFile?.documents || [];
 
-
-
-
   // Navigation functions
   const goBack = (): void => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   const goNext = (): void =>
@@ -299,6 +296,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
             totalPages={documents.length}
             onBack={goBack}
             onNext={goNext}
+            isDisabled={isDeepExtracting}
           />
         </div>
       )}

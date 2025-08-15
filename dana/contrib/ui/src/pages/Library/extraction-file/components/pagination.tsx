@@ -7,11 +7,13 @@ export const Pagination = ({
   totalPages,
   onBack,
   onNext,
+  isDisabled = false,
 }: {
   currentPage: number;
   totalPages: number;
   onBack: () => void;
   onNext: () => void;
+  isDisabled?: boolean;
 }) => {
   return (
     <div className="flex items-center justify-center gap-2">
@@ -21,7 +23,7 @@ export const Pagination = ({
         size="sm"
         className="flex items-center gap-1 text-gray-700 border-none"
         onClick={onBack}
-        disabled={currentPage <= 1}
+        disabled={isDisabled || currentPage <= 1}
       >
         <IconChevronLeft className="w-4 h-4" />
       </IconButton>
@@ -38,7 +40,7 @@ export const Pagination = ({
         size="sm"
         className="flex items-center gap-1 text-gray-700 border-none"
         onClick={onNext}
-        disabled={currentPage >= totalPages}
+        disabled={isDisabled || currentPage >= totalPages}
       >
         <IconChevronRight className="w-4 h-4" />
       </IconButton>

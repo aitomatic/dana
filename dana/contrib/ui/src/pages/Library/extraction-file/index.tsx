@@ -14,6 +14,7 @@ import { Check } from 'iconoir-react';
 import { ExtractedFile } from './extracted-file';
 import { Pagination } from './components/pagination';
 import { cn } from '@/lib/utils';
+import { useDeepExtraction } from './hooks/useDeepExtraction';
 
 interface ExtractionFilePopupProps {
   onSaveCompleted?: () => void;
@@ -39,6 +40,9 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     setOnSaveCompletedCallback,
   } = useExtractionFileStore();
 
+  // Get deep extraction state for the selected file
+  const { isDeepExtracting } = useDeepExtraction(selectedFile);
+
   // Set the callback when component mounts
   useEffect(() => {
     setOnSaveCompletedCallback(onSaveCompleted);
@@ -46,8 +50,8 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     return () => setOnSaveCompletedCallback(undefined);
   }, [onSaveCompleted]); // Remove setOnSaveCompletedCallback from dependencies
 
-  // Determine if all files are uploaded
-  const isDisabled = isExtracting;
+  // Determine if buttons should be disabled (during extraction or deep extraction)
+  const isDisabled = isExtracting || isDeepExtracting;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -132,7 +136,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                     variant="outline"
                     size="sm"
                     onClick={handleUploadClick}
-                    disabled={isExtracting}
+                    disabled={isDisabled}
                   >
                     <IconUpload className="mr-2 w-4 h-4" />
                     Add Files
@@ -213,6 +217,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                     totalPages={extractedFiles.length}
                     onBack={goToPreviousFile}
                     onNext={goToNextFile}
+                    isDisabled={isDisabled}
                   />
                 </div>
               )}
