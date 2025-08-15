@@ -1,17 +1,18 @@
 """Pseudo-Expertise in AI for integration testing."""
 
 
+from pathlib.py import Path
+
+
 __all__ = ['answer_any_question_regarding_ai']
 
 
 def summarize_doc(doc_path: str) -> str:
-    # For now, return a placeholder since file reading is not supported in sandbox
     return llm(f"Summarize 3 most important points from below document:
 
 DOCUMENT TO SUMMARIZE:
 ```
-This is a placeholder for the document at {doc_path}.
-In a real implementation, this would contain the actual document content.
+{Path(doc_path).read_text(encoding='utf-8')}
 ```")
 
 
@@ -24,12 +25,4 @@ INFORMATION:
 ```')
 
 
-def answer_any_question_regarding_ai(resources: dict) -> str:
-    # Extract doc_path from resources
-    doc_path = resources.get('doc-path', '')
-    if not doc_path:
-        return "No document path provided in resources"
-
-    # Execute the workflow (using placeholder content since file reading is not supported in sandbox)
-    summary = summarize_doc(doc_path)
-    return highlight_opinions_on_ai(summary)
+def answer_any_question_regarding_ai(doc_path: str) -> str = summarize_doc | highlight_opinions_on_ai
