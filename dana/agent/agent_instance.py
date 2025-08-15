@@ -76,7 +76,7 @@ def default_solve_method(
         resources = {}
 
     # Use the general solver
-    return solve(problem, expertise_modules, resources)
+    return solve(problem=problem, expertise_modules=expertise_modules, resources=resources)
 
 
 def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
