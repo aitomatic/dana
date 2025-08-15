@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana"
-version = "0.25.8.8"
+version = "0.25.9.1"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -71,6 +71,7 @@ dependencies = [
     "python-a2a>=0.5.9",
     # Misc / Other
     "tqdm",
+    "aicapture",
     "python-lsp-server[all]>=1.13.0",
     "pyright>=1.1.403",
     "jedi>=0.19.2",

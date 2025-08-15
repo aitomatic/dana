@@ -1,0 +1,47 @@
+/* Theme switching for GitHub Markdown CSS */
+
+/* Override any custom strong tag styling - this is the main fix for the original issue */
+.markdown-body strong {
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  position: static !important;
+}
+
+/* Allow background to inherit from parent container */
+.markdown-body {
+  background: inherit !important;
+}
+
+/* Ensure text color is readable on both light and dark backgrounds */
+.markdown-body {
+  color: inherit !important;
+}
+
+/* Specific overrides for user messages (gray background) */
+.bg-gray-100 .markdown-body {
+  color: #374151 !important; /* Dark text on gray background */
+}
+
+/* Specific overrides for agent messages (white background) */
+.bg-white .markdown-body {
+  color: #24292f !important; /* Dark text on white background */
+}
+
+/* Background context specific styling */
+.markdown-body-user {
+  background: inherit !important;
+  color: #374151 !important; /* Dark text for user messages */
+}
+
+.markdown-body-agent {
+  background: inherit !important;
+  color: #24292f !important; /* Dark text for agent messages */
+}
+
+.markdown-body-default {
+  background: inherit !important;
+  color: #24292f !important; /* Default dark text */
+}
+
