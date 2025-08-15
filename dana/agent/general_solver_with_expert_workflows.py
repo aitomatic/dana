@@ -18,6 +18,80 @@ from dana.util.llm import from_prompts_to_request, from_response_to_content
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# --- Prompt Templates ---
+
+WORKFLOW_SELECTION_PROMPT_TEMPLATE = """
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following named expert workflows:
+
+NAMED EXPERT WORKFLOWS:
+```
+{expert_workflow_names}
+```
+
+Return the name of the expert workflow that is most relevant to the problem; OR
+if none of such named expert workflows is deemed relevant to the problem, return the string NONE.
+
+!!! RETURN EITHER NONE OR ONLY THE NAME OF THE WORKFLOW AS A PURE STRING, NO OTHER TEXT, NO SURROUNDING QUOTES !!!
+"""
+
+SOLUTION_SYNTHESIS_PROMPT_TEMPLATE = """
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following result(s) from an expert workflow:
+
+EXPERT WORKFLOW RESULT:
+```
+{workflow_result}
+```
+
+Return your best conclusion about / solution to the posed problem.
+"""
+
+SOLUTION_FORMAT_TEMPLATE = """
+Problem: {problem}
+
+Solution (using {workflow_name}):
+{result}
+
+This solution was generated using the {workflow_name} workflow with a confidence score of {score:.3f}.
+"""
+
+FALLBACK_SOLUTION_TEMPLATE = """
+Problem: {problem}
+
+No suitable expert workflows found for this problem. Available resources: {available_resources}
+
+Consider:
+1. Adding more specialized workflows for this domain
+2. Providing different resources that match existing workflow requirements
+3. Breaking down the problem into smaller, more specific sub-problems
+"""
+
+ERROR_SOLUTION_TEMPLATE = """
+Problem: {problem}
+
+Error during execution of {workflow_name}: {error_message}
+
+This may be due to:
+1. Missing or incompatible resources
+2. Workflow implementation issues
+3. Data format problems
+
+Please check the resource requirements and try again.
+"""
+
 
 @dataclass
 class WorkflowInfo:
@@ -120,26 +194,10 @@ class GeneralProblemSolver:
                     expert_workflow_name_to_module_map[workflow.name] = module
                     break
 
-        closest_matched_expert_workflow_lookup_prompt: str = f"""
-Given the following problem:
-
-PROBLEM:
-```
-{problem}
-```
-
-And the following named expert workflows:
-
-NAMED EXPERT WORKFLOWS:
-```
-{expert_workflow_names}
-```
-
-Return the name of the expert workflow that is most relevant to the problem; OR
-if none of such named expert workflows is deemed relevant to the problem, return the string NONE.
-
-!!! RETURN EITHER NONE OR ONLY THE NAME OF THE WORKFLOW AS A PURE STRING, NO OTHER TEXT, NO SURROUNDING QUOTES !!!
-"""
+        closest_matched_expert_workflow_lookup_prompt: str = WORKFLOW_SELECTION_PROMPT_TEMPLATE.format(
+            problem=problem,
+            expert_workflow_names=expert_workflow_names
+        )
 
         closest_matched_expert_workflow_name: str = ''
         while not ((closest_matched_expert_workflow_name in expert_workflow_name_to_module_map) or
@@ -171,23 +229,14 @@ if none of such named expert workflows is deemed relevant to the problem, return
 
             solution: str = from_response_to_content(
                 llm.query_sync(
-                    from_prompts_to_request(f"""
-Given the following problem:
-
-PROBLEM:
-```
-{problem}
-```
-
-And the following result(s) from an expert workflow:
-
-EXPERT WORKFLOW RESULT:
-```
-{workflow_result}
-```
-
-Return your best conclusion about / solution to the posed problem.
-""")))
+                    from_prompts_to_request(
+                        SOLUTION_SYNTHESIS_PROMPT_TEMPLATE.format(
+                            problem=problem,
+                            workflow_result=workflow_result
+                        )
+                    )
+                )
+            )
 
         return solution
 
@@ -376,44 +425,29 @@ Return your best conclusion about / solution to the posed problem.
         workflow_name = match.workflow.name
         score = match.score
 
-        solution = f"""
-Problem: {problem}
-
-Solution (using {workflow_name}):
-{result}
-
-This solution was generated using the {workflow_name} workflow with a confidence score of {score:.3f}.
-"""
+        solution = SOLUTION_FORMAT_TEMPLATE.format(
+            problem=problem,
+            workflow_name=workflow_name,
+            result=result,
+            score=score
+        )
 
         return solution.strip()
 
     def _generate_fallback_solution(self, problem: str, resources: Dict[str, Any]) -> str:
         """Generate a fallback solution when no suitable workflows are found."""
-        return f"""
-Problem: {problem}
-
-No suitable expert workflows found for this problem. Available resources: {list(resources.keys())}
-
-Consider:
-1. Adding more specialized workflows for this domain
-2. Providing different resources that match existing workflow requirements
-3. Breaking down the problem into smaller, more specific sub-problems
-"""
+        return FALLBACK_SOLUTION_TEMPLATE.format(
+            problem=problem,
+            available_resources=list(resources.keys())
+        )
 
     def _generate_error_solution(self, problem: str, error: Exception, match: ResourceMatch) -> str:
         """Generate a solution when workflow execution fails."""
-        return f"""
-Problem: {problem}
-
-Error during execution of {match.workflow.name}: {str(error)}
-
-This may be due to:
-1. Missing or incompatible resources
-2. Workflow implementation issues
-3. Data format problems
-
-Please check the resource requirements and try again.
-"""
+        return ERROR_SOLUTION_TEMPLATE.format(
+            problem=problem,
+            workflow_name=match.workflow.name,
+            error_message=str(error)
+        )
 
     # Helper methods for problem analysis
     def _extract_key_concepts(self, problem: str) -> List[str]:
