@@ -6,7 +6,7 @@ problems to specialized workflows and interprets results. Based on the design in
 .docs/design/Agent-Problem-Solving.md
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from types import ModuleType
 from dataclasses import dataclass
 import logging
@@ -98,8 +98,8 @@ class WorkflowInfo:
     """Information about a workflow for matching and execution."""
     name: str
     description: str
-    input_signature: Dict[str, type]
-    output_signature: Dict[str, type]
+    input_signature: dict[str, type]
+    output_signature: dict[str, type]
     workflow_function: callable
     expertise_domain: str
 
@@ -109,9 +109,9 @@ class ResourceMatch:
     """Information about how well resources match workflow requirements."""
     workflow: WorkflowInfo
     score: float
-    matched_resources: Dict[str, Any]
-    missing_resources: List[str]
-    error_message: Optional[str] = None
+    matched_resources: dict[str, Any]
+    missing_resources: list[str]
+    error_message: str | None = None
 
 
 class GeneralProblemSolver:
@@ -122,7 +122,7 @@ class GeneralProblemSolver:
     """
 
     def __init__(self):
-        self.workflows: List[WorkflowInfo] = []
+        self.workflows: list[WorkflowInfo] = []
         self.llm_resource = None  # Will be initialized when needed
 
     def register_workflow(self, workflow: WorkflowInfo) -> None:
@@ -130,7 +130,7 @@ class GeneralProblemSolver:
         self.workflows.append(workflow)
         logger.info(f"Registered workflow: {workflow.name} ({workflow.expertise_domain})")
 
-    def discover_workflows_from_modules(self, expertise_modules: List[ModuleType]) -> None:
+    def discover_workflows_from_modules(self, expertise_modules: list[ModuleType]) -> None:
         """Discover and register workflows from expertise modules."""
         for module in expertise_modules:
             if hasattr(module, '__all__'):
@@ -152,7 +152,7 @@ class GeneralProblemSolver:
                         self.register_workflow(workflow_info)
                         logger.info(f"Discovered workflow: {workflow_name} from {module.__name__}")
 
-    def solve(self, problem: str, expertise_modules: List[ModuleType] = None, resources: Dict[str, Any] = None) -> str:
+    def solve(self, problem: str, expertise_modules: list[ModuleType] = None, resources: dict[str, Any] = None) -> str:
         """
         Solve a problem using available resources and expertise modules.
 
@@ -240,7 +240,7 @@ class GeneralProblemSolver:
 
         return solution
 
-    def _analyze_problem(self, problem: str) -> Dict[str, Any]:
+    def _analyze_problem(self, problem: str) -> dict[str, Any]:
         """
         Phase 1: Problem Analysis
 
@@ -256,7 +256,7 @@ class GeneralProblemSolver:
             "constraints": self._extract_constraints(problem)
         }
 
-    def _analyze_resources(self, resources: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_resources(self, resources: dict[str, Any]) -> dict[str, Any]:
         """
         Phase 2: Resource Inspection
 
@@ -274,8 +274,8 @@ class GeneralProblemSolver:
 
         return resource_analysis
 
-    def _match_workflows(self, problem_analysis: Dict[str, Any],
-                        resource_analysis: Dict[str, Any]) -> List[ResourceMatch]:
+    def _match_workflows(self, problem_analysis: dict[str, Any],
+                        resource_analysis: dict[str, Any]) -> list[ResourceMatch]:
         """
         Phase 3: Expertise Matching
 
@@ -294,8 +294,8 @@ class GeneralProblemSolver:
         return matches
 
     def _evaluate_workflow_match(self, workflow: WorkflowInfo,
-                                problem_analysis: Dict[str, Any],
-                                resource_analysis: Dict[str, Any]) -> ResourceMatch:
+                                problem_analysis: dict[str, Any],
+                                resource_analysis: dict[str, Any]) -> ResourceMatch:
         """
         Evaluate how well a workflow matches the problem and available resources.
         """
@@ -321,7 +321,7 @@ class GeneralProblemSolver:
         )
 
     def _calculate_conceptual_match(self, workflow: WorkflowInfo,
-                                   problem_analysis: Dict[str, Any]) -> float:
+                                   problem_analysis: dict[str, Any]) -> float:
         """
         Calculate how well the workflow conceptually matches the problem.
         """
@@ -341,7 +341,7 @@ class GeneralProblemSolver:
         return min(overlap / len(problem_words), 1.0)
 
     def _calculate_resource_compatibility(self, workflow: WorkflowInfo,
-                                        resource_analysis: Dict[str, Any]) -> Tuple[float, Dict[str, Any], List[str]]:
+                                        resource_analysis: dict[str, Any]) -> tuple[float, dict[str, Any], list[str]]:
         """
         Calculate how well available resources match workflow input requirements.
         """
@@ -367,7 +367,7 @@ class GeneralProblemSolver:
         return compatibility_score, matched_resources, list(missing_keys)
 
     def _calculate_output_relevance(self, workflow: WorkflowInfo,
-                                   problem_analysis: Dict[str, Any]) -> float:
+                                   problem_analysis: dict[str, Any]) -> float:
         """
         Calculate how relevant the workflow output is to the problem.
         """
@@ -375,7 +375,7 @@ class GeneralProblemSolver:
         # For now, return a default score
         return 0.7
 
-    def _select_best_workflow(self, matches: List[ResourceMatch]) -> ResourceMatch:
+    def _select_best_workflow(self, matches: list[ResourceMatch]) -> ResourceMatch:
         """
         Phase 4: Execution Planning
 
@@ -395,7 +395,7 @@ class GeneralProblemSolver:
 
         return best_match
 
-    def _execute_workflow(self, match: ResourceMatch, problem: str, resources: Dict[str, Any]) -> Any:
+    def _execute_workflow(self, match: ResourceMatch, problem: str, resources: dict[str, Any]) -> Any:
         """
         Phase 5: Solution Execution
 
@@ -434,7 +434,7 @@ class GeneralProblemSolver:
 
         return solution.strip()
 
-    def _generate_fallback_solution(self, problem: str, resources: Dict[str, Any]) -> str:
+    def _generate_fallback_solution(self, problem: str, resources: dict[str, Any]) -> str:
         """Generate a fallback solution when no suitable workflows are found."""
         return FALLBACK_SOLUTION_TEMPLATE.format(
             problem=problem,
@@ -450,7 +450,7 @@ class GeneralProblemSolver:
         )
 
     # Helper methods for problem analysis
-    def _extract_key_concepts(self, problem: str) -> List[str]:
+    def _extract_key_concepts(self, problem: str) -> list[str]:
         """Extract key concepts from the problem statement."""
         # TODO: Use LLM for better concept extraction
         # For now, use simple word extraction
@@ -459,25 +459,25 @@ class GeneralProblemSolver:
         stop_words = {"the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"}
         return [word for word in words if word not in stop_words and len(word) > 3]
 
-    def _extract_entities(self, problem: str) -> List[str]:
+    def _extract_entities(self, problem: str) -> list[str]:
         """Extract entities from the problem statement."""
         # TODO: Use LLM for entity extraction
         # For now, return empty list
         return []
 
-    def _extract_operations(self, problem: str) -> List[str]:
+    def _extract_operations(self, problem: str) -> list[str]:
         """Extract operations from the problem statement."""
         # TODO: Use LLM for operation extraction
         # For now, return empty list
         return []
 
-    def _extract_constraints(self, problem: str) -> List[str]:
+    def _extract_constraints(self, problem: str) -> list[str]:
         """Extract constraints from the problem statement."""
         # TODO: Use LLM for constraint extraction
         # For now, return empty list
         return []
 
-    def _infer_resource_capabilities(self, resource: Any) -> Dict[str, Any]:
+    def _infer_resource_capabilities(self, resource: Any) -> dict[str, Any]:
         """Infer capabilities of a resource object."""
         # TODO: Implement resource capability inference
         # For now, return basic type information
@@ -491,7 +491,7 @@ class GeneralProblemSolver:
 _solver = GeneralProblemSolver()
 
 
-def solve(problem: str, expertise_modules: List[ModuleType] = None, resources: Dict[str, Any] = None) -> str:
+def solve(problem: str, expertise_modules: list[ModuleType] = None, resources: dict[str, Any] = None) -> str:
     """
     Main solve function that routes problems to appropriate expert workflows.
 
@@ -511,8 +511,8 @@ def solve(problem: str, expertise_modules: List[ModuleType] = None, resources: D
     return _solver.solve(problem, expertise_modules, resources)
 
 
-def register_workflow(name: str, description: str, input_signature: Dict[str, type],
-                     output_signature: Dict[str, type], workflow_function: callable,
+def register_workflow(name: str, description: str, input_signature: dict[str, type],
+                     output_signature: dict[str, type], workflow_function: callable,
                      expertise_domain: str = "general") -> None:
     """
     Register a workflow for problem-solving.
