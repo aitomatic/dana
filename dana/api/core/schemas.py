@@ -577,6 +577,7 @@ class DeepExtractionRequest(BaseModel):
 
     document_id: int
     prompt: str | None = None
+    use_deep_extraction: bool = False
     config: dict[str, Any] | None = None
 
 
@@ -599,7 +600,7 @@ class FileObject(BaseModel):
     pages: list[PageContent]
 
 
-class DeepExtractionResponse(BaseModel):
+class ExtractionResponse(BaseModel):
     """Response schema for deep extraction endpoint"""
 
     file_object: FileObject

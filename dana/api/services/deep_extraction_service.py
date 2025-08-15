@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from dana.api.core.schemas import DeepExtractionResponse, FileObject, PageContent
+from dana.api.core.schemas import ExtractionResponse, FileObject, PageContent
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class DeepExtractionService:
         else:
             raise ValueError(f"Unsupported file type: {file_ext}. Supported types: PDF, Images (jpg, jpeg, png, tiff, tif, webp, bmp, gif)")
 
-    def _convert_aicapture_response(self, aicapture_result: dict[str, Any], file_path: str, prompt: str | None) -> DeepExtractionResponse:
+    def _convert_aicapture_response(self, aicapture_result: dict[str, Any], file_path: str, prompt: str | None) -> ExtractionResponse:
         """
         Convert aicapture response to our API response format.
 
@@ -112,7 +112,7 @@ class DeepExtractionService:
             prompt: Original prompt used
 
         Returns:
-            DeepExtractionResponse in our API format
+            ExtractionResponse in our API format
         """
         file_name = Path(file_path).name
         file_full_path = os.path.abspath(file_path)
@@ -143,7 +143,7 @@ class DeepExtractionService:
                 file_full_path=file_obj.get("file_full_path", file_full_path),
                 pages=pages,
             )
-            return DeepExtractionResponse(file_object=file_object)
+            return ExtractionResponse(file_object=file_object)
 
         # Otherwise, build the response from the raw aicapture_result
         pages = []
@@ -181,9 +181,9 @@ class DeepExtractionService:
             pages=pages,
         )
 
-        return DeepExtractionResponse(file_object=file_object)
+        return ExtractionResponse(file_object=file_object)
 
-    async def deep_extract(self, file_path: str, prompt: str | None = None, config: dict | None = None) -> DeepExtractionResponse:
+    async def extract(self, file_path: str, prompt: str | None = None, config: dict | None = None) -> ExtractionResponse:
         """
         Extract data from a visual document using aicapture.
 
@@ -193,7 +193,7 @@ class DeepExtractionService:
             config: Optional configuration dictionary for the processor
 
         Returns:
-            DeepExtractionResponse with extracted data
+            ExtractionResponse with extracted data
         """
         try:
             # Validate file exists

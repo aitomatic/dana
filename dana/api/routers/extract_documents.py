@@ -4,20 +4,21 @@ Deep Document Extraction routers - routing for document extraction endpoints usi
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
 from dana.api.core.models import Document
-from dana.api.core.schemas import DeepExtractionRequest, DeepExtractionResponse
+from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana.api.services.deep_extraction_service import DeepExtractionService
+from dana.api.services.llamaindex_extraction_service import LlamaIndexExtractionService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/extract-documents", tags=["extract-documents"])
 
 
-@router.post("/deep-extract", response_model=DeepExtractionResponse)
+@router.post("/extract", response_model=ExtractionResponse)
 async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get_db)):
     """
     Extract data from a visual document using aicapture.
@@ -31,7 +32,7 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
         db: Database session
 
     Returns:
-        DeepExtractionResponse with extracted data
+        ExtractionResponse with extracted data
     """
     try:
         logger.info("Received deep extraction request for document ID: %s", request.document_id)
@@ -45,14 +46,13 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
             raise FileNotFoundError(f"Document {request.document_id} has no file path")
 
         # Create service instance
-        service = DeepExtractionService()
+        if request.use_deep_extraction:
+            service = DeepExtractionService()
+        else:
+            service = LlamaIndexExtractionService()
 
         # Extract document - now just handles the extraction logic
-        result = await service.deep_extract(
-            file_path=str(document.file_path),
-            prompt=request.prompt,
-            config=request.config
-        )
+        result = await service.extract(file_path=str(document.file_path), prompt=request.prompt, config=request.config)
 
         logger.info("Successfully extracted document ID: %s", request.document_id)
         return result
@@ -71,7 +71,7 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/deep-extract/supported-types")
+@router.get("/extract/supported-types")
 async def get_supported_file_types():
     """
     Get list of supported file types for deep document extraction.
