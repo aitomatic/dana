@@ -14,7 +14,7 @@ from textual.reactive import reactive
 from textual.widgets import RichLog, Static
 
 from ..core.events import AgentEvent, Done, Error, FinalResult, Progress, Status, Token, ToolEnd, ToolStart
-from ..core.runtime import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class ThinkingEntry:
@@ -53,7 +53,7 @@ class AgentDetail(Vertical):
     def compose(self) -> ComposeResult:
         """Create the agent detail UI."""
         yield Static("🔍 Agent Detail", classes="panel-title", id="detail-title")
-        self._text_log = RichLog(highlight=True, markup=True, id="detail-log", auto_scroll=True)
+        self._text_log = RichLog(highlight=True, markup=True, wrap=False, id="detail-log", auto_scroll=True)
         yield self._text_log
 
     def on_mount(self) -> None:

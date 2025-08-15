@@ -85,7 +85,7 @@ class LogPanel(Vertical):
             yield Button("👁️ Show", id="log-toggle-btn", variant="default")
 
         # Log display
-        self._log_widget = RichLog(highlight=True, markup=True, wrap=True, id="log-output")
+        self._log_widget = RichLog(highlight=True, markup=True, wrap=False, id="log-output", auto_scroll=True)
         yield self._log_widget
 
     def on_mount(self) -> None:

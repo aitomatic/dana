@@ -145,14 +145,14 @@ class DanaTUI(App):
         border: round $border;
         background: $surface;
         color: $text;
-        height: 30;
+        height: 30%;
         min-height: 8;
         display: none;
     }
     
     #log-output {
         border: none;
-        height: 27;
+        height: 99%;
         background: $surface;
         color: $text;
         overflow: auto;
