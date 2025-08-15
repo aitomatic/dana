@@ -1,7 +1,9 @@
-from aicapture.py import VisionParser, VidCapture
+# Add local aicapture to Python path
+import os.py as os
+from aicapture.vision_parser.py import VisionParser
+from aicapture.vid_capture.py import VidCapture
 from aicapture.settings.py import MAX_CONCURRENT_TASKS, ImageQuality
 from aicapture.vision_parser.py import DEFAULT_PROMPT
-import os.py as os
 from typing.py import Optional, Dict, Any
 
 # Initialize parsers
@@ -82,7 +84,8 @@ def vision_extract(file_path: str, prompt: Optional[str] = None, config: Optiona
         vid_capture = _get_vid_capture(config)
         if not prompt:
             # Use default prompt for videos if none provided
-            prompt = "Extract and describe the key content, actions, and information shown in this video."
+            # prompt = "Extract and describe the key content, actions, and information shown in this video."
+            prompt = DEFAULT_PROMPT
         
         result = vid_capture.process_video_async(file_path, prompt)
         return {
@@ -95,4 +98,3 @@ def vision_extract(file_path: str, prompt: Optional[str] = None, config: Optiona
         }
     else:
         raise ValueError(f"Unsupported file type: {file_ext}. Supported types: PDF, Images (jpg, jpeg, png, tiff, tif, webp, bmp)") # TODO: Add video support
-
