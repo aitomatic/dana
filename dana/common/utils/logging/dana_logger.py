@@ -70,25 +70,42 @@ class DanaLogger:
         fmt: str = "%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
         datefmt: str = "%H:%M:%S",
         console: bool = True,
+        force: bool = False,
         **kwargs: Any,  # Accept but ignore extra args for backward compatibility
     ) -> None:
         """Configure the logger with basic settings.
 
         Only affects Dana loggers to avoid interfering with third-party libraries.
+
+        Args:
+            level: Logging level
+            fmt: Log format string
+            datefmt: Date format string
+            console: Whether to enable console logging
+            force: Force reconfiguration even if already configured
         """
-        if self._configured:
+        if self._configured and not force:
             return
+
+        # Check environment variable for console logging override
+        import os
+
+        env_console = os.getenv("DANA_CONSOLE_LOGGING", "").lower()
+        if env_console in ("false", "0", "no"):
+            console = False
+        elif env_console in ("true", "1", "yes"):
+            console = True
 
         # Configure only the Dana root logger, not the system root logger
         dana_root = logging.getLogger("dana")
         dana_root.setLevel(level)
 
+        # Remove any existing handlers on the Dana logger
+        for handler in dana_root.handlers[:]:
+            dana_root.removeHandler(handler)
+
         # Add our handler to the Dana root logger only if console logging is enabled
         if console:
-            # Remove any existing handlers on the Dana logger
-            for handler in dana_root.handlers[:]:
-                dana_root.removeHandler(handler)
-
             handler = logging.StreamHandler()
             formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
             handler.setFormatter(formatter)
@@ -323,6 +340,49 @@ class DanaLogger:
         Deprecated: Use configure() instead.
         """
         logging.basicConfig(*args, **kwargs)
+
+    def disable_console_logging(self) -> None:
+        """Disable console logging after initialization.
+
+        This method removes console handlers from Dana loggers to prevent
+        duplicate logging when using TUI or other GUI interfaces.
+        """
+        dana_root = logging.getLogger("dana")
+
+        # Remove console handlers (StreamHandler instances)
+        for handler in dana_root.handlers[:]:
+            if isinstance(handler, logging.StreamHandler):
+                dana_root.removeHandler(handler)
+
+        # Also check for handlers on the root logger that might be from Dana
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers[:]:
+            if isinstance(handler, logging.StreamHandler):
+                # Check if this handler was added by Dana (has our formatter)
+                if hasattr(handler, "formatter") and isinstance(handler.formatter, ColoredFormatter):
+                    root_logger.removeHandler(handler)
+
+    def is_console_logging_enabled(self) -> bool:
+        """Check if console logging is currently enabled.
+
+        Returns:
+            True if console logging is enabled, False otherwise
+        """
+        dana_root = logging.getLogger("dana")
+
+        # Check if there are any StreamHandler instances
+        for handler in dana_root.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                return True
+
+        # Also check root logger for Dana handlers
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                if hasattr(handler, "formatter") and isinstance(handler.formatter, ColoredFormatter):
+                    return True
+
+        return False
 
 
 # Create global logger instances

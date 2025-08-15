@@ -52,6 +52,9 @@ dependencies = [
     # Interactive Features
     "prompt-toolkit",
     "pygments",
+    "textual",
+    "textual-autocomplete>=4.0.5",
+    "pyperclip",
     # Web Automation
     "playwright",
     # API Server
@@ -76,6 +79,7 @@ dependencies = [
     "llama-index-llms-cohere>=0.5.0",
     "llama-index-vector-stores-duckdb>=0.4.6",
     "llama-index-vector-stores-postgres>=0.5.5",
+    "textual-dev>=1.7.0",
 ]
 
 # Optional dependency groups
@@ -88,6 +92,7 @@ dev = [
     "pytest-cov", # Test coverage reporting
     "build",      # Package building tool
     "twine",      # PyPI upload tool
+    "textual-dev",
 ]
 
 docs = [
