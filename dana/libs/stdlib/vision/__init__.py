@@ -6,7 +6,7 @@ from pathlib import Path
 # Get the directory where this module is located
 try:
     vision_dir = Path(__file__).parent
-except:
+except Exception:
     vision_dir = Path(os.path.dirname(__file__))
 
 aicapture_path = str(vision_dir / "aicapture")
