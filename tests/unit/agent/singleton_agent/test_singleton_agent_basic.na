@@ -1,0 +1,228 @@
+# Singleton Agent Basic Tests
+# Tests for basic singleton agent functionality
+
+log_level("INFO")
+
+# Test 1: Basic singleton agent creation
+agent Solo
+
+def test_basic_singleton_creation():
+    # Test that singleton agent can be created and used
+    try:
+        result = Solo.chat("hello")
+        if "hello" not in str(result).lower():
+            return "❌ Basic singleton chat not working"
+        return "✅ Basic singleton creation works"
+    except Exception as e:
+        return f"❌ Basic singleton creation failed: {e}"
+
+# Test 2: Singleton agent with blueprint alias
+agent_blueprint PersonAgent:
+    name: str = "Person"
+    role: str = "general"
+
+agent Jimmy(PersonAgent)
+
+def test_singleton_with_blueprint_alias():
+    # Test singleton with blueprint alias
+    try:
+        plan_result = Jimmy.plan("test task")
+        if "planning" not in str(plan_result).lower():
+            return "❌ Singleton with blueprint alias plan not working"
+        
+        solve_result = Jimmy.solve("test problem")
+        if "solving" not in str(solve_result).lower():
+            return "❌ Singleton with blueprint alias solve not working"
+        
+        return "✅ Singleton with blueprint alias works"
+    except Exception as e:
+        return f"❌ Singleton with blueprint alias failed: {e}"
+
+# Test 3: Singleton agent field access
+agent_blueprint ConfigAgent:
+    name: str = "Config"
+    version: str = "1.0"
+    enabled: bool = true
+
+agent Config(ConfigAgent)
+
+def test_singleton_field_access():
+    # Test that singleton fields are accessible
+    try:
+        if Config.name != "Config":
+            return "❌ Singleton name field not accessible"
+        if Config.version != "1.0":
+            return "❌ Singleton version field not accessible"
+        if Config.enabled != true:
+            return "❌ Singleton enabled field not accessible"
+        
+        return "✅ Singleton field access works"
+    except Exception as e:
+        return f"❌ Singleton field access failed: {e}"
+
+# Test 4: Multiple singleton agents
+agent_blueprint WorkerAgent:
+    name: str = "Worker"
+    task: str = "default"
+
+agent Worker1(WorkerAgent)
+agent Worker2(WorkerAgent)
+
+def test_multiple_singleton_agents():
+    # Test that multiple singletons can coexist
+    try:
+        # Test that both workers can work independently
+        result1 = Worker1.plan("task 1")
+        result2 = Worker2.plan("task 2")
+        
+        if "planning" not in str(result1).lower():
+            return "❌ Worker1 planning not working"
+        if "planning" not in str(result2).lower():
+            return "❌ Worker2 planning not working"
+        
+        return "✅ Multiple singleton agents work"
+    except Exception as e:
+        return f"❌ Multiple singleton agents failed: {e}"
+
+# Test 5: Singleton agent methods
+agent_blueprint MethodAgent:
+    name: str = "Method"
+    counter: int = 0
+
+agent MethodTest(MethodAgent)
+
+def test_singleton_agent_methods():
+    # Test that singleton agents have all built-in methods
+    try:
+        # Test plan method
+        plan_result = MethodTest.plan("test planning")
+        if "planning" not in str(plan_result).lower():
+            return "❌ Singleton plan method not working"
+        
+        # Test solve method
+        solve_result = MethodTest.solve("test solving")
+        if "solving" not in str(solve_result).lower():
+            return "❌ Singleton solve method not working"
+        
+        # Test memory methods
+        remember_result = MethodTest.remember("test_key", "test_value")
+        if remember_result != true:
+            return "❌ Singleton remember method not working"
+        
+        recall_result = MethodTest.recall("test_key")
+        if recall_result != "test_value":
+            return "❌ Singleton recall method not working"
+        
+        return "✅ Singleton agent methods work"
+    except Exception as e:
+        return f"❌ Singleton agent methods failed: {e}"
+
+# Test 6: Singleton agent identity
+agent IdentityTest
+
+def test_singleton_agent_identity():
+    # Test that singleton agents maintain their identity
+    try:
+        # Test that the same agent instance is returned
+        result1 = IdentityTest.chat("first message")
+        result2 = IdentityTest.chat("second message")
+        
+        # Both should work with the same agent
+        if "first" not in str(result1).lower() and "second" not in str(result2).lower():
+            return "❌ Singleton identity not maintained"
+        
+        return "✅ Singleton agent identity works"
+    except Exception as e:
+        return f"❌ Singleton agent identity failed: {e}"
+
+# Test 7: Singleton agent with complex fields
+agent_blueprint ComplexAgent:
+    name: str = "Complex"
+    config: dict = {"timeout": 30, "retries": 3}
+    tags: list = ["tag1", "tag2", "tag3"]
+
+agent Complex(ComplexAgent)
+
+def test_singleton_complex_fields():
+    # Test singleton with complex field types
+    try:
+        if Complex.name != "Complex":
+            return "❌ Complex singleton name field not working"
+        if Complex.config.get("timeout") != 30:
+            return "❌ Complex singleton config field not working"
+        if len(Complex.tags) != 3:
+            return "❌ Complex singleton tags field not working"
+        
+        return "✅ Singleton complex fields work"
+    except Exception as e:
+        return f"❌ Singleton complex fields failed: {e}"
+
+# Test 8: Singleton agent error handling
+agent ErrorTest
+
+def test_singleton_error_handling():
+    # Test that singleton agents handle errors gracefully
+    try:
+        # Test with empty input
+        result = ErrorTest.chat("")
+        if result is None:
+            return "❌ Singleton should handle empty input"
+        
+        # Test with very long input
+        long_input = "x" * 1000
+        result = ErrorTest.chat(long_input)
+        if result is None:
+            return "❌ Singleton should handle long input"
+        
+        return "✅ Singleton error handling works"
+    except Exception as e:
+        return f"❌ Singleton error handling failed: {e}"
+
+# Run basic singleton tests
+log("=== Singleton Agent Basic Tests ===")
+
+tests = [
+    test_basic_singleton_creation,
+    test_singleton_with_blueprint_alias,
+    test_singleton_field_access,
+    test_multiple_singleton_agents,
+    test_singleton_agent_methods,
+    test_singleton_agent_identity,
+    test_singleton_complex_fields,
+    test_singleton_error_handling
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Basic Singleton Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All basic singleton agent tests passed!")
+else:
+    log(f"⚠️  {failed} basic singleton tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}

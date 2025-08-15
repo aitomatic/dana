@@ -1,0 +1,42 @@
+# Test if agent.chat() is connected to an LLM
+
+# Define an agent blueprint with LLM config
+agent_blueprint SmartAgent:
+    name: str = "Smart Agent"
+    expertise: str = "general"
+    config: dict = {
+        "llm_model": "openai:gpt-4o-mini",
+        "llm_temperature": 0.3
+    }
+
+# Create instance from blueprint
+smart_agent = SmartAgent()
+
+print("=== Agent LLM Connection Test ===")
+print("SmartAgent type:", type(smart_agent))
+print("SmartAgent config:", smart_agent.config)
+
+# Test chat functionality to see if it's using LLM
+print("\n--- Testing Chat with LLM ---")
+response = smart_agent.chat("Hello! What model are you using?")
+print("Response:", response)
+print("Response type:", type(response))
+
+# Test if response is a promise (async) or direct (sync)
+if "Promise" in str(type(response)):
+    print("✅ Response is a Promise (likely using LLM)")
+else:
+    print("❌ Response is synchronous (likely fallback)")
+
+# Test a more complex query
+print("\n--- Testing Complex Query ---")
+response2 = smart_agent.chat("Can you explain quantum computing in simple terms?")
+print("Response:", response2)
+
+# Check if the response looks like it came from an LLM
+if "quantum" in str(response2).lower() or "computing" in str(response2).lower():
+    print("✅ Response appears to be from an LLM")
+elif "fallback" in str(response2).lower() or "limited" in str(response2).lower():
+    print("❌ Response appears to be fallback")
+else:
+    print("🤔 Response is ambiguous - could be either")

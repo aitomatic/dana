@@ -79,59 +79,20 @@ class TreeTraverser(Loggable):
     def unwrap_token(self, token: Token) -> Any:
         """
         Unwrap a Lark Token to extract its value.
-
-        Args:
-            token: The token to unwrap.
-
-        Returns:
-            The unwrapped value (as appropriate type if possible)
+        Delegates to transformer_utils for consistency.
         """
-        if not isinstance(token, Token):
-            return token
+        from dana.core.lang.parser.utils.transformer_utils import extract_token_value
 
-        value = token.value
-
-        # Try to convert numeric values
-        try:
-            if "." in value:
-                return float(value)
-            else:
-                return int(value)
-        except (ValueError, TypeError):
-            pass
-
-        # Handle boolean and None values
-        if value.lower() == "true":
-            return True
-        elif value.lower() == "false":
-            return False
-        elif value.lower() == "none":
-            return None
-
-        # Default: return as string
-        return value
+        return extract_token_value(token)
 
     def unwrap_single_child_tree(self, node: Any) -> Any:
         """
         Recursively unwrap single-child Trees.
-
-        For a Tree with a single child, return the child.
-        For nested Trees each with a single child, return the innermost child.
-        For non-Tree or Trees with multiple children, return as is.
-
-        Args:
-            node: The node to unwrap.
-
-        Returns:
-            The unwrapped node (if applicable)
+        Delegates to transformer_utils for consistency.
         """
-        if not isinstance(node, Tree):
-            return node
+        from dana.core.lang.parser.utils.transformer_utils import unwrap_single_child_tree
 
-        while isinstance(node, Tree) and len(node.children) == 1:
-            node = node.children[0]
-
-        return node
+        return unwrap_single_child_tree(node)
 
     def extract_from_tree(self, node: NodeType, rule_name: str) -> list[Any] | None:
         """
@@ -305,60 +266,9 @@ class TreeTraverser(Loggable):
 # Standalone utility functions
 
 
-def unwrap_single_child_tree(node: Any) -> Any:
-    """
-    Recursively unwrap single-child Trees.
-
-    For a Tree with a single child, return the child.
-    For nested Trees each with a single child, return the innermost child.
-    For non-Tree or Trees with multiple children, return as is.
-
-    Args:
-        node: The node to unwrap.
-
-    Returns:
-        The unwrapped node (if applicable)
-    """
-    if not isinstance(node, Tree):
-        return node
-
-    while isinstance(node, Tree) and len(node.children) == 1:
-        node = node.children[0]
-
-    return node
+# unwrap_single_child_tree function moved to transformer_utils.py to avoid duplication
+# Import it from there if needed in standalone context
 
 
-def extract_token_value(token: Token) -> Any:
-    """
-    Extract the value from a Token, converting to the appropriate type if possible.
-
-    Args:
-        token: The token to extract the value from.
-
-    Returns:
-        The extracted value, converted to the appropriate type if possible.
-    """
-    if not isinstance(token, Token):
-        return token
-
-    value = token.value
-
-    # Try to convert numeric values
-    try:
-        if "." in value:
-            return float(value)
-        else:
-            return int(value)
-    except (ValueError, TypeError):
-        pass
-
-    # Handle boolean and None values
-    if value.lower() == "true":
-        return True
-    elif value.lower() == "false":
-        return False
-    elif value.lower() == "none":
-        return None
-
-    # Default: return as string
-    return value
+# extract_token_value function moved to transformer_utils.py to avoid duplication
+# Import it from there if needed in standalone context

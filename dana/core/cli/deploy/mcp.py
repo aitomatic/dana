@@ -2,7 +2,7 @@ import importlib
 import os
 from pathlib import Path
 
-from dana import dana_module
+from dana import py2na
 
 
 def validate_agent_module(na_file_path: str, na_module):
@@ -52,7 +52,7 @@ def create_mcp_server_for_file(na_file_path):
     try:
         # Add the directory containing the .na file to search paths
         file_dir = str(Path(na_file_path).parent)
-        dana_module.enable_module_imports(search_paths=[file_dir])
+        py2na.enable_module_imports(search_paths=[file_dir])
 
         # Import the Dana module (without .na extension)
         module_name = Path(na_file_path).stem
@@ -151,4 +151,4 @@ def deploy_dana_agents_thru_mcp(na_file_path, host, port):
     try:
         uvicorn.run(app, host=host, port=port)
     finally:
-        dana_module.close()
+        py2na.close()

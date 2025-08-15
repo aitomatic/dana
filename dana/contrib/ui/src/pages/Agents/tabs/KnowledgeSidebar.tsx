@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, FileText, Calendar, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useUIStore } from '@/stores/ui-store';
 
 interface KnowledgeContent {
   knowledge_area_description: string;
@@ -31,6 +32,15 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   loading,
   error,
 }) => {
+  const { closeChatSidebar } = useUIStore();
+
+  // Close chat sidebar when knowledge sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      closeChatSidebar();
+    }
+  }, [isOpen, closeChatSidebar]);
+
   console.log({ content });
   if (!isOpen) return null;
 
@@ -163,7 +173,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
       {/* Sidebar */}
       <div className="flex flex-col w-200 max-h-full bg-white border-l border-gray-200 shadow-xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex justify-between items-center py-2 px-4 bg-gray-50 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {formatTopicName(topicPath)}
@@ -179,7 +189,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="overflow-y-auto flex-1 p-4 custom-scrollbar">
           {loading && (
             <div className="flex justify-center items-center py-8">
               <div className="w-8 h-8 rounded-full border-b-2 border-blue-600 animate-spin"></div>

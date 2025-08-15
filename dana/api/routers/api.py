@@ -296,8 +296,8 @@ async def deep_train_agent(request: dict):
 
     try:
         agent_id = request.get("agent_id")
-        training_data = request.get("training_data", [])
-        training_config = request.get("training_config", {})
+        request.get("training_data", [])
+        request.get("training_config", {})
 
         if not agent_id:
             return {"success": False, "error": "agent_id is required"}

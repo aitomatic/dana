@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana"
-version = "0.25.8.8"
+version = "0.25.9.1"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -52,13 +52,16 @@ dependencies = [
     # Interactive Features
     "prompt-toolkit",
     "pygments",
+    "textual",
+    "textual-autocomplete>=4.0.5",
+    "pyperclip",
     # Web Automation
     "playwright",
     # API Server
     "fastapi",
     "uvicorn",
     # Testing Frameworks
-    "datest",
+    # "datest",  # TODO: publish `datest` on PyPI
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
@@ -69,9 +72,15 @@ dependencies = [
     "python-a2a>=0.5.9",
     # Misc / Other
     "tqdm",
+    "aicapture",
     "python-lsp-server[all]>=1.13.0",
     "pyright>=1.1.403",
     "jedi>=0.19.2",
+    "llama-index-embeddings-openai>=0.3.1",
+    "llama-index-llms-cohere>=0.5.0",
+    "llama-index-vector-stores-duckdb>=0.4.6",
+    "llama-index-vector-stores-postgres>=0.5.5",
+    "textual-dev>=1.7.0",
 ]
 
 # Optional dependency groups
@@ -84,6 +93,7 @@ dev = [
     "pytest-cov", # Test coverage reporting
     "build",      # Package building tool
     "twine",      # PyPI upload tool
+    "textual-dev",
 ]
 
 docs = [

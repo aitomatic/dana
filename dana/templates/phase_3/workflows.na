@@ -1,0 +1,7 @@
+from methods import refine_query
+from methods import search_document
+from methods import search_web
+from methods import get_answer
+
+workflow_using_doc_kb = refine_query | search_document | get_answer
+workflow_using_web = search_web | get_answer

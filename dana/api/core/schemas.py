@@ -91,6 +91,7 @@ class DocumentRead(DocumentBase):
     filename: str
     file_size: int
     mime_type: str
+    source_document_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -101,6 +102,12 @@ class DocumentUpdate(BaseModel):
     original_filename: str | None = None
     topic_id: int | None = None
     agent_id: int | None = None
+
+
+class ExtractionDataRequest(BaseModel):
+    original_filename: str
+    extraction_results: dict
+    source_document_id: int  # ID of the raw PDF file
 
 
 class RunNAFileRequest(BaseModel):
@@ -201,6 +208,8 @@ class MessageData(BaseModel):
 
     role: str  # 'user' or 'assistant'
     content: str
+    require_user: bool = False
+    treat_as_tool: bool = False
 
 
 class AgentGenerationRequest(BaseModel):
@@ -472,6 +481,14 @@ class IntentDetectionRequest(BaseModel):
     current_domain_tree: DomainKnowledgeTree | None = None
     agent_id: int
 
+    def get_conversation_str(self, include_latest_user_message: bool = True) -> str:
+        conversation = ""
+        for i, message in enumerate(self.chat_history):
+            conversation += f"{message.role}: {message.content}{'\n' if i % 2 == 0 else '\n\n'}"
+        if include_latest_user_message:
+            conversation += f"user: {self.user_message}"
+        return conversation
+
 
 class IntentDetectionResponse(BaseModel):
     """Response from LLM intent detection"""
@@ -552,3 +569,38 @@ class ChatWithIntentResponse(BaseModel):
     updated_tree: DomainKnowledgeTree | None = None
 
     error: str | None = None
+
+
+# Visual Document Extraction schemas
+class DeepExtractionRequest(BaseModel):
+    """Request schema for visual document extraction endpoint"""
+
+    document_id: int
+    prompt: str | None = None
+    use_deep_extraction: bool = False
+    config: dict[str, Any] | None = None
+
+
+class PageContent(BaseModel):
+    """Schema for a single page content"""
+
+    page_number: int
+    page_content: str
+    page_hash: str
+
+
+class FileObject(BaseModel):
+    """Schema for file object in extraction response"""
+
+    file_name: str
+    cache_key: str
+    total_pages: int
+    total_words: int
+    file_full_path: str
+    pages: list[PageContent]
+
+
+class ExtractionResponse(BaseModel):
+    """Response schema for deep extraction endpoint"""
+
+    file_object: FileObject

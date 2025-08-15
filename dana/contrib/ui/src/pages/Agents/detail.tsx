@@ -163,24 +163,8 @@ export default function AgentDetailPage() {
       await deleteAgent(parseInt(agent_id));
       setShowCancelConfirmation(false);
 
-      // Show success toast notification
-      toast.success('Agent has been deleted successfully');
-      /*toast.success(
-        <div>
-          <span style={{ fontWeight: 'bold' }}>{selectedAgent?.config.name}</span> has been deleted
-        </div>,
-        {
-          style: {
-            background: '#f0fdf4',
-            color: '#166534',
-            border: '1px solid #bbf7d0',
-            borderRadius: '8px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        },
-      );*/
+      // No toast message when user chooses "Do not save" - they're discarding unsaved changes
+      // Only show success toast when user explicitly deletes a saved agent
 
       navigate('/agents');
     } catch (error) {
@@ -242,17 +226,14 @@ export default function AgentDetailPage() {
 
   // --- Step 2: Training view ---
   return (
-    <div className="flex flex-col w-full h-screen bg-gray-50">
-      <AgentDetailHeader
-        onBack={handleClose}
-        title="Train Your Agent"
-        onDeploy={handleDeploy}
-        onCancel={handleClose}
-      />
-      <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
+    <div className="flex overflow-hidden flex-col w-full h-screen bg-gray-50">
+      <AgentDetailHeader title="Train Your Agent" onDeploy={handleDeploy} onCancel={handleClose} />
+      <div className="flex overflow-hidden flex-1 w-full h-full">
         <AgentDetailSidebar />
         {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
-        <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+        <div className="flex-1 min-w-0">
+          <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+        </div>
       </div>
       <AgentPerformanceComparisonModal
         open={showComparison}

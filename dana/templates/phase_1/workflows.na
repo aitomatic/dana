@@ -1,0 +1,6 @@
+from methods import should_use_rag
+from methods import refine_query
+from methods import search_document
+from methods import get_answer
+
+workflow = should_use_rag | refine_query | search_document | get_answer

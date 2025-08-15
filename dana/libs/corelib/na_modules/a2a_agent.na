@@ -1,0 +1,24 @@
+"""
+A2A Agent Module
+
+This module provides access to A2A (Agent-to-Agent) functionality in Dana.
+It registers the A2A_Agent struct type with the Dana runtime, enabling
+direct instantiation of A2A agents from Dana code.
+
+Usage:
+    my_agent = A2A_Agent(
+        name = "my_agent",
+        url = "http://localhost:8000",
+        headers = {"Authorization": "Bearer token"},
+        timeout = 3000,
+        google_a2a_compatible = true,
+    )
+
+The A2A_Agent provides a wrapper around external A2A-compatible agents,
+allowing Dana programs to communicate with remote agent services.
+"""
+
+import dana.integrations.a2a.py as a2a  # triggers registration via package init
+
+# That's it! The import above registers A2A_Agent with StructTypeRegistry
+# Users can now do: my_agent = A2A_Agent(name = "test", url = "http://localhost:8000")

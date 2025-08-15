@@ -177,6 +177,8 @@ class ImportHandler(Loggable):
             context: The execution context
         """
         import importlib
+        import sys
+        from pathlib import Path
 
         # Strip .py extension for Python import
         import_name = module_name[:-3] if module_name.endswith(".py") else module_name
@@ -188,7 +190,19 @@ class ImportHandler(Loggable):
             context.set(f"local:{context_name}", module)
             return None
 
+        # Get the current executing file's directory to add to sys.path temporarily
+        current_file_dir = None
+        if hasattr(context, "error_context") and context.error_context and context.error_context.current_file:
+            current_file_dir = str(Path(context.error_context.current_file).parent)
+
+        # Temporarily add the script's directory to sys.path for relative Python imports
+        path_added = False
         try:
+            if current_file_dir and current_file_dir not in sys.path:
+                sys.path.insert(0, current_file_dir)
+                path_added = True
+                self.debug(f"Temporarily added '{current_file_dir}' to sys.path for Python import '{import_name}'")
+
             module = importlib.import_module(import_name)
 
             # Cache the module
@@ -201,6 +215,11 @@ class ImportHandler(Loggable):
 
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
+        finally:
+            # Clean up sys.path modification
+            if path_added and current_file_dir in sys.path:
+                sys.path.remove(current_file_dir)
+                self.debug(f"Removed '{current_file_dir}' from sys.path after Python import attempt")
 
     def _execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute Dana module import with caching.
@@ -213,7 +232,7 @@ class ImportHandler(Loggable):
             context_name: Name to use in context
             context: The execution context
         """
-        self._ensure_module_system_initialized()
+        self._ensure_module_system_initialized(context)
 
         # Handle relative imports
         absolute_module_name = self._resolve_relative_import(module_name, context)
@@ -230,7 +249,7 @@ class ImportHandler(Loggable):
             return
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader, get_module_registry
+        from dana.__init__.init_modules import get_module_loader, get_module_registry
 
         loader = get_module_loader()
 
@@ -326,7 +345,7 @@ class ImportHandler(Loggable):
             ``from core.math import add, sub as subtract``  -> binds ``local:add`` and ``local:subtract``
             ``from dana.libs.corelib.na_modules import *``  -> imports all exported names
         """
-        self._ensure_module_system_initialized()
+        self._ensure_module_system_initialized(context)
         module, absolute_module_name = self._get_module(kind="dana", module_name=module_name, context=context)
 
         if is_star:
@@ -404,21 +423,26 @@ class ImportHandler(Loggable):
             # This is not fatal - function can still be accessed as module attribute
             self.warning(f"Failed to register imported function '{context_name}': {reg_err}")
 
-    def _ensure_module_system_initialized(self) -> None:
+    def _ensure_module_system_initialized(self, context: SandboxContext | None = None) -> None:
         """Ensure the Dana module system is initialized with caching."""
 
         if self._module_loader_initialized:
             return
 
-        from dana.core.runtime.modules.core import get_module_loader, initialize_module_system
+        from dana.__init__.init_modules import get_module_loader, initialize_module_system
 
         try:
             # Try to get the loader (this will raise if not initialized)
             get_module_loader()
             self._module_loader_initialized = True
         except Exception:
+            # Get custom search paths from context if provided
+            search_paths = None
+            if context:
+                search_paths = context.get("system:module_search_paths")
+
             # Initialize the module system if not already done
-            initialize_module_system()
+            initialize_module_system(search_paths=search_paths)
             self._module_loader_initialized = True
 
     def _create_parent_namespaces(self, context_name: str, module: Any, context: SandboxContext) -> None:
@@ -600,25 +624,45 @@ class ImportHandler(Loggable):
         """
         if kind == "py":
             import importlib
+            import sys
+            from pathlib import Path
 
             import_name = module_name[:-3] if module_name.endswith(".py") else module_name
             cache_key = f"py:{import_name}"
             if cache_key in self._module_cache:
                 return self._module_cache[cache_key], import_name
+
+            # Get the current executing file's directory to add to sys.path temporarily
+            current_file_dir = None
+            if hasattr(context, "error_context") and context.error_context and context.error_context.current_file:
+                current_file_dir = str(Path(context.error_context.current_file).parent)
+
+            # Temporarily add the script's directory to sys.path for relative Python imports
+            path_added = False
             try:
+                if current_file_dir and current_file_dir not in sys.path:
+                    sys.path.insert(0, current_file_dir)
+                    path_added = True
+                    self.debug(f"Temporarily added '{current_file_dir}' to sys.path for Python import '{import_name}'")
+
                 module = importlib.import_module(import_name)
                 if len(self._module_cache) < self.MODULE_CACHE_SIZE:
                     self._module_cache[cache_key] = module
                 return module, import_name
             except ImportError as e:
                 raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
+            finally:
+                # Clean up sys.path modification
+                if path_added and current_file_dir in sys.path:
+                    sys.path.remove(current_file_dir)
+                    self.debug(f"Removed '{current_file_dir}' from sys.path after Python import attempt")
         elif kind == "dana":
             absolute_module_name = self._resolve_relative_import(module_name, context)
             cache_key = f"dana:{absolute_module_name}"
             if cache_key in self._module_cache:
                 return self._module_cache[cache_key], absolute_module_name
             try:
-                from dana.core.runtime.modules.core import get_module_loader
+                from dana.__init__.init_modules import get_module_loader
 
                 loader = get_module_loader()
                 spec = loader.find_spec(absolute_module_name)

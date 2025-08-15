@@ -244,8 +244,8 @@ class ChatService:
                 return "Error: Agent not found"
 
             # Import agent test functionality
+            from dana.__init__ import initialize_module_system, reset_module_system
             from dana.api.routers.agent_test import AgentTestRequest, test_agent
-            from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
             # Initialize module system
             initialize_module_system()
@@ -285,8 +285,8 @@ class ChatService:
         """Generate agent response for prebuilt agents using folder execution."""
         try:
             # Import agent test functionality
+            from dana.__init__ import initialize_module_system, reset_module_system
             from dana.api.routers.agent_test import AgentTestRequest, test_agent
-            from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
             # Initialize module system
             initialize_module_system()

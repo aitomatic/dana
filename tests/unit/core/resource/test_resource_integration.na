@@ -1,0 +1,381 @@
+# Test resource integration with agents and other Dana features
+# This file tests how resources work with agents, workflows, and other Dana systems
+
+def test_resource_with_agents():
+    """Test resource usage with agent blueprints and instances."""
+    # Define a resource
+    resource DataSource:
+        endpoint: str = "http://api.example.com"
+        api_key: str = ""
+        cache_enabled: bool = true
+    
+    # Define resource methods
+    def (self: DataSource) fetch_data(query: str) -> str:
+        return f"Data from {self.endpoint}: {query}"
+    
+    def (self: DataSource) get_status() -> str:
+        return f"Connected to {self.endpoint}, cache: {self.cache_enabled}"
+    
+    # Define agent blueprint
+    agent_blueprint DataAnalyst:
+        name: str = "DataAnalyst"
+        domain: str = "analysis"
+    
+    # Create resource instance
+    data_source = DataSource(endpoint="http://api.finance.com", api_key="secret123")
+    
+    # Create agent instance
+    analyst = DataAnalyst()
+    
+    # Test that agent can access resource fields
+    assert analyst.name == "DataAnalyst", f"Expected 'DataAnalyst', got '{analyst.name}'"
+    assert analyst.domain == "analysis", f"Expected 'analysis', got '{analyst.domain}'"
+    
+    # Test resource functionality
+    status = data_source.get_status()
+    assert "Connected to http://api.finance.com" in status, f"Expected status to contain endpoint, got '{status}'"
+    
+    data = data_source.fetch_data("stock prices")
+    assert "Data from http://api.finance.com: stock prices" in data, f"Expected data to contain query, got '{data}'"
+    
+    log("✅ Resource with agents test passed")
+
+def test_resource_with_agent_methods():
+    """Test resource usage within agent methods."""
+    # Define resources
+    resource DocumentStore:
+        documents: list = []
+        search_index: dict = {}
+    
+    resource APIClient:
+        base_url: str = "http://api.example.com"
+        timeout: int = 30
+    
+    # Define resource methods
+    def (self: DocumentStore) add_document(doc_id: str, content: str) -> bool:
+        self.documents.append({"id": doc_id, "content": content})
+        self.search_index[doc_id] = content
+        return true
+    
+    def (self: DocumentStore) search(query: str) -> list:
+        results = []
+        doc1_content = self.search_index.get("doc1", "")
+        doc2_content = self.search_index.get("doc2", "")
+        doc3_content = self.search_index.get("doc3", "")
+        
+        if query.lower() in doc1_content.lower():
+            results.append("doc1")
+        if query.lower() in doc2_content.lower():
+            results.append("doc2")
+        if query.lower() in doc3_content.lower():
+            results.append("doc3")
+        return results
+    
+    def (self: APIClient) get(endpoint: str) -> str:
+        return f"GET {self.base_url}/{endpoint} (timeout: {self.timeout}s)"
+    
+    def (self: APIClient) post(endpoint: str, data: str) -> str:
+        return f"POST {self.base_url}/{endpoint} with data: {data}"
+    
+    # Define agent blueprint
+    agent_blueprint ResearchAgent:
+        name: str = "Researcher"
+        specialization: str = "data_analysis"
+    
+    # Create resource instances
+    doc_store = DocumentStore()
+    api_client = APIClient(base_url="http://research.api.com", timeout=60)
+    
+    # Create agent instance
+    researcher = ResearchAgent()
+    
+    # Test agent can use resources through methods
+    # Add documents to store
+    success1 = doc_store.add_document("doc1", "Research findings on AI")
+    success2 = doc_store.add_document("doc2", "Machine learning algorithms")
+    success3 = doc_store.add_document("doc3", "Data analysis techniques")
+    
+    assert success1 == true, f"Expected true, got {success1}"
+    assert success2 == true, f"Expected true, got {success2}"
+    assert success3 == true, f"Expected true, got {success3}"
+    
+    # Search documents
+    ai_results = doc_store.search("AI")
+    assert len(ai_results) == 1, f"Expected 1 result, got {len(ai_results)}"
+    assert ai_results[0] == "doc1", f"Expected 'doc1', got '{ai_results[0]}'"
+    
+    data_results = doc_store.search("data")
+    # Check that we get at least one result for "data"
+    assert len(data_results) >= 1, f"Expected at least 1 result, got {len(data_results)}"
+    
+    # Test API client
+    get_result = api_client.get("users")
+    assert "GET http://research.api.com/users" in get_result, f"Expected GET request, got '{get_result}'"
+    
+    post_result = api_client.post("data", "test_data")
+    assert "POST http://research.api.com/data with data: test_data" in post_result, f"Expected POST request, got '{post_result}'"
+    
+    log("✅ Resource with agent methods test passed")
+
+def test_resource_with_workflows():
+    """Test resource usage within workflow patterns."""
+    # Define resources for workflow
+    resource InputProcessor:
+        batch_size: int = 100
+        timeout: int = 30
+    
+    resource DataTransformer:
+        transformation_rules: dict = {}
+        output_format: str = "json"
+    
+    resource OutputHandler:
+        destination: str = "console"
+        format_options: dict = {}
+    
+    # Define resource methods
+    def (self: InputProcessor) process_batch(data: list) -> list:
+        # Use min to avoid slice out of bounds
+        end_index = min(len(data), self.batch_size)
+        return [f"processed_{item}" for item in data[:end_index]]
+    
+    def (self: DataTransformer) transform(data: list) -> str:
+        transformed = [f"{self.output_format}:{item}" for item in data]
+        return str(transformed)
+    
+    def (self: OutputHandler) send(data: str) -> bool:
+        return f"Sent to {self.destination}: {data}" != ""
+    
+    # Define pipeline struct
+    struct DataPipeline:
+        processor: InputProcessor
+        transformer: DataTransformer
+        handler: OutputHandler
+    
+    # Test pipeline with resources
+    pipeline = DataPipeline(
+        processor=InputProcessor(batch_size=50),
+        transformer=DataTransformer(output_format="csv"),
+        handler=OutputHandler(destination="file")
+    )
+    
+    # Test individual components
+    input_data = ["item1", "item2", "item3", "item4", "item5"]
+    
+    # Process input
+    processed = pipeline.processor.process_batch(input_data)
+    assert len(processed) == 5, f"Expected 5 items, got {len(processed)}"
+    assert processed[0] == "processed_item1", f"Expected 'processed_item1', got '{processed[0]}'"
+    
+    # Transform data
+    transformed = pipeline.transformer.transform(processed)
+    assert "csv:processed_item1" in transformed, f"Expected CSV format, got '{transformed}'"
+    
+    # Handle output
+    sent = pipeline.handler.send(transformed)
+    assert sent == true, f"Expected true, got {sent}"
+    
+    log("✅ Resource with workflows test passed")
+
+def test_resource_with_concurrency():
+    """Test resource usage with Dana's concurrency features."""
+    # Define a resource that can be used concurrently
+    resource ConcurrentResource:
+        operation_count: int = 0
+        max_concurrent: int = 3
+        active_operations: int = 0
+    
+    # Define thread-safe methods
+    def (self: ConcurrentResource) safe_operation(operation_id: int) -> str:
+        self.active_operations += 1
+        self.operation_count += 1
+        
+        # Simulate work
+        result = f"Operation {operation_id} completed (total: {self.operation_count})"
+        
+        self.active_operations -= 1
+        return result
+    
+    def (self: ConcurrentResource) get_stats() -> dict:
+        return {
+            "total_operations": self.operation_count,
+            "active_operations": self.active_operations,
+            "max_concurrent": self.max_concurrent
+        }
+    
+    # Create resource instance
+    concurrent = ConcurrentResource(max_concurrent=5)
+    
+    # Test sequential operations
+    result1 = concurrent.safe_operation(1)
+    result2 = concurrent.safe_operation(2)
+    result3 = concurrent.safe_operation(3)
+    
+    assert "Operation 1 completed" in result1, f"Expected operation 1, got '{result1}'"
+    assert "Operation 2 completed" in result2, f"Expected operation 2, got '{result2}'"
+    assert "Operation 3 completed" in result3, f"Expected operation 3, got '{result3}'"
+    
+    # Check stats
+    stats = concurrent.get_stats()
+    assert stats["total_operations"] == 3, f"Expected 3 total operations, got {stats['total_operations']}"
+    assert stats["active_operations"] == 0, f"Expected 0 active operations, got {stats['active_operations']}"
+    assert stats["max_concurrent"] == 5, f"Expected max 5 concurrent, got {stats['max_concurrent']}"
+    
+    log("✅ Resource with concurrency test passed")
+
+def test_resource_with_promises():
+    """Test resource usage with Dana's promise system."""
+    # Define a resource that works with promises
+    resource PromiseResource:
+        pending_operations: int = 0
+        completed_operations: int = 0
+    
+    # Define async-like methods
+    def (self: PromiseResource) async_operation(operation_id: int) -> str:
+        self.pending_operations += 1
+        
+        # Simulate async work
+        result = f"Async operation {operation_id} completed"
+        
+        self.pending_operations -= 1
+        self.completed_operations += 1
+        return result
+    
+    def (self: PromiseResource) get_status() -> str:
+        return f"Pending: {self.pending_operations}, Completed: {self.completed_operations}"
+    
+    # Create resource instance
+    promise_resource = PromiseResource()
+    
+    # Test operations
+    result1 = promise_resource.async_operation(1)
+    result2 = promise_resource.async_operation(2)
+    
+    assert "Async operation 1 completed" in result1, f"Expected async operation 1, got '{result1}'"
+    assert "Async operation 2 completed" in result2, f"Expected async operation 2, got '{result2}'"
+    
+    # Check status
+    status = promise_resource.get_status()
+    assert "Pending: 0, Completed: 2" in status, f"Expected completed status, got '{status}'"
+    
+    log("✅ Resource with promises test passed")
+
+def test_resource_with_structs():
+    """Test resource integration with Dana's struct system."""
+    # Define a struct
+    struct Config:
+        name: str
+        value: int
+        enabled: bool
+    
+    # Define a resource that uses structs
+    resource StructResource:
+        configs: list = []
+        default_config: Config = Config(name="default", value=0, enabled=false)
+    
+    # Define methods that work with structs
+    def (self: StructResource) add_config(config: Config) -> bool:
+        self.configs.append(config)
+        return true
+    
+    def (self: StructResource) get_config(name: str) -> Config:
+        for config in self.configs:
+            if config.name == name:
+                return config
+        return self.default_config
+    
+    def (self: StructResource) list_configs() -> list:
+        return [config.name for config in self.configs]
+    
+    # Create resource instance
+    struct_resource = StructResource()
+    
+    # Create config structs
+    config1 = Config(name="production", value=100, enabled=true)
+    config2 = Config(name="development", value=50, enabled=false)
+    
+    # Add configs to resource
+    success1 = struct_resource.add_config(config1)
+    success2 = struct_resource.add_config(config2)
+    
+    assert success1 == true, f"Expected true, got {success1}"
+    assert success2 == true, f"Expected true, got {success2}"
+    
+    # Get configs
+    prod_config = struct_resource.get_config("production")
+    assert prod_config.name == "production", f"Expected 'production', got '{prod_config.name}'"
+    assert prod_config.value == 100, f"Expected 100, got {prod_config.value}"
+    assert prod_config.enabled == true, f"Expected true, got {prod_config.enabled}"
+    
+    dev_config = struct_resource.get_config("development")
+    assert dev_config.name == "development", f"Expected 'development', got '{dev_config.name}'"
+    
+    # Test default config
+    unknown_config = struct_resource.get_config("unknown")
+    assert unknown_config.name == "default", f"Expected 'default', got '{unknown_config.name}'"
+    
+    # List configs
+    config_list = struct_resource.list_configs()
+    assert len(config_list) == 2, f"Expected 2 configs, got {len(config_list)}"
+    assert "production" in config_list, f"Expected 'production' in list, got {config_list}"
+    assert "development" in config_list, f"Expected 'development' in list, got {config_list}"
+    
+    log("✅ Resource with structs test passed")
+
+def test_resource_with_functions():
+    """Test resource integration with Dana's function system."""
+    # Define a simple resource that processes text
+    resource TextProcessor:
+        default_processor: str = "identity"
+    
+    # Define resource methods
+    def (self: TextProcessor) process(text: str, processor_name: str = "") -> str:
+        if processor_name == "":
+            processor_name = self.default_processor
+        
+        if processor_name == "uppercase":
+            return text.upper()
+        elif processor_name == "lowercase":
+            return text.lower()
+        elif processor_name == "reverse":
+            return text[::-1]
+        else:
+            return text
+    
+    def (self: TextProcessor) list_processors() -> list:
+        return ["uppercase", "lowercase", "reverse"]
+    
+    # Create resource instance
+    processor = TextProcessor()
+    
+    # Test processing
+    result1 = processor.process("hello", "uppercase")
+    assert result1 == "HELLO", f"Expected 'HELLO', got '{result1}'"
+    
+    result2 = processor.process("WORLD", "lowercase")
+    assert result2 == "world", f"Expected 'world', got '{result2}'"
+    
+    result3 = processor.process("test", "reverse")
+    assert result3 == "tset", f"Expected 'tset', got '{result3}'"
+    
+    # Test default processor
+    result4 = processor.process("unchanged")
+    assert result4 == "unchanged", f"Expected 'unchanged', got '{result4}'"
+    
+    # List processors
+    processors = processor.list_processors()
+    assert len(processors) == 3, f"Expected 3 processors, got {len(processors)}"
+    assert "uppercase" in processors, f"Expected 'uppercase' in list, got {processors}"
+    assert "lowercase" in processors, f"Expected 'lowercase' in list, got {processors}"
+    assert "reverse" in processors, f"Expected 'reverse' in list, got {processors}"
+    
+    log("✅ Resource with functions test passed")
+
+log_level("INFO")
+test_resource_with_agents()
+test_resource_with_agent_methods()
+test_resource_with_workflows()
+test_resource_with_concurrency()
+test_resource_with_promises()
+test_resource_with_structs()
+test_resource_with_functions()
+log("🎉 All resource integration tests completed successfully!")
