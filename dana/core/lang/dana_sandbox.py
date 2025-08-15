@@ -172,7 +172,7 @@ class DanaSandbox(Loggable):
             # Enable mock mode for tests (check environment variable)
             import os
 
-            if os.environ.get("DANA_MOCK_LLM", "true").lower() == "true":
+            if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
                 self._llm_resource.with_mock_llm_call(True)
 
             # Load Dana startup file that handles all Dana resource loading and initialization
