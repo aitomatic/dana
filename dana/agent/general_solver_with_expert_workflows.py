@@ -101,7 +101,6 @@ class WorkflowInfo:
     input_signature: dict[str, type]
     output_signature: dict[str, type]
     workflow_function: callable
-    expertise_domain: str
 
 
 @dataclass
@@ -137,7 +136,7 @@ class GeneralProblemSolver:
                 workflow_names = module.__all__
                 for workflow_name in workflow_names:
                     if hasattr(module, workflow_name):
-                        workflow_function = getattr(module, workflow_name)
+                                                workflow_function = getattr(module, workflow_name)
 
                         # Create workflow info (with placeholder metadata for now)
                         workflow_info = WorkflowInfo(
@@ -145,12 +144,11 @@ class GeneralProblemSolver:
                             description=f"Workflow from {module.__name__}",
                             input_signature={},  # TODO: Extract from function signature
                             output_signature={},  # TODO: Extract from function signature
-                            workflow_function=workflow_function,
-                            expertise_domain=module.__name__
+                            workflow_function=workflow_function
                         )
 
                         self.register_workflow(workflow_info)
-                        logger.info(f"Discovered workflow: {workflow_name} from {module.__name__}")
+                        logger.info(f"Discovered workflow: {workflow_name}")
 
     def solve(self, problem: str, expertise_modules: list[ModuleType] = None, resources: dict[str, Any] = None) -> str:
         """
