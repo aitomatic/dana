@@ -11,10 +11,12 @@ from .agent_handler import AgentHandler
 from .assignment_handler import AssignmentHandler
 from .import_handler import ImportHandler
 from .statement_utils import StatementUtils
+from .type_handler import TypeHandler
 
 __all__ = [
     "AgentHandler",
     "AssignmentHandler",
     "ImportHandler",
     "StatementUtils",
+    "TypeHandler",
 ]

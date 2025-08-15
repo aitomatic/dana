@@ -154,7 +154,7 @@ async def test_dana_repl_promise_command():
     mock_inputs = [
         "/promise x = 42",  # Test /promise with assignment
         "x",  # Check that x has the resolved value
-        "/promise 10 + 5",  # Test /promise with expression  
+        "/promise 10 + 5",  # Test /promise with expression
         "exit",
     ]
 
@@ -162,15 +162,15 @@ async def test_dana_repl_promise_command():
         mock_prompt.side_effect = mock_inputs
 
         app = DanaREPLApp()
-        
+
         # Capture stdout to verify promise display
         captured_output = []
         original_print = builtins.print
-        
+
         def capture_print(*args, **kwargs):
             captured_output.append(" ".join(str(arg) for arg in args))
             original_print(*args, **kwargs)
-        
+
         with patch("builtins.print", side_effect=capture_print):
             await app.run()
 

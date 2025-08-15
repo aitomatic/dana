@@ -8,7 +8,6 @@ import json
 import logging
 import shutil
 from pathlib import Path
-from typing import Any
 
 from dana.api.core.models import Agent, Conversation, Message
 from dana.api.core.schemas import ChatRequest, ChatResponse, ConversationCreate, MessageCreate
@@ -90,7 +89,7 @@ class ChatService:
         try:
             assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
 
-            with open(assets_path, "r", encoding="utf-8") as f:
+            with open(assets_path, encoding="utf-8") as f:
                 prebuilt_agents = json.load(f)
 
             return next((agent for agent in prebuilt_agents if agent["key"] == agent_key), None)
@@ -172,7 +171,7 @@ class ChatService:
                 agent_response = await self._generate_agent_response(chat_request, conversation, db_session, websocket_id)
 
                 # Save agent message
-                agent_message = await self._save_message(conversation.id, "agent", agent_response, db_session)
+                await self._save_message(conversation.id, "agent", agent_response, db_session)
 
                 return ChatResponse(
                     success=True,
@@ -210,8 +209,8 @@ class ChatService:
             if conversation:
                 return conversation
             else:
-                # Conversation not found, create a new one instead of raising error
-                logger.info(f"Conversation {chat_request.conversation_id} not found, creating new conversation")
+                # Conversation not found - raise error instead of creating new one
+                raise ValueError(f"Conversation {chat_request.conversation_id} not found")
 
         # Create new conversation
         conversation_data = ConversationCreate(title=f"Chat with Agent {chat_request.agent_id}", agent_id=chat_request.agent_id)
@@ -245,8 +244,8 @@ class ChatService:
                 return "Error: Agent not found"
 
             # Import agent test functionality
+            from dana.__init__ import initialize_module_system, reset_module_system
             from dana.api.routers.agent_test import AgentTestRequest, test_agent
-            from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
             # Initialize module system
             initialize_module_system()
@@ -286,8 +285,8 @@ class ChatService:
         """Generate agent response for prebuilt agents using folder execution."""
         try:
             # Import agent test functionality
+            from dana.__init__ import initialize_module_system, reset_module_system
             from dana.api.routers.agent_test import AgentTestRequest, test_agent
-            from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
             # Initialize module system
             initialize_module_system()

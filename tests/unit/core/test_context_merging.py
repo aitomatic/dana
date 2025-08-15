@@ -154,7 +154,7 @@ def test_reason_function_with_context():
     reason_func = PythonFunction(mock_reason_function, trusted_for_context=True)
 
     metadata = FunctionMetadata()
-    registry.register("reason", reason_func, func_type=FunctionType.PYTHON, metadata=metadata)
+    registry.register("reason", reason_func, func_type=FunctionType.PYTHON, metadata=metadata, overwrite=True)
 
     # Test with user context - manually merge into local scope
     user_context = {"numbers": [5, 3]}

@@ -6,7 +6,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool 
     ToolResult,
 )
 from dana.api.core.schemas import DomainKnowledgeTree
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from typing import Callable
@@ -118,12 +118,7 @@ class GenerateKnowledgeTool(BaseTool):
 
         # Stream initial progress
         if self.notifier:
-            await self.notifier(
-                "generate_knowledge", 
-                f"🌳 Starting bulk generation for {len(all_leaf_paths)} topics", 
-                "in_progress", 
-                0.0
-            )
+            await self.notifier("generate_knowledge", f"🌳 Starting bulk generation for {len(all_leaf_paths)} topics", "in_progress", 0.0)
 
         # Generate knowledge for each leaf
         successful_generations = 0
@@ -137,16 +132,13 @@ class GenerateKnowledgeTool(BaseTool):
 
             # Calculate progress percentage
             progress = (i / len(all_leaf_paths)) if len(all_leaf_paths) > 0 else 0.0
-            
+
             logger.info(f"Processing leaf {i + 1}/{len(all_leaf_paths)}: {leaf_topic}")
 
             # Stream progress update
             if self.notifier:
                 await self.notifier(
-                    "generate_knowledge", 
-                    f"📝 Processing {i + 1}/{len(all_leaf_paths)}: {leaf_topic}", 
-                    "in_progress", 
-                    progress
+                    "generate_knowledge", f"📝 Processing {i + 1}/{len(all_leaf_paths)}: {leaf_topic}", "in_progress", progress
                 )
 
             try:
@@ -158,10 +150,7 @@ class GenerateKnowledgeTool(BaseTool):
                         # Stream skip notification
                         if self.notifier:
                             await self.notifier(
-                                "generate_knowledge", 
-                                f"⏭️ Skipped '{leaf_topic}' - already complete", 
-                                "in_progress", 
-                                progress
+                                "generate_knowledge", f"⏭️ Skipped '{leaf_topic}' - already complete", "in_progress", progress
                             )
                         continue
 
@@ -179,40 +168,37 @@ class GenerateKnowledgeTool(BaseTool):
                         except ValueError:
                             pass
                     generation_results.append(f"✅ Generated '{leaf_topic}' - {path_str}")
-                    
+
                     # Stream success notification
                     if self.notifier:
                         await self.notifier(
-                            "generate_knowledge", 
-                            f"✅ Completed '{leaf_topic}' - {successful_generations}/{len(all_leaf_paths)} done", 
-                            "in_progress", 
-                            (i + 1) / len(all_leaf_paths)
+                            "generate_knowledge",
+                            f"✅ Completed '{leaf_topic}' - {successful_generations}/{len(all_leaf_paths)} done",
+                            "in_progress",
+                            (i + 1) / len(all_leaf_paths),
                         )
                 else:
                     failed_generations += 1
                     generation_results.append(f"❌ Failed '{leaf_topic}' - {result}")
-                    
+
                     # Stream failure notification
                     if self.notifier:
                         await self.notifier(
-                            "generate_knowledge", 
-                            f"❌ Failed '{leaf_topic}' - {failed_generations} failures so far", 
-                            "in_progress", 
-                            (i + 1) / len(all_leaf_paths)
+                            "generate_knowledge",
+                            f"❌ Failed '{leaf_topic}' - {failed_generations} failures so far",
+                            "in_progress",
+                            (i + 1) / len(all_leaf_paths),
                         )
 
             except Exception as e:
                 failed_generations += 1
                 generation_results.append(f"❌ Failed '{leaf_topic}' - {str(e)}")
                 logger.error(f"Failed to generate knowledge for leaf {leaf_topic}: {str(e)}")
-                
+
                 # Stream error notification
                 if self.notifier:
                     await self.notifier(
-                        "generate_knowledge", 
-                        f"❌ Error processing '{leaf_topic}': {str(e)}", 
-                        "error", 
-                        (i + 1) / len(all_leaf_paths)
+                        "generate_knowledge", f"❌ Error processing '{leaf_topic}': {str(e)}", "error", (i + 1) / len(all_leaf_paths)
                     )
 
         # Format comprehensive summary
@@ -237,10 +223,10 @@ class GenerateKnowledgeTool(BaseTool):
         # Stream completion notification
         if self.notifier:
             await self.notifier(
-                "generate_knowledge", 
-                f"🎉 Bulk generation complete! {successful_generations} successful, {failed_generations} failed", 
-                "finish", 
-                1.0
+                "generate_knowledge",
+                f"🎉 Bulk generation complete! {successful_generations} successful, {failed_generations} failed",
+                "finish",
+                1.0,
             )
 
         return ToolResult(name="generate_knowledge", result=content, require_user=False)
@@ -249,25 +235,15 @@ class GenerateKnowledgeTool(BaseTool):
         """Generate knowledge for a single topic."""
         # Stream start notification
         if self.notifier:
-            await self.notifier(
-                "generate_knowledge", 
-                f"📝 Starting knowledge generation for: {topic}", 
-                "in_progress", 
-                0.0
-            )
-        
+            await self.notifier("generate_knowledge", f"📝 Starting knowledge generation for: {topic}", "in_progress", 0.0)
+
         # Check knowledge status first
         if self.knowledge_status_path:
             status_check = self._check_knowledge_status(topic)
             if status_check["skip"]:
                 # Stream skip notification
                 if self.notifier:
-                    await self.notifier(
-                        "generate_knowledge", 
-                        f"⏭️ Skipped '{topic}' - already complete", 
-                        "finish", 
-                        1.0
-                    )
+                    await self.notifier("generate_knowledge", f"⏭️ Skipped '{topic}' - already complete", "finish", 1.0)
                 return ToolResult(
                     name="generate_knowledge",
                     result=f"""📚 Knowledge Generation Skipped
@@ -283,25 +259,15 @@ No action needed - knowledge is up to date.""",
 
         # Stream progress update - starting generation
         if self.notifier:
-            await self.notifier(
-                "generate_knowledge", 
-                f"🧠 Generating knowledge artifacts for: {topic}", 
-                "in_progress", 
-                0.5
-            )
+            await self.notifier("generate_knowledge", f"🧠 Generating knowledge artifacts for: {topic}", "in_progress", 0.5)
 
         # Generate the knowledge
         result_content = await self._generate_single_knowledge(topic, counts, context)
-        
+
         # Stream completion
         if self.notifier:
-            await self.notifier(
-                "generate_knowledge", 
-                f"✅ Completed knowledge generation for: {topic}", 
-                "finish", 
-                1.0
-            )
-        
+            await self.notifier("generate_knowledge", f"✅ Completed knowledge generation for: {topic}", "finish", 1.0)
+
         return ToolResult(name="generate_knowledge", result=result_content, require_user=False)
 
     async def _generate_single_knowledge(self, topic: str, counts: str, context: str) -> str:

@@ -5,7 +5,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool 
     BaseArgument,
     ToolResult,
 )
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 import logging
@@ -52,22 +52,18 @@ class PreviewKnowledgeTopicTool(BaseTool):
     async def _execute(self, topic: str, context: str = "") -> ToolResult:
         """
         Generate a lightweight preview of knowledge content for a topic.
-        
+
         Returns: ToolResult with sample content preview for user review
         """
         try:
             logger.info(f"Generating knowledge preview for topic: {topic}")
-            
+
             if not topic.strip():
-                return ToolResult(
-                    name="preview_knowledge_topic",
-                    result="❌ Error: No topic provided for preview",
-                    require_user=True
-                )
-            
+                return ToolResult(name="preview_knowledge_topic", result="❌ Error: No topic provided for preview", require_user=True)
+
             # Generate lightweight preview content
             preview_content = self._generate_topic_preview(topic, context)
-            
+
             # Format the response for user review
             content = f"""🔍 Knowledge Preview: {topic.title()}
 
@@ -90,16 +86,14 @@ During structure planning, this helps you understand what content your agent wou
         except Exception as e:
             logger.error(f"Failed to generate knowledge preview: {e}")
             return ToolResult(
-                name="preview_knowledge_topic",
-                result=f"❌ Error generating preview for '{topic}': {str(e)}",
-                require_user=True
+                name="preview_knowledge_topic", result=f"❌ Error generating preview for '{topic}': {str(e)}", require_user=True
             )
 
     def _generate_topic_preview(self, topic: str, context: str) -> str:
         """Generate lightweight preview content using LLM."""
-        
+
         context_info = f" with focus on {context}" if context.strip() else ""
-        
+
         preview_prompt = f"""Generate a brief knowledge preview for the topic: {topic}{context_info}
 
 CONTEXT:
@@ -134,19 +128,22 @@ FORMAT:
 Generate the preview content now:"""
 
         try:
-            response = Misc.safe_asyncio_run(self.llm.query, BaseRequest(
-                arguments={
-                    "messages": [{"role": "user", "content": preview_prompt}],
-                    "temperature": 0.3,
-                    "max_tokens": 800  # Lightweight preview, not full generation
-                }
-            ))
-            
+            response = Misc.safe_asyncio_run(
+                self.llm.query,
+                BaseRequest(
+                    arguments={
+                        "messages": [{"role": "user", "content": preview_prompt}],
+                        "temperature": 0.3,
+                        "max_tokens": 800,  # Lightweight preview, not full generation
+                    }
+                ),
+            )
+
             preview_content = Misc.get_response_content(response).strip()
             logger.info(f"Generated preview content: {preview_content[:200]}...")
-            
+
             return preview_content
-            
+
         except Exception as e:
             logger.error(f"Failed to generate topic preview: {e}")
             # Fallback preview

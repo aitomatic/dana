@@ -1,0 +1,29 @@
+"""
+Dana Language Startup and Initialization
+
+This file is automatically loaded by DanaSandbox during initialization.
+(cf. dana.core.lang.dana_sandbox._ensure_initialized())
+It handles loading all Dana resources, corelib modules, and stdlib resources.
+"""
+
+# Import Dana library modules
+
+#
+# Core library functions and types are now available
+# BasicAgent, A2A_Agent, add_one, add_two, etc.
+#
+from dana.libs.corelib import *
+
+#
+# Resource types that will be available:
+# - SimpleCacheResource (from simple_cache_resource.na)
+# - WebhookResource (from webhook_resource.na) 
+# - KnowledgeBaseResource (from knowledge_base_resource.na)
+# - MemoryResource (from memory_resource.na) 
+# - FilesystemResource (from filesystem_resource.na)
+# - TimerResource (from timer_resource.na)
+# - ConfigResource (from config_resource.na)
+# - CodingResource (from coding_resource.na)
+#
+# Actually, we don't auto-import stdlib resources.
+# from dana.libs.stdlib import *

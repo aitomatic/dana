@@ -4,7 +4,7 @@ from common import EXECUTION_CONFIG
 
 log_level("debug")
 
-agent NovaAutonomous:
+agent_blueprint NovaAutonomous:
     name: str = "Nova"
     description: str = "Autonomous task execution agent with adaptive planning, validation, web search, and document analysis capabilities. Can analyze uploaded documents alongside web research."
     

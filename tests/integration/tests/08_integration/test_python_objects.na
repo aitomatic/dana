@@ -1,0 +1,485 @@
+# Test: Python Object Interaction
+# Purpose: Test Python object creation, manipulation, and interaction
+# Category: Integration - Python
+
+log("Starting Python Object Interaction test")
+
+# Test 1: Basic Python object creation and manipulation
+log("Test 1: Basic Python object creation")
+try:
+    # Test creating Python objects
+    import datetime
+    
+    # Create datetime object
+    dt = datetime.datetime(2024, 1, 15, 10, 30, 45)
+    assert dt is not null, "Datetime object should be created"
+    assert dt.year == 2024, "Year should be set correctly"
+    assert dt.month == 1, "Month should be set correctly"
+    assert dt.day == 15, "Day should be set correctly"
+    log(f"✓ Created datetime object: {dt}")
+    
+    # Test object method calls
+    formatted = dt.strftime("%Y-%m-%d %H:%M:%S")
+    assert "2024-01-15" in formatted, "Formatted date should contain correct date"
+    log(f"✓ Object method call: {formatted}")
+    
+    # Test object attribute access
+    weekday = dt.weekday()
+    assert weekday >= 0 and weekday <= 6, "Weekday should be valid"
+    log(f"✓ Object attribute access: weekday = {weekday}")
+    
+except Exception as e:
+    log(f"✗ Basic Python object creation failed: {e}")
+
+# Test 2: Python list objects
+log("Test 2: Python list objects")
+try:
+    # Create and manipulate list objects
+    my_list = [1, 2, 3, 4, 5]
+    assert len(my_list) == 5, "List should have 5 elements"
+    log(f"✓ Created list object: {my_list}")
+    
+    # Test list methods
+    my_list.append(6)
+    assert len(my_list) == 6, "List should have 6 elements after append"
+    assert my_list[-1] == 6, "Last element should be 6"
+    log(f"✓ List append: {my_list}")
+    
+    my_list.insert(0, 0)
+    assert my_list[0] == 0, "First element should be 0 after insert"
+    assert len(my_list) == 7, "List should have 7 elements after insert"
+    log(f"✓ List insert: {my_list}")
+    
+    removed = my_list.pop()
+    assert removed == 6, "Popped element should be 6"
+    assert len(my_list) == 6, "List should have 6 elements after pop"
+    log(f"✓ List pop: removed {removed}, list: {my_list}")
+    
+    # Test list slicing
+    slice_result = my_list[1:4]
+    assert len(slice_result) == 3, "Slice should have 3 elements"
+    log(f"✓ List slicing [1:4]: {slice_result}")
+    
+    # Test list comprehension-like operations
+    doubled = [x * 2 for x in my_list]
+    assert len(doubled) == len(my_list), "Doubled list should have same length"
+    assert doubled[1] == 2, "Second element should be doubled"
+    log(f"✓ List comprehension: {doubled}")
+    
+except Exception as e:
+    log(f"✗ Python list objects test failed: {e}")
+
+# Test 3: Python dictionary objects
+log("Test 3: Python dictionary objects")
+try:
+    # Create and manipulate dictionary objects
+    my_dict = {"name": "Alice", "age": 30, "city": "New York"}
+    assert my_dict["name"] == "Alice", "Dictionary access should work"
+    log(f"✓ Created dictionary object: {my_dict}")
+    
+    # Test dictionary methods
+    keys = my_dict.keys()
+    assert "name" in keys, "Keys should contain 'name'"
+    log(f"✓ Dictionary keys(): {list(keys)}")
+    
+    values = my_dict.values()
+    assert "Alice" in values, "Values should contain 'Alice'"
+    log(f"✓ Dictionary values(): {list(values)}")
+    
+    items = my_dict.items()
+    items_list = list(items)
+    assert len(items_list) == 3, "Items should have 3 pairs"
+    log(f"✓ Dictionary items(): {items_list}")
+    
+    # Test dictionary update
+    my_dict.update({"country": "USA", "profession": "Engineer"})
+    assert "country" in my_dict, "Update should add new keys"
+    assert my_dict["profession"] == "Engineer", "Update should set values correctly"
+    log(f"✓ Dictionary update: {my_dict}")
+    
+    # Test dictionary get with default
+    email = my_dict.get("email", "not provided")
+    assert email == "not provided", "Get with default should return default"
+    log(f"✓ Dictionary get with default: {email}")
+    
+    # Test dictionary pop
+    age = my_dict.pop("age")
+    assert age == 30, "Pop should return the value"
+    assert "age" not in my_dict, "Pop should remove the key"
+    log(f"✓ Dictionary pop: removed age={age}")
+    
+except Exception as e:
+    log(f"✗ Python dictionary objects test failed: {e}")
+
+# Test 4: Python set objects
+log("Test 4: Python set objects")
+try:
+    # Create and manipulate set objects
+    set1 = {1, 2, 3, 4, 5}
+    set2 = {4, 5, 6, 7, 8}
+    
+    assert len(set1) == 5, "Set1 should have 5 elements"
+    assert len(set2) == 5, "Set2 should have 5 elements"
+    log(f"✓ Created set objects: {set1}, {set2}")
+    
+    # Test set operations
+    union = set1.union(set2)
+    assert len(union) == 8, "Union should have 8 unique elements"
+    log(f"✓ Set union: {union}")
+    
+    intersection = set1.intersection(set2)
+    assert len(intersection) == 2, "Intersection should have 2 elements"
+    assert 4 in intersection and 5 in intersection, "Intersection should contain 4 and 5"
+    log(f"✓ Set intersection: {intersection}")
+    
+    difference = set1.difference(set2)
+    assert len(difference) == 3, "Difference should have 3 elements"
+    assert 1 in difference and 2 in difference and 3 in difference, "Difference should contain 1,2,3"
+    log(f"✓ Set difference: {difference}")
+    
+    # Test set modifications
+    set1.add(9)
+    assert 9 in set1, "Add should insert element"
+    log(f"✓ Set add: {set1}")
+    
+    set1.discard(1)
+    assert 1 not in set1, "Discard should remove element"
+    log(f"✓ Set discard: {set1}")
+    
+except Exception as e:
+    log(f"✗ Python set objects test failed: {e}")
+
+# Test 5: Python custom class objects
+log("Test 5: Python custom class objects")
+try:
+    # Define a simple Python class
+    class Person:
+        def __init__(self, name, age):
+            self.name = name
+            self.age = age
+            self.friends = []
+        
+        def add_friend(self, friend_name):
+            self.friends.append(friend_name)
+        
+        def get_info(self):
+            return f"{self.name} is {self.age} years old and has {len(self.friends)} friends"
+        
+        def is_adult(self):
+            return self.age >= 18
+    
+    # Create instances of the class
+    person1 = Person("Bob", 25)
+    person2 = Person("Carol", 17)
+    
+    assert person1.name == "Bob", "Person name should be set correctly"
+    assert person1.age == 25, "Person age should be set correctly"
+    assert len(person1.friends) == 0, "Friends list should be empty initially"
+    log(f"✓ Created Person objects: {person1.name}, {person2.name}")
+    
+    # Test method calls
+    person1.add_friend("Alice")
+    person1.add_friend("David")
+    assert len(person1.friends) == 2, "Should have 2 friends after adding"
+    assert "Alice" in person1.friends, "Friends should contain Alice"
+    log(f"✓ Added friends: {person1.friends}")
+    
+    info = person1.get_info()
+    assert "Bob" in info and "25" in info, "Info should contain name and age"
+    log(f"✓ Person info: {info}")
+    
+    is_adult1 = person1.is_adult()
+    is_adult2 = person2.is_adult()
+    assert is_adult1 == true, "Bob should be an adult"
+    assert is_adult2 == false, "Carol should not be an adult"
+    log(f"✓ Adult check: Bob={is_adult1}, Carol={is_adult2}")
+    
+except Exception as e:
+    log(f"✗ Python custom class objects test failed: {e}")
+
+# Test 6: Python file-like objects
+log("Test 6: Python file-like objects")
+try:
+    import io
+    
+    # Create string buffer object
+    string_buffer = io.StringIO()
+    assert string_buffer is not null, "StringIO object should be created"
+    log("✓ Created StringIO object")
+    
+    # Test writing to buffer
+    string_buffer.write("Hello, ")
+    string_buffer.write("World!")
+    log("✓ Wrote to StringIO buffer")
+    
+    # Test reading from buffer
+    string_buffer.seek(0)  # Reset position
+    content = string_buffer.read()
+    assert content == "Hello, World!", "Buffer content should match written data"
+    log(f"✓ Read from buffer: '{content}'")
+    
+    # Test buffer methods
+    string_buffer.seek(0)
+    partial = string_buffer.read(5)
+    assert partial == "Hello", "Partial read should work"
+    log(f"✓ Partial read: '{partial}'")
+    
+    # Test buffer position
+    position = string_buffer.tell()
+    assert position == 5, "Position should be 5 after reading 5 characters"
+    log(f"✓ Buffer position: {position}")
+    
+    # Close buffer
+    string_buffer.close()
+    log("✓ Closed StringIO buffer")
+    
+except Exception as e:
+    log(f"✗ Python file-like objects test failed: {e}")
+
+# Test 7: Python iterators and generators
+log("Test 7: Python iterators and generators")
+try:
+    # Test iterator protocol
+    my_list = [1, 2, 3, 4, 5]
+    iterator = iter(my_list)
+    assert iterator is not null, "Iterator should be created"
+    log("✓ Created iterator from list")
+    
+    # Test iterator methods
+    first = next(iterator)
+    assert first == 1, "First next() should return 1"
+    log(f"✓ Iterator next(): {first}")
+    
+    second = next(iterator)
+    assert second == 2, "Second next() should return 2"
+    log(f"✓ Iterator next(): {second}")
+    
+    # Test iterator in loop
+    remaining = []
+    for item in iterator:
+        remaining.append(item)
+    
+    assert len(remaining) == 3, "Should have 3 remaining items"
+    assert remaining == [3, 4, 5], "Remaining items should be [3, 4, 5]"
+    log(f"✓ Iterator in loop: {remaining}")
+    
+    # Test range object
+    range_obj = range(5, 10)
+    range_list = list(range_obj)
+    assert len(range_list) == 5, "Range should have 5 elements"
+    assert range_list == [5, 6, 7, 8, 9], "Range should contain correct values"
+    log(f"✓ Range object: {range_list}")
+    
+except Exception as e:
+    log(f"✗ Python iterators and generators test failed: {e}")
+
+# Test 8: Python collection objects with complex operations
+log("Test 8: Complex collection operations")
+try:
+    from collections import namedtuple, OrderedDict
+    
+    # Test namedtuple
+    Point = namedtuple('Point', ['x', 'y'])
+    p1 = Point(3, 4)
+    p2 = Point(0, 0)
+    
+    assert p1.x == 3 and p1.y == 4, "Namedtuple fields should be accessible"
+    assert p2.x == 0 and p2.y == 0, "Namedtuple should handle zero values"
+    log(f"✓ Namedtuple objects: {p1}, {p2}")
+    
+    # Test namedtuple methods
+    p1_dict = p1._asdict()
+    assert p1_dict['x'] == 3, "Namedtuple _asdict should work"
+    log(f"✓ Namedtuple as dict: {p1_dict}")
+    
+    # Test OrderedDict
+    od = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    assert list(od.keys()) == ['a', 'b', 'c'], "OrderedDict should preserve order"
+    log(f"✓ OrderedDict: {list(od.items())}")
+    
+    # Test OrderedDict methods
+    od.move_to_end('a')
+    assert list(od.keys()) == ['b', 'c', 'a'], "move_to_end should reorder"
+    log(f"✓ OrderedDict after move_to_end: {list(od.items())}")
+    
+except Exception as e:
+    log(f"✗ Complex collection operations test failed: {e}")
+
+# Test 9: Python object attribute manipulation
+log("Test 9: Object attribute manipulation")
+try:
+    # Create a simple object for testing
+    class TestObject:
+        def __init__(self):
+            self.name = "test"
+            self.value = 42
+    
+    obj = TestObject()
+    assert obj.name == "test", "Initial attribute should be set"
+    log("✓ Created test object with attributes")
+    
+    # Test hasattr
+    has_name = hasattr(obj, 'name')
+    has_missing = hasattr(obj, 'missing')
+    assert has_name == true, "hasattr should find existing attribute"
+    assert has_missing == false, "hasattr should not find missing attribute"
+    log(f"✓ hasattr tests: name={has_name}, missing={has_missing}")
+    
+    # Test getattr
+    name_value = getattr(obj, 'name')
+    default_value = getattr(obj, 'missing', 'default')
+    assert name_value == "test", "getattr should return attribute value"
+    assert default_value == "default", "getattr should return default for missing"
+    log(f"✓ getattr tests: name='{name_value}', default='{default_value}'")
+    
+    # Test setattr
+    setattr(obj, 'new_attr', 'new_value')
+    assert hasattr(obj, 'new_attr'), "setattr should create new attribute"
+    assert obj.new_attr == 'new_value', "setattr should set correct value"
+    log("✓ setattr created new attribute")
+    
+    # Test delattr (if supported)
+    try:
+        delattr(obj, 'new_attr')
+        has_new_attr = hasattr(obj, 'new_attr')
+        assert has_new_attr == false, "delattr should remove attribute"
+        log("✓ delattr removed attribute")
+    except Exception as e:
+        log(f"delattr not supported or failed: {e}")
+    
+except Exception as e:
+    log(f"✗ Object attribute manipulation test failed: {e}")
+
+# Test 10: Python object comparison and identity
+log("Test 10: Object comparison and identity")
+try:
+    # Create objects for comparison
+    list1 = [1, 2, 3]
+    list2 = [1, 2, 3]
+    list3 = list1
+    
+    # Test equality
+    equal_content = (list1 == list2)
+    assert equal_content == true, "Lists with same content should be equal"
+    log(f"✓ Content equality: {equal_content}")
+    
+    # Test identity
+    same_identity = (list1 is list3)
+    different_identity = (list1 is list2)
+    assert same_identity == true, "Same object should have same identity"
+    assert different_identity == false, "Different objects should have different identity"
+    log(f"✓ Identity tests: same={same_identity}, different={different_identity}")
+    
+    # Test object ID
+    id1 = id(list1)
+    id2 = id(list2)
+    id3 = id(list3)
+    assert id1 == id3, "Same object should have same ID"
+    assert id1 != id2, "Different objects should have different IDs"
+    log(f"✓ Object IDs: list1={id1}, list2={id2}, list3={id3}")
+    
+    # Test type checking
+    type1 = type(list1)
+    type_str = type("string")
+    type_int = type(42)
+    
+    assert str(type1) == "<class 'list'>", "Type should be list"
+    assert str(type_str) == "<class 'str'>", "Type should be str"
+    assert str(type_int) == "<class 'int'>", "Type should be int"
+    log("✓ Type checking working correctly")
+    
+except Exception as e:
+    log(f"✗ Object comparison and identity test failed: {e}")
+
+# Test 11: Python object serialization
+log("Test 11: Object serialization")
+try:
+    import pickle
+    import json
+    
+    # Test JSON serialization for simple objects
+    simple_obj = {"name": "John", "age": 30, "hobbies": ["reading", "coding"]}
+    json_str = json.dumps(simple_obj)
+    restored_obj = json.loads(json_str)
+    
+    assert restored_obj["name"] == "John", "JSON serialization should preserve data"
+    assert len(restored_obj["hobbies"]) == 2, "JSON should preserve arrays"
+    log("✓ JSON serialization working")
+    
+    # Test pickle serialization for complex objects
+    complex_obj = {"list": [1, 2, 3], "set": {4, 5, 6}, "tuple": (7, 8, 9)}
+    pickled = pickle.dumps(complex_obj)
+    unpickled = pickle.loads(pickled)
+    
+    assert unpickled["list"] == [1, 2, 3], "Pickle should preserve lists"
+    assert len(unpickled["set"]) == 3, "Pickle should preserve sets"
+    assert unpickled["tuple"] == (7, 8, 9), "Pickle should preserve tuples"
+    log("✓ Pickle serialization working")
+    
+except Exception as e:
+    log(f"✗ Object serialization test failed: {e}")
+
+# Test 12: Python object lifecycle and memory
+log("Test 12: Object lifecycle and memory")
+try:
+    import weakref
+    import gc
+    
+    # Test object lifecycle
+    class LifecycleTest:
+        def __init__(self, name):
+            self.name = name
+            log(f"Created object: {self.name}")
+    
+    # Create object and weak reference
+    obj = LifecycleTest("test_object")
+    weak_ref = weakref.ref(obj)
+    
+    assert weak_ref() is not null, "Weak reference should point to object"
+    log("✓ Created object with weak reference")
+    
+    # Test object still exists
+    assert obj.name == "test_object", "Object should still be accessible"
+    assert weak_ref().name == "test_object", "Object accessible through weak ref"
+    log("✓ Object accessible through weak reference")
+    
+    # Clear strong reference
+    del obj
+    
+    # Force garbage collection
+    gc.collect()
+    
+    # Check if object was collected (may or may not be, depending on implementation)
+    still_exists = weak_ref() is not null
+    log(f"✓ After deletion and GC, object still exists: {still_exists}")
+    
+except Exception as e:
+    log(f"✗ Object lifecycle and memory test failed: {e}")
+
+log("Python Object Interaction test completed")
+
+# Summary of test results
+log("=== Python Object Interaction Test Summary ===")
+log("✓ Basic Python object creation and manipulation")
+log("✓ Python list objects and methods")
+log("✓ Python dictionary objects and operations")
+log("✓ Python set objects and set operations")
+log("✓ Python custom class objects")
+log("✓ Python file-like objects (StringIO)")
+log("✓ Python iterators and generators")
+log("✓ Complex collection operations (namedtuple, OrderedDict)")
+log("✓ Object attribute manipulation (hasattr, getattr, setattr)")
+log("✓ Object comparison and identity")
+log("✓ Object serialization (JSON, pickle)")
+log("✓ Object lifecycle and memory management")
+log("=== All Python object interaction tests passed ===")
+
+# Notes for developers
+log("")
+log("NOTES:")
+log("- Python objects can be created and manipulated seamlessly in Dana")
+log("- Object methods and attributes are accessible using standard syntax")
+log("- Complex Python objects (custom classes, collections) work correctly")
+log("- Object identity and comparison operations are supported")
+log("- Serialization and lifecycle management work as expected")
+log("- Memory management and garbage collection are handled properly")

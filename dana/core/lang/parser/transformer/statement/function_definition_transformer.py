@@ -13,6 +13,7 @@ MIT License
 
 from lark import Token, Tree
 
+from dana.common.exceptions import ParseError
 from dana.core.lang.ast import (
     AgentDefinition,
     AgentField,
@@ -21,6 +22,9 @@ from dana.core.lang.ast import (
     Identifier,
     MethodDefinition,
     Parameter,
+    ResourceDefinition,
+    ResourceField,
+    ResourceMethod,
     StructDefinition,
     StructField,
     TypeHint,
@@ -421,49 +425,265 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # === Agent Definitions ===
 
     def agent_definition(self, items):
-        """Transform an agent definition rule into an AgentDefinition node."""
-        name_token = items[0]
-        # items are [NAME, optional COMMENT, agent_block]
-        agent_block = items[2] if len(items) > 2 else items[1]
+        """Transform an agent blueprint definition rule into an AgentDefinition node."""
+        # Items may include a leading keyword token (AGENT_BLUEPRINT)
+        from lark import Token, Tree
+
+        name_token = None
+        agent_block = None
+
+        for it in items:
+            if isinstance(it, Token) and it.type == "NAME" and name_token is None:
+                name_token = it
+            elif isinstance(it, Tree) and getattr(it, "data", None) == "agent_block":
+                agent_block = it
+
+        if name_token is None or agent_block is None:
+            # Fallback to previous positional behavior
+            name_token = items[0]
+            agent_block = items[2] if len(items) > 2 else items[1]
 
         fields = []
         if hasattr(agent_block, "data") and agent_block.data == "agent_block":
-            # The children of agent_block are NL, INDENT, agent_fields, DEDENT...
-            # The agent_fields tree is what we want
             agent_fields_tree = None
             for child in agent_block.children:
                 if hasattr(child, "data") and child.data == "agent_fields":
                     agent_fields_tree = child
                     break
-
             if agent_fields_tree:
                 fields = [child for child in agent_fields_tree.children if isinstance(child, AgentField)]
 
         return AgentDefinition(name=name_token.value, fields=fields)
 
+    def singleton_agent_definition(self, items):
+        """Transform a singleton agent definition into a SingletonAgentDefinition node."""
+        from lark import Token, Tree
+
+        blueprint_name = None
+        overrides_block = None
+
+        for it in items:
+            if isinstance(it, Token) and it.type == "NAME" and blueprint_name is None:
+                # This is the blueprint name (first NAME after 'agent (')
+                blueprint_name = it.value
+            elif isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
+                overrides_block = it
+
+        overrides = []
+        if overrides_block is not None:
+            for child in overrides_block.children:
+                if hasattr(child, "data") and child.data == "singleton_agent_fields":
+                    for f in child.children:
+                        from dana.core.lang.ast import SingletonAgentField
+
+                        if isinstance(f, SingletonAgentField):
+                            overrides.append(f)
+
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        assert blueprint_name is not None
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=None)
+
+    def singleton_agent_definition_with_alias(self, items):
+        """Transform alias-based singleton with block: agent Alias(Blueprint): ..."""
+        from lark import Token, Tree
+
+        alias_name = None
+        blueprint_name = None
+        overrides_block = None
+
+        # Expect order: AGENT, Alias NAME, '(', Blueprint NAME, ')', ':', block
+        name_tokens = [it for it in items if isinstance(it, Token) and it.type == "NAME"]
+        if len(name_tokens) >= 2:
+            alias_name = name_tokens[0].value
+            blueprint_name = name_tokens[1].value
+
+        for it in items:
+            if isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
+                overrides_block = it
+
+        overrides = []
+        if overrides_block is not None:
+            for child in overrides_block.children:
+                if hasattr(child, "data") and child.data == "singleton_agent_fields":
+                    for f in child.children:
+                        from dana.core.lang.ast import SingletonAgentField
+
+                        if isinstance(f, SingletonAgentField):
+                            overrides.append(f)
+
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        assert blueprint_name is not None
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=alias_name)
+
+    def singleton_agent_definition_with_alias_simple(self, items):
+        """Transform alias-based singleton without block: agent Alias(Blueprint)"""
+        from lark import Token
+
+        name_tokens = [it for it in items if isinstance(it, Token) and it.type == "NAME"]
+        alias_name = name_tokens[0].value if len(name_tokens) >= 1 else None
+        blueprint_name = name_tokens[1].value if len(name_tokens) >= 2 else None
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        assert blueprint_name is not None
+        assert alias_name is not None
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=[], alias_name=alias_name)
+
+    def singleton_agent_field(self, items):
+        """Transform a singleton agent override into a SingletonAgentField node."""
+        name_token = items[0]
+        value_expr = items[1]
+        from dana.core.lang.ast import SingletonAgentField
+
+        return SingletonAgentField(name=name_token.value, value=value_expr)
+
+    def base_agent_singleton_definition(self, items):
+        """Transform `agent Name` into a BaseAgentSingletonDefinition AST node."""
+        from lark import Token
+
+        from dana.core.lang.ast import BaseAgentSingletonDefinition
+
+        alias_token = next((it for it in items if isinstance(it, Token) and it.type == "NAME"), None)
+        if alias_token is None:
+            raise ParseError("Malformed AST: expected an alias token for base agent singleton definition, but none was found.")
+        alias = alias_token.value
+        return BaseAgentSingletonDefinition(alias_name=alias)
+
     def agent_field(self, items):
-        """Transform an agent field rule into an AgentField node."""
+        """Transform an agent field rule into an AgentField node.
+
+        Grammar: agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
+        """
+        # Validate minimum required parts (name and type)
+        if len(items) < 2:
+            raise ValueError(f"Agent field must include a name and a type, got {len(items)} item(s): {items}")
 
         name_token = items[0]
         type_hint_node = items[1]
-        default_value = None
 
-        # Check if there's a default value (items[2] would be the default expression)
-        if len(items) > 2:
-            default_value = self.main_transformer.expression_transformer.transform(items[2])
-
-        field_name = name_token.value
-
-        # The type_hint_node should already be a TypeHint object
-        # from the 'basic_type' rule transformation.
+        # Normalize type hint to TypeHint
         if not isinstance(type_hint_node, TypeHint):
-            # Fallback if it's a token
             if isinstance(type_hint_node, Token):
                 type_hint = TypeHint(name=type_hint_node.value)
             else:
-                # This would be an unexpected state
                 raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
         else:
             type_hint = type_hint_node
 
-        return AgentField(name=field_name, type_hint=type_hint, default_value=default_value)
+        # Optional default value expression (third positional item before any COMMENT)
+        default_value = None
+        if len(items) > 2:
+            default_candidate = items[2]
+            # Transform only if it looks like an expression tree/token, otherwise ignore
+            try:
+                default_value = self.main_transformer.expression_transformer.transform(default_candidate)
+            except Exception:
+                # If it's a trailing comment token or something non-expr, ignore gracefully
+                default_value = None
+
+        return AgentField(name=name_token.value, type_hint=type_hint, default_value=default_value)
+
+    # === Resource Definitions ===
+
+    def resource_definition(self, items):
+        """Transform a resource definition rule into a ResourceDefinition node."""
+        name_token = None
+        parent_name_token = None
+        resource_block = None
+
+        # Parse items to extract name, optional parent, and block
+        for _i, item in enumerate(items):
+            if isinstance(item, Token) and item.type == "NAME":
+                if name_token is None:
+                    name_token = item
+                elif parent_name_token is None:
+                    parent_name_token = item
+            elif hasattr(item, "data") and item.data == "resource_block":
+                resource_block = item
+
+        if name_token is None:
+            raise ValueError("Resource definition must have a name")
+
+        parent_name = parent_name_token.value if parent_name_token else None
+        fields, methods, docstring = self._parse_resource_block(resource_block)
+
+        return ResourceDefinition(name=name_token.value, parent_name=parent_name, fields=fields, methods=methods, docstring=docstring)
+
+    def resource_field(self, items):
+        """Transform a resource field rule into a ResourceField node."""
+        if len(items) < 2:
+            raise ValueError(f"Resource field must have name and type, got {len(items)} items")
+
+        name_token = items[0]
+        type_hint_node = items[1]
+
+        # Normalize type hint
+        if not isinstance(type_hint_node, TypeHint):
+            if isinstance(type_hint_node, Token):
+                type_hint = TypeHint(name=type_hint_node.value)
+            else:
+                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
+        else:
+            type_hint = type_hint_node
+
+        # Handle optional default value
+        default_value = None
+        if len(items) > 2:
+            default_value = self.main_transformer.expression_transformer.transform(items[2])
+
+        # Extract comment if present
+        comment = None
+        for item in items:
+            if hasattr(item, "type") and item.type == "COMMENT":
+                comment = item.value.lstrip("#").strip()
+                break
+
+        return ResourceField(name=name_token.value, type_hint=type_hint, default_value=default_value, comment=comment)
+
+    def resource_method(self, items):
+        """Transform a resource method rule into a ResourceMethod node."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+
+        if len(relevant_items) < 2:
+            raise ValueError(f"Resource method must have at least name and body, got {len(relevant_items)} items")
+
+        # Extract decorators and method name
+        decorators, method_name_token, current_index = self._extract_decorators_and_name(relevant_items)
+
+        # Resolve parameters
+        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+
+        # Extract return type
+        return_type, current_index = self._extract_return_type(relevant_items, current_index)
+
+        # Extract method body
+        block_items = self._extract_function_body(relevant_items, current_index)
+
+        # Handle method name extraction
+        if isinstance(method_name_token, Token) and method_name_token.type == "NAME":
+            method_name = method_name_token.value
+        else:
+            raise ValueError(f"Expected method name token, got {method_name_token}")
+
+        return ResourceMethod(name=method_name, parameters=parameters, body=block_items, return_type=return_type, decorators=decorators)
+
+    def _parse_resource_block(self, resource_block):
+        """Parse a resource block to extract fields, methods, and docstring."""
+        fields = []
+        methods = []
+        docstring = None
+
+        if resource_block and hasattr(resource_block, "data") and resource_block.data == "resource_block":
+            for child in resource_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip('"')
+                    elif child.data == "resource_fields_and_methods":
+                        for item in child.children:
+                            if isinstance(item, ResourceField):
+                                fields.append(item)
+                            elif isinstance(item, ResourceMethod):
+                                methods.append(item)
+
+        return fields, methods, docstring

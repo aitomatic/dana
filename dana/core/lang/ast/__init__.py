@@ -74,6 +74,7 @@ Statement = Union[
     "MethodDefinition",
     "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
+    "ResourceDefinition",
     "AgentDefinition",
     "ImportStatement",
     "ImportFromStatement",
@@ -112,6 +113,7 @@ class BinaryOperator(Enum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
+    FLOOR_DIVIDE = "//"
     MODULO = "%"
     POWER = "**"
     PIPE = "|"
@@ -151,7 +153,7 @@ class LambdaExpression:
 
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
-    body: Expression = None  # Lambda body expression
+    body: Expression | None = None  # Lambda body expression
     location: Location | None = None
 
 
@@ -470,7 +472,7 @@ class WhileLoop:
 class ForLoop:
     """For loop statement."""
 
-    target: Identifier
+    target: Union[Identifier, list[Identifier]]  # Support single or multiple targets for tuple unpacking
     iterable: Expression
     body: list[Statement]
     location: Location | None = None
@@ -556,6 +558,18 @@ class StructDefinition:
 
 
 @dataclass
+class ResourceDefinition:
+    """Resource definition statement (e.g., resource MyRAG(BaseResource): sources: list[str])."""
+
+    name: str
+    parent_name: str | None = None  # Optional parent resource
+    fields: list["ResourceField"] = field(default_factory=list)
+    methods: list["ResourceMethod"] = field(default_factory=list)
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
 class StructField:
     """A field in a struct definition."""
 
@@ -563,6 +577,29 @@ class StructField:
     type_hint: TypeHint
     comment: str | None = None  # Field description from inline comment
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ResourceField:
+    """A field in a resource definition."""
+
+    name: str
+    type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
+    default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ResourceMethod:
+    """A method in a resource definition."""
+
+    name: str
+    parameters: list[Parameter]
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)
     location: Location | None = None
 
 
@@ -595,10 +632,11 @@ class ImportStatement:
 
 @dataclass
 class ImportFromStatement:
-    """From-import statement (e.g., from math import sqrt)."""
+    """From-import statement (e.g., from math import sqrt or from math import *)."""
 
     module: str
     names: list[tuple[str, str | None]]
+    is_star_import: bool = False
     location: Location | None = None
 
 
@@ -721,12 +759,39 @@ class AgentDefinition:
 
 
 @dataclass
+class SingletonAgentDefinition:
+    """Singleton agent definition referencing a blueprint and optional overrides."""
+
+    blueprint_name: str
+    overrides: list["SingletonAgentField"]
+    alias_name: str | None = None
+    location: Location | None = None
+
+
+@dataclass
+class BaseAgentSingletonDefinition:
+    """Base agent singleton definition (e.g., agent John)."""
+
+    alias_name: str
+    location: Location | None = None
+
+
+@dataclass
 class AgentField:
     """A field in an agent definition."""
 
     name: str
     type_hint: TypeHint
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class SingletonAgentField:
+    """An override assignment in a singleton agent definition block."""
+
+    name: str
+    value: Expression
     location: Location | None = None
 
 

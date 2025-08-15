@@ -395,8 +395,9 @@ class ApiService {
     return response.data;
   }
 
-  async deleteTopic(topicId: number): Promise<{ message: string }> {
-    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}`);
+  async deleteTopic(topicId: number, force: boolean = false): Promise<{ message: string }> {
+    const params = force ? '?force=true' : '';
+    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}${params}`);
     return response.data;
   }
 
@@ -432,6 +433,42 @@ class ApiService {
     return response.data;
   }
 
+  // Raw upload for a single file (no title/description required)
+  async uploadDocumentRaw(
+    file: File,
+    options?: { topic_id?: number; agent_id?: number; build_index?: boolean },
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.topic_id !== undefined) formData.append('topic_id', String(options.topic_id));
+    if (options?.agent_id !== undefined) formData.append('agent_id', String(options.agent_id));
+    if (options?.build_index !== undefined)
+      formData.append('build_index', String(options.build_index));
+    const response = await this.client.post<DocumentRead>('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  // Visual Document Deep Extraction
+  async deepExtract(request: {
+    document_id: number;
+    prompt?: string;
+    config?: Record<string, any>;
+  }): Promise<{
+    file_object: {
+      file_name: string;
+      cache_key: string;
+      total_pages: number;
+      total_words: number;
+      file_full_path: string;
+      pages: Array<{ page_number: number; page_content: string; page_hash: string }>;
+    };
+  }> {
+    const response = await this.client.post('/extract-documents/deep-extract', request);
+    return response.data;
+  }
+
   async updateDocument(documentId: number, document: DocumentUpdate): Promise<DocumentRead> {
     const response = await this.client.put<DocumentRead>(`/documents/${documentId}`, document);
     return response.data;
@@ -439,6 +476,16 @@ class ApiService {
 
   async deleteDocument(documentId: number): Promise<{ message: string }> {
     const response = await this.client.delete<{ message: string }>(`/documents/${documentId}`);
+    return response.data;
+  }
+
+  // Save extraction results as JSON file
+  async saveExtractionData(request: {
+    original_filename: string;
+    extraction_results: Record<string, any>;
+    source_document_id: number;
+  }): Promise<DocumentRead> {
+    const response = await this.client.post<DocumentRead>('/documents/save-extraction', request);
     return response.data;
   }
 

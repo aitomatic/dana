@@ -1,15 +1,15 @@
+import logging
+import os
 from pathlib import Path
 from typing import Any
-import os
-import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.types import BaseRequest
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,9 @@ async def _llm_fallback(agent_name: str, agent_description: str, message: str) -
         logger.info(f"Using LLM fallback for agent '{agent_name}' with message: {message}")
 
         # Create LLM resource
-        llm = LLMResource(name="agent_test_fallback_llm", description="LLM fallback for agent testing when Dana code is not available")
+        llm = LegacyLLMResource(
+            name="agent_test_fallback_llm", description="LLM fallback for agent testing when Dana code is not available"
+        )
         await llm.initialize()
 
         # Check if LLM is available
@@ -171,7 +173,7 @@ async def test_agent(request: AgentTestRequest):
                         sandbox_context.set("system:session_id", "test-agent-creation")
                         sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
                         print(f"sandbox_context: {sandbox_context.get_scope('system')}")
-                        result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
+                        result = DanaSandbox.execute_file_once(file_path=temp_file_path, context=sandbox_context)
 
                         # Get the response from the execution
                         if result.success and result.output:
@@ -266,7 +268,7 @@ async def test_agent(request: AgentTestRequest):
         print("--------------------------------")
         try:
             sandbox_context = SandboxContext()
-            result = DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+            result = DanaSandbox.execute_file_once(file_path=full_path, context=sandbox_context)
 
             if not result.success:
                 # Dana execution failed, use LLM fallback

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { convertTopicToFolderItem, convertDocumentToFileItem } from '@/components/library';
 import { LibraryTable } from '@/components/library';
 import { PdfViewer } from '@/components/library/pdf-viewer';
+import { JsonViewer } from '@/components/library/json-viewer';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import { ExtractionFilePopup } from './extraction-file';
 
@@ -80,6 +81,9 @@ export default function LibraryPage() {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
+  const [jsonViewerOpen, setJsonViewerOpen] = useState(false);
+  const [jsonFileUrl, setJsonFileUrl] = useState<string | null>(null);
+  const [jsonFileName, setJsonFileName] = useState<string | undefined>(undefined);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -139,8 +143,12 @@ export default function LibraryPage() {
       setPdfFileUrl(item.path);
       setPdfFileName(item.name);
       setPdfViewerOpen(true);
+    } else if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'json') {
+      setJsonFileUrl(item.path);
+      setJsonFileName(item.name);
+      setJsonViewerOpen(true);
     } else {
-      // Open document preview (non-PDF)
+      // Open document preview (other file types)
       console.log('View document:', item);
     }
   };
@@ -193,8 +201,20 @@ export default function LibraryPage() {
         await deleteDocument(documentId);
         toast.success('Document deleted successfully');
       }
-    } catch {
-      toast.error('Failed to delete item');
+    } catch (error: any) {
+      // Extract error message from the error object (handles both Error and ApiError)
+      const errorMessage = error?.message || 'Failed to delete item';
+
+      // For topics with documents, the store automatically retries with force=true
+      // So we should only see an error if the retry also failed
+      console.log('Delete error in UI:', errorMessage);
+
+      // If it's still about associated documents, that means the force delete also failed
+      if (errorMessage.includes('associated documents')) {
+        toast.error('Unable to delete topic and its associated documents. Please try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setShowDeleteConfirm(false);
       setSelectedItem(null);
@@ -239,10 +259,10 @@ export default function LibraryPage() {
     setTypeFilter(type);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchTopics();
     fetchDocuments();
-  };
+  }, [fetchTopics, fetchDocuments]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -262,194 +282,204 @@ export default function LibraryPage() {
   const error = topicsError || documentsError;
 
   return (
-    <div className="flex flex-col p-6 space-y-6 h-full">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Library</h1>
-          <p className="text-gray-600">Manage your topics and documents</p>
+    <div className="flex overflow-hidden flex-col h-[calc(100vh-64px)]">
+      <div className="flex flex-col flex-1 p-6 space-y-6 min-h-0">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Library</h1>
+            <p className="text-gray-600">Manage your topics and documents</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+              <IconRefresh className="mr-2 w-4 h-4" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateFolder(true)}
+              disabled={isCreatingTopic}
+            >
+              <IconFolderPlus className="mr-2 w-4 h-4" />
+              New Topic
+            </Button>
+            <Button onClick={openExtractionPopup} variant="outline">
+              <IconFileExport className="mr-2 w-4 h-4" />
+              Extract Files
+            </Button>
+            <Button onClick={handleUploadClick} disabled={isUploading}>
+              <IconUpload className="mr-2 w-4 h-4" />
+              Add Documents
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-            <IconRefresh className="mr-2 w-4 h-4" />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowCreateFolder(true)}
-            disabled={isCreatingTopic}
-          >
-            <IconFolderPlus className="mr-2 w-4 h-4" />
-            New Topic
-          </Button>
-          <Button onClick={openExtractionPopup} variant="outline">
-            <IconFileExport className="mr-2 w-4 h-4" />
-            Extract Files
-          </Button>
-          <Button onClick={handleUploadClick} disabled={isUploading}>
-            <IconUpload className="mr-2 w-4 h-4" />
-            Add Documents
-          </Button>
-        </div>
-      </div>
 
-      {/* Breadcrumb Navigation */}
-      {folderState.isInFolder && (
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={navigateToRoot}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <IconArrowLeft className="mr-1 w-4 h-4" />
-            Back to Library
-          </Button>
-        </div>
-      )}
+        {/* Breadcrumb Navigation */}
+        {folderState.isInFolder && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={navigateToRoot}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <IconArrowLeft className="mr-1 w-4 h-4" />
+              Back to Library
+            </Button>
+          </div>
+        )}
 
-      {/* Error Display */}
-      {error && (
-        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-          <p className="text-red-800">{error}</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              clearTopicsError();
-              clearDocumentsError();
-            }}
-            className="mt-2"
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
+        {/* Error Display */}
+        {error && (
+          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+            <p className="text-red-800">{error}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                clearTopicsError();
+                clearDocumentsError();
+              }}
+              className="mt-2"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
 
-      {/* Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-sm">
-          <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
-          <Input
-            placeholder="Search topics and documents..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
+        {/* Filters */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-sm">
+            <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
+            <Input
+              placeholder="Search topics and documents..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {!folderState.isInFolder && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <IconFilter className="mr-2 w-4 h-4" />
+                  {typeFilter === 'all' ? 'All' : typeFilter === 'files' ? 'Documents' : 'Topics'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleTypeFilterChange('all')}>
+                  All Items
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleTypeFilterChange('files')}>
+                  Documents Only
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleTypeFilterChange('folders')}>
+                  Topics Only
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* Data Table */}
+        <div className="overflow-hidden flex-1 min-h-0">
+          <LibraryTable
+            data={filteredItems}
+            loading={isLoading}
+            mode="library"
+            onRowClick={handleViewItem}
+            onViewItem={handleViewItem}
+            onEditItem={handleEditItem}
+            onDeleteItem={handleDeleteItem}
+            onDownloadItem={handleDownloadDocument}
+            allLibraryItems={itemsWithCounts}
           />
         </div>
 
-        {!folderState.isInFolder && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <IconFilter className="mr-2 w-4 h-4" />
-                {typeFilter === 'all' ? 'All' : typeFilter === 'files' ? 'Documents' : 'Topics'}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleTypeFilterChange('all')}>
-                All Items
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTypeFilterChange('files')}>
-                Documents Only
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTypeFilterChange('folders')}>
-                Topics Only
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
-      {/* Data Table */}
-      <div className="flex-1">
-        <LibraryTable
-          data={filteredItems}
-          loading={isLoading}
-          mode="library"
-          onRowClick={handleViewItem}
-          onViewItem={handleViewItem}
-          onEditItem={handleEditItem}
-          onDeleteItem={handleDeleteItem}
-          onDownloadItem={handleDownloadDocument}
-          allLibraryItems={itemsWithCounts}
+        {/* Hidden file input for upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+          accept="*/*"
         />
+
+        {/* Dialogs */}
+        <CreateFolderDialog
+          isOpen={showCreateFolder}
+          onClose={() => setShowCreateFolder(false)}
+          onCreateFolder={handleCreateFolder}
+          currentPath={folderState.currentPath}
+        />
+
+        {/* Edit Topic Dialog */}
+        <EditTopicDialog
+          topic={
+            selectedItem?.type === 'folder'
+              ? topics.find((t) => t.id === parseInt(selectedItem.id.replace('topic-', ''))) || null
+              : null
+          }
+          isOpen={showEditTopic}
+          onClose={() => {
+            setShowEditTopic(false);
+            setSelectedItem(null);
+          }}
+          onSave={handleEditTopic}
+          isLoading={isUpdatingTopic}
+        />
+
+        {/* Edit Document Dialog */}
+        <EditDocumentDialog
+          document={
+            selectedItem?.type === 'file'
+              ? documents.find((d) => d.id === parseInt(selectedItem.id.replace('doc-', ''))) ||
+                null
+              : null
+          }
+          topics={topics}
+          isOpen={showEditDocument}
+          onClose={() => {
+            setShowEditDocument(false);
+            setSelectedItem(null);
+          }}
+          onSave={handleEditDocument}
+          isLoading={isUpdatingDocument}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setSelectedItem(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          title={`Delete ${selectedItem?.type === 'folder' ? 'Topic' : 'Document'}`}
+          description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="destructive"
+        />
+        <PdfViewer
+          open={pdfViewerOpen}
+          onClose={() => setPdfViewerOpen(false)}
+          fileUrl={pdfFileUrl || ''}
+          fileName={pdfFileName}
+        />
+
+        <JsonViewer
+          open={jsonViewerOpen}
+          onClose={() => setJsonViewerOpen(false)}
+          fileUrl={jsonFileUrl || ''}
+          fileName={jsonFileName}
+        />
+
+        {/* Extraction File Popup */}
+        {isExtractionPopupOpen && <ExtractionFilePopup onSaveCompleted={handleRefresh} />}
       </div>
-
-      {/* Hidden file input for upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-        accept="*/*"
-      />
-
-      {/* Dialogs */}
-      <CreateFolderDialog
-        isOpen={showCreateFolder}
-        onClose={() => setShowCreateFolder(false)}
-        onCreateFolder={handleCreateFolder}
-        currentPath={folderState.currentPath}
-      />
-
-      {/* Edit Topic Dialog */}
-      <EditTopicDialog
-        topic={
-          selectedItem?.type === 'folder'
-            ? topics.find((t) => t.id === parseInt(selectedItem.id.replace('topic-', ''))) || null
-            : null
-        }
-        isOpen={showEditTopic}
-        onClose={() => {
-          setShowEditTopic(false);
-          setSelectedItem(null);
-        }}
-        onSave={handleEditTopic}
-        isLoading={isUpdatingTopic}
-      />
-
-      {/* Edit Document Dialog */}
-      <EditDocumentDialog
-        document={
-          selectedItem?.type === 'file'
-            ? documents.find((d) => d.id === parseInt(selectedItem.id.replace('doc-', ''))) || null
-            : null
-        }
-        topics={topics}
-        isOpen={showEditDocument}
-        onClose={() => {
-          setShowEditDocument(false);
-          setSelectedItem(null);
-        }}
-        onSave={handleEditDocument}
-        isLoading={isUpdatingDocument}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setSelectedItem(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title={`Delete ${selectedItem?.type === 'folder' ? 'Topic' : 'Document'}`}
-        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="destructive"
-      />
-      <PdfViewer
-        open={pdfViewerOpen}
-        onClose={() => setPdfViewerOpen(false)}
-        fileUrl={pdfFileUrl || ''}
-        fileName={pdfFileName}
-      />
-
-      {/* Extraction File Popup */}
-      {isExtractionPopupOpen && <ExtractionFilePopup />}
     </div>
   );
 }

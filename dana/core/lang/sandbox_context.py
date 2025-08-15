@@ -19,16 +19,18 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dana.common.exceptions import StateError
-from dana.common.resource.base_resource import BaseResource
+from dana.common.mixins.loggable import Loggable
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana.core.resource import ResourceInstance
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class ExecutionStatus(Enum):
@@ -40,7 +42,7 @@ class ExecutionStatus(Enum):
     FAILED = "failed"
 
 
-class SandboxContext:
+class SandboxContext(Loggable):
     """Manages the scoped state during Dana program execution."""
 
     def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None):
@@ -59,6 +61,9 @@ class SandboxContext:
 
         self._error_context = ErrorContext()
 
+        # Private system LLM resource for efficient access
+        self._system_llm_resource: LLMResourceInstance | None = None
+
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -68,21 +73,20 @@ class SandboxContext:
                 "history": [],
             },
         }
-        self.__resources: dict[str, dict[str, BaseResource]] = {
+        # Update the type annotations and remove system scope from __resources and __agents
+        self.__resources: dict[str, dict[str, ResourceInstance]] = {
             "local": {},
             "private": {},
             "public": {},
-            "system": {},
         }
-        self.__agents: dict[str, dict[str, BaseResource]] = {
+        self.__agents: dict[str, dict[str, ResourceInstance]] = {
             "local": {},
             "private": {},
             "public": {},
-            "system": {},
         }
         # If parent exists, share global scopes instead of copying
         if parent:
-            for scope in RuntimeScopes.GLOBAL:
+            for scope in RuntimeScopes.GLOBALS:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
 
     @property
@@ -188,7 +192,7 @@ class SandboxContext:
         scope, var_name = self._validate_key(key)
 
         # For global scopes, set in root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -213,7 +217,7 @@ class SandboxContext:
             scope, var_name = self._validate_key(key)
 
             # For global scopes, search in root context
-            if scope in RuntimeScopes.GLOBAL:
+            if scope in RuntimeScopes.GLOBALS:
                 root = self
                 while root._parent is not None:
                     root = root._parent
@@ -231,11 +235,10 @@ class SandboxContext:
 
             # Auto-resolve Promise if requested and value is a Promise
             if auto_resolve:
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import resolve_if_promise
 
-                if isinstance(value, BasePromise):
-                    # Auto-resolve promises to their values
-                    return value._ensure_resolved()
+                # Auto-resolve promises to their values
+                return resolve_if_promise(value)
 
             return value
         except StateError:
@@ -331,7 +334,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, set in root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -352,7 +355,7 @@ class SandboxContext:
         """
         try:
             scope, var_name = self._validate_key(key)
-            if scope in RuntimeScopes.GLOBAL:
+            if scope in RuntimeScopes.GLOBALS:
                 root = self
                 while root._parent is not None:
                     root = root._parent
@@ -371,7 +374,7 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -639,7 +642,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, get from root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -679,7 +682,7 @@ class SandboxContext:
 
         return None
 
-    def set_resource(self, name: str, resource: BaseResource) -> None:
+    def set_resource(self, name: str, resource: "ResourceInstance") -> None:
         """Set a resource in the context.
 
         Args:
@@ -693,13 +696,13 @@ class SandboxContext:
         self.set_in_scope(var_name, resource, scope=scope)
         self.__resources[scope][var_name] = resource
 
-    def get_resource(self, name: str) -> BaseResource:
+    def get_resource(self, name: str) -> "ResourceInstance":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
         return self.__resources[scope][var_name]
 
-    def get_resources(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
+    def get_resources(self, included: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, "ResourceInstance"]:
         """Get a dictionary of resources from the context.
 
         Args:
@@ -713,13 +716,13 @@ class SandboxContext:
             resource_names = self.list_resources()
             return {name: self.get_resource(name) for name in resource_names}
 
-        # Handle mixed list of BaseResource objects and string names
+        # Handle mixed list of resource objects and string names
         resources = {}
         for item in included:
-            if isinstance(item, BaseResource):
+            if hasattr(item, "name"):  # Check if it's a resource object
                 # Direct resource object - use it directly
                 resources[item.name] = item
-            else:
+            elif isinstance(item, str):
                 # String name - look it up in context
                 try:
                     resources[item] = self.get_resource(item)
@@ -759,7 +762,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, delete from root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -773,7 +776,7 @@ class SandboxContext:
         elif self._parent is not None:
             self._parent.delete_from_scope(var_name, scope)
 
-    def set_agent(self, name: str, agent: BaseResource) -> None:
+    def set_agent(self, name: str, agent: "ResourceInstance") -> None:
         """Set an agent in the context.
 
         Args:
@@ -787,13 +790,13 @@ class SandboxContext:
         self.set_in_scope(var_name, agent, scope=scope)
         self.__agents[scope][var_name] = agent
 
-    def get_agent(self, name: str) -> BaseResource:
+    def get_agent(self, name: str) -> "ResourceInstance":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
         return self.__agents[scope][var_name]
 
-    def get_agents(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
+    def get_agents(self, included: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, "ResourceInstance"]:
         """Get a dictionary of agents from the context.
 
         Args:
@@ -805,7 +808,7 @@ class SandboxContext:
         agent_names = self.list_agents()
         if included is not None:
             # Convert to list of strings
-            included = [agent.name if isinstance(agent, BaseResource) else agent for agent in included]
+            included = [agent.name if hasattr(agent, "name") else agent for agent in included]
         agent_names = filter(lambda name: (included is None or name in included), agent_names)
         return {name: self.get_agent(name) for name in agent_names}
 
@@ -825,7 +828,7 @@ class SandboxContext:
                     all_agents.append(agent.name)
         return all_agents
 
-    def get_self_agent_card(self, included_resources: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
+    def get_self_agent_card(self, included_resources: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, dict[str, Any]]:
         """
         Get the agent card for the current agent.
         Args:
@@ -844,7 +847,7 @@ class SandboxContext:
         """
 
         if included_resources is not None:
-            included_resources = [resource.name if isinstance(resource, BaseResource) else resource for resource in included_resources]
+            included_resources = [resource.name if hasattr(resource, "name") else resource for resource in included_resources]
 
         tools = []
         for name, resource in self.get_resources().items():
@@ -862,7 +865,7 @@ class SandboxContext:
                 agent_card["skills"].append({"name": function.get("name", ""), "description": function.get("description", "")})
         return {"__self__": agent_card}
 
-    def get_other_agent_cards(self, included_agents: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
+    def get_other_agent_cards(self, included_agents: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, dict[str, Any]]:
         all_agent_cards = {}
         for name, agent in self.get_agents(included=included_agents).items():
             all_agent_cards[name] = agent.agent_card
@@ -893,3 +896,24 @@ class SandboxContext:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Context manager exit - cleanup local state only"""
         self.shutdown()
+
+    def get_system_llm_resource(self, use_mock: bool | None = None) -> "LLMResourceInstance | None":
+        """Get the system LLM resource as a LLMResourceInstance.
+
+        This method provides convenient access to the system LLM resource.
+        """
+        try:
+            return cast("LLMResourceInstance", self.get_resource("system_llm"))
+        except KeyError:
+            return None
+
+    def set_system_llm_resource(self, llm_resource: "LLMResourceInstance") -> None:
+        """Set the system LLM resource.
+
+        This method accepts a LLMResourceInstance and stores it in the context.
+        """
+        try:
+            self.set_resource("system_llm", llm_resource)
+            self.info(f"Stored system LLM resource: {llm_resource.model}")
+        except Exception as e:
+            self.error(f"Failed to set system LLM resource: {e}")

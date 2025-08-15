@@ -1,0 +1,48 @@
+# Test agent LLM parameters using config dictionary approach
+
+# Define an agent blueprint with LLM config
+agent_blueprint SmartAgent:
+    name: str = "Smart Agent"
+    expertise: str = "general"
+    config: dict = {
+        "llm_model": "openai:gpt-4o-mini",
+        "llm_temperature": 0.3,
+        "llm_max_tokens": 1000
+    }
+
+# Create instance from blueprint
+smart_agent = SmartAgent()
+
+# Create singleton agent with custom LLM config
+agent CustomAgent(SmartAgent):
+    expertise = "coding"
+    config = {
+        "llm_model": "anthropic:claude-3-sonnet",
+        "llm_temperature": 0.1,
+        "llm_max_tokens": 2000
+    }
+
+# Create simple agent with LLM config
+agent SimpleAgent:
+    config = {
+        "llm_model": "openai:gpt-3.5-turbo",
+        "llm_temperature": 0.7
+    }
+
+print("=== Agent Config LLM Parameters Test ===")
+print("SmartAgent type:", type(smart_agent))
+print("CustomAgent type:", type(CustomAgent))
+print("SimpleAgent type:", type(SimpleAgent))
+
+# Test chat functionality
+print("\n--- Testing SmartAgent ---")
+response1 = smart_agent.chat("Hello! What model are you using?")
+print("Response:", response1)
+
+print("\n--- Testing CustomAgent ---")
+response2 = CustomAgent.chat("Hello! What model are you using?")
+print("Response:", response2)
+
+print("\n--- Testing SimpleAgent ---")
+response3 = SimpleAgent.chat("Hello! What model are you using?")
+print("Response:", response3)

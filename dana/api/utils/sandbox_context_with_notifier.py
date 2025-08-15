@@ -230,9 +230,11 @@ class SandboxContextWithNotifier(SandboxContext):
         Returns:
             A new SandboxContextWithNotifier with the same state and notifier
         """
-        new_context = SandboxContextWithNotifier()
+        new_context = SandboxContextWithNotifier(parent=self._parent, manager=self._manager, notifier=self._notifier)
         new_context.set_state(self.get_state())
         new_context.set_notifier(self._notifier)
+
+        self._copy_attributes(new_context, skip_state=False, skip_resources=False)
 
         # Also copy resource and agent registrations (same as parent)
         import copy

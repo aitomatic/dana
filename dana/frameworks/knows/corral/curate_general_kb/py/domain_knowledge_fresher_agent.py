@@ -1,4 +1,4 @@
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 from dana.core.lang.sandbox_context import SandboxContext
 import yaml
 import logging
@@ -27,6 +27,8 @@ class DomainKnowledgeFresherAgent:
             previous_assessment = {}
 
         # Extract topic names from questions dict
+        if previous_assessment is None:
+            previous_assessment = {}
         topic_names = list(questions.keys())
 
         confidence_prompt = f"""
@@ -49,7 +51,7 @@ INSTRUCTIONS:
 
 OUTPUT FORMAT (valid JSON):
 {{
-    "per_criterion": {{{', '.join([f'"{topic}": 0-100' for topic in topic_names])}}},
+    "per_criterion": {{{", ".join([f'"{topic}": 0-100' for topic in topic_names])}}},
     "overall_confidence": 0-100,
     "status": "Ready to proceed | More info needed",
     "gaps": [["topic_name", "reason for inadequacy"]]
@@ -85,10 +87,8 @@ OUTPUT FORMAT:
     def generate_initial_domain_questions(self, knowledge_area_description: str, key_topics: list = None) -> dict:
         """Generate high-quality initial questions focused on key topics"""
 
-        # Handle None default argument
         if key_topics is None:
-            key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
-
+            key_topics = []
         if not key_topics:
             key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
 
@@ -140,11 +140,9 @@ OUTPUT FORMAT (strict)  return ONLY this:
     def generate_domain_questions(self, knowledge_area_description: str, key_topics: list = None) -> dict:
         """Main method to generate questions for a knowledge area until confidence threshold is reached"""
 
-        # Handle None default argument
         if key_topics is None:
-            key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
-
-        print("< Processing knowledge area")
+            key_topics = []
+        print("<� Processing knowledge area")
 
         # Generate initial questions
         questions = self.generate_initial_domain_questions(knowledge_area_description, key_topics)
@@ -271,7 +269,7 @@ OUTPUT FORMAT (strict)  return ONLY this:
         }
 
         print(
-            f"< Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration-1} iterations"
+            f"<� Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration - 1} iterations"
         )
         return result
 

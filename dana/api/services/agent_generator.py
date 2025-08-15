@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.core.lang.dana_sandbox import DanaSandbox
 
@@ -34,7 +34,7 @@ class AgentGenerator:
 
         # Initialize LLM resource with better error handling
         try:
-            self.llm_resource = LLMResource(
+            self.llm_resource = LegacyLLMResource(
                 name="agent_generator_llm", description="LLM for generating Dana agent code", config=self.llm_config
             )
             logger.info("LLMResource created successfully")
@@ -439,7 +439,7 @@ async def generate_agent_code_na(messages: list[dict[str, Any]], current_code: s
 
         try:
             # Execute the .na file using DanaSandbox.quick_run with file path
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
 
             if result.success:
                 generated_code = result.result
@@ -643,7 +643,7 @@ def _test_generated_code(code: str) -> Any:
 
         try:
             # Test the code using DanaSandbox.quick_run
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
             return result
         finally:
             # Clean up the temporary file
@@ -688,7 +688,7 @@ async def _fix_generated_code_with_agent(code: str, error: str, messages: list[d
 
         try:
             # Execute the code fixer
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
 
             if result.success and result.result:
                 # Test the fixed code
@@ -1016,7 +1016,7 @@ async def analyze_agent_capabilities(
         try:
             # Create LLM resource with proper configuration
             llm_config = {"model": "gpt-4o", "temperature": 0.7, "max_tokens": 2000}
-            llm = LLMResource(
+            llm = LegacyLLMResource(
                 name="agent_capabilities_analyzer", description="LLM for analyzing Dana agent capabilities", config=llm_config
             )
 
@@ -1703,9 +1703,9 @@ def _create_phase_2_prompt(
 AGENT SUMMARY:
 - Name: {agent_name}
 - Description: {agent_description}
-- Knowledge Domains: {', '.join(knowledge_domains) if knowledge_domains else 'None specified'}
-- Workflow Steps: {', '.join(workflow_steps) if workflow_steps else 'None specified'}
-- Tools: {', '.join(tools) if tools else 'None specified'}
+- Knowledge Domains: {", ".join(knowledge_domains) if knowledge_domains else "None specified"}
+- Workflow Steps: {", ".join(workflow_steps) if workflow_steps else "None specified"}
+- Tools: {", ".join(tools) if tools else "None specified"}
 - Summary: {agent_summary_description}
 
 CONVERSATION CONTEXT:
@@ -1731,7 +1731,7 @@ def solve(self : {agent_class}, query: str) -> str:
 this_agent = {agent_class}()
 """
 
-    methods_na = f"""
+    methods_na = """
 from knowledge import knowledge
 from knowledge import doc
 from common import QUERY_GENERATION_PROMPT
@@ -2106,7 +2106,6 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     """
     Returns the multi-file agent generation prompt for the LLM.
     """
-    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
     rag_import_block = "from tools import rag_resource\n"
     rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
 

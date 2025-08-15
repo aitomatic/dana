@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter()
 
+
 # --- WebSocket Connection Manager ---
 class ConnectionManager:
     def __init__(self):
@@ -22,7 +23,9 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
+
 manager = ConnectionManager()
+
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -53,10 +56,11 @@ def get_root_info():
             "agents": "/api/agents",
             "chat": "/api/chat",
             "conversations": "/api/conversations",
-            "documents": "/api/documents", 
+            "documents": "/api/documents",
             "topics": "/api/topics",
-            "agent-test": "/api/agent-test"
-        }
+            "agent-test": "/api/agent-test",
+            "extract-documents": "/api/extract-documents",
+        },
     }
 
 

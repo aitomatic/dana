@@ -30,6 +30,7 @@ export const FILE_ICONS = {
   png: imageIcon,
   jpeg: imageIcon,
   jpg: imageIcon,
+  json: codeIcon,
   html: codeIcon,
 } as const;
 

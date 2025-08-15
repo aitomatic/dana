@@ -1,0 +1,94 @@
+# Demo: Promise Processing with INFO Logging
+# 
+# This demo shows the detailed logging output when working with Promises.
+# Run this with logging enabled to see the flow of Promise creation and resolution.
+
+import time
+
+# Track execution to show timing
+execution_tracker = [0]
+
+def expensive_operation():
+    execution_tracker[0] = execution_tracker[0] + 1
+    print(f"🔄 Executing expensive operation #{execution_tracker[0]}...")
+    # Simulate expensive computation
+    time.sleep(0.1)  # 100ms delay
+    result = f"result_{execution_tracker[0]}"
+    print(f"✅ Expensive operation #{execution_tracker[0]} completed!")
+    return result
+
+# Function using return (creates EagerPromise)
+def return_function():
+    print("📝 Creating return function...")
+    return expensive_operation()
+
+# Function using deliver (executes inline)
+def deliver_function():
+    print("⚡ Creating deliver function...")
+    deliver expensive_operation()
+
+print("=== PROMISE LOGGING DEMO ===")
+print("Watch the INFO logs to see Promise processing flow!")
+print()
+
+print("1. RETURN FUNCTION (creates EagerPromise)")
+print("Creating return function...")
+execution_tracker[0] = 0
+
+# This should return immediately with EagerPromise
+result = return_function()
+print(f"Function returned! Result type: {type(result)}")
+
+# Try to access the result
+print("\nTrying to access the result...")
+try:
+    value = result
+    print(f"Successfully accessed! Value: {value}")
+except Exception as e:
+    print(f"Access failed: {e}")
+
+# Wait a bit and try again
+print("\nWaiting 200ms and trying again...")
+time.sleep(0.2)
+try:
+    value = result
+    print(f"Successfully accessed! Value: {value}")
+except Exception as e:
+    print(f"Still failed: {e}")
+
+print("\n2. DELIVER FUNCTION (executes inline)")
+print("Creating deliver function...")
+execution_tracker[0] = 0
+
+# This should execute immediately and block until complete
+result = deliver_function()
+print(f"Function executed! Result type: {type(result)}")
+print(f"Result value: {result}")
+
+print("\n3. MULTIPLE RETURN FUNCTIONS (parallel execution)")
+print("Creating multiple return functions...")
+execution_tracker[0] = 0
+
+# Create multiple EagerPromises
+a = return_function()
+b = return_function()
+c = return_function()
+
+print(f"Created 3 EagerPromises!")
+
+# Wait for all to complete
+print("\nWaiting for all to complete...")
+time.sleep(0.3)
+
+try:
+    combined = f"{a} | {b} | {c}"
+    print(f"All accessed! Combined: {combined}")
+except Exception as e:
+    print(f"Some still not ready: {e}")
+
+print("\n=== LOGGING INSIGHTS ===")
+print("🔵 Blue logs = EagerPromise processing")
+print("🟡 Yellow logs = LazyPromise processing")
+print("📝 Look for creation, execution start, resolution, and access patterns")
+print("⚡ Notice how EagerPromise starts execution immediately")
+print("🔄 Notice how LazyPromise defers until access") 

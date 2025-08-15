@@ -1,0 +1,44 @@
+# Demo of current type behavior for resources and structs
+
+# Define a resource
+resource Abc:
+    name: str
+
+# Define a struct  
+struct Xyz:
+    name: str
+
+# Create instances
+a = Abc(name="yes")
+x = Xyz(name="yes")
+
+# Show current behavior
+log("=== Current Type Behavior ===")
+log(f"a = {a}")
+log(f"x = {x}")
+log(f"type(a) = {type(a)}")
+log(f"type(x) = {type(x)}")
+log(f"type(Abc) = {type(Abc)}")
+log(f"type(Xyz) = {type(Xyz)}")
+
+# Show what we can access
+log("\n=== Accessible Information ===")
+log(f"a._type.name = {a._type.name}")
+log(f"x._type.name = {x._type.name}")
+log(f"a._type = {a._type}")
+log(f"x._type = {x._type}")
+
+log("\n=== Analysis ===")
+log("Current behavior:")
+log("- type(a) returns 'ResourceInstance' (not very informative)")
+log("- type(x) returns 'StructInstance' (not very informative)")
+log("- type(Abc) returns 'function' (not very informative)")
+log("- type(Xyz) returns 'function' (not very informative)")
+
+log("\nDesired behavior:")
+log("- type(a) should return 'ResourceInstance[Abc]'")
+log("- type(x) should return 'StructInstance[Xyz]'")
+log("- type(Abc) should return 'ResourceType'")
+log("- type(Xyz) should return 'StructType'")
+
+log("\n✅ Demo completed!")

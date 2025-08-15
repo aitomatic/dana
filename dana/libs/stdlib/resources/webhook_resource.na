@@ -1,0 +1,91 @@
+# Webhook Resource
+# A resource for handling webhook endpoints and HTTP callbacks
+
+resource WebhookResource:
+    kind: str = "webhook"
+    name: str = ""
+    state: str = "created"
+    endpoint: str = "http://localhost:8080/webhook"
+    method: str = "POST"
+    headers: dict = {}
+    timeout: int = 30
+    retry_count: int = 3
+    description: str = "Webhook endpoint resource for HTTP callbacks"
+
+# Initialize the webhook resource
+def (webhook: WebhookResource) initialize() -> bool:
+    if webhook.state == "created":
+        webhook.state = "initialized"
+        print(f"Webhook '{webhook.name}' initialized for {webhook.endpoint}")
+        return true
+    return false
+
+# Start the webhook resource
+def (webhook: WebhookResource) start() -> bool:
+    if webhook.state == "initialized":
+        webhook.state = "running"
+        print(f"Webhook '{webhook.name}' ready to send to {webhook.endpoint}")
+        return true
+    return false
+
+
+
+# Query interface for webhook operations
+def (webhook: WebhookResource) query(request: str) -> str:
+    if webhook.state != "running":
+        return f"Webhook resource {webhook.name} not running (state: {webhook.state})"
+    
+    # In a real implementation, this would send an HTTP request
+    # For now, simulate the webhook call
+    result = f"""
+Webhook Request Sent:
+- Endpoint: {webhook.endpoint}
+- Method: {webhook.method}
+- Timeout: {webhook.timeout}s
+- Payload: {request}
+- Status: [Simulated] 200 OK
+- Response: Webhook received successfully
+"""
+    
+    return result
+
+# Send a webhook with custom payload
+def (webhook: WebhookResource) send(payload: dict) -> dict:
+    if webhook.state != "running":
+        return {
+            "success": false,
+            "error": f"Webhook not running (state: {webhook.state})"
+        }
+    
+    # Simulate sending webhook
+    return {
+        "success": true,
+        "endpoint": webhook.endpoint,
+        "method": webhook.method,
+        "payload": payload,
+        "status_code": 200,
+        "response": "Webhook sent successfully"
+    }
+
+# Register a new webhook endpoint
+def (webhook: WebhookResource) register_endpoint(url: str, method: str = "POST") -> bool:
+    webhook.endpoint = url
+    webhook.method = method
+    print(f"Webhook endpoint updated: {method} {url}")
+    return true
+
+# Get webhook configuration
+def (webhook: WebhookResource) get_config() -> dict:
+    return {
+        "name": webhook.name,
+        "endpoint": webhook.endpoint,
+        "method": webhook.method,
+        "headers": webhook.headers,
+        "timeout": webhook.timeout,
+        "retry_count": webhook.retry_count,
+        "state": webhook.state
+    }
+
+# Check if resource is running
+def (webhook: WebhookResource) is_running() -> bool:
+    return webhook.state == "running"

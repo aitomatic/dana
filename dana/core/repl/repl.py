@@ -51,18 +51,20 @@ from typing import Any
 
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils import Misc
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.lang.translator.translator import Translator
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing Dana programs."""
 
-    def __init__(self, llm_resource: LLMResource | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None):
+    def __init__(
+        self, llm_resource: LLMResourceInstance | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None
+    ):
         """Initialize the REPL.
 
         Args:
@@ -79,9 +81,9 @@ class REPL(Loggable):
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
 
-        # Set LLM resource if provided and not already in context
-        if llm_resource is not None and not self.context.get("system:llm_resource"):
-            self.context.set("system:llm_resource", llm_resource)
+        # Set system-wide LLM resource if provided
+        if llm_resource is not None:
+            self.context.set_system_llm_resource(llm_resource)
 
         self.last_result = None
         self.transcoder = None
@@ -154,11 +156,36 @@ class REPL(Loggable):
             return (
                 f"Syntax Error:\n  Input: {user_input}\n  {main_msg}\n  Please check for typos, missing operators, or unsupported syntax."
             )
+
+        # Handle new parser error format
+        if "No terminal matches" in error_msg:
+            import re
+
+            # Extract the problematic character and location
+            match = re.search(r"No terminal matches '([^']+)' in the current parser context, at line (\d+) col (\d+)", error_msg)
+            if match:
+                char, line, col = match.groups()
+                caret_line = " " * (int(col) - 1) + "^"
+                return (
+                    f"Syntax Error:\n"
+                    f"  Input: {user_input}\n"
+                    f"         {caret_line}\n"
+                    f"  Unexpected '{char}' after condition. Did you forget a colon (:)?\n"
+                    f"  Tip: Use a colon after the condition, e.g., if x > 0:"
+                )
+            else:
+                return f"Syntax Error:\n  Input: {user_input}\n  {error_msg}"
+
         # Determine error type
         error_type = "Error"
         summary = None
         tip = None
-        if "Unexpected token" in error_msg or "Invalid syntax" in error_msg or "Expected one of" in error_msg:
+        if (
+            "Unexpected token" in error_msg
+            or "Invalid syntax" in error_msg
+            or "Expected one of" in error_msg
+            or "No terminal matches" in error_msg
+        ):
             error_type = "Syntax Error"
         elif "Unsupported expression type" in error_msg:
             error_type = "Execution Error"
@@ -196,7 +223,18 @@ class REPL(Loggable):
                     break
         if tip:
             formatted.append(f"  {tip}")
-        return "\n".join(formatted)
+
+        # Don't add "Error:" prefix if the message already contains it or is a formatted error
+        result = "\n".join(formatted)
+        if "Error:" in error_msg or "=== Dana Runtime Error ===" in error_msg:
+            # If the error message already contains "Error:" or is a formatted error,
+            # just return the original error message with user input prepended
+            if user_input:
+                return f"Error:\n  Input: {user_input}\n  {error_msg}"
+            else:
+                return error_msg
+        else:
+            return result
 
     def execute(self, program_source: str, initial_context: dict[str, Any] | None = None) -> Any:
         """Execute a Dana program and return the result value.
@@ -233,7 +271,7 @@ class REPL(Loggable):
 
         # Execute using DanaSandbox
         try:
-            result = self.sandbox.eval(program_source)
+            result = self.sandbox.execute_string(program_source)
 
             if result.success:
                 # Restore any print output to the interpreter buffer so tests can access it

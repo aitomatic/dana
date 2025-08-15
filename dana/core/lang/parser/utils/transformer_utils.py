@@ -70,19 +70,39 @@ def unwrap_single_child_tree(item: Any, stop_at: set[str] | None = None) -> Any:
     return item
 
 
-def extract_token_value(item: Token | Tree | Any) -> str:
-    """Extract the string value from a Token, Tree, or other item.
+def extract_token_value(item: Token | Tree | Any) -> Any:
+    """Extract the value from a Token, Tree, or other item, converting to appropriate type.
 
     Args:
-        item: Item to extract value from
+        item: Item to extract value from (Token, Tree, or other)
 
     Returns:
-        String value of the item
+        The extracted value, converted to the appropriate type if possible
     """
     if isinstance(item, Token):
-        return item.value
+        value = item.value
+
+        # Try to convert numeric values
+        try:
+            if "." in value:
+                return float(value)
+            else:
+                return int(value)
+        except (ValueError, TypeError):
+            pass
+
+        # Handle boolean and None values
+        if value.lower() == "true":
+            return True
+        elif value.lower() == "false":
+            return False
+        elif value.lower() == "none":
+            return None
+
+        # Default: return as string
+        return value
     elif isinstance(item, Tree) and item.children:
-        # For Trees, try to extract from first child
+        # For Trees, try to extract from first child recursively
         return extract_token_value(item.children[0])
     else:
         return str(item)

@@ -37,6 +37,7 @@ class HelpFormatter(Loggable):
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp off')}        - Disable natural language processing mode"))
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp status')}     - Check if NLP mode is enabled"))
         print_formatted_text(ANSI(f"  {self.colors.accent('/nlp test')}       - Test the NLP transcoder functionality"))
+        print_formatted_text(ANSI(f"  {self.colors.accent('/status')}         - Show current REPL status and context information"))
 
         # Show core functions
         print_formatted_text(ANSI(f"\n{self.colors.bold('Core Functions:')}"))
@@ -53,11 +54,6 @@ class HelpFormatter(Loggable):
         print_formatted_text(ANSI(f"  {self.colors.bold('Loops:')}          {self.colors.accent('while private:x < 10:')}"))
         print_formatted_text(ANSI(f"                  {self.colors.accent('    private:x = private:x + 1')}"))
         print_formatted_text(ANSI(f"  {self.colors.bold('Functions:')}      {self.colors.accent('func add(a, b): return a + b')}"))
-
-        print_formatted_text(ANSI(f"\n{self.colors.bold('Promise Display Examples:')}"))
-        # Show example that demonstrates Promise display
-        example_text = f"  {self.colors.accent('some_async_function()')}                  - Automatically shows Promise meta info if result is a Promise"
-        print_formatted_text(ANSI(example_text))
 
         # Show tips and general info
         print_formatted_text(ANSI(f"\n{self.colors.bold('Tips:')}"))
@@ -80,7 +76,7 @@ class HelpFormatter(Loggable):
         try:
             # Get all core functions from the registry
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("local")
+            core_functions = registry.list("system")
 
             if not core_functions:
                 print_formatted_text(ANSI(f"  {self.colors.error('No core functions found')}"))
@@ -139,7 +135,7 @@ class HelpFormatter(Loggable):
         try:
             # Get all core functions from the registry
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("local")
+            core_functions = registry.list("system")
 
             if not core_functions:
                 print("  No core functions found")
