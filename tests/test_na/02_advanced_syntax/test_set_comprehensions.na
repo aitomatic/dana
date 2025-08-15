@@ -1,0 +1,74 @@
+# Test: Set Comprehensions
+# Purpose: Test set comprehensions with various patterns and conditions
+# Category: Advanced Syntax - Comprehensions
+
+log("Starting Set Comprehensions test")
+
+# Test 1: Basic set comprehension
+numbers = [1, 2, 3, 4, 5]
+squares = {x * x for x in numbers}
+assert squares == {1, 4, 9, 16, 25}, f"Expected {1, 4, 9, 16, 25}, got {squares}"
+log("✅ Basic set comprehension works")
+
+# Test 2: Set comprehension with conditional filtering
+even_squares = {x * x for x in numbers if x % 2 == 0}
+assert even_squares == {4, 16}, f"Expected {4, 16}, got {even_squares}"
+log("✅ Set comprehension with conditional filtering works")
+
+# Test 3: Set comprehension with string operations
+words = ["hello", "world", "python", "dana", "hello"]
+unique_upper = {word.upper() for word in words}
+assert unique_upper == {"HELLO", "WORLD", "PYTHON", "DANA"}, f"Expected {'HELLO', 'WORLD', 'PYTHON', 'DANA'}, got {unique_upper}"
+log("✅ Set comprehension with string operations works")
+
+# # Test 4: Set comprehension with nested operations - [NOT SUPPORTED YET] `for ... for ...`
+# nested_result = {x + y for x in [1, 2] for y in [10, 20]}
+# assert nested_result == {11, 21, 12, 22}, f"Expected {11, 21, 12, 22}, got {nested_result}"
+# log("✅ Set comprehension with nested operations works")
+
+# Test 5: Set comprehension with dictionary operations
+data = {"a": 1, "b": 2, "c": 3}
+keys = {key for key in data.keys()}
+values = {value for value in data.values()}
+assert keys == {"a", "b", "c"}, f"Expected {'a', 'b', 'c'}, got {keys}"
+assert values == {1, 2, 3}, f"Expected {1, 2, 3}, got {values}"
+log("✅ Set comprehension with dictionary operations works")
+
+# Test 6: Set comprehension with tuple unpacking
+pairs = [(1, "a"), (2, "b"), (3, "c")]
+first_elements = {x for x, y in pairs}
+assert first_elements == {1, 2, 3}, f"Expected {1, 2, 3}, got {first_elements}"
+log("✅ Set comprehension with tuple unpacking works")
+
+# Test 7: Set comprehension with multiple conditions - [NOT SUPPORTED YET] 
+# complex_filter = {x for x in range(20) if x % 2 == 0 if x % 3 == 0}
+# assert complex_filter == {0, 6, 12, 18}, f"Expected {0, 6, 12, 18}, got {complex_filter}"
+# log("✅ Set comprehension with multiple conditions works")
+
+# Test 8: Set comprehension with function calls - [NOT SUPPORTED YET] EagerPromise is not resolved in the comprehension for now
+# def square(x: int) -> int:
+#     return x * x
+
+# squared_values = {square(x) for x in [1, 2, 3, 4]}
+# assert squared_values == {1, 4, 9, 16}, f"Expected {1, 4, 9, 16}, got {squared_values}"
+# log("✅ Set comprehension with function calls works")
+
+# Test 9: Set comprehension with type checking
+mixed_data = [1, "hello", 3.14, true, [1, 2, 3]]
+int_values = {x for x in mixed_data if type(x) == 'int'}
+assert int_values == {1}, f"Expected {1}, got {int_values}"
+log("✅ Set comprehension with type checking works")
+
+
+# Test 11: Set comprehension with empty source
+empty_source = {x for x in []}
+assert empty_source == set(), f"Expected set(), got {empty_source}"
+log("✅ Set comprehension with empty source works")
+
+# Test 12: Set comprehension with duplicate removal
+duplicate_numbers = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+unique_numbers = {x for x in duplicate_numbers}
+assert unique_numbers == {1, 2, 3, 4}, f"Expected {1, 2, 3, 4}, got {unique_numbers}"
+log("✅ Set comprehension with duplicate removal works")
+
+log("Set Comprehensions test completed successfully") 

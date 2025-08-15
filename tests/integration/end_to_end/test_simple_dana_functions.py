@@ -82,6 +82,7 @@ log("set_model function exists")
     def test_reason_function_exists(self):
         """Test if reason function exists."""
         code = """
+set_model("openai:gpt-4")
 result = reason("What is 2+2?")
 log(f"reason function works: {result is not None}")
 """

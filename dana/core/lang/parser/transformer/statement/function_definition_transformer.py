@@ -22,6 +22,9 @@ from dana.core.lang.ast import (
     Identifier,
     MethodDefinition,
     Parameter,
+    ResourceDefinition,
+    ResourceField,
+    ResourceMethod,
     StructDefinition,
     StructField,
     TypeHint,
@@ -580,3 +583,107 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 default_value = None
 
         return AgentField(name=name_token.value, type_hint=type_hint, default_value=default_value)
+
+    # === Resource Definitions ===
+
+    def resource_definition(self, items):
+        """Transform a resource definition rule into a ResourceDefinition node."""
+        name_token = None
+        parent_name_token = None
+        resource_block = None
+
+        # Parse items to extract name, optional parent, and block
+        for _i, item in enumerate(items):
+            if isinstance(item, Token) and item.type == "NAME":
+                if name_token is None:
+                    name_token = item
+                elif parent_name_token is None:
+                    parent_name_token = item
+            elif hasattr(item, "data") and item.data == "resource_block":
+                resource_block = item
+
+        if name_token is None:
+            raise ValueError("Resource definition must have a name")
+
+        parent_name = parent_name_token.value if parent_name_token else None
+        fields, methods, docstring = self._parse_resource_block(resource_block)
+
+        return ResourceDefinition(name=name_token.value, parent_name=parent_name, fields=fields, methods=methods, docstring=docstring)
+
+    def resource_field(self, items):
+        """Transform a resource field rule into a ResourceField node."""
+        if len(items) < 2:
+            raise ValueError(f"Resource field must have name and type, got {len(items)} items")
+
+        name_token = items[0]
+        type_hint_node = items[1]
+
+        # Normalize type hint
+        if not isinstance(type_hint_node, TypeHint):
+            if isinstance(type_hint_node, Token):
+                type_hint = TypeHint(name=type_hint_node.value)
+            else:
+                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
+        else:
+            type_hint = type_hint_node
+
+        # Handle optional default value
+        default_value = None
+        if len(items) > 2:
+            default_value = self.main_transformer.expression_transformer.transform(items[2])
+
+        # Extract comment if present
+        comment = None
+        for item in items:
+            if hasattr(item, "type") and item.type == "COMMENT":
+                comment = item.value.lstrip("#").strip()
+                break
+
+        return ResourceField(name=name_token.value, type_hint=type_hint, default_value=default_value, comment=comment)
+
+    def resource_method(self, items):
+        """Transform a resource method rule into a ResourceMethod node."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+
+        if len(relevant_items) < 2:
+            raise ValueError(f"Resource method must have at least name and body, got {len(relevant_items)} items")
+
+        # Extract decorators and method name
+        decorators, method_name_token, current_index = self._extract_decorators_and_name(relevant_items)
+
+        # Resolve parameters
+        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+
+        # Extract return type
+        return_type, current_index = self._extract_return_type(relevant_items, current_index)
+
+        # Extract method body
+        block_items = self._extract_function_body(relevant_items, current_index)
+
+        # Handle method name extraction
+        if isinstance(method_name_token, Token) and method_name_token.type == "NAME":
+            method_name = method_name_token.value
+        else:
+            raise ValueError(f"Expected method name token, got {method_name_token}")
+
+        return ResourceMethod(name=method_name, parameters=parameters, body=block_items, return_type=return_type, decorators=decorators)
+
+    def _parse_resource_block(self, resource_block):
+        """Parse a resource block to extract fields, methods, and docstring."""
+        fields = []
+        methods = []
+        docstring = None
+
+        if resource_block and hasattr(resource_block, "data") and resource_block.data == "resource_block":
+            for child in resource_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip('"')
+                    elif child.data == "resource_fields_and_methods":
+                        for item in child.children:
+                            if isinstance(item, ResourceField):
+                                fields.append(item)
+                            elif isinstance(item, ResourceMethod):
+                                methods.append(item)
+
+        return fields, methods, docstring

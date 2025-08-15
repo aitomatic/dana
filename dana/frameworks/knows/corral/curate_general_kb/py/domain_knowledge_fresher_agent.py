@@ -19,10 +19,12 @@ class DomainKnowledgeFresherAgent:
         self.confidence_threshold = confidence_threshold
         self.max_iterations = max_iterations
 
-    def assess_domain_confidence(self, knowledge_area_description: str, questions: dict, previous_assessment: dict = {}) -> dict:
+    def assess_domain_confidence(self, knowledge_area_description: str, questions: dict, previous_assessment: dict = None) -> dict:
         """Assess LLM confidence using dynamic topic-based framework"""
 
         # Extract topic names from questions dict
+        if previous_assessment is None:
+            previous_assessment = {}
         topic_names = list(questions.keys())
 
         confidence_prompt = f"""
@@ -78,9 +80,11 @@ OUTPUT FORMAT:
 
         return reason(prompt, target_type=dict)
 
-    def generate_initial_domain_questions(self, knowledge_area_description: str, key_topics: list = []) -> dict:
+    def generate_initial_domain_questions(self, knowledge_area_description: str, key_topics: list = None) -> dict:
         """Generate high-quality initial questions focused on key topics"""
 
+        if key_topics is None:
+            key_topics = []
         if not key_topics:
             key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
 
@@ -129,9 +133,11 @@ OUTPUT FORMAT (strict)  return ONLY this:
 
         return reason(prompt, target_type=dict)
 
-    def generate_domain_questions(self, knowledge_area_description: str, key_topics: list = []) -> dict:
+    def generate_domain_questions(self, knowledge_area_description: str, key_topics: list = None) -> dict:
         """Main method to generate questions for a knowledge area until confidence threshold is reached"""
 
+        if key_topics is None:
+            key_topics = []
         print("<� Processing knowledge area")
 
         # Generate initial questions

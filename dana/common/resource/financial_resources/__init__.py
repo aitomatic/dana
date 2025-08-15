@@ -1,1 +1,0 @@
-"""Financial resources package."""

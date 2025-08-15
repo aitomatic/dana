@@ -9,10 +9,9 @@ import logging
 import os
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.types import BaseRequest
-
 from dana.api.services.code_handler import CodeHandler
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class AgentService:
 
         # Initialize LLM resource with better error handling
         try:
-            self.llm_resource = LLMResource(
+            self.llm_resource = LegacyLLMResource(
                 name="agent_generator_llm", description="LLM for generating Dana agent code", config=self.llm_config
             )
             logger.info("LLMResource created successfully")

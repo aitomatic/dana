@@ -28,7 +28,7 @@ Create a memory resource that agents can use:
 
 ```python
 # dana/common/resource/conversation_memory_resource.py
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_resource import BaseResource
 from dana.frameworks.memory import ConversationMemory
 
 class ConversationMemoryResource(BaseResource):

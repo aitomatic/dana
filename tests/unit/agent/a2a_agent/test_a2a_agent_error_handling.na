@@ -1,0 +1,301 @@
+# A2A Agent Error Handling Tests
+# Tests for a2a_agent error handling and edge cases
+# NOTE: a2a_agent is currently disabled in corelib due to recursion issues
+# These are placeholder tests that document what should be tested when available
+
+log_level("INFO")
+
+# Test 1: a2a_agent with invalid URL format
+def test_a2a_agent_invalid_url():
+    # Test a2a_agent with invalid URL format
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="not-a-valid-url")
+    #     if agent is None:
+    #         return "❌ a2a_agent invalid URL creation failed"
+    #     return "✅ a2a_agent invalid URL handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent invalid URL failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 2: a2a_agent with unreachable URL
+def test_a2a_agent_unreachable_url():
+    # Test a2a_agent with unreachable URL
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://unreachable-host-12345.com")
+    #     if agent is None:
+    #         return "❌ a2a_agent unreachable URL creation failed"
+    #     return "✅ a2a_agent unreachable URL handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent unreachable URL failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 3: a2a_agent with malformed headers
+def test_a2a_agent_malformed_headers():
+    # Test a2a_agent with malformed headers
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     headers = {"Invalid-Header": None, "Another-Header": 123}
+    #     agent = a2a_agent(url="http://localhost:8000/test", headers=headers)
+    #     if agent is None:
+    #         return "❌ a2a_agent malformed headers creation failed"
+    #     return "✅ a2a_agent malformed headers handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent malformed headers failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 4: a2a_agent with invalid timeout
+def test_a2a_agent_invalid_timeout():
+    # Test a2a_agent with invalid timeout values
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test", timeout=-1)
+    #     if agent is None:
+    #         return "❌ a2a_agent invalid timeout creation failed"
+    #     return "✅ a2a_agent invalid timeout handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent invalid timeout failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 5: a2a_agent with very large timeout
+def test_a2a_agent_large_timeout():
+    # Test a2a_agent with very large timeout value
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test", timeout=999999)
+    #     if agent is None:
+    #         return "❌ a2a_agent large timeout creation failed"
+    #     return "✅ a2a_agent large timeout handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent large timeout failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 6: a2a_agent with special characters in URL
+def test_a2a_agent_special_characters_url():
+    # Test a2a_agent with special characters in URL
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test@#$%^&*()")
+    #     if agent is None:
+    #         return "❌ a2a_agent special characters URL creation failed"
+    #     return "✅ a2a_agent special characters URL handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent special characters URL failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 7: a2a_agent with very long URL
+def test_a2a_agent_long_url():
+    # Test a2a_agent with very long URL
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     long_url = "http://localhost:8000/" + "x" * 1000
+    #     agent = a2a_agent(url=long_url)
+    #     if agent is None:
+    #         return "❌ a2a_agent long URL creation failed"
+    #     return "✅ a2a_agent long URL handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent long URL failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 8: a2a_agent with empty name
+def test_a2a_agent_empty_name():
+    # Test a2a_agent with empty name parameter
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(name="")
+    #     return "❌ a2a_agent should not accept empty name"
+    # except Exception as e:
+    #     if "requires at least" in str(e).lower():
+    #         return "✅ a2a_agent empty name handling works"
+    #     else:
+    #         return f"❌ a2a_agent empty name failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 9: a2a_agent with whitespace-only name
+def test_a2a_agent_whitespace_name():
+    # Test a2a_agent with whitespace-only name
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(name="   ")
+    #     return "❌ a2a_agent should not accept whitespace-only name"
+    # except Exception as e:
+    #     if "requires at least" in str(e).lower():
+    #         return "✅ a2a_agent whitespace name handling works"
+    #     else:
+    #         return f"❌ a2a_agent whitespace name failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 10: a2a_agent with special characters in name
+def test_a2a_agent_special_characters_name():
+    # Test a2a_agent with special characters in name
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(name="test@#$%^&*()")
+    #     if agent is None:
+    #         return "❌ a2a_agent special characters name creation failed"
+    #     return "✅ a2a_agent special characters name handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent special characters name failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 11: a2a_agent with very long name
+def test_a2a_agent_long_name():
+    # Test a2a_agent with very long name
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     long_name = "x" * 1000
+    #     agent = a2a_agent(name=long_name)
+    #     if agent is None:
+    #         return "❌ a2a_agent long name creation failed"
+    #     return "✅ a2a_agent long name handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent long name failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 12: a2a_agent method call with network error simulation
+def test_a2a_agent_network_error_simulation():
+    # Test a2a_agent method calls with simulated network errors
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://unreachable-host-12345.com")
+    #     try:
+    #         result = agent.plan("test task")
+    #         return "✅ a2a_agent network error simulation works (unexpected success)"
+    #     except Exception:
+    #         return "✅ a2a_agent network error simulation works (expected failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent network error simulation failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 13: a2a_agent method call with timeout simulation
+def test_a2a_agent_timeout_simulation():
+    # Test a2a_agent method calls with timeout simulation
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test", timeout=1)
+    #     try:
+    #         result = agent.solve("test problem")
+    #         return "✅ a2a_agent timeout simulation works"
+    #     except Exception:
+    #         return "✅ a2a_agent timeout simulation works (expected failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent timeout simulation failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 14: a2a_agent method call with invalid parameters
+def test_a2a_agent_method_invalid_parameters():
+    # Test a2a_agent method calls with invalid parameters
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result = agent.plan(None)
+    #         return "❌ a2a_agent should handle None parameter"
+    #     except Exception:
+    #         pass
+    #     try:
+    #         result = agent.solve(123)
+    #         return "✅ a2a_agent method invalid parameters handling works"
+    #     except Exception:
+    #         return "✅ a2a_agent method invalid parameters handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method invalid parameters failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 15: a2a_agent method call with empty parameters
+def test_a2a_agent_method_empty_parameters():
+    # Test a2a_agent method calls with empty parameters
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result = agent.chat("")
+    #         return "✅ a2a_agent method empty parameters handling works"
+    #     except Exception:
+    #         return "✅ a2a_agent method empty parameters handling works (expected failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method empty parameters failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Run error handling tests
+log("=== A2A Agent Error Handling Tests ===")
+log("⚠️  NOTE: a2a_agent is currently disabled in corelib")
+log("⚠️  These are placeholder tests documenting expected functionality")
+
+tests = [
+    test_a2a_agent_invalid_url,
+    test_a2a_agent_unreachable_url,
+    test_a2a_agent_malformed_headers,
+    test_a2a_agent_invalid_timeout,
+    test_a2a_agent_large_timeout,
+    test_a2a_agent_special_characters_url,
+    test_a2a_agent_long_url,
+    test_a2a_agent_empty_name,
+    test_a2a_agent_whitespace_name,
+    test_a2a_agent_special_characters_name,
+    test_a2a_agent_long_name,
+    test_a2a_agent_network_error_simulation,
+    test_a2a_agent_timeout_simulation,
+    test_a2a_agent_method_invalid_parameters,
+    test_a2a_agent_method_empty_parameters
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("⚠️"):
+            log(f"⚠️  Test {test_num}: {result}")
+            passed += 1  # Count placeholder tests as passed
+        elif result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Error Handling Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All error handling tests passed (placeholder mode)!")
+else:
+    log(f"⚠️  {failed} error handling tests failed")
+
+log("\n=== Next Steps ===")
+log("1. Enable a2a_agent in dana/libs/corelib/na_modules/__init__.na")
+log("2. Uncomment test implementations above")
+log("3. Run tests with real a2a_agent functionality")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests),
+    "status": "PLACEHOLDER"
+}

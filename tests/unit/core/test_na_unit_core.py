@@ -4,9 +4,10 @@ Test runner for frameworks .na test files.
 Automatically discovers and runs all test_*.na files in this directory.
 """
 
-import pytest
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
@@ -35,7 +36,7 @@ class TestFrameworks:
         with open(file_path) as f:
             code = f.read()
 
-        return self.interpreter._eval(code, self.context)
+        return self.interpreter._eval_source_code(code, self.context)
 
     @pytest.mark.parametrize("na_file", get_na_files())
     def test_frameworks_files(self, na_file: Path):

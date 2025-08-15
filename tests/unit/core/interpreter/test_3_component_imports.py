@@ -9,7 +9,7 @@ class TestComponentImports:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear module registry to ensure test isolation
-        from dana.core.runtime.modules.core import reset_module_system
+        from dana.__init__.init_modules import reset_module_system
 
         reset_module_system()
 

@@ -63,9 +63,13 @@ def old_reason_function(
     # Priority: function parameter > environment variable
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
-    # Get LLM resource from context using consolidated method
+    # Get LLM resource from context using system resource access
     llm_resource = context.get_system_llm_resource(use_mock=should_mock)
-    logger.info(f"LLMResource ID: {llm_resource.id}")
+
+    if llm_resource is None:
+        raise SandboxError("No LLM resource available in context")
+
+    logger.info(f"LLMResource: {llm_resource.name} (model: {llm_resource.model})")
 
     # Get resources from context once and reuse throughout the function
     resources = {}

@@ -1,0 +1,292 @@
+# Test advanced resource functionality and edge cases
+# This file tests complex resource scenarios, inheritance, and error handling
+
+def test_resource_composition():
+    """Test combining multiple resources for complex workflows."""
+    # Define a simple resource
+    resource SimpleResource:
+        name: str = "test"
+        value: int = 42
+    
+    # Define method
+    def (self: SimpleResource) get_info() -> str:
+        return f"{self.name}: {self.value}"
+    
+    # Create resource instance
+    simple = SimpleResource(name="composition", value=100)
+    
+    # Test resource
+    info = simple.get_info()
+    assert info == "composition: 100", f"Expected 'composition: 100', got '{info}'"
+    
+    log("✅ Resource composition test passed")
+
+def test_resource_inheritance_chain():
+    """Test resource inheritance with multiple levels."""
+    # Define a simple resource
+    resource InheritanceResource:
+        name: str = "base"
+        version: str = "1.0.0"
+        extra_field: str = "extra"
+    
+    # Define methods
+    def (self: InheritanceResource) get_info() -> str:
+        return f"{self.name} v{self.version}"
+    
+    def (self: InheritanceResource) get_extended_info() -> str:
+        return f"{self.get_info()} - {self.extra_field}"
+    
+    # Test resource
+    inheritance = InheritanceResource(name="test", extra_field="value")
+    
+    # Test fields
+    assert inheritance.name == "test", f"Expected 'test', got '{inheritance.name}'"
+    assert inheritance.version == "1.0.0", f"Expected '1.0.0', got '{inheritance.version}'"
+    assert inheritance.extra_field == "value", f"Expected 'value', got '{inheritance.extra_field}'"
+    
+    # Test methods
+    info = inheritance.get_extended_info()
+    assert info == "test v1.0.0 - value", f"Expected 'test v1.0.0 - value', got '{info}'"
+    
+    log("✅ Resource inheritance chain test passed")
+
+def test_resource_error_handling():
+    """Test resource error handling and edge cases."""
+    resource ErrorTestResource:
+        should_fail: bool = false
+        error_message: str = "Test error"
+    
+    # Define methods that can fail
+    def (self: ErrorTestResource) safe_operation() -> str:
+        if self.should_fail:
+            return f"ERROR: {self.error_message}"
+        return "success"
+    
+    def (self: ErrorTestResource) divide(a: float, b: float) -> str:
+        if b == 0:
+            return "ERROR: Division by zero"
+        return str(a / b)
+    
+    # Test normal operation
+    normal = ErrorTestResource()
+    result = normal.safe_operation()
+    assert result == "success", f"Expected 'success', got '{result}'"
+    
+    # Test error case
+    failing = ErrorTestResource(should_fail=true, error_message="Custom error")
+    result = failing.safe_operation()
+    assert result == "ERROR: Custom error", f"Expected 'ERROR: Custom error', got '{result}'"
+    
+    # Test division by zero
+    calc = ErrorTestResource()
+    result1 = calc.divide(10, 0)
+    assert result1 == "ERROR: Division by zero", f"Expected 'ERROR: Division by zero', got '{result1}'"
+    
+    # Test successful division
+    result2 = calc.divide(10, 2)
+    assert result2 == "5.0", f"Expected '5.0', got '{result2}'"
+    
+    log("✅ Resource error handling test passed")
+
+def test_resource_state_management():
+    """Test resource state management and transitions."""
+    resource StatefulResource:
+        current_state: str = "initialized"
+        transition_count: int = 0
+        last_transition: str = ""
+    
+    # Define state management methods
+    def (self: StatefulResource) transition_to(new_state: str) -> bool:
+        valid_transitions = {
+            "initialized": ["running", "error"],
+            "running": ["paused", "stopped", "error"],
+            "paused": ["running", "stopped", "error"],
+            "stopped": ["initialized", "error"],
+            "error": ["initialized"]
+        }
+        
+        if new_state in valid_transitions.get(self.current_state, []):
+            self.last_transition = f"{self.current_state} -> {new_state}"
+            self.current_state = new_state
+            self.transition_count += 1
+            return true
+        return false
+    
+    def (self: StatefulResource) get_status() -> str:
+        return f"{self.current_state} (transitions: {self.transition_count})"
+    
+    # Test state transitions
+    stateful = StatefulResource()
+    
+    # Initial state
+    assert stateful.current_state == "initialized", f"Expected 'initialized', got '{stateful.current_state}'"
+    assert stateful.transition_count == 0, f"Expected 0, got {stateful.transition_count}"
+    
+    # Valid transition
+    success = stateful.transition_to("running")
+    assert success == true, f"Expected true, got {success}"
+    assert stateful.current_state == "running", f"Expected 'running', got '{stateful.current_state}'"
+    assert stateful.transition_count == 1, f"Expected 1, got {stateful.transition_count}"
+    assert stateful.last_transition == "initialized -> running", f"Expected 'initialized -> running', got '{stateful.last_transition}'"
+    
+    # Another valid transition
+    success = stateful.transition_to("paused")
+    assert success == true, f"Expected true, got {success}"
+    assert stateful.current_state == "paused", f"Expected 'paused', got '{stateful.current_state}'"
+    
+    # Invalid transition
+    success = stateful.transition_to("initialized")
+    assert success == false, f"Expected false, got {success}"
+    assert stateful.current_state == "paused", f"Expected 'paused', got '{stateful.current_state}'"
+    
+    # Get status
+    status = stateful.get_status()
+    assert status == "paused (transitions: 2)", f"Expected 'paused (transitions: 2)', got '{status}'"
+    
+    log("✅ Resource state management test passed")
+
+def test_resource_with_complex_defaults():
+    """Test resources with complex default values."""
+    resource ComplexDefaultsResource:
+        config: dict = {"timeout": 30, "retries": 3, "backoff": 1.5}
+        tags: list = ["default", "test"]
+        nested: dict = {"level1": {"level2": {"value": 42}}}
+        computed: str = "computed_" + "value"
+    
+    # Create instance
+    complex = ComplexDefaultsResource()
+    
+    # Test complex defaults
+    assert complex.config["timeout"] == 30, f"Expected 30, got {complex.config['timeout']}"
+    assert complex.config["retries"] == 3, f"Expected 3, got {complex.config['retries']}"
+    assert complex.config["backoff"] == 1.5, f"Expected 1.5, got {complex.config['backoff']}"
+    
+    assert len(complex.tags) == 2, f"Expected 2, got {len(complex.tags)}"
+    assert complex.tags[0] == "default", f"Expected 'default', got '{complex.tags[0]}'"
+    assert complex.tags[1] == "test", f"Expected 'test', got '{complex.tags[1]}'"
+    
+    assert complex.nested["level1"]["level2"]["value"] == 42, f"Expected 42, got {complex.nested['level1']['level2']['value']}"
+    
+    # Test with custom values
+    custom = ComplexDefaultsResource(
+        config={"timeout": 60, "retries": 5},
+        tags=["custom", "production"],
+        nested={"custom": {"value": 100}}
+    )
+    
+    assert custom.config["timeout"] == 60, f"Expected 60, got {custom.config['timeout']}"
+    assert custom.config["retries"] == 5, f"Expected 5, got {custom.config['retries']}"
+    assert custom.tags[0] == "custom", f"Expected 'custom', got '{custom.tags[0]}'"
+    assert custom.nested["custom"]["value"] == 100, f"Expected 100, got {custom.nested['custom']['value']}"
+    
+    log("✅ Resource with complex defaults test passed")
+
+def test_resource_method_overloading():
+    """Test resource methods with different parameter patterns."""
+    resource OverloadTestResource:
+        data: dict = {}
+    
+    # Define methods with different parameter patterns
+    def (self: OverloadTestResource) get(key: str) -> str:
+        return self.data.get(key, "not_found")
+    
+    def (self: OverloadTestResource) get_with_default(key: str, default: str) -> str:
+        return self.data.get(key, default)
+    
+    def (self: OverloadTestResource) set(key: str, value: str) -> bool:
+        self.data[key] = value
+        return true
+    
+    def (self: OverloadTestResource) set_multiple(kwargs: dict) -> int:
+        count = 0
+        self.data["age"] = kwargs.get("age", 0)
+        self.data["city"] = kwargs.get("city", "")
+        self.data["active"] = kwargs.get("active", false)
+        count = 3
+        return count
+    
+    # Test method overloading
+    overload = OverloadTestResource()
+    
+    # Test set methods
+    success = overload.set("name", "test")
+    assert success == true, f"Expected true, got {success}"
+    
+    count = overload.set_multiple({"age": 25, "city": "NYC", "active": true})
+    assert count == 3, f"Expected 3, got {count}"
+    
+    # Test get methods
+    name = overload.get("name")
+    assert name == "test", f"Expected 'test', got '{name}'"
+    
+    age = overload.get_with_default("age", "unknown")
+    assert age == 25, f"Expected 25, got {age}"
+    
+    missing = overload.get("missing")
+    assert missing == "not_found", f"Expected 'not_found', got '{missing}'"
+    
+    missing_with_default = overload.get_with_default("missing", "default_value")
+    assert missing_with_default == "default_value", f"Expected 'default_value', got '{missing_with_default}'"
+    
+    log("✅ Resource method overloading test passed")
+
+def test_resource_context_managers():
+    """Test resource context manager behavior."""
+    resource ContextResource:
+        is_open: bool = false
+        operation_count: int = 0
+    
+    # Define manual context management methods
+    def (self: ContextResource) open() -> bool:
+        self.is_open = true
+        return true
+    
+    def (self: ContextResource) close() -> bool:
+        self.is_open = false
+        return true
+    
+    def (self: ContextResource) operation() -> str:
+        if not self.is_open:
+            return "ERROR: Resource not open"
+        self.operation_count += 1
+        return f"Operation {self.operation_count} completed"
+    
+    # Test manual context management
+    context = ContextResource()
+    
+    # Test operations when closed
+    result1 = context.operation()
+    assert result1 == "ERROR: Resource not open", f"Expected error, got '{result1}'"
+    
+    # Test opening resource
+    open_success = context.open()
+    assert open_success == true, f"Expected true, got {open_success}"
+    assert context.is_open == true, f"Expected true, got {context.is_open}"
+    
+    # Test operations when open
+    result2 = context.operation()
+    assert result2 == "Operation 1 completed", f"Expected 'Operation 1 completed', got '{result2}'"
+    
+    result3 = context.operation()
+    assert result3 == "Operation 2 completed", f"Expected 'Operation 2 completed', got '{result3}'"
+    
+    # Test closing resource
+    close_success = context.close()
+    assert close_success == true, f"Expected true, got {close_success}"
+    assert context.is_open == false, f"Expected false, got {context.is_open}"
+    
+    # Test operations when closed again
+    result4 = context.operation()
+    assert result4 == "ERROR: Resource not open", f"Expected error, got '{result4}'"
+    
+    log("✅ Resource context managers test passed")
+
+log_level("INFO")
+test_resource_composition()
+test_resource_inheritance_chain()
+test_resource_error_handling()
+test_resource_state_management()
+test_resource_with_complex_defaults()
+test_resource_method_overloading()
+test_resource_context_managers()
+log("🎉 All advanced resource tests completed successfully!")

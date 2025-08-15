@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from dana.common.exceptions import LLMError
 from dana.common.mixins.queryable import QueryStrategy
-from dana.common.resource.llm.llm_query_executor import LLMQueryExecutor
+from dana.common.sys_resource.llm.llm_query_executor import LLMQueryExecutor
 from dana.common.utils.misc import Misc
 
 

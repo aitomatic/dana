@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import BaseRequest, BaseResponse, LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import BaseRequest, BaseResponse, LegacyLLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
@@ -130,7 +130,7 @@ Return your validation as JSON in this exact format:
 
     def __init__(
         self,
-        llm_resource: LLMResource | None = None,
+        llm_resource: LegacyLLMResource | None = None,
         confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
         max_expansions: int = DEFAULT_MAX_EXPANSIONS,
     ):

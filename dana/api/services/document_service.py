@@ -13,7 +13,7 @@ from typing import BinaryIO
 
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
-from dana.common.resource.rag.rag_resource import RAGResource
+from dana.common.sys_resource.rag.rag_resource import RAGResource
 
 logger = logging.getLogger(__name__)
 
