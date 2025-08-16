@@ -1,5 +1,5 @@
 from dana.frameworks.knows.corral.curate_general_kb.py.prompts import CREATE_ROOT_PROMPT, EXTENSION_PROMPT
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 from dana.core.lang.sandbox_context import SandboxContext
 
 

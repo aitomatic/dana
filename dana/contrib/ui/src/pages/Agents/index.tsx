@@ -149,6 +149,8 @@ export default function AgentsPage() {
               (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
           )}
           navigate={navigate}
+          handleCreateAgent={handleCreateAgent}
+          creating={creating}
         />
       )}
       {activeTab === 'Explore' && (

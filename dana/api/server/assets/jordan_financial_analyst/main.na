@@ -6,7 +6,7 @@ from common import FINAL_ANSWER_PROMPT
 
 set_model("openai:gpt-4.1")
 
-agent JordanBelfort:
+agent_blueprint JordanBelfort:
     name: str = "Jordan Belfort"
     description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
     max_iteration: int = 10

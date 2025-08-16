@@ -1,0 +1,41 @@
+from methods import execute_step
+from methods import compress_context
+from methods import validate_completion
+from methods import plan_ahead
+from methods import classify_complexity
+from methods import initialize_simple_query
+from methods import initialize_complex_query
+from methods import execute_multi_step
+from methods import generate_final_response
+
+# === Core Pipeline Definitions using Dana's pipe operator ===
+
+# Single step workflow: execute → compress → validate
+def workflow(state) = execute_step | compress_context | validate_completion
+
+# Simple execution: initialize → single step workflow
+def simple_execution_pipeline(state) = initialize_simple_query | workflow
+
+# Complex execution: initialize → plan → multi-step execution
+def complex_execution_pipeline(state) = initialize_complex_query | plan_ahead | execute_multi_step
+
+# === Main Entry Point ===
+
+# Main query solver: classify → route to appropriate pipeline → generate final response
+def solve_query(state) = classify_complexity | route_to_workflow | generate_final_response
+
+# === Routing Logic ===
+
+def route_to_workflow(state):
+    """Route state to simple or complex workflow based on classification"""
+    if state.complexity and state.complexity["level"] == "SIMPLE":
+        return simple_execution_pipeline(state)
+    else:
+        return complex_execution_pipeline(state)
+
+# === Alternative Pipeline Compositions ===
+
+# Direct pipelines for specific use cases
+def simple_query_pipeline(state) = classify_complexity | initialize_simple_query | workflow | generate_final_response
+
+def complex_query_pipeline(state) = classify_complexity | initialize_complex_query | plan_ahead | execute_multi_step | generate_final_response

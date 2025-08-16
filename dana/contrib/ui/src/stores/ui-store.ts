@@ -10,6 +10,13 @@ export interface UIState {
   currentPage: string;
   sidebarCollapsed: boolean;
 
+  // Sidebar States
+  isChatSidebarOpen: boolean;
+
+  // Agent Detail Tab States
+  agentDetailActiveTab: string;
+  knowledgeBaseActiveSubTab: string;
+
   // Theme & Appearance
   theme: 'light' | 'dark' | 'system';
   sidebarWidth: number;
@@ -37,6 +44,15 @@ export interface UIState {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
 
+  // Sidebar Actions
+  openChatSidebar: () => void;
+  closeChatSidebar: () => void;
+  toggleChatSidebar: () => void;
+
+  // Agent Detail Tab Actions
+  setAgentDetailActiveTab: (tab: string) => void;
+  setKnowledgeBaseActiveSubTab: (subTab: string) => void;
+
   // Theme Actions
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setSidebarWidth: (width: number) => void;
@@ -57,6 +73,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   isHelpDialogOpen: false,
   currentPage: 'dashboard',
   sidebarCollapsed: false,
+  isChatSidebarOpen: false,
+  agentDetailActiveTab: 'Overview',
+  knowledgeBaseActiveSubTab: 'Domain Knowledge',
   theme: 'system',
   sidebarWidth: 280,
   notifications: [],
@@ -73,6 +92,15 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCurrentPage: (page: string) => set({ currentPage: page }),
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed: boolean) => set({ sidebarCollapsed: collapsed }),
+
+  // Sidebar Actions
+  openChatSidebar: () => set({ isChatSidebarOpen: true }),
+  closeChatSidebar: () => set({ isChatSidebarOpen: false }),
+  toggleChatSidebar: () => set((state) => ({ isChatSidebarOpen: !state.isChatSidebarOpen })),
+
+  // Agent Detail Tab Actions
+  setAgentDetailActiveTab: (tab: string) => set({ agentDetailActiveTab: tab }),
+  setKnowledgeBaseActiveSubTab: (subTab: string) => set({ knowledgeBaseActiveSubTab: subTab }),
 
   // Theme Actions
   setTheme: (theme: 'light' | 'dark' | 'system') => set({ theme }),
@@ -112,6 +140,9 @@ export const useUIStore = create<UIState>((set, get) => ({
       isHelpDialogOpen: false,
       currentPage: 'dashboard',
       sidebarCollapsed: false,
+      isChatSidebarOpen: false,
+      agentDetailActiveTab: 'Overview',
+      knowledgeBaseActiveSubTab: 'Domain Knowledge',
       theme: 'system',
       sidebarWidth: 280,
       notifications: [],

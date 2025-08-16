@@ -1,0 +1,50 @@
+# Demo script to show TUI log panel capturing existing Dana logging system messages
+# Run this with: dana demos/tui_logging_demo.na
+
+# Import the Dana logging system
+from dana.common.utils import DANA_LOGGER
+
+# Test different log levels that will be captured by the TUI log panel
+DANA_LOGGER.debug("This is a DEBUG message from DANA_LOGGER")
+DANA_LOGGER.info("This is an INFO message from DANA_LOGGER")
+DANA_LOGGER.warning("This is a WARNING message from DANA_LOGGER")
+DANA_LOGGER.error("This is an ERROR message from DANA_LOGGER")
+
+# Test logging from different Dana modules
+from dana.common.mixins.loggable import Loggable
+
+class TestService(Loggable):
+    def __init__(self):
+        super().__init__()
+        self.info("TestService initialized - this should appear in TUI log panel")
+    
+    def do_something(self):
+        self.debug("Doing something...")
+        self.info("Something completed successfully")
+        self.warning("Something might be wrong")
+
+# Create and use a service to demonstrate Loggable mixin logging
+service = TestService()
+service.do_something()
+
+# Test the py_log function from Dana standard library
+py_log("This is a message from py_log function", "INFO")
+py_log("This is a debug message", "DEBUG")
+py_log("This is a warning message", "WARNING")
+
+# Test logging from different namespaces
+import logging
+logger1 = logging.getLogger("dana.api")
+logger1.info("Message from dana.api logger")
+
+logger2 = logging.getLogger("dana.core")
+logger2.warning("Message from dana.core logger")
+
+logger3 = logging.getLogger("dana.agent")
+logger3.error("Message from dana.agent logger")
+
+# Test root logger messages
+root_logger = logging.getLogger()
+root_logger.info("Message from root logger")
+
+print("Demo completed! Check the TUI log panel (Ctrl+Shift+L) to see these messages.")
