@@ -643,7 +643,7 @@ class StatementExecutor(BaseExecutor):
                 self._bind_declarative_function_parameters(node.parameters, args, kwargs, func_context)
 
                 # Execute the composition expression
-                return self._execute_composition(node.composition, func_context, args, kwargs)
+                return self._execute_composition(node.composition, func_context, args)
 
             return wrapper
 
@@ -737,14 +737,13 @@ class StatementExecutor(BaseExecutor):
         if len(args) > len(param_names):
             raise TypeError(f"Too many positional arguments: expected {len(param_names)}, got {len(args)}")
 
-    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple, kwargs: dict = None) -> Any:
+    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple) -> Any:
         """Execute the composition expression and handle the result appropriately.
 
         Args:
             composition: The composition expression to execute
             func_context: The function execution context
             args: The arguments passed to the function
-            kwargs: The keyword arguments passed to the function
 
         Returns:
             The result of executing the composition
@@ -766,15 +765,15 @@ class StatementExecutor(BaseExecutor):
         from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         if isinstance(composed_func, SandboxFunction):
-            if args or kwargs:
-                return composed_func.execute(func_context, *args, **(kwargs or {}))
+            if args:
+                return composed_func.execute(func_context, *args)
             else:
                 return composed_func.execute(func_context)
 
         # If the composition is a regular callable, call it with all arguments
         elif callable(composed_func):
-            if args or kwargs:
-                return composed_func(*args, **(kwargs or {}))
+            if args:
+                return composed_func(*args)  # Pass all arguments, not just the first
             else:
                 return composed_func()
         else:

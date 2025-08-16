@@ -615,10 +615,14 @@ class TypeAwareMethodRegistry:
 struct_function_registry = _StructFunctionRegistry()
 type_registry = _TypeRegistry()
 
-# Keep the old global instances for compatibility
-type_aware_method_registry = struct_function_registry
-method_registry = struct_function_registry
-universal_dana_method_registry = struct_function_registry
+# Make all method registries point to the global registry's struct_functions
+# to ensure consistency across the system
+from dana.registry import get_global_registry
+
+global_registry = get_global_registry()
+type_aware_method_registry = global_registry.struct_functions
+method_registry = global_registry.struct_functions
+universal_dana_method_registry = global_registry.struct_functions
 
 
 # === Utility Functions (restored for backward compatibility) ===

@@ -181,9 +181,9 @@ class TestAgentRegistryIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registries.type_registry import agent_type_registry
+        from dana.registry import get_global_registry
 
-        agent_type_registry.types.clear()
+        get_global_registry().types.clear()
 
     def test_agent_type_registration_in_struct_registry(self):
         """Test that agent types are properly registered in struct registry."""
@@ -193,7 +193,7 @@ class TestAgentRegistryIntegration(unittest.TestCase):
         register_agent_type(agent_type)
 
         # Check that it's in the agent registry
-        from dana.registries import get_agent_type
+        from dana.registry import get_agent_type
 
         agent_registry_type = get_agent_type("TestAgent")
         self.assertIs(agent_registry_type, agent_type)

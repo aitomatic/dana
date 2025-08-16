@@ -229,12 +229,11 @@ class AgentType(StructType):
     def agent_methods(self) -> dict[str, Callable]:
         """Get all agent methods for this type."""
         methods = {}
-        # Get all methods registered for this agent type from the registry
-        from dana.registry.struct_function_registry import StructFunctionRegistry
+        # Get all methods registered for this agent type from the global registry
+        from dana.registry import get_global_registry
 
-        # Access the internal registry to find all methods for this agent type
-        registry = StructFunctionRegistry()
-        for (receiver_type, method_name), method in registry._methods.items():
+        registry = get_global_registry()
+        for (receiver_type, method_name), method in registry.struct_functions._methods.items():
             if receiver_type == self.name:
                 methods[method_name] = method
 
