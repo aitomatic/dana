@@ -211,7 +211,7 @@ class DocumentService:
 
     async def delete_document(self, document_id: int, db_session) -> bool:
         """
-        Delete a document.
+        Delete a document and its related extraction files.
 
         Args:
             document_id: The document ID
@@ -225,20 +225,53 @@ class DocumentService:
             if not document:
                 return False
 
-            # Delete file from disk
             import os
 
-            if document.file_path and os.path.exists(document.file_path):
-                os.remove(document.file_path)
+            # First, find and delete any extraction files that reference this document
+            extraction_files = db_session.query(Document).filter(Document.source_document_id == document_id).all()
 
-            # Delete database record
+            if extraction_files:
+                logger.info("Found %d extraction files to delete for document %d", len(extraction_files), document_id)
+                for extraction_file in extraction_files:
+                    # Delete extraction file from disk
+                    if extraction_file.file_path:
+                        # Extraction files store relative paths, so always join with upload directory
+                        file_path = os.path.join(self.upload_directory, extraction_file.file_path)
+
+                        if os.path.exists(file_path):
+                            try:
+                                os.remove(file_path)
+                                logger.info("Deleted extraction file: %s", file_path)
+                            except Exception as file_error:
+                                logger.warning("Could not delete extraction file %s: %s", file_path, file_error)
+                        else:
+                            logger.warning("Extraction file not found: %s", file_path)
+
+                    # Delete extraction file database record
+                    db_session.delete(extraction_file)
+
+                logger.info("Deleted %d extraction files for document %d", len(extraction_files), document_id)
+
+            # Delete the main document file from disk
+            if document.file_path:
+                # Main documents store absolute paths, so use as-is
+                file_path = document.file_path
+
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info("Deleted main document file: %s", file_path)
+                else:
+                    logger.warning("Main document file not found: %s", file_path)
+
+            # Delete the main document database record
             db_session.delete(document)
             db_session.commit()
 
+            logger.info("Successfully deleted document %d and %d related extraction files", document_id, len(extraction_files))
             return True
 
         except Exception as e:
-            logger.error(f"Error deleting document {document_id}: {e}")
+            logger.error("Error deleting document %d: %s", document_id, e)
             raise
 
     async def list_documents(
@@ -259,6 +292,9 @@ class DocumentService:
         """
         try:
             query = db_session.query(Document)
+
+            # Exclude documents that have source_document_id (extraction files)
+            query = query.filter(Document.source_document_id.is_(None))
 
             if topic_id is not None:
                 query = query.filter(Document.topic_id == topic_id)
@@ -307,6 +343,8 @@ class DocumentService:
         except Exception as e:
             logger.error(f"Error getting file path for document {document_id}: {e}")
             raise
+
+
 
     def _get_mime_type(self, filename: str) -> str:
         """
@@ -387,7 +425,8 @@ class DocumentService:
                 logger.info(f"Building RAG index for agent {agent_id} with {len(source_paths)} documents")
 
                 # Create agent-specific cache directory
-                cache_dir = os.path.join(folder_path, ".rag_cache")
+                cache_dir = os.path.abspath(os.path.join(folder_path, ".cache/rag"))
+                
 
                 # Create RAG resource with force_reload to rebuild index
                 rag_resource = RAGResource(
