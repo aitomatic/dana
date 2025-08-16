@@ -57,7 +57,9 @@ class TerminalREPL(Vertical):
             self._output.write("  • Lines ending with ':' automatically enter multi-line mode")
             self._output.write("  • Use \\ to add a new line and enter/stay in multi-line mode")
             self._output.write("  • An empty line executes the multi-line code")
-            self._output.write("Use ↑↓ for history navigation.")
+            self._output.write("Navigation:")
+            self._output.write("  • Use ↑↓ arrows to navigate command history")
+            self._output.write("  • History persists between sessions")
             self._output.write("")  # Empty line
 
         # Connect prompt widget to input widget

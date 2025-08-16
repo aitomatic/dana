@@ -12,101 +12,14 @@ from textual.binding import Binding
 from textual.events import Key
 from textual.message import Message
 from textual.widgets import Input, TextArea
-from textual_autocomplete import AutoComplete, DropdownItem, TargetState
+# Removed autocomplete imports - using history navigation only
 
 from dana.common import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 from ..ui.syntax_highlighter import dana_highlighter
 
-_DANA_KEYWORDS = [
-    # Control flow
-    "if",
-    "else",
-    "elif",
-    "for",
-    "while",
-    "break",
-    "continue",
-    "pass",
-    # Functions and methods
-    "def",
-    "return",
-    "deliver",
-    "lambda",
-    # Data structures and types
-    "struct",
-    "resource",
-    "agent",
-    "agent_blueprint",
-    "agent_pool",
-    # Type annotations
-    "int",
-    "float",
-    "str",
-    "bool",
-    "list",
-    "dict",
-    "tuple",
-    "set",
-    "None",
-    "any",
-    # Exception handling
-    "try",
-    "except",
-    "finally",
-    "raise",
-    "assert",
-    # Context management
-    "with",
-    "as",
-    # Import/export
-    "import",
-    "from",
-    "export",
-    "use",
-    # Scope modifiers
-    "private",
-    "public",
-    "local",
-    "system",
-    # Logical operators
-    "and",
-    "or",
-    "not",
-    "in",
-    "is",
-    # Other keywords
-    "True",
-    "False",
-    "None",
-]
-
-_DANA_FUNCTIONS = [
-    "print",
-    "len",
-    "str",
-    "int",
-    "float",
-    "bool",
-    "list",
-    "dict",
-    "tuple",
-    "set",
-    "range",
-    "enumerate",
-    "zip",
-    "sum",
-    "max",
-    "min",
-    "abs",
-    "sorted",
-    "reversed",
-    "filter",
-    "map",
-    "any",
-    "all",
-]
+# Removed Dana keywords and functions lists - no longer needed for autocomplete
 
 
 class _DanaInput(Input):
@@ -182,7 +95,7 @@ class PromptStyleTextArea(TextArea):
 
         # The Input widgets are the source of truth for user interaction.
         self._input_lines: list[_DanaInput] = []
-        self._autocomplete: AutoComplete | None = None
+        # Removed autocomplete - using history navigation only
 
         # Reference to prompt widget (will be set by parent)
         self._prompt = None
@@ -222,130 +135,19 @@ class PromptStyleTextArea(TextArea):
         new_input = _DanaInput(owner=self, placeholder="", classes="overlay-input", index=index, highlighter=dana_highlighter)
         self._input_lines.append(new_input)
         self.mount(new_input)
-        # new_input.focus()
-
-        # Autocomplete is driven by the currently focused input widget
-        self._autocomplete = AutoComplete(
-            target=self._input_lines[0],
-            candidates=self._get_dana_completions,
-            prevent_default_enter=False,
-        )
-        self.app.mount(self._autocomplete)
-
-    def _get_dana_completions(self, state) -> list[DropdownItem]:
-        """Get Dana completion candidates for textual_autocomplete."""
-        word = state.text
-        if not word:
-            return []
-
-        completions: list[DropdownItem] = []
-
-        # Filter keywords and functions that start with the word
-        for keyword in _DANA_KEYWORDS:
-            if keyword.startswith(word):
-                completions.append(DropdownItem(keyword))
-
-        for func in _DANA_FUNCTIONS:
-            if func.startswith(word):
-                completions.append(DropdownItem(f"{func}("))
-
-        # Add history completions
-        history_completions = self._get_history_completions(word)
-        completions.extend(DropdownItem(c) for c in history_completions)
-
-        return sorted(completions, key=lambda c: c.value)
-
-    def _get_history_completions(self, word: str) -> list[str]:
-        """Get completions from command history."""
-        if not word or not self._history:
-            return []
-
-        completions = []
-
-        # Look for history entries that start with the word
-        for entry in reversed(self._history):  # Most recent first
-            if entry.strip().startswith(word):
-                # Extract the first word or identifier from the history entry
-                first_word = self._extract_first_word(entry.strip())
-                if first_word and first_word not in completions:
-                    completions.append(first_word)
-
-        # Also look for any word in history that starts with our word
-        for entry in reversed(self._history):
-            words = entry.split()
-            for word_in_entry in words:
-                if word_in_entry.startswith(word) and word_in_entry not in completions:
-                    completions.append(word_in_entry)
-
-        return completions[:10]  # Limit to 10 history completions
-
-    def _extract_first_word(self, text: str) -> str:
-        """Extract the first word or identifier from text."""
-        if not text:
-            return ""
-
-        # Skip leading whitespace
-        start = 0
-        while start < len(text) and text[start].isspace():
-            start += 1
-
-        if start >= len(text):
-            return ""
-
-        # Find the end of the first word/identifier
-        end = start
-        while end < len(text) and (text[end].isalnum() or text[end] in "_"):
-            end += 1
-
-        return text[start:end]
-
-    def _update_autocomplete_candidates(self) -> None:
-        """Update the autocomplete candidates based on the current word."""
-        if not self._input_lines or not self._autocomplete:
-            return
-
-        # Update candidates for the currently focused input widget
-        word = self._get_word_under_cursor()
-        if not word:
-            self._autocomplete.candidates = []
-            return
-
-        # Update candidates
-        self._autocomplete.candidates = self._get_dana_completions(TargetState(text=word, cursor_position=len(word)))
-
-    def _get_word_under_cursor(self) -> str:
-        """Extract the word under the cursor from the overlay input."""
-        if not self._input_lines:
-            return ""
-        text = self._input_lines[-1].value
-        cursor_pos = self._input_lines[-1].cursor_position
-
-        start = cursor_pos
-        while start > 0 and (text[start - 1].isalnum() or text[start - 1] == "_"):
-            start -= 1
-
-        end = cursor_pos
-        while end < len(text) and (text[end].isalnum() or text[end] == "_"):
-            end += 1
-
-        return text[start:end]
+        # Removed autocomplete setup - using history navigation only
 
     @on(Input.Changed)
     def _on_input_changed(self, event: Input.Changed) -> None:
-        """Handle input changes to update autocomplete and sync text for syntax highlighting."""
-        if event.input in self._input_lines:
-            self._update_autocomplete_candidates()
+        """Handle input changes for syntax highlighting."""
+        # Autocomplete removed - just handle text changes for syntax highlighting
+        pass
 
     @on(Input.Submitted)
     def _on_input_submitted(self, event: Input.Submitted | None = None) -> None:
         """Handle command submission from any Input widget."""
         if event and hasattr(event, "input"):
             if event.input not in self._input_lines:
-                return
-
-            # If autocomplete is open, Enter should select the item, not submit.
-            if self._autocomplete and self._autocomplete.styles.display == "block":
-                event.input.focus()
                 return
 
         # Combine text from all input lines, stripping trailing whitespace from each

@@ -53,7 +53,6 @@ dependencies = [
     "prompt-toolkit",
     "pygments",
     "textual",
-    "textual-autocomplete>=4.0.5",
     "pyperclip",
     # Web Automation
     "playwright",
