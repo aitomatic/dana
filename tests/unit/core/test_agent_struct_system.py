@@ -5,16 +5,13 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 
 import unittest
 
-from dana.agent import (
-    AgentInstance,
-    AgentType,
-    AgentTypeRegistry,
-    create_agent_instance,
-    get_agent_type,
-    register_agent_type,
-)
+from dana.agent import AgentInstance, AgentType, create_agent_instance
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import get_agent_type, get_global_registry, register_agent_type
+
+# For backward compatibility
+global_agent_type_registry = get_global_registry().types
 
 
 class TestAgentStructType(unittest.TestCase):
@@ -182,17 +179,18 @@ class TestAgentTypeRegistry(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.registry = AgentTypeRegistry()
+        self.registry = global_agent_type_registry
+        # Clear registry to ensure clean state for each test
+        self.registry.types.clear()
 
     def test_singleton_pattern(self):
-        """Test that AgentTypeRegistry is a singleton."""
-        # Note: The registry is not actually a singleton in the current implementation
-        # This test is updated to reflect the actual behavior
-        registry1 = AgentTypeRegistry()
-        registry2 = AgentTypeRegistry()
+        """Test that global_agent_type_registry follows singleton pattern."""
+        # The global registry should be a singleton
+        registry1 = global_agent_type_registry
+        registry2 = global_agent_type_registry
 
-        # They should be different instances in the current implementation
-        self.assertIsNot(registry1, registry2)
+        # They should be the same instance with singleton pattern
+        self.assertIs(registry1, registry2)
 
     def test_register_and_get_agent_type(self):
         """Test registering and retrieving agent types."""
@@ -203,6 +201,7 @@ class TestAgentTypeRegistry(unittest.TestCase):
 
         # Retrieve the agent type
         retrieved_type = self.registry.get_agent_type("TestAgent")
+        # Check that we get the same agent type back (object identity should be preserved)
         self.assertIs(retrieved_type, agent_type)
 
     def test_get_nonexistent_agent_type(self):
@@ -231,9 +230,15 @@ class TestHelperFunctions(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import get_global_registry
 
-        StructTypeRegistry.clear()
+        get_global_registry().types.clear()
+
+    def tearDown(self):
+        """Clean up after tests."""
+        from dana.registry import get_global_registry
+
+        get_global_registry().types.clear()
 
     def test_register_agent_type(self):
         """Test register_agent_type helper function."""
@@ -284,9 +289,15 @@ class TestAgentStructIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import get_global_registry
 
-        StructTypeRegistry.clear()
+        get_global_registry().types.clear()
+
+    def tearDown(self):
+        """Clean up after tests."""
+        from dana.registry import get_global_registry
+
+        get_global_registry().types.clear()
 
     def test_agent_type_in_struct_registry(self):
         """Test that agent types are registered in struct registry."""

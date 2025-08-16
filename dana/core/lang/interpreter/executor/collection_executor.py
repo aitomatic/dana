@@ -100,8 +100,10 @@ class CollectionExecutor(BaseExecutor):
             key_result = self.parent.execute(key, context)
             value_result = self.parent.execute(value, context)
             # Auto-resolve any promises
-            resolved_key = key_result._ensure_resolved() if hasattr(key_result, "_ensure_resolved") else key_result
-            resolved_value = value_result._ensure_resolved() if hasattr(value_result, "_ensure_resolved") else value_result
+            from dana.core.concurrency import resolve_if_promise
+
+            resolved_key = resolve_if_promise(key_result)
+            resolved_value = resolve_if_promise(value_result)
             result[resolved_key] = resolved_value
         return result
 

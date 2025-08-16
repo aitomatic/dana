@@ -280,7 +280,7 @@ class REPL(Loggable):
                 return result.result
             else:
                 # Log debug information but don't print to user
-                self.debug(f"Sandbox execution failed: {result.error}")
+                self.error(f"Sandbox execution failed: {result.error}")
                 if result.error is not None and hasattr(result.error, "__traceback__"):
                     import traceback
 
