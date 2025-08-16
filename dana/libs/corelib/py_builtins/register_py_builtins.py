@@ -40,13 +40,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_max(*args):
         """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("max expected at least 1 argument, got 0")
@@ -66,13 +63,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_min(*args):
         """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("min expected at least 1 argument, got 0")
@@ -92,13 +86,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_sum(*args):
         """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 1:
             return sum(resolved_args[0])  # sum([1,2,3])

@@ -16,6 +16,21 @@ from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType, universal_dana_method_registry
 from dana.core.lang.sandbox_context import SandboxContext
 
+# --- Registry Integration ---
+# Import the centralized registry from the new location
+
+# Re-export for backward compatibility
+__all__ = getattr(globals(), "__all__", [])
+__all__.extend(
+    [
+        "AgentTypeRegistry",
+        "global_agent_type_registry",
+        "register_agent_type",
+        "get_agent_type",
+        "create_agent_instance",
+    ]
+)
+
 # --- Default Agent Method Implementations ---
 
 
@@ -215,10 +230,11 @@ class AgentType(StructType):
         """Get all agent methods for this type."""
         methods = {}
         # Get all methods registered for this agent type from the registry
-        from dana.core.lang.interpreter.struct_system import TypeAwareMethodRegistry
+        from dana.registry.struct_function_registry import StructFunctionRegistry
 
         # Access the internal registry to find all methods for this agent type
-        for (receiver_type, method_name), method in TypeAwareMethodRegistry._methods.items():
+        registry = StructFunctionRegistry()
+        for (receiver_type, method_name), method in registry._methods.items():
             if receiver_type == self.name:
                 methods[method_name] = method
 
@@ -410,11 +426,19 @@ class AgentInstance(StructInstance):
 
             # Fallback to sandbox context if agent's LLM is not available
             if sandbox_context is not None:
-                # Look for LLM resource in agent's available resources
-                resources = sandbox_context.get_resources()
-                for _, resource in resources.items():
-                    if hasattr(resource, "kind") and resource.kind == "llm":
-                        return resource
+                # Use the system LLM resource from context
+                system_llm = sandbox_context.get_system_llm_resource()
+                if system_llm is not None:
+                    return system_llm
+
+                # Fallback to looking for any LLM resource in context
+                try:
+                    resources = sandbox_context.get_resources()
+                    for _, resource in resources.items():
+                        if hasattr(resource, "kind") and resource.kind == "llm":
+                            return resource
+                except Exception:
+                    pass
             return None
         except Exception:
             return None
@@ -588,66 +612,14 @@ class AgentInstance(StructInstance):
         return True
 
 
-# --- Agent Type Registry ---
-
-
-class AgentTypeRegistry:
-    """Registry for agent struct types.
-
-    Extends the existing StructTypeRegistry to handle agent types.
-    """
-
-    def __init__(self):
-        self._agent_types: dict[str, AgentType] = {}
-
-    def register_agent_type(self, agent_type: AgentType) -> None:
-        """Register an agent struct type."""
-        self._agent_types[agent_type.name] = agent_type
-
-    def get_agent_type(self, name: str) -> AgentType | None:
-        """Get an agent struct type by name."""
-        return self._agent_types.get(name)
-
-    def list_agent_types(self) -> list[str]:
-        """List all registered agent type names."""
-        return list(self._agent_types.keys())
-
-    def create_agent_instance(self, name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
-        """Create an agent struct instance."""
-        agent_type = self.get_agent_type(name)
-        if not agent_type:
-            raise ValueError(f"Unknown agent type: {name}")
-
-        # Create instance with field values
-        instance = AgentInstance(agent_type, field_values)
-
-        return instance
-
-
-# --- Global Registry Instance ---
-
-# Global registry for agent struct types
-agent_type_registry = AgentTypeRegistry()
-
-
-# --- Utility Functions ---
-
-
-def register_agent_type(agent_type: AgentType) -> None:
-    """Register an agent struct type in the global registry."""
-    agent_type_registry.register_agent_type(agent_type)
-
-    # Also register in the struct registry so method dispatch can find it
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-
-    StructTypeRegistry.register(agent_type)
-
-
-def get_agent_type(name: str) -> AgentType | None:
-    """Get an agent struct type from the global registry."""
-    return agent_type_registry.get_agent_type(name)
-
-
-def create_agent_instance(name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
-    """Create an agent struct instance using the global registry."""
-    return agent_type_registry.create_agent_instance(name, field_values, context)
+# Re-export for backward compatibility
+__all__ = getattr(globals(), "__all__", [])
+__all__.extend(
+    [
+        "AgentTypeRegistry",
+        "global_agent_type_registry",
+        "register_agent_type",
+        "get_agent_type",
+        "create_agent_instance",
+    ]
+)

@@ -113,11 +113,10 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from dana.core.lang.interpreter.functions.function_registry import (
-            FunctionRegistry,
-        )
+        # Use the global registry instead of creating a new one
+        from dana.registry import get_global_registry
 
-        self._function_registry = FunctionRegistry()
+        self._function_registry = get_global_registry().functions
 
         # Apply the feature flag if set on the Interpreter class
         if hasattr(self.__class__, "_function_registry_use_arg_processor"):
