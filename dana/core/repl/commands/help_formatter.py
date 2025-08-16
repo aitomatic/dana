@@ -76,7 +76,7 @@ class HelpFormatter(Loggable):
         try:
             # Get all core functions from the registry
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("system")
+            core_functions = registry.list_functions("system")
 
             if not core_functions:
                 print_formatted_text(ANSI(f"  {self.colors.error('No core functions found')}"))
@@ -135,7 +135,7 @@ class HelpFormatter(Loggable):
         try:
             # Get all core functions from the registry
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("system")
+            core_functions = registry.list_functions("system")
 
             if not core_functions:
                 print("  No core functions found")

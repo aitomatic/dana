@@ -73,7 +73,7 @@ class StatusBarManager:
             try:
                 registry = self.repl.interpreter.function_registry
                 for scope in ["system", "private", "public"]:
-                    functions = registry.list(scope) or []
+                    functions = registry.list_functions(scope) or []
                     func_count += len(functions)
             except Exception:
                 pass
@@ -179,7 +179,7 @@ class DanaCompleter(Completer):
         try:
             registry = self.repl.interpreter.function_registry
             for scope in ["system", "private", "public"]:
-                functions = registry.list(scope) or []
+                functions = registry.list_functions(scope) or []
                 for func_name in functions:
                     if func_name.startswith(current_word):
                         # Add parentheses for function calls

@@ -335,7 +335,7 @@ class FunctionExecutor(BaseExecutor):
         # If all attempts failed, provide helpful error
         available_functions = []
         if self.function_registry:
-            available_functions = self.function_registry.list()
+            available_functions = self.function_registry.list_functions()
 
         raise NameError(f"Decorator '{decorator_name}' not found. Available functions: {available_functions}")
 

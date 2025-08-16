@@ -143,7 +143,7 @@ class CommandHandler(Loggable):
             # Show available core functions count
             try:
                 registry = self.repl.interpreter.function_registry
-                core_functions = registry.list("system") or []
+                core_functions = registry.list_functions("system") or []
                 print_formatted_text(ANSI(f"  {self.colors.accent('Core functions:')} {len(core_functions)} available"))
             except Exception:
                 print_formatted_text(ANSI(f"  {self.colors.accent('Core functions:')} Unable to count"))

@@ -51,7 +51,7 @@ class StatusDisplay(Loggable):
             try:
                 registry = self.repl.interpreter.function_registry
                 for scope in ["system", "private", "public"]:
-                    functions = registry.list(scope) or []
+                    functions = registry.list_functions(scope) or []
                     func_count += len(functions)
             except Exception:
                 pass
