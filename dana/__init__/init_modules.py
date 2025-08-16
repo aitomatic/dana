@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dana.core.runtime.modules.errors import ModuleError
 from dana.core.runtime.modules.loader import ModuleLoader
-from dana.core.runtime.modules.registry import ModuleRegistry
+from dana.registry.module_registry import ModuleRegistry
 
 _module_registry: ModuleRegistry | None = None
 _module_loader: ModuleLoader | None = None

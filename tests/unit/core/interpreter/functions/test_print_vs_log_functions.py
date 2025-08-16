@@ -106,7 +106,7 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+        from dana.registry.function_registry import FunctionRegistry
         from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
 
         registry = FunctionRegistry()
@@ -264,7 +264,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+        from dana.registry.function_registry import FunctionRegistry
         from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
 
         registry = FunctionRegistry()

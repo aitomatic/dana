@@ -61,7 +61,7 @@ from dana.core.lang.interpreter.executor.expression.identifier_resolver import (
 from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
     PipeOperationHandler,
 )
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 

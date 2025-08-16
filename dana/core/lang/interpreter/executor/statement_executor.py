@@ -50,7 +50,7 @@ from dana.core.lang.interpreter.executor.statement import (
     StatementUtils,
 )
 from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -338,7 +338,7 @@ class StatementExecutor(BaseExecutor):
 
         # Detect function type and set appropriate metadata
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
+        from dana.registry.function_registry import FunctionMetadata
 
         func_type = FunctionType.PYTHON
         context_aware = False

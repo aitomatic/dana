@@ -27,7 +27,7 @@ from dana.common.error_utils import ErrorUtils
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.ast import Expression, Program, Statement
 from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import ExecutionStatus, SandboxContext
 

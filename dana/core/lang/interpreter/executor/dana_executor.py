@@ -31,7 +31,7 @@ from dana.core.lang.interpreter.executor.function_executor import FunctionExecut
 from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
 from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
 from dana.core.lang.interpreter.executor.traversal import OptimizedASTTraversal
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.interpreter.hooks import HookRegistry, HookType
 from dana.core.lang.sandbox_context import SandboxContext
 

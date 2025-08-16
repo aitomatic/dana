@@ -3,7 +3,7 @@
 Test context merging functionality in function registry.
 """
 
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -21,7 +21,7 @@ def test_context_merging_in_function_registry():
         return {"numbers": context.get("local:numbers"), "name": context.get("local:name"), "config": context.get("local:config")}
 
     # Register the test function
-    from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+    from dana.registry.function_registry import FunctionMetadata, FunctionType
     from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
     test_func = PythonFunction(test_function, trusted_for_context=True)
@@ -63,7 +63,7 @@ def test_context_merging_with_non_dict_context():
         return "success"
 
     # Register the test function
-    from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+    from dana.registry.function_registry import FunctionMetadata, FunctionType
     from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
     test_func = PythonFunction(test_function, trusted_for_context=True)
@@ -98,7 +98,7 @@ def test_context_merging_preserves_existing_local_scope():
         }
 
     # Register the test function
-    from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+    from dana.registry.function_registry import FunctionMetadata, FunctionType
     from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
     test_func = PythonFunction(test_function, trusted_for_context=True)
@@ -148,7 +148,7 @@ def test_reason_function_with_context():
             return f"No numbers in context, Prompt: {prompt}"
 
     # Register the mock reason function
-    from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+    from dana.registry.function_registry import FunctionMetadata, FunctionType
     from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
     reason_func = PythonFunction(mock_reason_function, trusted_for_context=True)

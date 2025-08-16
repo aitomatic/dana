@@ -21,7 +21,7 @@ from typing import Any
 
 from dana.core.lang.ast import Program
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 

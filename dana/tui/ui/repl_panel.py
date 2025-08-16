@@ -108,6 +108,9 @@ class TerminalREPL(Vertical):
                 highlighted_command = dana_highlighter.highlight_code(command)
                 self._output.write(f"[bold]⏵[/bold] {highlighted_command}")
 
+            # Force refresh the display to show command immediately
+            self._output.refresh()
+
         # Execute the command
         self._execute_dana_code(command)
 

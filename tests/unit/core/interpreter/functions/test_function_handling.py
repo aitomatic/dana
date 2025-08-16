@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
+from dana.registry.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.interpreter.functions.python_function import PythonFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
