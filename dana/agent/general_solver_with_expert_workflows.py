@@ -127,7 +127,7 @@ class GeneralProblemSolver:
     def register_workflow(self, workflow: WorkflowInfo) -> None:
         """Register a workflow for problem-solving."""
         self.workflows.append(workflow)
-        logger.info(f"Registered workflow: {workflow.name} ({workflow.expertise_domain})")
+        logger.info(f"Registered workflow: {workflow.name}")
 
     def discover_workflows_from_modules(self, expertise_modules: list[ModuleType]) -> None:
         """Discover and register workflows from expertise modules."""
@@ -326,7 +326,7 @@ class GeneralProblemSolver:
         # TODO: Use LLM to evaluate conceptual match
         # For now, use simple keyword matching
         problem_text = " ".join(problem_analysis.get("key_concepts", []))
-        workflow_text = f"{workflow.name} {workflow.description} {workflow.expertise_domain}"
+        workflow_text = f"{workflow.name} {workflow.description}"
 
         # Simple overlap calculation
         problem_words = set(problem_text.lower().split())
@@ -510,8 +510,7 @@ def solve(problem: str, expertise_modules: list[ModuleType] = None, resources: d
 
 
 def register_workflow(name: str, description: str, input_signature: dict[str, type],
-                      output_signature: dict[str, type], workflow_function: callable,
-                      expertise_domain: str = "general") -> None:
+                      output_signature: dict[str, type], workflow_function: callable) -> None:
     """
     Register a workflow for problem-solving.
 
@@ -521,14 +520,12 @@ def register_workflow(name: str, description: str, input_signature: dict[str, ty
         input_signature: Dictionary mapping input parameter names to their types
         output_signature: Dictionary mapping output parameter names to their types
         workflow_function: The actual workflow function to execute
-        expertise_domain: Domain of expertise (e.g., "finance", "healthcare", "engineering")
     """
     workflow_info = WorkflowInfo(
         name=name,
         description=description,
         input_signature=input_signature,
         output_signature=output_signature,
-        workflow_function=workflow_function,
-        expertise_domain=expertise_domain
+        workflow_function=workflow_function
     )
     _solver.register_workflow(workflow_info)
