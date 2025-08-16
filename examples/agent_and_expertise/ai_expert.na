@@ -1,9 +1,0 @@
-"""Pseudo-Expert in AI for integration testing."""
-
-import ai_expertise
-
-agent AIExpert
-AIExpert.expertise = [ai_expertise]  # TODO: attribute declaration/override in singleton
-
-AIExpert.solve('Should AI agent developers care about Dana?',
-               resources={'doc-path': '../../README.md'})
