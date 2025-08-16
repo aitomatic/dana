@@ -173,9 +173,16 @@ class PromptStyleTextArea(TextArea):
         self._temp_content = ""  # Store current content when navigating history
         self._max_history = 1000
 
+        # Multi-line mode management
+        self._multiline_mode = False
+        self._multiline_buffer: list[str] = []
+
         # The Input widgets are the source of truth for user interaction.
         self._input_lines: list[_DanaInput] = []
         self._autocomplete: AutoComplete | None = None
+
+        # Reference to prompt widget (will be set by parent)
+        self._prompt = None
 
         # Load history from file
         self._load_history()
@@ -184,6 +191,10 @@ class PromptStyleTextArea(TextArea):
         """Set up the initial input line and autocomplete."""
         # Create and set up the first input line
         self._focus_on_input_line(0)
+
+    def set_prompt_widget(self, prompt):
+        """Set reference to the prompt widget for updating continuation prompt."""
+        self._prompt = prompt
 
     def focus(self, scroll_visible: bool = True) -> "PromptStyleTextArea":
         """Focus the last input line."""
@@ -334,8 +345,9 @@ class PromptStyleTextArea(TextArea):
                 event.input.focus()
                 return
 
-        # Combine text from all input lines to form the complete command.
-        full_command = "\n".join(line.value for line in self._input_lines)
+        # Combine text from all input lines, stripping trailing whitespace from each
+        lines = [line.value.rstrip() for line in self._input_lines]
+        full_command = "\n".join(lines)
 
         DANA_LOGGER.debug(f"posting message: {full_command}")
 
@@ -482,28 +494,64 @@ class PromptStyleTextArea(TextArea):
 
     async def _handle_input_key(self, event: Key, line_index: int) -> None:
         """Handle key events forwarded from the _DanaInput widget."""
-        # Backslash on the last line creates a new input line
-        # die(f"event: {event.control}")
-        if event.key == "backslash":  # and event.control is self._input_lines[-1]:
-            event.key = "enter"  # simulate enter key press
-            self._focus_on_input_line(line_index + 1)
-            event.prevent_default()
-
         # Up/Down arrows - navigate history (basic implementation)
-        elif event.key in ("up", "down", "pageup", "pagedown"):
-            current_input = self._get_current_input_content()
-            if current_input == "" or self._history_index != -1:
-                if event.key in ("up", "pageup"):
-                    self._navigate_history(-1)
-                else:
-                    self._navigate_history(1)
-                # event.prevent_default()
+        if event.key in ("up", "down", "pageup", "pagedown"):
+            # Only allow history navigation when not in multi-line mode
+            if not self._multiline_mode:
+                current_input = self._get_current_input_content()
+                if current_input == "" or self._history_index != -1:
+                    if event.key in ("up", "pageup"):
+                        self._navigate_history(-1)
+                    else:
+                        self._navigate_history(1)
 
-        # Enter - submit the command
+        # Enter - handle based on multi-line mode
         elif event.key == "enter":
-            self._on_input_submitted()
-            event.key = "escape"
-            # event.prevent_default()
+            current_line = self._input_lines[line_index].value.rstrip()  # Strip trailing whitespace
+
+            if not self._multiline_mode:
+                # Check if we should enter multi-line mode
+                if current_line.endswith(":"):
+                    self._multiline_mode = True
+                    self._multiline_buffer = [current_line]
+                    # Create a new input line for continuation
+                    self._focus_on_input_line(line_index + 1)
+                    # Update prompt to show continuation
+                    if self._prompt:
+                        self._prompt.update("...")
+                    event.prevent_default()
+                else:
+                    # Single-line submission
+                    self._on_input_submitted()
+                    event.key = "escape"
+            else:
+                # We're in multi-line mode
+                if current_line == "":  # Empty line signals end of multi-line
+                    # Check if there are any non-empty lines after this one
+                    has_content_after = False
+                    for i in range(line_index + 1, len(self._input_lines)):
+                        if self._input_lines[i].value.strip():
+                            has_content_after = True
+                            break
+
+                    if not has_content_after:
+                        # End multi-line mode and submit
+                        self._multiline_mode = False
+                        # Reset prompt
+                        if self._prompt:
+                            self._prompt.update("⏵")
+                        self._on_input_submitted()
+                        event.key = "escape"
+                    else:
+                        # Continue multi-line mode
+                        self._multiline_buffer.append(current_line)
+                        self._focus_on_input_line(line_index + 1)
+                        event.prevent_default()
+                else:
+                    # Add line to buffer and continue
+                    self._multiline_buffer.append(current_line)
+                    self._focus_on_input_line(line_index + 1)
+                    event.prevent_default()
 
     def clear(self):
         """Clear the contents of all input lines."""
@@ -518,6 +566,15 @@ class PromptStyleTextArea(TextArea):
         self.text = ""
         self._history_index = -1
         self._temp_content = ""
+
+        # Reset multi-line mode
+        self._multiline_mode = False
+        self._multiline_buffer = []
+
+        # Reset prompt if we have reference to it
+        if self._prompt:
+            self._prompt.update("⏵")
+
         return result
 
     @property
