@@ -53,8 +53,18 @@ class TerminalREPL(Vertical):
         if self._output:
             self._output.write("Welcome to Dana REPL!")
             self._output.write("Enter Dana expressions and press Enter to execute.")
-            self._output.write("Use \\ for multi-line input, ↑↓ for history.")
+            self._output.write("Multi-line input:")
+            self._output.write("  • Lines ending with ':' automatically enter multi-line mode")
+            self._output.write("  • Use \\ to add a new line and enter/stay in multi-line mode")
+            self._output.write("  • An empty line executes the multi-line code")
+            self._output.write("Navigation:")
+            self._output.write("  • Use ↑↓ arrows to navigate command history")
+            self._output.write("  • History persists between sessions")
             self._output.write("")  # Empty line
+
+        # Connect prompt widget to input widget
+        if self._input and self._prompt:
+            self._input.set_prompt_widget(self._prompt)
 
         # Focus the input
         if self._input:
@@ -87,13 +97,13 @@ class TerminalREPL(Vertical):
         # Show the command in output (like a real REPL) with syntax highlighting
         if self._output:
             # Format multi-line commands nicely
-            if "\\n" in command:
-                lines = command.split("\\n")
+            if "\n" in command:
+                lines = command.split("\n")
                 highlighted_first = dana_highlighter.highlight_code(lines[0])
                 self._output.write(f"[bold]⏵[/bold] {highlighted_first}")
                 for line in lines[1:]:
                     highlighted_line = dana_highlighter.highlight_code(line)
-                    self._output.write(f"[bold].......[/bold] {highlighted_line}")
+                    self._output.write(f"[bold]...[/bold] {highlighted_line}")
             else:
                 highlighted_command = dana_highlighter.highlight_code(command)
                 self._output.write(f"[bold]⏵[/bold] {highlighted_command}")

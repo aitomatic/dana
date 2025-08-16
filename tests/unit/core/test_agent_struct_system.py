@@ -181,7 +181,7 @@ class TestAgentTypeRegistry(unittest.TestCase):
         """Set up test fixtures."""
         self.registry = global_agent_type_registry
         # Clear registry to ensure clean state for each test
-        self.registry.types.clear()
+        self.registry.clear()
 
     def test_singleton_pattern(self):
         """Test that global_agent_type_registry follows singleton pattern."""
