@@ -97,7 +97,28 @@ class BinaryOperationHandler(Loggable):
             else:
                 raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:
-            raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
+            # Provide more helpful error messages for common workflow composition issues
+            error_msg = str(e)
+
+            # Check for common workflow composition errors
+            if node.operator == BinaryOperator.ADD and "can only concatenate list" in error_msg:
+                # This is likely a workflow composition issue where a list is being passed to a function expecting an int
+                raise SandboxError(
+                    f"Workflow composition error: You're trying to pass a list to a function that expects a different type.\n"
+                    f"Error: {error_msg}\n"
+                    f"Hint: When using the | operator for workflow composition, make sure the right side function can handle the output type from the left side.\n"
+                    f"Example: [f1, f2] | f3  # f3 should expect a list input, not an int"
+                )
+            elif "unsupported operand type" in error_msg and "SandboxContext" in error_msg:
+                # This is likely a context passing issue
+                raise SandboxError(
+                    f"Context passing error: A function is receiving a SandboxContext instead of the expected input value.\n"
+                    f"Error: {error_msg}\n"
+                    f"Hint: This might be a bug in the workflow composition system."
+                )
+            else:
+                # Generic error message
+                raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
 
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled."""

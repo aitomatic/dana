@@ -117,8 +117,8 @@ class TestPrintVsLogFunctions:
         assert registry.has("log")
 
         # Check their registered functions
-        print_func, _, _ = registry.resolve("print")
-        log_func, _, _ = registry.resolve("log")
+        print_func, _, _ = registry.resolve_with_type("print")
+        log_func, _, _ = registry.resolve_with_type("log")
 
         assert print_func is not None
         assert log_func is not None
@@ -274,7 +274,7 @@ class TestLogLevelFunction:
         assert registry.has("log_level")
 
         # Check the registered function
-        log_level_func, _, _ = registry.resolve("log_level")
+        log_level_func, _, _ = registry.resolve_with_type("log_level")
         assert log_level_func is not None
 
 

@@ -19,9 +19,8 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -511,373 +510,122 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
-class TypeAwareMethodRegistry:
-    """Registry that indexes methods by (receiver_type, method_name) for O(1) lookup.
+# DEPRECATED: Registries have been moved to dana.registry
+# Import them from the new location for backward compatibility
+from dana.registry.struct_function_registry import StructFunctionRegistry as _StructFunctionRegistry
+from dana.registry.type_registry import TypeRegistry as _TypeRegistry
 
-    This registry provides fast method lookup for Dana's polymorphic dispatch system.
-    Methods are indexed by receiver type and method name, enabling O(1) resolution
-    instead of traversing multiple lookup chains.
-    """
-
-    _instance: Optional["TypeAwareMethodRegistry"] = None
-    _methods: dict[tuple[str, str], Callable] = {}
-
-    def __new__(cls) -> "TypeAwareMethodRegistry":
-        """Singleton pattern for global method registry."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    @classmethod
-    def register_method(cls, receiver_type: str, method_name: str, func: Callable) -> None:
-        """Register a method indexed by receiver type and method name.
-
-        Args:
-            receiver_type: The type name of the receiver (e.g., "AgentInstance", "ResourceInstance")
-            method_name: The name of the method
-            func: The callable function/method to register
-        """
-        key = (receiver_type, method_name)
-        if key in cls._methods:
-            # Allow overriding for now (useful during development)
-            # In production, might want to warn or error
-            pass
-        cls._methods[key] = func
-
-    @classmethod
-    def lookup_method(cls, receiver_type: str, method_name: str) -> Callable | None:
-        """Fast O(1) lookup by receiver type and method name.
-
-        Args:
-            receiver_type: The type name of the receiver
-            method_name: The name of the method
-
-        Returns:
-            The registered method or None if not found
-        """
-        key = (receiver_type, method_name)
-        return cls._methods.get(key)
-
-    @classmethod
-    def has_method(cls, receiver_type: str, method_name: str) -> bool:
-        """Check if a method exists for a receiver type.
-
-        Args:
-            receiver_type: The type name of the receiver
-            method_name: The name of the method
-
-        Returns:
-            True if the method exists
-        """
-        return cls.lookup_method(receiver_type, method_name) is not None
-
-    @classmethod
-    def lookup_method_for_instance(cls, instance: Any, method_name: str) -> Callable | None:
-        """Lookup method for a specific instance (extracts type automatically).
-
-        Args:
-            instance: The instance to lookup the method for
-            method_name: The name of the method
-
-        Returns:
-            The registered method or None if not found
-        """
-        type_name = cls._get_instance_type_name(instance)
-        if type_name:
-            return cls.lookup_method(type_name, method_name)
-        return None
-
-    @classmethod
-    def _get_instance_type_name(cls, instance: Any) -> str | None:
-        """Get the type name from an instance.
-
-        Handles StructType, AgentType, ResourceType, and other Dana types.
-
-        Args:
-            instance: The instance to extract type from
-
-        Returns:
-            The type name or None if unable to determine
-        """
-        # Check for struct instances (including agents and resources)
-        if hasattr(instance, "__struct_type__"):
-            struct_type = instance.__struct_type__
-            if hasattr(struct_type, "name"):
-                return struct_type.name
-
-        # Check for struct instances with _type attribute
-        if hasattr(instance, "_type") and hasattr(instance._type, "name"):
-            return instance._type.name
-
-        # For agent instances
-        try:
-            from dana.agent import AgentInstance
-
-            if isinstance(instance, AgentInstance):
-                if hasattr(instance, "agent_type") and hasattr(instance.agent_type, "name"):
-                    return instance.agent_type.name
-        except ImportError:
-            pass
-
-        # For resource instances
-        try:
-            from dana.core.resource.resource_instance import ResourceInstance
-
-            if isinstance(instance, ResourceInstance):
-                if hasattr(instance, "resource_type") and hasattr(instance.resource_type, "name"):
-                    return instance.resource_type.name
-        except ImportError:
-            pass
-
-        # Fallback to Python type name
-        return type(instance).__name__
-
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered methods (for testing)."""
-        cls._methods.clear()
-
-    @classmethod
-    def list_methods(cls, receiver_type: str | None = None) -> list[tuple[str, str]]:
-        """List all registered methods, optionally filtered by receiver type.
-
-        Args:
-            receiver_type: Optional type name to filter by
-
-        Returns:
-            List of (receiver_type, method_name) tuples
-        """
-        if receiver_type:
-            return [(rt, mn) for (rt, mn) in cls._methods.keys() if rt == receiver_type]
-        return list(cls._methods.keys())
+# Re-export for backward compatibility
+# Note: The new system consolidates method and type registries
+StructTypeRegistry = _TypeRegistry
 
 
+# Create a wrapper class for MethodRegistry backward compatibility
 class MethodRegistry:
-    """Legacy method registry for backward compatibility.
-
-    This class provides the interface expected by existing code while
-    delegating to the new TypeAwareMethodRegistry.
-    """
+    """Legacy method registry for backward compatibility."""
 
     @classmethod
-    def register_method(cls, receiver_types: list[str], method_name: str, func: Callable, source_info: str = "") -> None:
+    def register_method(cls, receiver_types: list[str], method_name: str, func, source_info: str = "") -> None:
         """Register a method for multiple receiver types.
 
         Args:
             receiver_types: List of receiver type names
             method_name: The name of the method
             func: The callable function/method to register
-            source_info: Optional source information for debugging
+            source_info: Optional source information for debugging (ignored in new system)
         """
+        from dana.registry import register_struct_function
+
         # Register for each receiver type
         for receiver_type in receiver_types:
-            TypeAwareMethodRegistry.register_method(receiver_type, method_name, func)
+            register_struct_function(receiver_type, method_name, func)
 
     @classmethod
-    def get_method(cls, receiver_type: str, method_name: str) -> Callable | None:
-        """Get a method for a specific receiver type.
+    def get_method(cls, receiver_type: str, method_name: str):
+        """Get a method for a specific receiver type."""
+        from dana.registry import lookup_struct_function
 
-        Args:
-            receiver_type: The type name of the receiver
-            method_name: The name of the method
-
-        Returns:
-            The registered method or None if not found
-        """
-        return TypeAwareMethodRegistry.lookup_method(receiver_type, method_name)
+        return lookup_struct_function(receiver_type, method_name)
 
     @classmethod
     def clear(cls) -> None:
         """Clear all registered methods (for testing)."""
-        TypeAwareMethodRegistry.clear()
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        registry.struct_functions.clear()
 
 
-# Create global singleton instances
-type_aware_method_registry = TypeAwareMethodRegistry()
-method_registry = MethodRegistry()
-
-# For backward compatibility - universal_method_registry referenced in other files
-universal_dana_method_registry = type_aware_method_registry
-
-
-class StructTypeRegistry:
-    """Global registry for struct types."""
-
-    _instance: Optional["StructTypeRegistry"] = None
-    _types: dict[str, StructType] = {}
-
-    def __new__(cls) -> "StructTypeRegistry":
-        """Singleton pattern for global registry."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+# Create a wrapper class that provides class methods for backward compatibility
+class TypeAwareMethodRegistry:
+    """Type-aware method registry with class methods for backward compatibility."""
 
     @classmethod
-    def register(cls, struct_type: StructType) -> None:
-        """Register a new struct type."""
-        if struct_type.name in cls._types:
-            # Check if this is the same struct definition
-            existing_struct = cls._types[struct_type.name]
-            if existing_struct.fields == struct_type.fields and existing_struct.field_order == struct_type.field_order:
-                # Same struct definition - allow idempotent registration
-                return
-            else:
-                raise ValueError(
-                    f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique."
-                )
+    def register_method(cls, receiver_type: str, method_name: str, func) -> None:
+        """Register a method for a receiver type."""
+        from dana.registry import register_struct_function
 
-        cls._types[struct_type.name] = struct_type
+        register_struct_function(receiver_type, method_name, func)
 
     @classmethod
-    def get(cls, struct_name: str) -> StructType | None:
-        """Get a struct type by name."""
-        return cls._types.get(struct_name)
+    def lookup_method(cls, receiver_type: str, method_name: str):
+        """Lookup a method for a receiver type."""
+        from dana.registry import lookup_struct_function
+
+        return lookup_struct_function(receiver_type, method_name)
 
     @classmethod
-    def exists(cls, struct_name: str) -> bool:
-        """Check if a struct type is registered."""
-        return struct_name in cls._types
+    def has_method(cls, receiver_type: str, method_name: str) -> bool:
+        """Check if a method exists for a receiver type."""
+        from dana.registry import has_struct_function
+
+        return has_struct_function(receiver_type, method_name)
 
     @classmethod
-    def list_types(cls) -> list[str]:
-        """Get list of all registered struct type names."""
-        return sorted(cls._types.keys())
+    def lookup_method_for_instance(cls, instance, method_name: str):
+        """Lookup method for a specific instance (extracts type automatically)."""
+        from dana.registry import get_global_registry
+
+        registry = get_global_registry()
+        return registry.struct_functions.lookup_method_for_instance(instance, method_name)
 
     @classmethod
     def clear(cls) -> None:
-        """Clear all registered struct types (for testing)."""
-        cls._types.clear()
+        """Clear all registered methods (for testing)."""
+        from dana.registry import get_global_registry
 
-    @classmethod
-    def create_instance(cls, struct_name: str, values: dict[str, Any]) -> StructInstance:
-        """Create a struct instance by name."""
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
+        registry = get_global_registry()
+        registry.struct_functions.clear()
 
-        # Check if this is an agent struct type
-        from dana.agent import AgentInstance, AgentType
+    def __init__(self):
+        """Initialize the wrapper instance."""
+        # This is needed for backward compatibility when code creates an instance
+        pass
 
-        # Check if this is a resource type (delegate to resource registry)
-        try:
-            from dana.core.resource.resource_registry import ResourceTypeRegistry
+    @property
+    def _storage(self):
+        """Backward compatibility property for accessing the internal storage."""
+        from dana.registry import get_global_registry
 
-            if ResourceTypeRegistry.exists(struct_name):
-                return ResourceTypeRegistry.create_resource_instance(struct_name, values)
-        except ImportError:
-            pass
+        registry = get_global_registry()
+        return registry.struct_functions._methods
 
-        if isinstance(struct_type, AgentType):
-            return AgentInstance(struct_type, values)
 
-        return StructInstance(struct_type, values)
+# Create global instances for compatibility
+struct_function_registry = _StructFunctionRegistry()
+type_registry = _TypeRegistry()
 
-    @classmethod
-    def get_schema(cls, struct_name: str) -> dict[str, Any]:
-        """Get JSON schema for a struct type.
+# Make all method registries point to the global registry's struct_functions
+# to ensure consistency across the system
+from dana.registry import get_global_registry
 
-        Args:
-            struct_name: Name of the struct type
+global_registry = get_global_registry()
+type_aware_method_registry = global_registry.struct_functions
+method_registry = global_registry.struct_functions
+universal_dana_method_registry = global_registry.struct_functions
 
-        Returns:
-            JSON schema dictionary for the struct
 
-        Raises:
-            ValueError: If struct type not found
-        """
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
-
-        # Generate JSON schema
-        properties = {}
-        required = []
-
-        for field_name in struct_type.field_order:
-            field_type = struct_type.fields[field_name]
-            properties[field_name] = cls._type_to_json_schema(field_type)
-            required.append(field_name)
-
-        return {
-            "type": "object",
-            "properties": properties,
-            "required": required,
-            "additionalProperties": False,
-            "title": struct_name,
-            "description": f"Schema for {struct_name} struct",
-        }
-
-    @classmethod
-    def _type_to_json_schema(cls, type_name: str) -> dict[str, Any]:
-        """Convert Dana type name to JSON schema type definition."""
-        type_mapping = {
-            "str": {"type": "string"},
-            "int": {"type": "integer"},
-            "float": {"type": "number"},
-            "bool": {"type": "boolean"},
-            "list": {"type": "array"},
-            "dict": {"type": "object"},
-            "any": {},  # Accept any type
-        }
-
-        # Check for built-in types first
-        if type_name in type_mapping:
-            return type_mapping[type_name]
-
-        # Check for registered struct types
-        if cls.exists(type_name):
-            return {"type": "object", "description": f"Reference to {type_name} struct", "$ref": f"#/definitions/{type_name}"}
-
-        # Unknown type - treat as any
-        return {"description": f"Unknown type: {type_name}"}
-
-    @classmethod
-    def validate_json(cls, json_data: dict[str, Any], struct_name: str) -> bool:
-        """Validate JSON data against struct schema.
-
-        Args:
-            json_data: JSON data to validate
-            struct_name: Name of the struct type to validate against
-
-        Returns:
-            True if valid
-
-        Raises:
-            ValueError: If validation fails or struct type not found
-        """
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
-
-        # Use existing struct validation
-        try:
-            struct_type.validate_instantiation(json_data)
-            return True
-        except ValueError as e:
-            raise ValueError(f"JSON validation failed for struct '{struct_name}': {e}")
-
-    @classmethod
-    def create_instance_from_json(cls, json_data: dict[str, Any], struct_name: str) -> StructInstance:
-        """Create struct instance from validated JSON data.
-
-        Args:
-            json_data: JSON data to convert
-            struct_name: Name of the struct type
-
-        Returns:
-            StructInstance created from JSON data
-
-        Raises:
-            ValueError: If validation fails or struct type not found
-        """
-        # Validate first
-        cls.validate_json(json_data, struct_name)
-
-        # Create instance
-        return cls.create_instance(struct_name, json_data)
+# === Utility Functions (restored for backward compatibility) ===
 
 
 def create_struct_type_from_ast(struct_def, context=None) -> StructType:
@@ -928,7 +676,6 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
     )
 
 
-# Convenience functions for common operations
 def register_struct_from_ast(struct_def) -> StructType:
     """Register a struct type from AST definition."""
     struct_type = create_struct_type_from_ast(struct_def)

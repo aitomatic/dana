@@ -6,6 +6,7 @@ MIT License
 """
 
 import re
+from re import Pattern
 
 from rich.highlighter import Highlighter
 from rich.text import Text
@@ -18,6 +19,8 @@ class DanaSyntaxHighlighter:
     This class provides methods to highlight Dana syntax elements including
     keywords, strings, numbers, comments, and function calls. It also handles
     result value highlighting for different data types.
+
+    Performance optimized with compiled regex patterns.
     """
 
     # Dana keywords to highlight (from dana_grammar.lark)
@@ -85,8 +88,43 @@ class DanaSyntaxHighlighter:
     ]
 
     def __init__(self):
-        """Initialize the syntax highlighter."""
-        pass
+        """Initialize the syntax highlighter with compiled regex patterns."""
+        # Compile regex patterns once for better performance
+        self._compiled_patterns = self._compile_patterns()
+
+    def _compile_patterns(self) -> dict[str, Pattern]:
+        """Compile all regex patterns used for syntax highlighting."""
+        patterns = {}
+
+        # Comments (highest priority - most specific)
+        patterns["hash_comment"] = re.compile(r"(#[^\n]*)")
+        patterns["double_slash_comment"] = re.compile(r"(//[^\n]*)")
+
+        # String literals (before keywords to avoid conflicts)
+        patterns["double_quoted_string"] = re.compile(r'("(?:[^"\\]|\\.)*")')
+        patterns["single_quoted_string"] = re.compile(r"('(?:[^'\\]|\\.)*')")
+
+        # Numbers (simple pattern - only standalone numbers)
+        patterns["numbers"] = re.compile(r"\b(\d+(?:\.\d+)?)\b")
+
+        # Function calls (simple pattern)
+        patterns["function_calls"] = re.compile(r"\b([a-zA-Z_]\w*)(?=\s*\()")
+
+        # Result validation patterns
+        patterns["result_number"] = re.compile(r"^-?\d+(\.\d+)?$")
+
+        # Create a single compiled pattern for all keywords
+        # This is much more efficient than processing keywords one by one
+        if self.DANA_KEYWORDS:
+            # Sort keywords by length (longest first) to avoid partial matches
+            sorted_keywords = sorted(self.DANA_KEYWORDS, key=len, reverse=True)
+            # Escape special regex characters in keywords
+            escaped_keywords = [re.escape(keyword) for keyword in sorted_keywords]
+            # Create a single pattern that matches any keyword with word boundaries
+            keyword_pattern = r"\b(" + "|".join(escaped_keywords) + r")\b"
+            patterns["keywords"] = re.compile(keyword_pattern)
+
+        return patterns
 
     def escape_markup(self, text: str) -> str:
         """
@@ -130,24 +168,21 @@ class DanaSyntaxHighlighter:
         result = text
 
         # 1. Comments (highest priority - most specific)
-        result = re.sub(r"(#[^\n]*)", r"[dim]\1[/dim]", result)
-        result = re.sub(r"(//[^\n]*)", r"[dim]\1[/dim]", result)
+        result = self._compiled_patterns["hash_comment"].sub(r"[dim]\1[/dim]", result)
+        result = self._compiled_patterns["double_slash_comment"].sub(r"[dim]\1[/dim]", result)
 
         # 2. String literals (before keywords to avoid conflicts)
-        result = re.sub(r'("(?:[^"\\]|\\.)*")', r"[green]\1[/green]", result)
-        result = re.sub(r"('(?:[^'\\]|\\.)*')", r"[green]\1[/green]", result)
+        result = self._compiled_patterns["double_quoted_string"].sub(r"[green]\1[/green]", result)
+        result = self._compiled_patterns["single_quoted_string"].sub(r"[green]\1[/green]", result)
 
         # 3. Numbers (simple pattern - only standalone numbers)
-        result = re.sub(r"\b(\d+(?:\.\d+)?)\b", r"[cyan]\1[/cyan]", result)
+        result = self._compiled_patterns["numbers"].sub(r"[cyan]\1[/cyan]", result)
 
-        # 4. Highlight Dana keywords
-        for keyword in self.DANA_KEYWORDS:
-            # Simple word boundary matching
-            pattern = rf"\b({keyword})\b"
-            result = re.sub(pattern, r"[blue]\1[/blue]", result)
+        # 4. Highlight Dana keywords (single compiled pattern for all keywords)
+        result = self._compiled_patterns["keywords"].sub(r"[blue]\1[/blue]", result)
 
         # 5. Function calls (simple pattern)
-        result = re.sub(r"\b([a-zA-Z_]\w*)(?=\s*\()", r"[yellow]\1[/yellow]", result)
+        result = self._compiled_patterns["function_calls"].sub(r"[yellow]\1[/yellow]", result)
 
         return result
 
@@ -167,7 +202,7 @@ class DanaSyntaxHighlighter:
         # Check for different result types and apply appropriate colors
 
         # Numbers (integers, floats)
-        if re.match(r"^-?\d+(\.\d+)?$", result_str.strip()):
+        if self._compiled_patterns["result_number"].match(result_str.strip()):
             return f"[cyan]{result_str}[/cyan]"
 
         # Booleans

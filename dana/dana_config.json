@@ -2,6 +2,7 @@
     "llm": {
         "preferred_models": [
             "openai:gpt-4o-mini",
+	    "openrouter:gpt-4o-mini",
 	    "anthropic:kimi-k2-0711-preview",
             "azure:gpt-4o-mini",
             "azure:gpt-4o",
@@ -33,6 +34,10 @@
                 "base_url": "http://localhost:8000/v1",
                 "model_name": "microsoft/Phi-3.5-mini-instruct"
             },
+	    "openrouter": {
+		"api_key": "env:OPENROUTER_API_KEY",
+		"base_url": "https://openrouter.ai/api/v1"
+	    },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "base_url": "https://api.openai.com/v1"
