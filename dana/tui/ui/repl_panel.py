@@ -53,8 +53,10 @@ class TerminalREPL(Vertical):
         if self._output:
             self._output.write("Welcome to Dana REPL!")
             self._output.write("Enter Dana expressions and press Enter to execute.")
-            self._output.write("Lines ending with ':' will enter multi-line mode.")
-            self._output.write("In multi-line mode, an empty line will execute the code.")
+            self._output.write("Multi-line input:")
+            self._output.write("  • Lines ending with ':' automatically enter multi-line mode")
+            self._output.write("  • Use \\ to add a new line and enter/stay in multi-line mode")
+            self._output.write("  • An empty line executes the multi-line code")
             self._output.write("Use ↑↓ for history navigation.")
             self._output.write("")  # Empty line
 

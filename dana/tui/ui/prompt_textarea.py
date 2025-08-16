@@ -128,9 +128,12 @@ class PromptStyleTextArea(TextArea):
     Enhanced input widget inspired by prompt-toolkit.
 
     Features:
-    - Multi-line editing with \\ (backslash) for new lines
-    - Enter to execute (single or multi-line)
-    - Enhanced history navigation with / (forward slash) or ↑/↓ arrows
+    - Multi-line editing:
+      • Lines ending with ':' automatically enter multi-line mode
+      • \\ (backslash) adds new line and enters/stays in multi-line mode
+      • Empty line executes multi-line code
+    - Enter to execute (single-line or end of multi-line)
+    - Enhanced history navigation with ↑/↓ arrows (disabled in multi-line mode)
     - Persistent command history
     - Dana syntax highlighting
     - Copy/paste support with Ctrl+C/Ctrl+V
@@ -494,8 +497,27 @@ class PromptStyleTextArea(TextArea):
 
     async def _handle_input_key(self, event: Key, line_index: int) -> None:
         """Handle key events forwarded from the _DanaInput widget."""
+        # Backslash - create new line and enter/stay in multi-line mode
+        if event.key == "backslash":
+            current_line = self._input_lines[line_index].value.rstrip()
+
+            # Enter multi-line mode if not already in it
+            if not self._multiline_mode:
+                self._multiline_mode = True
+                self._multiline_buffer = [current_line]
+                # Update prompt to show continuation
+                if self._prompt:
+                    self._prompt.update("...")
+            else:
+                # Already in multi-line mode, add current line to buffer
+                self._multiline_buffer.append(current_line)
+
+            # Create a new input line for continuation
+            self._focus_on_input_line(line_index + 1)
+            event.prevent_default()
+
         # Up/Down arrows - navigate history (basic implementation)
-        if event.key in ("up", "down", "pageup", "pagedown"):
+        elif event.key in ("up", "down", "pageup", "pagedown"):
             # Only allow history navigation when not in multi-line mode
             if not self._multiline_mode:
                 current_input = self._get_current_input_content()
