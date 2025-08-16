@@ -25,7 +25,7 @@ print(f"
 
 print(f"
 VERIZON's CAPITAL INTENSITY
-==========================
+===========================
 {assess_cap_intens(VERIZON)}
 ")
 
@@ -36,9 +36,9 @@ AMD's QUICK RATIO
 {calc_quick_ratio(AMD)}
 ")
 
-# Liquidity assessment by Cash Conversion Cycle
+# Liquidity assessment by Cash Conversion Cycle (CCC)
 print(f"
-GENERAL MILLS's CASH CONVERSION CYCLE
-====================================
+GENERAL MILLS's CASH CONVERSION CYCLE (CCC)
+===========================================
 {calc_ccc(GEN_MILLS)}
 ")
