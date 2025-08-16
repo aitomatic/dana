@@ -24,14 +24,14 @@ from dana.registry import (
 
 
 # Create backward compatibility functions and instances
-def create_agent_instance(agent_type_name: str, **kwargs):
+def create_agent_instance(agent_type_name: str, field_values=None, context=None):
     """Create an agent instance (backward compatibility)."""
     from dana.agent.agent_instance import AgentInstance
 
     agent_type = get_agent_type(agent_type_name)
     if agent_type is None:
         raise ValueError(f"Agent type '{agent_type_name}' not found")
-    return AgentInstance(agent_type, **kwargs)
+    return AgentInstance(agent_type, field_values or {})
 
 
 # Global registry instance for backward compatibility
