@@ -50,8 +50,8 @@ from dana.core.lang.interpreter.executor.statement import (
     StatementUtils,
 )
 from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
-from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class StatementExecutor(BaseExecutor):

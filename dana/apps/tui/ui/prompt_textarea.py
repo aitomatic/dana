@@ -12,8 +12,8 @@ from textual.binding import Binding
 from textual.events import Key
 from textual.message import Message
 from textual.widgets import Input, TextArea
-# Removed autocomplete imports - using history navigation only
 
+# Removed autocomplete imports - using history navigation only
 from dana.common import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 
@@ -97,26 +97,86 @@ class PromptStyleTextArea(TextArea):
         self._input_lines: list[_DanaInput] = []
         # Removed autocomplete - using history navigation only
 
-        # Reference to prompt widget (will be set by parent)
-        self._prompt = None
-
         # Load history from file
         self._load_history()
+
+    # ============================================================================
+    # Lifecycle Methods
+    # ============================================================================
 
     def on_mount(self) -> None:
         """Set up the initial input line and autocomplete."""
         # Create and set up the first input line
         self._focus_on_input_line(0)
 
-    def set_prompt_widget(self, prompt):
-        """Set reference to the prompt widget for updating continuation prompt."""
-        self._prompt = prompt
+    # ============================================================================
+    # Public Interface Methods
+    # ============================================================================
 
     def focus(self, scroll_visible: bool = True) -> "PromptStyleTextArea":
         """Focus the last input line."""
         if self._input_lines:
             self._input_lines[-1].focus()
         return self
+
+    def clear(self):
+        """Clear the contents of all input lines."""
+        if self._input_lines:
+            for line in self._input_lines:
+                line.value = ""
+            self._input_lines[0].focus()
+
+        # Also clear the display text area
+        result = super().clear()
+
+        self.text = ""
+        self._history_index = -1
+        self._temp_content = ""
+
+        # Reset multi-line mode
+        self._multiline_mode = False
+        self._multiline_buffer = []
+
+        return result
+
+    @property
+    def value(self) -> str:
+        """Get the current input value."""
+        return self.text
+
+    @value.setter
+    def value(self, text: str) -> None:
+        """Set the current input value."""
+        self.text = text
+        if text:
+            lines = text.split("\n")
+            last_line_index = len(lines) - 1
+            last_line_length = len(lines[last_line_index])
+            self.cursor_location = (last_line_index, last_line_length)
+
+    def get_current_line(self) -> str:
+        """Get the current line content (for autocomplete)."""
+        if not self.text:
+            return ""
+        lines = self.text.split("\n")
+        current_row = self.cursor_location[0]
+        if 0 <= current_row < len(lines):
+            return lines[current_row]
+        return ""
+
+    def get_cursor_column(self) -> int:
+        """Get cursor column position in current line (for autocomplete)."""
+        return self.cursor_location[1]
+
+    def get_autocomplete_status(self) -> str | None:
+        """Get current autocomplete status for display."""
+        # The overlay input is no longer the single source of truth for autocomplete status
+        # and is managed by the AutoComplete widget itself.
+        return None
+
+    # ============================================================================
+    # Input Line Management
+    # ============================================================================
 
     def _focus_on_input_line(self, index: int) -> None:
         """Focus the input line at the given index."""
@@ -167,6 +227,10 @@ class PromptStyleTextArea(TextArea):
         # The overlay input is no longer the single source of truth for text
         # and autocomplete, so we don't need to keep it in sync here.
         self.post_message(self.TextChanged(text))
+
+    # ============================================================================
+    # History Management
+    # ============================================================================
 
     def _get_history_file(self) -> Path:
         """Get path to history file."""
@@ -297,144 +361,109 @@ class PromptStyleTextArea(TextArea):
                 # Move cursor to end of line
                 self._input_lines[last_line_index].cursor_position = len(lines[last_line_index])
 
+    # ============================================================================
+    # Key Event Handling
+    # ============================================================================
+
     async def _handle_input_key(self, event: Key, line_index: int) -> None:
         """Handle key events forwarded from the _DanaInput widget."""
-        # Backslash - create new line and enter/stay in multi-line mode
-        if event.key == "backslash":
+
+        # Multi-line continuation and submission keys
+        if event.key in ("backslash", "enter"):
+            # Common preprocessing
             current_line = self._input_lines[line_index].value.rstrip()
 
-            # Enter multi-line mode if not already in it
-            if not self._multiline_mode:
-                self._multiline_mode = True
-                self._multiline_buffer = [current_line]
-                # Update prompt to show continuation
-                if self._prompt:
-                    self._prompt.update("...")
-            else:
-                # Already in multi-line mode, add current line to buffer
-                self._multiline_buffer.append(current_line)
+            # Key-specific handling
+            if event.key == "backslash":
+                self._continue_multiline_mode(line_index, current_line)
+                event.prevent_default()
+            else:  # enter
+                if not self._multiline_mode:
+                    self._handle_single_line_enter(event, line_index, current_line)
+                else:
+                    self._handle_multiline_enter(event, line_index, current_line)
 
-            # Create a new input line for continuation
-            self._focus_on_input_line(line_index + 1)
+            # Common post-processing
+            self._post_multiline_processing(event, line_index)
+
+        # History navigation keys
+        elif event.key in ("up", "down", "pageup", "pagedown"):
+            self._handle_history_navigation(event)
+
+    def _handle_history_navigation(self, event: Key) -> None:
+        """Handle history navigation with up/down arrow keys."""
+        # Only allow history navigation when not in multi-line mode
+        if not self._multiline_mode:
+            current_input = self._get_current_input_content()
+            if current_input == "" or self._history_index != -1:
+                if event.key in ("up", "pageup"):
+                    self._navigate_history(-1)
+                else:
+                    self._navigate_history(1)
+
+    def _post_multiline_processing(self, event: Key, line_index: int) -> None:
+        """Common post-processing for multi-line continuation keys."""
+        # This method can be extended with common post-processing logic
+        # such as updating UI state, logging, etc.
+        pass
+
+    # ============================================================================
+    # Multi-line Mode Handling
+    # ============================================================================
+
+    def _continue_multiline_mode(self, line_index: int, current_line: str, update_prompt: bool = False) -> None:
+        """Helper method to continue multi-line mode by adding current line to buffer and creating new input line."""
+        if not self._multiline_mode:
+            self._multiline_mode = True
+            self._multiline_buffer = [current_line]
+        else:
+            self._multiline_buffer.append(current_line)
+
+        # Create a new input line for continuation
+        self._focus_on_input_line(line_index + 1)
+
+    def _handle_single_line_enter(self, event: Key, line_index: int, current_line: str) -> None:
+        """Handle enter key in single-line mode."""
+        # Check if we should enter multi-line mode
+        if current_line.endswith(":"):
+            self._continue_multiline_mode(line_index, current_line, update_prompt=True)
+            event.prevent_default()
+        else:
+            # Single-line submission
+            self._on_input_submitted()
+            event.key = "escape"
+
+    def _handle_multiline_enter(self, event: Key, line_index: int, current_line: str) -> None:
+        """Handle enter key in multi-line mode."""
+        if current_line == "":  # Empty line signals end of multi-line
+            self._handle_empty_line_in_multiline(event, line_index)
+        else:
+            # Add line to buffer and continue
+            self._continue_multiline_mode(line_index, current_line)
             event.prevent_default()
 
-        # Up/Down arrows - navigate history (basic implementation)
-        elif event.key in ("up", "down", "pageup", "pagedown"):
-            # Only allow history navigation when not in multi-line mode
-            if not self._multiline_mode:
-                current_input = self._get_current_input_content()
-                if current_input == "" or self._history_index != -1:
-                    if event.key in ("up", "pageup"):
-                        self._navigate_history(-1)
-                    else:
-                        self._navigate_history(1)
+    def _handle_empty_line_in_multiline(self, event: Key, line_index: int) -> None:
+        """Handle empty line in multi-line mode - check if we should end or continue."""
+        # Check if there are any non-empty lines after this one
+        has_content_after = False
+        for i in range(line_index + 1, len(self._input_lines)):
+            if self._input_lines[i].value.strip():
+                has_content_after = True
+                break
 
-        # Enter - handle based on multi-line mode
-        elif event.key == "enter":
-            current_line = self._input_lines[line_index].value.rstrip()  # Strip trailing whitespace
+        if not has_content_after:
+            # End multi-line mode and submit
+            self._multiline_mode = False
+            self._on_input_submitted()
+            event.key = "escape"
+        else:
+            # Continue multi-line mode
+            self._continue_multiline_mode(line_index, "")
+            event.prevent_default()
 
-            if not self._multiline_mode:
-                # Check if we should enter multi-line mode
-                if current_line.endswith(":"):
-                    self._multiline_mode = True
-                    self._multiline_buffer = [current_line]
-                    # Create a new input line for continuation
-                    self._focus_on_input_line(line_index + 1)
-                    # Update prompt to show continuation
-                    if self._prompt:
-                        self._prompt.update("...")
-                    event.prevent_default()
-                else:
-                    # Single-line submission
-                    self._on_input_submitted()
-                    event.key = "escape"
-            else:
-                # We're in multi-line mode
-                if current_line == "":  # Empty line signals end of multi-line
-                    # Check if there are any non-empty lines after this one
-                    has_content_after = False
-                    for i in range(line_index + 1, len(self._input_lines)):
-                        if self._input_lines[i].value.strip():
-                            has_content_after = True
-                            break
-
-                    if not has_content_after:
-                        # End multi-line mode and submit
-                        self._multiline_mode = False
-                        # Reset prompt
-                        if self._prompt:
-                            self._prompt.update("⏵")
-                        self._on_input_submitted()
-                        event.key = "escape"
-                    else:
-                        # Continue multi-line mode
-                        self._multiline_buffer.append(current_line)
-                        self._focus_on_input_line(line_index + 1)
-                        event.prevent_default()
-                else:
-                    # Add line to buffer and continue
-                    self._multiline_buffer.append(current_line)
-                    self._focus_on_input_line(line_index + 1)
-                    event.prevent_default()
-
-    def clear(self):
-        """Clear the contents of all input lines."""
-        if self._input_lines:
-            for line in self._input_lines:
-                line.value = ""
-            self._input_lines[0].focus()
-
-        # Also clear the display text area
-        result = super().clear()
-
-        self.text = ""
-        self._history_index = -1
-        self._temp_content = ""
-
-        # Reset multi-line mode
-        self._multiline_mode = False
-        self._multiline_buffer = []
-
-        # Reset prompt if we have reference to it
-        if self._prompt:
-            self._prompt.update("⏵")
-
-        return result
-
-    @property
-    def value(self) -> str:
-        """Get the current input value."""
-        return self.text
-
-    @value.setter
-    def value(self, text: str) -> None:
-        """Set the current input value."""
-        self.text = text
-        if text:
-            lines = text.split("\n")
-            last_line_index = len(lines) - 1
-            last_line_length = len(lines[last_line_index])
-            self.cursor_location = (last_line_index, last_line_length)
-
-    def get_current_line(self) -> str:
-        """Get the current line content (for autocomplete)."""
-        if not self.text:
-            return ""
-        lines = self.text.split("\n")
-        current_row = self.cursor_location[0]
-        if 0 <= current_row < len(lines):
-            return lines[current_row]
-        return ""
-
-    def get_cursor_column(self) -> int:
-        """Get cursor column position in current line (for autocomplete)."""
-        return self.cursor_location[1]
-
-    def get_autocomplete_status(self) -> str | None:
-        """Get current autocomplete status for display."""
-        # The overlay input is no longer the single source of truth for autocomplete status
-        # and is managed by the AutoComplete widget itself.
-        return None
+    # ============================================================================
+    # Action Methods
+    # ============================================================================
 
     def action_copy_selection(self) -> None:
         """Copy selected text to clipboard."""
@@ -446,13 +475,9 @@ class PromptStyleTextArea(TextArea):
                 # Optionally show a brief notification
                 if hasattr(self, "notify"):
                     self.notify("Text copied to clipboard", timeout=1)
-        except Exception:
-            # Fallback to app clipboard if available
-            try:
-                if hasattr(self.app, "copy_to_clipboard"):
-                    self.app.copy_to_clipboard(self.selected_text or "")
-            except Exception:
-                pass  # Silent fail - clipboard might not be available
+        except ImportError:
+            # Silently fail if pyperclip is not available
+            pass
 
     def action_paste_text(self) -> None:
         """Paste text from clipboard."""
@@ -462,28 +487,13 @@ class PromptStyleTextArea(TextArea):
             clipboard_text = pyperclip.paste()
             if clipboard_text:
                 # Insert at cursor position
-                cursor_row, cursor_col = self.cursor_location
-                lines = self.text.split("\n") if self.text else [""]
-
-                if cursor_row < len(lines):
-                    current_line = lines[cursor_row]
-                    # Insert clipboard text at cursor position
-                    new_line = current_line[:cursor_col] + clipboard_text + current_line[cursor_col:]
-                    lines[cursor_row] = new_line
-                    self.text = "\n".join(lines)
-
-                    # Move cursor to end of pasted text
-                    if "\n" in clipboard_text:
-                        # Multi-line paste
-                        pasted_lines = clipboard_text.split("\n")
-                        new_row = cursor_row + len(pasted_lines) - 1
-                        new_col = len(pasted_lines[-1]) if len(pasted_lines) > 1 else cursor_col + len(clipboard_text)
-                        self.cursor_location = (new_row, new_col)
-                    else:
-                        # Single line paste
-                        self.cursor_location = (cursor_row, cursor_col + len(clipboard_text))
-        except Exception:
-            pass  # Silent fail - clipboard might not be available
+                self.insert_text_at_cursor(clipboard_text)
+                # Optionally show a brief notification
+                if hasattr(self, "notify"):
+                    self.notify("Text pasted from clipboard", timeout=1)
+        except ImportError:
+            # Silently fail if pyperclip is not available
+            pass
 
     def action_cut_selection(self) -> None:
         """Cut selected text to clipboard."""
@@ -492,16 +502,11 @@ class PromptStyleTextArea(TextArea):
 
             if self.selected_text:
                 pyperclip.copy(self.selected_text)
-                # Delete the selected text
+                # Remove selected text
                 self.delete_selection()
                 # Optionally show a brief notification
                 if hasattr(self, "notify"):
                     self.notify("Text cut to clipboard", timeout=1)
-        except Exception:
-            # Fallback to app clipboard if available
-            try:
-                if hasattr(self.app, "copy_to_clipboard"):
-                    self.app.copy_to_clipboard(self.selected_text or "")
-                    self.delete_selection()
-            except Exception:
-                pass  # Silent fail - clipboard might not be available
+        except ImportError:
+            # Silently fail if pyperclip is not available
+            pass

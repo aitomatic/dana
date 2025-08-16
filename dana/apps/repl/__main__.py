@@ -3,7 +3,7 @@
 Dana REPL Main Entry Point with TIMING DIAGNOSTICS
 
 This module serves as the entry point for running the Dana REPL as a module.
-Usage: python -m dana.core.repl
+Usage: python -m dana.apps.repl
 
 The actual REPL implementation is in dana_repl_app.py to allow for better
 organization and testing. This file handles the basic setup and delegates

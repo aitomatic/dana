@@ -1,7 +1,7 @@
 """
 Main entry point for Dana TUI.
 
-Usage: python -m dana.tui
+Usage: python -m dana.apps.tui
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License

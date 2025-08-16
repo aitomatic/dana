@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from dana.common.mixins.loggable import Loggable
 
 if TYPE_CHECKING:
-    from dana.core.repl.repl import Repl
+    from dana.apps.repl.repl import Repl
 
 
 class StatusDisplay(Loggable):

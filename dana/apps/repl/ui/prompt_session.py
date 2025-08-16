@@ -26,10 +26,10 @@ from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame
 
+from dana.apps.repl.repl import REPL
+from dana.apps.repl.ui.status_display import StatusDisplay
 from dana.common.mixins.loggable import Loggable
 from dana.common.terminal_utils import ColorScheme, get_dana_lexer
-from dana.core.repl.repl import REPL
-from dana.core.repl.ui.status_display import StatusDisplay
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana/repl_history")

@@ -63,16 +63,16 @@ import logging
 import sys
 import time
 
+from dana.apps.repl.commands import CommandHandler
+from dana.apps.repl.input import InputProcessor
+from dana.apps.repl.repl import REPL
+from dana.apps.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.terminal_utils import ColorScheme
 from dana.core.concurrency.base_promise import BasePromise
 from dana.core.lang.log_manager import LogLevel
-from dana.core.repl.commands import CommandHandler
-from dana.core.repl.input import InputProcessor
-from dana.core.repl.repl import REPL
-from dana.core.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
 from dana.core.runtime import DanaThreadPool
 
 # Map Dana LogLevel to Python logging levels
@@ -132,10 +132,10 @@ async def dana_repl_main(debug: bool = False) -> None:
 
         if use_fullscreen:
             # Use full-screen REPL with persistent status bar
+            from dana.apps.repl.repl import REPL
+            from dana.apps.repl.ui.fullscreen_repl import FullScreenREPL
             from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
             from dana.common.terminal_utils import ColorScheme
-            from dana.core.repl.repl import REPL
-            from dana.core.repl.ui.fullscreen_repl import FullScreenREPL
 
             repl = REPL(llm_resource=LegacyLLMResource(), log_level=log_level)
             colors = ColorScheme()

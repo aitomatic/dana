@@ -18,8 +18,8 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.collection_executor import CollectionExecutor
@@ -31,9 +31,9 @@ from dana.core.lang.interpreter.executor.function_executor import FunctionExecut
 from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
 from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
 from dana.core.lang.interpreter.executor.traversal import OptimizedASTTraversal
-from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.interpreter.hooks import HookRegistry, HookType
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class DanaExecutor(BaseExecutor):

@@ -15,8 +15,8 @@ ARCHITECTURE:
     - ui/: User interface components
 
 USAGE:
-    python -m dana.core.repl          # Start interactive REPL
-    from dana.core.repl import dana_repl  # Import for programmatic use
+    python -m dana.apps.repl          # Start interactive REPL
+    from dana.apps.repl import dana_repl  # Import for programmatic use
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and Dana/Dana in derivative works.

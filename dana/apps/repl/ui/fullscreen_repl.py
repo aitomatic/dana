@@ -18,10 +18,10 @@ from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.styles import Style
 
+from dana.apps.repl.repl import REPL
+from dana.apps.repl.ui.prompt_session import DanaCompleter
 from dana.common.mixins.loggable import Loggable
 from dana.common.terminal_utils import ColorScheme, get_dana_lexer
-from dana.core.repl.repl import REPL
-from dana.core.repl.ui.prompt_session import DanaCompleter
 
 
 class FullScreenREPL(Loggable):

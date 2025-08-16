@@ -8,9 +8,9 @@ comprehensive help information and status for the REPL.
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.shortcuts import print_formatted_text
 
+from dana.apps.repl.repl import REPL
 from dana.common.mixins.loggable import Loggable
 from dana.common.terminal_utils import ColorScheme, print_header
-from dana.core.repl.repl import REPL
 
 
 class HelpFormatter(Loggable):

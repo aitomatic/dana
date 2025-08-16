@@ -9,7 +9,7 @@ from collections.abc import AsyncIterator
 from abc import ABC, abstractmethod
 
 from dana.core.lang.dana_sandbox import DanaSandbox as CoreDanaSandbox, ExecutionResult
-from dana.core.repl.repl import REPL
+from dana.apps.repl.repl import REPL
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.log_manager import LogLevel
 from .events import AgentEvent

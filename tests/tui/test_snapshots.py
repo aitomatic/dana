@@ -12,7 +12,7 @@ import pytest
 
 pytest.skip("Disabling snapshot tests due to library issue.", allow_module_level=True)
 
-from dana.tui import DanaTUI
+from dana.apps.tui import DanaTUI
 
 
 @pytest.mark.asyncio

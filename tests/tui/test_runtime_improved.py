@@ -10,8 +10,9 @@ MIT License
 from unittest.mock import AsyncMock
 
 import pytest
-from dana.tui.core.events import Done, Status, Token
-from dana.tui.core.runtime import Agent, DanaSandbox
+
+from dana.apps.tui.core.events import Done, Status, Token
+from dana.apps.tui.core.runtime import Agent, DanaSandbox
 
 
 class TestAgent:

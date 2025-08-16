@@ -7,10 +7,10 @@ This module processes special commands like /help, /debug, /nlp, etc.
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.shortcuts import print_formatted_text
 
+from dana.apps.repl.commands.help_formatter import HelpFormatter
+from dana.apps.repl.repl import REPL
 from dana.common.mixins.loggable import Loggable
 from dana.common.terminal_utils import ColorScheme
-from dana.core.repl.commands.help_formatter import HelpFormatter
-from dana.core.repl.repl import REPL
 
 
 class CommandHandler(Loggable):

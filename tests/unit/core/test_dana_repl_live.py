@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.core.repl.dana_repl_app import DanaREPLApp
+from dana.apps.repl.dana_repl_app import DanaREPLApp
 
 # Mark all tests in this file as live tests
 pytestmark = [pytest.mark.asyncio, pytest.mark.live]
@@ -158,7 +158,7 @@ async def test_dana_repl_promise_command():
         "exit",
     ]
 
-    with patch("dana.core.repl.ui.prompt_session_manager.PromptSession.prompt_async") as mock_prompt:
+    with patch("dana.apps.repl.ui.prompt_session_manager.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs
 
         app = DanaREPLApp()

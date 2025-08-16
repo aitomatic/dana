@@ -61,8 +61,8 @@ from dana.core.lang.interpreter.executor.expression.identifier_resolver import (
 from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
     PipeOperationHandler,
 )
-from dana.registry.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class ExpressionExecutor(BaseExecutor):

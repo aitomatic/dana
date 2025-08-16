@@ -4,8 +4,8 @@ Test math functions in Dana standard library.
 
 import pytest
 
-from dana.registry.function_registry import FunctionRegistry
 from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+from dana.registry.function_registry import FunctionRegistry
 
 
 class TestMathFunctions:

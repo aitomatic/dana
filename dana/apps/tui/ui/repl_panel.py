@@ -9,10 +9,10 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import RichLog, Static
 
+from dana.apps.tui.core.runtime import DanaSandbox
 from dana.common import DANA_LOGGER
 from dana.core.concurrency import is_promise
 from dana.core.concurrency.base_promise import BasePromise
-from dana.tui.core.runtime import DanaSandbox
 
 from .prompt_textarea import PromptStyleTextArea
 from .syntax_highlighter import dana_highlighter
@@ -61,10 +61,6 @@ class TerminalREPL(Vertical):
             self._output.write("  • Use ↑↓ arrows to navigate command history")
             self._output.write("  • History persists between sessions")
             self._output.write("")  # Empty line
-
-        # Connect prompt widget to input widget
-        if self._input and self._prompt:
-            self._input.set_prompt_widget(self._prompt)
 
         # Focus the input
         if self._input:

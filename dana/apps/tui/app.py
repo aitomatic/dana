@@ -29,7 +29,7 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
     }
-    
+
     /* Layout containers */
     .main-container {
         height: 100%;
@@ -60,15 +60,13 @@ class DanaTUI(App):
     .panel-title {
         background: $accent;
         color: $text;
-        padding: 0 1;
         text-style: bold;
     }
     
     /* Terminal specific - use design system */
     #terminal-output {
-        border: round $border;
+        border: round $accent;
         height: 1fr;
-        margin: 0;
         background: $surface;
         color: $text;
         overflow: auto;
@@ -77,11 +75,9 @@ class DanaTUI(App):
     
     
     #terminal-input-container {
-        border: round $border;
+        border: round $accent;
         background: $surface;
         height: 5;
-        padding: 0;
-        margin: 0;
     }
     
     #terminal-prompt {
@@ -89,7 +85,6 @@ class DanaTUI(App):
         border: none;
         background: $surface;
         color: $accent;
-        padding: 0;
     }
     
     #terminal-input {
@@ -109,14 +104,16 @@ class DanaTUI(App):
         color: $text;
         width: 100%;
         height: auto;
-        margin: 0 0 0 0;
+        margin: 0;
         padding: 0;
         position: relative;
     }
     
+
+    
     /* Agents list - use design system */
     #agents-list {
-        border: round $border;
+        border: round $accent;
         background: $surface;
         color: $text;
         overflow: auto;
@@ -125,7 +122,7 @@ class DanaTUI(App):
     
     /* Agent detail - use design system */
     #detail-log {
-        border: round $border;
+        border: round $accent;
         background: $surface;
         color: $text;
         overflow: auto;
@@ -136,11 +133,12 @@ class DanaTUI(App):
     Footer {
         background: $accent;
         color: $text;
+        opacity: 0.5
     }
     
     /* Log panel - use design system */
     #log-panel {
-        border: round $border;
+        border: round $accent;
         background: $surface;
         color: $text;
         height: 30%;
@@ -159,17 +157,17 @@ class DanaTUI(App):
     """
 
     BINDINGS = [
-        Binding("escape", "cancel_focused", "Cancel", show=True),
-        Binding("shift+escape", "cancel_all", "Cancel All", show=True),
+        Binding("ctrl+q", "quit", "Quit", show=True),
+        Binding("ctrl+l", "toggle_logs", "Logs", show=True),
+        # Binding("escape", "cancel_focused", "Cancel", show=false),
+        # Binding("shift+escape", "cancel_all", "Cancel All", show=False),
+        Binding("f1", "help", "Help", show=True),
         Binding("tab", "next_agent", "Next Agent", show=False),
         Binding("shift+tab", "prev_agent", "Prev Agent", show=False),
-        Binding("f1", "help", "Help", show=True),
         Binding("ctrl+x", "clear_transcript", "Clear", show=False),
         Binding("ctrl+h", "show_history", "History", show=False),
         Binding("ctrl+shift+h", "clear_history", "Clear History", show=False),
         Binding("ctrl+s", "save_logs", "Save Logs", show=False),
-        Binding("ctrl+l", "toggle_logs", "Toggle Logs", show=False),
-        Binding("ctrl+c", "quit", "Quit", show=True),
     ]
 
     def __init__(self, **kwargs):
@@ -207,7 +205,6 @@ class DanaTUI(App):
     def compose(self) -> ComposeResult:
         """Create the application layout."""
         with Vertical(classes="main-container"):
-            # Main content area
             with Horizontal(classes="content-area"):
                 # Left panel: Unified REPL (input/output + execution)
                 with Vertical(classes="left-panel"):

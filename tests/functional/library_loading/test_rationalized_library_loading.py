@@ -52,7 +52,6 @@ class TestRationalizedLibraryLoading:
 
         # Note: _preloaded_functions is no longer used in the new registry system
         # The new system uses the global registry for function registration
-
         # Verify that corelib functions are available when DanaInterpreter is created
         from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
