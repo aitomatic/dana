@@ -1,0 +1,24 @@
+"""Chartered Financial Analyst (CFA) Domain-Expert Agent (DXA)."""
+
+
+log_level('debug')
+
+
+# import relevant expertise module(s)
+import financial_analysis
+
+
+# define domain-expert agent (DXA) blueprint with relevant expertise module(s)
+agent_blueprint CFA:
+    expertise: list = [financial_analysis]
+
+# instantiate domain-expert agent (DXA)
+V102 = CFA()
+
+
+# use domain-expert agent (DXA) to solve problems
+print(V102.solve(
+    'Is AMD capital-intensive?',
+    resources={'doc': financial_analysis.FinDoc(company='AMD',
+                                                period='2022',
+                                                path='financial_analysis/docs/AMD_2022_10K.pdf')}))
