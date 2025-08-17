@@ -205,9 +205,9 @@ class AgentHandler(Loggable):
 
             # Register constructor in context to create instances
             def agent_constructor(**kwargs):
-                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.registry import TYPE_REGISTRY
 
-                return StructTypeRegistry.create_instance(agent_type.name, kwargs)
+                return TYPE_REGISTRY.create_instance(agent_type.name, kwargs)
 
             context.set(f"local:{node.name}", agent_constructor)
             self._trace_resource_operation("agent_blueprint", node.name, len(node.fields), 0)

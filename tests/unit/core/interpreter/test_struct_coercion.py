@@ -14,11 +14,8 @@ import unittest
 import pytest
 
 from dana.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
-from dana.core.lang.interpreter.struct_system import (
-    StructInstance,
-    StructType,
-    StructTypeRegistry,
-)
+from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.registry import TYPE_REGISTRY
 
 
 @pytest.mark.unit
@@ -28,12 +25,12 @@ class TestStructCoercion(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         # Clear struct registry before each test
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.coercer = SemanticCoercer(strategy=CoercionStrategy.ENHANCED)
 
     def tearDown(self):
         """Clean up after each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_coerce_json_string_to_simple_struct(self):
         """Test coercing JSON string to simple struct instance."""
@@ -41,7 +38,7 @@ class TestStructCoercion(unittest.TestCase):
         test_struct = StructType(
             name="TestPerson", fields={"name": "str", "age": "int", "email": "str"}, field_order=["name", "age", "email"], field_comments={}
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Mock LLM JSON response
         json_response = '{"name": "John Doe", "age": 30, "email": "john@example.com"}'
@@ -71,7 +68,7 @@ class TestStructCoercion(unittest.TestCase):
             field_order=["entities", "knowledge_needs", "success_criteria", "complexity_level", "estimated_minimum_assets"],
             field_comments={},
         )
-        StructTypeRegistry.register(task_signature)
+        TYPE_REGISTRY.register(task_signature)
 
         # Mock LLM response similar to what reason() would return
         mock_response = json.dumps(
@@ -106,7 +103,7 @@ class TestStructCoercion(unittest.TestCase):
             field_order=["street", "city", "zipcode"],
             field_comments={},
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Mock data (already parsed dict)
         data = {"street": "123 Main St", "city": "San Francisco", "zipcode": "94102"}
@@ -129,7 +126,7 @@ class TestStructCoercion(unittest.TestCase):
             field_order=["id", "name", "price", "category"],
             field_comments={},
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Mock LLM response with markdown formatting (common LLM behavior)
         markdown_response = """```json
@@ -160,7 +157,7 @@ class TestStructCoercion(unittest.TestCase):
             field_order=["timeout", "retries", "debug"],
             field_comments={},
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Mock LLM response with reasoning and final answer
         response_with_reasoning = """I need to create a configuration with appropriate values.
@@ -197,7 +194,7 @@ FINAL_ANSWER: {"timeout": 30, "retries": 3, "debug": true}"""
         """Test that invalid JSON for registered struct type raises ValueError."""
         # Register a test struct
         test_struct = StructType(name="TestStruct", fields={"field": "str"}, field_order=["field"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Invalid JSON
         invalid_json = '{"field": "value"'  # Missing closing brace
@@ -217,7 +214,7 @@ FINAL_ANSWER: {"timeout": 30, "retries": 3, "debug": true}"""
             field_order=["name", "age", "email"],
             field_comments={},
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # JSON missing required fields
         incomplete_json = '{"name": "John"}'  # Missing age and email
@@ -232,10 +229,10 @@ FINAL_ANSWER: {"timeout": 30, "retries": 3, "debug": true}"""
         """Test that existing struct instance of correct type is returned as-is."""
         # Register a test struct
         test_struct = StructType(name="ExistingStruct", fields={"field": "str"}, field_order=["field"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Create an existing struct instance
-        existing_instance = StructTypeRegistry.create_instance("ExistingStruct", {"field": "value"})
+        existing_instance = TYPE_REGISTRY.create_instance("ExistingStruct", {"field": "value"})
 
         # Test coercion - should return the same instance
         result = self.coercer.coerce_value(existing_instance, "ExistingStruct")
@@ -247,7 +244,7 @@ FINAL_ANSWER: {"timeout": 30, "retries": 3, "debug": true}"""
         """Test that trying to coerce list to struct raises ValueError."""
         # Register a test struct
         test_struct = StructType(name="ListTestStruct", fields={"field": "str"}, field_order=["field"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Try to coerce a list
         list_value = ["item1", "item2"]
@@ -276,7 +273,7 @@ FINAL_ANSWER: {"timeout": 30, "retries": 3, "debug": true}"""
             field_order=["id", "type", "source", "content", "trust_tier", "metadata", "relevance_score", "knowledge_category"],
             field_comments={},
         )
-        StructTypeRegistry.register(knowledge_asset)
+        TYPE_REGISTRY.register(knowledge_asset)
 
         # Mock complex JSON response
         complex_json = json.dumps(
@@ -311,12 +308,12 @@ class TestStructCoercionEdgeCases(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.coercer = SemanticCoercer(strategy=CoercionStrategy.ENHANCED)
 
     def tearDown(self):
         """Clean up after each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_empty_json_object_with_optional_fields(self):
         """Test handling of empty JSON objects."""
@@ -328,7 +325,7 @@ class TestStructCoercionEdgeCases(unittest.TestCase):
         """Test that extra fields in JSON are rejected."""
         # Register a test struct
         test_struct = StructType(name="StrictStruct", fields={"name": "str"}, field_order=["name"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # JSON with extra fields
         json_with_extra = '{"name": "test", "extra_field": "should_be_rejected"}'
@@ -348,7 +345,7 @@ class TestStructCoercionEdgeCases(unittest.TestCase):
             field_order=["count", "active", "score"],
             field_comments={},
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # JSON with correct types
         valid_json = '{"count": 42, "active": true, "score": 95.5}'

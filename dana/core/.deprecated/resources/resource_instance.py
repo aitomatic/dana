@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.registry import STRUCT_FUNCTION_REGISTRY
 
 
 @dataclass
@@ -152,10 +153,8 @@ class ResourceInstance(StructInstance):
         First checks MethodRegistry, then falls back to parent implementation.
         """
         # Check MethodRegistry first
-        from dana.core.lang.interpreter.struct_system import MethodRegistry
-
-        method_key = (self._type.name, method_name)
-        method = MethodRegistry._methods.get(method_key)
+        # method_key = (self._type.name, method_name)
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self._type.name, method_name)
 
         if method:
             # Call the registered method
@@ -229,7 +228,6 @@ def create_resource_type_from_ast(resource_def, context=None) -> ResourceType:
     """
     # Import here to avoid circular imports
     from dana.core.lang.ast import ResourceDefinition
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 
     if not isinstance(resource_def, ResourceDefinition):
         raise TypeError(f"Expected ResourceDefinition, got {type(resource_def)}")
@@ -242,7 +240,10 @@ def create_resource_type_from_ast(resource_def, context=None) -> ResourceType:
 
     # Handle inheritance by merging parent fields
     if resource_def.parent_name:
-        parent_type = StructTypeRegistry.get(resource_def.parent_name)
+        # Get parent from the global registry
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        parent_type = STRUCT_FUNCTION_REGISTRY.get_type(resource_def.parent_name)
         if parent_type is None:
             raise ValueError(f"Parent resource '{resource_def.parent_name}' not found for '{resource_def.name}'")
 

@@ -5,9 +5,8 @@ Registers KnowledgeBase as a ResourceType that creates ResourceInstance objects
 with KnowledgeBaseResource backend automatically.
 """
 
+from dana.core.lang.interpreter.struct_system import deprecated_StructTypeRegistry
 from dana.core.resource.resource_instance import ResourceType
-from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-
 
 # Define the ResourceType for Knowledge Base
 KNOWLEDGE_BASE_RESOURCE_TYPE = ResourceType(
@@ -20,7 +19,7 @@ KNOWLEDGE_BASE_RESOURCE_TYPE = ResourceType(
 )
 
 # Register the type so it can be used in Dana
-StructTypeRegistry.register(KNOWLEDGE_BASE_RESOURCE_TYPE)
+deprecated_StructTypeRegistry.register(KNOWLEDGE_BASE_RESOURCE_TYPE)
 
 
 def get_knowledge_base_resource_type() -> ResourceType:

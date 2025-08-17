@@ -62,6 +62,7 @@ from dana.core.lang.interpreter.executor.expression.pipe_operation_handler impor
     PipeOperationHandler,
 )
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import STRUCT_FUNCTION_REGISTRY
 from dana.registry.function_registry import FunctionRegistry
 
 
@@ -443,13 +444,10 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # NEW RESOLUTION ORDER with TypeAwareMethodRegistry
-        # 1. Try type-aware method registry (fast O(1) lookup)
-        from dana.core.lang.interpreter.struct_system import TypeAwareMethodRegistry
-
-        method = TypeAwareMethodRegistry.lookup_method_for_instance(obj, method_name)
+        # 1. Try STRUCT_FUNCTION_REGISTRY (fast O(1) lookup)
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method_for_instance(obj, method_name)
         if method is not None:
-            self.debug("DEBUG: Found method in TypeAwareMethodRegistry")
+            self.debug("DEBUG: Found method in STRUCT_FUNCTION_REGISTRY")
             # Create a context for the function call
             func_context = context.create_child_context()
             # Ensure the interpreter is available in the new context
@@ -518,7 +516,7 @@ class ExpressionExecutor(BaseExecutor):
                 return self.run_function(method, context, obj, *args, **kwargs)
 
             # Note: Lambda methods, struct methods, agent methods, and resource methods
-            # are all handled by the TypeAwareMethodRegistry lookup above.
+            # are all handled by the STRUCT_FUNCTION_REGISTRY lookup above.
             # This eliminates the need for multiple registry lookups.
 
             # Fallback 2: Try to find a method directly on the object (built-in methods, etc.)

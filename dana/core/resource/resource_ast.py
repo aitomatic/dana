@@ -7,7 +7,7 @@ Functions to create ResourceType from AST nodes with inheritance support.
 from typing import Any
 
 from dana.core.lang.ast import ResourceDefinition
-from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+from dana.registry import TYPE_REGISTRY
 
 from .resource_type import ResourceType
 
@@ -34,7 +34,7 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
 
     # Handle inheritance by merging parent fields
     if resource_def.parent_name:
-        parent_type = StructTypeRegistry.get(resource_def.parent_name)
+        parent_type = TYPE_REGISTRY.get(resource_def.parent_name)
         if parent_type is None:
             raise ValueError(f"Parent resource '{resource_def.parent_name}' not found for '{resource_def.name}'")
 

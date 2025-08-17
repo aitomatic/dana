@@ -22,15 +22,17 @@ from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
 # Global singleton instance
-_global_registry: GlobalRegistry | None = None
+GLOBAL_REGISTRY: GlobalRegistry = GlobalRegistry()
+MODULE_REGISTRY: ModuleRegistry = GLOBAL_REGISTRY.modules
+TYPE_REGISTRY: TypeRegistry = GLOBAL_REGISTRY.types
+FUNCTION_REGISTRY: FunctionRegistry = GLOBAL_REGISTRY.functions
+STRUCT_FUNCTION_REGISTRY: StructFunctionRegistry = GLOBAL_REGISTRY.struct_functions
 
 
 def get_global_registry() -> GlobalRegistry:
     """Get the global registry singleton instance."""
-    global _global_registry
-    if _global_registry is None:
-        _global_registry = GlobalRegistry()
-    return _global_registry
+    global GLOBAL_REGISTRY
+    return GLOBAL_REGISTRY
 
 
 # Convenience functions for common operations
@@ -95,6 +97,7 @@ def clear_all() -> None:
 
 
 __all__ = [
+    "GLOBAL_REGISTRY",
     "GlobalRegistry",
     "TypeRegistry",
     "StructFunctionRegistry",

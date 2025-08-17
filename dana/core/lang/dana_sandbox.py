@@ -93,6 +93,7 @@ class DanaSandbox(Loggable):
             self._context.set("system:module_search_paths", module_search_paths)
 
         # Add system functions to local context for easy access
+        # TODO: remove this
         if "system" in self._interpreter.function_registry._functions:
             for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
                 self._context.set(f"local:{func_name}", func)
@@ -689,12 +690,6 @@ class DanaSandbox(Loggable):
     def context(self) -> SandboxContext:
         """Public accessor for the sandbox execution context."""
         return self._context
-
-    def _deprecated_load_file(self, file_path: str) -> None:
-        """Load and evaluate a Dana file in the sandbox context."""
-        with open(file_path, encoding="utf-8") as f:
-            source_code = f.read()
-        self.execute_string(source_code, filename=file_path)
 
     @property
     def function_registry(self):

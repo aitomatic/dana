@@ -22,6 +22,8 @@ Discord: https://discord.gg/6jGD4PYk
 from dataclasses import dataclass
 from typing import Any
 
+from dana.registry import STRUCT_FUNCTION_REGISTRY, TYPE_REGISTRY
+
 
 @dataclass
 class StructType:
@@ -119,7 +121,7 @@ class StructType:
             return True
 
         # Handle custom struct types
-        if StructTypeRegistry.exists(expected_type):
+        if TYPE_REGISTRY.exists(expected_type):
             # Check if value is a StructInstance of the expected type
             if isinstance(value, StructInstance):
                 return value._type.name == expected_type
@@ -290,8 +292,7 @@ class StructInstance:
                 # Check if it's a struct instance with registered methods
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
-                    # Use the module-level TypeAwareMethodRegistry class
-                    if type_aware_method_registry.has_method(delegated_struct_type.name, method_name):
+                    if STRUCT_FUNCTION_REGISTRY.has_method(delegated_struct_type.name, method_name):
                         return delegated_object, method_name
 
                 # Also check for direct callable attributes (for non-struct objects)
@@ -510,121 +511,6 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
-# DEPRECATED: Registries have been moved to dana.registry
-# Import them from the new location for backward compatibility
-from dana.registry.struct_function_registry import StructFunctionRegistry as _StructFunctionRegistry
-from dana.registry.type_registry import TypeRegistry as _TypeRegistry
-
-# Re-export for backward compatibility
-# Note: The new system consolidates method and type registries
-StructTypeRegistry = _TypeRegistry
-
-
-# Create a wrapper class for MethodRegistry backward compatibility
-class MethodRegistry:
-    """Legacy method registry for backward compatibility."""
-
-    @classmethod
-    def register_method(cls, receiver_types: list[str], method_name: str, func, source_info: str = "") -> None:
-        """Register a method for multiple receiver types.
-
-        Args:
-            receiver_types: List of receiver type names
-            method_name: The name of the method
-            func: The callable function/method to register
-            source_info: Optional source information for debugging (ignored in new system)
-        """
-        from dana.registry import register_struct_function
-
-        # Register for each receiver type
-        for receiver_type in receiver_types:
-            register_struct_function(receiver_type, method_name, func)
-
-    @classmethod
-    def get_method(cls, receiver_type: str, method_name: str):
-        """Get a method for a specific receiver type."""
-        from dana.registry import lookup_struct_function
-
-        return lookup_struct_function(receiver_type, method_name)
-
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered methods (for testing)."""
-        from dana.registry import get_global_registry
-
-        registry = get_global_registry()
-        registry.struct_functions.clear()
-
-
-# Create a wrapper class that provides class methods for backward compatibility
-class TypeAwareMethodRegistry:
-    """Type-aware method registry with class methods for backward compatibility."""
-
-    @classmethod
-    def register_method(cls, receiver_type: str, method_name: str, func) -> None:
-        """Register a method for a receiver type."""
-        from dana.registry import register_struct_function
-
-        register_struct_function(receiver_type, method_name, func)
-
-    @classmethod
-    def lookup_method(cls, receiver_type: str, method_name: str):
-        """Lookup a method for a receiver type."""
-        from dana.registry import lookup_struct_function
-
-        return lookup_struct_function(receiver_type, method_name)
-
-    @classmethod
-    def has_method(cls, receiver_type: str, method_name: str) -> bool:
-        """Check if a method exists for a receiver type."""
-        from dana.registry import has_struct_function
-
-        return has_struct_function(receiver_type, method_name)
-
-    @classmethod
-    def lookup_method_for_instance(cls, instance, method_name: str):
-        """Lookup method for a specific instance (extracts type automatically)."""
-        from dana.registry import get_global_registry
-
-        registry = get_global_registry()
-        return registry.struct_functions.lookup_method_for_instance(instance, method_name)
-
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered methods (for testing)."""
-        from dana.registry import get_global_registry
-
-        registry = get_global_registry()
-        registry.struct_functions.clear()
-
-    def __init__(self):
-        """Initialize the wrapper instance."""
-        # This is needed for backward compatibility when code creates an instance
-        pass
-
-    @property
-    def _storage(self):
-        """Backward compatibility property for accessing the internal storage."""
-        from dana.registry import get_global_registry
-
-        registry = get_global_registry()
-        return registry.struct_functions._methods
-
-
-# Create global instances for compatibility
-struct_function_registry = _StructFunctionRegistry()
-type_registry = _TypeRegistry()
-
-# Make all method registries point to the global registry's struct_functions
-# to ensure consistency across the system
-from dana.registry import get_global_registry
-
-global_registry = get_global_registry()
-type_aware_method_registry = global_registry.struct_functions
-method_registry = global_registry.struct_functions
-universal_dana_method_registry = global_registry.struct_functions
-
-
 # === Utility Functions (restored for backward compatibility) ===
 
 
@@ -679,10 +565,10 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
 def register_struct_from_ast(struct_def) -> StructType:
     """Register a struct type from AST definition."""
     struct_type = create_struct_type_from_ast(struct_def)
-    StructTypeRegistry.register(struct_type)
+    TYPE_REGISTRY.register(struct_type)
     return struct_type
 
 
 def create_struct_instance(struct_name: str, **kwargs) -> StructInstance:
     """Create a struct instance with keyword arguments."""
-    return StructTypeRegistry.create_instance(struct_name, kwargs)
+    return TYPE_REGISTRY.create_instance(struct_name, kwargs)

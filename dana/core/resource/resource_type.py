@@ -7,7 +7,8 @@ compatibility with the struct system.
 
 from typing import Any
 
-from dana.core.lang.interpreter.struct_system import StructType, TypeAwareMethodRegistry
+from dana.core.lang.interpreter.struct_system import StructType
+from dana.registry import STRUCT_FUNCTION_REGISTRY
 
 
 class ResourceType(StructType):
@@ -68,8 +69,8 @@ class ResourceType(StructType):
 
     def has_method(self, method_name: str) -> bool:
         """Check if this resource type has a method."""
-        # Check TypeAwareMethodRegistry
-        if TypeAwareMethodRegistry.lookup_method(self.name, method_name):
+        # Check STRUCT_FUNCTION_REGISTRY
+        if STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name):
             return True
 
         # Check current type attributes
@@ -79,9 +80,9 @@ class ResourceType(StructType):
         return False
 
     def add_resource_method(self, method_name: str, method: Any) -> None:
-        """Add a resource-specific method to the TypeAwareMethodRegistry."""
-        TypeAwareMethodRegistry.register_method(self.name, method_name, method)
+        """Add a resource-specific method to the STRUCT_FUNCTION_REGISTRY."""
+        STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
 
     def get_resource_method(self, method_name: str) -> Any | None:
         """Get a resource method by name."""
-        return TypeAwareMethodRegistry.lookup_method(self.name, method_name)
+        return STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name)
