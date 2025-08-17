@@ -9,7 +9,6 @@ It delegates to the main CLI handler in dana.apps.cli.dana
 def main():
     from dana.apps.cli.__main__ import main as cli_main
 
-    print("calling cli_main")
     cli_main()
 
 
