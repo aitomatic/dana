@@ -30,6 +30,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 # Import main REPL components
+from .repl_app import DanaREPLApp
 from .repl_app import main as repl_main
 
-__all__ = ["repl_main"]
+__all__ = ["repl_main", "DanaREPLApp"]

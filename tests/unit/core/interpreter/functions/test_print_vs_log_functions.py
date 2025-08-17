@@ -286,7 +286,7 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from dana.apps.repl.dana_repl_app import DanaREPLApp
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
@@ -321,7 +321,7 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from dana.apps.repl.dana_repl_app import DanaREPLApp
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
@@ -360,7 +360,7 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
-        from dana.apps.repl.dana_repl_app import DanaREPLApp
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
