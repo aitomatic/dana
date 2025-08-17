@@ -13,6 +13,7 @@ import logging
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.util.llm import from_prompts_to_request, from_response_to_content
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -139,11 +140,21 @@ class GeneralProblemSolver:
                         workflow_function = getattr(module, workflow_name)
 
                         # Extract function signature information
-                        import inspect
-                        sig = inspect.signature(workflow_function)
                         input_signature = {}
-                        for param_name, param in sig.parameters.items():
-                            input_signature[param_name] = param.annotation if param.annotation != inspect.Parameter.empty else Any
+
+                        # Handle Dana functions differently from regular Python functions
+                        if isinstance(workflow_function, DanaFunction):
+                            # For Dana functions, use the parameters attribute
+                            for param_name in workflow_function.parameters:
+                                input_signature[param_name] = Any  # Dana functions don't have type annotations in parameters
+                            logger.info(f"Discovered Dana workflow: {workflow_name} with parameters: {workflow_function.parameters}")
+                        else:
+                            # For regular Python functions, use inspect.signature
+                            import inspect
+                            sig = inspect.signature(workflow_function)
+                            for param_name, param in sig.parameters.items():
+                                input_signature[param_name] = param.annotation if param.annotation != inspect.Parameter.empty else Any
+                            logger.info(f"Discovered Python workflow: {workflow_name} with signature: {input_signature}")
 
                         # Create workflow info with actual signature
                         workflow_info = WorkflowInfo(
@@ -155,7 +166,6 @@ class GeneralProblemSolver:
                         )
 
                         self.register_workflow(workflow_info)
-                        logger.info(f"Discovered workflow: {workflow_name} with signature: {input_signature}")
 
     def _extract_workflow_parameters(self, workflow: WorkflowInfo, resources: dict[str, Any]) -> dict[str, Any]:
         """
@@ -170,36 +180,59 @@ class GeneralProblemSolver:
         """
         parameters = {}
 
-        # Get the workflow function's signature
-        import inspect
-        sig = inspect.signature(workflow.workflow_function)
-
-        for param_name, param in sig.parameters.items():
-            # Skip self parameter if it's a method
-            if param_name == 'self':
-                continue
-
-            # Check if we have a resource with a matching key
-            if param_name in resources:
-                parameters[param_name] = resources[param_name]
-                logger.info(f"Matched parameter '{param_name}' to resource '{param_name}'")
-            else:
-                # Try to find a resource with a similar name (e.g., doc-path vs doc_path)
-                for resource_key in resources.keys():
-                    # Convert both to lowercase and replace hyphens with underscores for comparison
-                    normalized_param = param_name.lower().replace('-', '_')
-                    normalized_resource = resource_key.lower().replace('-', '_')
-
-                    if normalized_param == normalized_resource:
-                        parameters[param_name] = resources[resource_key]
-                        logger.info(f"Matched parameter '{param_name}' to resource '{resource_key}' (normalized)")
-                        break
+        # Handle Dana functions differently from regular Python functions
+        if isinstance(workflow.workflow_function, DanaFunction):
+            # For Dana functions, use the parameters attribute and pass as positional arguments
+            for param_name in workflow.workflow_function.parameters:
+                # Check if we have a resource with a matching key
+                if param_name in resources:
+                    parameters[param_name] = resources[param_name]
+                    logger.info(f"Matched Dana parameter '{param_name}' to resource '{param_name}'")
                 else:
-                    # No matching resource found
-                    if param.default == inspect.Parameter.empty:
-                        logger.warning(f"Required parameter '{param_name}' not found in resources")
+                    # Try to find a resource with a similar name (e.g., doc-path vs doc_path)
+                    for resource_key in resources.keys():
+                        # Convert both to lowercase and replace hyphens with underscores for comparison
+                        normalized_param = param_name.lower().replace('-', '_')
+                        normalized_resource = resource_key.lower().replace('-', '_')
+
+                        if normalized_param == normalized_resource:
+                            parameters[param_name] = resources[resource_key]
+                            logger.info(f"Matched Dana parameter '{param_name}' to resource '{resource_key}' (normalized)")
+                            break
                     else:
-                        logger.info(f"Using default value for optional parameter '{param_name}'")
+                        # No matching resource found
+                        logger.warning(f"Required Dana parameter '{param_name}' not found in resources")
+        else:
+            # For regular Python functions, use inspect.signature
+            import inspect
+            sig = inspect.signature(workflow.workflow_function)
+
+            for param_name, param in sig.parameters.items():
+                # Skip self parameter if it's a method
+                if param_name == 'self':
+                    continue
+
+                # Check if we have a resource with a matching key
+                if param_name in resources:
+                    parameters[param_name] = resources[param_name]
+                    logger.info(f"Matched Python parameter '{param_name}' to resource '{param_name}'")
+                else:
+                    # Try to find a resource with a similar name (e.g., doc-path vs doc_path)
+                    for resource_key in resources.keys():
+                        # Convert both to lowercase and replace hyphens with underscores for comparison
+                        normalized_param = param_name.lower().replace('-', '_')
+                        normalized_resource = resource_key.lower().replace('-', '_')
+
+                        if normalized_param == normalized_resource:
+                            parameters[param_name] = resources[resource_key]
+                            logger.info(f"Matched Python parameter '{param_name}' to resource '{resource_key}' (normalized)")
+                            break
+                    else:
+                        # No matching resource found
+                        if param.default == inspect.Parameter.empty:
+                            logger.warning(f"Required Python parameter '{param_name}' not found in resources")
+                        else:
+                            logger.info(f"Using default value for optional Python parameter '{param_name}'")
 
         return parameters
 
@@ -280,7 +313,21 @@ class GeneralProblemSolver:
             logger.info(f'Extracted parameters: {workflow_parameters}')
 
             # Execute the workflow function with extracted parameters
-            workflow_result = matched_workflow.workflow_function(**workflow_parameters)
+            if isinstance(matched_workflow.workflow_function, DanaFunction):
+                # For Dana functions, pass parameters as positional arguments in the correct order
+                positional_args = []
+                for param_name in matched_workflow.workflow_function.parameters:
+                    if param_name in workflow_parameters:
+                        positional_args.append(workflow_parameters[param_name])
+                    else:
+                        # If parameter is missing, pass None (Dana function will handle the error)
+                        positional_args.append(None)
+                        logger.warning(f"Missing parameter '{param_name}' for Dana function, passing None")
+
+                workflow_result = matched_workflow.workflow_function(*positional_args)
+            else:
+                # For regular Python functions, pass as keyword arguments
+                workflow_result = matched_workflow.workflow_function(**workflow_parameters)
 
             solution: str = from_response_to_content(
                 llm.query_sync(
