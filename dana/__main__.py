@@ -5,7 +5,13 @@ This module serves as the entry point when running 'python -m dana'
 It delegates to the main CLI handler in dana.apps.cli.dana
 """
 
-from dana.apps.cli.dana import main
+
+def main():
+    from dana.apps.cli.__main__ import main as cli_main
+
+    print("calling cli_main")
+    cli_main()
+
 
 if __name__ == "__main__":
     main()

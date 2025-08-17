@@ -16,9 +16,9 @@ def main():
     # The TUI log panel will capture all logs instead
     DANA_LOGGER.disable_console_logging()
 
-    from .app import main as app_main
+    from .tui_app import main as tui_main
 
-    app_main()
+    tui_main()
 
 
 if __name__ == "__main__":

@@ -6,29 +6,29 @@ ARCHITECTURE ROLE:
     This is the PRIMARY ENTRY POINT for all Dana operations, analogous to the 'python' command.
     It acts as a ROUTER that decides whether to:
     - Execute a .na file directly (file mode)
-    - Launch the interactive REPL (interactive mode)
+    - Launch the Terminal User Interface (TUI mode)
 
 USAGE PATTERNS:
-    dana                 # Start interactive REPL → delegates to dana_repl_app.py
+    dana                 # Start TUI → delegates to tui_app.py
     dana script.na       # Execute file → uses DanaSandbox directly
     dana --help         # Show help and usage information
 
 DESIGN DECISIONS:
     - Single entry point for all Dana operations (consistency)
-    - File execution bypasses REPL overhead (performance)
-    - REPL delegation to specialized interactive application (separation of concerns)
+    - File execution bypasses TUI overhead (performance)
+    - TUI delegation to specialized interactive application (separation of concerns)
     - Console script integration via pyproject.toml (standard Python packaging)
 
 INTEGRATION:
     - Console script: 'dana' command → this file's main() function
     - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
-    - REPL mode: Imports and delegates to dana_repl_app.dana_repl_main() for interactive experience
+    - TUI mode: Imports and delegates to tui_app.main() for interactive experience
 
 This script serves as the main entry point for the DANA language, similar to the python command.
-It either starts the REPL when no arguments are provided, or executes a .na file when given.
+It either starts the TUI when no arguments are provided, or executes a .na file when given.
 
 Usage:
-  dana                         Start the DANA REPL
+  dana                         Start the Dana Terminal User Interface
   dana [file.na]               Execute a DANA file
   dana deploy [file.na]        Deploy a .na file as an agent endpoint
       [--protocol mcp|a2a]     Protocol to use (default: a2a)
@@ -46,7 +46,6 @@ Examples:
 """
 
 import argparse
-import asyncio
 import logging
 import os
 import sys
@@ -75,10 +74,12 @@ def show_help():
     print(f"{colors.header('DANA - Domain-Aware NeuroSymbolic Architecture')}")
     print("")
     print(f"{colors.bold('Usage:')}")
-    print(f"  {colors.accent('dana')}                   Start the DANA REPL")
+    print(f"  {colors.accent('dana')}                   Start the Dana Terminal User Interface")
     print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
     print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
+    print(f"  {colors.accent('dana repl')}              Start the Dana Interactive REPL")
+    print(f"  {colors.accent('dana tui')}               Start the Dana Terminal User Interface")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
@@ -140,19 +141,22 @@ def execute_file(file_path, debug=False):
         sys.exit(1)
 
 
-async def start_repl(debug=False):
+def start_repl():
     """Start the DANA REPL.
 
     ARCHITURAL NOTE: This function delegates to the full-featured interactive REPL application.
     It does NOT implement REPL logic itself - it imports and launches dana_repl_app.py which
     provides the complete interactive experience with commands, colors, multiline support, etc.
     """
+    # Shift the repl subcommand from the argv
+    if len(sys.argv) > 1 and sys.argv[1] == "repl":
+        sys.argv = sys.argv[1:]
+
     # Import the REPL application module
     try:
-        from dana.apps.repl.dana_repl_app import dana_repl_main as repl_main
+        from dana.apps.repl.__main__ import main as repl_main
 
-        # Pass debug flag to repl_main
-        await repl_main(debug=debug)
+        repl_main()
     except ImportError as e:
         print(f"{colors.error(f'Error: Failed to import REPL module: {e}')}")
         sys.exit(1)
@@ -161,11 +165,35 @@ async def start_repl(debug=False):
         sys.exit(1)
 
 
+def start_tui():
+    """Start the DANA TUI.
+
+    ARCHITECTURAL NOTE: This function delegates to the full-featured TUI application.
+    It does NOT implement TUI logic itself - it imports and launches tui_app.py which
+    provides the complete terminal user interface with panels, navigation, etc.
+    """
+    # Shift the tui subcommand from the argv
+    if len(sys.argv) > 1 and sys.argv[1] == "tui":
+        sys.argv = sys.argv[1:]
+
+    # Import the TUI application module
+    try:
+        from dana.apps.tui.__main__ import main as tui_main
+
+        tui_main()
+    except ImportError as e:
+        print(f"{colors.error(f'Error: Failed to import TUI module: {e}')}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"{colors.error(f'Error starting TUI: {e}')}")
+        sys.exit(1)
+
+
 def handle_start_command(args):
     """Start the Dana API server using uvicorn."""
     try:
         # First validate configuration
-        from dana.core.cli.config_manager import ConfigurationManager
+        from dana.apps.cli.config_manager import ConfigurationManager
 
         print(f"{colors.accent('🔧 Validating Dana configuration...')}")
         manager = ConfigurationManager(output_file=".env", debug=False)
@@ -278,8 +306,16 @@ def main():
         parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
         parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
 
+        # TUI subcommand for terminal user interface
+        parser_tui = subparsers.add_parser("tui", help="Start the Dana Terminal User Interface")
+        parser_tui.add_argument("--debug", action="store_true", help="Enable debug logging")
+
+        # REPL subcommand for interactive REPL
+        parser_repl = subparsers.add_parser("repl", help="Start the Dana Interactive REPL")
+        parser_repl.add_argument("--debug", action="store_true", help="Enable debug logging")
+
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "config")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "config", "tui", "repl")):
             return handle_main_command()
 
         # Parse subcommand
@@ -298,6 +334,10 @@ def main():
             return handle_start_command(args)
         elif args.subcommand == "config":
             return handle_config_command(args)
+        elif args.subcommand == "tui":
+            return start_tui()
+        elif args.subcommand == "repl":
+            return start_repl()
 
         return 0
 
@@ -348,13 +388,13 @@ def handle_main_command():
         show_help()
         return 0
 
-    # Handle file execution or REPL
+    # Handle file execution or TUI
     if args.file:
         if not validate_na_file(args.file):
             return 1
         execute_file(args.file, debug=args.debug)
     else:
-        asyncio.run(start_repl(debug=args.debug))
+        start_tui()
 
     return 0
 
@@ -389,7 +429,7 @@ def handle_deploy_command(args):
 def handle_config_command(args):
     """Handle the config subcommand."""
     try:
-        from dana.core.cli.config_manager import ConfigurationManager
+        from dana.apps.cli.config_manager import ConfigurationManager
 
         # Configure debug logging if requested
         if args.debug:
@@ -418,7 +458,7 @@ def handle_config_command(args):
 def deploy_thru_mcp(file_path, args):
     """Deploy file using MCP protocol."""
     try:
-        from dana.core.cli.deploy.mcp import deploy_dana_agents_thru_mcp
+        from dana.apps.cli.deploy.mcp import deploy_dana_agents_thru_mcp
 
         deploy_dana_agents_thru_mcp(file_path, args.host, args.port)
         return 0
@@ -435,7 +475,7 @@ def deploy_thru_mcp(file_path, args):
 def deploy_thru_a2a(file_path, args):
     """Deploy file using A2A protocol."""
     try:
-        from dana.core.cli.deploy.a2a import deploy_dana_agents_thru_a2a
+        from dana.apps.cli.deploy.a2a import deploy_dana_agents_thru_a2a
 
         deploy_dana_agents_thru_a2a(file_path, args.host, args.port)
         return 0

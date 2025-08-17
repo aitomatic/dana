@@ -51,7 +51,7 @@ class TerminalREPL(Vertical):
         """Initialize the terminal when mounted."""
         # Add welcome message
         if self._output:
-            self._output.write("Welcome to Dana REPL!")
+            self._output.write("Welcome to the Dana TUI!")
             self._output.write("Enter Dana expressions and press Enter to execute.")
             self._output.write("Multi-line input:")
             self._output.write("  • Lines ending with ':' automatically enter multi-line mode")

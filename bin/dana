@@ -8,6 +8,21 @@ It delegates to the module entry point using 'python -m dana'.
 
 import os
 import sys
+import importlib
+from pathlib import Path
+
+
+# Determine which entrypoint to dispatch to
+cmd = Path(sys.argv[0]).name  # basename of the command
+
+MAIN_MODULE = "dana.apps.cli.__main__"
+
+if cmd == "dana" or cmd == "dana-cli":
+    MAIN_MODULE = "dana.apps.cli.__main__"
+elif cmd == "dana-repl":
+    MAIN_MODULE = "dana.apps.repl.__main__"
+elif cmd == "dana-tui":
+    MAIN_MODULE = "dana.apps.tui.__main__"
 
 # Add the project root to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +31,5 @@ sys.path.insert(0, project_root)
 # Execute the module entry point
 if __name__ == "__main__":
     # Import and run the main function from the module entry point
-    from dana.__main__ import main
-
-    main()
+    module = importlib.import_module(MAIN_MODULE)
+    module.main()  # pass as a single list

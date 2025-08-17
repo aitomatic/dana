@@ -79,7 +79,7 @@ from dana.core.runtime import DanaThreadPool
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
-async def dana_repl_main(debug: bool = False) -> None:
+async def main(debug: bool = False) -> None:
     """Main entry point for the Dana REPL."""
     import argparse
 

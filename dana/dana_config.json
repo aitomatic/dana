@@ -1,11 +1,12 @@
 {
     "llm": {
         "preferred_models": [
-	    "huggingface:openai/gpt-oss-120b",
-	    "anthropic:kimi-k2-0711-preview",
-	    "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
-	    "moonshot:kimi",
-	    "openrouter:gpt-4o-mini",
+            "openai:gpt-4.1-mini",
+            "huggingface:openai/gpt-oss-120b",
+            "anthropic:kimi-k2-0711-preview",
+            "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
+            "moonshot:kimi",
+            "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4",
             "azure:gpt-4o-mini",

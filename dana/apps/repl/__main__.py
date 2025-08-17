@@ -26,14 +26,11 @@ Discord: https://discord.gg/6jGD4PYk
 import asyncio
 import sys
 
-# Import the main function from dana_repl_app.py
-from .dana_repl_app import dana_repl_main
 
+def main():
+    from .repl_app import main as repl_main
 
-async def main():
-    """Main entry point for the Dana REPL module."""
-    # Delegate to the actual implementation in dana_repl_app.py
-    await dana_repl_main()
+    asyncio.run(repl_main())
 
 
 if __name__ == "__main__":
@@ -42,4 +39,4 @@ if __name__ == "__main__":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     # Run the main function
-    asyncio.run(main())
+    main()

@@ -6,6 +6,6 @@ MIT License
 """
 
 # Only expose the main public interface
-from .app import DanaTUI
+from .tui_app import main as tui_main
 
-__all__ = ["DanaTUI"]
+__all__ = ["tui_main"]
