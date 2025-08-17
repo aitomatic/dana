@@ -198,7 +198,7 @@ class GeneralProblemSolver:
         )
 
         closest_matched_expert_workflow_name: str = ''
-        while not ((closest_matched_expert_workflow_name in expert_workflow_name_to_module_map) or
+        while not ((closest_matched_expert_workflow_name in expert_workflow_name_to_module_map) or  # noqa: W504
                    (closest_matched_expert_workflow_name == 'NONE')):
             closest_matched_expert_workflow_name: str = (
                 from_response_to_content(

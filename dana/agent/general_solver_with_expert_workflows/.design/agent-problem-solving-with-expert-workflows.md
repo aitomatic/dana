@@ -91,38 +91,6 @@ def solve(
   - Which workflow(s) to utilize
   - What resources to use in which expert workflows
 
-## Problem-Solving Flow
-
-### Phase 1: Problem Analysis
-1. **Problem Understanding**: Parse and understand the natural language problem statement
-2. **Key Concept Extraction**: Identify key concepts, entities, and required operations
-3. **Resource Requirements**: Determine what types of resources might be needed
-
-### Phase 2: Expertise Module Inspection
-1. **Module Discovery**: Examine the agent's expertise modules for available workflows
-2. **Workflow Inspection**: Analyze workflow names, metadata, and function signatures
-3. **Capability Assessment**: Understand what each workflow can do based on its inspectable properties
-
-### Phase 3: Resource Inspection
-1. **Resource Discovery**: Examine available resources in the dictionary
-2. **Resource Analysis**: Analyze resource names, metadata, and capabilities
-3. **Compatibility Assessment**: Determine which resources might be compatible with which workflows
-
-### Phase 4: Intelligent Matching
-1. **Workflow Selection**: Use inspectable properties to select appropriate workflows
-2. **Resource Matching**: Match resources to workflow input requirements based on inspectable properties
-3. **Execution Planning**: Plan how to use selected workflows with available resources
-
-### Phase 5: Solution Execution
-1. **Workflow Execution**: Execute selected workflows with matched resources
-2. **Result Collection**: Collect intermediate and final results
-3. **Error Handling**: Handle any execution errors or missing resources
-
-### Phase 6: Result Synthesis
-1. **Solution Assembly**: Combine results from multiple workflows if needed
-2. **Problem Resolution**: Ensure the solution addresses the original problem
-3. **Response Formatting**: Format the final solution appropriately
-
 ## Key Design Principles
 
 ### 1. Leverage Existing Code
@@ -166,9 +134,47 @@ result = analyst.solve(
 )
 ```
 
-## Implementation Strategy
+---
 
-### Workflow Discovery
+## 🚧 TENTATIVE SECTIONS: To Be Iterated On During Implementation
+
+*The following sections are tentative and will be refined through iterative development and real-world testing. They represent initial thoughts that may evolve significantly during implementation.*
+
+### Problem-Solving Flow
+
+#### Phase 1: Problem Analysis
+1. **Problem Understanding**: Parse and understand the natural language problem statement
+2. **Key Concept Extraction**: Identify key concepts, entities, and required operations
+3. **Resource Requirements**: Determine what types of resources might be needed
+
+#### Phase 2: Expertise Module Inspection
+1. **Module Discovery**: Examine the agent's expertise modules for available workflows
+2. **Workflow Inspection**: Analyze workflow names, metadata, and function signatures
+3. **Capability Assessment**: Understand what each workflow can do based on its inspectable properties
+
+#### Phase 3: Resource Inspection
+1. **Resource Discovery**: Examine available resources in the dictionary
+2. **Resource Analysis**: Analyze resource names, metadata, and capabilities
+3. **Compatibility Assessment**: Determine which resources might be compatible with which workflows
+
+#### Phase 4: Intelligent Matching
+1. **Workflow Selection**: Use inspectable properties to select appropriate workflows
+2. **Resource Matching**: Match resources to workflow input requirements based on inspectable properties
+3. **Execution Planning**: Plan how to use selected workflows with available resources
+
+#### Phase 5: Solution Execution
+1. **Workflow Execution**: Execute selected workflows with matched resources
+2. **Result Collection**: Collect intermediate and final results
+3. **Error Handling**: Handle any execution errors or missing resources
+
+#### Phase 6: Result Synthesis
+1. **Solution Assembly**: Combine results from multiple workflows if needed
+2. **Problem Resolution**: Ensure the solution addresses the original problem
+3. **Response Formatting**: Format the final solution appropriately
+
+### Implementation Strategy
+
+#### Workflow Discovery
 ```python
 def discover_workflows_from_modules(self, expertise_modules: list[ModuleType]) -> None:
     """Discover and register workflows from expertise modules."""
@@ -182,7 +188,7 @@ def discover_workflows_from_modules(self, expertise_modules: list[ModuleType]) -
                     self.register_workflow(workflow_function, module.__name__)
 ```
 
-### Intelligent Resource Matching
+#### Intelligent Resource Matching
 ```python
 def match_resources_to_workflow(self, workflow, resources: dict[str, Any]) -> dict[str, Any]:
     """Match available resources to workflow requirements using inspectable properties."""
@@ -201,19 +207,19 @@ def match_resources_to_workflow(self, workflow, resources: dict[str, Any]) -> di
     return matched_resources
 ```
 
-## Future Enhancements
+### Future Enhancements
 
-### 1. Enhanced Inspection
+#### 1. Enhanced Inspection
 - **Type System Integration**: Better integration with Dana's type system for inspection
 - **Metadata Standards**: Standardized metadata for workflows and resources
 - **Semantic Matching**: Semantic understanding of workflow and resource capabilities
 
-### 2. Advanced Composition
+#### 2. Advanced Composition
 - **Dynamic Workflow Generation**: Generate new workflows at problem-solving time
 - **Multi-Step Problem Solving**: Chain multiple workflows for complex problems
 - **Conditional Execution**: Execute workflows based on intermediate results
 
-### 3. Learning and Adaptation
+#### 3. Learning and Adaptation
 - **Performance Tracking**: Learn which workflows work best for different problem types
 - **Resource Optimization**: Optimize resource usage based on historical performance
 - **Workflow Recommendations**: Suggest new workflows based on problem patterns
