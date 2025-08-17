@@ -205,7 +205,7 @@ class GeneralProblemSolver:
                     llm.query_sync(
                         from_prompts_to_request(
                             closest_matched_expert_workflow_lookup_prompt)))
-                    .strip('"').strip("'"))
+                .strip('"').strip("'"))
 
         # Find the expertise module that contains the matched workflow
         if closest_matched_expert_workflow_name == 'NONE':
