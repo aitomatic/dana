@@ -1,9 +1,6 @@
 """Domain-Expert Agent (DXA) specializing in AI."""
 
 
-log_level('debug')
-
-
 # import relevant expertise module(s)
 import ai_expertise
 

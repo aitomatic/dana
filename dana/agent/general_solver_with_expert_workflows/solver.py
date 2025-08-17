@@ -140,41 +140,68 @@ class GeneralProblemSolver:
 
                         # Extract function signature information
                         import inspect
+                        sig = inspect.signature(workflow_function)
                         input_signature = {}
-                        output_signature = {}
-                        description = ""
+                        for param_name, param in sig.parameters.items():
+                            input_signature[param_name] = param.annotation if param.annotation != inspect.Parameter.empty else Any
 
-                        try:
-                            sig = inspect.signature(workflow_function)
-                            for param_name, param in sig.parameters.items():
-                                input_signature[param_name] = param.annotation if param.annotation != inspect.Parameter.empty else Any
-
-                            # Try to get return type annotation
-                            if hasattr(workflow_function, '__annotations__'):
-                                return_annotation = workflow_function.__annotations__.get('return', Any)
-                                output_signature['return'] = return_annotation
-
-                            # Try to get docstring
-                            if hasattr(workflow_function, '__doc__') and workflow_function.__doc__:
-                                description = workflow_function.__doc__.strip()
-                            else:
-                                description = f"Workflow from {module.__name__}"
-
-                        except Exception as e:
-                            logger.warning(f"Could not extract signature for {workflow_name}: {e}")
-                            description = f"Workflow from {module.__name__}"
-
-                        # Create workflow info with extracted metadata
+                        # Create workflow info with actual signature
                         workflow_info = WorkflowInfo(
                             name=workflow_name,
-                            description=description,
+                            description=f"Workflow from {module.__name__}",
                             input_signature=input_signature,
-                            output_signature=output_signature,
+                            output_signature={},  # TODO: Extract from function signature
                             workflow_function=workflow_function
                         )
 
                         self.register_workflow(workflow_info)
-                        logger.info(f"Discovered workflow: {workflow_name} with params: {list(input_signature.keys())}")
+                        logger.info(f"Discovered workflow: {workflow_name} with signature: {input_signature}")
+
+    def _extract_workflow_parameters(self, workflow: WorkflowInfo, resources: dict[str, Any]) -> dict[str, Any]:
+        """
+        Extract workflow parameters from resources based on workflow signature.
+
+        Args:
+            workflow: The workflow to extract parameters for
+            resources: Available resources dictionary
+
+        Returns:
+            Dictionary of parameters to pass to the workflow function
+        """
+        parameters = {}
+
+        # Get the workflow function's signature
+        import inspect
+        sig = inspect.signature(workflow.workflow_function)
+
+        for param_name, param in sig.parameters.items():
+            # Skip self parameter if it's a method
+            if param_name == 'self':
+                continue
+
+            # Check if we have a resource with a matching key
+            if param_name in resources:
+                parameters[param_name] = resources[param_name]
+                logger.info(f"Matched parameter '{param_name}' to resource '{param_name}'")
+            else:
+                # Try to find a resource with a similar name (e.g., doc-path vs doc_path)
+                for resource_key in resources.keys():
+                    # Convert both to lowercase and replace hyphens with underscores for comparison
+                    normalized_param = param_name.lower().replace('-', '_')
+                    normalized_resource = resource_key.lower().replace('-', '_')
+
+                    if normalized_param == normalized_resource:
+                        parameters[param_name] = resources[resource_key]
+                        logger.info(f"Matched parameter '{param_name}' to resource '{resource_key}' (normalized)")
+                        break
+                else:
+                    # No matching resource found
+                    if param.default == inspect.Parameter.empty:
+                        logger.warning(f"Required parameter '{param_name}' not found in resources")
+                    else:
+                        logger.info(f"Using default value for optional parameter '{param_name}'")
+
+        return parameters
 
     def solve(self, problem: str, expertise_modules: list[ModuleType] = None, resources: dict[str, Any] = None) -> str:
         """
@@ -246,19 +273,14 @@ class GeneralProblemSolver:
                     matched_workflow = workflow
                     break
 
-            logger.info(f'Executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}` on `{resources}`...')
+            logger.info(f'Executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...')
 
-            # Execute the workflow using proper resource extraction
-            workflow_result = self._execute_workflow(
-                ResourceMatch(
-                    workflow=matched_workflow,
-                    score=1.0,  # We trust the LLM selection
-                    matched_resources=resources,
-                    missing_resources=[]
-                ),
-                problem,
-                resources
-            )
+            # Extract parameters from resources based on workflow signature
+            workflow_parameters = self._extract_workflow_parameters(matched_workflow, resources)
+            logger.info(f'Extracted parameters: {workflow_parameters}')
+
+            # Execute the workflow function with extracted parameters
+            workflow_result = matched_workflow.workflow_function(**workflow_parameters)
 
             solution: str = from_response_to_content(
                 llm.query_sync(
@@ -439,53 +461,9 @@ class GeneralProblemSolver:
         logger.info(f"Executing workflow: {workflow.name}")
         logger.info(f"Available resources: {list(resources.keys())}")
 
-        # Extract workflow function and inspect its parameters
-        workflow_function = workflow.workflow_function
-
-        # Get the function's parameter names
-        import inspect
-        try:
-            sig = inspect.signature(workflow_function)
-            param_names = list(sig.parameters.keys())
-            logger.info(f"Workflow parameters: {param_names}")
-        except Exception as e:
-            logger.warning(f"Could not inspect workflow signature: {e}")
-            param_names = []
-
-        # Extract resources based on parameter names
-        workflow_args = {}
-        for param_name in param_names:
-            # Try to find a matching resource key
-            # First try exact match
-            if param_name in resources:
-                workflow_args[param_name] = resources[param_name]
-                logger.info(f"Matched resource '{param_name}' to parameter '{param_name}'")
-            else:
-                # Try with different naming conventions
-                # Convert param_name to different formats and check
-                possible_keys = [
-                    param_name,
-                    param_name.replace('_', '-'),  # doc_path -> doc-path
-                    param_name.replace('-', '_'),  # doc-path -> doc_path
-                    param_name.replace('_', ''),   # doc_path -> docpath
-                ]
-
-                for key in possible_keys:
-                    if key in resources:
-                        workflow_args[param_name] = resources[key]
-                        logger.info(f"Matched resource '{key}' to parameter '{param_name}'")
-                        break
-                else:
-                    logger.warning(f"No resource found for parameter '{param_name}'")
-
-        # Execute the workflow function with extracted arguments
-        if workflow_args:
-            logger.info(f"Executing workflow with args: {list(workflow_args.keys())}")
-            result = workflow_function(**workflow_args)
-        else:
-            # Fallback: pass the entire resources dict if no specific args found
-            logger.warning("No specific resources matched, passing entire resources dict")
-            result = workflow_function(resources)
+        # Execute the workflow function with the full resources dictionary
+        # The workflow function should handle extracting what it needs from resources
+        result = workflow.workflow_function(resources)
 
         logger.info("Workflow execution completed")
         return result
