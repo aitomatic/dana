@@ -1,0 +1,12 @@
+"""
+Knowledge domains for this agent:
+
+- Knowledge from AML-Compliance-Manual-Template-Preview-2023.pdf
+
+This agent has access to knowledge files in the ./docs folder.
+"""
+
+# Knowledge domains are automatically managed based on uploaded files
+# and conversation context.
+
+rag_resource = use("rag", sources=["./docs"])

@@ -119,6 +119,11 @@
   --warning-900: 120 53 15; /* #78350F */
   --warning-950: 69 26 3; /* #451A03 */
 
+  /* Purple/Indigo colors */
+  --purple-25: 253 252 255; /* #FDFCFF */
+  --purple-50: 250 245 255; /* #FAF5FF */
+  --indigo-25: 248 250 255; /* #F8FAFF */
+
   --radius: 0.625rem;
 
   /* Custom shadow variables */
@@ -233,28 +238,55 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+
+  /* Custom thin scrollbar with hover visibility */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgb(var(--gray-300));
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .custom-scrollbar:hover {
+    scrollbar-color: rgb(var(--gray-300)) transparent;
+  }
 }
 
 /* Custom Toast Styles */
 .toast-custom {
-  @apply bg-white border border-gray-200 rounded-lg shadow-lg;
+  @apply bg-white rounded-lg border border-gray-200 shadow-lg;
   font-family: var(--font-family-sans);
 }
 
 .toast-success {
-  @apply bg-green-50 border-green-200 text-green-800;
+  @apply text-green-800 bg-green-50 border-green-200;
 }
 
 .toast-error {
-  @apply bg-red-50 border-red-200 text-red-800;
+  @apply text-red-800 bg-red-50 border-red-200;
 }
 
 .toast-warning {
-  @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+  @apply text-yellow-800 bg-yellow-50 border-yellow-200;
 }
 
 .toast-info {
-  @apply bg-blue-50 border-blue-200 text-blue-800;
+  @apply text-blue-800 bg-blue-50 border-blue-200;
 }
 
 /* Toast Close Button Styling */

@@ -112,7 +112,7 @@ def create_duckdb_config(
 def create_pgvector_config(
     host: str = "localhost",
     port: int = 5432,
-    database: str = "vector_db",
+    database: str = "vector_db",   
     user: str = "postgres",
     password: str = "",
     schema_name: str = "public",

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   IconSearch,
-  IconPlus,
   IconDatabase,
   IconCalendar,
   IconCloud,
@@ -77,12 +75,20 @@ const ToolsTab: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col p-6 h-full bg-white rounded-lg">
+    <div className="flex flex-col p-6 h-full bg-white">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Tools</h1>
-        <Button variant="outline" className="flex items-center">
-          <IconPlus className="mr-2 w-4 h-4" /> Add Tool
-        </Button>
+        <div>
+          <div className="flex gap-3 items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Tools</h1>
+            <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+              Coming Soon
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">External tool connections are on the way.</p>
+        </div>
+        {/* <Button variant="outline" className="flex items-center">
+            <IconPlus className="mr-2 w-4 h-4" /> Add Tool
+          </Button> */}
       </div>
       <div className="mb-6 max-w-sm">
         <div className="relative">
@@ -101,9 +107,11 @@ const ToolsTab: React.FC = () => {
             key={tool.id}
             className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow min-h-[140px]"
           >
-            <div className="flex items-center mb-4">
-              {tool.icon}
-              <span className="ml-3 text-lg font-semibold text-gray-900">{tool.name}</span>
+            <div className="flex flex-col mb-4">
+              <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
+                {tool.icon}
+              </div>
+              <span className="mt-4 text-lg font-semibold text-gray-900">{tool.name}</span>
             </div>
             <p className="flex-1 text-sm text-gray-600">{tool.description}</p>
           </div>
