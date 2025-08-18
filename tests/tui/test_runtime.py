@@ -12,12 +12,12 @@ from pathlib import Path
 
 import pytest
 
-# Add the project root to path so we can import dana.tui.core
+# Add the project root to path so we can import dana.apps.tui.core
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.tui.core.events import Done, Status, Token
-from dana.tui.core.runtime import Agent, DanaSandbox
+from dana.apps.tui.core.events import Done, Status, Token
+from dana.apps.tui.core.runtime import Agent, DanaSandbox
 
 
 class MockTestAgent(Agent):

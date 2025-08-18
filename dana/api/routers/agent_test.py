@@ -190,9 +190,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
                     # Clear global registries to prevent struct/module conflicts between runs
                     from dana.__init__.init_modules import reset_module_system
-                    from dana.registry import get_global_registry
+                    from dana.registry import GLOBAL_REGISTRY
 
-                    registry = get_global_registry()
+                    registry = GLOBAL_REGISTRY
                     registry.clear_all()
                     reset_module_system()
 
@@ -387,9 +387,9 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
 
                 # Clear global registries to prevent struct/module conflicts between runs
                 from dana.__init__.init_modules import reset_module_system
-                from dana.registry import get_global_registry
+                from dana.registry import GLOBAL_REGISTRY
 
-                registry = get_global_registry()
+                registry = GLOBAL_REGISTRY
                 registry.clear_all()
                 reset_module_system()
 

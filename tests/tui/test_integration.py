@@ -9,7 +9,7 @@ MIT License
 
 import pytest
 
-from dana.tui import DanaTUI
+from dana.apps.tui import DanaTUI
 
 
 @pytest.mark.asyncio

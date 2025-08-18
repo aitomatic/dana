@@ -19,10 +19,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from dana.apps.repl.repl import REPL
 from dana.common.error_utils import DanaError
 from dana.core.lang.log_manager import LogLevel
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.repl.repl import REPL
 
 
 @pytest.mark.unit

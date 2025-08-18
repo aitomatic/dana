@@ -212,10 +212,9 @@ class TypeRegistry:
         Returns:
             List of struct type names
         """
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        return registry.types.list_struct_types()
+        return TYPE_REGISTRY.list_struct_types()
 
     @classmethod
     def exists(cls, name: str) -> bool:
@@ -227,10 +226,9 @@ class TypeRegistry:
         Returns:
             True if the struct type exists
         """
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        return registry.types.has_struct_type(name)
+        return TYPE_REGISTRY.has_struct_type(name)
 
     @classmethod
     def register(cls, struct_type: Any) -> None:
@@ -239,10 +237,9 @@ class TypeRegistry:
         Args:
             struct_type: The struct type to register
         """
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        registry.types.register_struct_type(struct_type)
+        TYPE_REGISTRY.register_struct_type(struct_type)
 
     @classmethod
     def create_instance(cls, struct_name: str, values: dict[str, Any]) -> Any:
@@ -257,15 +254,14 @@ class TypeRegistry:
         """
         from dana.agent import AgentInstance
         from dana.core.lang.interpreter.struct_system import StructInstance
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        struct_type = registry.types.get_struct_type(struct_name)
+        struct_type = TYPE_REGISTRY.get_struct_type(struct_name)
         if struct_type is None:
             raise ValueError(f"Unknown struct type '{struct_name}'")
 
         # Check if this is an agent type and create appropriate instance
-        if registry.types.has_agent_type(struct_name):
+        if TYPE_REGISTRY.has_agent_type(struct_name):
             return AgentInstance(struct_type, values)
         else:
             return StructInstance(struct_type, values)
@@ -273,10 +269,9 @@ class TypeRegistry:
     @classmethod
     def clear(cls) -> None:
         """Clear all registered types (backward compatibility for testing)."""
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        registry.types.clear_instance()
+        TYPE_REGISTRY.clear_instance()
 
     # === Generic Type Methods ===
 
@@ -360,12 +355,11 @@ class TypeRegistry:
     @classmethod
     def create_instance_from_json(cls, data: dict[str, Any], struct_name: str) -> Any:
         """Create a struct instance from JSON data (backward compatibility)."""
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        struct_type = registry.types.get_struct_type(struct_name)
+        struct_type = TYPE_REGISTRY.get_struct_type(struct_name)
         if struct_type is None:
-            available_types = registry.types.list_struct_types()
+            available_types = TYPE_REGISTRY.list_struct_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Validate the JSON data first
@@ -376,7 +370,7 @@ class TypeRegistry:
         from dana.core.lang.interpreter.struct_system import StructInstance
 
         # Check if this is an agent type and create appropriate instance
-        if registry.types.has_agent_type(struct_name):
+        if TYPE_REGISTRY.has_agent_type(struct_name):
             return AgentInstance(struct_type, data)
         else:
             return StructInstance(struct_type, data)
@@ -384,12 +378,11 @@ class TypeRegistry:
     @classmethod
     def validate_json_data(cls, data: dict[str, Any], struct_name: str) -> bool:
         """Validate JSON data against struct schema (backward compatibility)."""
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        struct_type = registry.types.get_struct_type(struct_name)
+        struct_type = TYPE_REGISTRY.get_struct_type(struct_name)
         if struct_type is None:
-            available_types = registry.types.list_struct_types()
+            available_types = TYPE_REGISTRY.list_struct_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Basic validation
@@ -416,20 +409,18 @@ class TypeRegistry:
     @classmethod
     def get(cls, struct_name: str) -> Any | None:
         """Get a struct type by name (backward compatibility)."""
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        return registry.types.get_struct_type(struct_name)
+        return TYPE_REGISTRY.get_struct_type(struct_name)
 
     @classmethod
     def get_schema(cls, struct_name: str) -> dict[str, Any]:
         """Get JSON schema for a struct type (backward compatibility)."""
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        struct_type = registry.types.get_struct_type(struct_name)
+        struct_type = TYPE_REGISTRY.get_struct_type(struct_name)
         if struct_type is None:
-            available_types = registry.types.list_struct_types()
+            available_types = TYPE_REGISTRY.list_struct_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Generate JSON schema
@@ -468,10 +459,9 @@ class TypeRegistry:
             return type_mapping[type_name]
 
         # Check for registered struct types
-        from dana.registry import get_global_registry
+        from dana.registry import TYPE_REGISTRY
 
-        registry = get_global_registry()
-        if registry.types.has_struct_type(type_name):
+        if TYPE_REGISTRY.has_struct_type(type_name):
             return {"type": "object", "description": f"Reference to {type_name} struct", "$ref": f"#/definitions/{type_name}"}
 
         # Unknown type - treat as any

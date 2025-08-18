@@ -195,9 +195,9 @@ class AssignmentHandler(Loggable):
 
         # Check if this is a Dana struct type
         try:
-            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            from dana.registry import TYPE_REGISTRY
 
-            if StructTypeRegistry.exists(type_name):
+            if TYPE_REGISTRY.exists(type_name):
                 # This is a Dana struct type - set it in context for POET system
                 context.set("system:__current_assignment_type", type_name)
                 # Return a special marker for Dana struct types

@@ -22,86 +22,84 @@ from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
 # Global singleton instance
-_global_registry: GlobalRegistry | None = None
+GLOBAL_REGISTRY: GlobalRegistry = GlobalRegistry()
+MODULE_REGISTRY: ModuleRegistry = GLOBAL_REGISTRY.modules
 
+TYPE_REGISTRY: TypeRegistry = GLOBAL_REGISTRY.types
 
-def get_global_registry() -> GlobalRegistry:
-    """Get the global registry singleton instance."""
-    global _global_registry
-    if _global_registry is None:
-        _global_registry = GlobalRegistry()
-    return _global_registry
+FUNCTION_REGISTRY: FunctionRegistry = GLOBAL_REGISTRY.functions
+STRUCT_FUNCTION_REGISTRY: StructFunctionRegistry = GLOBAL_REGISTRY.struct_functions
+
+AGENT_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.agents
+RESOURCE_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.resources
+WORKFLOW_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.workflows
+
+# def get_global_registry() -> GlobalRegistry:
+#     """Get the global registry singleton instance."""
+#     global GLOBAL_REGISTRY
+#     return GLOBAL_REGISTRY
 
 
 # Convenience functions for common operations
 def register_agent_type(agent_type) -> None:
     """Register an agent type in the global registry."""
-    registry = get_global_registry()
-    registry.types.register_agent_type(agent_type)
+    TYPE_REGISTRY.register_agent_type(agent_type)
 
 
 def register_resource_type(resource_type) -> None:
     """Register a resource type in the global registry."""
-    registry = get_global_registry()
-    registry.types.register_resource_type(resource_type)
+    TYPE_REGISTRY.register_resource_type(resource_type)
 
 
 def register_struct_type(struct_type) -> None:
     """Register a struct type in the global registry."""
-    registry = get_global_registry()
-    registry.types.register_struct_type(struct_type)
+    TYPE_REGISTRY.register_struct_type(struct_type)
 
 
 def get_agent_type(name: str):
     """Get an agent type from the global registry."""
-    registry = get_global_registry()
-    return registry.types.get_agent_type(name)
+    return TYPE_REGISTRY.get_agent_type(name)
 
 
 def get_resource_type(name: str):
     """Get a resource type from the global registry."""
-    registry = get_global_registry()
-    return registry.types.get_resource_type(name)
+    return TYPE_REGISTRY.get_resource_type(name)
 
 
 def get_struct_type(name: str):
     """Get a struct type from the global registry."""
-    registry = get_global_registry()
-    return registry.types.get_struct_type(name)
+    return TYPE_REGISTRY.get_struct_type(name)
 
 
 def register_struct_function(receiver_type: str, method_name: str, func) -> None:
     """Register a struct function in the global registry."""
-    registry = get_global_registry()
-    registry.struct_functions.register_method(receiver_type, method_name, func)
+    STRUCT_FUNCTION_REGISTRY.register_method(receiver_type, method_name, func)
 
 
 def lookup_struct_function(receiver_type: str, method_name: str):
     """Lookup a struct function in the global registry."""
-    registry = get_global_registry()
-    return registry.struct_functions.lookup_method(receiver_type, method_name)
+    return STRUCT_FUNCTION_REGISTRY.lookup_method(receiver_type, method_name)
 
 
 def has_struct_function(receiver_type: str, method_name: str) -> bool:
     """Check if a struct function exists in the global registry."""
-    registry = get_global_registry()
-    return registry.struct_functions.has_method(receiver_type, method_name)
+    return STRUCT_FUNCTION_REGISTRY.has_method(receiver_type, method_name)
 
 
 def clear_all() -> None:
     """Clear all registries (for testing)."""
-    registry = get_global_registry()
-    registry.clear_all()
+    GLOBAL_REGISTRY.clear_all()
 
 
 __all__ = [
+    "GLOBAL_REGISTRY",
     "GlobalRegistry",
     "TypeRegistry",
     "StructFunctionRegistry",
     "ModuleRegistry",
     "FunctionRegistry",
     "InstanceRegistry",
-    "get_global_registry",
+    # "get_global_registry",
     "register_agent_type",
     "register_resource_type",
     "register_struct_type",
