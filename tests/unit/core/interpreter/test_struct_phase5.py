@@ -11,8 +11,8 @@ MIT License
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestRealWorldScenarios:
@@ -20,7 +20,7 @@ class TestRealWorldScenarios:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_complex_data_processing_pipeline(self):
@@ -187,7 +187,7 @@ class TestPerformanceBenchmarks:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_vs_dict_creation_performance(self):
@@ -292,7 +292,7 @@ class TestComprehensiveIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_structs_with_control_flow_comprehensive(self):

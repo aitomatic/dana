@@ -100,21 +100,8 @@ class TestUnifiedExecution(unittest.TestCase):
         self.reason_calls = []
 
         # Create a mock function that records calls
-        def mock_reason_function(*args, **kwargs):
-            # Extract arguments based on correct signature: (context, prompt, options=None, use_mock=None)
-            context = args[0] if len(args) > 0 else kwargs.get("context", self.context)
-            prompt = args[1] if len(args) > 1 else kwargs.get("prompt", "")
-            options = args[2] if len(args) > 2 else kwargs.get("options", {})
-
-            # Merge any remaining kwargs into options
-            if kwargs:
-                remaining_kwargs = {k: v for k, v in kwargs.items() if k not in ["prompt", "context", "options", "use_mock"]}
-                if remaining_kwargs:
-                    if isinstance(options, dict):
-                        options.update(remaining_kwargs)
-                    else:
-                        options = remaining_kwargs
-
+        def mock_reason_function(context, prompt, options=None, use_mock=None):
+            # The reason function signature is (context, prompt, options=None, use_mock=None)
             self.reason_calls.append({"prompt": prompt, "context": context, "options": options or {}})
             return self.reason_result
 
@@ -219,7 +206,7 @@ if True:
         """Test function call chaining."""
 
         # Set up a second function to chain with
-        def mock_process(input_text, context):
+        def mock_process(context, input_text):
             return f"Processed: {input_text}"
 
         self.interpreter.function_registry.register(

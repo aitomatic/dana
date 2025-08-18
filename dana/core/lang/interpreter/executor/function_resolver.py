@@ -327,7 +327,7 @@ class FunctionResolver:
 
         # Get functions from registry
         try:
-            from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+            from dana.registry.function_registry import FunctionRegistry
 
             for func_name in FunctionRegistry.list_functions():
                 if namespace is None or namespace == "registry":

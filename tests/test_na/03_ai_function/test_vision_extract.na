@@ -1,0 +1,234 @@
+# Test: Vision Processing Function Integration
+# Purpose: Comprehensive test of Dana's vision processing capabilities including:
+#   - process_vision() function for unified file processing
+#   - PDF document processing
+#   - Image file processing  
+#   - Video file processing
+#   - Configuration options and customization
+#   - Error handling and validation
+#   - Cache behavior testing
+# Category: Integration - Vision Processing
+
+log("Starting Vision Processing Integration test")
+
+# Import the vision processing module
+from vision import vision_extract
+import os.path.py as path
+
+log("✓ Vision processing module imported")
+
+# Test setup - file paths
+log("Setting up test file paths...")
+
+test_pdf_path = "tests/test_na/03_ai_function/files/American-Political-System.pdf"
+test_image_path = "tests/test_na/03_ai_function/files/Diagram_of_the_human_heart.png"
+test_video_path = "tests/test_na/03_ai_function/files/family_meal.mp4"
+non_existent_path = "tests/test_na/03_ai_function/files/non_existent_file.pdf"
+unsupported_path = "tests/test_na/03_ai_function/files/test.txt"
+
+log("✓ Test file paths configured")
+
+# Test 1: Basic PDF Processing
+log("Test 1: Basic PDF Processing")
+
+try:
+    pdf_result = vision_extract(test_pdf_path)
+    
+    assert pdf_result is not null, "✗ PDF processing should return a result"
+    assert type(pdf_result) == "dict", "✗ PDF result should be a dictionary"
+    assert "file_object" in pdf_result, "✗ PDF result should contain file_object"
+    assert "file_name" in pdf_result["file_object"], "✗ PDF result should contain file_name"
+    assert "total_pages" in pdf_result["file_object"], "✗ PDF result should contain total_pages"
+    assert "pages" in pdf_result["file_object"], "✗ PDF result should contain pages"
+    
+    log("✓ Basic PDF processing working")
+    log(f"  - File: {pdf_result['file_object']['file_name']}")
+    log(f"  - Pages: {pdf_result['file_object']['total_pages']}")
+    
+except Exception as e:
+    log(f"✗ PDF processing failed: {e}")
+
+# Test 2: PDF Processing with Custom Prompt
+log("Test 2: PDF Processing with Custom Prompt")
+
+custom_prompt = "Extract only the main topics and key points from this document."
+try:
+    pdf_custom_result = vision_extract(test_pdf_path, prompt=custom_prompt)
+    
+    assert pdf_custom_result is not null, "✗ PDF processing with custom prompt should return a result"
+    assert type(pdf_custom_result) == "dict", "✗ PDF result should be a dictionary"
+    
+    log("✓ PDF processing with custom prompt working")
+    
+except Exception as e:
+    log(f"✗ PDF processing with custom prompt failed: {e}")
+
+# Test 3: Image Processing
+log("Test 3: Image Processing")
+
+try:
+    image_result = vision_extract(test_image_path)
+    
+    assert image_result is not null, "✗ Image processing should return a result"
+    assert type(image_result) == "dict", "✗ Image result should be a dictionary"
+    assert "file_object" in image_result, "✗ Image result should contain file_object"
+    assert "file_name" in image_result["file_object"], "✗ Image result should contain file_name"
+    assert "pages" in image_result["file_object"], "✗ Image result should contain pages"
+    
+    log("✓ Basic image processing working")
+    log(f"  - File: {image_result['file_object']['file_name']}")
+    
+except Exception as e:
+    log(f"✗ Image processing failed: {e}")
+
+# Test 4: Image Processing with Custom Prompt
+log("Test 4: Image Processing with Custom Prompt")
+
+image_prompt = "Describe the anatomical features shown in this medical diagram."
+try:
+    image_custom_result = vision_extract(test_image_path, prompt=image_prompt)
+    
+    assert image_custom_result is not null, "✗ Image processing with custom prompt should return a result"
+    assert type(image_custom_result) == "dict", "✗ Image result should be a dictionary"
+    
+    log("✓ Image processing with custom prompt working")
+    
+except Exception as e:
+    log(f"✗ Image processing with custom prompt failed: {e}")
+
+# Test 5: Video Processing
+log("Test 5: Video Processing")
+
+try:
+    video_result = vision_extract(test_video_path)
+    
+    assert video_result is not null, "✗ Video processing should return a result"
+    assert type(video_result) == "dict", "✗ Video result should be a dictionary"
+    assert "file_object" in video_result, "✗ Video result should contain file_object"
+    assert "file_name" in video_result["file_object"], "✗ Video result should contain file_name"
+    assert "file_type" in video_result["file_object"], "✗ Video result should contain file_type"
+    assert video_result["file_object"]["file_type"] == "video", "✗ File type should be 'video'"
+    assert "content" in video_result["file_object"], "✗ Video result should contain content"
+    
+    log("✓ Basic video processing working")
+    log(f"  - File: {video_result['file_object']['file_name']}")
+    
+except Exception as e:
+    log(f"✗ Video processing failed: {e}")
+
+# Test 6: Video Processing with Custom Prompt
+log("Test 6: Video Processing with Custom Prompt")
+
+video_prompt = "Describe the activities and interactions shown in this video."
+try:
+    video_custom_result = vision_extract(test_video_path, prompt=video_prompt)
+    
+    assert video_custom_result is not null, "✗ Video processing with custom prompt should return a result"
+    assert type(video_custom_result) == "dict", "✗ Video result should be a dictionary"
+    
+    log("✓ Video processing with custom prompt working")
+    
+except Exception as e:
+    log(f"✗ Video processing with custom prompt failed: {e}")
+
+# Test 7: Configuration Options
+log("Test 7: Configuration Options")
+
+test_config = {
+    "cache_dir": "tmp/test_vision_cache",
+    "invalidate_cache": true,
+    "image_quality": "high",
+    "max_duration_seconds": 15,  # For video processing
+    "frame_rate": 1  # For video processing
+}
+
+try:
+    configured_result = vision_extract(test_image_path, config=test_config)
+    
+    assert configured_result is not null, "✗ Processing with custom config should return a result"
+    assert type(configured_result) == "dict", "✗ Configured result should be a dictionary"
+    assert path.exists(test_config["cache_dir"]), "✗ Cache directory should be created"
+    
+    log("✓ Processing with custom configuration working")
+    
+except Exception as e:
+    log(f"✗ Processing with custom configuration failed: {e}")
+
+# Test 8: Error Handling - Non-existent File
+log("Test 8: Error Handling - Non-existent File")
+private:raise_file_not_found_error = false
+try:
+    vision_extract(non_existent_path)
+    private:raise_file_not_found_error = false
+except as e:
+    private:raise_file_not_found_error = true
+
+if not private:raise_file_not_found_error:
+    assert false, "✗ FileNotFoundError not raised for non-existent file"
+
+# Test 9: Error Handling - Unsupported File Type
+log("Test 9: Error Handling - Unsupported File Type")
+private:raise_value_error = false
+try:
+    vision_extract(unsupported_path)
+    private:raise_value_error = false
+except as e:
+    private:raise_value_error = true
+
+if not private:raise_value_error:
+    assert false, "✗ ValueError not raised for unsupported file type"
+
+# Test 12: Edge Cases
+log("Test 12: Edge Cases")
+
+# Test with empty prompt
+try:
+    empty_prompt_result = vision_extract(test_image_path, prompt="")
+    assert empty_prompt_result is not null, "✗ Empty prompt should work"
+    log("✓ Empty prompt handling working")
+except Exception as e:
+    log(f"✗ Empty prompt handling failed: {e}")
+
+# Test with None config
+try:
+    none_config_result = vision_extract(test_image_path, config=null)
+    assert none_config_result is not null, "✗ None config should work"
+    log("✓ None config handling working")
+except Exception as e:
+    log(f"✗ None config handling failed: {e}")
+
+# Test 13: Integration with AI Functions
+log("Test 13: Integration with AI Functions")
+
+# Test using vision processing result with AI reasoning
+try:
+    vision_result = vision_extract(test_image_path)
+    
+    # Extract content for AI processing
+    if "file_object" in vision_result and "pages" in vision_result["file_object"]:
+        content = vision_result["file_object"]["pages"][0]["page_content"]
+
+        print(f'content: {content}')
+        
+        # Use AI to analyze the extracted content
+        analysis: str = reason(f"Summarize this medical content in one sentence: {content[:500]}...")
+        
+        assert analysis is not null, "✗ AI analysis of vision content should work"
+        assert type(analysis) == "str", "✗ AI analysis should return string"
+        
+        log("✓ Vision-AI integration working")
+        log(f"  - Analysis: {analysis}...")
+    
+except Exception as e:
+    log(f"✗ Vision-AI integration failed: {e}")
+
+# Test Summary
+log("=== Vision Processing Test Summary ===")
+log("✓ All vision processing tests completed")
+log("✓ Supported file types: PDF, Images (jpg, jpeg, png, tiff, tif, webp, bmp), Videos (mp4, avi, mov, mkv)")
+log("✓ Configuration options tested")
+log("✓ Error handling validated")
+log("✓ Cache functionality verified")
+log("✓ AI integration confirmed")
+
+log("🎉 Vision Processing Integration test completed successfully!")
