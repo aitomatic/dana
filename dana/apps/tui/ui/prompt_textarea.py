@@ -84,9 +84,11 @@ class PromptStyleTextArea(TextArea):
         )
 
         self.sandbox = sandbox
+
+        # History management - completely rewritten
         self._history: list[str] = []
-        self._history_index = -1
-        self._temp_content = ""  # Store current content when navigating history
+        self._history_index = -1  # -1 means not navigating history
+        self._current_input = ""  # Store current input when navigating history
         self._max_history = 1000
 
         # Multi-line mode management
@@ -131,7 +133,7 @@ class PromptStyleTextArea(TextArea):
 
         self.text = ""
         self._history_index = -1
-        self._temp_content = ""
+        self._current_input = ""
 
         # Reset multi-line mode
         self._multiline_mode = False
@@ -200,8 +202,8 @@ class PromptStyleTextArea(TextArea):
     @on(Input.Changed)
     def _on_input_changed(self, event: Input.Changed) -> None:
         """Handle input changes for syntax highlighting."""
-        # Autocomplete removed - just handle text changes for syntax highlighting
-        pass
+        # Reset history navigation when user types
+        self._reset_history_navigation()
 
     @on(Input.Submitted)
     def _on_input_submitted(self, event: Input.Submitted | None = None) -> None:
@@ -229,14 +231,14 @@ class PromptStyleTextArea(TextArea):
         self.post_message(self.TextChanged(text))
 
     # ============================================================================
-    # History Management
+    # History Management - COMPLETELY REWRITTEN
     # ============================================================================
 
     def _get_history_file(self) -> Path:
         """Get path to history file."""
         dana_dir = Path.home() / ".dana"
         dana_dir.mkdir(exist_ok=True)
-        return dana_dir / "tui_prompt_history.txt"
+        return dana_dir / "history_tui.txt"
 
     def _load_history(self) -> None:
         """Load command history from file."""
@@ -281,7 +283,7 @@ class PromptStyleTextArea(TextArea):
 
         # Reset history navigation
         self._history_index = -1
-        self._temp_content = ""
+        self._current_input = ""
 
         # Save to file
         self._save_history()
@@ -294,38 +296,91 @@ class PromptStyleTextArea(TextArea):
         """Clear command history."""
         self._history.clear()
         self._history_index = -1
-        self._temp_content = ""
+        self._current_input = ""
         self._save_history()
 
     def _navigate_history(self, direction: int) -> None:
-        """Navigate through command history."""
+        """
+        Navigate through command history with prefix filtering.
+
+        Expected behavior:
+        1. With prefix: Up arrow finds last matching item, down arrow finds next matching item
+        2. Without prefix: Up arrow finds last item, down arrow finds next item
+        3. Typing: Resets history navigation
+        """
         if not self._history:
             return
 
-        # Save current content when starting history navigation
+        # Get current input content
+        current_input = self._get_current_input_content()
+        DANA_LOGGER.debug(f"current_input: {current_input}")
+
+        # If we're not currently navigating history, save current input and start
         if self._history_index == -1:
-            self._temp_content = self._get_current_input_content()
+            self._current_input = current_input
+            DANA_LOGGER.debug(f"Starting history navigation with current_input: '{current_input}'")
+            DANA_LOGGER.debug(f"History: {self._history}")
 
-        # Calculate new index
-        new_index = self._history_index + direction
+            # If we have a prefix, filter history to matching items
+            if current_input:
+                matching_indices = [i for i, item in enumerate(self._history) if item.startswith(current_input)]
+                DANA_LOGGER.debug(f"Matching indices for '{current_input}': {matching_indices}")
+                if not matching_indices:
+                    return  # No matches, don't navigate
 
-        if new_index < -1:
-            new_index = len(self._history) - 1
-        elif new_index >= len(self._history):
-            new_index = -1
+                # Start with the appropriate item based on direction
+                if direction < 0:  # Up arrow - go to last match
+                    self._history_index = matching_indices[-1]
+                else:  # Down arrow - go to first match
+                    self._history_index = matching_indices[0]
+            else:
+                # No prefix - navigate through all history
+                if direction < 0:  # Up arrow - go to last item
+                    self._history_index = len(self._history) - 1
+                else:  # Down arrow - go to first item
+                    self._history_index = 0
 
-        self._history_index = new_index
-
-        # Update content
-        if self._history_index == -1:
-            # Back to current/temp content
-            content = self._temp_content
+            DANA_LOGGER.debug(f"Set history_index to: {self._history_index}")
         else:
-            # Show history item
-            content = self._history[self._history_index]
+            # We're already navigating history
+            DANA_LOGGER.debug(f"Already navigating history, current_input: '{current_input}', history_index: {self._history_index}")
 
-        # Update input lines with the content
-        self._set_input_content(content)
+            # Always filter by the original prefix (which doesn't change while cycling)
+            matching_indices = [i for i, item in enumerate(self._history) if item.startswith(self._current_input)]
+            DANA_LOGGER.debug(f"Filtering by original prefix '{self._current_input}': {matching_indices}")
+
+            if not matching_indices:
+                return  # No matches, don't navigate
+
+            # Find current position in filtered list
+            try:
+                current_filtered_index = matching_indices.index(self._history_index)
+            except ValueError:
+                # Current index not in filtered list, start from beginning
+                current_filtered_index = -1
+
+            # Calculate new filtered index
+            new_filtered_index = current_filtered_index + direction
+
+            # Handle wrap around
+            if new_filtered_index < 0:
+                # Going up past first match - wrap to last match
+                self._history_index = matching_indices[-1]
+                DANA_LOGGER.debug(f"Wrapped up to last match: {self._history_index}")
+            elif new_filtered_index >= len(matching_indices):
+                # Going down past last match - wrap to first match
+                self._history_index = matching_indices[0]
+                DANA_LOGGER.debug(f"Wrapped down to first match: {self._history_index}")
+            else:
+                # Normal navigation within filtered list
+                self._history_index = matching_indices[new_filtered_index]
+                DANA_LOGGER.debug(f"Normal navigation within filtered list: {self._history_index}")
+
+            DANA_LOGGER.debug(f"Final history_index: {self._history_index}")
+
+        # Update content with the selected history item
+        if self._history_index != -1:
+            self._set_input_content(self._history[self._history_index])
 
     def _get_current_input_content(self) -> str:
         """Get the current content from all input lines."""
@@ -361,6 +416,29 @@ class PromptStyleTextArea(TextArea):
                 # Move cursor to end of line
                 self._input_lines[last_line_index].cursor_position = len(lines[last_line_index])
 
+    def _reset_history_navigation(self) -> None:
+        """Reset history navigation when user starts typing."""
+        # Only reset if we're currently navigating history and the current content
+        # doesn't match any history item (indicating user typed something new)
+        if self._history_index != -1:
+            current_content = self._get_current_input_content()
+            # Check if current content matches the history item we're on
+            if self._history_index < len(self._history):
+                expected_content = self._history[self._history_index]
+                if current_content != expected_content:
+                    # User typed something different, reset navigation
+                    self._history_index = -1
+                    self._current_input = ""
+                    DANA_LOGGER.debug("Reset history navigation - content changed")
+                else:
+                    # Content matches history item, don't reset
+                    DANA_LOGGER.debug("Not resetting - content matches history item")
+            else:
+                # Invalid history index, reset
+                self._history_index = -1
+                self._current_input = ""
+                DANA_LOGGER.debug("Reset history navigation - invalid index")
+
     # ============================================================================
     # Key Event Handling
     # ============================================================================
@@ -394,12 +472,12 @@ class PromptStyleTextArea(TextArea):
         """Handle history navigation with up/down arrow keys."""
         # Only allow history navigation when not in multi-line mode
         if not self._multiline_mode:
-            current_input = self._get_current_input_content()
-            if current_input == "" or self._history_index != -1:
-                if event.key in ("up", "pageup"):
-                    self._navigate_history(-1)
-                else:
-                    self._navigate_history(1)
+            if event.key in ("up", "pageup"):
+                self._navigate_history(-1)
+            else:
+                self._navigate_history(1)
+            # Prevent default arrow key behavior (cursor movement)
+            event.prevent_default()
 
     def _post_multiline_processing(self, event: Key, line_index: int) -> None:
         """Common post-processing for multi-line continuation keys."""

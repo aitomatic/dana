@@ -32,7 +32,7 @@ from dana.common.mixins.loggable import Loggable
 from dana.common.terminal_utils import ColorScheme, get_dana_lexer
 
 # Constants
-HISTORY_FILE = os.path.expanduser("~/.dana/repl_history")
+HISTORY_FILE = os.path.expanduser("~/.dana/history_repl.txt")
 MULTILINE_PROMPT = "... "
 STANDARD_PROMPT = ">>> "
 MAX_HISTORY_SIZE = 50000  # 50KB max for auto-suggest to prevent blocking

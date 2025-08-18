@@ -1,8 +1,9 @@
 {
     "llm": {
         "preferred_models": [
-            "openai:gpt-4.1-mini",
             "huggingface:openai/gpt-oss-120b",
+            "huggingface:openai/gpt-oss-20b",
+            "openai:gpt-4.1-mini",
             "anthropic:kimi-k2-0711-preview",
             "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
             "moonshot:kimi",
