@@ -19,6 +19,50 @@
   color: inherit !important;
 }
 
+/* MARKDOWN HEADING SIZE OVERRIDES */
+/* Override GitHub Markdown CSS heading sizes to make them more appropriate for UI */
+.markdown-body h1 {
+  font-size: 1.25rem !important; /* Reduce from default large size */
+  line-height: 2.0rem !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.markdown-body h2 {
+  font-size: 1.15rem !important; /* Reduce from default size */
+  line-height: 1.75rem !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.markdown-body h3 {
+  font-size: 1.1rem !important; /* Reduce from default size */
+  line-height: 1.5rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.markdown-body h4 {
+  font-size: 1.0rem !important; /* Reduce from default size */
+  line-height: 1.4rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.markdown-body h5 {
+  font-size: 0.9rem !important; /* Reduce from default size */
+  line-height: 1.3rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.markdown-body h6 {
+  font-size: 0.85rem !important; /* Reduce from default size */
+  line-height: 1.2rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
 /* Specific overrides for user messages (gray background) */
 .bg-gray-100 .markdown-body {
   color: #374151 !important; /* Dark text on gray background */
