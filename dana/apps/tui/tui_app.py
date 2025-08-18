@@ -11,7 +11,8 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer
 
-from .core.mock_agents import CoderAgent, PlannerAgent, ResearchAgent
+from dana.registry import AGENT_REGISTRY
+
 from .core.runtime import DanaSandbox
 from .core.taskman import task_manager
 from .ui.agent_detail import AgentDetail
@@ -116,8 +117,25 @@ class DanaTUI(App):
         border: round $accent;
         background: $surface;
         color: $text;
-        overflow: auto;
-        scrollbar-size: 0 0;
+        overflow-x: scroll;  /* Force horizontal scrollbar to always show */
+        overflow-y: auto;
+        scrollbar-size: 1 1;
+        scrollbar-background: $accent 30%;
+        scrollbar-color: $text;
+        scrollbar-color-hover: $text 80%;
+        scrollbar-color-active: $text;
+    }
+    
+    /* Force agent list items to not wrap and show full width */
+    #agents-list ListItem {
+        min-width: 80;
+        overflow-x: hidden;
+        overflow-y: hidden;
+    }
+    
+    #agents-list Label {
+        min-width: 80;
+        width: auto;
     }
     
     /* Agent detail - use design system */
@@ -168,6 +186,7 @@ class DanaTUI(App):
         Binding("ctrl+h", "show_history", "History", show=False),
         Binding("ctrl+shift+h", "clear_history", "Clear History", show=False),
         Binding("ctrl+s", "save_logs", "Save Logs", show=False),
+        Binding("ctrl+r", "sync_registry", "Sync Registry", show=True),
     ]
 
     def __init__(self, **kwargs):
@@ -192,15 +211,49 @@ class DanaTUI(App):
         self.agent_detail: AgentDetail | None = None
         self.log_panel: LogPanel | None = None
 
-        # Create initial mock agents
-        self._setup_initial_agents()
+        # TUI-managed focused agent state
+        self._focused_agent: str | None = None
 
-    def _setup_initial_agents(self) -> None:
-        """Set up initial mock agents for demo."""
-        agents = [ResearchAgent(), CoderAgent(), PlannerAgent()]
+        # Register for AGENT_REGISTRY events
+        self._setup_registry_events()
 
-        for agent in agents:
-            self.sandbox.register(agent)
+    def _setup_registry_events(self) -> None:
+        """Set up event handlers for AGENT_REGISTRY events."""
+        AGENT_REGISTRY.on_registered(self._on_agent_registered)
+        AGENT_REGISTRY.on_unregistered(self._on_agent_unregistered)
+
+    def _on_agent_registered(self, agent_id: str, agent_instance) -> None:
+        """Handle agent registration events from AGENT_REGISTRY."""
+        # Log the event
+        if self.repl_panel:
+            self.repl_panel.add_system_message(f"Agent registered in global registry: {agent_id}", "green")
+
+        # Update the agents list if it exists
+        if self.agents_list:
+            self.agents_list.refresh_agents()
+
+    def _on_agent_unregistered(self, agent_id: str, agent_instance) -> None:
+        """Handle agent unregistration events from AGENT_REGISTRY."""
+        # Log the event
+        if self.repl_panel:
+            self.repl_panel.add_system_message(f"Agent unregistered from global registry: {agent_id}", "yellow")
+
+        # Update the agents list if it exists
+        if self.agents_list:
+            self.agents_list.refresh_agents()
+
+    def sync_with_global_registry(self) -> None:
+        """Refresh the TUI to reflect the current state of AGENT_REGISTRY."""
+        # Get all agents from the global registry
+        global_agents = AGENT_REGISTRY.list_instances()
+
+        # Log the sync operation
+        if self.repl_panel:
+            self.repl_panel.add_system_message(f"Refreshing from global registry: {len(global_agents)} agents found", "blue")
+
+        # Update the agents list to reflect global state
+        if self.agents_list:
+            self.agents_list.refresh_agents()
 
     def compose(self) -> ComposeResult:
         """Create the application layout."""
@@ -215,7 +268,7 @@ class DanaTUI(App):
                 with Vertical(classes="right-panel"):
                     # Top: Agents list
                     with Vertical(classes="agents-section"):
-                        self.agents_list = AgentsList(self.sandbox)
+                        self.agents_list = AgentsList()
                         yield self.agents_list
 
                     # Bottom: Agent detail
@@ -241,31 +294,36 @@ class DanaTUI(App):
 
     def _update_all_panels(self) -> None:
         """Update all panels with current state."""
-        focused_agent = self.sandbox.get_focused_name()
-
         if self.repl_panel:
-            self.repl_panel.set_focused_agent(focused_agent)
+            self.repl_panel.set_focused_agent(self._focused_agent)
 
         if self.agents_list:
-            self.agents_list.update_focus(focused_agent)
+            self.agents_list.update_focus(self._focused_agent)
 
         if self.agent_detail:
-            self.agent_detail.set_focused_agent(focused_agent)
+            self.agent_detail.set_focused_agent(self._focused_agent)
 
     @on(AgentSelected)
     def handle_agent_selected(self, event: AgentSelected) -> None:
-        """Handle agent selection from agents list."""
-        # Just highlight, don't change focus yet
+        """Handle agent highlighting (hover) from agents list."""
+        # Agent is highlighted/hovered - could update preview or status
+        # Currently no action needed, just visual feedback in the list
         pass
 
     @on(AgentFocused)
     def handle_agent_focused(self, event: AgentFocused) -> None:
-        """Handle agent focus change from agents list."""
+        """Handle agent focus change (actual selection) from agents list."""
+        # Agent is actually selected/clicked - change the focused agent
         self.focus_agent(event.agent_name)
 
     def focus_agent(self, agent_name: str) -> None:
         """Focus on a specific agent."""
-        if self.sandbox.set_focus(agent_name):
+        # Check if agent exists in global registry
+        instances = AGENT_REGISTRY.list_instances()
+        agent_exists = any(hasattr(instance, "name") and instance.name == agent_name for instance in instances)
+
+        if agent_exists:
+            self._focused_agent = agent_name
             self._update_all_panels()
             if self.repl_panel:
                 self.repl_panel.focus_input()
@@ -273,12 +331,11 @@ class DanaTUI(App):
     # Action handlers for keybindings
     def action_cancel_focused(self) -> None:
         """Cancel the focused agent's current task."""
-        focused_agent = self.sandbox.get_focused_name()
-        if focused_agent:
-            cancelled = task_manager.cancel_agent_tasks(focused_agent)
+        if self._focused_agent:
+            cancelled = task_manager.cancel_agent_tasks(self._focused_agent)
             if cancelled > 0:
                 if self.repl_panel:
-                    self.repl_panel.add_system_message(f"Cancelled {cancelled} task(s) for {focused_agent}", "yellow")
+                    self.repl_panel.add_system_message(f"Cancelled {cancelled} task(s) for {self._focused_agent}", "yellow")
                 if self.agent_detail:
                     self.agent_detail.add_system_message(f"Tasks cancelled: {cancelled}", "yellow")
         else:
@@ -301,11 +358,15 @@ class DanaTUI(App):
 
     def action_next_agent(self) -> None:
         """Focus on the next agent."""
-        agents = self.sandbox.list()
+        # Get agents directly from AGENT_REGISTRY
+        instances = AGENT_REGISTRY.list_instances()
+        agents = [instance.name for instance in instances if hasattr(instance, "name")]
+        agents.sort()  # Sort for consistent ordering
+
         if not agents:
             return
 
-        current = self.sandbox.get_focused_name()
+        current = self._focused_agent
         if current and current in agents:
             current_idx = agents.index(current)
             next_idx = (current_idx + 1) % len(agents)
@@ -315,11 +376,15 @@ class DanaTUI(App):
 
     def action_prev_agent(self) -> None:
         """Focus on the previous agent."""
-        agents = self.sandbox.list()
+        # Get agents directly from AGENT_REGISTRY
+        instances = AGENT_REGISTRY.list_instances()
+        agents = [instance.name for instance in instances if hasattr(instance, "name")]
+        agents.sort()  # Sort for consistent ordering
+
         if not agents:
             return
 
-        current = self.sandbox.get_focused_name()
+        current = self._focused_agent
         if current and current in agents:
             current_idx = agents.index(current)
             prev_idx = (current_idx - 1) % len(agents)
@@ -330,7 +395,29 @@ class DanaTUI(App):
     def action_help(self) -> None:
         """Show help information."""
         if self.repl_panel:
-            self.repl_panel.add_meta_command_result("No help available yet.")
+            help_text = """
+Dana TUI Help
+=============
+
+Key Bindings:
+- Ctrl+Q: Quit
+- Ctrl+L: Toggle log panel
+- F1: Show this help
+- Tab/Shift+Tab: Navigate between agents
+- Ctrl+X: Clear transcript
+- Ctrl+H: Show history
+- Ctrl+Shift+H: Clear history
+- Ctrl+S: Save logs
+- Ctrl+R: Sync with global registry
+
+Registry Integration:
+- The TUI automatically monitors AGENT_REGISTRY events
+- Agent registration/unregistration events are logged
+- Press Ctrl+R to manually refresh from the global registry
+- The agents list updates automatically when registry changes
+- The TUI displays agents from the global AGENT_REGISTRY only
+            """
+            self.repl_panel.add_meta_command_result(help_text)
 
     def action_clear_transcript(self) -> None:
         """Clear the REPL transcript."""
@@ -364,6 +451,10 @@ class DanaTUI(App):
                 self.log_panel.show()
                 if self.repl_panel:
                     self.repl_panel.add_system_message("Log panel visible. Press Ctrl+L to hide.", "green")
+
+    def action_sync_registry(self) -> None:
+        """Manually sync with the global AGENT_REGISTRY."""
+        self.sync_with_global_registry()
 
 
 def main():

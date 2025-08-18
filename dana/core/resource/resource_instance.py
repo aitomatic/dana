@@ -9,7 +9,6 @@ from collections.abc import Callable
 from typing import Any
 
 from dana.core.lang.interpreter.struct_system import StructInstance
-from dana.registry import RESOURCE_REGISTRY
 
 from .resource_type import ResourceType
 
@@ -45,7 +44,9 @@ class ResourceInstance(StructInstance):
             resource_type: The resource type definition
             values: Initial field values
         """
-        # Call parent constructor
+        # Call parent constructor (import registry lazily to avoid circular import)
+        from dana.registry import RESOURCE_REGISTRY
+
         super().__init__(resource_type, values or {}, RESOURCE_REGISTRY)
 
         # Resource-specific attributes for composition

@@ -9,9 +9,11 @@ MIT License
 
 from typing import Any, Optional
 
+from .agent_registry import AgentRegistry
 from .function_registry import FunctionRegistry
-from .instance_registry import InstanceRegistry
+from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
+from .resource_registry import ResourceRegistry
 from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
@@ -47,13 +49,13 @@ class GlobalRegistry:
         self.functions = FunctionRegistry()
 
         # Agent instance registry
-        self.agents = InstanceRegistry()
+        self.agents = AgentRegistry()
 
         # Resource instance registry
-        self.resources = InstanceRegistry()
+        self.resources = ResourceRegistry()
 
         # Workflow instance registry
-        self.workflows = InstanceRegistry()
+        self.workflows = StructRegistry()
 
     def clear_all(self) -> None:
         """Clear all registries (for testing)."""

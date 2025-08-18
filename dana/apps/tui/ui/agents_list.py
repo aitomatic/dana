@@ -11,26 +11,33 @@ import time
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import Label, ListItem, ListView, Static
 
-from ..core.runtime import Agent, DanaSandbox
+from dana.agent import AgentInstance
+from dana.registry import AGENT_REGISTRY
 
 
 class AgentListItem(ListItem):
     """Individual agent item in the list."""
 
-    def __init__(self, agent_name: str, agent: Agent, is_focused: bool = False):
+    def __init__(self, agent_name: str, agent: AgentInstance, is_focused: bool = False):
         super().__init__()
         self.agent_name = agent_name
         self.agent = agent
         self.is_focused = is_focused
         self._last_update = 0.0
-        self.update_content()
+        # Don't call update_content() here - compose() hasn't run yet
 
     def compose(self) -> ComposeResult:
         """Create the list item content."""
-        yield Label(self._format_agent_display(), id=f"agent-{self.agent_name}")
+        label = Label(self._format_agent_display(), id=f"agent-{self.agent_name}")
+        # Disable text wrapping to allow horizontal scrolling
+        label.wrap = False
+        # Ensure minimum width to force horizontal overflow
+        label.styles.min_width = 80
+        yield label
 
     def update_content(self) -> None:
         """Update the agent display content."""
@@ -40,9 +47,13 @@ class AgentListItem(ListItem):
 
         self._last_update = now
 
-        # Update the label content
-        label = self.query_one(f"#agent-{self.agent_name}", Label)
-        label.update(self._format_agent_display())
+        # Update the label content (only if widget is mounted)
+        try:
+            label = self.query_one(f"#agent-{self.agent_name}", Label)
+            label.update(self._format_agent_display())
+        except Exception:
+            # Widget not mounted yet, skip update
+            pass
 
     def _format_agent_display(self) -> str:
         """Format the agent display string."""
@@ -53,7 +64,7 @@ class AgentListItem(ListItem):
         focus_char = "→" if self.is_focused else " "
 
         # Step and elapsed time
-        step = metrics.get("current_step", "idle")[:8]  # Truncate long steps
+        step = metrics.get("current_step", "idle")  # Don't truncate for horizontal scrolling
         elapsed = metrics.get("elapsed_time", 0.0)
 
         # Token rate
@@ -70,13 +81,13 @@ class AgentListItem(ListItem):
         else:
             tok_str = " - "
 
-        # Ensure consistent spacing
-        name_part = f"{focus_char}{status_char} {self.agent_name:<12}"
-        step_part = f"step: {step:<8}"
-        rate_part = f"tok/s: {tok_str:<4}"
+        # Format with natural width (no truncation for horizontal scrolling)
+        name_part = f"{focus_char}{status_char} {self.agent_name}"
+        step_part = f"step: {step}"
+        rate_part = f"tok/s: {tok_str}"
         time_part = f"⏱ {elapsed_str}"
 
-        return f"{name_part} {step_part} {rate_part} {time_part}"
+        return f"{name_part} │ {step_part} │ {rate_part} │ {time_part}"
 
     def set_focused(self, focused: bool) -> None:
         """Update focus state."""
@@ -89,11 +100,9 @@ class AgentsList(Vertical):
 
     # Reactive attributes
     focused_agent: reactive[str | None] = reactive(None)
-    agents: reactive[dict[str, Agent]] = reactive({})
 
-    def __init__(self, sandbox: DanaSandbox, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.sandbox = sandbox
         self._list_view: ListView | None = None
         self._last_update = 0.0
         self._update_timer = None
@@ -102,6 +111,8 @@ class AgentsList(Vertical):
         """Create the agents list UI."""
         yield Static("🤖 Agents", classes="panel-title")
         self._list_view = ListView(id="agents-list")
+        # Enable horizontal scrolling for long agent names/metrics
+        self._list_view.can_focus = True
         yield self._list_view
 
     def on_mount(self) -> None:
@@ -128,25 +139,26 @@ class AgentsList(Vertical):
 
     def refresh_agents(self) -> None:
         """Refresh the entire agents list."""
-        if not self._list_view:
+        # Don't check boolean value of ListView - it may return False when not mounted
+        if self._list_view is None:
             return
 
-        # Get current agents from sandbox
-        current_agents = self.sandbox.get_all_agents()
-        focused_agent_name = self.sandbox.get_focused_name()
+        # Get current agents from AGENT_REGISTRY
+        instances = AGENT_REGISTRY.list_instances()
+        current_agents = {}
+        for instance in instances:
+            if hasattr(instance, "name"):
+                current_agents[instance.name] = instance
 
         # Clear and rebuild the list
         self._list_view.clear()
 
         for agent_name in sorted(current_agents.keys()):
-            agent = current_agents[agent_name]
-            is_focused = agent_name == focused_agent_name
+            agent: AgentInstance = current_agents[agent_name]
+            # Note: focus state is managed by the TUI app, not this component
+            is_focused = False  # Will be updated by update_focus method
             item = AgentListItem(agent_name, agent, is_focused)
             self._list_view.append(item)
-
-        # Update reactive state
-        self.agents = current_agents
-        self.focused_agent = focused_agent_name
 
     def refresh_metrics(self) -> None:
         """Refresh just the metrics without rebuilding the list."""
@@ -164,7 +176,7 @@ class AgentsList(Vertical):
             if isinstance(item, AgentListItem):
                 item.update_content()
 
-    def add_agent(self, agent_name: str, agent: Agent) -> None:
+    def add_agent(self, agent_name: str, agent: AgentInstance) -> None:
         """Add a new agent to the list."""
         if not self._list_view:
             return
@@ -174,13 +186,9 @@ class AgentsList(Vertical):
             if isinstance(item, AgentListItem) and item.agent_name == agent_name:
                 return  # Already exists
 
-        # Add new agent
-        is_focused = agent_name == self.sandbox.get_focused_name()
-        item = AgentListItem(agent_name, agent, is_focused)
+        # Add new agent (focus state will be updated by update_focus method)
+        item = AgentListItem(agent_name, agent, False)
         self._list_view.append(item)
-
-        # Update reactive state
-        self.agents = self.sandbox.get_all_agents()
 
     def remove_agent(self, agent_name: str) -> None:
         """Remove an agent from the list."""
@@ -192,9 +200,6 @@ class AgentsList(Vertical):
             if isinstance(item, AgentListItem) and item.agent_name == agent_name:
                 item.remove()
                 break
-
-        # Update reactive state
-        self.agents = self.sandbox.get_all_agents()
 
     def update_focus(self, new_focused_agent: str | None) -> None:
         """Update which agent is focused."""
@@ -234,29 +239,31 @@ class AgentsList(Vertical):
 
     @on(ListView.Highlighted)
     def on_agent_highlighted(self, event: ListView.Highlighted) -> None:
-        """Handle agent selection in the list."""
+        """Handle agent highlighting (hovering) in the list."""
         if isinstance(event.item, AgentListItem):
-            # Post a custom message for the main app to handle
+            # Post message when agent is highlighted/hovered (visual feedback only)
             self.post_message(AgentSelected(event.item.agent_name))
 
     @on(ListView.Selected)
     def on_agent_selected(self, event: ListView.Selected) -> None:
-        """Handle agent selection (Enter key)."""
+        """Handle agent selection (Enter key or click)."""
         if isinstance(event.item, AgentListItem):
-            # Focus the selected agent
+            # Post message when agent is actually selected/clicked (focus change)
             self.post_message(AgentFocused(event.item.agent_name))
 
 
 # Custom messages for agent selection
-class AgentSelected:
-    """Message posted when an agent is highlighted."""
+class AgentSelected(Message):
+    """Message posted when an agent is highlighted/hovered over (but not necessarily focused)."""
 
     def __init__(self, agent_name: str):
+        super().__init__()
         self.agent_name = agent_name
 
 
-class AgentFocused:
-    """Message posted when an agent should be focused."""
+class AgentFocused(Message):
+    """Message posted when an agent is actually selected/clicked and should become the focused agent."""
 
     def __init__(self, agent_name: str):
+        super().__init__()
         self.agent_name = agent_name

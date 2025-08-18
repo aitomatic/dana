@@ -1,0 +1,37 @@
+# Event Handler Demo for Dana Registries
+# This demonstrates how to use the new event handler functionality
+
+# Import the registries
+from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
+
+# Define event handlers
+def on_agent_registered(agent_id: str, agent):
+    print(f"🎯 Agent registered: {agent_id} (type: {type(agent).__name__})")
+
+def on_agent_unregistered(agent_id: str, agent):
+    print(f"🗑️  Agent unregistered: {agent_id} (type: {type(agent).__name__})")
+
+def on_resource_registered(resource_id: str, resource):
+    print(f"📦 Resource registered: {resource_id} (type: {type(resource).__name__})")
+
+def on_resource_unregistered(resource_id: str, resource):
+    print(f"🗑️  Resource unregistered: {resource_id} (type: {type(resource).__name__})")
+
+def on_general_event(event_type: str, item_id: str, item):
+    print(f"📢 General event '{event_type}': {item_id}")
+
+# Register event handlers
+AGENT_REGISTRY.on_registered(on_agent_registered)
+AGENT_REGISTRY.on_unregistered(on_agent_unregistered)
+AGENT_REGISTRY.on_event("registered", lambda item_id, item: on_general_event("registered", item_id, item))
+
+RESOURCE_REGISTRY.on_registered(on_resource_registered)
+RESOURCE_REGISTRY.on_unregistered(on_resource_unregistered)
+RESOURCE_REGISTRY.on_event("unregistered", lambda item_id, item: on_general_event("unregistered", item_id, item))
+
+print("✅ Event handlers registered successfully!")
+print(f"📊 Agent registry has {AGENT_REGISTRY.get_event_handler_count()} total handlers")
+print(f"📊 Resource registry has {RESOURCE_REGISTRY.get_event_handler_count()} total handlers")
+
+# Now when agents or resources are tracked/untracked, the event handlers will be called automatically
+print("\n🎬 Demo ready! Create agents or resources to see events in action.")

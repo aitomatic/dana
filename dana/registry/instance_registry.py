@@ -7,12 +7,15 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any
+from typing import Any, Generic, TypeVar
 
+from dana.common.mixins.registry_observable import RegistryObservable
 from dana.core.lang.interpreter.struct_system import StructInstance
 
+InstanceT = TypeVar("InstanceT", bound=StructInstance)
 
-class InstanceRegistry:
+
+class StructRegistry(RegistryObservable[InstanceT], Generic[InstanceT]):
     """Optional registry for tracking StructInstance objects globally.
 
     This registry provides instance tracking capabilities for debugging,
@@ -22,8 +25,10 @@ class InstanceRegistry:
 
     def __init__(self):
         """Initialize the instance registry with unified storage."""
+        super().__init__()
+
         # Unified instance storage
-        self._instances: dict[str, StructInstance] = {}
+        self._instances: dict[str, InstanceT] = {}
 
         # Instance metadata and lifecycle tracking
         self._instance_metadata: dict[str, dict[str, Any]] = {}
@@ -37,7 +42,7 @@ class InstanceRegistry:
         # Instance counter
         self._instance_counter: int = 0
 
-    def track_instance(self, instance: StructInstance, name: str | None = None) -> str:
+    def track_instance(self, instance: InstanceT, name: str | None = None) -> str:
         """Track a StructInstance globally.
 
         Args:
@@ -48,7 +53,7 @@ class InstanceRegistry:
             The instance ID
         """
         if not isinstance(instance, StructInstance):
-            raise TypeError(f"InstanceRegistry can only track StructInstance objects, got {type(instance)}")
+            raise TypeError(f"StructRegistry can only track StructInstance objects, got {type(instance)}")
 
         instance_id = instance.instance_id
         self._instance_counter += 1
@@ -63,6 +68,9 @@ class InstanceRegistry:
         self._instance_creation_times[instance_id] = self._get_timestamp()
         self._instance_states[instance_id] = "active"
 
+        # Trigger registration event
+        self._trigger_event("registered", instance_id, instance)
+
         return instance_id
 
     def untrack_instance(self, instance_id: str) -> bool:
@@ -76,6 +84,9 @@ class InstanceRegistry:
         """
         if instance_id not in self._instances:
             return False
+
+        # Get the instance before removing it for event triggering
+        instance = self._instances[instance_id]
 
         # Remove the instance from storage
         del self._instances[instance_id]
@@ -93,9 +104,12 @@ class InstanceRegistry:
             if not self._agent_owned_instances[owner]:
                 del self._agent_owned_instances[owner]
 
+        # Trigger unregistration event
+        self._trigger_event("unregistered", instance_id, instance)
+
         return True
 
-    def get_instance(self, instance_id: str) -> StructInstance | None:
+    def get_instance(self, instance_id: str) -> InstanceT | None:
         """Get a StructInstance by ID.
 
         Args:
@@ -106,7 +120,7 @@ class InstanceRegistry:
         """
         return self._instances.get(instance_id)
 
-    def list_instances(self, instance_type: str | None = None) -> list[StructInstance]:
+    def list_instances(self, instance_type: str | None = None) -> list[InstanceT]:
         """List all tracked StructInstance objects.
 
         Args:
@@ -230,6 +244,10 @@ class InstanceRegistry:
 
     def clear(self) -> None:
         """Clear all tracked instances (for testing)."""
+        # Trigger unregistration events for all instances before clearing
+        for instance_id, instance in list(self._instances.items()):
+            self._trigger_event("unregistered", instance_id, instance)
+
         self._instances.clear()
         self._instance_metadata.clear()
         self._instance_creation_times.clear()
@@ -289,6 +307,6 @@ class InstanceRegistry:
         return time.time()
 
     def __repr__(self) -> str:
-        """String representation of the instance registry."""
+        """String representation of the struct registry."""
         stats = self.get_statistics()
-        return f"InstanceRegistry(total={stats['total_instances']}, types={stats['instance_types']}, active={stats['active_instances']})"
+        return f"StructRegistry(total={stats['total_instances']}, types={stats['instance_types']}, active={stats['active_instances']})"

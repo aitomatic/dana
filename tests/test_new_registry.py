@@ -9,6 +9,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Any
 
+from dana.agent.agent_instance import AgentInstance
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 
 
@@ -138,6 +139,66 @@ class TestNewGlobalRegistry(unittest.TestCase):
         self.assertEqual(len(resource_instances), 1)
         self.assertIn(agent_instance, agent_instances)
         self.assertIn(resource_instance, resource_instances)
+
+    def test_event_handler_functionality(self):
+        """Test event handler functionality for StructRegistry."""
+        from dana.registry import AGENT_REGISTRY
+
+        # Test data to track events
+        registered_events = []
+        unregistered_events = []
+        general_events = []
+
+        def on_registered_handler(item_id: str, item: Any) -> None:
+            registered_events.append((item_id, item))
+
+        def on_unregistered_handler(item_id: str, item: Any) -> None:
+            unregistered_events.append((item_id, item))
+
+        def on_general_handler(item_id: str, item: Any) -> None:
+            general_events.append((item_id, item))
+
+        # Register event handlers
+        AGENT_REGISTRY.on_registered(on_registered_handler)
+        AGENT_REGISTRY.on_unregistered(on_unregistered_handler)
+        AGENT_REGISTRY.on_event("registered", on_general_handler)
+
+        # Create test instances
+        agent_struct_type = StructType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
+        agent_instance = AgentInstance(agent_struct_type, {"name": "TestAgent"})
+
+        # Track instance (should trigger registered event)
+        instance_id = AGENT_REGISTRY.track_agent(agent_instance, "test_agent")
+
+        # Verify registered events were triggered
+        self.assertEqual(len(registered_events), 1)
+        self.assertEqual(len(general_events), 1)
+        self.assertEqual(registered_events[0][0], instance_id)
+        self.assertEqual(registered_events[0][1], agent_instance)
+        self.assertEqual(general_events[0][0], instance_id)
+        self.assertEqual(general_events[0][1], agent_instance)
+
+        # Untrack instance (should trigger unregistered event)
+        AGENT_REGISTRY.untrack_instance(instance_id)
+
+        # Verify unregistered events were triggered
+        self.assertEqual(len(unregistered_events), 1)
+        self.assertEqual(unregistered_events[0][0], instance_id)
+        self.assertEqual(unregistered_events[0][1], agent_instance)
+
+        # Test event handler count
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count("registered"), 2)  # on_registered + on_event
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count("unregistered"), 1)
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count(), 3)  # total
+
+        # Test clear event handlers
+        AGENT_REGISTRY.clear_event_handlers("registered")
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count("registered"), 0)
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count("unregistered"), 1)  # still there
+
+        # Test clear all event handlers
+        AGENT_REGISTRY.clear_event_handlers()
+        self.assertEqual(AGENT_REGISTRY.get_event_handler_count(), 0)
 
     def test_registry_statistics(self):
         """Test registry statistics."""

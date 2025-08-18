@@ -8,7 +8,8 @@ compatibility with the struct system.
 from typing import Any
 
 from dana.core.lang.interpreter.struct_system import StructType
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+# Import lazily where used to avoid circular import during module import
 
 
 class ResourceType(StructType):
@@ -70,6 +71,8 @@ class ResourceType(StructType):
     def has_method(self, method_name: str) -> bool:
         """Check if this resource type has a method."""
         # Check STRUCT_FUNCTION_REGISTRY
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         if STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name):
             return True
 
@@ -81,8 +84,12 @@ class ResourceType(StructType):
 
     def add_resource_method(self, method_name: str, method: Any) -> None:
         """Add a resource-specific method to the STRUCT_FUNCTION_REGISTRY."""
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
 
     def get_resource_method(self, method_name: str) -> Any | None:
         """Get a resource method by name."""
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         return STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name)

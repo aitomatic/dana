@@ -8,16 +8,18 @@ This module provides a centralized registry that consolidates all Dana registrie
 - StructFunctionRegistry: Struct method dispatch with composite keys
 - ModuleRegistry: Module loading and dependency tracking
 - FunctionRegistry: Function registration and dispatch
-- InstanceRegistry: Optional instance tracking and lifecycle management
+- StructRegistry: Optional instance tracking and lifecycle management
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from .agent_registry import AgentRegistry
 from .function_registry import FunctionRegistry
 from .global_registry import GlobalRegistry
-from .instance_registry import InstanceRegistry
+from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
+from .resource_registry import ResourceRegistry
 from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
@@ -30,9 +32,9 @@ TYPE_REGISTRY: TypeRegistry = GLOBAL_REGISTRY.types
 FUNCTION_REGISTRY: FunctionRegistry = GLOBAL_REGISTRY.functions
 STRUCT_FUNCTION_REGISTRY: StructFunctionRegistry = GLOBAL_REGISTRY.struct_functions
 
-AGENT_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.agents
-RESOURCE_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.resources
-WORKFLOW_REGISTRY: InstanceRegistry = GLOBAL_REGISTRY.workflows
+AGENT_REGISTRY: AgentRegistry = GLOBAL_REGISTRY.agents
+RESOURCE_REGISTRY: ResourceRegistry = GLOBAL_REGISTRY.resources
+WORKFLOW_REGISTRY: StructRegistry = GLOBAL_REGISTRY.workflows
 
 # def get_global_registry() -> GlobalRegistry:
 #     """Get the global registry singleton instance."""
@@ -92,22 +94,18 @@ def clear_all() -> None:
 
 
 __all__ = [
+    "AGENT_REGISTRY",
+    "FUNCTION_REGISTRY",
+    "STRUCT_FUNCTION_REGISTRY",
+    "AgentRegistry",
     "GLOBAL_REGISTRY",
     "GlobalRegistry",
+    "TYPE_REGISTRY",
     "TypeRegistry",
-    "StructFunctionRegistry",
+    "MODULE_REGISTRY",
     "ModuleRegistry",
-    "FunctionRegistry",
-    "InstanceRegistry",
-    # "get_global_registry",
-    "register_agent_type",
-    "register_resource_type",
-    "register_struct_type",
-    "get_agent_type",
-    "get_resource_type",
-    "get_struct_type",
-    "register_struct_function",
-    "lookup_struct_function",
-    "has_struct_function",
+    "StructRegistry",
+    "WORKFLOW_REGISTRY",
+    "ResourceRegistry",
     "clear_all",
 ]

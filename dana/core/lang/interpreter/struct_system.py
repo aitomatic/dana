@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from dana.registry import InstanceRegistry
+    from dana.registry import StructRegistry
 
 
 @dataclass
@@ -243,7 +243,7 @@ class StructType:
 class StructInstance:
     """Runtime representation of a struct instance (Go-style data container)."""
 
-    def __init__(self, struct_type: StructType, values: dict[str, Any], registry: Optional["InstanceRegistry"] = None):
+    def __init__(self, struct_type: StructType, values: dict[str, Any], registry: Optional["StructRegistry"] = None):
         """Create a new struct instance.
 
         Args:

@@ -14,7 +14,7 @@ from textual.reactive import reactive
 from textual.widgets import RichLog, Static
 
 from ..core.events import AgentEvent, Done, Error, FinalResult, Progress, Status, Token, ToolEnd, ToolStart
-from dana.core.lang.dana_sandbox import DanaSandbox
+from ..core.runtime import DanaSandbox
 
 
 class ThinkingEntry:
@@ -86,7 +86,7 @@ class AgentDetail(Vertical):
         """Update the panel title with focused agent info."""
         title_widget = self.query_one("#detail-title", Static)
 
-        focused_name = self.sandbox.get_focused_name()
+        focused_name = self.focused_agent
         if focused_name:
             agent = self.sandbox.get(focused_name)
             if agent:
@@ -223,7 +223,7 @@ class AgentDetail(Vertical):
         self._thinking_entries.clear()
         if self._text_log:
             self._text_log.clear()
-            focused_name = self.sandbox.get_focused_name()
+            focused_name = self.focused_agent
             if focused_name:
                 self._text_log.write(f"[bold]Thinking feed for {focused_name}[/bold]\n\n")
             else:
@@ -264,7 +264,7 @@ class AgentDetail(Vertical):
 
     def get_agent_status_summary(self) -> str:
         """Get a one-line status summary for the focused agent."""
-        focused_name = self.sandbox.get_focused_name()
+        focused_name = self.focused_agent
         if not focused_name:
             return "No agent focused"
 
