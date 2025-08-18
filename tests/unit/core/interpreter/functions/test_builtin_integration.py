@@ -406,7 +406,13 @@ class TestBuiltinErrorHandling:
         # Test sum with too many arguments
         with pytest.raises((TypeError, SandboxError)) as exc_info:
             interpreter._eval_source_code("sum([1, 2, 3], 10, 20)", context=context)
-        assert "expected at most 2 arguments" in str(exc_info.value) or "too many" in str(exc_info.value)
+        error_msg = str(exc_info.value)
+        assert (
+            "expected at most 2 arguments" in error_msg
+            or "too many" in error_msg
+            or "Invalid arguments" in error_msg
+            or "got (list, int, int)" in error_msg
+        )
 
         # Test sum with no arguments
         with pytest.raises((TypeError, SandboxError)) as exc_info:

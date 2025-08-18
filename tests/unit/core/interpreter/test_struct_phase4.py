@@ -7,8 +7,8 @@ This module tests the transformation of method calls (obj.method()) to function 
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestMethodSyntaxTransformation:
@@ -16,7 +16,7 @@ class TestMethodSyntaxTransformation:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_basic_method_syntax_transformation(self):
@@ -153,7 +153,7 @@ class TestStructMethodIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_methods_in_loops(self):
@@ -349,7 +349,7 @@ class TestAdvancedStructFeatures:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_methods_with_multiple_signatures(self):

@@ -53,7 +53,6 @@ dependencies = [
     "prompt-toolkit",
     "pygments",
     "textual",
-    "textual-autocomplete>=4.0.5",
     "pyperclip",
     # Web Automation
     "playwright",
@@ -126,7 +125,7 @@ docs = [
 
 # Command-line entry points
 [project.scripts]
-dana = "dana.core.cli.dana:main"
+dana = "dana.apps.cli.__main__:main"
 dana-ls = "dana.core.lang.lsp.server:main"
 
 # =============================================================================
