@@ -216,10 +216,9 @@ The knowledge generation workflow is now complete. Your agent has been enhanced 
         
         if len(paragraphs) == 1:
             # Single paragraph - add some basic formatting
-            return f"## ℹ️ Information\n\n{summary}"
+            return f"\n{summary}"
         else:
             # Multiple paragraphs - structure them
-            content = "## ℹ️ Information\n\n"
             for i, para in enumerate(paragraphs):
                 if para.strip():
                     content += f"{para.strip()}\n\n"

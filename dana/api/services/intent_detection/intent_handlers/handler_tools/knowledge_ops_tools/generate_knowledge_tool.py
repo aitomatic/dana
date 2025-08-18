@@ -36,10 +36,16 @@ class GenerateKnowledgeTool(BaseTool):
         self.notifier = notifier
         tool_info = BaseToolInformation(
             name="generate_knowledge",
-            description="Generate knowledge for topics. Can generate for a single topic or automatically for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'. IMPORTANT NOTE: Running this tool takes a long time. Therefore, this tool CANNOT be used until you have received the command or approval from the user to generate knowledge EXPLICITLY.",
+            description="Generate knowledge for topics. Can generate for a single topic or automatically for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
+                    BaseArgument(
+                        name="user_message",
+                        type="string",
+                        description="A comprehensive message that acknowledges the user's request and explains what knowledge generation will be performed",
+                        example="I understand you want to generate comprehensive knowledge about Current Ratio Analysis for Sofia. This will create detailed facts, procedures, and heuristics to enhance her financial analysis capabilities.",
+                    ),
                     BaseArgument(
                         name="mode",
                         type="string",
@@ -71,29 +77,29 @@ class GenerateKnowledgeTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    async def _execute(self, mode: str, topic: str = "", counts: str = "", context: str = "") -> ToolResult:
+    async def _execute(self, mode: str, user_message: str = "", topic: str = "", counts: str = "", context: str = "") -> ToolResult:
         try:
             if mode == "all_leaves":
-                return await self._generate_for_all_leaves(counts, context)
+                return await self._generate_for_all_leaves(user_message, counts, context)
             elif mode == "single":
                 if not topic:
                     return ToolResult(
-                        name="generate_knowledge", result="❌ Error: Topic is required for single mode generation", require_user=False
+                        name="generate_knowledge", result=self._build_structured_response(user_message, "❌ Error: Topic is required for single mode generation"), require_user=False
                     )
-                return await self._generate_for_single_topic(topic, counts, context)
+                return await self._generate_for_single_topic(user_message, topic, counts, context)
             else:
                 return ToolResult(
-                    name="generate_knowledge", result=f"❌ Error: Invalid mode '{mode}'. Use 'single' or 'all_leaves'", require_user=False
+                    name="generate_knowledge", result=self._build_structured_response(user_message, f"❌ Error: Invalid mode '{mode}'. Use 'single' or 'all_leaves'"), require_user=False
                 )
         except Exception as e:
             logger.error(f"Failed to generate knowledge: {e}")
-            return ToolResult(name="generate_knowledge", result=f"❌ Error generating knowledge: {str(e)}", require_user=False)
+            return ToolResult(name="generate_knowledge", result=self._build_structured_response(user_message, f"❌ Error generating knowledge: {str(e)}"), require_user=False)
 
-    async def _generate_for_all_leaves(self, counts: str, context: str) -> ToolResult:
+    async def _generate_for_all_leaves(self, user_message: str, counts: str, context: str) -> ToolResult:
         """Generate knowledge for all leaf nodes in the tree structure."""
         if not self.tree_structure or not self.tree_structure.root:
             return ToolResult(
-                name="generate_knowledge", result="❌ Error: No tree structure available for all_leaves mode", require_user=False
+                name="generate_knowledge", result=self._build_structured_response(user_message, "❌ Error: No tree structure available for all_leaves mode"), require_user=False
             )
 
         # Extract all leaf paths from the tree
@@ -229,9 +235,9 @@ class GenerateKnowledgeTool(BaseTool):
                 1.0,
             )
 
-        return ToolResult(name="generate_knowledge", result=content, require_user=False)
+        return ToolResult(name="generate_knowledge", result=self._build_structured_response(user_message, content), require_user=False)
 
-    async def _generate_for_single_topic(self, topic: str, counts: str, context: str) -> ToolResult:
+    async def _generate_for_single_topic(self, user_message: str, topic: str, counts: str, context: str) -> ToolResult:
         """Generate knowledge for a single topic."""
         # Stream start notification
         if self.notifier:
@@ -246,14 +252,14 @@ class GenerateKnowledgeTool(BaseTool):
                     await self.notifier("generate_knowledge", f"⏭️ Skipped '{topic}' - already complete", "finish", 1.0)
                 return ToolResult(
                     name="generate_knowledge",
-                    result=f"""📚 Knowledge Generation Skipped
+                    result=self._build_structured_response(user_message, f"""📚 Knowledge Generation Skipped
 
 Topic: {topic}
 Status: {status_check["status"]}
 Reason: {status_check["reason"]}
 
 ✅ This topic already has successful knowledge generation.
-No action needed - knowledge is up to date.""",
+No action needed - knowledge is up to date."""),
                     require_user=False,
                 )
 
@@ -268,7 +274,7 @@ No action needed - knowledge is up to date.""",
         if self.notifier:
             await self.notifier("generate_knowledge", f"✅ Completed knowledge generation for: {topic}", "finish", 1.0)
 
-        return ToolResult(name="generate_knowledge", result=result_content, require_user=False)
+        return ToolResult(name="generate_knowledge", result=self._build_structured_response(user_message, result_content), require_user=False)
 
     async def _generate_single_knowledge(self, topic: str, counts: str, context: str) -> str:
         """Core method to generate knowledge for a single topic."""
@@ -647,3 +653,18 @@ Return as JSON:
 📊 File Size: {full_file_path.stat().st_size} bytes
 🕒 Saved At: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}
 ✅ Status: Ready for agent usage"""
+
+    def _build_structured_response(self, user_message: str, content: str) -> str:
+        """Build a structured response with user message and generation content."""
+        response_parts = []
+        
+        # Add user message first (acknowledgment and context)
+        if user_message:
+            response_parts.append(f"{user_message}")
+            response_parts.append("")  # Empty line for spacing
+        
+        # Add the generation content
+        response_parts.append(content)
+        
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)
