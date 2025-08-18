@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.core.lang.dana_sandbox import DanaSandbox
 
@@ -34,7 +34,7 @@ class AgentGenerator:
 
         # Initialize LLM resource with better error handling
         try:
-            self.llm_resource = LLMResource(
+            self.llm_resource = LegacyLLMResource(
                 name="agent_generator_llm", description="LLM for generating Dana agent code", config=self.llm_config
             )
             logger.info("LLMResource created successfully")
@@ -1016,7 +1016,7 @@ async def analyze_agent_capabilities(
         try:
             # Create LLM resource with proper configuration
             llm_config = {"model": "gpt-4o", "temperature": 0.7, "max_tokens": 2000}
-            llm = LLMResource(
+            llm = LegacyLLMResource(
                 name="agent_capabilities_analyzer", description="LLM for analyzing Dana agent capabilities", config=llm_config
             )
 

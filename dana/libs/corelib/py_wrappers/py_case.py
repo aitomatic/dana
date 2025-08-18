@@ -100,7 +100,7 @@ def py_case(context: SandboxContext, *conditions_and_functions) -> Any:
 
         else:
             # Middle argument that's not a tuple - this is an error
-            raise TypeError(f"Argument {i+1} must be a (condition, function) tuple, not {type(arg).__name__}")
+            raise TypeError(f"Argument {i + 1} must be a (condition, function) tuple, not {type(arg).__name__}")
 
     # No conditions matched and no fallback provided
     raise ValueError("No conditions matched in case() and no fallback function provided")

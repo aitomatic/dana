@@ -363,10 +363,10 @@ class IdentifierResolver(Loggable):
             The struct type name string if found, None otherwise
         """
         try:
-            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            from dana.registry import TYPE_REGISTRY
 
             # Check if this is a registered struct type name
-            if StructTypeRegistry.exists(name):
+            if TYPE_REGISTRY.exists(name):
                 self.debug(f"Found '{name}' as struct type name")
                 return name  # Return the string name for struct types
 

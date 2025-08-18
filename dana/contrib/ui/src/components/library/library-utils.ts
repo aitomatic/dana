@@ -20,7 +20,7 @@ export const convertDocumentToFileItem = (document: DocumentRead): FileItem => (
   size: document.file_size,
   extension: document.original_filename.split('.').pop()?.toLowerCase() || 'unknown',
   lastModified: new Date(document.updated_at),
-  path: `/documents/${document.id}`,
+  path: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/documents/${document.id}/download`,
   topicId: document.topic_id || undefined,
 });
 

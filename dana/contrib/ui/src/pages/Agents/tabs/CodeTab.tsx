@@ -161,7 +161,7 @@ const CodeTab: React.FC = () => {
             <IconRefresh className="w-4 h-4" />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
           {files.map((file) => (
             <button
               key={file.id}

@@ -4,8 +4,8 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.resource.base_resource import BaseResource
-from dana.common.resource.llm.llm_tool_call_manager import LLMToolCallManager
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.common.sys_resource.llm.llm_tool_call_manager import LLMToolCallManager
 
 
 class MockToolCall:
@@ -18,7 +18,7 @@ class MockToolCall:
         self.id = call_id
 
 
-class MockResource(BaseResource):
+class MockResource(BaseSysResource):
     """Mock resource for testing."""
 
     def __init__(self, name: str):
@@ -58,7 +58,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     def test_build_request_params_with_tools(self):
         """Test request parameter building with tools."""
         request = {"messages": [{"role": "user", "content": "test"}]}
-        resources: dict[str, BaseResource] = {"test_resource": MockResource("test_resource")}
+        resources: dict[str, BaseSysResource] = {"test_resource": MockResource("test_resource")}
 
         params = self.tool_manager.build_request_params(request, "openai:gpt-4", resources)
 
@@ -78,7 +78,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
 
     def test_get_openai_functions(self):
         """Test getting OpenAI functions from resources."""
-        resources: dict[str, BaseResource] = {"resource1": MockResource("resource1"), "resource2": MockResource("resource2")}
+        resources: dict[str, BaseSysResource] = {"resource1": MockResource("resource1"), "resource2": MockResource("resource2")}
 
         functions = self.tool_manager.get_openai_functions(resources)
 
@@ -93,8 +93,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_success(self):
         """Test successful tool calling."""
         with (
-            patch("dana.common.resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("dana.common.resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -119,8 +119,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_resource_not_found(self):
         """Test tool calling when resource is not found."""
         with (
-            patch("dana.common.resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("dana.common.resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -138,8 +138,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_error_handling(self):
         """Test tool calling error handling."""
         with (
-            patch("dana.common.resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("dana.common.resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -162,8 +162,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_json_response(self):
         """Test tool calling with JSON response conversion."""
         with (
-            patch("dana.common.resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("dana.common.resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -191,8 +191,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         self.tool_manager.max_response_length = 10
 
         with (
-            patch("dana.common.resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("dana.common.resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.sys_resource.llm.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -216,7 +216,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         """Test legacy tool calling method."""
         tool_calls = [{"name": "test_resource", "arguments": {"param": "value"}}]
         mock_resource = MockResource("test_resource")
-        available_resources: list[BaseResource] = [mock_resource]
+        available_resources: list[BaseSysResource] = [mock_resource]
 
         responses = await self.tool_manager.call_tools_legacy(tool_calls, available_resources)
 
@@ -227,7 +227,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_tools_legacy_resource_not_found(self):
         """Test legacy tool calling when resource not found."""
         tool_calls = [{"name": "nonexistent_resource", "arguments": {"param": "value"}}]
-        available_resources: list[BaseResource] = []
+        available_resources: list[BaseSysResource] = []
 
         responses = await self.tool_manager.call_tools_legacy(tool_calls, available_resources)
 
@@ -297,7 +297,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
         """Test that LLMResource properly uses LLMToolCallManager."""
         import os
 
-        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API key
         previous_key = os.environ.get("OPENAI_API_KEY")
@@ -305,7 +305,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
 
         try:
             # Create LLMResource
-            llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
+            llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
             # Verify tool call manager is created
             self.assertIsNotNone(llm._tool_call_manager)

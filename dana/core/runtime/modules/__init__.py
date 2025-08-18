@@ -1,5 +1,5 @@
-"""Dana module system."""
+from dana.registry.module_registry import ModuleRegistry
 
-from .core import errors, loader, registry, types
+from .loader import ModuleLoader
 
-__all__ = ["registry", "loader", "types", "errors"]
+__all__ = ["ModuleLoader", "ModuleRegistry"]

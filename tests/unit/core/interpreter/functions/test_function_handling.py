@@ -13,9 +13,9 @@ from unittest.mock import MagicMock, patch
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.interpreter.functions.python_function import PythonFunction
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionMetadata, FunctionRegistry
 
 
 def test_dana_to_dana_function_call():
@@ -299,7 +299,7 @@ def test_enhanced_function_registry_operations():
     assert not registry.has("bar")
 
     # Resolve the function
-    func, func_type, metadata = registry.resolve("foo")
+    func, func_type, metadata = registry.resolve_with_type("foo")
     assert callable(func)
     assert func_type == FunctionType.PYTHON  # Registry now returns enum correctly
     assert isinstance(metadata, FunctionMetadata)

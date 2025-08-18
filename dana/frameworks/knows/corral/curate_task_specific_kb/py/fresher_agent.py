@@ -13,7 +13,7 @@ import logging
 from typing import Any
 
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 from .domains.default_domain import DefaultDomain
 
 logger = logging.getLogger(__name__)
@@ -78,8 +78,10 @@ class TaskSpecificFresherAgent:
         """
 
         # Extract all paths from root to leaf
-        def extract_paths(node, current_path=[]):
+        def extract_paths(node, current_path=None):
             """Recursively extract all paths from root to leaf"""
+            if current_path is None:
+                current_path = []
             topic = node.get("topic", "")
             new_path = current_path + [topic]
             children = node.get("children", [])

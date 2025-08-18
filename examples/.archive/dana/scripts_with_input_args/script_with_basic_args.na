@@ -1,4 +1,0 @@
-"""Dana script with basic arguments."""
-
-def __main__(location: str = "Tokyo", weather: str = "sunny"):
-    print(reason(f"Plan a day trip in {location} with weather being {weather}"))

@@ -2,7 +2,7 @@
 
 import pytest
 
-from dana.core.runtime.modules.core.types import Module, ModuleCache, ModuleSpec, ModuleType
+from dana.core.runtime.modules.types import Module, ModuleCache, ModuleSpec, ModuleType
 
 
 def test_module_creation(sample_module):

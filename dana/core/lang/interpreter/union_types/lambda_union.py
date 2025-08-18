@@ -4,9 +4,9 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.core.lang.ast import LambdaExpression, TypeHint
-from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.lang.type_system.constants import COMMON_TYPE_NAMES, PYTHON_TO_DANA_TYPE_MAPPING
+from dana.registry import STRUCT_FUNCTION_REGISTRY, TYPE_REGISTRY
 
 
 class UnionTypeHandler:
@@ -52,7 +52,7 @@ class UnionTypeHandler:
                 continue
 
             # Check if it's a registered struct type
-            if StructTypeRegistry.exists(type_name):
+            if TYPE_REGISTRY.exists(type_name):
                 continue
 
             # For now, allow unknown types (they might be defined later)
@@ -213,7 +213,7 @@ class LambdaUnionReceiver:
         union_method_function = self.create_union_method_function()
 
         # Register for all types in the union
-        MethodRegistry.register_method(self.union_types, method_name, union_method_function)
+        STRUCT_FUNCTION_REGISTRY.register_method(self.union_types, method_name, union_method_function)
 
 
 class UnionLambdaDispatcher:
@@ -234,7 +234,7 @@ class UnionLambdaDispatcher:
             return False
 
         struct_type = obj.__struct_type__
-        method = MethodRegistry.get_method(struct_type.name, method_name)
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(struct_type.name, method_name)
 
         # Check if the method has union receiver metadata
         return method is not None and hasattr(method, "_dana_lambda_union_types") and struct_type.name in method._dana_lambda_union_types
@@ -256,7 +256,7 @@ class UnionLambdaDispatcher:
             raise SandboxError(f"Object {obj} is not a struct instance")
 
         struct_type = obj.__struct_type__
-        method_function = MethodRegistry.get_method(struct_type.name, method_name)
+        method_function = STRUCT_FUNCTION_REGISTRY.lookup_method(struct_type.name, method_name)
 
         if method_function is None:
             raise AttributeError(f"No union lambda method '{method_name}' found for type '{struct_type.name}'")

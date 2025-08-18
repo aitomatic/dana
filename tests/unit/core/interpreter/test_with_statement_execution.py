@@ -8,11 +8,11 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
-class MockMCPResource(BaseResource):
+class MockMCPResource(BaseSysResource):
     """Mock MCP resource for testing without real MCP servers."""
 
     def __init__(self, name, *args, **kwargs):
@@ -55,16 +55,16 @@ def mock_use_function():
 
     # Instead of patching at module level, we'll patch the function registry's resolve method
     # to return our mock function when 'use' is requested
-    from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+    from dana.registry.function_registry import FunctionRegistry
 
     original_resolve = FunctionRegistry.resolve
 
     def mock_resolve(self, name, namespace=None):
         if name == "use":
-            from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
             from dana.core.lang.interpreter.functions.python_function import PythonFunction
+            from dana.registry.function_registry import FunctionMetadata
 
-            return PythonFunction(mock_use), "python", FunctionMetadata()
+            return PythonFunction(mock_use), FunctionMetadata()
         else:
             return original_resolve(self, name, namespace)
 

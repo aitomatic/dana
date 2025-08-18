@@ -15,8 +15,10 @@ from dana.common.exceptions import SandboxError
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.concurrency import LazyPromise
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionMetadata, FunctionRegistry
+
+from .type_wrapper import create_type_wrapper
 
 
 class UnsupportedReason(Enum):
@@ -38,13 +40,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_max(*args):
         """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("max expected at least 1 argument, got 0")
@@ -64,13 +63,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_min(*args):
         """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("min expected at least 1 argument, got 0")
@@ -90,13 +86,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_sum(*args):
         """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 1:
             return sum(resolved_args[0])  # sum([1,2,3])
@@ -197,15 +190,12 @@ class PythonicBuiltinsFactory:
             "signatures": [(str,), (int,), (float,), (list,), (dict,), (LazyPromise,)],
         },
         "type": {
-            # SECURITY: Dana's type() function is NOT the same as Python's type() function.
-            # Returns string name instead of type object to prevent introspection attacks.
-            # This is a deliberate sandbox security choice to prevent malicious code from
-            # accessing type internals, performing isinstance checks, or gaining access
-            # to class hierarchies and internal Python type system details.
-            # Dana: type(obj) -> "str", Python: type(obj).__name__ -> "str"
-            "func": lambda v: type(v).__name__,
+            # SECURITY: Dana's type() function returns a secure wrapper object.
+            # This provides rich type information while maintaining security boundaries
+            # and preventing introspection attacks on internal Python type system details.
+            "func": lambda v: create_type_wrapper(v),
             "types": [object, LazyPromise],
-            "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict'). SECURITY NOTE: Unlike Python's type(), this returns a string for sandbox security.",
+            "doc": "Return a secure type wrapper with rich type information (e.g., 'ResourceInstance[User]', 'StructInstance[Point]'). Provides safe access to type details while maintaining sandbox security.",
             "signatures": [(object,), (LazyPromise,)],
         },
         # Collection functions

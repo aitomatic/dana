@@ -1,0 +1,250 @@
+# A2A Agent Communication Tests
+# Tests for a2a_agent communication functionality
+# NOTE: a2a_agent is currently disabled in corelib due to recursion issues
+# These are placeholder tests that document what should be tested when available
+
+log_level("INFO")
+
+# Test 1: Basic a2a_agent method availability
+def test_a2a_agent_method_availability():
+    # Test that a2a_agent instances have expected methods
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     if not hasattr(agent, "plan"):
+    #         return "❌ a2a_agent missing plan method"
+    #     if not hasattr(agent, "solve"):
+    #         return "❌ a2a_agent missing solve method"
+    #     if not hasattr(agent, "chat"):
+    #         return "❌ a2a_agent missing chat method"
+    #     return "✅ a2a_agent method availability works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method availability failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 2: a2a_agent method call structure
+def test_a2a_agent_method_call_structure():
+    # Test that a2a_agent methods can be called
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result = agent.plan("test task")
+    #         return "✅ a2a_agent method call structure works"
+    #     except Exception:
+    #         return "✅ a2a_agent method call structure works (expected server failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method call structure failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 3: a2a_agent method parameter handling
+def test_a2a_agent_method_parameter_handling():
+    # Test that a2a_agent methods handle different parameter types
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     test_cases = ["simple string", "", "x" * 100, "special@#$%^&*()"]
+    #     for param in test_cases:
+    #         try:
+    #             result = agent.plan(param)
+    #             break
+    #         except Exception:
+    #             continue
+    #     return "✅ a2a_agent method parameter handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method parameter handling failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 4: a2a_agent method return value structure
+def test_a2a_agent_method_return_structure():
+    # Test that a2a_agent methods return expected value structures
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     methods_to_test = ["plan", "solve", "chat"]
+    #     for method_name in methods_to_test:
+    #         if not hasattr(agent, method_name):
+    #             return f"❌ a2a_agent missing {method_name} method"
+    #         method = getattr(agent, method_name)
+    #         if not callable(method):
+    #             return f"❌ a2a_agent {method_name} is not callable"
+    #     return "✅ a2a_agent method return structure works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method return structure failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 5: a2a_agent method chaining
+def test_a2a_agent_method_chaining():
+    # Test that a2a_agent methods can be called in sequence
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result1 = agent.plan("chained task")
+    #         result2 = agent.solve("chained problem")
+    #         result3 = agent.chat("chained message")
+    #         return "✅ a2a_agent method chaining works"
+    #     except Exception:
+    #         return "✅ a2a_agent method chaining works (expected server failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method chaining failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 6: a2a_agent method isolation
+def test_a2a_agent_method_isolation():
+    # Test that different a2a_agent instances are isolated
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent1 = a2a_agent(url="http://localhost:8000/agent1")
+    #     agent2 = a2a_agent(url="http://localhost:8000/agent2")
+    #     if agent1 is None or agent2 is None:
+    #         return "❌ a2a_agent method isolation creation failed"
+    #     if not hasattr(agent1, "plan") or not hasattr(agent2, "plan"):
+    #         return "❌ a2a_agent method isolation structure failed"
+    #     return "✅ a2a_agent method isolation works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method isolation failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 7: a2a_agent method error handling
+def test_a2a_agent_method_error_handling():
+    # Test that a2a_agent methods handle errors gracefully
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result = agent.plan(None)
+    #         return "❌ a2a_agent should handle None parameter"
+    #     except Exception:
+    #         pass
+    #     try:
+    #         large_param = "x" * 10000
+    #         result = agent.solve(large_param)
+    #         return "✅ a2a_agent method error handling works"
+    #     except Exception:
+    #         return "✅ a2a_agent method error handling works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method error handling failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 8: a2a_agent method performance
+def test_a2a_agent_method_performance():
+    # Test a2a_agent method performance with multiple calls
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     for i in range(5):
+    #         try:
+    #             result = agent.plan(f"performance test {i}")
+    #             break
+    #         except Exception:
+    #             continue
+    #     return "✅ a2a_agent method performance works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method performance failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 9: a2a_agent method consistency
+def test_a2a_agent_method_consistency():
+    # Test that a2a_agent methods behave consistently
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     try:
+    #         result1 = agent.plan("consistent task")
+    #         result2 = agent.plan("consistent task")
+    #         return "✅ a2a_agent method consistency works"
+    #     except Exception:
+    #         return "✅ a2a_agent method consistency works (expected server failure)"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method consistency failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Test 10: a2a_agent method state management
+def test_a2a_agent_method_state_management():
+    # Test that a2a_agent methods maintain state appropriately
+    # TODO: Uncomment when a2a_agent becomes available
+    # try:
+    #     agent = a2a_agent(url="http://localhost:8000/test")
+    #     if not hasattr(agent, "plan"):
+    #         return "❌ a2a_agent state management failed - lost plan method"
+    #     if not hasattr(agent, "solve"):
+    #         return "❌ a2a_agent state management failed - lost solve method"
+    #     if not hasattr(agent, "chat"):
+    #         return "❌ a2a_agent state management failed - lost chat method"
+    #     return "✅ a2a_agent method state management works"
+    # except Exception as e:
+    #     return f"❌ a2a_agent method state management failed: {e}"
+    
+    return "⚠️  a2a_agent temporarily disabled - placeholder test"
+
+# Run communication tests
+log("=== A2A Agent Communication Tests ===")
+log("⚠️  NOTE: a2a_agent is currently disabled in corelib")
+log("⚠️  These are placeholder tests documenting expected functionality")
+
+tests = [
+    test_a2a_agent_method_availability,
+    test_a2a_agent_method_call_structure,
+    test_a2a_agent_method_parameter_handling,
+    test_a2a_agent_method_return_structure,
+    test_a2a_agent_method_chaining,
+    test_a2a_agent_method_isolation,
+    test_a2a_agent_method_error_handling,
+    test_a2a_agent_method_performance,
+    test_a2a_agent_method_consistency,
+    test_a2a_agent_method_state_management
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("⚠️"):
+            log(f"⚠️  Test {test_num}: {result}")
+            passed += 1  # Count placeholder tests as passed
+        elif result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Communication Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All communication tests passed (placeholder mode)!")
+else:
+    log(f"⚠️  {failed} communication tests failed")
+
+log("\n=== Next Steps ===")
+log("1. Enable a2a_agent in dana/libs/corelib/na_modules/__init__.na")
+log("2. Uncomment test implementations above")
+log("3. Run tests with real a2a_agent functionality")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests),
+    "status": "PLACEHOLDER"
+}

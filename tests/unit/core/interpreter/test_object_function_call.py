@@ -186,32 +186,32 @@ class TestObjectFunctionCallExecution:
 
     def test_simple_method_call_no_args(self):
         """Test calling a method with no arguments."""
-        result = self.interpreter._eval("test_obj.get_value()", self.context)
+        result = self.interpreter._eval_source_code("test_obj.get_value()", self.context)
         assert result == 42
 
     def test_method_call_with_args(self):
         """Test calling a method with arguments."""
-        result = self.interpreter._eval("test_obj.add(10)", self.context)
+        result = self.interpreter._eval_source_code("test_obj.add(10)", self.context)
         assert result == 52
 
     def test_method_call_with_multiple_args(self):
         """Test calling a method with multiple arguments."""
-        result = self.interpreter._eval("test_obj.multiply(2, 3)", self.context)
+        result = self.interpreter._eval_source_code("test_obj.multiply(2, 3)", self.context)
         assert result == 252  # 42 * 2 * 3 = 252
 
     def test_method_returns_list(self):
         """Test calling a method that returns a list."""
-        result = self.interpreter._eval("test_obj.list_tools()", self.context)
+        result = self.interpreter._eval_source_code("test_obj.list_tools()", self.context)
         assert result == ["tool1", "tool2", "tool3"]
 
     def test_method_modifies_object_state(self):
         """Test calling a method that modifies object state."""
         # Change the value
-        result = self.interpreter._eval("test_obj.set_value(100)", self.context)
+        result = self.interpreter._eval_source_code("test_obj.set_value(100)", self.context)
         assert result == 100
 
         # Verify the change
-        result2 = self.interpreter._eval("test_obj.get_value()", self.context)
+        result2 = self.interpreter._eval_source_code("test_obj.get_value()", self.context)
         assert result2 == 100
 
 
@@ -229,7 +229,7 @@ class TestWebSearchPattern:
 
     def test_websearch_list_tools(self):
         """Test the exact websearch.list_tools() pattern."""
-        result = self.interpreter._eval("websearch.list_tools()", self.context)
+        result = self.interpreter._eval_source_code("websearch.list_tools()", self.context)
 
         expected = [
             {"name": "search", "description": "Search the web"},
@@ -240,7 +240,7 @@ class TestWebSearchPattern:
 
     def test_websearch_search_method(self):
         """Test websearch.search() method with arguments."""
-        result = self.interpreter._eval('websearch.search("Dana")', self.context)
+        result = self.interpreter._eval_source_code('websearch.search("Dana")', self.context)
         assert result == "Search results for: Dana"
 
 
@@ -258,12 +258,12 @@ class TestNestedObjectCalls:
 
     def test_nested_object_method_call(self):
         """Test calling a method on a nested object."""
-        result = self.interpreter._eval('api.get_data("users")', self.context)
+        result = self.interpreter._eval_source_code('api.get_data("users")', self.context)
         assert result == "Query result for: SELECT * FROM users"
 
     def test_nested_object_chain_call(self):
         """Test calling methods that chain through nested objects."""
-        result = self.interpreter._eval("api.disconnect()", self.context)
+        result = self.interpreter._eval_source_code("api.disconnect()", self.context)
         assert result == "Connection closed"
 
 
@@ -280,19 +280,19 @@ class TestObjectFunctionCallEdgeCases:
 
     def test_nonexistent_method(self):
         """Test calling a method that doesn't exist."""
-        with pytest.raises(Exception):
-            self.interpreter._eval("test_obj.nonexistent_method()", self.context)
+        with pytest.raises(AttributeError):
+            self.interpreter._eval_source_code("test_obj.nonexistent_method()", self.context)
 
     def test_nonexistent_object(self):
         """Test calling a method on an object that doesn't exist."""
-        with pytest.raises(Exception):
-            self.interpreter._eval("nonexistent_obj.method()", self.context)
+        with pytest.raises(AttributeError):
+            self.interpreter._eval_source_code("nonexistent_obj.method()", self.context)
 
     def test_method_call_wrong_args(self):
         """Test calling a method with wrong number of arguments."""
-        with pytest.raises(Exception):
+        with pytest.raises(TypeError):
             # add() requires one argument
-            self.interpreter._eval("test_obj.add()", self.context)
+            self.interpreter._eval_source_code("test_obj.add()", self.context)
 
 
 class TestDictMethodCalls:
@@ -312,7 +312,7 @@ class TestDictMethodCalls:
 
     def test_dict_method_call(self):
         """Test calling a method stored in a dictionary."""
-        result = self.interpreter._eval("dict_obj.method()", self.context)
+        result = self.interpreter._eval_source_code("dict_obj.method()", self.context)
         assert result == "called"
 
 
@@ -330,7 +330,7 @@ class TestObjectFunctionCallIntegration:
     def test_object_method_in_assignment(self):
         """Test using object method calls in assignments."""
         # Execute assignment using _eval
-        self.interpreter._eval("result = test_obj.add(5)", self.context)
+        self.interpreter._eval_source_code("result = test_obj.add(5)", self.context)
 
         # Check the result
         result = self.context.get("local:result")
@@ -338,16 +338,16 @@ class TestObjectFunctionCallIntegration:
 
     def test_object_method_in_expression(self):
         """Test using object method calls in larger expressions."""
-        result = self.interpreter._eval("test_obj.add(10) + test_obj.add(20)", self.context)
+        result = self.interpreter._eval_source_code("test_obj.add(10) + test_obj.add(20)", self.context)
         assert result == 114  # (42 + 10) + (42 + 20) = 52 + 62 = 114
 
     def test_chained_object_method_calls(self):
         """Test chaining multiple object method calls."""
         # Execute first method call using _eval
-        self.interpreter._eval("test_obj.set_value(10)", self.context)
+        self.interpreter._eval_source_code("test_obj.set_value(10)", self.context)
 
         # Then test the result
-        result = self.interpreter._eval("test_obj.get_value()", self.context)
+        result = self.interpreter._eval_source_code("test_obj.get_value()", self.context)
         assert result == 10
 
 
@@ -365,28 +365,28 @@ class TestAsyncObjectFunctionCalls:
 
     def test_async_method_call_no_args(self):
         """Test calling an async method with no arguments."""
-        result = self.interpreter._eval("async_obj.async_get_value()", self.context)
+        result = self.interpreter._eval_source_code("async_obj.async_get_value()", self.context)
         assert result == 100
 
     def test_async_method_call_with_args(self):
         """Test calling an async method with arguments."""
-        result = self.interpreter._eval("async_obj.async_add(25)", self.context)
+        result = self.interpreter._eval_source_code("async_obj.async_add(25)", self.context)
         assert result == 125  # 100 + 25
 
     def test_async_method_call_with_string_args(self):
         """Test calling an async method with string arguments."""
-        result = self.interpreter._eval('async_obj.async_fetch_data("test query")', self.context)
+        result = self.interpreter._eval_source_code('async_obj.async_fetch_data("test query")', self.context)
         assert result == "Async data for: test query"
 
     def test_sync_method_on_async_object(self):
         """Test calling a sync method on an object that also has async methods."""
-        result = self.interpreter._eval("async_obj.sync_method()", self.context)
+        result = self.interpreter._eval_source_code("async_obj.sync_method()", self.context)
         assert result == "sync result"
 
     def test_async_method_in_assignment(self):
         """Test using async method calls in assignments."""
         # Execute assignment using _eval
-        self.interpreter._eval("result = async_obj.async_add(50)", self.context)
+        self.interpreter._eval_source_code("result = async_obj.async_add(50)", self.context)
 
         # Check the result
         result = self.context.get("local:result")
@@ -395,7 +395,7 @@ class TestAsyncObjectFunctionCalls:
     def test_async_method_in_expression(self):
         """Test using async method calls in larger expressions."""
         # Note: Both async calls will be executed synchronously by safe_asyncio_run
-        result = self.interpreter._eval("async_obj.async_add(10) + async_obj.async_add(20)", self.context)
+        result = self.interpreter._eval_source_code("async_obj.async_add(10) + async_obj.async_add(20)", self.context)
         assert result == 230  # (100 + 10) + (100 + 20) = 110 + 120 = 230
 
 

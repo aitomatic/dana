@@ -10,7 +10,8 @@ Dana is built for building domain-expert multi-agent systems with key AI-first f
 - Built-in AI reasoning capabilities
 - Seamless Python interoperability
 - Type safety with modern syntax
-- **Agent Capability Packs** for domain-specific expertise infusion
+- **Agent Blueprints** for domain-specific expertise infusion
+- **Struct Functions** for clean data operations
 
 ## Dana's GoLang-like Functional Nature
 
@@ -57,25 +58,25 @@ rect = Rectangle(width=10.0, height=5.0, color="blue")
 area = rect.width * rect.height
 ```
 
-### Agent Keyword and Type Declaration
+### Agent Blueprint System
 
-The `agent` keyword in Dana is a **type declaration** that creates a specialized struct type for agents:
+The `agent_blueprint` keyword in Dana creates reusable agent types with built-in intelligence capabilities:
 
 ```dana
-# agent keyword creates a new agent type
-agent ProSEAAgent:
-    DanaAgent  # Inherits from base DanaAgent struct
-    
+# agent_blueprint creates a new agent type
+agent_blueprint ProSEAAgent:
     # Declarative properties define agent capabilities
-    domains: list[str] = ["semiconductor_manufacturing"]
-    tasks: list[str] = ["wafer_inspection", "defect_classification"]
-    capabilities: list[str] = ["optical_analysis", "pattern_recognition"]
-    knowledge_sources: list[str] = ["equipment_specs", "historical_data"]
+    process_type: str = "semiconductor_manufacturing"
+    tolerance_threshold: float = 0.02
+    alert_channels: list[str] = ["email", "slack"]
 
-# This creates a new type 'ProSEAAgent' that can be used in function signatures
-def diagnose_wafer(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
-    # Function operates on the agent instance
-    pass
+# Create instances from blueprint
+inspector = ProSEAAgent(process_type="etch", tolerance_threshold=0.015)
+validator = ProSEAAgent(process_type="deposition", tolerance_threshold=0.025)
+
+# Use built-in methods
+plan = inspector.plan("Inspect wafer batch WB-2024-001")
+solution = validator.solve("High defect rate in etching process")
 ```
 
 ### Function Parameters and Agent Usage
@@ -86,7 +87,7 @@ Functions that work with agents receive the agent instance as an explicit parame
 # Functions explicitly receive agent as parameter (GoLang-style)
 def solve_request(agent: ProSEAAgent, request: str) -> str:
     # Access agent properties
-    if request in agent.tasks:
+    if request in agent.process_type:
         return process_request(agent, request)
     else:
         return "Cannot handle this request"
@@ -247,9 +248,51 @@ user.email = "new_email@example.com"  # Structs are mutable
 
 **Important:** Struct instantiation requires named arguments - positional arguments are not supported.
 
+## Struct Functions
+
+Dana provides two patterns for operating on structs:
+
+### 1. Struct Functions (Main Pattern)
+Functions that take structs as their first parameter, with automatic transformation:
+
+```dana
+struct Point:
+    x: int
+    y: int
+
+# Define functions that operate on Point structs
+def translate_point(point: Point, dx: int, dy: int) -> Point:
+    return Point(x=point.x + dx, y=point.y + dy)
+
+def point_distance(point: Point) -> float:
+    return (point.x ** 2 + point.y ** 2) ** 0.5
+
+# Usage - Dana transforms automatically
+point = Point(x=3, y=4)
+moved = point.translate_point(2, 1)      # Transforms to translate_point(point, 2, 1)
+distance = point.point_distance()        # Transforms to point_distance(point)
+```
+
+### 2. Struct Methods (Receiver Syntax)
+Functions with explicit receiver syntax for direct method calls:
+
+```dana
+# Receiver syntax for direct method calls
+def (point: Point) translate(dx: int, dy: int) -> Point:
+    return Point(x=point.x + dx, y=point.y + dy)
+
+def (point: Point) distance_from_origin() -> float:
+    return (point.x ** 2 + point.y ** 2) ** 0.5
+
+# Usage - direct method calls
+point = Point(x=3, y=4)
+moved = point.translate(2, 1)            # Direct method call
+distance = point.distance_from_origin()  # Direct method call
+```
+
 ## Function Composition & Pipelines
 
-Dana's enhanced pipeline system enables powerful data transformation workflows with both sequential and parallel execution:
+Dana's pipeline system enables powerful data transformation workflows:
 
 ### Pipeline Functions
 ```dana
@@ -270,7 +313,7 @@ def format(x):
     return f"Formatted: {x}"
 ```
 
-### Enhanced Function Composition
+### Function Composition
 ```dana
 # Sequential composition (creates reusable pipeline)
 math_pipeline = add_ten | double | stringify
@@ -302,7 +345,7 @@ result3 = data_processor(15)  # [{"value": 25, "is_even": false}, "Formatted: 25
 
 ### Argument Passing in Pipelines
 
-Dana provides three flexible ways to pass arguments in pipelines and function composition:
+Dana provides flexible ways to pass arguments in pipelines:
 
 #### 1. Implicit First Parameter (Default)
 ```dana
@@ -335,24 +378,6 @@ def multiply_by_factor(factor: int, value: int) -> int:
 pipeline = add_ten | multiply_by_factor(3, $$)
 result = pipeline(10)  # 20 → 60
 # Flow: 10 → add_ten(10) = 20 → multiply_by_factor(3, 20) = 60
-
-# Example with string formatting
-def format_number(value: int) -> str:
-    return f"Number: {value}"
-
-def append_suffix(text: str, suffix: str) -> str:
-    return f"{text} {suffix}"
-
-pipeline = format_number | append_suffix($$, "is ready")
-result = pipeline(42)  # "Number: 42" → "Number: 42 is ready"
-# Flow: 42 → format_number(42) = "Number: 42" → append_suffix("Number: 42", "is ready") = "Number: 42 is ready"
-
-# $$ changes value at each step based on previous function's output
-pipeline = add_ten | double | stringify
-result = pipeline(5)  # 15 → 30 → "Result: 30"
-# Step 1: $$ = 5 → add_ten(5) = 15
-# Step 2: $$ = 15 → double(15) = 30  
-# Step 3: $$ = 30 → stringify(30) = "Result: 30"
 ```
 
 #### 3. Named Parameters with "as parameter_name"
@@ -385,65 +410,6 @@ def format_output(is_valid: bool, processed: str) -> str:
 # Capture f2_result for use in f4
 pipeline = validate_input | process_data as f2_result | format_output($$, f2_result)
 result = pipeline(42)  # true → "Processed: 42" → "Processed: 42 (valid: true)"
-
-# Multiple captures
-pipeline = validate_input as validation_result | process_data as processed_result | format_output(validation_result, processed_result)
-result = pipeline(42)  # true → "Processed: 42" → "Processed: 42 (valid: true)"
-```
-
-### Complex Pipeline Examples
-
-#### Mixed Argument Passing
-```dana
-def validate_range(min_val: int, value: int, max_val: int) -> bool:
-    return min_val <= value <= max_val
-
-def format_validation(result: bool, value: int) -> str:
-    return f"Value {value} is {'valid' if result else 'invalid'}"
-
-# Combine implicit, explicit, and named parameters
-# Combine implicit, explicit, and named parameters
-pipeline = validate_range(0, $$, 100) | format_validation($$, 42)
-result = pipeline(42)  # true → "Value 42 is valid"
-# Flow: 42 → validate_range(0, 42, 100) = true → format_validation(true, 42) = "Value 42 is valid"
-```
-
-#### Agent Pipelines with Named Parameters
-```dana
-def process_image(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
-    pass
-
-def validate_report(agent: ProSEAAgent, report: DefectReport) -> bool:
-    pass
-
-def format_results(agent: ProSEAAgent, report: DefectReport, is_valid: bool) -> str:
-    pass
-
-# Agent parameter persists throughout pipeline
-pipeline = process_image(as agent=my_agent, as image_data=$$) | validate_report(as agent=my_agent, as report=$$) | format_results(as agent=my_agent, as report=$$, as is_valid=$$)
-result = pipeline(image_bytes)
-
-# Using captured results
-pipeline = process_image(as agent=my_agent, as image_data=$$) as report | validate_report(as agent=my_agent, as report=report) as is_valid | format_results(as agent=my_agent, as report=report, as is_valid=is_valid)
-result = pipeline(image_bytes)
-```
-
-### Error Handling and Validation
-```dana
-# Missing function error
-pipeline = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent_function' not found"
-
-# Non-function composition error  
-pipeline = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
-
-# Invalid $$ placement error
-pipeline = func1($$, extra_param) | func2  # ❌ Error: "$$ placeholder must be a complete parameter"
-
-# Missing named parameter error
-pipeline = func1(as width=10) | func2(as height=$$)  # ❌ Error: "Missing required parameter 'width' in func2"
-
-# Clear error messages help with debugging
-pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 ```
 
 **Pipeline Operators:**
@@ -454,21 +420,6 @@ pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 - Supports both sequential and parallel composition in clean two-statement approach
 - Left-to-right data flow similar to Unix pipes
 - **Function-only validation**: Only callable functions allowed in composition chains
-
-**Argument Passing Rules:**
-1. **Implicit First**: Default behavior - pipeline value becomes first parameter
-2. **Explicit $$**: Use $$ to specify exact parameter position ($$ = result of immediately preceding function)
-3. **Named as**: Bind parameters by name for pipeline duration
-4. **Result Capture as**: Use `function as result_name` to capture intermediate results for later use
-5. **Mixed Usage**: Combine all approaches in complex pipelines
-6. **Agent Persistence**: Agent parameters can be bound once and reused
-
-**Design Philosophy:**
-- **Clean Two-Statement Approach**: Separate function composition from data application
-- **No Mixed Patterns**: All `data | function` patterns removed for clarity
-- **Flexible Arguments**: Multiple ways to pass parameters based on function needs
-- **Parallel-Ready**: Sequential execution with parallel-ready architecture
-- **Comprehensive Validation**: Clear error messages for invalid usage
 
 ## Module System
 
@@ -588,27 +539,48 @@ log("Critical error occurred", "error")
 - `"error"` - Error conditions
 - `"debug"` - Debug information
 
-## Agent Capabilities
+## Agent System
 
-Dana introduces **Agent Capability Packs** - comprehensive packages that infuse agents with domain-specific expertise, similar to Matrix "Training Packs". These packs contain all the elements needed to transform a basic agent into a specialized domain expert.
+Dana introduces **Agent Blueprints** - comprehensive packages that define reusable agent types with built-in intelligence capabilities.
 
-### Agent Capability Pack Structure
+### Agent Blueprint Structure
 ```dana
-agent_capability_pack/
-├── common.na               # Shared types and helper functions
-├── agent.na                # Agent type definition with declarative properties
-├── resources.na            # Direct knowledge store references
-├── methods.na              # Agent-bound functions
-├── workflows.na            # Reusable task patterns
-└── metadata.json           # Pack metadata and load order
+# Define reusable agent blueprints (like struct definitions)
+agent_blueprint QualityInspector:
+    domain: str = "semiconductor"
+    expertise_level: str = "senior"
+    tolerance_threshold: float = 0.015
+    alert_channels: list[str] = ["email", "slack"]
+
+# Create instances from blueprints
+inspector = QualityInspector()
+custom_inspector = QualityInspector(expertise_level="expert", tolerance_threshold=0.01)
+
+# Create singleton agents
+agent Solo                          # Simple singleton
+agent Jimmy(QualityInspector)       # Singleton from blueprint
+agent Config(QualityInspector):     # Singleton with field overrides
+    expertise_level = "expert"
+```
+
+### Built-in Agent Methods
+```dana
+# All agents have built-in intelligence methods
+plan = inspector.plan("Inspect wafer batch WB-2024-001")
+solution = Jimmy.solve("High defect rate in etching process")
+
+# Memory operations (isolated per agent instance)
+inspector.remember("common_defects", ["misalignment", "surface_roughness"])
+defects = inspector.recall("common_defects")
+
+# Chat method (for simple agents)
+response = agent.chat("message")
 ```
 
 ### Agent Declaration with Capabilities
 ```dana
-# agent.na - Agent type definition with declarative properties
-agent ProSEAAgent:
-    DanaAgent
-    
+# agent_blueprint - Agent type definition with declarative properties
+agent_blueprint ProSEAAgent:
     # Domains this agent works in
     domains: list[str] = ["semiconductor_manufacturing"]
     
@@ -643,30 +615,15 @@ agent ProSEAAgent:
     ]
 ```
 
-### Base Agent Struct
-```dana
-# dana_agent.na - Base struct for all Dana agents
-struct DanaAgent:
-    """
-    Base agent struct that all specialized agents inherit from.
-    """
-    id: str
-    name: str
-    domains: list[str]
-    tasks: list[str]
-    capabilities: list[str]
-    knowledge_sources: list[str]
-```
-
 ### Knowledge Integration
 ```dana
-# resources.na - Direct knowledge store references
+# Direct knowledge store references
 specs_db = SqlResource(dsn = "postgres://prx_specs")           # Direct DB reference
 cases_db = VectorDBResource(index = "prx_cases")              # Direct vector DB
 docs_store = DocStoreResource(bucket = "prx_docs")            # Direct document store
 lab_api = MCPResource(url = "http://lab-controller:9000")     # Direct API
 
-# methods.na - Agent-bound functions using knowledge sources
+# Agent-bound functions using knowledge sources
 @poet
 def diagnose_defect(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
     """
@@ -678,28 +635,12 @@ def diagnose_defect(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
     pass
 ```
 
-### Agent Creation Workflow
-```dana
-# dana_agent/ - The agent that creates other agents
-def create_agent_workflow(agent: DanaAgent, user_request: str) -> AgentCapabilityPack:
-    """
-    Main workflow for creating specialized agents.
-    """
-    requirements = analyze_requirements(agent, user_request)
-    knowledge_plan = assess_knowledge_requirements(agent, requirements)
-    design = design_agent(agent, requirements, knowledge_plan)
-    knowledge_pack = curate_knowledge(agent, design)
-    capability_pack = generate_agent(agent, design, knowledge_pack)
-    
-    return capability_pack
-```
-
 **Key Benefits:**
 - **Domain Expertise**: Agents gain specialized knowledge and capabilities
-- **Modular Design**: Capability packs can be shared, versioned, and reused
+- **Modular Design**: Agent blueprints can be shared, versioned, and reused
 - **Declarative Properties**: Clear definition of what agents can do and what knowledge they use
 - **Knowledge Optimization**: Knowledge is organized for specific tasks and domains
-- **Agent Creation**: Meta-agents can create specialized agents automatically
+- **Built-in Intelligence**: Immediate AI-powered planning, problem-solving, and memory capabilities
 
 ## Dana vs Python Key Differences
 
@@ -712,6 +653,8 @@ import dana_module               # Dana modules no extension
 def func(x: int) -> str:         # Type hints required
     return f"Result: {x}"
 point = Point(x=5, y=10)         # Named arguments for structs
+agent_blueprint MyAgent:         # Agent blueprint definition
+    field: str = "default"
 ```
 
 ### ❌ Incorrect (Python-style)
@@ -722,6 +665,9 @@ import math                      # Missing .py for Python modules
 def func(x):                     # Missing type hints
     return "Result: " + str(x)
 point = Point(5, 10)             # Positional arguments not supported
+class MyAgent:                   # Use agent_blueprint instead of class
+    def __init__(self):
+        pass
 ```
 
 ## Common Patterns
@@ -819,11 +765,14 @@ processed_data = raw_data | validate | normalize | analyze | format_output
 3. **Use explicit scoping** when managing agent state
 4. **Prefer pipelines** for data transformation workflows
 5. **Use named arguments** for struct instantiation
+6. **Use agent_blueprint** for reusable agent types
+7. **Use struct functions** for clean data operations
 
 ### Performance Considerations
 1. **Pipeline composition** is more efficient than nested function calls
 2. **Explicit scoping** helps with memory management in long-running agents
 3. **Type hints** enable better optimization by the Dana runtime
+4. **Agent blueprints** provide efficient agent creation and reuse
 
 ### Security Guidelines
 1. **Never expose private: state** to untrusted code

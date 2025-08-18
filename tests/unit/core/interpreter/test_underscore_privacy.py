@@ -2,8 +2,8 @@
 
 import os
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestUnderscorePrivacy:
@@ -12,9 +12,9 @@ class TestUnderscorePrivacy:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear struct registry to ensure test isolation
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import TYPE_REGISTRY
 
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
         # Get the path to test_modules directory
         current_dir = os.path.dirname(os.path.abspath(__file__))

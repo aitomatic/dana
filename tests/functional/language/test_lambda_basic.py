@@ -15,7 +15,7 @@ class TestLambdaBasic:
     def test_simple_lambda_no_params(self):
         """Test a simple lambda expression with no parameters."""
         code = "lambda :: 42"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -26,7 +26,7 @@ class TestLambdaBasic:
     def test_simple_lambda_with_param(self):
         """Test a simple lambda expression with one parameter."""
         code = "lambda x :: x * 2"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -38,7 +38,7 @@ class TestLambdaBasic:
     def test_lambda_with_multiple_params(self):
         """Test lambda expression with multiple parameters."""
         code = "lambda x, y :: x + y"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -50,7 +50,7 @@ class TestLambdaBasic:
     def test_lambda_with_typed_params(self):
         """Test lambda expression with typed parameters."""
         code = "lambda x: int, y: int :: x * y"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -62,7 +62,7 @@ class TestLambdaBasic:
     def test_lambda_complex_body(self):
         """Test lambda expression with complex body expression."""
         code = "lambda x :: x * x + 1"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -74,7 +74,7 @@ class TestLambdaBasic:
     def test_lambda_nested_expressions(self):
         """Test lambda expression with nested arithmetic."""
         code = "lambda a, b :: (a + b) * (a - b)"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be a callable function
         assert callable(result)
@@ -89,7 +89,7 @@ class TestLambdaBasic:
 f = lambda x :: x * 3
 result = f(7)
 """
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # The result should be the final assignment result
         assert result == 21  # 7 * 3 = 21
@@ -102,7 +102,7 @@ result = f(7)
     def test_lambda_metadata(self):
         """Test that lambda functions store metadata correctly."""
         code = "lambda x: int, y: str :: x + 1"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # Check lambda metadata
         assert hasattr(result, "_dana_lambda")
@@ -115,7 +115,7 @@ result = f(7)
     def test_lambda_no_receiver_metadata(self):
         """Test that lambda without receiver has correct metadata."""
         code = "lambda x :: x"
-        result = self.interpreter._eval(code, self.context)
+        result = self.interpreter._eval_source_code(code, self.context)
 
         # Check receiver metadata
         assert hasattr(result, "_dana_receiver")

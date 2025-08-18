@@ -1,0 +1,187 @@
+# Filesystem Resource
+# Provides file system operations for Dana agents
+
+resource FileSystemResource:
+    kind: str = "filesystem"
+    name: str = ""
+    state: str = "created"
+    root_path: str = "."
+    read_only: bool = false
+    max_file_size: int = 10485760  # 10MB default
+    allowed_extensions: list = []
+    description: str = "File system access resource"
+
+# Initialize the filesystem resource
+def (filesystem: FileSystemResource) initialize() -> bool:
+    if filesystem.state == "created":
+        filesystem.state = "initialized"
+        print(f"Filesystem resource '{filesystem.name}' initialized at '{filesystem.root_path}'")
+        return true
+    return false
+
+# Start the filesystem resource
+def (filesystem: FileSystemResource) start() -> bool:
+    if filesystem.state == "initialized":
+        filesystem.state = "running"
+        print(f"Filesystem resource '{filesystem.name}' ready for operations")
+        return true
+    return false
+
+
+
+# Check if resource is running
+def (filesystem: FileSystemResource) is_running() -> bool:
+    return filesystem.state == "running"
+
+# Standard query interface for filesystem operations
+def (filesystem: FileSystemResource) query(request: str) -> str:
+    if filesystem.state != "running":
+        return f"Filesystem resource {filesystem.name} not running (state: {filesystem.state})"
+    
+    # Parse the request to determine operation
+    # Format: "read:path" or "write:path:content" or "list:path" or "exists:path"
+    parts = request.split(":")
+    
+    if len(parts) < 2:
+        return "Invalid filesystem request format. Use 'read:path', 'write:path:content', 'list:path', or 'exists:path'"
+    
+    operation = parts[0]
+    filepath = parts[1]
+    
+    # Security check: ensure path is within root_path
+    safe_path = filesystem._make_safe_path(filepath)
+    if safe_path == "":
+        return f"Access denied: path '{filepath}' is outside allowed root '{filesystem.root_path}'"
+    
+    if operation == "read":
+        return filesystem._handle_read(safe_path)
+    elif operation == "write":
+        if filesystem.read_only:
+            return "Write operation denied: resource is in read-only mode"
+        if len(parts) < 3:
+            return "Write operation requires content. Use 'write:path:content'"
+        content = ":".join(parts[2:])  # Rejoin in case content contains colons
+        return filesystem._handle_write(safe_path, content)
+    elif operation == "list":
+        return filesystem._handle_list(safe_path)
+    elif operation == "exists":
+        return filesystem._handle_exists(safe_path)
+    elif operation == "info":
+        return filesystem._handle_info(safe_path)
+    elif operation == "delete":
+        if filesystem.read_only:
+            return "Delete operation denied: resource is in read-only mode"
+        return filesystem._handle_delete(safe_path)
+    else:
+        return f"Unknown filesystem operation: {operation}"
+
+# Helper function to create safe paths within root
+def (filesystem: FileSystemResource) _make_safe_path(filepath: str) -> str:
+    # In a real implementation, this would properly resolve paths and check bounds
+    # For now, simple security check for obvious path traversal attempts
+    if ".." in filepath or filepath.startswith("/"):
+        return ""  # Deny access
+    
+    if filesystem.root_path == ".":
+        return filepath
+    else:
+        return f"{filesystem.root_path}/{filepath}"
+
+# Handle read operations
+def (filesystem: FileSystemResource) _handle_read(path: str) -> str:
+    # Check file extension if restrictions exist
+    if len(filesystem.allowed_extensions) > 0:
+        extension = filesystem._get_file_extension(path)
+        if extension not in filesystem.allowed_extensions:
+            return f"File type '.{extension}' not allowed. Allowed: {filesystem.allowed_extensions}"
+    
+    # Simulate file reading (in real implementation would use actual file I/O)
+    return f"File content from '{path}': [simulated file content - would read actual file here]"
+
+# Handle write operations
+def (filesystem: FileSystemResource) _handle_write(path: str, content: str) -> str:
+    # Check file size limit
+    if len(content) > filesystem.max_file_size:
+        return f"Content too large ({len(content)} bytes). Maximum allowed: {filesystem.max_file_size} bytes"
+    
+    # Check file extension if restrictions exist
+    if len(filesystem.allowed_extensions) > 0:
+        extension = filesystem._get_file_extension(path)
+        if extension not in filesystem.allowed_extensions:
+            return f"File type '.{extension}' not allowed for writing. Allowed: {filesystem.allowed_extensions}"
+    
+    # Simulate file writing
+    return f"Successfully wrote {len(content)} bytes to '{path}'"
+
+# Handle list operations (directory listing)
+def (filesystem: FileSystemResource) _handle_list(path: str) -> str:
+    # Simulate directory listing
+    files = ["example.txt", "data.json", "script.py", "readme.md"]
+    file_list = "\n".join([f"  - {file}" for file in files])
+    return f"Contents of '{path}':\n{file_list}"
+
+# Handle exists operations
+def (filesystem: FileSystemResource) _handle_exists(path: str) -> str:
+    # Simulate existence check
+    # In real implementation would check if file/directory exists
+    return f"File '{path}' exists: true"
+
+# Handle info operations (file metadata)
+def (filesystem: FileSystemResource) _handle_info(path: str) -> str:
+    # Simulate file info retrieval
+    return f"""File info for '{path}':
+  - Size: 1024 bytes
+  - Type: file
+  - Created: 2025-01-22 10:00:00
+  - Modified: 2025-01-22 12:30:00
+  - Permissions: read-write"""
+
+# Handle delete operations
+def (filesystem: FileSystemResource) _handle_delete(path: str) -> str:
+    # Simulate file deletion
+    return f"Successfully deleted '{path}'"
+
+# Get file extension
+def (filesystem: FileSystemResource) _get_file_extension(path: str) -> str:
+    # Simple extension extraction
+    parts = path.split(".")
+    if len(parts) > 1:
+        return parts[-1].lower()
+    return ""
+
+# Read a specific file
+def (filesystem: FileSystemResource) read_file(filepath: str) -> str:
+    if not filesystem.is_running():
+        return "Resource not running"
+    return filesystem.query(f"read:{filepath}")
+
+# Write to a specific file
+def (filesystem: FileSystemResource) write_file(filepath: str, content: str) -> str:
+    if not filesystem.is_running():
+        return "Resource not running"
+    return filesystem.query(f"write:{filepath}:{content}")
+
+# List directory contents
+def (filesystem: FileSystemResource) list_directory(dirpath: str = ".") -> str:
+    if not filesystem.is_running():
+        return "Resource not running"
+    return filesystem.query(f"list:{dirpath}")
+
+# Check if file exists
+def (filesystem: FileSystemResource) file_exists(filepath: str) -> bool:
+    if not filesystem.is_running():
+        return false
+    result = filesystem.query(f"exists:{filepath}")
+    return "true" in result
+
+# Get filesystem resource statistics
+def (filesystem: FileSystemResource) get_stats() -> dict:
+    return {
+        "name": filesystem.name,
+        "state": filesystem.state,
+        "root_path": filesystem.root_path,
+        "read_only": filesystem.read_only,
+        "max_file_size": filesystem.max_file_size,
+        "allowed_extensions": filesystem.allowed_extensions,
+        "operations_supported": ["read", "write", "list", "exists", "info", "delete"]
+    }

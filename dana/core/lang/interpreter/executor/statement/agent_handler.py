@@ -187,7 +187,8 @@ class AgentHandler(Loggable):
                     default_value = self.parent_executor.parent.execute(field.default_value, context)
                     field_defaults[field.name] = default_value
 
-            from dana.agent import AgentType, register_agent_type
+            from dana.agent import AgentType
+            from dana.registry import register_agent_type
 
             agent_type = AgentType(
                 name=node.name,
@@ -204,9 +205,9 @@ class AgentHandler(Loggable):
 
             # Register constructor in context to create instances
             def agent_constructor(**kwargs):
-                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.registry import TYPE_REGISTRY
 
-                return StructTypeRegistry.create_instance(agent_type.name, kwargs)
+                return TYPE_REGISTRY.create_instance(agent_type.name, kwargs)
 
             context.set(f"local:{node.name}", agent_constructor)
             self._trace_resource_operation("agent_blueprint", node.name, len(node.fields), 0)
@@ -220,7 +221,8 @@ class AgentHandler(Loggable):
         """Create and bind a singleton agent instance from a blueprint with optional overrides."""
         try:
             # Find the blueprint type
-            from dana.agent import AgentInstance, AgentType, get_agent_type, register_agent_type
+            from dana.agent import AgentInstance, AgentType
+            from dana.registry import get_agent_type, register_agent_type
 
             blueprint_type = get_agent_type(node.blueprint_name)
             if blueprint_type is None:
@@ -234,7 +236,9 @@ class AgentHandler(Loggable):
             # Merge with defaults from the type
             merged_defaults: dict[str, Any] = {}
             if getattr(blueprint_type, "field_defaults", None):
-                merged_defaults.update(blueprint_type.field_defaults)
+                field_defaults = blueprint_type.field_defaults
+                if field_defaults:
+                    merged_defaults.update(field_defaults)
             merged_defaults.update(overrides)
 
             # If an alias is provided, create a derived AgentType that inherits blueprint fields/methods
@@ -248,8 +252,8 @@ class AgentHandler(Loggable):
                     field_comments=dict(getattr(blueprint_type, "field_comments", {})),
                 )
                 # Inherit agent methods and capabilities
-                if hasattr(blueprint_type, "agent_methods"):
-                    derived.agent_methods.update(blueprint_type.agent_methods)
+                if hasattr(blueprint_type, "_initial_agent_methods"):
+                    derived._initial_agent_methods.update(blueprint_type._initial_agent_methods)
                 if hasattr(blueprint_type, "reasoning_capabilities") and blueprint_type.reasoning_capabilities:
                     derived.reasoning_capabilities.extend(blueprint_type.reasoning_capabilities)
 
@@ -272,7 +276,8 @@ class AgentHandler(Loggable):
     def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
         """Create a base AgentType with default methods and bind an instance to the alias name."""
         try:
-            from dana.agent import AgentInstance, AgentType, register_agent_type
+            from dana.agent import AgentInstance, AgentType
+            from dana.registry import register_agent_type
 
             # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
             base_type = AgentType(

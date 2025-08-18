@@ -61,8 +61,9 @@ from dana.core.lang.interpreter.executor.expression.identifier_resolver import (
 from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
     PipeOperationHandler,
 )
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry.function_registry import FunctionRegistry
 
 
 class ExpressionExecutor(BaseExecutor):
@@ -360,25 +361,36 @@ class ExpressionExecutor(BaseExecutor):
             is_bound_method = hasattr(func, "__self__")
 
             # For bound methods, the 'self' parameter is already bound and doesn't appear in signature
-            # For regular functions, we check the first parameter
-            context_param_index = 0
-            if not is_bound_method and parameters and parameters[0] == "self":
-                context_param_index = 1
+            # For regular functions, we need to find the context parameter
+            context_param_index = None
+            context_param_found = False
+
+            if is_bound_method:
+                # For bound methods, check the first parameter
+                if len(parameters) > 0 and parameters[0] in ["context", "ctx", "sandbox_context", "the_context"]:
+                    context_param_index = 0
+                    context_param_found = True
+            else:
+                # For unbound functions, check parameters starting from the appropriate index
+                start_index = 1 if parameters and parameters[0] == "self" else 0
+                # Look for context parameter in the first few positions (it's usually early)
+                for i in range(start_index, min(len(parameters), start_index + 3)):
+                    if parameters[i] in ["context", "ctx", "sandbox_context", "the_context"]:
+                        context_param_index = i
+                        context_param_found = True
+                        break
 
             # Check if the function expects a SandboxContext parameter
-            if len(parameters) > context_param_index and parameters[context_param_index] in [
-                "context",
-                "ctx",
-                "sandbox_context",
-                "the_context",
-            ]:
-                # Function expects context - insert it as the first argument after self
-                if context_param_index == 0:
-                    # Regular function - insert context as first argument
-                    call_args = [func_context] + list(args)
+            if context_param_found and context_param_index is not None:
+                # Function expects context - insert it at the correct position
+                if is_bound_method:
+                    # For bound methods, context goes at the detected index
+                    call_args = list(args)
+                    call_args.insert(context_param_index, func_context)
                 else:
-                    # Method - insert context after self
-                    call_args = [args[0], func_context] + list(args[1:])
+                    # For unbound functions, context goes at the detected index
+                    call_args = list(args)
+                    call_args.insert(context_param_index, func_context)
 
                 if asyncio.iscoroutinefunction(func):
                     return Misc.safe_asyncio_run(func, *call_args, **kwargs)
@@ -432,23 +444,35 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # If the object is a struct (including agent structs), try to find the method in this order:
-        # 1. Look for a function with the method name in the scopes
-        # 2. Look for a method on the struct type
-        # 3. Look for a method on the object itself
-        # 4. For agent structs, look for built-in agent methods
+        # 1. Try STRUCT_FUNCTION_REGISTRY (fast O(1) lookup)
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method_for_instance(obj, method_name)
+        if method is not None:
+            self.debug("DEBUG: Found method in STRUCT_FUNCTION_REGISTRY")
+            # Create a context for the function call
+            func_context = context.create_child_context()
+            # Ensure the interpreter is available in the new context
+            if hasattr(context, "_interpreter") and context._interpreter is not None:
+                func_context._interpreter = context._interpreter
+
+            # Execute the method
+            if hasattr(method, "execute"):
+                return method.execute(func_context, obj, *args, **kwargs)
+            else:
+                # Check if this is a bound method to avoid double-passing the object
+                if hasattr(method, "__self__"):
+                    # Bound method - don't pass obj since self is already bound
+                    return self.run_function(method, func_context, *args, **kwargs)
+                else:
+                    # Unbound method - pass obj as first argument
+                    return self.run_function(method, func_context, obj, *args, **kwargs)
+
+        # Fallback 1: Look for a function with the method name in scopes (for standalone functions)
+        # This handles cases where someone defines 'def my_method(obj, ...)' without type annotations
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
-            self.debug(f"DEBUG: Object is struct of type {struct_type}")
+            self.debug(f"DEBUG: Struct type: {struct_type.name if hasattr(struct_type, 'name') else struct_type}")
 
-            # Check if this is an agent struct
-            from dana.core.lang.interpreter.struct_system import StructType
-
-            is_struct = isinstance(struct_type, StructType)
-            if is_struct:
-                self.debug(f"DEBUG: Object is struct of type {struct_type.name}")
-
-            # First try to find a function with the method name in the scopes
+            # Try to find a function with the method name in the scopes
             func = None
             for scope in ["local", "private", "public", "system"]:
                 try:
@@ -491,46 +515,23 @@ class ExpressionExecutor(BaseExecutor):
                 self.debug("DEBUG: Found callable method on struct_type")
                 return self.run_function(method, context, obj, *args, **kwargs)
 
-            # Try lambda methods registered in the MethodRegistry
-            self.debug(f"DEBUG: Trying lambda methods in MethodRegistry for {method_name}")
-            try:
-                from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+            # Note: Lambda methods, struct methods, agent methods, and resource methods
+            # are all handled by the STRUCT_FUNCTION_REGISTRY lookup above.
+            # This eliminates the need for multiple registry lookups.
 
-                if LambdaMethodDispatcher.can_handle_method_call(obj, method_name):
-                    self.debug("DEBUG: Found lambda method in MethodRegistry")
-                    return LambdaMethodDispatcher.dispatch_method_call(obj, method_name, *args, **kwargs)
-            except ImportError:
-                self.debug("DEBUG: Lambda receiver support not available")
-            except Exception as e:
-                self.debug(f"DEBUG: Error checking lambda methods: {e}")
-
-            # If no method found on struct type, try to find a method on the object itself
-            self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
+            # Fallback 2: Try to find a method directly on the object (built-in methods, etc.)
+            self.debug(f"DEBUG: Trying built-in methods on object for {method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on object")
                 return self.run_function(method, context, *args, **kwargs)
 
-            # For structs, try built-in instance/class methods
-            if is_struct:
-                self.debug(f"DEBUG: Trying built-in methods for {method_name}")
-                if hasattr(obj, method_name) and callable(getattr(obj, method_name)):
-                    self.debug(f"DEBUG: Found built-in method {method_name}")
-                    return self.run_function(getattr(obj, method_name), context, *args, **kwargs)
-
             # If we get here, no method was found
-            self.debug(f"DEBUG: No method found for {method_name}")
-            # Print all available functions in the local scope
-            local_scope = context._state.get("local", {})
-            self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
-            for k, v in local_scope.items():
-                self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
+            self.debug(f"DEBUG: No method '{method_name}' found for {struct_type.name if hasattr(struct_type, 'name') else struct_type}")
 
-            # Provide more specific error message for structs
-            if is_struct:
-                raise AttributeError(f"Struct '{struct_type.name}' has no method '{method_name}'.")
-            else:
-                raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+            # Provide specific error message
+            type_name = struct_type.name if hasattr(struct_type, "name") else str(struct_type)
+            raise AttributeError(f"'{type_name}' object has no method '{method_name}'")
 
         # For non-struct objects, use getattr on the object itself
         self.debug("DEBUG: Not a struct, trying getattr on object")
@@ -911,7 +912,7 @@ class ExpressionExecutor(BaseExecutor):
         if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
             registry = context._interpreter.function_registry  # type: ignore
             if registry.has(identifier.name):
-                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                resolved_func, func_type, metadata = registry.resolve_with_type(identifier.name)
                 return resolved_func
 
         # Return None if not found (will be handled by caller)

@@ -36,6 +36,7 @@ from dana.core.lang.ast import (
     MethodDefinition,
     PassStatement,
     RaiseStatement,
+    ResourceDefinition,
     SingletonAgentDefinition,
     StructDefinition,
     UseStatement,
@@ -49,8 +50,8 @@ from dana.core.lang.interpreter.executor.statement import (
     StatementUtils,
 )
 from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class StatementExecutor(BaseExecutor):
@@ -99,6 +100,7 @@ class StatementExecutor(BaseExecutor):
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
+            ResourceDefinition: self.execute_resource_definition,
             StructDefinition: self.execute_struct_definition,
             UseStatement: self.execute_use_statement,
             ExportStatement: self.execute_export_statement,
@@ -186,7 +188,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -273,7 +275,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -336,7 +338,7 @@ class StatementExecutor(BaseExecutor):
 
         # Detect function type and set appropriate metadata
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
+        from dana.registry.function_registry import FunctionMetadata
 
         func_type = FunctionType.PYTHON
         context_aware = False
@@ -489,6 +491,53 @@ class StatementExecutor(BaseExecutor):
             None (agent definitions don't produce a value, they register a type)
         """
         return self.agent_handler.execute_agent_definition(node, context)
+
+    def execute_resource_definition(self, node, context: SandboxContext) -> None:
+        """Execute a resource definition statement.
+
+        Registers a ResourceType in the resource registry and binds a constructor
+        that creates ResourceInstance at runtime.
+
+        Args:
+            node: The ResourceDefinition node
+            context: The execution context
+
+        Returns:
+            None (registers type and constructor in scope)
+        """
+        # Import lazily to avoid circulars
+        from dana.common.exceptions import SandboxError
+        from dana.core.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.resource.resource_registry import ResourceTypeRegistry
+
+        try:
+            # Build ResourceType from AST
+            resource_type = create_resource_type_from_ast(node)
+
+            # Evaluate default values in the current context (same approach as structs)
+            if resource_type.field_defaults:
+                evaluated_defaults: dict[str, Any] = {}
+                for field_name, default_expr in resource_type.field_defaults.items():
+                    try:
+                        # Evaluate default values using the parent executor
+                        default_value = self.parent.execute(default_expr, context)
+                        evaluated_defaults[field_name] = default_value
+                    except Exception as e:
+                        raise SandboxError(f"Failed to evaluate default value for resource field '{field_name}': {e}")
+                resource_type.field_defaults = evaluated_defaults
+
+            # Register the resource type in the resource registry
+            ResourceTypeRegistry.register_resource(resource_type)
+            self.debug(f"Registered resource type: {resource_type.name}")
+
+            # Bind constructor that uses resource registry
+            def resource_constructor(**kwargs):
+                return ResourceTypeRegistry.create_resource_instance(resource_type.name, kwargs)
+
+            context.set(f"local:{node.name}", resource_constructor)
+            return None
+        except Exception as e:
+            raise SandboxError(f"Failed to register resource {node.name}: {e}")
 
     def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
         """Execute a singleton agent definition statement using optimized handler."""
@@ -699,11 +748,30 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The result of executing the composition
         """
-        # Execute the composition expression in the function context
-        composed_func = self.parent.execute(composition, func_context)
+        # Special handling for ListLiteral in declarative function definitions
+        from dana.core.lang.ast import ListLiteral
 
-        # If the composition is a callable, call it with all arguments
-        if callable(composed_func):
+        if isinstance(composition, ListLiteral):
+            # Convert ListLiteral to ParallelFunction for parallel composition
+            from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+
+            pipe_handler = PipeOperationHandler(self.parent)
+            composed_func = pipe_handler._resolve_list_literal(composition, func_context)
+        else:
+            # Execute the composition expression in the function context
+            composed_func = self.parent.execute(composition, func_context)
+
+        # Handle SandboxFunction objects (like ParallelFunction, ComposedFunction)
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+
+        if isinstance(composed_func, SandboxFunction):
+            if args:
+                return composed_func.execute(func_context, *args)
+            else:
+                return composed_func.execute(func_context)
+
+        # If the composition is a regular callable, call it with all arguments
+        elif callable(composed_func):
             if args:
                 return composed_func(*args)  # Pass all arguments, not just the first
             else:
