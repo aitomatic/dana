@@ -32,7 +32,10 @@ class AgentListItem(ListItem):
 
     def compose(self) -> ComposeResult:
         """Create the list item content."""
-        label = Label(self._format_agent_display(), id=f"agent-{self.agent_name}")
+        # Create a valid CSS ID by replacing spaces and special characters
+        safe_id = self.agent_name.replace(" ", "_").replace("-", "_")
+        safe_id = "".join(c for c in safe_id if c.isalnum() or c == "_")
+        label = Label(self._format_agent_display(), id=f"agent-{safe_id}")
         # Disable text wrapping to allow horizontal scrolling
         label.wrap = False
         # Ensure minimum width to force horizontal overflow
@@ -49,7 +52,10 @@ class AgentListItem(ListItem):
 
         # Update the label content (only if widget is mounted)
         try:
-            label = self.query_one(f"#agent-{self.agent_name}", Label)
+            # Create the same safe ID as in compose()
+            safe_id = self.agent_name.replace(" ", "_").replace("-", "_")
+            safe_id = "".join(c for c in safe_id if c.isalnum() or c == "_")
+            label = self.query_one(f"#agent-{safe_id}", Label)
             label.update(self._format_agent_display())
         except Exception:
             # Widget not mounted yet, skip update

@@ -292,7 +292,8 @@ class AgentInstance(StructInstance):
     @property
     def name(self) -> str:
         """Get the agent's name for TUI compatibility."""
-        return getattr(self.struct_type, "name", "unnamed_agent")
+        # Return the instance name field value, not the struct type name
+        return self._values.get("name", "unnamed_agent")
 
     @staticmethod
     def get_default_dana_methods() -> dict[str, Callable]:
@@ -333,6 +334,7 @@ class AgentInstance(StructInstance):
     def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "plan")
         if method:
             return method(self, sandbox_context, task, context)
@@ -341,6 +343,7 @@ class AgentInstance(StructInstance):
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "solve")
         if method:
             return method(self, sandbox_context, problem, context)
@@ -349,6 +352,7 @@ class AgentInstance(StructInstance):
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
         """Execute agent memory storage method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "remember")
         if method:
             return method(self, sandbox_context, key, value)
@@ -357,6 +361,7 @@ class AgentInstance(StructInstance):
     def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Execute agent memory retrieval method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "recall")
         if method:
             return method(self, sandbox_context, key)
@@ -365,6 +370,7 @@ class AgentInstance(StructInstance):
     def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> Any:
         """Execute agent reasoning method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "reason")
         if method:
             return method(self, sandbox_context, premise, context)
@@ -373,6 +379,7 @@ class AgentInstance(StructInstance):
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
         from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "chat")
         if method:
             return method(self, sandbox_context, message, context, max_context_turns)

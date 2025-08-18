@@ -164,8 +164,14 @@ class TestNewGlobalRegistry(unittest.TestCase):
         AGENT_REGISTRY.on_event("registered", on_general_handler)
 
         # Create test instances
-        agent_struct_type = StructType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
+        from dana.agent import AgentType
+
+        agent_struct_type = AgentType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
         agent_instance = AgentInstance(agent_struct_type, {"name": "TestAgent"})
+
+        # Clear any auto-registration events from agent creation
+        registered_events.clear()
+        general_events.clear()
 
         # Track instance (should trigger registered event)
         instance_id = AGENT_REGISTRY.track_agent(agent_instance, "test_agent")

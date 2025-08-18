@@ -291,12 +291,14 @@ class StructInstance:
 
     def cleanup(self) -> None:
         """Cleanup the struct instance."""
-        if self._registry is not None and self._is_registered:
-            instance_id = getattr(self, "instance_id", None)
-            if instance_id is not None:
-                self._registry.untrack_instance(instance_id)
+        # Very defensively access attributes since we could be called during/after __del__()
+        registry = getattr(self, "_registry", None)
+        is_registered = getattr(self, "_is_registered", False)
+        instance_id = getattr(self, "instance_id", None)
 
-            self._is_registered = False
+        if registry is not None and is_registered and instance_id:
+            registry.untrack_instance(instance_id)
+            setattr(self, "_is_registered", False)
 
     def __enter__(self) -> "StructInstance":
         """Enter the context of the struct instance."""
@@ -310,7 +312,11 @@ class StructInstance:
 
     def __del__(self) -> None:
         """Delete the struct instance."""
-        self.cleanup()
+        try:
+            self.cleanup()
+        except Exception:
+            # Avoid exceptions in __del__ as they can cause issues
+            pass  # Ignore errors in GC
 
     async def __aenter__(self) -> "StructInstance":
         """Async enter the context of the struct instance."""

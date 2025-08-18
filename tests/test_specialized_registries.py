@@ -192,4 +192,4 @@ class TestSpecializedRegistryInheritance:
         assert RESOURCE_REGISTRY.count() == 1
 
         # Test specialized ResourceRegistry functionality
-        assert RESOURCE_REGISTRY.get_resource_status(resource_id) == "unknown"  # Not set via track_instance
+        assert RESOURCE_REGISTRY.get_resource_status(resource_id) == "available"  # Set via track_resource
