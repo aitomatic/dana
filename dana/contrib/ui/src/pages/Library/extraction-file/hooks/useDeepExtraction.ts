@@ -39,6 +39,7 @@ export const useDeepExtraction = (selectedFile: any) => {
         const response = await apiService.deepExtract({
           document_id: selectedFile.document_id,
           prompt: usePrompt ? prompt : undefined,
+          use_deep_extraction: true, // Enable deep extraction by default
         });
 
         // Map pages to our document structure and unwrap fenced markdown
