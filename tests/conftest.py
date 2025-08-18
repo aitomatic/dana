@@ -194,9 +194,9 @@ def run_dana_test_file(dana_test_file):
     """
     # Clear struct registry to ensure test isolation
     from dana.__init__ import initialize_module_system, reset_module_system
-    from dana.registry import get_global_registry
+    from dana.registry import GLOBAL_REGISTRY
 
-    registry = get_global_registry()
+    registry = GLOBAL_REGISTRY
     registry.clear_all()
 
     # Reload core functions after clearing

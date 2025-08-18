@@ -56,17 +56,16 @@ def run_test(na_file):
     print(f"Running test: {Path(na_file).name}")
 
     # Clear registries for test isolation
-    from dana.registry import get_global_registry
+    from dana.registry import GLOBAL_REGISTRY
 
-    registry = get_global_registry()
-    registry.clear_all()
+    GLOBAL_REGISTRY.clear_all()
 
     # Reload core functions after clearing
     from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
     from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
-    do_register_py_builtins(registry.functions)
-    register_py_wrappers(registry.functions)
+    do_register_py_builtins(GLOBAL_REGISTRY.functions)
+    register_py_wrappers(GLOBAL_REGISTRY.functions)
 
     try:
         # Read the .na file

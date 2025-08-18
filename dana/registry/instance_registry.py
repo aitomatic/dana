@@ -9,9 +9,11 @@ MIT License
 
 from typing import Any
 
+from dana.core.lang.interpreter.struct_system import StructInstance
+
 
 class InstanceRegistry:
-    """Optional registry for tracking instances globally.
+    """Optional registry for tracking StructInstance objects globally.
 
     This registry provides instance tracking capabilities for debugging,
     monitoring, and lifecycle management. It's optional and doesn't affect
@@ -19,10 +21,9 @@ class InstanceRegistry:
     """
 
     def __init__(self):
-        """Initialize the instance registry with instance-specific storage."""
-        # Instance storage by category
-        self._agent_instances: dict[str, Any] = {}
-        self._resource_instances: dict[str, Any] = {}
+        """Initialize the instance registry with unified storage."""
+        # Unified instance storage
+        self._instances: dict[str, StructInstance] = {}
 
         # Instance metadata and lifecycle tracking
         self._instance_metadata: dict[str, dict[str, Any]] = {}
@@ -33,159 +34,105 @@ class InstanceRegistry:
         self._instance_owners: dict[str, str] = {}  # instance_id -> owner_agent
         self._agent_owned_instances: dict[str, set[str]] = {}  # agent -> set of instance_ids
 
-        # Instance counters
-        self._instance_counters: dict[str, int] = {
-            "agent": 0,
-            "resource": 0,
-        }
+        # Instance counter
+        self._instance_counter: int = 0
 
-    # === Agent Instance Methods ===
-
-    def track_agent_instance(self, instance: Any, name: str | None = None) -> str:
-        """Track an agent instance globally.
+    def track_instance(self, instance: StructInstance, name: str | None = None) -> str:
+        """Track a StructInstance globally.
 
         Args:
-            instance: The agent instance to track
+            instance: The StructInstance to track
             name: Optional custom name for the instance
 
         Returns:
             The instance ID
         """
-        instance_id = name or f"agent_{self._instance_counters['agent']}"
-        self._instance_counters["agent"] += 1
+        if not isinstance(instance, StructInstance):
+            raise TypeError(f"InstanceRegistry can only track StructInstance objects, got {type(instance)}")
 
-        self._agent_instances[instance_id] = instance
+        instance_id = instance.instance_id
+        self._instance_counter += 1
+
+        self._instances[instance_id] = instance
         self._instance_metadata[instance_id] = {
-            "category": "agent",
+            "name": name,
             "tracked_at": self._get_timestamp(),
             "type_name": self._get_instance_type_name(instance),
+            "instance_type": type(instance).__name__,
         }
         self._instance_creation_times[instance_id] = self._get_timestamp()
         self._instance_states[instance_id] = "active"
 
         return instance_id
 
-    def get_agent_instance(self, instance_id: str) -> Any | None:
-        """Get an agent instance by ID.
+    def untrack_instance(self, instance_id: str) -> bool:
+        """Remove a StructInstance from tracking and release all associated resources.
+
+        Args:
+            instance_id: The instance ID to untrack
+
+        Returns:
+            True if the instance was successfully untracked, False if not found
+        """
+        if instance_id not in self._instances:
+            return False
+
+        # Remove the instance from storage
+        del self._instances[instance_id]
+
+        # Clean up all associated metadata and tracking data
+        self._instance_metadata.pop(instance_id, None)
+        self._instance_creation_times.pop(instance_id, None)
+        self._instance_states.pop(instance_id, None)
+
+        # Clean up ownership relationships
+        owner = self._instance_owners.pop(instance_id, None)
+        if owner and owner in self._agent_owned_instances:
+            self._agent_owned_instances[owner].discard(instance_id)
+            # Clean up empty agent entries
+            if not self._agent_owned_instances[owner]:
+                del self._agent_owned_instances[owner]
+
+        return True
+
+    def get_instance(self, instance_id: str) -> StructInstance | None:
+        """Get a StructInstance by ID.
 
         Args:
             instance_id: The instance ID
 
         Returns:
-            The agent instance or None if not found
+            The StructInstance or None if not found
         """
-        return self._agent_instances.get(instance_id)
+        return self._instances.get(instance_id)
 
-    def list_agent_instances(self, agent_type: str | None = None) -> list[Any]:
-        """List all tracked agent instances.
+    def list_instances(self, instance_type: str | None = None) -> list[StructInstance]:
+        """List all tracked StructInstance objects.
 
         Args:
-            agent_type: Optional filter by agent type name
+            instance_type: Optional filter by instance type name (e.g., "AgentInstance", "ResourceInstance")
 
         Returns:
-            List of agent instances
+            List of StructInstance objects
         """
-        instances = list(self._agent_instances.values())
-        if agent_type:
-            instances = [inst for inst in instances if self._get_instance_type_name(inst) == agent_type]
+        instances = list(self._instances.values())
+        if instance_type:
+            instances = [inst for inst in instances if type(inst).__name__ == instance_type]
         return instances
 
-    def list_agent_instance_ids(self, agent_type: str | None = None) -> list[str]:
-        """List all tracked agent instance IDs.
+    def list_instance_ids(self, instance_type: str | None = None) -> list[str]:
+        """List all tracked instance IDs.
 
         Args:
-            agent_type: Optional filter by agent type name
+            instance_type: Optional filter by instance type name
 
         Returns:
-            List of agent instance IDs
+            List of instance IDs
         """
-        ids = list(self._agent_instances.keys())
-        if agent_type:
-            ids = [inst_id for inst_id in ids if self._instance_metadata.get(inst_id, {}).get("type_name") == agent_type]
+        ids = list(self._instances.keys())
+        if instance_type:
+            ids = [inst_id for inst_id in ids if self._instance_metadata.get(inst_id, {}).get("instance_type") == instance_type]
         return ids
-
-    # === Resource Instance Methods ===
-
-    def track_resource_instance(self, instance: Any, name: str | None = None) -> str:
-        """Track a resource instance globally.
-
-        Args:
-            instance: The resource instance to track
-            name: Optional custom name for the instance
-
-        Returns:
-            The instance ID
-        """
-        instance_id = name or f"resource_{self._instance_counters['resource']}"
-        self._instance_counters["resource"] += 1
-
-        self._resource_instances[instance_id] = instance
-        self._instance_metadata[instance_id] = {
-            "category": "resource",
-            "tracked_at": self._get_timestamp(),
-            "type_name": self._get_instance_type_name(instance),
-        }
-        self._instance_creation_times[instance_id] = self._get_timestamp()
-        self._instance_states[instance_id] = "active"
-
-        return instance_id
-
-    def get_resource_instance(self, instance_id: str) -> Any | None:
-        """Get a resource instance by ID.
-
-        Args:
-            instance_id: The instance ID
-
-        Returns:
-            The resource instance or None if not found
-        """
-        return self._resource_instances.get(instance_id)
-
-    def list_resource_instances(self, resource_type: str | None = None) -> list[Any]:
-        """List all tracked resource instances.
-
-        Args:
-            resource_type: Optional filter by resource type name
-
-        Returns:
-            List of resource instances
-        """
-        instances = list(self._resource_instances.values())
-        if resource_type:
-            instances = [inst for inst in instances if self._get_instance_type_name(inst) == resource_type]
-        return instances
-
-    def list_resource_instance_ids(self, resource_type: str | None = None) -> list[str]:
-        """List all tracked resource instance IDs.
-
-        Args:
-            resource_type: Optional filter by resource type name
-
-        Returns:
-            List of resource instance IDs
-        """
-        ids = list(self._resource_instances.keys())
-        if resource_type:
-            ids = [inst_id for inst_id in ids if self._instance_metadata.get(inst_id, {}).get("type_name") == resource_type]
-        return ids
-
-    # === Generic Instance Methods ===
-
-    def get_instance(self, instance_id: str) -> Any | None:
-        """Get any instance by ID (searches all categories).
-
-        Args:
-            instance_id: The instance ID
-
-        Returns:
-            The instance or None if not found
-        """
-        # Search in order: agent, resource
-        if instance_id in self._agent_instances:
-            return self._agent_instances[instance_id]
-        elif instance_id in self._resource_instances:
-            return self._resource_instances[instance_id]
-        return None
 
     def has_instance(self, instance_id: str) -> bool:
         """Check if an instance is tracked.
@@ -196,29 +143,7 @@ class InstanceRegistry:
         Returns:
             True if the instance is tracked
         """
-        return instance_id in self._agent_instances or instance_id in self._resource_instances
-
-    def list_all_instances(self) -> list[Any]:
-        """List all tracked instances across all categories.
-
-        Returns:
-            List of all instances
-        """
-        instances = []
-        instances.extend(self._agent_instances.values())
-        instances.extend(self._resource_instances.values())
-        return instances
-
-    def list_all_instance_ids(self) -> list[str]:
-        """List all tracked instance IDs across all categories.
-
-        Returns:
-            List of all instance IDs
-        """
-        ids = []
-        ids.extend(self._agent_instances.keys())
-        ids.extend(self._resource_instances.keys())
-        return ids
+        return instance_id in self._instances
 
     # === Instance Lifecycle Methods ===
 
@@ -305,18 +230,17 @@ class InstanceRegistry:
 
     def clear(self) -> None:
         """Clear all tracked instances (for testing)."""
-        self._agent_instances.clear()
-        self._resource_instances.clear()
+        self._instances.clear()
         self._instance_metadata.clear()
         self._instance_creation_times.clear()
         self._instance_states.clear()
         self._instance_owners.clear()
         self._agent_owned_instances.clear()
-        self._instance_counters = {"agent": 0, "resource": 0}
+        self._instance_counter = 0
 
     def count(self) -> int:
         """Get the total number of tracked instances."""
-        return len(self._agent_instances) + len(self._resource_instances)
+        return len(self._instances)
 
     def is_empty(self) -> bool:
         """Check if the registry is empty."""
@@ -324,20 +248,24 @@ class InstanceRegistry:
 
     def get_statistics(self) -> dict[str, Any]:
         """Get statistics about tracked instances."""
+        instance_types = {}
+        for metadata in self._instance_metadata.values():
+            instance_type = metadata.get("instance_type", "Unknown")
+            instance_types[instance_type] = instance_types.get(instance_type, 0) + 1
+
         return {
             "total_instances": self.count(),
-            "agent_instances": len(self._agent_instances),
-            "resource_instances": len(self._resource_instances),
+            "instance_types": instance_types,
             "active_instances": sum(1 for state in self._instance_states.values() if state == "active"),
             "inactive_instances": sum(1 for state in self._instance_states.values() if state == "inactive"),
             "destroyed_instances": sum(1 for state in self._instance_states.values() if state == "destroyed"),
         }
 
-    def _get_instance_type_name(self, instance: Any) -> str | None:
-        """Get the type name from an instance.
+    def _get_instance_type_name(self, instance: StructInstance) -> str | None:
+        """Get the type name from a StructInstance.
 
         Args:
-            instance: The instance to extract type from
+            instance: The StructInstance to extract type from
 
         Returns:
             The type name or None if unable to determine
@@ -347,18 +275,6 @@ class InstanceRegistry:
             struct_type = instance.__struct_type__
             if hasattr(struct_type, "name"):
                 return struct_type.name
-
-        # Try to get from agent_type attribute
-        if hasattr(instance, "agent_type"):
-            agent_type = instance.agent_type
-            if hasattr(agent_type, "name"):
-                return agent_type.name
-
-        # Try to get from resource_type attribute
-        if hasattr(instance, "resource_type"):
-            resource_type = instance.resource_type
-            if hasattr(resource_type, "name"):
-                return resource_type.name
 
         # Try to get from class name
         if hasattr(instance, "__class__"):
@@ -375,11 +291,4 @@ class InstanceRegistry:
     def __repr__(self) -> str:
         """String representation of the instance registry."""
         stats = self.get_statistics()
-        return (
-            f"InstanceRegistry("
-            f"total={stats['total_instances']}, "
-            f"agents={stats['agent_instances']}, "
-            f"resources={stats['resource_instances']}, "
-            f"active={stats['active_instances']}"
-            f")"
-        )
+        return f"InstanceRegistry(total={stats['total_instances']}, types={stats['instance_types']}, active={stats['active_instances']})"

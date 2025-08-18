@@ -32,9 +32,9 @@ def pytest_configure(config):
 def test_na_file(na_file):
     """Test that a .na file can be parsed and executed without errors."""
     # Clear struct registry to ensure test isolation
-    from dana.registry import get_global_registry
+    from dana.registry import GLOBAL_REGISTRY
 
-    get_global_registry().types.clear()
+    GLOBAL_REGISTRY.types.clear()
 
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"
@@ -53,17 +53,16 @@ def test_na_file(na_file):
     context = SandboxContext()
 
     # Clear registries to ensure test isolation
-    from dana.registry import get_global_registry
+    from dana.registry import GLOBAL_REGISTRY
 
-    registry = get_global_registry()
-    registry.clear_all()
+    GLOBAL_REGISTRY.clear_all()
 
     # Reload core functions after clearing
     from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
     from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
-    do_register_py_builtins(registry.functions)
-    register_py_wrappers(registry.functions)
+    do_register_py_builtins(GLOBAL_REGISTRY.functions)
+    register_py_wrappers(GLOBAL_REGISTRY.functions)
 
     # Initialize LLM resource if needed
     if "reason(" in program_text:

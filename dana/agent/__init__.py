@@ -18,7 +18,6 @@ MIT License
 from dana.registry import TypeRegistry as AgentTypeRegistry
 from dana.registry import (
     get_agent_type,
-    get_global_registry,
     register_agent_type,
 )
 
@@ -34,9 +33,6 @@ def create_agent_instance(agent_type_name: str, field_values=None, context=None)
     return AgentInstance(agent_type, field_values or {})
 
 
-# Global registry instance for backward compatibility
-global_agent_type_registry = get_global_registry().types
-
 from .agent_instance import (
     AgentInstance,
     AgentType,
@@ -46,7 +42,6 @@ __all__ = [
     "AgentInstance",
     "AgentType",
     "AgentTypeRegistry",
-    "global_agent_type_registry",
     "create_agent_instance",
     "get_agent_type",
     "register_agent_type",

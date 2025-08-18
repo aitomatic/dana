@@ -9,6 +9,8 @@ import unittest
 from dataclasses import dataclass
 from typing import Any
 
+from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+
 
 # Mock classes for testing
 @dataclass
@@ -35,18 +37,6 @@ class MockStructType:
     field_defaults: dict[str, Any] = None
 
 
-@dataclass
-class MockAgentInstance:
-    agent_type: MockAgentType
-    name: str
-
-
-@dataclass
-class MockResourceInstance:
-    resource_type: MockResourceType
-    name: str
-
-
 class TestNewGlobalRegistry(unittest.TestCase):
     """Test the new global registry system."""
 
@@ -58,10 +48,10 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_global_registry_singleton(self):
         """Test that GlobalRegistry is a singleton."""
-        from dana.registry import get_global_registry
+        from dana.registry import GLOBAL_REGISTRY
 
-        registry1 = get_global_registry()
-        registry2 = get_global_registry()
+        registry1 = GLOBAL_REGISTRY
+        registry2 = GLOBAL_REGISTRY
 
         self.assertIs(registry1, registry2)
 
@@ -125,16 +115,16 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_instance_tracking(self):
         """Test instance tracking functionality."""
-        from dana.registry import get_global_registry
+        from dana.registry import GLOBAL_REGISTRY
 
-        registry = get_global_registry()
+        registry = GLOBAL_REGISTRY
 
-        # Create mock instances
-        agent_type = MockAgentType("TestAgent", {"name": "str"}, ["name"])
-        resource_type = MockResourceType("TestResource", {"url": "str"}, ["url"])
+        # Create proper StructType and StructInstance objects
+        agent_struct_type = StructType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
+        resource_struct_type = StructType("TestResource", {"url": "str"}, ["url"], {"url": "Resource URL"})
 
-        agent_instance = MockAgentInstance(agent_type, "Alice")
-        resource_instance = MockResourceInstance(resource_type, "Database")
+        agent_instance = StructInstance(agent_struct_type, {"name": "Alice"})
+        resource_instance = StructInstance(resource_struct_type, {"url": "https://example.com"})
 
         # Track instances
         registry.track_agent_instance(agent_instance, "alice_agent")
@@ -151,9 +141,9 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_registry_statistics(self):
         """Test registry statistics."""
-        from dana.registry import get_global_registry, register_agent_type, register_struct_function
+        from dana.registry import GLOBAL_REGISTRY, register_agent_type, register_struct_function
 
-        registry = get_global_registry()
+        registry = GLOBAL_REGISTRY
 
         # Add some data
         agent_type = MockAgentType("TestAgent", {"name": "str"}, ["name"])

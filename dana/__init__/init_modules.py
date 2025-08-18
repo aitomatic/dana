@@ -29,6 +29,7 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
     import os
 
     import dana as dana_module
+    from dana.registry import GLOBAL_REGISTRY
 
     dana_module_path = Path(dana_module.__file__).parent
     # Set up default search paths
@@ -49,9 +50,8 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
     _ensure_danapath_includes_defaults(search_paths)
 
     # Create registry and loader
-    from dana.registry import get_global_registry
 
-    _module_registry = get_global_registry().modules
+    _module_registry = GLOBAL_REGISTRY.modules
     _module_loader = ModuleLoader(search_paths, _module_registry)
 
     # DO NOT install import hook in sys.meta_path to avoid interfering with Python imports

@@ -15,7 +15,7 @@ from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry import AGENT_REGISTRY, STRUCT_FUNCTION_REGISTRY
 
 # --- Registry Integration ---
 # Import the centralized registry from the new location
@@ -209,10 +209,7 @@ class AgentType(StructType):
         """Get all agent methods for this type."""
         methods = {}
         # Get all methods registered for this agent type from the global registry
-        from dana.registry import get_global_registry
-
-        registry = get_global_registry()
-        for (receiver_type, method_name), method in registry.struct_functions._methods.items():
+        for (receiver_type, method_name), method in STRUCT_FUNCTION_REGISTRY._methods.items():
             if receiver_type == self.name:
                 methods[method_name] = method
 
@@ -236,15 +233,15 @@ class AgentInstance(StructInstance):
         if not isinstance(struct_type, AgentType):
             raise TypeError(f"AgentStructInstance requires AgentStructType, got {type(struct_type)}")
 
-        # Initialize the base StructInstance
-        super().__init__(struct_type, values)
-
         # Initialize agent-specific state
         self._memory = {}
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
         self._llm_resource: LegacyLLMResource = None  # Lazy initialization
         self._llm_resource_instance = None  # Lazy initialization
+
+        # Initialize the base StructInstance
+        super().__init__(struct_type, values, AGENT_REGISTRY)
 
     @staticmethod
     def get_default_dana_methods() -> dict[str, Callable]:

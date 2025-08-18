@@ -92,12 +92,6 @@ class DanaSandbox(Loggable):
         if module_search_paths:
             self._context.set("system:module_search_paths", module_search_paths)
 
-        # Add system functions to local context for easy access
-        # TODO: remove this
-        if "system" in self._interpreter.function_registry._functions:
-            for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
-                self._context.set(f"local:{func_name}", func)
-
         # In test mode, ensure corelib functions are available by loading them manually
         if os.getenv("DANA_TEST_MODE") and "system" not in self._interpreter.function_registry._functions:
             try:
@@ -108,10 +102,6 @@ class DanaSandbox(Loggable):
                 py_dir = Path(__file__).parent.parent.parent / "libs" / "corelib" / "py_wrappers"
                 _register_python_functions(py_dir, self._interpreter.function_registry)
 
-                # Add the newly registered functions to the context
-                if "system" in self._interpreter.function_registry._functions:
-                    for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
-                        self._context.set(f"local:{func_name}", func)
             except Exception as e:
                 self.warning(f"Failed to load corelib functions in test mode: {e}")
 

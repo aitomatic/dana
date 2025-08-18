@@ -20,9 +20,10 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
-from dana.registry import STRUCT_FUNCTION_REGISTRY, TYPE_REGISTRY
+if TYPE_CHECKING:
+    from dana.registry import InstanceRegistry
 
 
 @dataclass
@@ -35,6 +36,7 @@ class StructType:
     field_comments: dict[str, str]  # Maps field name to comment/description
     field_defaults: dict[str, Any] | None = None  # Maps field name to default value
     docstring: str | None = None  # Struct docstring
+    instance_id: str | None = None  # ← add this so the interpreter can pass it in
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -52,6 +54,23 @@ class StructType:
         if not hasattr(self, "field_comments"):
             self.field_comments = {}
 
+        if self.instance_id is None:
+            self.instance_id = f"{self.name}_{id(self)}"
+
+    def __eq__(self, other) -> bool:
+        """Compare struct types for equality, excluding instance_id."""
+        if not isinstance(other, StructType):
+            return False
+
+        return (
+            self.name == other.name
+            and self.fields == other.fields
+            and self.field_order == other.field_order
+            and self.field_comments == other.field_comments
+            and self.field_defaults == other.field_defaults
+            and self.docstring == other.docstring
+        )
+
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
         """Validate that provided arguments match struct field requirements."""
         # Check all required fields are present (fields without defaults)
@@ -65,6 +84,12 @@ class StructType:
             raise ValueError(
                 f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(required_fields)}"
             )
+
+        # -- allow implicit instance_id --
+        # If instance_id is NOT part of declared fields, skip all checks for it
+        if "instance_id" in args and "instance_id" not in self.fields:
+            # remove it just for validation purposes
+            args = {k: v for k, v in args.items() if k != "instance_id"}
 
         # Check no extra fields are provided
         extra_fields = set(args.keys()) - set(self.fields.keys())
@@ -121,6 +146,8 @@ class StructType:
             return True
 
         # Handle custom struct types
+        from dana.registry import TYPE_REGISTRY
+
         if TYPE_REGISTRY.exists(expected_type):
             # Check if value is a StructInstance of the expected type
             if isinstance(value, StructInstance):
@@ -216,7 +243,7 @@ class StructType:
 class StructInstance:
     """Runtime representation of a struct instance (Go-style data container)."""
 
-    def __init__(self, struct_type: StructType, values: dict[str, Any]):
+    def __init__(self, struct_type: StructType, values: dict[str, Any], registry: Optional["InstanceRegistry"] = None):
         """Create a new struct instance.
 
         Args:
@@ -243,6 +270,55 @@ class StructInstance:
             field_type = struct_type.fields.get(field_name)
             coerced_values[field_name] = self._coerce_value(value, field_type)
         self._values = coerced_values
+        self._registry = registry
+        self._is_initialized = False
+        self._is_registered = False
+
+        # -- allow implicit instance_id --
+        # self.__dict__['instance_id'] = f"{self._type.name}_{id(self)}"
+        self.instance_id = f"{self._type.name}_{id(self)}"
+
+        self.initialize()
+
+    def initialize(self) -> None:
+        """Initialize the struct instance."""
+        if not self._is_initialized:
+            if self._registry is not None and not self._is_registered:
+                self._registry.track_instance(self)
+                self._is_registered = True
+
+            self._is_initialized = True
+
+    def cleanup(self) -> None:
+        """Cleanup the struct instance."""
+        if self._registry is not None and self._is_registered:
+            instance_id = getattr(self, "instance_id", None)
+            if instance_id is not None:
+                self._registry.untrack_instance(instance_id)
+
+            self._is_registered = False
+
+    def __enter__(self) -> "StructInstance":
+        """Enter the context of the struct instance."""
+        self.initialize()
+        return super().__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the context of the struct instance."""
+        self.cleanup()
+        return super().__exit__(exc_type, exc_value, traceback)
+
+    def __del__(self) -> None:
+        """Delete the struct instance."""
+        self.cleanup()
+
+    async def __aenter__(self) -> "StructInstance":
+        """Async enter the context of the struct instance."""
+        return self.__enter__()
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        """Async exit the context of the struct instance."""
+        return self.__exit__(exc_type, exc_value, traceback)
 
     @property
     def struct_type(self) -> StructType:
@@ -292,6 +368,8 @@ class StructInstance:
                 # Check if it's a struct instance with registered methods
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
+                    from dana.registry import STRUCT_FUNCTION_REGISTRY
+
                     if STRUCT_FUNCTION_REGISTRY.has_method(delegated_struct_type.name, method_name):
                         return delegated_object, method_name
 
@@ -304,6 +382,63 @@ class StructInstance:
 
     def __getattr__(self, name: str) -> Any:
         """Get field value using dot notation with delegation support."""
+
+        # 1) Prevent recursion during early initialization (before _values exists)
+        if "_values" not in self.__dict__:
+            return super().__getattribute__(name)
+
+        # 2) Allow access to internal bookkeeping attributes
+        if name.startswith("_") and name in ["_type", "_values", "_llm_resource"]:
+            return super().__getattribute__(name)
+
+        # 3) Access declared struct fields directly
+        if name in self._type.fields:
+            return self._values.get(name)
+
+        # 4) Try field/method delegation
+        delegation_result = self._find_delegated_field_access(name)
+        if delegation_result is not None:
+            delegated_object, field_name = delegation_result
+            return getattr(delegated_object, field_name)
+
+        method_delegation_result = self._find_delegated_method_access(name)
+        if method_delegation_result is not None:
+            delegated_object, method_name = method_delegation_result
+            return getattr(delegated_object, method_name)
+
+        # 5) Fallback: allow access to private attributes that aren't struct fields
+        if name.startswith("_"):
+            return super().__getattribute__(name)
+
+        # 6) Otherwise: raise helpful struct field error
+        available_fields = sorted(self._type.fields.keys())
+        suggestion = self._find_similar_field(name, available_fields)
+        suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
+
+        delegatable_fields = self._get_delegatable_fields()
+        if delegatable_fields:
+            available_delegated_fields = []
+            for delegatable_field in delegatable_fields:
+                delegated_object = self._values.get(delegatable_field)
+                if delegated_object is not None:
+                    if hasattr(delegated_object, "__dict__"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{attr}" for attr in vars(delegated_object)])
+                    elif hasattr(delegated_object, "_type") and hasattr(delegated_object._type, "fields"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{field}" for field in delegated_object._type.fields])
+            if available_delegated_fields:
+                suggestion_text += f" Available through delegation: {sorted(available_delegated_fields)[:5]}"
+
+        raise AttributeError(
+            f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+        )
+
+    def __deprecated_getattr__(self, name: str) -> Any:
+        """Get field value using dot notation with delegation support."""
+        # If runtime is still initializing (e.g. before _values exists),
+        # # delegate to default Python lookup to avoid recursion
+        if "_values" not in self.__dict__:
+            return super().__getattribute__(name)
+
         # Special handling for truly internal attributes (like _type, _values)
         if name.startswith("_") and name in ["_type", "_values"]:
             # Allow access to internal attributes
@@ -356,7 +491,7 @@ class StructInstance:
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set field value using dot notation with delegation support."""
-        if name.startswith("_"):
+        if name.startswith("_") or name == "instance_id":
             # Allow setting internal attributes
             super().__setattr__(name, value)
             return
@@ -554,6 +689,7 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
 
     return StructType(
         name=struct_def.name,
+        instance_id=f"{struct_def.name}_{id(struct_def)}",  # TODO: is this for the type or the instance?
         fields=fields,
         field_order=field_order,
         field_defaults=field_defaults if field_defaults else None,
@@ -565,10 +701,14 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
 def register_struct_from_ast(struct_def) -> StructType:
     """Register a struct type from AST definition."""
     struct_type = create_struct_type_from_ast(struct_def)
+    from dana.registry import TYPE_REGISTRY
+
     TYPE_REGISTRY.register(struct_type)
     return struct_type
 
 
 def create_struct_instance(struct_name: str, **kwargs) -> StructInstance:
     """Create a struct instance with keyword arguments."""
+    from dana.registry import TYPE_REGISTRY
+
     return TYPE_REGISTRY.create_instance(struct_name, kwargs)
