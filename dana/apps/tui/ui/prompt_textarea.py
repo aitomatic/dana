@@ -49,13 +49,13 @@ class PromptStyleTextArea(TextArea):
     - Enhanced history navigation with ↑/↓ arrows (disabled in multi-line mode)
     - Persistent command history
     - Dana syntax highlighting
-    - Copy/paste support with Ctrl+C/Ctrl+V
+    - Copy/paste support with Ctrl+Shift+C/Ctrl+Shift+V/Ctrl+Shift+X
     """
 
     BINDINGS = [
-        Binding("ctrl+c", "copy_selection", "Copy", show=False),
-        Binding("ctrl+v", "paste_text", "Paste", show=False),
-        Binding("ctrl+x", "cut_selection", "Cut", show=False),
+        Binding("ctrl+shift+c", "copy", "Copy", show=False),
+        Binding("ctrl+shift+v", "paste", "Paste", show=False),
+        Binding("ctrl+shift+x", "cut", "Cut", show=False),
     ]
 
     class Submitted(Message):
@@ -543,48 +543,13 @@ class PromptStyleTextArea(TextArea):
     # Action Methods
     # ============================================================================
 
-    def action_copy_selection(self) -> None:
-        """Copy selected text to clipboard."""
-        try:
-            import pyperclip
-
-            if self.selected_text:
-                pyperclip.copy(self.selected_text)
-                # Optionally show a brief notification
-                if hasattr(self, "notify"):
-                    self.notify("Text copied to clipboard", timeout=1)
-        except ImportError:
-            # Silently fail if pyperclip is not available
-            pass
-
-    def action_paste_text(self) -> None:
-        """Paste text from clipboard."""
-        try:
-            import pyperclip
-
-            clipboard_text = pyperclip.paste()
-            if clipboard_text:
-                # Insert at cursor position
-                self.insert_text_at_cursor(clipboard_text)
-                # Optionally show a brief notification
-                if hasattr(self, "notify"):
-                    self.notify("Text pasted from clipboard", timeout=1)
-        except ImportError:
-            # Silently fail if pyperclip is not available
-            pass
-
-    def action_cut_selection(self) -> None:
-        """Cut selected text to clipboard."""
-        try:
-            import pyperclip
-
-            if self.selected_text:
-                pyperclip.copy(self.selected_text)
-                # Remove selected text
-                self.delete_selection()
-                # Optionally show a brief notification
-                if hasattr(self, "notify"):
-                    self.notify("Text cut to clipboard", timeout=1)
-        except ImportError:
-            # Silently fail if pyperclip is not available
-            pass
+    def action_cut(self) -> None:
+        """Cut selected text to clipboard using Textual's built-in functionality."""
+        if self.selected_text:
+            # Copy to clipboard using Textual's method
+            self.app.copy_to_clipboard(self.selected_text)
+            # Remove selected text
+            self.delete_selection()
+            # Show notification
+            if hasattr(self.app, "notify"):
+                self.app.notify("Text cut to clipboard", timeout=1)

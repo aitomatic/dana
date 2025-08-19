@@ -170,7 +170,7 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
         overflow: auto;
-        scrollbar-size: 0 0;
+        scrollbar-size: 0 2;
     }
     """
 
@@ -409,6 +409,16 @@ Key Bindings:
 - Ctrl+Shift+H: Clear history
 - Ctrl+S: Save logs
 - Ctrl+R: Sync with global registry
+
+Copy/Paste:
+Input Area:
+- Ctrl+Shift+C: Copy selected text
+- Ctrl+Shift+V: Paste text
+- Ctrl+Shift+X: Cut selected text
+
+Output Areas (Terminal, Logs, Agent Detail):
+- Ctrl+Shift+C: Copy all content
+- Ctrl+Shift+A: Select all and copy
 
 Registry Integration:
 - The TUI automatically monitors AGENT_REGISTRY events
