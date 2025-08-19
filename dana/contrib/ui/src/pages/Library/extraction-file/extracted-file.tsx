@@ -12,10 +12,11 @@ import { useDeepExtraction } from './hooks/useDeepExtraction';
 import { useDocumentEditing } from './hooks/useDocumentEditing';
 import { useFilePreview } from './hooks/useFilePreview';
 import { getFileType, hasPreviewPane } from './utils/fileUtils';
-import { PromptSection } from './components/PromptSection';
+// import { PromptSection } from './components/PromptSection';
 import { ExtractionControls } from './components/ExtractionControls';
 import { DocumentEditor } from './components/DocumentEditor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { useExtractionFileStore } from '@/stores/extraction-file-store';
 
 interface FilePreviewProps {
   blobUrl: string | null;
@@ -114,9 +115,6 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
     isDeepExtracting,
     isDeepExtracted,
     deepExtractedDocuments,
-    prompt,
-    setPrompt,
-    handleDeepExtractWithPrompt,
     handleDeepExtractWithoutPrompt,
   } = useDeepExtraction(selectedFile);
 
@@ -126,6 +124,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
   );
 
   const { blobUrl, loading, error } = useFilePreview(selectedFile?.file || null);
+  const { error: extractionError } = useExtractionFileStore();
 
   // File type detection
   const fileType = getFileType(selectedFile?.file?.name || '');
@@ -141,11 +140,6 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
     setCurrentPage((prev) => (prev < (documents?.length || 0) ? prev + 1 : prev));
 
   // Wrapper functions to handle deep extraction and hide prompt input
-  const handleDeepExtractWithPromptWrapper = (): void => {
-    setShowPromptInput(false);
-    handleDeepExtractWithPrompt();
-  };
-
   const handleDeepExtractWithoutPromptWrapper = (): void => {
     setShowPromptInput(false);
     handleDeepExtractWithoutPrompt();
@@ -217,7 +211,8 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                       isDeepExtracting={isDeepExtracting}
                       showPromptInput={showPromptInput}
                       onShowPromptInput={() => setShowPromptInput(true)}
-                      onDeepExtractWithPrompt={handleDeepExtractWithPromptWrapper}
+                      onDeepExtractWithPrompt={handleDeepExtractWithoutPromptWrapper}
+                      onDeepExtractWithoutPrompt={handleDeepExtractWithoutPromptWrapper}
                       isEditing={isEditing}
                       onEdit={handleEdit}
                       onSave={handleSave}
@@ -228,16 +223,24 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
                 {/* Content */}
                 <div className="flex overflow-hidden flex-col flex-1 gap-4 p-4">
                   {/* Prompt Section */}
-                  <PromptSection
+                  {/* <PromptSection
                     showPromptInput={showPromptInput}
                     setShowPromptInput={setShowPromptInput}
                     prompt={prompt}
                     setPrompt={setPrompt}
                     isDeepExtracting={isDeepExtracting}
                     isDeepExtracted={isDeepExtracted}
-                    onDeepExtractWithPrompt={handleDeepExtractWithPromptWrapper}
+                    onDeepExtractWithPrompt={handleDeepExtractWithoutPromptWrapper}
                     onDeepExtractWithoutPrompt={handleDeepExtractWithoutPromptWrapper}
-                  />
+                  /> */}
+
+                  {/* Extraction Error Banner */}
+                  {extractionError && (
+                    <div className="p-3 text-red-700 bg-red-50 rounded-md border border-red-200">
+                      <p className="text-sm font-medium">Extraction Error</p>
+                      <p className="mt-1 text-xs">{extractionError}</p>
+                    </div>
+                  )}
 
                   {/* Document Editor */}
                   <div className="flex-1 min-h-0">
