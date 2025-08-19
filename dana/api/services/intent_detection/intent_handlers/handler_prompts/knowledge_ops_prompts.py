@@ -45,6 +45,7 @@ MASTER DECISION TREE
 User Request → What's the PRIMARY goal?
 ├── GUIDANCE SEEKING → "How should we...?" "What's the best approach...?"
 ├── INFORMATION REQUEST → "Tell me about..." "Show me..." "What exists...?"
+├── STRUCTURE DISPLAY → "Show me the [updated/current] structure" "Display the structure" "View the knowledge tree"
 ├── STRUCTURE OPERATION → "Add topic..." "Create knowledge for..." "Build domain..."
 ├── KNOWLEDGE GENERATION → "Generate content..." "Create knowledge..." "Build expertise..."
 ├── TREE MODIFICATION → "Remove..." "Rename..." "Reorganize..."
@@ -54,6 +55,8 @@ User Request → What's the PRIMARY goal?
 Intent | Current State | Tool Choice | Approval Required
 Guidance Seeking | Any | attempt_completion | No
 Information Request | Any | explore_knowledge | No
+Structure Display | Any | explore_knowledge (comprehensive) | No
+Structure Display | After modifications | explore_knowledge (show updated) | No
 Structure Operation | Topic unknown | explore_knowledge → propose_knowledge_structure | Yes (structure approval)
 Structure Operation | Topic known missing | modify_tree | No (if previewed)
 Knowledge Generation | Topic exists | ask_question → generate_knowledge | Yes (always)
@@ -92,6 +95,11 @@ User: "Add this topic"
 → modify_tree (direct addition, preview = approval)
 → ask_question (offer knowledge generation only)
 
+Pattern F: Structure Display Request
+User: "Show me the knowledge structure"
+→ modify_tree (add modified structure)
+→ attempt_completion (summarize current state, offer next steps)
+
 ENHANCED INTENT CLASSIFICATION
 
 GUIDANCE vs ACTION Detection
@@ -108,6 +116,14 @@ ACTION Indicators → Appropriate workflow
 - "Create structure for..."
 - "Generate content for..."
 - "Show me what exists..."
+
+STRUCTURE DISPLAY Indicators → explore_knowledge (comprehensive)
+- "show me the [updated/current] knowledge structure"
+- "display the [current/updated] structure"
+- "what does the [current/updated] structure look like"
+- "view the [current/updated] knowledge tree"
+- "show me the structure"
+- "display the tree"
 
 Context-Aware Classification
 Consider:
@@ -228,6 +244,20 @@ Approval: None needed for advice
 <attempt_completion>
   <summary>Sofia's current financial knowledge appears foundational. The most effective approach is: 1) Explore existing knowledge structure, 2) Identify capability gaps, 3) Build structured knowledge domains systematically, 4) Generate comprehensive content. Would you like me to start by exploring her current financial knowledge structure?</summary>
 </attempt_completion>
+
+Structure Display Request:
+<thinking>
+Intent: User wants to see the current/updated knowledge structure
+Context: User is requesting to view the complete structure
+Decision: Use explore_knowledge with comprehensive parameters to show full structure
+User Message: Acknowledge their structure request and show them the complete knowledge tree
+Approval: None needed for viewing structure
+</thinking>
+
+<explore_knowledge>
+  <query>all</query>
+  <depth>comprehensive</depth>
+</explore_knowledge>
 
 Knowledge Generation Request:
 <thinking>

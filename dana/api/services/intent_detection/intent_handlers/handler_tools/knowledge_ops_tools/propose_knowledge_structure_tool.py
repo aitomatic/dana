@@ -116,14 +116,14 @@ DOMAIN CONTEXT:
 FORMAT REQUIREMENTS:
 - Use 📁 for main categories (folders)
 - Use 📄 for specific subtopics (knowledge generation targets)
-- Use proper indentation (├── and └──) for tree structure
+- Use proper indentation for tree structure
 - Each subtopic should be specific enough for focused knowledge generation
 
 EXAMPLE FORMAT:
-📁 Category Name
-  ├── 📄 Specific Subtopic 1
-  ├── 📄 Specific Subtopic 2
-  ├── 📄 Specific Subtopic 3
+📁 **Category Name**
+  - 📄 Specific Subtopic 1
+  - 📄 Specific Subtopic 2
+  - 📄 Specific Subtopic 3
 
 Generate the complete knowledge structure now:"""
 
@@ -144,22 +144,17 @@ Generate the complete knowledge structure now:"""
             logger.error(f"Failed to generate topic structure: {e}")
             # Fallback structure
             return f"""📁 {topic.title()} Fundamentals
-  ├── 📄 Core Concepts
-  ├── 📄 Key Principles
-  ├── 📄 Basic Terminology
-  └── 📄 Getting Started
 
-📁 {topic.title()} Applications
-  ├── 📄 Common Use Cases
-  ├── 📄 Best Practices
-  ├── 📄 Real-World Examples
-  └── 📄 Implementation Strategies
 
-📁 Advanced {topic.title()}
-  ├── 📄 Advanced Concepts
-  ├── 📄 Specialized Areas
-  ├── 📄 Expert Techniques
-  └── 📄 Future Trends
+📁 **Application of {topic.title()} **
+  - 📄 Specific Subtopic 1
+  - 📄 Specific Subtopic 2
+  - 📄 Specific Subtopic 3
+
+📁 **Advanced {topic.title()}**
+  - 📄 Advanced Subtopic 1
+  - 📄 Advanced Subtopic 2
+  - 📄 Advanced Subtopic 3
 
 ⚠️ Note: This is a fallback structure due to generation error. Please refine as needed."""
 
