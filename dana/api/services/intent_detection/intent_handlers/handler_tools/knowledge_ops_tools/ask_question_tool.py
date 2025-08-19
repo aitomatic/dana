@@ -73,37 +73,26 @@ class AskQuestionTool(BaseTool):
 
     def _build_sophisticated_response(self, user_message: str, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> str:
         """
-        Build a sophisticated, context-rich response with clear sections and visual indicators.
+        Build a sophisticated, context-rich response with HTML button-style options.
         """
         response_parts = []
         
         # Add user message first (acknowledgment and context)
         if user_message:
-            response_parts.append(f"{user_message}")
+            response_parts.append(f"<p>{user_message}</p>")
             response_parts.append("")  # Empty line for spacing
         
-        # # Add workflow phase if provided
-        # if workflow_phase:
-        #     response_parts.append(f"**Workflow Phase:** {workflow_phase}")
-        #     response_parts.append("")  # Empty line for spacing
-        
-        # # Add current state section if context provided
-        # if context:
-        #     response_parts.append(f"**Current State:** {context}")
-        #     response_parts.append("")  # Empty line for spacing
-        
-        # # Add decision logic section if provided
-        # if decision_logic:
-        #     response_parts.append(f"**Decision Logic:** {decision_logic}")
-        #     response_parts.append("")  # Empty line for spacing
-        
         # Add the main question
+        response_parts.append(f"<p><strong>{question}</strong></p>")
         response_parts.append("")  # Empty line for spacing
         
         # Add options if provided
         if options and len(options) > 0:
+            response_parts.append("<div class='options-container'>")
             for i, option in enumerate(options, 1):
-                response_parts.append(f"{i}. {option}")
+                # Create clickable button-style options (onclick handled by React)
+                response_parts.append(f"<button class='option-button' data-option='{i}'>{i}. {option}</button>")
+            response_parts.append("</div>")
             response_parts.append("")  # Empty line for spacing
         
         # Join all parts with proper spacing

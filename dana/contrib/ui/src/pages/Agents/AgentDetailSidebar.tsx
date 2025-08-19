@@ -7,7 +7,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp, Expand, Collapse } from 'iconoir-react';
-import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { HybridRenderer } from './chat/hybrid-renderer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
 // Constants for resize functionality
@@ -176,6 +176,24 @@ const SmartAgentChat: React.FC<{
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+
+  // Make sendMessage globally available for HTMLRenderer to call
+  useEffect(() => {
+    (window as any).sendMessage = () => {
+      if (input.trim() && agent_id) {
+        sendMessage();
+      }
+    };
+    
+    (window as any).setInput = (value: string) => {
+      setInput(value);
+    };
+    
+    return () => {
+      delete (window as any).sendMessage;
+      delete (window as any).setInput;
+    };
+  }, [input, agent_id]);
   const messages = useSmartChatStore((s) => s.messages);
   const addMessage = useSmartChatStore((s) => s.addMessage);
   const removeMessage = useSmartChatStore((s) => s.removeMessage);
@@ -190,6 +208,9 @@ const SmartAgentChat: React.FC<{
     [],
   );
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+
+  // Option click handling is now done directly in HTMLRenderer
+  // No global handlers needed
 
   // WebSocket integration for real-time updates
   const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
@@ -445,11 +466,10 @@ const SmartAgentChat: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <MarkdownViewerSmall
+                    <HybridRenderer
+                      content={msg.text}
                       backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
-                    >
-                      {msg.text}
-                    </MarkdownViewerSmall>
+                    />
                     {isWelcomeMessage && (
                       <div className="flex flex-col gap-2 mt-3">
                         <button

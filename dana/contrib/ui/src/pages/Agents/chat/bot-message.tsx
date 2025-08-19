@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MarkdownViewerSmall } from './markdown-viewer';
+import { HybridRenderer } from './hybrid-renderer';
 import { IconLoader } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
+// Option click handling is now done directly in HTMLRenderer
 import { ArrowLeft, Hourglass } from 'iconoir-react';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import { useParams } from 'react-router-dom';
@@ -71,6 +72,12 @@ const BotMessage = ({
   const [isOldResponse, setIsOldResponse] = useState(false);
 
   const [displayText, setDisplayText] = useState('');
+
+  // Option click handling is now done directly in HTMLRenderer
+  // No local handler needed
+
+  // Option click handling is now done directly in HTMLRenderer
+  // No local handler needed
 
   const messageContent = extractMessageContent(message);
   const messageSources = extractMessageSources(message);
@@ -168,9 +175,10 @@ const BotMessage = ({
                 </span>
               </div>
             )}
-            <MarkdownViewerSmall citations={messageSources}>
-              {contributedMessage && !isOldResponse ? contributedMessage : displayText}
-            </MarkdownViewerSmall>
+            <HybridRenderer
+              content={contributedMessage && !isOldResponse ? contributedMessage : displayText}
+              backgroundContext="agent"
+            />
             {message?.data?.meta_data?.type === 'dxa:prosea:user_input' && isLastMessage && (
               <div className="flex gap-1 items-center mt-2">
                 <Hourglass className="w-5 h-5 text-brand-700" />

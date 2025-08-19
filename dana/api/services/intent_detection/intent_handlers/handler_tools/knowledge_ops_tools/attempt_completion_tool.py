@@ -219,7 +219,8 @@ The knowledge generation workflow is now complete. Your agent has been enhanced 
             return f"\n{summary}"
         else:
             # Multiple paragraphs - structure them
-            for i, para in enumerate(paragraphs):
+            content = ""  # Initialize content variable
+            for para in paragraphs:
                 if para.strip():
                     content += f"{para.strip()}\n\n"
             return content.strip()
