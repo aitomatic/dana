@@ -448,6 +448,7 @@ class ExpressionExecutor(BaseExecutor):
         method = STRUCT_FUNCTION_REGISTRY.lookup_method_for_instance(obj, method_name)
         if method is not None:
             self.debug("DEBUG: Found method in STRUCT_FUNCTION_REGISTRY")
+
             # Create a context for the function call
             func_context = context.create_child_context()
             # Ensure the interpreter is available in the new context
