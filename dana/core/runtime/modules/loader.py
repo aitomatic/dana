@@ -381,6 +381,12 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         if not module_obj.__file__:
             raise ImportError(f"No file path for module {module_obj.__name__}")
 
+        # Check for circular imports before starting to load
+        if self.registry.is_module_loading(module_obj.__name__):
+            from .errors import CircularImportError
+
+            raise CircularImportError([module_obj.__name__])
+
         # Start loading lifecycle
         self.registry.start_loading(module_obj.__name__)
         try:
@@ -473,6 +479,10 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         interpreter = DanaInterpreter()
         context = SandboxContext()
         context._interpreter = interpreter  # Bind interpreter
+
+        # Set the current file being executed (used for error reporting AND Python import resolution)
+        if origin_path:
+            context.error_context.set_file(str(origin_path))
 
         # Set current module and package for relative import resolution
         context._current_module = module.__name__
