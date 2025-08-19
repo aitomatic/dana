@@ -201,7 +201,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
 
   return (
     <div
-      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
+      className="overflow-x-auto mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
       <SyntaxHighlighter
@@ -215,6 +215,10 @@ const MermaidBlock = ({ content }: { content: string }) => {
           padding: '1rem',
           background: 'rgb(30, 30, 30)',
           fontSize: '0.875rem',
+          width: '100%',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -232,7 +236,7 @@ export const CodeBlock = ({ content, language }: { content: string; language: st
 
   return (
     <div
-      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
+      className="overflow-x-auto mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
       <SyntaxHighlighter
@@ -245,6 +249,10 @@ export const CodeBlock = ({ content, language }: { content: string; language: st
           lineHeight: 1.6,
           padding: '1rem',
           fontSize: '0.875rem',
+          width: '100%',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -562,9 +570,27 @@ export const MarkdownViewerSmall = ({
 
             table: ({ children }: TableProps) => (
               <div className="overflow-x-auto my-4 w-full">
-                <table className="overflow-hidden w-full rounded border border-gray-200 border-collapse">
+                <table
+                  className="w-full rounded border border-gray-200 border-collapse table-fixed"
+                  style={{ tableLayout: 'fixed', width: '100%' }}
+                >
                   {children}
                 </table>
+              </div>
+            ),
+            pre: ({ children }: any) => (
+              <div className="overflow-x-auto my-4 w-full">
+                <pre
+                  className="overflow-x-auto p-4 w-full text-sm bg-gray-100 rounded-lg"
+                  style={{
+                    maxWidth: '100%',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {children}
+                </pre>
               </div>
             ),
             thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
@@ -575,7 +601,7 @@ export const MarkdownViewerSmall = ({
             th: ({ children }: TableCellProps) => {
               return (
                 <th
-                  className={`px-4 py-3 text-sm font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr`}
+                  className={`px-4 py-3 text-sm font-medium tracking-wider text-left text-gray-900 uppercase break-words border-b border-gray-200 first:rounded-tl last:rounded-tr`}
                 >
                   {children}
                 </th>
@@ -590,7 +616,9 @@ export const MarkdownViewerSmall = ({
                 children.$$typeof === Symbol.for('react.element')
               ) {
                 return (
-                  <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
+                  <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                    {children}
+                  </td>
                 );
               }
 
@@ -605,7 +633,7 @@ export const MarkdownViewerSmall = ({
 
                 if (hasReactElements) {
                   return (
-                    <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>
+                    <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
                       {children}
                     </td>
                   );
@@ -626,12 +654,14 @@ export const MarkdownViewerSmall = ({
 
               if (parts?.length === 1) {
                 return (
-                  <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
+                  <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                    {children}
+                  </td>
                 );
               }
 
               return (
-                <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>
+                <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
                   <span className="inline-flex flex-wrap gap-1 items-center">
                     {parts?.map((part, index) => {
                       return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;

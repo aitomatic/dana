@@ -8,10 +8,6 @@ interface FadeTextProps {
 }
 
 const FadeText = ({ text }: FadeTextProps) => {
-  console.log('[FadeText] text:', text);
-  console.log('[FadeText] text type:', typeof text);
-  console.log('[FadeText] text length:', text?.length);
-
   return (
     <div
       className={`flex overflow-y-auto w-full min-w-full h-full transition-opacity duration-500 scrollbar-hide`}

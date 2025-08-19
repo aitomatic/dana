@@ -23,7 +23,7 @@
 /* Override GitHub Markdown CSS heading sizes to make them more appropriate for UI */
 .markdown-body h1 {
   font-size: 1.25rem !important; /* Reduce from default large size */
-  line-height: 2.0rem !important;
+  line-height: 2rem !important;
   margin-top: 1.5rem !important;
   margin-bottom: 1rem !important;
 }
@@ -43,7 +43,7 @@
 }
 
 .markdown-body h4 {
-  font-size: 1.0rem !important; /* Reduce from default size */
+  font-size: 1rem !important; /* Reduce from default size */
   line-height: 1.4rem !important;
   margin-top: 0.75rem !important;
   margin-bottom: 0.5rem !important;
@@ -89,3 +89,21 @@
   color: #24292f !important; /* Default dark text */
 }
 
+/* PRE TAG WIDTH CONSTRAINTS */
+/* Ensure pre tags don't break the layout width */
+.markdown-body pre {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: pre-wrap !important;
+  width: 100% !important;
+}
+
+/* Ensure code blocks within pre tags are also constrained */
+.markdown-body pre code {
+  max-width: 100% !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: pre-wrap !important;
+}
