@@ -346,10 +346,12 @@ class ImportHandler(Loggable):
             ``from dana.libs.corelib.na_modules import *``  -> imports all exported names
         """
         self._ensure_module_system_initialized(context)
-        module, absolute_module_name = self._get_module(kind="dana", module_name=module_name, context=context)
+        # Resolve the base module path
+        base_absolute_module = self._resolve_relative_import(module_name, context)
 
         if is_star:
-            # Star import: import all exported names from the module
+            # Star import: load the base module and import all names
+            module, absolute_module_name = self._get_module(kind="dana", module_name=module_name, context=context)
             self._import_all_from_module(
                 module,
                 context,
@@ -359,16 +361,46 @@ class ImportHandler(Loggable):
                 crosswire_dana_functions=True,
             )
         else:
-            # Explicit imports
-            self._import_names_from_module(
-                module,
-                names,
-                context,
-                module_name_for_errors=absolute_module_name,
-                enforce_exports=True,
-                enforce_underscore_privacy=True,
-                crosswire_dana_functions=True,
-            )
+            # Explicit imports: try to load from base module first, then as submodules
+            for name, alias in names:
+                context_name = alias if alias else name
+                imported_successfully = False
+
+                # First attempt: load the base module and extract the name
+                try:
+                    base_module, _ = self._get_module(kind="dana", module_name=module_name, context=context)
+
+                    if hasattr(base_module, name):
+                        # Check privacy before importing
+                        if name.startswith("_"):
+                            raise SandboxError(
+                                f"Cannot import name '{name}' from Dana module '{base_absolute_module}': names starting with '_' are private"
+                            )
+                        # Found the name in the base module - import it
+                        imported_obj = getattr(base_module, name)
+                        context.set_in_scope(context_name, imported_obj, scope="local")
+                        imported_successfully = True
+                except SandboxError as e:
+                    # Re-raise SandboxError (privacy violations, etc) immediately
+                    if "names starting with '_' are private" in str(e):
+                        raise
+                    # Other SandboxErrors fall through to submodule attempt
+                except Exception:
+                    # Base module loading failed, will try submodule approach
+                    pass
+
+                # Second attempt: try loading as a submodule
+                if not imported_successfully:
+                    try:
+                        submodule_name = f"{base_absolute_module}.{name}"
+                        submodule, _ = self._get_module(kind="dana", module_name=submodule_name, context=context)
+                        context.set_in_scope(context_name, submodule, scope="local")
+                        imported_successfully = True
+                    except Exception:
+                        pass
+
+                if not imported_successfully:
+                    raise SandboxError(f"Cannot import name '{name}' from Dana module '{base_absolute_module}': name not found")
 
     def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry with optimized handling.
