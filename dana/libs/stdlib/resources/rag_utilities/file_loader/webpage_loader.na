@@ -1,9 +1,13 @@
 from llama_index.core.py import Document
 from dana.common.sys_resource.rag.utility.web_fetch.py import fetch_web_content
+from typing.py import Callable
 
 
-def load_webpage(url: str) -> Document:
-    return Document(text=fetch_web_content(url), metadata={"source": url}, id_=url)
+struct WebpageLoader:
+    loading_func : Callable = fetch_web_content
 
-
-# print(load_webpage("https://www.aitomatic.com/"))
+def (loader: WebpageLoader) load_urls(urls: list[str]) -> list[Document]:
+    res = []
+    for url in urls:
+        res.append(Document(text=loader.loading_func(url), metadata={"source": url}, id_=url))
+    return res

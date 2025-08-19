@@ -7,8 +7,8 @@ This module tests struct instantiation and field access execution in the Dana in
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestStructExecution:
@@ -16,7 +16,7 @@ class TestStructExecution:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_definition_execution(self):
@@ -36,10 +36,10 @@ struct Point:
         assert execution_result.result is None
 
         # But the struct should be registered
-        assert StructTypeRegistry.exists("Point")
+        assert TYPE_REGISTRY.exists("Point")
 
         # Check the registered struct type
-        struct_type = StructTypeRegistry.get("Point")
+        struct_type = TYPE_REGISTRY.get("Point")
         assert struct_type is not None
         assert struct_type.name == "Point"
         assert len(struct_type.fields) == 2
@@ -252,7 +252,7 @@ class TestStructIntegrationWithDanaFeatures:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_with_functions(self):

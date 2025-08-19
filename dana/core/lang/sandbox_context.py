@@ -27,6 +27,7 @@ from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
+    from dana.agent import AgentInstance
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
     from dana.core.resource import ResourceInstance
@@ -73,17 +74,8 @@ class SandboxContext(Loggable):
                 "history": [],
             },
         }
-        # Update the type annotations and remove system scope from __resources and __agents
-        self.__resources: dict[str, dict[str, ResourceInstance]] = {
-            "local": {},
-            "private": {},
-            "public": {},
-        }
-        self.__agents: dict[str, dict[str, ResourceInstance]] = {
-            "local": {},
-            "private": {},
-            "public": {},
-        }
+        # Resources are now stored in self._state[scope]["resources"]
+        # Agents are now stored in self._state[scope]["agents"] if needed
         # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBALS:
@@ -693,14 +685,26 @@ class SandboxContext(Loggable):
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
+
+        # Store in scope for variable access
         self.set_in_scope(var_name, resource, scope=scope)
-        self.__resources[scope][var_name] = resource
+
+        # Store in state scope for proper inheritance by child contexts
+        if "resources" not in self._state[scope]:
+            self._state[scope]["resources"] = {}
+        self._state[scope]["resources"][var_name] = resource
 
     def get_resource(self, name: str) -> "ResourceInstance":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
-        return self.__resources[scope][var_name]
+
+        # Get from state scope
+        if "resources" in self._state[scope]:
+            return self._state[scope]["resources"][var_name]
+
+        # If not found, raise KeyError
+        raise KeyError(f"Resource '{name}' not found in scope '{scope}'")
 
     def get_resources(self, included: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, "ResourceInstance"]:
         """Get a dictionary of resources from the context.
@@ -742,10 +746,14 @@ class SandboxContext(Loggable):
     def list_resources(self) -> list[str]:
         # list all resources that are in the local scope (that is not soft deleted)
         all_resources = []
-        for scope, resources in self.__resources.items():
-            for var_name, resource in resources.items():
-                if var_name in self._state[scope]:
-                    all_resources.append(resource.name)
+
+        # Check state scope resources
+        for scope in self._state:
+            if "resources" in self._state[scope]:
+                for var_name, resource in self._state[scope]["resources"].items():
+                    if var_name in self._state[scope]:  # Only if not soft deleted
+                        all_resources.append(resource.name)
+
         return all_resources
 
     def delete_from_scope(self, var_name: str, scope: str = "local") -> None:
@@ -776,7 +784,7 @@ class SandboxContext(Loggable):
         elif self._parent is not None:
             self._parent.delete_from_scope(var_name, scope)
 
-    def set_agent(self, name: str, agent: "ResourceInstance") -> None:
+    def set_agent(self, name: str, agent: "AgentInstance") -> None:
         """Set an agent in the context.
 
         Args:
@@ -788,15 +796,25 @@ class SandboxContext(Loggable):
         if scope is None:
             scope = "private"
         self.set_in_scope(var_name, agent, scope=scope)
-        self.__agents[scope][var_name] = agent
 
-    def get_agent(self, name: str) -> "ResourceInstance":
+        # Store in state scope for proper inheritance by child contexts
+        if "agents" not in self._state[scope]:
+            self._state[scope]["agents"] = {}
+        self._state[scope]["agents"][var_name] = agent
+
+    def get_agent(self, name: str) -> "AgentInstance":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
-        return self.__agents[scope][var_name]
 
-    def get_agents(self, included: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, "ResourceInstance"]:
+        # Get from state scope
+        if "agents" in self._state[scope]:
+            return self._state[scope]["agents"][var_name]
+
+        # If not found, raise KeyError
+        raise KeyError(f"Agent '{name}' not found in scope '{scope}'")
+
+    def get_agents(self, included: list[Union[str, "AgentInstance"]] | None = None) -> dict[str, "AgentInstance"]:
         """Get a dictionary of agents from the context.
 
         Args:
@@ -813,7 +831,7 @@ class SandboxContext(Loggable):
         return {name: self.get_agent(name) for name in agent_names}
 
     def soft_delete_agent(self, name: str) -> None:
-        # agent will remain in private variable self.__agents but will be removed from the local scope
+        # agent will remain in state scope but will be removed from the local scope
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
@@ -822,10 +840,14 @@ class SandboxContext(Loggable):
     def list_agents(self) -> list[str]:
         # list all agents that are in the local scope (that is not soft deleted)
         all_agents = []
-        for scope, agents in self.__agents.items():
-            for var_name, agent in agents.items():
-                if var_name in self._state[scope]:
-                    all_agents.append(agent.name)
+
+        # Check state scope agents
+        for scope in self._state:
+            if "agents" in self._state[scope]:
+                for var_name, agent in self._state[scope]["agents"].items():
+                    if var_name in self._state[scope]:  # Only if not soft deleted
+                        all_agents.append(agent.name)
+
         return all_agents
 
     def get_self_agent_card(self, included_resources: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, dict[str, Any]]:
@@ -865,7 +887,7 @@ class SandboxContext(Loggable):
                 agent_card["skills"].append({"name": function.get("name", ""), "description": function.get("description", "")})
         return {"__self__": agent_card}
 
-    def get_other_agent_cards(self, included_agents: list[Union[str, "ResourceInstance"]] | None = None) -> dict[str, dict[str, Any]]:
+    def get_other_agent_cards(self, included_agents: list[Union[str, "AgentInstance"]] | None = None) -> dict[str, dict[str, Any]]:
         all_agent_cards = {}
         for name, agent in self.get_agents(included=included_agents).items():
             all_agent_cards[name] = agent.agent_card

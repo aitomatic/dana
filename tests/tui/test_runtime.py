@@ -12,21 +12,27 @@ from pathlib import Path
 
 import pytest
 
-# Add the project root to path so we can import dana.tui.core
+# Add the project root to path so we can import dana.apps.tui.core
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.tui.core.events import Done, Status, Token
-from dana.tui.core.runtime import Agent, DanaSandbox
+from dana.agent import AgentInstance, AgentType
+from dana.apps.tui.core.events import Done, Status, Token
+from dana.apps.tui.core.runtime import DanaSandbox
 
 
-class MockTestAgent(Agent):
+class MockTestAgent(AgentInstance):
     """Mock agent for testing."""
 
     def __init__(self, name: str, response_text: str = "test response"):
-        super().__init__(name)
-        self.response_text = response_text
-        self.chat_calls = []
+        # Create a simple agent type for testing with all needed fields
+        agent_type = AgentType(
+            name=f"{name}_type",
+            fields={"name": "str", "response_text": "str", "chat_calls": "list"},
+            field_order=["name", "response_text", "chat_calls"],
+            field_defaults={"name": name, "response_text": response_text, "chat_calls": []},
+        )
+        super().__init__(agent_type, {"name": name, "response_text": response_text, "chat_calls": []})
 
     async def chat(self, message: str):
         """Mock chat implementation."""
@@ -104,181 +110,61 @@ class TestDanaSandbox:
         """Create a fresh sandbox for each test."""
         return DanaSandbox()
 
-    @pytest.fixture
-    def test_agents(self):
-        """Create test agents."""
-        return [MockTestAgent("agent1", "response1"), MockTestAgent("agent2", "response2"), MockTestAgent("agent3", "response3")]
+    def test_initialization(self, sandbox):
+        """Test sandbox initializes properly."""
+        assert sandbox is not None
+        assert sandbox.get_dana_context() is not None
+        assert sandbox.get_dana_sandbox() is not None
 
-    def test_initial_state(self, sandbox):
-        """Test sandbox initial state."""
-        assert len(sandbox.list()) == 0
-        assert sandbox.get_focused() is None
-        assert sandbox.get_focused_name() is None
+    def test_execute_simple_expression(self, sandbox):
+        """Test executing simple Dana expressions."""
+        result = sandbox.execute_string("5 + 3")
+        assert result.success is True
+        assert result.result == 8
 
-    def test_register_agent(self, sandbox, test_agents):
-        """Test agent registration."""
-        agent = test_agents[0]
-        sandbox.register(agent)
+    def test_execute_variable_assignment(self, sandbox):
+        """Test executing variable assignments."""
+        result = sandbox.execute_string("x = 10")
+        assert result.success is True
 
-        assert len(sandbox.list()) == 1
-        assert agent.name in sandbox.list()
-        assert sandbox.get(agent.name) is agent
-        assert sandbox.exists(agent.name)
+        # Variable should be available in subsequent executions
+        result = sandbox.execute_string("x * 2")
+        assert result.success is True
+        assert result.result == 20
 
-        # First agent should be auto-focused
-        assert sandbox.get_focused() is agent
-        assert sandbox.get_focused_name() == agent.name
+    def test_execute_invalid_syntax(self, sandbox):
+        """Test executing invalid Dana code."""
+        result = sandbox.execute_string("5 +")  # Incomplete expression
+        assert result.success is False
+        assert result.error is not None
 
-    def test_register_multiple_agents(self, sandbox, test_agents):
-        """Test registering multiple agents."""
-        for agent in test_agents:
-            sandbox.register(agent)
+    def test_execute_string_operations(self, sandbox):
+        """Test executing string operations."""
+        result = sandbox.execute_string('"hello" + " world"')
+        assert result.success is True
+        assert result.result == "hello world"
 
-        assert len(sandbox.list()) == 3
-        assert set(sandbox.list()) == {"agent1", "agent2", "agent3"}
+    def test_get_dana_context(self, sandbox):
+        """Test getting the Dana context."""
+        context = sandbox.get_dana_context()
+        assert context is not None
 
-        # First agent should still be focused
-        assert sandbox.get_focused_name() == "agent1"
+        # Execute something to modify context
+        sandbox.execute_string("test_var = 42")
 
-    def test_focus_switching(self, sandbox, test_agents):
-        """Test focus switching between agents."""
-        for agent in test_agents:
-            sandbox.register(agent)
+        # Context should contain the variable in local scope
+        updated_context = sandbox.get_dana_context()
+        assert "test_var" in updated_context._state["local"]
 
-        # Initially focused on first agent
-        assert sandbox.get_focused_name() == "agent1"
+    def test_get_dana_sandbox_access(self, sandbox):
+        """Test getting access to underlying Dana sandbox."""
+        dana_sandbox = sandbox.get_dana_sandbox()
+        assert dana_sandbox is not None
 
-        # Switch focus
-        result = sandbox.set_focus("agent2")
-        assert result is True
-        assert sandbox.get_focused_name() == "agent2"
-        assert sandbox.get_focused() is test_agents[1]
+        # Should be a CoreDanaSandbox instance
+        from dana.core.lang.dana_sandbox import DanaSandbox as CoreDanaSandbox
 
-        # Switch to another agent
-        result = sandbox.set_focus("agent3")
-        assert result is True
-        assert sandbox.get_focused_name() == "agent3"
-
-        # Try to focus non-existent agent
-        result = sandbox.set_focus("nonexistent")
-        assert result is False
-        assert sandbox.get_focused_name() == "agent3"  # Should remain unchanged
-
-    def test_unregister_agent(self, sandbox, test_agents):
-        """Test agent unregistration."""
-        for agent in test_agents:
-            sandbox.register(agent)
-
-        # Remove an agent that's not focused
-        result = sandbox.unregister("agent2")
-        assert result is True
-        assert "agent2" not in sandbox.list()
-        assert len(sandbox.list()) == 2
-        assert sandbox.get_focused_name() == "agent1"  # Focus unchanged
-
-        # Remove the focused agent
-        result = sandbox.unregister("agent1")
-        assert result is True
-        assert "agent1" not in sandbox.list()
-        assert len(sandbox.list()) == 1
-
-        # Focus should switch to remaining agent
-        assert sandbox.get_focused_name() == "agent3"
-
-        # Remove last agent
-        result = sandbox.unregister("agent3")
-        assert result is True
-        assert len(sandbox.list()) == 0
-        assert sandbox.get_focused() is None
-
-    def test_unregister_nonexistent_agent(self, sandbox):
-        """Test unregistering non-existent agent."""
-        result = sandbox.unregister("nonexistent")
-        assert result is False
-
-    def test_get_all_agents(self, sandbox, test_agents):
-        """Test getting all agents."""
-        for agent in test_agents:
-            sandbox.register(agent)
-
-        all_agents = sandbox.get_all_agents()
-        assert len(all_agents) == 3
-        assert all_agents["agent1"] is test_agents[0]
-        assert all_agents["agent2"] is test_agents[1]
-        assert all_agents["agent3"] is test_agents[2]
-
-        # Should be a copy, not the original dict
-        all_agents["new_agent"] = MockTestAgent("new_agent")
-        assert "new_agent" not in sandbox.list()
-
-    def test_clear_sandbox(self, sandbox, test_agents):
-        """Test clearing all agents."""
-        for agent in test_agents:
-            sandbox.register(agent)
-
-        assert len(sandbox.list()) == 3
-        assert sandbox.get_focused() is not None
-
-        sandbox.clear()
-
-        assert len(sandbox.list()) == 0
-        assert sandbox.get_focused() is None
-        assert sandbox.get_focused_name() is None
-
-    def test_focus_management_edge_cases(self, sandbox, test_agents):
-        """Test edge cases in focus management."""
-        # Set focus with no agents
-        result = sandbox.set_focus("agent1")
-        assert result is False
-        assert sandbox.get_focused() is None
-
-        # Register first agent
-        sandbox.register(test_agents[0])
-        assert sandbox.get_focused_name() == "agent1"
-
-        # Register second agent - focus should stay on first
-        sandbox.register(test_agents[1])
-        assert sandbox.get_focused_name() == "agent1"
-
-        # Remove focused agent when only one other exists
-        sandbox.unregister("agent1")
-        assert sandbox.get_focused_name() == "agent2"
-
-        # Remove last agent
-        sandbox.unregister("agent2")
-        assert sandbox.get_focused() is None
-
-    def test_agent_name_collision(self, sandbox):
-        """Test handling of agent name collisions."""
-        agent1 = MockTestAgent("same_name")
-        agent2 = MockTestAgent("same_name")
-
-        sandbox.register(agent1)
-        assert sandbox.get("same_name") is agent1
-
-        # Registering another agent with same name should replace
-        sandbox.register(agent2)
-        assert sandbox.get("same_name") is agent2
-        assert len(sandbox.list()) == 1
-
-    @pytest.mark.asyncio
-    async def test_agent_interaction_through_sandbox(self, sandbox):
-        """Test agent interaction through the sandbox."""
-        agent = MockTestAgent("test_agent", "sandbox response")
-        sandbox.register(agent)
-
-        focused_agent = sandbox.get_focused()
-        assert focused_agent is agent
-
-        # Interact with the focused agent
-        events = []
-        async for event in focused_agent.chat("test message"):
-            events.append(event)
-
-        # Verify the interaction worked
-        assert len(events) >= 3
-        token_chars = [event.text for event in events if isinstance(event, Token)]
-        assert "".join(token_chars) == "sandbox response"
+        assert isinstance(dana_sandbox, CoreDanaSandbox)
 
 
 if __name__ == "__main__":

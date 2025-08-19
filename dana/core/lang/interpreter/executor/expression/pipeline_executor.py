@@ -268,7 +268,7 @@ class PipelineExecutor:
             if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
                 registry = context._interpreter.function_registry
                 if registry.has(func_name):
-                    resolved_func, func_type, metadata = registry.resolve(func_name)
+                    resolved_func, func_type, metadata = registry.resolve_with_type(func_name)
                     return resolved_func
 
             raise SandboxError(f"Function '{func_name}' not found")

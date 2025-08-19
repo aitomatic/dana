@@ -1,0 +1,21 @@
+from llama_index.vector_stores.duckdb.py import DuckDBVectorStore
+from llama_index.vector_stores.postgres.py import PGVectorStore
+
+
+def get_duckdb_store(database_name: str, persist_dir: str, table_name: str, embed_dim: int=1800) -> DuckDBStorage:
+    return DuckDBVectorStore(database_name=database_name, persist_dir=persist_dir, table_name=table_name, embed_dim=embed_dim)
+
+def get_pgvector_store(host: str, 
+                        port: int,
+                        database: str,
+                        user: str,
+                        password: str,
+                        schema_name: str,
+                        table_name: str,
+                        use_halfvec: bool=False,
+                        hybrid_search: bool=False,
+                        hnsw_config: dict[str, Any]=None, embed_dim: int=1800) -> PGVectorStorage:
+    return PGVectorStore(host=host, port=port, database=database, 
+                        user=user, password=password, schema_name=schema_name, 
+                        table_name=table_name, use_halfvec=use_halfvec, hybrid_search=hybrid_search, 
+                        hnsw_config=hnsw_config, embed_dim=embed_dim)

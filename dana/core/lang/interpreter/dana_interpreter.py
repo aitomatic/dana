@@ -27,9 +27,9 @@ from dana.common.error_utils import ErrorUtils
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.ast import Expression, Program, Statement
 from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import ExecutionStatus, SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 # Patch ErrorUtils.format_user_error to improve parser error messages
 _original_format_user_error = ErrorUtils.format_user_error
@@ -113,11 +113,10 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from dana.core.lang.interpreter.functions.function_registry import (
-            FunctionRegistry,
-        )
+        # Use the global registry instead of creating a new one
+        from dana.registry import FUNCTION_REGISTRY
 
-        self._function_registry = FunctionRegistry()
+        self._function_registry = FUNCTION_REGISTRY
 
         # Apply the feature flag if set on the Interpreter class
         if hasattr(self.__class__, "_function_registry_use_arg_processor"):

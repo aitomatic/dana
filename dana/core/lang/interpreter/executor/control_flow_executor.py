@@ -36,8 +36,8 @@ from dana.core.lang.interpreter.executor.control_flow.context_manager_handler im
 from dana.core.lang.interpreter.executor.control_flow.control_flow_utils import ControlFlowUtils
 from dana.core.lang.interpreter.executor.control_flow.exception_handler import ExceptionHandler
 from dana.core.lang.interpreter.executor.control_flow.loop_handler import LoopHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class ControlFlowExecutor(BaseExecutor):

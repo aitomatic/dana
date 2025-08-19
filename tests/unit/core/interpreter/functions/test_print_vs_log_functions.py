@@ -106,8 +106,8 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
         from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -117,8 +117,8 @@ class TestPrintVsLogFunctions:
         assert registry.has("log")
 
         # Check their registered functions
-        print_func, _, _ = registry.resolve("print")
-        log_func, _, _ = registry.resolve("log")
+        print_func, _, _ = registry.resolve_with_type("print")
+        log_func, _, _ = registry.resolve_with_type("log")
 
         assert print_func is not None
         assert log_func is not None
@@ -264,8 +264,8 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
         from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -274,7 +274,7 @@ class TestLogLevelFunction:
         assert registry.has("log_level")
 
         # Check the registered function
-        log_level_func, _, _ = registry.resolve("log_level")
+        log_level_func, _, _ = registry.resolve_with_type("log_level")
         assert log_level_func is not None
 
 
@@ -286,8 +286,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -304,7 +304,7 @@ class TestDynamicHelp:
 
         # Verify core functions are listed
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("system")
+        core_functions = registry.list_functions("system")
 
         # All core functions should appear in the help output
         for func_name in core_functions:
@@ -321,8 +321,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -360,15 +360,15 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
 
         # Get core functions from registry
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("system")
+        core_functions = registry.list_functions("system")
 
         # Get completer words from prompt session
         completer = app.prompt_manager.prompt_session.completer
@@ -387,10 +387,10 @@ class TestDynamicHelp:
         from io import StringIO
         from unittest.mock import patch
 
+        from dana.apps.repl.commands.command_handler import CommandHandler
+        from dana.apps.repl.repl import REPL
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
         from dana.common.terminal_utils import ColorScheme
-        from dana.core.repl.commands.command_handler import CommandHandler
-        from dana.core.repl.repl import REPL
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=LegacyLLMResource())
