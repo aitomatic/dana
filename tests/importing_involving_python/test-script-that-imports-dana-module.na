@@ -1,1 +1,3 @@
 from dana_module_that_imports_python_io_util import read_file
+
+print(read_file('path/to/file.txt'))
