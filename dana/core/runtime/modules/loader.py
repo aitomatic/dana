@@ -18,9 +18,9 @@ from typing import TYPE_CHECKING, cast
 
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.registry.module_registry import ModuleRegistry
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
-from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
 
 if TYPE_CHECKING:
@@ -578,7 +578,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
             context: The execution context
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+        from dana.registry.function_registry import FunctionMetadata, FunctionType
 
         # Find all DanaFunction objects in the module
         dana_functions = {}

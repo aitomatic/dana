@@ -4,7 +4,16 @@ This module provides initialization and startup functionality for Dana applicati
 including environment loading, configuration setup, and bootstrap utilities.
 """
 
-import dana.libs.corelib.py_builtins as __python_builtins  # noqa: F401
-import dana.libs.corelib.py_wrappers as __python_wrappers  # noqa: F401
+# Load core functions into the global registry
+# Load Python built-in functions
+from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+from dana.registry import FUNCTION_REGISTRY
+
+do_register_py_builtins(FUNCTION_REGISTRY)
+
+# Load Python wrapper functions
+from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+register_py_wrappers(FUNCTION_REGISTRY)
 
 __all__ = []

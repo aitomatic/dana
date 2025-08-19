@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from dana.agent import AgentType, register_agent_type
+from dana.agent import AgentType
 from dana.common.utils.misc import Misc
 from dana.integrations.a2a.client.a2a_client import BaseA2AClient
+from dana.registry import register_agent_type
 
 
 def _get_or_create_client(instance: Any) -> BaseA2AClient:
@@ -105,7 +106,7 @@ register_agent_type(_a2a_agent_type)
 
 def create_a2a_agent(*, name: str, url: str, headers: dict | None = None, timeout: int = 30 * 60, google_a2a_compatible: bool = False):
     """Convenience factory to create an A2A_Agent instance."""
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+    from dana.registry import TYPE_REGISTRY
 
     values = {
         "name": name,
@@ -114,4 +115,4 @@ def create_a2a_agent(*, name: str, url: str, headers: dict | None = None, timeou
         "timeout": timeout,
         "google_a2a_compatible": google_a2a_compatible,
     }
-    return StructTypeRegistry.create_instance("A2A_Agent", values)
+    return TYPE_REGISTRY.create_instance("A2A_Agent", values)

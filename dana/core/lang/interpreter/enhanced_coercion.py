@@ -351,10 +351,10 @@ class SemanticCoercer(Loggable):
         """
         try:
             # Import here to avoid circular imports
-            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            from dana.registry import TYPE_REGISTRY
 
             # Check if this is a registered Dana struct type
-            if not StructTypeRegistry.exists(target_type):
+            if not TYPE_REGISTRY.exists(target_type):
                 self.debug(f"'{target_type}' is not a registered struct type")
                 return None
 
@@ -451,11 +451,11 @@ class SemanticCoercer(Loggable):
         Raises:
             ValueError: If validation fails
         """
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import TYPE_REGISTRY
 
         try:
             # Use the registry method to create instance from JSON
-            struct_instance = StructTypeRegistry.create_instance_from_json(data, target_type)
+            struct_instance = TYPE_REGISTRY.create_instance_from_json(data, target_type)
             self.debug(f"Successfully created {target_type} instance: {struct_instance}")
             return struct_instance
 

@@ -548,9 +548,10 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
                     # Clear global registries to prevent struct/module conflicts between runs
                     from dana.__init__.init_modules import reset_module_system
-                    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                    from dana.registry import GLOBAL_REGISTRY
 
-                    StructTypeRegistry.clear()
+                    registry = GLOBAL_REGISTRY
+                    registry.clear_all()
                     reset_module_system()
 
             # Start periodic log sending while execution runs
@@ -770,9 +771,10 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
 
                 # Clear global registries to prevent struct/module conflicts between runs
                 from dana.__init__.init_modules import reset_module_system
-                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.registry import GLOBAL_REGISTRY
 
-                StructTypeRegistry.clear()
+                registry = GLOBAL_REGISTRY
+                registry.clear_all()
                 reset_module_system()
 
         result = await loop.run_in_executor(None, run_code_based_agent)

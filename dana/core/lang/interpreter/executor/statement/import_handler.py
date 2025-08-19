@@ -395,7 +395,7 @@ class ImportHandler(Loggable):
             # Import here to avoid circular imports
             from dana.core.lang.interpreter.executor.function_resolver import FunctionType
             from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-            from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
+            from dana.registry.function_registry import FunctionMetadata
 
             # Determine function type and create metadata
             if isinstance(func, DanaFunction):
