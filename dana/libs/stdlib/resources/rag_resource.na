@@ -1,0 +1,29 @@
+from dana.common.sys_resource.embedding.embedding_integrations.py import get_default_embedding_model
+
+resource RagResource:
+    sources: list[str] = []
+    name: str = ""
+    cache_dir: str = ""
+    force_reload: bool = false
+    chunk_size: int = 1024
+    chunk_overlap: int = 256
+    debug: bool = false
+    reranking: bool = false
+    initial_multiplier: int = 2
+    embedding_model: object = get_default_embedding_model()
+    
+
+def (rag: RagResource) initialize() -> bool:
+    rag.b = "HEHE"
+
+def (rag: RagResource) _should_rebuild() -> bool:
+    if rag.force_reload:
+        return True
+
+
+a = RagResource()
+
+# a.initialize()
+
+print(a.embedding_model.__class__.__name__)
+

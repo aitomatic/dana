@@ -1,0 +1,9 @@
+from llama_index.core.py import Document
+from dana.common.sys_resource.rag.utility.web_fetch.py import fetch_web_content
+
+
+def load_webpage(url: str) -> Document:
+    return Document(text=fetch_web_content(url), metadata={"source": url}, id_=url)
+
+
+# print(load_webpage("https://www.aitomatic.com/"))

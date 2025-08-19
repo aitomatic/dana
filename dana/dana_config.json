@@ -2,7 +2,7 @@
     "llm": {
         "preferred_models": [
             "openai:gpt-4o-mini",
-	    "anthropic:kimi-k2-0711-preview",
+            "anthropic:kimi-k2-0711-preview",
             "azure:gpt-4o-mini",
             "azure:gpt-4o",
             "openai:gpt-4.1-mini",
@@ -25,7 +25,7 @@
             "xai:grok-2-vision-1212",
             "xai:grok-beta",
             "azure:gpt-4",
-	    "moonshot:kimi"
+            "moonshot:kimi"
         ],
         "provider_configs": {
             "local": {
@@ -39,7 +39,7 @@
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/openai"
+                "base_url": "https://api.moonshot.ai/openai"
             },
             "cohere": {
                 "api_key": "env:COHERE_API_KEY"
@@ -49,7 +49,7 @@
             },
             "anthropic": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/anthropic"
+                "base_url": "https://api.moonshot.ai/anthropic"
             },
             "groq": {
                 "api_key": "env:GROQ_API_KEY"

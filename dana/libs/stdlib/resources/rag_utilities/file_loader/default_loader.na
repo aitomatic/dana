@@ -1,0 +1,33 @@
+from dana.common.sys_resource.rag.loader.local_loader.py import LocalFileMetadataFunc
+from llama_index.core.readers.py import SimpleDirectoryReader
+import os.py
+
+metadata_func = LocalFileMetadataFunc()
+
+
+SUPPORTED_TYPES = [".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".html", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
+encoding = "utf-8"
+
+def load_folder(folder_path: str) -> list[Document]:
+    print(folder_path)
+    res = SimpleDirectoryReader(
+                    input_dir=folder_path,
+                    input_files=None,
+                    exclude=[
+                        ".DS_Store"
+                    ],
+                    exclude_hidden=False,
+                    errors="strict",
+                    recursive=True,
+                    encoding=encoding,
+                    filename_as_id=True,
+                    required_exts=SUPPORTED_TYPES,
+                    file_extractor=None,
+                    num_files_limit=None,
+                    file_metadata=metadata_func,
+                    raise_on_error=False,  # Changed to False to handle errors gracefully
+                    fs=None,
+                ).aload_data(num_workers=max(1, cpu_count() // 4))
+    return res
+
+print(load_folder("/Users/lam/Desktop/repos/opendxa/docs/for-engineers"))
