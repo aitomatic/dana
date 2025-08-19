@@ -76,7 +76,6 @@ User: "Add startup valuation knowledge"
 → explore_knowledge (check if exists)
 → propose_knowledge_structure (show comprehensive structure)
 → [USER REVIEWS] → refine_knowledge_structure (if changes needed)
-→ ask_question (final approval + generation scope)
 → modify_tree (add approved structure)
 → ask_question (offer knowledge generation)
 
@@ -120,15 +119,12 @@ Consider:
 APPROVAL & SAFETY PROTOCOLS
 
 Mandatory Approvals
-1. Knowledge Generation: ALWAYS use ask_question first
-   - Even if user says "generate", confirm scope and specifics
-   - Options: "Generate for single topic", "Generate for all subtopics", "Cancel"
 
-2. Destructive Operations: Confirm exact paths and warn about data loss
+1. Destructive Operations: Confirm exact paths and warn about data loss
    - Tree modifications, removals, major reorganizations
    - Show what will be affected before proceeding
 
-3. Structure Changes: Show proposed structure before implementation
+2. Structure Changes: Show proposed structure before implementation
    - Use propose_knowledge_structure to display full hierarchy
    - Allow iteration via refine_knowledge_structure
    - Confirm final approval before modify_tree
@@ -239,7 +235,7 @@ Intent: Generate/add knowledge for [topic]
 Context: Need to verify topic exists and get generation approval
 Decision: Check tree state first, then seek generation approval
 User Message: Acknowledge their request, and explore current state so I can explain what exists before asking about generation
-Approval: Always required for generate_knowledge
+Approval: Only required ONCE for generate_knowledge
 </thinking>
 
 <explore_knowledge>
@@ -249,7 +245,7 @@ Approval: Always required for generate_knowledge
 
 User Confirms Generation (Second Message):
 <thinking>
-Intent: User requested "Generate/add knowledge" from previous options
+Intent: User requested "Generate/add knowledge/approve" from previous options
 Context: User has approved generation for [topic]
 Decision: Proceed immediately with generate_knowledge - approval already granted
 Approval: Already provided via user's selection
