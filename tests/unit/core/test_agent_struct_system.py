@@ -8,10 +8,7 @@ import unittest
 from dana.agent import AgentInstance, AgentType, create_agent_instance
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import get_agent_type, get_global_registry, register_agent_type
-
-# For backward compatibility
-global_agent_type_registry = get_global_registry().types
+from dana.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
 
 
 class TestAgentStructType(unittest.TestCase):
@@ -179,15 +176,15 @@ class TestAgentTypeRegistry(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.registry = global_agent_type_registry
+        self.registry = TYPE_REGISTRY
         # Clear registry to ensure clean state for each test
         self.registry.clear()
 
     def test_singleton_pattern(self):
         """Test that global_agent_type_registry follows singleton pattern."""
         # The global registry should be a singleton
-        registry1 = global_agent_type_registry
-        registry2 = global_agent_type_registry
+        registry1 = TYPE_REGISTRY
+        registry2 = TYPE_REGISTRY
 
         # They should be the same instance with singleton pattern
         self.assertIs(registry1, registry2)
@@ -230,15 +227,13 @@ class TestHelperFunctions(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import get_global_registry
 
-        get_global_registry().types.clear()
+        TYPE_REGISTRY.clear()
 
     def tearDown(self):
         """Clean up after tests."""
-        from dana.registry import get_global_registry
 
-        get_global_registry().types.clear()
+        TYPE_REGISTRY.clear()
 
     def test_register_agent_type(self):
         """Test register_agent_type helper function."""
@@ -289,15 +284,13 @@ class TestAgentStructIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import get_global_registry
 
-        get_global_registry().types.clear()
+        TYPE_REGISTRY.clear()
 
     def tearDown(self):
         """Clean up after tests."""
-        from dana.registry import get_global_registry
 
-        get_global_registry().types.clear()
+        TYPE_REGISTRY.clear()
 
     def test_agent_type_in_struct_registry(self):
         """Test that agent types are registered in struct registry."""

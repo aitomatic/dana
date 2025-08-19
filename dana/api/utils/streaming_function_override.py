@@ -8,26 +8,26 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Optional, Union, Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
+from typing import Union
 
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.api.utils.streaming_print_function import StreamingPrintManager, streaming_print_function
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.api.utils.streaming_print_function import streaming_print_function, StreamingPrintManager
+from dana.registry import FunctionRegistry
 
 
 @contextmanager
 def streaming_print_override(
-    registry: FunctionRegistry,
-    log_streamer: Optional[Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]]] = None
+    registry: FunctionRegistry, log_streamer: Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]] | None = None
 ):
     """
     Context manager to temporarily override the print function with streaming version.
-    
+
     Args:
         registry: The function registry to modify
         log_streamer: Optional callback for streaming log messages
-        
+
     Yields:
         The context manager
     """
@@ -38,33 +38,25 @@ def streaming_print_override(
         original_print = registry.get_function("print")
     except Exception:
         pass  # No existing print function
-    
+
     # Set the log streamer
     if log_streamer:
         StreamingPrintManager.set_streamer(log_streamer)
-    
+
     try:
         # Register our streaming print function
         registry.register(
-            name="print",
-            func=streaming_print_function,
-            func_type=FunctionType.REGISTRY,
-            overwrite=True,
-            trusted_for_context=True
+            name="print", func=streaming_print_function, func_type=FunctionType.REGISTRY, overwrite=True, trusted_for_context=True
         )
-        
+
         yield
-        
+
     finally:
         # Restore original print function
         if original_print:
             registry.register(
-                name="print", 
-                func=original_print.func,
-                func_type=original_print.func_type,
-                overwrite=True,
-                trusted_for_context=True
+                name="print", func=original_print.func, func_type=original_print.func_type, overwrite=True, trusted_for_context=True
             )
-        
+
         # Clear the log streamer
         StreamingPrintManager.clear_streamer()

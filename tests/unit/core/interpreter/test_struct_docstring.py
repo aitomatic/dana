@@ -1,6 +1,7 @@
 """Unit tests for struct docstring functionality."""
 
-from dana.core.lang.interpreter.struct_system import StructType, StructTypeRegistry
+from dana.core.lang.interpreter.struct_system import StructType
+from dana.registry import TYPE_REGISTRY
 
 
 class TestStructDocstring:
@@ -8,7 +9,7 @@ class TestStructDocstring:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_struct_type_with_docstring(self):
         """Test that StructType can store and retrieve docstrings."""
@@ -107,10 +108,10 @@ class TestStructDocstring:
             docstring="A test struct for verifying docstring functionality.",
         )
 
-        StructTypeRegistry.register(struct_type)
+        TYPE_REGISTRY.register(struct_type)
 
         # Retrieve and verify docstring is preserved
-        retrieved_type = StructTypeRegistry.get("TestStruct")
+        retrieved_type = TYPE_REGISTRY.get("TestStruct")
         assert retrieved_type is not None
         assert retrieved_type.docstring == "A test struct for verifying docstring functionality."
         assert retrieved_type.get_docstring() == "A test struct for verifying docstring functionality."

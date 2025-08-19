@@ -4,8 +4,8 @@ Test text functions in Dana core library.
 
 import pytest
 
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+from dana.registry.function_registry import FunctionRegistry
 
 
 class TestTextFunctions:

@@ -79,6 +79,11 @@ dependencies = [
     "llama-index-llms-cohere>=0.5.0",
     "llama-index-vector-stores-duckdb>=0.4.6",
     "llama-index-vector-stores-postgres>=0.5.5",
+    "pymupdf>=1.25.3",  # PDF processing and manipulation library
+    "pillow>=11.1.0",  # Python Imaging Library for image processing
+    "numpy>=2.2.3",  # Numerical computing library for array operations
+    "opencv-python>=4.11.0.86",  # Computer vision library for image processing
+    "loguru>=0.7.3",  # Better logging library than Python's built-in logging
     "textual-dev>=1.7.0",
 ]
 
@@ -126,7 +131,7 @@ docs = [
 
 # Command-line entry points
 [project.scripts]
-dana = "dana.core.cli.dana:main"
+dana = "dana.apps.cli.__main__:main"
 dana-ls = "dana.core.lang.lsp.server:main"
 
 # =============================================================================

@@ -769,6 +769,7 @@ class LegacyLLMResource(BaseSysResource):
             return {}
 
         # Use the consolidated helper method for all model-specific transformations
+        self.info(f"Getting AISuite config for model: {self._model} with provider config: {resolved_config}")
         return self._get_aisuite_config_for_model(self._model, resolved_config)
 
     def _get_provider_from_model(self, model_name: str) -> str | None:
