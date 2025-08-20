@@ -9,7 +9,6 @@ MIT License
 """
 
 import atexit
-import os
 import weakref
 from dataclasses import dataclass
 from pathlib import Path
@@ -96,7 +95,7 @@ class DanaSandbox(Loggable):
         # This is especially important in test environments where the global registry might be cleared
         try:
             # Check if basic functions are missing and register them if needed
-            if not self._interpreter.function_registry.has('len', None):
+            if not self._interpreter.function_registry.has("len", None):
                 # Register built-in functions
                 from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 

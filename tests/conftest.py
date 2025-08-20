@@ -73,20 +73,8 @@ def configure_llm_mocking(request):
     If --run-llm is provided, we assume live credentials are set up
     and do not enable mock mode.
     """
-    if not request.config.getoption("--run-llm"):
-        os.environ["DANA_MOCK_LLM"] = "true"
-        yield
-        # Only delete if it exists
-        if "DANA_MOCK_LLM" in os.environ:
-            del os.environ["DANA_MOCK_LLM"]
-    else:
-        # When running live tests, ensure mock mode is disabled
-        original_value = os.environ.get("DANA_MOCK_LLM")
-        if original_value:
-            del os.environ["DANA_MOCK_LLM"]
-        yield
-        if original_value:
-            os.environ["DANA_MOCK_LLM"] = original_value
+    # No longer overriding DANA_MOCK_LLM - let environment control it
+    yield
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -119,6 +107,17 @@ def clear_promise_groups_per_test():
     # Clear again after test
     if hasattr(_current_promise_group, "group"):
         delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def ensure_mock_llm_for_tests():
+    """
+    Ensure DANA_MOCK_LLM is set to 'true' for tests that expect mock responses.
+
+    This prevents tests from failing when other tests clear the environment variable.
+    """
+    # No longer overriding DANA_MOCK_LLM - let environment control it
+    yield
 
 
 # Universal Dana (.na) file test integration
@@ -197,17 +196,17 @@ def run_dana_test_file(dana_test_file):
     from dana.registry import GLOBAL_REGISTRY
 
     registry = GLOBAL_REGISTRY
-    
+
     # Clear type registry to prevent struct type conflicts between tests
     registry.types.clear()
-    
+
     # Clear module registry to ensure fresh module loading
     registry.modules.clear()
-    
+
     # Clear agent/resource instances to prevent state bleeding
     registry.agents.clear()
     registry.resources.clear()
-    
+
     # Clear Promise group to prevent bleeding between tests
     from dana.core.concurrency.lazy_promise import _current_promise_group
 

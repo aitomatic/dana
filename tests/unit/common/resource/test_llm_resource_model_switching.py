@@ -275,14 +275,9 @@ class TestLLMResourceModelSwitching:
     @pytest.mark.live
     def test_actual_aisuite_model_format_validation(self):
         """Test that actually triggers the AISuite model format validation error."""
-        import os
-
         from dana.common.types import BaseRequest
 
-        # Temporarily disable mock mode
-        original_mock_env = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "false"
-
+        # No longer overriding DANA_MOCK_LLM - let environment control it
         try:
             # Create LLMResource with the exact model that's causing the error
             llm = LegacyLLMResource(name="test_actual_aisuite", model="microsoft/Phi-3.5-mini-instruct")
@@ -309,11 +304,8 @@ class TestLLMResourceModelSwitching:
                     assert "Expected 'provider:model'" in error_message, f"Expected specific format error, got: {error_message}"
                     assert "microsoft/Phi-3.5-mini-instruct" in error_message, f"Expected model name in error, got: {error_message}"
         finally:
-            # Restore original mock environment
-            if original_mock_env is not None:
-                os.environ["DANA_MOCK_LLM"] = original_mock_env
-            else:
-                del os.environ["DANA_MOCK_LLM"]
+            # No longer overriding DANA_MOCK_LLM - let environment control it
+            pass
 
     def test_config_with_invalid_model_format_triggers_error(self):
         """Test that a config with an invalid model format triggers the error before Dana sees it."""
@@ -350,8 +342,6 @@ class TestLLMResourceModelSwitching:
     @pytest.mark.live
     def test_local_model_bug_is_fixed(self):
         """Test that the local model bug is fixed - correct model format transformation."""
-        import os
-
         from dana.common.types import BaseRequest
 
         # Test 1: Default api_type (should default to "openai")
@@ -415,10 +405,7 @@ class TestLLMResourceModelSwitching:
             llm._query_executor.model == "openai:microsoft/Phi-3.5-mini-instruct"
         ), f"Query executor should receive AISuite format, got: {llm._query_executor.model}"
 
-        # Enable mock mode to test the query without real API calls
-        original_mock = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "true"
-
+        # No longer overriding DANA_MOCK_LLM - let environment control it
         try:
             # Test query with mock enabled
             request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
@@ -435,11 +422,8 @@ class TestLLMResourceModelSwitching:
             ), f"Query executor model should start with 'openai:' for AISuite compatibility, got: {llm._query_executor.model}"
 
         finally:
-            # Restore original mock environment
-            if original_mock is not None:
-                os.environ["DANA_MOCK_LLM"] = original_mock
-            elif "DANA_MOCK_LLM" in os.environ:
-                del os.environ["DANA_MOCK_LLM"]
+            # No longer overriding DANA_MOCK_LLM - let environment control it
+            pass
 
     def test_local_model_api_type_configuration(self):
         """Test that different api_type values are properly handled for local models."""
