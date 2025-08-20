@@ -43,8 +43,38 @@ class TestLLMIntegration(unittest.TestCase):
         """Clean up test cases."""
         self.init_patcher.stop()
         import shutil
+        import os
 
-        shutil.rmtree(self.temp_dir)
+        # Clean up any temporary files created by ConversationMemory
+        if hasattr(self, "memory_dir") and self.memory_dir.exists():
+            for file_path in self.memory_dir.iterdir():
+                if file_path.is_file():
+                    try:
+                        file_path.unlink()
+                    except OSError:
+                        pass  # File might already be deleted
+
+        # Clean up temp directory
+        try:
+            shutil.rmtree(self.temp_dir)
+        except OSError as e:
+            # If directory is not empty, try to remove files individually
+            if e.errno == 39:  # Directory not empty
+                for root, dirs, files in os.walk(self.temp_dir, topdown=False):
+                    for file in files:
+                        try:
+                            os.remove(os.path.join(root, file))
+                        except OSError:
+                            pass
+                    for dir in dirs:
+                        try:
+                            os.rmdir(os.path.join(root, dir))
+                        except OSError:
+                            pass
+                try:
+                    os.rmdir(self.temp_dir)
+                except OSError:
+                    pass  # Final cleanup attempt
 
     def create_test_agent(self, name="TestAgent", fields=None):
         """Create a test agent for testing."""
