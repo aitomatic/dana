@@ -45,7 +45,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
     def function_def(self, items):
         """Transform a unified function definition rule into a FunctionDefinition node.
 
-        Grammar: function_def: [decorators] ["sync"] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+        Grammar: function_def: [decorators] function_header [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
         """
         # Filter out None values and Comments
         relevant_items = self.main_transformer._filter_relevant_items(items)
@@ -62,17 +62,6 @@ class FunctionDefinitionTransformer(BaseTransformer):
             first_item = relevant_items[current_index]
             if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
                 decorators = first_item
-                current_index += 1
-
-        # Check for "sync" keyword
-        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], Token):
-            if relevant_items[current_index].type == "SYNC":
-                is_sync = True
-                current_index += 1
-
-        # Skip "def" keyword if present
-        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], Token):
-            if relevant_items[current_index].type == "DEF" or relevant_items[current_index].value == "def":
                 current_index += 1
 
         # Extract receiver if present
@@ -122,67 +111,23 @@ class FunctionDefinitionTransformer(BaseTransformer):
         )
 
     def sync_function_def(self, items):
-        """Transform a sync function definition rule into a FunctionDefinition node."""
-        relevant_items = self.main_transformer._filter_relevant_items(items)
+        """Transform a sync function definition rule into a FunctionDefinition node.
 
-        if len(relevant_items) < 2:
-            raise ValueError(f"Sync function definition must have at least a name and body, got {len(relevant_items)} items")
+        This is the same as function_def but with is_sync=True.
+        """
+        # Call the regular function_def method but set is_sync=True
+        result = self.function_def(items)
+        if isinstance(result, FunctionDefinition):
+            result.is_sync = True
+        return result
 
-        current_index = 0
-        decorators = []
+    def function_header(self, items):
+        """Transform a function_header rule into a list indicating sync status.
 
-        # Check for decorators
-        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
-            first_item = relevant_items[current_index]
-            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
-                decorators = first_item
-                current_index += 1
-
-        # Extract receiver if present
-        receiver = None
-        if (
-            current_index < len(relevant_items)
-            and hasattr(relevant_items[current_index], "data")
-            and relevant_items[current_index].data == "receiver_spec"
-        ):
-            receiver_tree = relevant_items[current_index]
-            if receiver_tree.children:
-                receiver_param = receiver_tree.children[0]
-                # Check if receiver_param is already a transformed Parameter object
-                if isinstance(receiver_param, Parameter):
-                    receiver = receiver_param
-                elif hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
-                    receiver = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
-            current_index += 1
-
-        # Extract function name
-        func_name_token = relevant_items[current_index]
-        if not (isinstance(func_name_token, Token) and func_name_token.type == "NAME"):
-            raise ValueError(f"Expected function name token, got {func_name_token}")
-        func_name = func_name_token.value
-        current_index += 1
-
-        # Resolve parameters using simplified logic
-        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
-
-        # Extract return type
-        return_type, current_index = self._extract_return_type(relevant_items, current_index)
-
-        # Extract function body
-        block_items = self._extract_function_body(relevant_items, current_index)
-
-        location = self.main_transformer.create_location(func_name_token)
-
-        return FunctionDefinition(
-            name=Identifier(name=func_name, location=location),
-            parameters=parameters,
-            body=block_items,
-            return_type=return_type,
-            decorators=decorators,
-            is_sync=True,
-            receiver=receiver,
-            location=location,
-        )
+        Grammar: function_header: "def" | "sync" "def"
+        """
+        # Return a list with the tokens to indicate sync status
+        return items
 
     def unified_function_def(self, items):
         """Transform a unified function definition rule into a FunctionDefinition node."""

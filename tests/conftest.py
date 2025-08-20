@@ -116,8 +116,17 @@ def ensure_mock_llm_for_tests():
 
     This prevents tests from failing when other tests clear the environment variable.
     """
-    # No longer overriding DANA_MOCK_LLM - let environment control it
+    # Set DANA_MOCK_LLM to true for all tests unless explicitly overridden
+    original_mock_llm = os.environ.get("DANA_MOCK_LLM")
+    os.environ["DANA_MOCK_LLM"] = "true"
+
     yield
+
+    # Restore original value
+    if original_mock_llm is None:
+        os.environ.pop("DANA_MOCK_LLM", None)
+    else:
+        os.environ["DANA_MOCK_LLM"] = original_mock_llm
 
 
 # Universal Dana (.na) file test integration

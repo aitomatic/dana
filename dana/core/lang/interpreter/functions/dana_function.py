@@ -96,6 +96,10 @@ class DanaFunction(SandboxFunction, Loggable):
         # This allows function code to access the execution context
         prepared_context.set_in_scope("context", prepared_context, scope="local")
 
+        # Copy the interpreter from the original context to the prepared context
+        if isinstance(context, SandboxContext) and hasattr(context, "_interpreter"):
+            prepared_context._interpreter = context._interpreter
+
         return prepared_context
 
     def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:

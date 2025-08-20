@@ -240,6 +240,10 @@ class UnifiedFunctionDispatcher:
         # Check if this is a sync function (should not be wrapped in Promise)
         is_sync_function = isinstance(resolved_func.func, DanaFunction) and getattr(resolved_func.func, "is_sync", False)
 
+        self.logger.debug(
+            f"Function '{func_name}' - is_sync_function: {is_sync_function}, func type: {type(resolved_func.func)}, is_sync: {getattr(resolved_func.func, 'is_sync', 'N/A')}"
+        )
+
         if is_sync_function:
             # Execute sync function synchronously (no Promise wrapping)
             self.logger.debug(f"Executing sync function '{func_name}' synchronously (no Promise wrapping)")
@@ -247,7 +251,10 @@ class UnifiedFunctionDispatcher:
             return self._assign_and_coerce_result(raw_result, func_name)
 
         # Check if we can create a Promise for this function execution
-        if promise_limiter.can_create_promise():
+        can_create = promise_limiter.can_create_promise()
+        self.logger.debug(f"Function '{func_name}' - can_create_promise: {can_create}")
+
+        if can_create:
             # Create a computation function that will execute the Dana function
             def dana_function_computation():
                 try:

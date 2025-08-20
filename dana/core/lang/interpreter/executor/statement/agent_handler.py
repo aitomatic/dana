@@ -273,7 +273,13 @@ class AgentHandler(Loggable):
 
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body,
+            parameters=param_names,
+            context=context,
+            return_type=return_type,
+            defaults=param_defaults,
+            name=node.name.name,
+            is_sync=node.is_sync,
         )
 
         # Check if this function should be associated with an agent type

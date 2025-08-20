@@ -306,6 +306,10 @@ class StatementTransformer(BaseTransformer):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
 
+    def sync_function_def(self, items):
+        """Transform a sync function definition rule into a FunctionDefinition node."""
+        return self.function_definition_transformer.sync_function_def(items)
+
     def method_def(self, items):
         """Transform a method definition rule into a FunctionDefinition node (for backward compatibility)."""
         return self.function_definition_transformer.method_def(items)

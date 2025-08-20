@@ -124,9 +124,15 @@ class PromptStyleTextArea(TextArea):
     def clear(self):
         """Clear the contents of all input lines."""
         if self._input_lines:
-            for line in self._input_lines:
-                line.value = ""
-            self._input_lines[0].focus()
+            # Remove all input lines except the first one
+            while len(self._input_lines) > 1:
+                line = self._input_lines.pop()
+                line.remove()  # Remove from DOM
+
+            # Clear the first line and focus it
+            if self._input_lines:
+                self._input_lines[0].value = ""
+                self._input_lines[0].focus()
 
         # Also clear the display text area
         result = super().clear()

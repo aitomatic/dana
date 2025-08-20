@@ -35,6 +35,7 @@ compound_stmt: if_stmt
              | while_stmt
              | for_stmt
              | function_def
+             | sync_function_def
              | try_stmt
              | with_stmt
              | definition
@@ -56,7 +57,8 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
 for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
-function_def: [decorators] ["sync"] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+function_def: [decorators] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+sync_function_def: [decorators] "sync" "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 receiver_spec: "(" typed_parameter ")"
 
 try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
@@ -71,7 +73,7 @@ definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT) NAME ["(" NAME ")"] ":" [COMME
 singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
 
 docstring: MULTILINE_STRING _NL
-fields_and_functions: (field | function_def)+
+fields_and_functions: (field | function_def | sync_function_def)+
 
 field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
 

@@ -98,6 +98,17 @@ class TestMethodDispatchPriority(unittest.TestCase):
     def test_builtin_agent_methods_work(self):
         """Test that built-in agent methods work through dispatch."""
         context = SandboxContext()
+
+        # Set up LLM resource in context for agent methods with mock mode enabled
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        context.set_system_llm_resource(llm_resource)
+
         agent_instance = create_agent_instance("TestAgent", {"name": "test"}, context)
 
         # Test that built-in methods work with mock responses
@@ -129,6 +140,17 @@ class TestMethodDispatchPriority(unittest.TestCase):
         # This would require custom method registration
         # For now, we test that built-in methods work as expected
         context = SandboxContext()
+
+        # Set up LLM resource in context for agent methods with mock mode enabled
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        context.set_system_llm_resource(llm_resource)
+
         agent_instance = create_agent_instance("TestAgent", {"name": "test"}, context)
 
         # Built-in methods should work with mock responses
