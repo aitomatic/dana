@@ -12,6 +12,41 @@ pytest_plugins = ["pytest_asyncio"]
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
+def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
+    """Create a mock LLM resource for testing.
+
+    This utility function creates a configured LLMResourceInstance with mock mode enabled,
+    reducing code duplication across test files.
+
+    Args:
+        name: Name of the LLM resource (default: "test_llm")
+        model: Model identifier (default: "openai:gpt-4o-mini")
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+    llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name=name, model=model))
+    llm_resource.initialize()
+    llm_resource.with_mock_llm_call(True)  # Enable mock mode
+    return llm_resource
+
+
+@pytest.fixture
+def mock_llm_resource():
+    """Pytest fixture that provides a mock LLM resource.
+
+    This fixture can be used in test functions by adding it as a parameter.
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    return create_mock_llm_resource()
+
+
 def pytest_addoption(parser):
     """Add custom command line options for pytest."""
     parser.addoption("--run-llm", action="store_true", default=False, help="Run tests that require LLM calls")

@@ -27,10 +27,19 @@ from dana.core.concurrency.promise_limiter import (
     get_global_promise_limiter,
     set_global_promise_limiter,
 )
+from dana.core.concurrency.promise_utils import resolve_if_promise, resolve_promise
 
 
 class TestPromiseLimiter:
     """Test PromiseLimiter functionality and safety mechanisms."""
+
+    def _resolve_promise_result(self, result):
+        """Utility function to resolve Promise results consistently in tests."""
+        return resolve_if_promise(result)
+
+    def _resolve_promise_directly(self, promise):
+        """Utility function to resolve a Promise directly (when we know it's a Promise)."""
+        return resolve_promise(promise)
 
     @pytest.fixture
     def limiter(self):
@@ -93,11 +102,7 @@ class TestPromiseLimiter:
 
         # Access one promise to complete it
         result = promises[0]
-        # The result might be a Promise object, so we need to access it properly
-        if hasattr(result, "_wait_for_delivery"):
-            result_value = result._wait_for_delivery()
-        else:
-            result_value = result
+        result_value = self._resolve_promise_directly(result)
         assert "result_0" in str(result_value)
 
         # Wait a bit for Promise completion
@@ -319,7 +324,7 @@ class TestPromiseLimiter:
         promise = limiter.create_promise(lambda: "callback_result", executor, on_delivery=callback)
 
         # Access the promise to trigger completion
-        result = promise
+        result = self._resolve_promise_directly(promise)
         assert "callback_result" in str(result)
 
         # Wait for callback to be called
@@ -334,7 +339,7 @@ class TestPromiseLimiter:
 
         # Should not raise exception
         promise = limiter.create_promise(lambda: "result", executor, callback)
-        result = promise
+        result = self._resolve_promise_directly(promise)
         assert "result" in str(result)
 
     def test_promise_creation_failure_handling(self, limiter, executor):
@@ -433,7 +438,7 @@ class TestPromiseLimiter:
 
             # Access some promises
             for i in range(10):
-                result = promises[i]
+                result = self._resolve_promise_result(promises[i])
                 assert f"memory_test_{i}" in str(result)
 
             # Wait for completion
@@ -467,7 +472,7 @@ class TestPromiseLimiter:
         # Access promises
         start_time = time.time()
         for promise in promises[:10]:
-            result = promise
+            result = self._resolve_promise_result(promise)
             assert "perf_test_" in str(result)
 
         access_time = time.time() - start_time
@@ -479,20 +484,12 @@ class TestPromiseLimiter:
         """Test various edge cases."""
         # Test with None computation - should handle gracefully
         result = limiter.create_promise(lambda: None, executor)
-        # The result might be a Promise, so we need to access it properly
-        if hasattr(result, "_wait_for_delivery"):
-            result_value = result._wait_for_delivery()
-        else:
-            result_value = result
+        result_value = self._resolve_promise_result(result)
         assert result_value is None
 
         # Test with very fast computation
         result = limiter.create_promise(lambda: "fast", executor)
-        # The result might be a Promise, so we need to access it properly
-        if hasattr(result, "_wait_for_delivery"):
-            result_value = result._wait_for_delivery()
-        else:
-            result_value = result
+        result_value = self._resolve_promise_result(result)
         assert result_value == "fast"
 
         # Test with computation that returns a Promise

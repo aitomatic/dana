@@ -69,7 +69,7 @@ except_spec: exception_type ["as" NAME] | "as" NAME
 exception_type: expr
 
 with_stmt: "with" (with_context_manager | NAME "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
-definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT) NAME ["(" NAME ")"] ":" [COMMENT] struct_block -> definition
+definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT) NAME ":" [COMMENT] struct_block -> definition
 singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
 
 docstring: MULTILINE_STRING _NL

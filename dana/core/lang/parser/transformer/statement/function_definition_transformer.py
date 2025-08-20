@@ -488,19 +488,11 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
     def definition(self, items):
         """Transform a unified definition rule into appropriate AST node."""
-        from lark import Token
 
         # Extract keyword, name, optional parent, and block
         keyword_token = items[0]  # STRUCT, RESOURCE, or AGENT_BLUEPRINT
         name_token = items[1]
-        parent_name_token = None
         struct_block = None
-
-        # Look for parent name token (NAME token that's not the definition name)
-        for i in range(2, len(items)):
-            if isinstance(items[i], Token) and items[i].type == "NAME":
-                parent_name_token = items[i]
-                break
 
         # Find the struct_block - it should be a dict (transformed) or Tree
         for item in items[2:]:  # Skip keyword and name
@@ -513,8 +505,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
         if keyword_token.value == "struct":
             return StructDefinition(name=name_token.value, fields=fields, docstring=docstring)
         elif keyword_token.value == "resource":
-            parent_name = parent_name_token.value if parent_name_token else None
-            return ResourceDefinition(name=name_token.value, parent_name=parent_name, fields=fields, methods=methods, docstring=docstring)
+            return ResourceDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
         elif keyword_token.value == "agent_blueprint":
             return AgentDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
         else:

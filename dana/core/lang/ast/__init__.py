@@ -555,10 +555,9 @@ class StructDefinition:
 
 @dataclass
 class ResourceDefinition:
-    """Resource definition statement (e.g., resource MyRAG(BaseResource): sources: list[str])."""
+    """Resource definition statement (e.g., resource MyRAG: sources: list[str])."""
 
     name: str
-    parent_name: str | None = None  # Optional parent resource
     fields: list["StructField"] = field(default_factory=list)
     methods: list["FunctionDefinition"] = field(default_factory=list)
     docstring: str | None = None

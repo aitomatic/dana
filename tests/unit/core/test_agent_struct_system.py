@@ -131,13 +131,9 @@ class TestAgentInstance(unittest.TestCase):
         agent_instance = AgentInstance(self.agent_type, values)
 
         # Set up LLM resource in context for agent methods
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from tests.conftest import create_mock_llm_resource
 
-        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
-        llm_resource.initialize()
-        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        llm_resource = create_mock_llm_resource()
         self.sandbox_context.set_system_llm_resource(llm_resource)
 
         # Test plan method
