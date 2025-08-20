@@ -578,14 +578,32 @@ class FunctionRegistry:
                 if first_param_is_ctx:
                     # Security check: only trusted functions can receive context
                     if not func._is_trusted_for_context():
-                        # Function wants context but is not trusted - call without context
-                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
+                        # Function wants context but is not trusted - call without context with async detection
+                        import asyncio
+                        from dana.common.utils.misc import Misc
+                        
+                        if asyncio.iscoroutinefunction(wrapped_func):
+                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
+                        else:
+                            return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
                     else:
-                        # First parameter is context and function is trusted
-                        return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
+                        # First parameter is context and function is trusted - add execute-time async detection
+                        import asyncio
+                        from dana.common.utils.misc import Misc
+                        
+                        if asyncio.iscoroutinefunction(wrapped_func):
+                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, context, *positional_args, **func_kwargs))
+                        else:
+                            return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
                 else:
-                    # No context parameter
-                    return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
+                    # No context parameter - add execute-time async detection
+                    import asyncio
+                    from dana.common.utils.misc import Misc
+                    
+                    if asyncio.iscoroutinefunction(wrapped_func):
+                        return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
+                    else:
+                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
             except Exception as e:
                 # Standardize error handling for direct function calls
                 import traceback
