@@ -114,25 +114,27 @@ class LambdaMethodDispatcher:
 
     @staticmethod
     def can_handle_method_call(obj: Any, method_name: str) -> bool:
-        """Check if a method call can be handled by a lambda with receiver.
+        """Check if this dispatcher can handle a method call.
 
         Args:
             obj: The object the method is being called on
             method_name: The method name
 
         Returns:
-            True if a lambda method exists for this object type and method name
+            True if this dispatcher can handle the method call
         """
         if not hasattr(obj, "__struct_type__"):
             return False
 
         struct_type = obj.__struct_type__
+        
         # Check direct method first
         if STRUCT_FUNCTION_REGISTRY.has_method(struct_type.name, method_name):
             return True
 
         # Check delegation
-        return LambdaMethodDispatcher._can_handle_delegated_method_call(obj, method_name)
+        delegation_result = LambdaMethodDispatcher._can_handle_delegated_method_call(obj, method_name)
+        return delegation_result
 
     @staticmethod
     def _can_handle_delegated_method_call(obj: Any, method_name: str) -> bool:
