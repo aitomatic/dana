@@ -11,15 +11,11 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
+from typing import Any
 
 from dana.core.lang.ast import (
-    AgentPoolStatement,
-    AgentStatement,
-    Assignment,
     CompoundAssignment,
     Identifier,
-    UseStatement,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 from dana.core.lang.parser.transformer.statement.statement_helpers import AssignmentHelper
@@ -45,29 +41,54 @@ class AssignmentTransformer(BaseTransformer):
 
     def assignment(self, items):
         """
-        Transform an assignment rule into an Assignment node.
-        Grammar: assignment: typed_assignment | simple_assignment
-
-        This rule is just a choice, so return the result of whichever was chosen.
+        Transform a unified assignment rule into an Assignment node.
+        Grammar: assignment: target [":" basic_type] "=" expr [COMMENT] | compound_assignment
         """
-        return items[0]
-
-    def typed_assignment(self, items):
-        """Transform a typed assignment rule into an Assignment node with type hint."""
-        # Grammar: typed_assignment: variable ":" basic_type "=" expr
-        target_tree = items[0]
-        type_hint = items[1]  # Should be a TypeHint from basic_type
-        value_tree = items[2]
-
-        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
-
-    def simple_assignment(self, items):
-        """Transform a simple assignment rule into an Assignment node without type hint."""
-        # Grammar: simple_assignment: variable "=" expr
-        target_tree = items[0]
-        value_tree = items[1]
-
-        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
+        # The unified assignment rule can be either a regular assignment or a compound assignment
+        # We need to determine which one based on the structure of the items
+        
+        # If we have only 1 item and it's already a CompoundAssignment, return it directly
+        if len(items) == 1 and hasattr(items[0], "__class__") and items[0].__class__.__name__ == "CompoundAssignment":
+            return items[0]
+        
+        # Check for compound assignment (3 items: target, operator, value)
+        if len(items) == 3 and hasattr(items[1], "value") and items[1].value in ["+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", "<<=", ">>="]:
+            return self.compound_assignment(items)
+        
+        # Check for typed assignment: target, type_hint, value, [comment]
+        # Look for TypeHint in the items - could be at index 1 (4 items) or index 2 (with different grammar structure)
+        type_hint_index = None
+        for i, item in enumerate(items):
+            if item is not None and hasattr(item, "__class__") and item.__class__.__name__ == "TypeHint":
+                type_hint_index = i
+                break
+        
+        if type_hint_index is not None:
+            # Found a type hint, this is a typed assignment
+            target_tree = items[0]
+            type_hint = items[type_hint_index]
+            # Find the value - should be after the type hint
+            value_tree = None
+            for i in range(type_hint_index + 1, len(items)):
+                if items[i] is not None and not (hasattr(items[i], 'type') and items[i].type == 'COMMENT'):
+                    value_tree = items[i]
+                    break
+            return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
+        
+        # Regular assignment without type hint: target "=" expr
+        if len(items) >= 2:
+            target_tree = items[0]
+            # Find the value - it could be at index 1 (no type hint) or index 2 (with type hint that's None)
+            value_tree = None
+            for i in range(1, len(items)):
+                if items[i] is not None and not (hasattr(items[i], 'type') and items[i].type == 'COMMENT'):
+                    value_tree = items[i]
+                    break
+            
+            return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), None)
+        
+        # Fallback for unexpected structure
+        raise ValueError(f"Unexpected assignment structure with {len(items)} items: {items}")
 
     def compound_assignment(self, items):
         """Transform a compound assignment rule into a CompoundAssignment node."""
@@ -108,7 +129,7 @@ class AssignmentTransformer(BaseTransformer):
             target = VariableTransformer().variable([target_tree])
 
         # Validate target type
-        from dana.core.lang.ast import AttributeAccess, Identifier, SubscriptExpression
+        from dana.core.lang.ast import AttributeAccess, SubscriptExpression
 
         if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
             raise TypeError(f"Compound assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
@@ -126,34 +147,10 @@ class AssignmentTransformer(BaseTransformer):
         # Grammar: compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
         return items[0].value  # Return the string value of the token
 
-    def function_call_assignment(self, items):
-        """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
-        # Grammar: function_call_assignment: target "=" return_object_stmt
-        target_tree = items[0]
-        return_object_tree = items[1]
-
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform the return_object_stmt (which should be UseStatement, AgentStatement, or AgentPoolStatement)
-        # The return_object_tree should already be transformed by return_object_stmt method
-        if isinstance(return_object_tree, UseStatement | AgentStatement | AgentPoolStatement):
-            if hasattr(return_object_tree, "target") and return_object_tree.target is None:
-                # If the target is not set, set it to the target of the assignment
-                return_object_tree.target = target
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-        else:
-            # Fallback transformation if needed
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-
-        return Assignment(target=target, value=value_expr)
-
     def declarative_function_assignment(self, items):
         """Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node."""
         # Grammar: declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
-        from dana.core.lang.ast import DeclarativeFunctionDefinition, Identifier
+        from dana.core.lang.ast import DeclarativeFunctionDefinition
 
         # Extract components from the parse tree
         name_token = items[0]  # NAME token
@@ -256,7 +253,7 @@ class AssignmentTransformer(BaseTransformer):
 
     def return_object_stmt(self, items):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
-        # Grammar: return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
+        # Grammar: return_object_stmt: use_stmt | agent_stmt
         # items[0] should be the result of the chosen statement transformation
 
         # The statement should already be transformed into the appropriate AST node
@@ -290,8 +287,11 @@ class AssignmentTransformer(BaseTransformer):
                 continue
             elif hasattr(item, "type") and item.type == "COMMENT":
                 continue
-            elif hasattr(item, "name"):  # TypeHint object
+            elif hasattr(item, "name"):  # Already transformed TypeHint object
                 type_hint = item
+            elif hasattr(item, "data") and item.data == "basic_type":
+                # Raw basic_type tree that needs transformation
+                type_hint = self.basic_type(item.children)
             else:
                 # Assume it's a default value expression
                 default_value = self.expression_transformer.expression([item])

@@ -15,6 +15,8 @@ class TestCasePipelines:
         """Set up test environment."""
         self.interpreter = DanaInterpreter()
         self.context = SandboxContext()
+        # Set the interpreter in the context so functions have access to it
+        self.context.interpreter = self.interpreter
         # Register corelib functions including case
         register_py_wrappers(self.interpreter.function_registry)
 

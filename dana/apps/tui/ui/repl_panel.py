@@ -7,6 +7,7 @@ MIT License
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
+from textual.message import Message
 from textual.widgets import Static
 
 from dana.apps.tui.core.runtime import DanaSandbox
@@ -17,6 +18,14 @@ from dana.core.concurrency.base_promise import BasePromise
 from .copyable_richlog import CopyableRichLog
 from .prompt_textarea import PromptStyleTextArea
 from .syntax_highlighter import dana_highlighter
+
+
+class ExecuteCommand(Message):
+    """Message to execute a command after display update."""
+
+    def __init__(self, command: str) -> None:
+        super().__init__()
+        self.command = command
 
 
 class TerminalREPL(Vertical):
@@ -107,13 +116,74 @@ class TerminalREPL(Vertical):
 
             # Force refresh the display to show command immediately
             self._output.refresh()
+            self.app.refresh()
 
-        # Execute the command
-        self._execute_dana_code(command)
+        # Execute our own async task
+        import asyncio
 
-        # Add command to history after execution
+        asyncio.create_task(self._execute_command_async(command))
+
+        # Add command to history after submission (before execution)
         if self._input:
             self._input.add_to_history(command)
+
+    async def _execute_command_async(self, command: str) -> None:
+        """Execute Dana code asynchronously with input blocking."""
+        # Disable input while executing to maintain REPL blocking behavior
+        if self._input:
+            self._input.disabled = True
+
+        try:
+            # Execute in a thread pool to avoid blocking the event loop
+            import asyncio
+
+            from dana.core.runtime import DanaThreadPool
+
+            loop = asyncio.get_running_loop()
+            executor = DanaThreadPool.get_instance().get_executor()
+
+            # Run the synchronous execution in a thread pool
+            result = await loop.run_in_executor(executor, self.sandbox.execute_string, command)
+
+            # Display results
+            if self._output:
+                if result.success:
+                    # Handle output
+                    if result.output:
+                        self._output.write(result.output.rstrip())
+
+                    # Handle result
+                    if result.result is not None:
+                        # Check if result is a Promise
+                        if is_promise(result.result):
+                            self._handle_promise_result(result.result)
+                        else:
+                            # Direct result with syntax highlighting
+                            result_str = str(result.result)
+                            highlighted_result = self._highlight_result(result_str)
+                            self._output.write(highlighted_result)
+                else:
+                    # Handle error
+                    if result.error:
+                        safe_error = dana_highlighter.escape_markup(str(result.error))
+                        self._output.write(f"[red]Error: {safe_error}[/red]")
+                    else:
+                        self._output.write("[red]Unknown execution error[/red]")
+
+        except Exception as e:
+            if self._output:
+                safe_error = dana_highlighter.escape_markup(str(e))
+                self._output.write(f"[red]Execution error: {safe_error}[/red]")
+
+        finally:
+            # Re-enable input now that execution is complete
+            if self._input:
+                self._input.disabled = False
+                self._input.focus()  # Return focus to input
+
+    def on_execute_command(self, event: ExecuteCommand) -> None:
+        """Handle command execution message."""
+        self._execute_dana_code(event.command)
 
     def set_focused_agent(self, agent_name: str | None) -> None:
         """No-op for compatibility - agents not used in simple REPL."""
@@ -124,7 +194,7 @@ class TerminalREPL(Vertical):
         assert self._output is not None
 
         try:
-            # Execute the Dana code
+            # Execute the Dana code directly first (like regular REPL)
             result = self.sandbox.execute_string(code)
 
             if result.success:

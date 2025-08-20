@@ -40,7 +40,6 @@ from dana.core.lang.ast import (
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
-    UseStatement,
     WhileLoop,
     WithStatement,
 )
@@ -577,168 +576,173 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
         assert isinstance(stmt.body[0], PassStatement)
 
 
-@pytest.mark.parametrize(
-    "code, expected_args, expected_kwargs, should_raise",
-    [
-        # Empty use statement
-        ("use()", [], {}, False),
-        # Single positional argument
-        ('use("mcp")', ["mcp"], {}, False),
-        # Multiple positional arguments
-        ('use("mcp", "server")', ["mcp", "server"], {}, False),
-        # Single keyword argument
-        ('use(url="http://localhost:8880")', [], {"url": "http://localhost:8880"}, False),
-        # Multiple keyword arguments
-        ('use(url="http://localhost", port=8080)', [], {"url": "http://localhost", "port": 8080}, False),
-        # Mixed positional and keyword arguments
-        ('use("mcp", url="http://localhost:8880")', ["mcp"], {"url": "http://localhost:8880"}, False),
-        (
-            'use("mcp", "websearch", url="http://localhost", port=8080)',
-            ["mcp", "websearch"],
-            {"url": "http://localhost", "port": 8080},
-            False,
-        ),
-        # Boolean and numeric arguments
-        ("use(True, count=42)", [True], {"count": 42}, False),
-        ("use(enabled=False, timeout=30.5)", [], {"enabled": False, "timeout": 30.5}, False),
-        # Variable arguments
-        ('x = "mcp"\nuse(x)', None, None, False),  # Special case - will check separately
-        ('url = "http://localhost"\nuse(service=url)', None, None, False),  # Special case - will check separately
-        # Error cases - positional after keyword
-        ('use(url="http://localhost", "mcp")', None, None, True),
-        ('use(a=1, b=2, "positional")', None, None, True),
-    ],
-)
-def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
-    parser = ParserCache.get_parser("dana")
-
-    if should_raise:
-        with pytest.raises(Exception):  # noqa: B017
-            parser.parse(code, do_transform=True)
-    else:
-        program = parser.parse(code, do_transform=True)
-
-        # Handle multi-statement cases for variable tests
-        if "\n" in code:
-            # Find the use statement (should be the last statement)
-            use_stmt = None
-            for stmt in program.statements:
-                if isinstance(stmt, UseStatement):
-                    use_stmt = stmt
-                    break
-            assert use_stmt is not None, "UseStatement not found in program"
-            stmt = use_stmt
-        else:
-            stmt = program.statements[0]
-
-        assert isinstance(stmt, UseStatement)
-
-        # For variable test cases, check structure but not exact values
-        if expected_args is None and expected_kwargs is None:
-            # Variable test cases - just check that we have the right structure
-            if "service=" in code:
-                # use(service=url) case
-                assert len(stmt.args) == 0
-                assert len(stmt.kwargs) == 1
-                assert "service" in stmt.kwargs
-                assert isinstance(stmt.kwargs["service"], Identifier)
-            elif "use(x)" in code:
-                # use(x) case
-                assert len(stmt.args) == 1
-                assert len(stmt.kwargs) == 0
-                assert isinstance(stmt.args[0], Identifier)
-        else:
-            # Regular test cases - check exact values
-            if isinstance(expected_args, list):
-                assert len(stmt.args) == len(expected_args)
-                for actual, expected in zip(stmt.args, expected_args, strict=False):
-                    assert isinstance(actual, LiteralExpression)
-                    assert actual.value == expected
-
-            if isinstance(expected_kwargs, dict):
-                assert len(stmt.kwargs) == len(expected_kwargs)
-                for key, expected_value in expected_kwargs.items():
-                    assert key in stmt.kwargs
-                    assert isinstance(stmt.kwargs[key], LiteralExpression)
-                    assert stmt.kwargs[key].value == expected_value
-
-
-def test_use_stmt_complex_expressions():
-    """Test use statements with complex expressions as arguments."""
-    parser = ParserCache.get_parser("dana")
-
-    # Test with binary expression
-    code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
-    program = parser.parse(code, do_transform=True)
-
-    # Find the use statement
-    use_stmt = None
-    for stmt in program.statements:
-        if isinstance(stmt, UseStatement):
-            use_stmt = stmt
-            break
-
-    assert use_stmt is not None
-    assert isinstance(use_stmt, UseStatement)
-    assert len(use_stmt.args) == 0
-    assert len(use_stmt.kwargs) == 1
-    assert "url" in use_stmt.kwargs
-    # The value should be a function call (str(port)) - we don't need to verify the exact structure
-    # just that it's a complex expression, not a simple literal
-    assert not isinstance(use_stmt.kwargs["url"], LiteralExpression)
+# Note: UseStatement functionality has been removed as part of grammar unification
+# @pytest.mark.parametrize(
+#     "code, expected_args, expected_kwargs, should_raise",
+#     [
+#         # Empty use statement
+#         ("use()", [], {}, False),
+#         # Single positional argument
+#         ('use("mcp")', ["mcp"], {}, False),
+#         # Multiple positional arguments
+#         ('use("mcp", "server")', ["mcp", "server"], {}, False),
+#         # Single keyword argument
+#         ('use(url="http://localhost:8880")', [], {"url": "http://localhost:8880"}, False),
+#         # Multiple keyword arguments
+#         ('use(url="http://localhost", port=8080)', [], {"url": "http://localhost", "port": 8080}, False),
+#         # Mixed positional and keyword arguments
+#         ('use("mcp", url="http://localhost:8880")', ["mcp"], {"url": "http://localhost:8880"}, False),
+#         (
+#             'use("mcp", "websearch", url="http://localhost", port=8080)',
+#             ["mcp", "websearch"],
+#             {"url": "http://localhost", "port": 8080},
+#             False,
+#         ),
+#         # Boolean and numeric arguments
+#         ("use(True, count=42)", [True], {"count": 42}, False),
+#         ("use(enabled=False, timeout=30.5)", [], {"enabled": False, "timeout": 30.5}, False),
+#         # Variable arguments
+#         ('x = "mcp"\nuse(x)', None, None, False),  # Special case - will check separately
+#         ('url = "http://localhost"\nuse(service=url)', None, None, False),  # Special case - will check separately
+#         # Error cases - positional after keyword
+#         ('use(url="http://localhost", "mcp")', None, None, True),
+#         ('use(a=1, b=2, "positional")', None, None, True),
+#     ],
+# )
+# Note: UseStatement functionality has been removed as part of grammar unification
+# def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
+#     parser = ParserCache.get_parser("dana")
+# 
+#     if should_raise:
+#         with pytest.raises(Exception):  # noqa: B017
+#             parser.parse(code, do_transform=True)
+#     else:
+#         program = parser.parse(code, do_transform=True)
+# 
+#         # Handle multi-statement cases for variable tests
+#         if "\n" in code:
+#             # Find the use statement (should be the last statement)
+#             use_stmt = None
+#             for stmt in program.statements:
+#                 if isinstance(stmt, UseStatement):
+#                     use_stmt = stmt
+#                     break
+#             assert use_stmt is not None, "UseStatement not found in program"
+#             stmt = use_stmt
+#         else:
+#             stmt = program.statements[0]
+# 
+#         assert isinstance(stmt, UseStatement)
+# 
+#         # For variable test cases, check structure but not exact values
+#         if expected_args is None and expected_kwargs is None:
+#             # Variable test cases - just check that we have the right structure
+#             if "service=" in code:
+#                 # use(service=url) case
+#                 assert len(stmt.args) == 0
+#                 assert len(stmt.kwargs) == 1
+#                 assert "service" in stmt.kwargs
+#                 assert isinstance(stmt.kwargs["service"], Identifier)
+#             elif "use(x)" in code:
+#                 # use(x) case
+#                 assert len(stmt.args) == 1
+#                 assert len(stmt.kwargs) == 0
+#                 assert isinstance(stmt.args[0], Identifier)
+#         else:
+#             # Regular test cases - check exact values
+#             if isinstance(expected_args, list):
+#                 assert len(stmt.args) == len(expected_args)
+#                 for actual, expected in zip(stmt.args, expected_args, strict=False):
+#                     assert isinstance(actual, LiteralExpression)
+#                     assert actual.value == expected
+# 
+#             if isinstance(expected_kwargs, dict):
+#                 assert len(stmt.kwargs) == len(expected_kwargs)
+#                 for key, expected_value in expected_kwargs.items():
+#                     assert key in stmt.kwargs
+#                     assert isinstance(stmt.kwargs[key], LiteralExpression)
+#                     assert stmt.kwargs[key].value == expected_value
 
 
-def test_use_stmt_in_context():
-    """Test use statement in a realistic context similar to the examples."""
-    parser = ParserCache.get_parser("dana")
+# Note: UseStatement functionality has been removed as part of grammar unification
+# def test_use_stmt_complex_expressions():
+#     """Test use statements with complex expressions as arguments."""
+#     parser = ParserCache.get_parser("dana")
+# 
+#     # Test with binary expression
+#     code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
+#     program = parser.parse(code, do_transform=True)
+# 
+#     # Find the use statement
+#     use_stmt = None
+#     for stmt in program.statements:
+#         if isinstance(stmt, UseStatement):
+#             use_stmt = stmt
+#             break
+# 
+#     assert use_stmt is not None
+#     assert isinstance(use_stmt, UseStatement)
+#     assert len(use_stmt.args) == 0
+#     assert len(use_stmt.kwargs) == 1
+#     assert "url" in use_stmt.kwargs
+#     # The value should be a function call (str(port)) - we don't need to verify the exact structure
+#     # just that it's a complex expression, not a simple literal
+#     assert not isinstance(use_stmt.kwargs["url"], LiteralExpression)
 
-    code = textwrap.dedent(
-        """
-        log_level("DEBUG")
-        use("mcp", url="http://localhost:8880/websearch")
-        x = 42
-    """
-    ).strip()
 
-    program = parser.parse(code, do_transform=True)
-    assert len(program.statements) == 3
+# Note: UseStatement functionality has been removed as part of grammar unification
+# def test_use_stmt_in_context():
+#     """Test use statement in a realistic context similar to the examples."""
+#     parser = ParserCache.get_parser("dana")
+#
+#     code = textwrap.dedent(
+#         """
+#         log_level("DEBUG")
+#         use("mcp", url="http://localhost:8880/websearch")
+#         x = 42
+#     """
+#     ).strip()
+#
+#     program = parser.parse(code, do_transform=True)
+#     assert len(program.statements) == 3
+#
+#     # Find the use statement (should be second)
+#     use_stmt = program.statements[1]
+#     assert isinstance(use_stmt, UseStatement)
+#     assert len(use_stmt.args) == 1
+#     assert use_stmt.args[0].value == "mcp"
+#     assert len(use_stmt.kwargs) == 1
+#     assert "url" in use_stmt.kwargs
+#     assert use_stmt.kwargs["url"].value == "http://localhost:8880/websearch"
 
-    # Find the use statement (should be second)
-    use_stmt = program.statements[1]
-    assert isinstance(use_stmt, UseStatement)
-    assert len(use_stmt.args) == 1
-    assert use_stmt.args[0].value == "mcp"
-    assert len(use_stmt.kwargs) == 1
-    assert "url" in use_stmt.kwargs
-    assert use_stmt.kwargs["url"].value == "http://localhost:8880/websearch"
 
-
-def test_with_use_stmt():
-    """Test with use(...) syntax for context manager usage."""
-    parser = ParserCache.get_parser("dana")
-
-    code = textwrap.dedent(
-        """
-        with use("mcp", url="http://localhost:8880/websearch") as mcp:
-            answer = reason("Who is the CEO of Aitomatic")
-        print(answer)
-    """
-    ).strip()
-
-    program = parser.parse(code, do_transform=True)
-    assert len(program.statements) == 2
-
-    # First statement should be a WithStatement using "use" as context manager
-    with_stmt = program.statements[0]
-    assert isinstance(with_stmt, WithStatement)
-    assert with_stmt.context_manager == "use"  # Updated to use new field name
-    assert len(with_stmt.args) == 1
-    assert with_stmt.args[0].value == "mcp"
-    assert len(with_stmt.kwargs) == 1
-    assert "url" in with_stmt.kwargs
-    assert with_stmt.kwargs["url"].value == "http://localhost:8880/websearch"
-    assert with_stmt.as_var == "mcp"
-    assert len(with_stmt.body) == 1
+# Note: UseStatement functionality has been removed as part of grammar unification
+# def test_with_use_stmt():
+#     """Test with use(...) syntax for context manager usage."""
+#     parser = ParserCache.get_parser("dana")
+#
+#     code = textwrap.dedent(
+#         """
+#         with use("mcp", url="http://localhost:8880/websearch") as mcp:
+#             answer = reason("Who is the CEO of Aitomatic")
+#         print(answer)
+#     """
+#     ).strip()
+#
+#     program = parser.parse(code, do_transform=True)
+#     assert len(program.statements) == 2
+#
+#     # First statement should be a WithStatement using "use" as context manager
+#     with_stmt = program.statements[0]
+#     assert isinstance(with_stmt, WithStatement)
+#     assert with_stmt.context_manager == "use"  # Updated to use new field name
+#     assert len(with_stmt.args) == 1
+#     assert with_stmt.args[0].value == "mcp"
+#     assert len(with_stmt.kwargs) == 1
+#     assert "url" in with_stmt.kwargs
+#     assert with_stmt.kwargs["url"].value == "http://localhost:8880/websearch"
+#     assert with_stmt.as_var == "mcp"
+#     assert len(with_stmt.body) == 1
 
 
 def test_with_direct_object():

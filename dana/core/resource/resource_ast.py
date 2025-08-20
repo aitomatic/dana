@@ -6,8 +6,9 @@ Functions to create ResourceType from AST nodes with inheritance support.
 
 from typing import Any
 
-from dana.core.lang.ast import ResourceDefinition
-from dana.registry import TYPE_REGISTRY
+from dana.core.lang.ast import FunctionDefinition, ResourceDefinition
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+from dana.registry import FUNCTION_REGISTRY, TYPE_REGISTRY
 
 from .resource_type import ResourceType
 
@@ -17,6 +18,7 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
     Create a ResourceType from a ResourceDefinition AST node.
 
     Handles inheritance by merging parent fields and defaults.
+    Processes resource methods as FunctionDefinition nodes and registers them.
 
     Args:
         resource_def: The ResourceDefinition AST node
@@ -69,11 +71,67 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
         if getattr(field, "comment", None):
             field_comments[field.name] = field.comment
 
-    return ResourceType(
+    # Create the resource type
+    resource_type = ResourceType(
         name=resource_def.name,
         fields=fields,
         field_order=field_order,
         field_defaults=field_defaults if field_defaults else None,
         field_comments=field_comments,
         docstring=resource_def.docstring,
+    )
+
+    # Process resource methods (FunctionDefinition nodes)
+    for method_def in resource_def.methods:
+        if isinstance(method_def, FunctionDefinition):
+            # Create DanaFunction from FunctionDefinition
+            dana_func = _create_dana_function_from_definition(method_def, context)
+
+            # Register the method in unified registry
+            # Resource methods are registered with the resource type name as the receiver type
+            FUNCTION_REGISTRY.register_struct_function(resource_def.name, method_def.name.name, dana_func)
+
+    return resource_type
+
+
+def _create_dana_function_from_definition(func_def: FunctionDefinition, context=None) -> DanaFunction:
+    """
+    Create a DanaFunction from a FunctionDefinition AST node.
+
+    Args:
+        func_def: The FunctionDefinition node
+        context: Optional execution context
+
+    Returns:
+        DanaFunction object
+    """
+    # Extract parameter names and defaults
+    param_names = []
+    param_defaults = {}
+
+    # Handle parameters (including receiver if present)
+    all_params = []
+    if func_def.receiver:
+        all_params.append(func_def.receiver)
+    all_params.extend(func_def.parameters)
+
+    for param in all_params:
+        if hasattr(param, "name"):
+            param_name = param.name
+            param_names.append(param_name)
+
+            # Extract default value if present
+            if hasattr(param, "default_value") and param.default_value is not None:
+                param_defaults[param_name] = param.default_value
+
+    # Create DanaFunction
+    return DanaFunction(
+        name=func_def.name.name,
+        parameters=param_names,
+        defaults=param_defaults,
+        body=func_def.body,
+        return_type=func_def.return_type,
+        decorators=func_def.decorators,
+        is_sync=func_def.is_sync,
+        location=func_def.location,
     )

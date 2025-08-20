@@ -15,7 +15,7 @@ struct Calculator:
     base_value: int
 
 # Test 1: Basic lambda expressions as struct methods
-def test_lambda_as_struct_methods():
+def test_lambda_as_struct_functions():
     # Point struct with lambda methods
     point = Point(x=3, y=4)
     
@@ -152,7 +152,7 @@ def test_lambda_struct_polymorphism():
     log("✅ Lambda struct polymorphism tests passed")
 
 # Run all tests
-test_lambda_as_struct_methods()
+test_lambda_as_struct_functions()
 test_lambda_struct_field_operations()
 test_lambda_struct_chaining()
 test_lambda_complex_struct_operations()

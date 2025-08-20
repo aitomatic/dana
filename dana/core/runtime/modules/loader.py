@@ -419,17 +419,20 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
                 # 4) Execute AST
                 self._execute_ast(interpreter, ast, context)
 
-                # 4) Publish results back to module/public scopes
+                # 4.5) Register receiver functions from AST
+                self._register_receiver_functions_from_ast(ast, module_obj, context)
+
+                # 5) Publish results back to module/public scopes
                 public_vars = self._collect_public_vars(context)
                 self._publish_scopes_to_module(module_obj, context, public_vars)
                 self._merge_public_into_root(context, public_vars)
                 self._expose_system_vars(module_obj, context)
 
-                # 5) Determine and apply exports
+                # 6) Determine and apply exports
                 exports = self._determine_exports(module_obj, context, public_vars)
                 self._apply_exports(module_obj, exports)
 
-                # 6) Post-process: enable intra-module function calls and log
+                # 7) Post-process: enable intra-module function calls and log
                 self._setup_module_function_context(module_obj, interpreter, context)
 
                 return
@@ -444,6 +447,9 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
 
             # 3) Execute AST
             self._execute_ast(interpreter, ast, context)
+
+            # 3.5) Register receiver functions from AST
+            self._register_receiver_functions_from_ast(ast, module_obj, context)
 
             # 4) Publish results back to module/public scopes
             public_vars = self._collect_public_vars(context)
@@ -824,3 +830,78 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         """
         # Reuse the same logic as namespace packages
         self._populate_namespace_package(module_obj, package_dir)
+
+    def _register_receiver_functions_from_ast(self, ast, module_obj: Module, context) -> None:
+        """Extract and register receiver functions from module AST.
+
+        This method scans the AST for receiver functions (MethodDefinition nodes)
+        and registers them in the unified FUNCTION_REGISTRY so they can be called
+        as methods on struct instances.
+
+        Args:
+            ast: The parsed AST of the module
+            module_obj: The module object being loaded
+            context: The execution context
+        """
+        from dana.core.lang.ast import MethodDefinition
+
+        try:
+            # Scan through all statements in the AST
+            for statement in ast.statements:
+                if isinstance(statement, MethodDefinition):
+                    self._register_receiver_function(statement, module_obj, context)
+
+        except Exception as e:
+            # Log warning but don't fail module loading
+            self.warning(f"Failed to register receiver functions from module '{module_obj.__name__}': {e}")
+
+    def _register_receiver_function(self, method_def, module_obj: Module, context) -> None:
+        """Register a single receiver function in the struct function registry.
+
+        Args:
+            method_def: The method definition AST node
+            module_obj: The module object being loaded
+            context: The execution context
+        """
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.registry import FUNCTION_REGISTRY
+
+        try:
+            # Extract receiver type from the method definition
+            receiver_param = method_def.receiver
+            receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+
+            if not receiver_type_str:
+                self.warning(f"Method definition in module '{module_obj.__name__}' has no receiver type")
+                return
+
+            # Parse union types (e.g., "Point | Circle | Rectangle")
+            receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+            # Extract method name
+            method_name = method_def.name.name
+
+            # Create a function that can be called as a method
+            def method_function(receiver, *args, **kwargs):
+                # Get the function from the module context
+                func = context.get(method_name)
+                if func is None:
+                    raise AttributeError(f"Method '{method_name}' not found in module '{module_obj.__name__}'")
+
+                # Call the function with receiver as first argument
+                if isinstance(func, DanaFunction):
+                    return func.execute(context, receiver, *args, **kwargs)
+                else:
+                    return func(receiver, *args, **kwargs)
+
+            # Register the method for all receiver types
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, method_function)
+                self.debug(f"Registered receiver function '{method_name}' for type '{receiver_type}' in module '{module_obj.__name__}'")
+
+            self.debug(
+                f"Successfully registered receiver function '{method_name}' for type '{receiver_type_str}' in module '{module_obj.__name__}'"
+            )
+
+        except Exception as e:
+            self.warning(f"Failed to register receiver function '{method_def.name.name}' from module '{module_obj.__name__}': {e}")
