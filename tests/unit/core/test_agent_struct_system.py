@@ -130,14 +130,26 @@ class TestAgentInstance(unittest.TestCase):
         values = {"name": "Alice", "age": 30}
         agent_instance = AgentInstance(self.agent_type, values)
 
+        # Set up LLM resource in context for agent methods
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        self.sandbox_context.set_system_llm_resource(llm_resource)
+
         # Test plan method
         plan_result = agent_instance.plan(self.sandbox_context, "test task")
-        self.assertIn("planning", plan_result.lower())
+        # Since DANA_MOCK_LLM is true, we should get a mock response
+        self.assertIn("mock", plan_result.lower())
         self.assertIn("TestAgent", plan_result)
 
         # Test solve method
         solve_result = agent_instance.solve(self.sandbox_context, "test problem")
-        self.assertIn("solving", solve_result.lower())
+        # Since DANA_MOCK_LLM is true, we should get a mock response
+        self.assertIn("mock", solve_result.lower())
         self.assertIn("TestAgent", solve_result)
 
         # Test memory methods
