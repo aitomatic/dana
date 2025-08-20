@@ -452,6 +452,7 @@ class TestBuiltinFunctionPrecedence:
         """Test that built-in functions take precedence over user-defined functions."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
+        context.interpreter = interpreter  # Set interpreter for background thread execution
 
         # Define a custom len function
         code = """def len(obj):
@@ -467,6 +468,7 @@ class TestBuiltinFunctionPrecedence:
         """Test the complete function lookup order."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
+        context.interpreter = interpreter  # Set interpreter for background thread execution
 
         # Initially, built-in len should work
         result = interpreter._eval_source_code("len([1, 2, 3, 4])", context=context)

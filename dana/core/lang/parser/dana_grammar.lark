@@ -137,7 +137,6 @@ simple_stmt: assignment
            | declarative_function_assignment
            | expr_stmt
            | return_stmt
-           | deliver_stmt
            | break_stmt
            | continue_stmt
            | pass_stmt

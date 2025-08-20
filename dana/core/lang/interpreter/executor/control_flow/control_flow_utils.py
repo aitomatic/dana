@@ -69,12 +69,10 @@ class ControlFlowUtils(Loggable):
         raise ContinueException()
 
     def execute_return_statement(self, node: ReturnStatement, context: SandboxContext) -> None:
-        """Execute a return statement with intelligent Promise creation.
+        """Execute a return statement synchronously.
 
-        Uses PromiseFactory to determine optimal execution strategy:
-        - Nested contexts → synchronous execution (prevents deadlock)
-        - Simple expressions → synchronous execution (avoids overhead)
-        - Complex expressions → EagerPromise creation (enables concurrency)
+        Since the function itself is now wrapped in an EagerPromise, return statements
+        can be purely synchronous - they just evaluate and return values directly.
 
         Args:
             node: The return statement to execute
@@ -84,7 +82,7 @@ class ControlFlowUtils(Loggable):
             Never returns normally, raises a ReturnException
 
         Raises:
-            ReturnException: With either direct value or Promise[T] based on strategy
+            ReturnException: With the evaluated return value
         """
         self._statements_executed += 1
 
@@ -92,43 +90,21 @@ class ControlFlowUtils(Loggable):
             if self.parent_executor is None:
                 raise RuntimeError("Parent executor not available for return value evaluation")
 
-            self.debug("Processing return statement with intelligent Promise creation")
+            self.debug("Processing return statement synchronously")
 
-            # Import the Promise factory
-            from dana.core.concurrency.promise_factory import PromiseFactory
-
-            # Create a computation function that will evaluate the return value
-            captured_context = context.copy()
-            captured_node_value = node.value
-
-            def return_computation():
-                self.debug("Return computation function called")
-                try:
-                    result = self.parent_executor.execute(captured_node_value, captured_context)  # type: ignore
-                    self.debug(f"Return computation result: {result}")
-                    return result
-                except Exception as e:
-                    self.debug(f"Return computation failed with error: {e}")
-                    raise
-
-            # Use PromiseFactory to create optimal execution strategy
-            from dana.core.runtime import DanaThreadPool
-
-            executor = DanaThreadPool.get_instance().get_executor()
-
-            # The factory will decide: synchronous execution or EagerPromise creation
-            promise_value = PromiseFactory.create_promise(
-                return_computation,
-                executor,
-                node.value,  # type: ignore # Pass AST node for complexity analysis
-            )
-
-            self.debug(f"Promise factory returned: {type(promise_value)}")
+            # Simply evaluate the return value expression synchronously
+            try:
+                result = self.parent_executor.execute(node.value, context)  # type: ignore
+                self.debug(f"Return statement evaluated to: {result}")
+            except Exception as e:
+                self.debug(f"Return statement evaluation failed: {e}")
+                raise
         else:
-            promise_value = None
+            result = None
             self.debug("Executing return statement with no value")
 
-        raise ReturnException(promise_value)
+        # Raise ReturnException with the direct result (no Promise wrapping)
+        raise ReturnException(result)
 
     def get_performance_stats(self) -> dict[str, Any]:
         """Get control flow utility performance statistics."""

@@ -214,8 +214,11 @@ class UnifiedFunctionDispatcher:
         evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
-        """Execute a Dana function."""
+        """Execute a Dana function with PromiseLimiter integration."""
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+        # Get PromiseLimiter from context
+        promise_limiter = context.promise_limiter
 
         # For Dana functions, use the function's own context as the base
         # This ensures it has access to module functions and other context
@@ -226,12 +229,38 @@ class UnifiedFunctionDispatcher:
             # Merge the current context's local scope into the execution context
             for key, value in context.get_scope("local").items():
                 execution_context.set(f"local:{key}", value)
+
+            # Ensure the interpreter is set in the execution context
+            if hasattr(context, "_interpreter") and context._interpreter is not None:
+                execution_context._interpreter = context._interpreter
         else:
             # Fallback to current context for non-DanaFunction objects
             execution_context = context
 
-        raw_result = resolved_func.func.execute(execution_context, *evaluated_args, **evaluated_kwargs)
-        return self._assign_and_coerce_result(raw_result, func_name)
+        # Check if we can create a Promise for this function execution
+        if promise_limiter.can_create_promise():
+            # Create a computation function that will execute the Dana function
+            def dana_function_computation():
+                try:
+                    return resolved_func.func.execute(execution_context, *evaluated_args, **evaluated_kwargs)
+                except Exception as e:
+                    self.logger.error(f"Error in Dana function computation: {e}")
+                    raise
+
+            # Create EagerPromise for the function execution
+            from dana.core.runtime import DanaThreadPool
+
+            executor = DanaThreadPool.get_instance().get_executor()
+
+            promise_result = promise_limiter.create_promise(dana_function_computation, executor=executor, on_delivery=None)
+
+            self.logger.debug(f"Created EagerPromise for Dana function '{func_name}'")
+            return self._assign_and_coerce_result(promise_result, func_name)
+        else:
+            # Fall back to synchronous execution when limits are exceeded
+            self.logger.debug(f"PromiseLimiter limits exceeded, executing Dana function '{func_name}' synchronously")
+            raw_result = resolved_func.func.execute(execution_context, *evaluated_args, **evaluated_kwargs)
+            return self._assign_and_coerce_result(raw_result, func_name)
 
     def _execute_python_function(
         self,

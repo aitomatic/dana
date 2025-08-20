@@ -18,7 +18,6 @@ from dana.core.lang.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,
-    DeliverStatement,
     Expression,
     ForLoop,
     Identifier,
@@ -262,14 +261,6 @@ class SimpleStatementHelper:
         if isinstance(value, tuple):
             raise TypeError(f"Return value cannot be a tuple: {value}")
         return ReturnStatement(value=value)
-
-    @staticmethod
-    def create_deliver_statement(items, expression_transformer):
-        """Create a DeliverStatement node."""
-        value = expression_transformer.expression(items) if items else None
-        if isinstance(value, tuple):
-            raise TypeError(f"Deliver value cannot be a tuple: {value}")
-        return DeliverStatement(value=value)
 
     @staticmethod
     def create_break_statement():

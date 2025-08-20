@@ -1193,6 +1193,18 @@ class ExpressionExecutor(BaseExecutor):
             A callable function object representing the lambda
         """
 
+        # Capture the current context's local scope at lambda creation time
+        # This ensures that variables are captured by value, not by reference
+        captured_locals = {}
+        if hasattr(context, "get_scope"):
+            try:
+                local_scope = context.get_scope("local")
+                if local_scope:
+                    captured_locals = local_scope.copy()
+            except Exception:
+                # If we can't get the scope, continue with empty captured_locals
+                pass
+
         def lambda_function(*args, **kwargs):
             """The callable function created from the lambda expression."""
             # Validate parameter compatibility if type checking is enabled
@@ -1207,6 +1219,22 @@ class ExpressionExecutor(BaseExecutor):
 
             # Create a new scope for lambda execution
             lambda_context = context.copy()
+
+            # Restore the captured local variables from lambda creation time
+            # This ensures that variables captured by the lambda are available
+            # BUT don't overwrite variables that are being assigned to in the current context
+            current_local_scope = {}
+            if hasattr(context, "get_scope"):
+                try:
+                    current_local_scope = context.get_scope("local") or {}
+                except Exception:
+                    pass
+
+            for var_name, var_value in captured_locals.items():
+                # Only restore if the variable is not being assigned to in the current context
+                # or if it's not present in the current context (meaning it was captured but not modified)
+                if var_name not in current_local_scope:
+                    lambda_context.set(var_name, var_value)
 
             # Handle receiver binding if present
             if node.receiver and args:
@@ -1239,6 +1267,7 @@ class ExpressionExecutor(BaseExecutor):
         setattr(lambda_function, "_dana_receiver", node.receiver)
         setattr(lambda_function, "_dana_parameters", node.parameters)
         setattr(lambda_function, "_dana_body", node.body)
+        setattr(lambda_function, "_dana_captured_locals", captured_locals)
 
         return lambda_function
 

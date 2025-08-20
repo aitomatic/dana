@@ -104,6 +104,9 @@ def test_na_file(na_file):
     # Initialize interpreter
     interpreter = DanaInterpreter()
 
+    # Set the interpreter in the context (required for background thread execution)
+    context.interpreter = interpreter
+
     result = None
     exception_info = None
     try:

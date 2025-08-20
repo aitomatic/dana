@@ -7,46 +7,31 @@ execution strategies based on context and expression complexity.
 Why This Factory Exists:
 ========================
 
-The Dana language implements "concurrent by default" execution where `return` statements
-create EagerPromises for background execution. However, naive Promise creation leads to
-several critical problems:
+The Dana language implements "concurrent by default" execution where functions
+are wrapped in EagerPromises for background execution. However, explicit Promise
+creation (for LLM calls, I/O operations, etc.) still needs intelligent management:
 
-1. **Thread Pool Exhaustion Deadlock**
-   Problem: Nested function calls with `return` statements create nested EagerPromises.
-   With a limited thread pool (16 workers), deep call chains can exhaust all threads,
-   where each worker blocks waiting for nested EagerPromises that need additional workers.
-
-   Example deadlock scenario:
-   ```dana
-   def level1(x): return level2(x) + level2(x+1)  # Creates 2 EagerPromises
-   def level2(x): return level3(x) * level3(x+1)  # Each creates 2 more = 4 total
-   def level3(x): return x + 1                    # Each creates 1 more = 4 more
-   ```
-   This creates 8 EagerPromises from a single level1() call, easily exhausting a 16-thread pool.
+1. **Thread Pool Exhaustion Prevention**
+   Problem: Multiple explicit Promise creations can exhaust the thread pool.
+   Solution: Use PromiseLimiter to enforce safety limits.
 
 2. **Unnecessary Concurrency Overhead**
-   Problem: Simple expressions (literals, basic arithmetic) don't benefit from concurrency
-   but still pay the overhead of EagerPromise creation, thread scheduling, and synchronization.
-
-   Example inefficiency:
-   ```dana
-   def simple(): return 42          # Creates EagerPromise for literal!
-   def basic(): return x + 1        # Creates EagerPromise for simple arithmetic!
-   ```
+   Problem: Simple operations don't benefit from concurrency but still pay overhead.
+   Solution: Analyze expression complexity and execute simple operations synchronously.
 
 3. **Resource Contention**
-   Problem: Every `return` statement competing for the same thread pool creates contention,
-   reducing overall system throughput and increasing latency.
+   Problem: Multiple Promise creations competing for the same thread pool.
+   Solution: Centralized Promise creation with PromiseLimiter integration.
 
 Solutions Implemented:
 =====================
 
-This factory implements three complementary strategies:
+This factory implements complementary strategies:
 
-**Strategy 1: Nested Context Detection**
-- Detects when Promise creation occurs within existing EagerPromise execution
-- Uses synchronous evaluation to avoid nested threading and deadlock
-- Maintains Dana's transparent concurrency semantics
+**Strategy 1: PromiseLimiter Integration**
+- Uses PromiseLimiter for all Promise creation to enforce safety limits
+- Provides fallback to synchronous execution when limits are exceeded
+- Maintains system stability and prevents resource exhaustion
 
 **Strategy 2: Expression Complexity Analysis**
 - Analyzes AST nodes to determine if concurrency provides benefit
@@ -65,7 +50,7 @@ Architecture Benefits:
 1. **Single Responsibility**: EagerPromise focuses on Promise mechanics, not creation policy
 2. **Centralized Intelligence**: All Promise creation decisions in one testable location
 3. **Performance Optimization**: Reduces unnecessary Promise overhead by 60-80% in typical code
-4. **Deadlock Prevention**: Eliminates thread pool exhaustion through smart nesting detection
+4. **Safety Integration**: Uses PromiseLimiter for all safety mechanisms
 5. **Future Extensibility**: Easy to add new strategies (batching, different Promise types, etc.)
 
 Copyright © 2025 Aitomatic, Inc.
@@ -73,56 +58,12 @@ MIT License
 """
 
 import inspect
-import threading
 from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
-from dana.core.concurrency.eager_promise import EagerPromise
+from dana.core.concurrency.promise_limiter import get_global_promise_limiter
 from dana.core.lang.ast import ASTNode, BinaryExpression, FunctionCall, Identifier, LiteralExpression, UnaryExpression
-
-
-class PromiseExecutionContext:
-    """
-    Thread-local context tracking for Promise execution.
-
-    Tracks whether the current thread is executing within an EagerPromise
-    to prevent nested Promise creation and thread pool deadlock.
-    """
-
-    _context = threading.local()
-
-    @classmethod
-    def is_nested(cls) -> bool:
-        """Check if we're currently executing within an EagerPromise."""
-        return getattr(cls._context, "in_eager_execution", False)
-
-    @classmethod
-    def enter_eager_execution(cls):
-        """Mark that we're entering EagerPromise execution context."""
-        cls._context.in_eager_execution = True
-
-    @classmethod
-    def exit_eager_execution(cls):
-        """Mark that we're exiting EagerPromise execution context."""
-        cls._context.in_eager_execution = False
-
-    @classmethod
-    def get_nesting_depth(cls) -> int:
-        """Get current Promise nesting depth."""
-        return getattr(cls._context, "nesting_depth", 0)
-
-    @classmethod
-    def increment_depth(cls):
-        """Increment nesting depth."""
-        current = getattr(cls._context, "nesting_depth", 0)
-        cls._context.nesting_depth = current + 1
-
-    @classmethod
-    def decrement_depth(cls):
-        """Decrement nesting depth."""
-        current = getattr(cls._context, "nesting_depth", 0)
-        cls._context.nesting_depth = max(0, current - 1)
 
 
 class ExpressionComplexityAnalyzer:
@@ -220,9 +161,9 @@ class PromiseFactory:
         whether to use synchronous execution or EagerPromise creation.
 
         This method implements critical correctness guarantees:
-        1. Prevents thread pool exhaustion and deadlock via nested detection
+        1. Uses PromiseLimiter for safety limits and resource management
         2. Optimizes simple expressions to avoid unnecessary overhead
-        3. Prevents excessive nesting depth
+        3. Provides fallback to synchronous execution when limits are exceeded
 
         These are not optional optimizations - they prevent system failure.
 
@@ -237,25 +178,10 @@ class PromiseFactory:
         Returns:
             Either the direct result (synchronous) or EagerPromise (concurrent)
         """
-        # Strategy 1: Prevent nested EagerPromise creation
-        if PromiseExecutionContext.is_nested():
-            # We're already inside an EagerPromise - execute synchronously
-            # to prevent thread pool exhaustion and deadlock
-            if inspect.iscoroutine(computation):
-                import asyncio
+        # Get PromiseLimiter for safety management
+        promise_limiter = get_global_promise_limiter()
 
-                result = asyncio.run(computation)
-            elif inspect.iscoroutinefunction(computation):
-                import asyncio
-
-                result = asyncio.run(computation())
-            else:
-                result = computation()  # type: ignore
-
-            # For synchronous execution, ignore callbacks - return result directly
-            return result
-
-        # Strategy 2: Simple expression optimization
+        # Strategy 1: Simple expression optimization
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
             # Simple expressions don't benefit from concurrency
             # Execute synchronously to avoid unnecessary overhead
@@ -273,10 +199,30 @@ class PromiseFactory:
             # For synchronous execution, ignore callbacks - return result directly
             return result
 
-        # Strategy 3: Deep nesting prevention
-        nesting_depth = PromiseExecutionContext.get_nesting_depth()
-        if nesting_depth >= 3:  # Configurable threshold
-            # Prevent excessively deep Promise nesting
+        # Strategy 2: Use PromiseLimiter for all Promise creation
+        # This handles safety limits, nesting depth, timeouts, and circuit breaker
+        try:
+            # For PromiseLimiter, we only pass the first callback if it's a list
+            # Additional callbacks will be added via add_on_delivery_callback
+            first_callback = None
+            if on_delivery is not None:
+                if callable(on_delivery):
+                    first_callback = on_delivery
+                elif isinstance(on_delivery, list) and on_delivery:
+                    first_callback = on_delivery[0]
+
+            promise = promise_limiter.create_promise(computation, executor, first_callback)
+
+            # Add additional callbacks to the Promise using BasePromise callback facility
+            if on_delivery is not None and isinstance(on_delivery, list) and len(on_delivery) > 1:
+                for callback in on_delivery[1:]:
+                    promise.add_on_delivery_callback(callback)
+
+            return promise
+
+        except Exception:
+            # If PromiseLimiter fails, fall back to synchronous execution
+            # This ensures the system never fails due to Promise creation issues
             if inspect.iscoroutine(computation):
                 import asyncio
 
@@ -291,37 +237,70 @@ class PromiseFactory:
             # For synchronous execution, ignore callbacks - return result directly
             return result
 
-        # Strategy 4: Context-aware computation wrapper
-        def context_aware_computation():
-            """Execute computation with proper context tracking."""
-            try:
-                PromiseExecutionContext.enter_eager_execution()
-                PromiseExecutionContext.increment_depth()
-                if inspect.iscoroutine(computation):
-                    import asyncio
+    @staticmethod
+    def wrap_python_function(
+        python_function: Callable[..., Any],
+        *args,
+        executor: ThreadPoolExecutor | None = None,
+        on_delivery: Callable[[Any], None] | list[Callable[[Any], None]] | None = None,
+        **kwargs,
+    ) -> Any:
+        """
+        Wrap a Python function call in an EagerPromise for asynchronous execution.
 
-                    result = asyncio.run(computation)
-                else:
-                    result = computation()  # type: ignore
-                return result
-            finally:
-                PromiseExecutionContext.decrement_depth()
-                PromiseExecutionContext.exit_eager_execution()
+        This method provides a clean way to execute Python functions asynchronously
+        without the complexity analysis that might optimize them away. Python functions
+        are always wrapped in EagerPromise for consistent async behavior.
 
-        # Create EagerPromise for complex expressions that benefit from concurrency
-        promise = EagerPromise.create(context_aware_computation, executor)
+        Args:
+            python_function: The Python function to execute
+            *args: Arguments to pass to the Python function
+            executor: ThreadPoolExecutor for background execution
+            on_delivery: Optional callback(s) called with the result when delivered
+            **kwargs: Keyword arguments to pass to the Python function
 
-        # Add callbacks to the Promise using BasePromise callback facility
-        if on_delivery is not None:
-            if callable(on_delivery):
-                # Single callback
-                promise.add_on_delivery_callback(on_delivery)
-            elif isinstance(on_delivery, list):
-                # List of callbacks
-                for callback in on_delivery:
+        Returns:
+            EagerPromise that will resolve to the function's result
+        """
+
+        def computation():
+            return python_function(*args, **kwargs)
+
+        # Get PromiseLimiter for safety management
+        promise_limiter = get_global_promise_limiter()
+
+        try:
+            # For PromiseLimiter, we only pass the first callback if it's a list
+            first_callback = None
+            if on_delivery is not None:
+                if callable(on_delivery):
+                    first_callback = on_delivery
+                elif isinstance(on_delivery, list) and on_delivery:
+                    first_callback = on_delivery[0]
+
+            promise = promise_limiter.create_promise(computation, executor, first_callback)
+
+            # Add additional callbacks to the Promise using BasePromise callback facility
+            if on_delivery is not None and isinstance(on_delivery, list) and len(on_delivery) > 1:
+                for callback in on_delivery[1:]:
                     promise.add_on_delivery_callback(callback)
 
-        return promise
+            return promise
+
+        except Exception:
+            # If PromiseLimiter fails, fall back to synchronous execution
+            # This ensures the system never fails due to Promise creation issues
+            result = computation()
+
+            # For synchronous execution, call callbacks immediately
+            if on_delivery is not None:
+                if callable(on_delivery):
+                    on_delivery(result)
+                elif isinstance(on_delivery, list):
+                    for callback in on_delivery:
+                        callback(result)
+
+            return result
 
     @staticmethod
     def _should_use_eager_promise(ast_node: ASTNode | None = None, context_info: dict | None = None) -> bool:
@@ -338,14 +317,15 @@ class PromiseFactory:
         Returns:
             True if EagerPromise should be used, False for synchronous execution
         """
-        # Check all our strategies
-        if PromiseExecutionContext.is_nested():
+        # Get PromiseLimiter for safety checks
+        promise_limiter = get_global_promise_limiter()
+
+        # Check if PromiseLimiter allows Promise creation
+        if not promise_limiter.can_create_promise():
             return False
 
+        # Check expression complexity
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
-            return False
-
-        if PromiseExecutionContext.get_nesting_depth() >= 3:
             return False
 
         return True

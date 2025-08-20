@@ -13,8 +13,29 @@ from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
+from dana.core.concurrency.promise_utils import is_promise
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+
+
+# Runtime function definitions
+def lookup_dana_method(receiver_type: str, method_name: str):
+    from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+    return STRUCT_FUNCTION_REGISTRY.lookup_method(receiver_type, method_name)
+
+
+def register_dana_method(receiver_type: str, method_name: str, func: Callable):
+    from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+    return STRUCT_FUNCTION_REGISTRY.register_method(receiver_type, method_name, func)
+
+
+def has_dana_method(receiver_type: str, method_name: str):
+    from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+    return STRUCT_FUNCTION_REGISTRY.has_method(receiver_type, method_name)
+
 
 # Avoid importing registries at module import time to prevent circular imports.
 # Import needed registries lazily inside methods.
@@ -40,80 +61,62 @@ __all__.extend(
 def default_plan_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, task: str, user_context: dict | None = None
 ) -> Any:
-    """Default plan method for agent structs."""
-    agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
-    # TODO: Implement actual planning logic with prompt
-    # context_info = f" with context: {user_context}" if user_context else ""
-    # prompt = f"""You are an agent with fields: {agent_fields}.
-    #
-    # Task: {task}{context_info}
-    #
-    # Please create a detailed plan for accomplishing this task. Consider the agent's capabilities and context.
-    #
-    # Return a structured plan with clear steps."""
+    """Default plan method for agent structs - delegates to instance method."""
 
-    # For now, return a simple response since we don't have context access
-    return f"Agent {agent_instance.agent_type.name} planning: {task} (fields: {agent_fields})"
+    # Simply delegate to the built-in implementation
+    # The main plan() method will handle Promise wrapping
+    def wrapper():
+        return agent_instance._plan_impl(sandbox_context, task, user_context)
+
+    return PromiseFactory.create_promise(computation=wrapper)
 
 
 def default_solve_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
 ) -> Any:
-    """Default solve method for agent structs."""
-    agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
-    # TODO: Implement actual solving logic with prompt
-    # context_info = f" with context: {user_context}" if user_context else ""
-    # prompt = f"""You are an agent with fields: {agent_fields}.
-    #
-    # Problem: {problem}{context_info}
-    #
-    # Please provide a solution to this problem. Use the agent's capabilities and context to formulate an effective response.
-    #
-    # Return a comprehensive solution."""
+    """Default solve method for agent structs - delegates to instance method."""
 
-    # For now, return a simple response since we don't have context access
-    return f"Agent {agent_instance.agent_type.name} solving: {problem} (fields: {agent_fields})"
+    # Simply delegate to the built-in implementation
+    # The main solve() method will handle Promise wrapping
+    def wrapper():
+        return agent_instance._solve_impl(sandbox_context, problem, user_context)
+
+    return PromiseFactory.create_promise(computation=wrapper)
 
 
-def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
-    """Default remember method for agent structs."""
-    # Initialize memory if it doesn't exist
-    try:
-        agent_instance._memory[key] = value
-    except AttributeError:
-        # Memory not initialized yet, create it
-        agent_instance._memory = {key: value}
-    return True
+def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> Any:
+    """Default remember method for agent structs - delegates to instance method."""
+
+    # Simply delegate to the built-in implementation
+    # The main remember() method will handle Promise wrapping
+    def wrapper():
+        return agent_instance._remember_impl(sandbox_context, key, value)
+
+    return PromiseFactory.create_promise(computation=wrapper)
 
 
 def default_recall_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str) -> Any:
-    """Default recall method for agent structs."""
-    # Use try/except instead of hasattr to avoid sandbox restrictions
-    try:
-        return agent_instance._memory.get(key, None)
-    except AttributeError:
-        # Memory not initialized yet
-        return None
+    """Default recall method for agent structs - delegates to instance method."""
+
+    # Simply delegate to the built-in implementation
+    # The main recall() method will handle Promise wrapping
+    def wrapper():
+        return agent_instance._recall_impl(sandbox_context, key)
+
+    return PromiseFactory.create_promise(computation=wrapper)
 
 
 def default_reason_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
 ) -> Any:
-    """Default reason method for agent structs."""
-    agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
-    # TODO: Implement actual reasoning logic with prompt
-    # context_info = f" with context: {context}" if context else ""
-    # prompt = f"""You are an agent with fields: {agent_fields}.
-    #
-    # Premise: {premise}{context_info}
-    #
-    # Please reason about this premise. Apply logical thinking, consider implications,
-    # and draw reasonable conclusions based on the available information.
-    #
-    # Return your reasoning process and conclusions."""
+    """Default reason method for agent structs - delegates to instance method."""
 
-    # For now, return a simple response since we don't have context access
-    return f"Agent {agent_instance.agent_type.name} reasoning about: {premise} (fields: {agent_fields})"
+    # Simply delegate to the built-in implementation
+    # The main reason() method will handle Promise wrapping
+    def wrapper():
+        return agent_instance._reason_impl(sandbox_context, premise, context)
+
+    return PromiseFactory.create_promise(computation=wrapper)
 
 
 def default_chat_method(
@@ -124,7 +127,22 @@ def default_chat_method(
     max_context_turns: int = 5,
 ) -> Any:
     """Default chat method for agent structs - delegates to instance method."""
-    return agent_instance._chat_impl(sandbox_context, message, context, max_context_turns)
+
+    # Initialize conversation memory before creating the Promise
+    agent_instance._initialize_conversation_memory()
+
+    def wrapper():
+        return agent_instance._chat_impl(sandbox_context, message, context, max_context_turns)
+
+    def save_conversation_callback(response):
+        """Callback to save the conversation turn when the response is ready."""
+        if agent_instance._conversation_memory:
+            # Handle case where response might be an EagerPromise
+            if is_promise(response):
+                response = response._wait_for_delivery()
+            agent_instance._conversation_memory.add_turn(message, response)
+
+    return PromiseFactory.create_promise(computation=wrapper, on_delivery=save_conversation_callback)
 
 
 # --- Agent Struct Type System ---
@@ -180,17 +198,13 @@ class AgentType(StructType):
         self.merge_additional_fields(additional_fields)
 
         # Register default agent methods (defined by AgentInstance)
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
-
         default_methods = AgentInstance.get_default_dana_methods()
         for method_name, method in default_methods.items():
-            STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
+            register_dana_method(self.name, method_name, method)
 
         # Register any custom agent methods that were passed in during initialization
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
-
         for method_name, method in self._temp_agent_methods.items():
-            STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
+            register_dana_method(self.name, method_name, method)
 
         # Clean up temporary storage since the registry is now the source of truth
         del self._temp_agent_methods
@@ -200,21 +214,15 @@ class AgentType(StructType):
 
     def add_agent_method(self, name: str, method: Callable) -> None:
         """Add an agent-specific method to the universal registry."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
-
-        STRUCT_FUNCTION_REGISTRY.register_method(self.name, name, method)
+        register_dana_method(self.name, name, method)
 
     def has_agent_method(self, name: str) -> bool:
         """Check if this agent type has a specific method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
-
-        return STRUCT_FUNCTION_REGISTRY.has_method(self.name, name)
+        return has_dana_method(self.name, name)
 
     def get_agent_method(self, name: str) -> Callable | None:
         """Get an agent method by name."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
-
-        return STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, name)
+        return lookup_dana_method(self.name, name)
 
     @property
     def agent_methods(self) -> dict[str, Callable]:
@@ -333,57 +341,90 @@ class AgentInstance(StructInstance):
 
     def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "plan")
+        method = lookup_dana_method(self.__struct_type__.name, "plan")
         if method:
+            # User-defined Dana plan() method
             return method(self, sandbox_context, task, context)
-        return default_plan_method(self, sandbox_context, task, context)
+        else:
+            # Fallback to built-in plan implementation
+            return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "solve")
+        method = lookup_dana_method(self.__struct_type__.name, "solve")
         if method:
+            # User-defined Dana solve() method
             return method(self, sandbox_context, problem, context)
-        return default_solve_method(self, sandbox_context, problem, context)
+        else:
+            # Fallback to built-in solve implementation
+            return default_solve_method(self, sandbox_context, problem, context)
 
-    def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
+    def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:
         """Execute agent memory storage method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "remember")
+        method = lookup_dana_method(self.__struct_type__.name, "remember")
         if method:
+            # User-defined Dana remember() method
             return method(self, sandbox_context, key, value)
-        return default_remember_method(self, sandbox_context, key, value)
+        else:
+            # Fallback to built-in remember implementation
+            return default_remember_method(self, sandbox_context, key, value)
 
     def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Execute agent memory retrieval method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "recall")
+        method = lookup_dana_method(self.__struct_type__.name, "recall")
         if method:
+            # User-defined Dana recall() method
             return method(self, sandbox_context, key)
-        return default_recall_method(self, sandbox_context, key)
+        else:
+            # Fallback to built-in recall implementation
+            return default_recall_method(self, sandbox_context, key)
 
     def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> Any:
         """Execute agent reasoning method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "reason")
+        method = lookup_dana_method(self.__struct_type__.name, "reason")
         if method:
+            # User-defined Dana reason() method
             return method(self, sandbox_context, premise, context)
-        return default_reason_method(self, sandbox_context, premise, context)
+        else:
+            # Fallback to built-in reason implementation
+            return default_reason_method(self, sandbox_context, premise, context)
 
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "chat")
+        method = lookup_dana_method(self.__struct_type__.name, "chat")
+        if method:
+            # User-defined Dana chat() method
+            return method(self, sandbox_context, message, context, max_context_turns)
+        else:
+            return default_chat_method(self, sandbox_context, message, context, max_context_turns)
+
+    def old_chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
+        """Execute agent chat method."""
+        from dana.core.concurrency.promise_factory import PromiseFactory
+
+        method = lookup_dana_method(self.__struct_type__.name, "chat")
         if method:
             return method(self, sandbox_context, message, context, max_context_turns)
-        return default_chat_method(self, sandbox_context, message, context, max_context_turns)
+
+        # Initialize conversation memory before creating the Promise
+        self._initialize_conversation_memory()
+
+        # Wrap the _chat_impl call in an EagerPromise for asynchronous execution
+        def chat_computation():
+            return self._chat_impl(sandbox_context, message, context, max_context_turns)
+
+        def save_conversation_callback(response):
+            """Callback to save the conversation turn when the response is ready."""
+            if self._conversation_memory:
+                self._conversation_memory.add_turn(message, response)
+
+        return PromiseFactory.create_promise(computation=chat_computation, on_delivery=save_conversation_callback)
 
     def _initialize_conversation_memory(self):
         """Initialize conversation memory if not already done."""
@@ -536,111 +577,189 @@ class AgentInstance(StructInstance):
             "I'm currently running without an LLM connection, so my responses are limited."
         )
 
-    def _create_response_promise(self, computation: Callable[[], Any], message: str) -> Any:
-        """
-        Create a Promise with conversation memory callback.
-
-        Args:
-            computation: Function that computes the response
-            message: The original user message (for conversation memory)
-
-        Returns:
-            Promise that resolves to the response string
-        """
-
-        def save_conversation_callback(response: str):
-            """Callback to save the conversation turn when the response is ready."""
-            if self._conversation_memory:
-                self._conversation_memory.add_turn(message, response)
-
-        return PromiseFactory.create_promise(computation=computation, on_delivery=save_conversation_callback)
-
     def _chat_impl(
         self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 5
-    ) -> Any:
-        """Implementation of chat functionality. Returns a Promise that resolves to the response."""
-        # Initialize conversation memory if needed
-        self._initialize_conversation_memory()
+    ) -> str:
+        """Implementation of chat functionality. Returns the response string directly."""
+        # Build conversation context - initialize if not already done
+        if self._conversation_memory is None:
+            self._initialize_conversation_memory()
 
-        # Build conversation context
-        assert self._conversation_memory is not None  # Should be initialized by _initialize_conversation_memory
-        conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
+        # Ensure conversation memory is available
+        if self._conversation_memory is None:
+            # Fallback if initialization failed
+            conversation_context = ""
+        else:
+            conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
         # Try to get LLM resource - prioritize agent's own LLM resource
         llm_resource = self._get_llm_resource(sandbox_context)
 
-        # Fallback to sandbox context if agent's LLM is not available
-        if llm_resource is None and sandbox_context is not None:
-            # Look for LLM resource in agent's available resources
-            resources = sandbox_context.get_resources()
-            for _, resource in resources.items():
-                if hasattr(resource, "kind") and resource.kind == "llm":
-                    llm_resource = resource
-                    break
-
         if llm_resource:
-            # Build prompt with agent description and conversation context
-            system_prompt = self._build_agent_description()
+            try:
+                # Build system prompt with agent description
+                system_prompt = self._build_agent_description()
+
+                # Add conversation context if available
+                if conversation_context.strip():
+                    system_prompt += f"\n\nPrevious conversation:\n{conversation_context}"
+
+                # Prepare messages
+                messages = [{"role": "user", "content": message}]
+
+                # Use the simplified chat completion method
+                result = llm_resource.chat_completion(messages=messages, system_prompt=system_prompt, context=context)
+
+            except Exception as e:
+                result = f"I encountered an error while processing your message: {str(e)}"
+        else:
+            # For fallback response, execute synchronously
+            result = self._generate_fallback_response(message, conversation_context)
+
+        return result
+
+    def _plan_impl(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> str:
+        """Implementation of planning functionality using py_reason with POET enhancements."""
+        try:
+            from dana.libs.corelib.py_wrappers.py_reason import py_reason
+
+            # Build agent description for context
+            agent_description = self._build_agent_description()
+
+            # Create planning prompt
+            planning_prompt = f"""
+You are {agent_description}
+
+Please create a detailed plan for accomplishing this task: {task}
+
+Consider the agent's capabilities and context. Return a structured plan with clear steps.
+"""
+
+            # Prepare options for py_reason
+            options = {
+                "system_message": agent_description,
+                "temperature": 0.7,
+            }
 
             # Add any additional context
             if context:
-                system_prompt += f" Additional context: {context}"
+                options["context"] = context
 
-            # Create computation that will call LLM resource through core resource interface
-            def llm_computation():
-                try:
-                    from dana.common.types import BaseRequest
+            # Use py_reason for sophisticated planning with POET enhancements
+            result = py_reason(sandbox_context, planning_prompt, options)
 
-                    # Build proper messages format for LLM query
-                    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
+            return str(result)
 
-                    # Add conversation context if available
-                    if conversation_context.strip():
-                        # Insert conversation context before the user message
-                        messages.insert(-1, {"role": "system", "content": f"Previous conversation:\n{conversation_context}"})
+        except Exception as e:
+            # Fallback to simple response if py_reason fails
+            agent_fields = ", ".join(f"{k}: {v}" for k, v in self.__dict__.items() if not k.startswith("_"))
+            return f"Agent {self.agent_type.name} planning: {task} (fields: {agent_fields}) - Error: {str(e)}"
 
-                    # Use core resource interface
-                    request = BaseRequest(arguments={"messages": messages})
-                    response = llm_resource.query_sync(request)  # Use synchronous query
+    def _solve_impl(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> str:
+        """Implementation of problem-solving functionality using py_reason with POET enhancements."""
+        try:
+            from dana.libs.corelib.py_wrappers.py_reason import py_reason
 
-                    if response.success:
-                        # Extract the actual text content from the response
-                        content = response.content
-                        if isinstance(content, dict):
-                            if "choices" in content and content["choices"]:
-                                # OpenAI/Anthropic style response
-                                first_choice = content["choices"][0]
-                                if isinstance(first_choice, dict) and "message" in first_choice:
-                                    response_message = first_choice["message"]
-                                    if isinstance(response_message, dict) and "content" in response_message:
-                                        return response_message["content"]
-                                    elif hasattr(response_message, "content"):
-                                        return response_message.content
-                                elif hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
-                                    return first_choice.message.content
-                            elif "content" in content:
-                                return content["content"]
-                            elif "response" in content:
-                                return content["response"]
-                        # If we can't extract content, return the whole response as string
-                        return str(content)
-                    else:
-                        return f"LLM call failed: {response.error}"
-                except Exception as e:
-                    return f"I encountered an error while processing your message: {str(e)}"
+            # Build agent description for context
+            agent_description = self._build_agent_description()
 
-            return self._create_response_promise(llm_computation, message)
-        else:
-            # For fallback response, execute synchronously but still use Promise for consistency
-            def fallback_computation():
-                return self._generate_fallback_response(message, conversation_context)
+            # Create problem-solving prompt
+            solving_prompt = f"""
+You are {agent_description}
 
-            return self._create_response_promise(fallback_computation, message)
+Please provide a solution to this problem: {problem}
+
+Use the agent's capabilities and context to formulate an effective response. Return a comprehensive solution.
+"""
+
+            # Prepare options for py_reason
+            options = {
+                "system_message": agent_description,
+                "temperature": 0.7,
+            }
+
+            # Add any additional context
+            if context:
+                options["context"] = context
+
+            # Use py_reason for sophisticated problem-solving with POET enhancements
+            result = py_reason(sandbox_context, solving_prompt, options)
+
+            return str(result)
+
+        except Exception as e:
+            # Fallback to simple response if py_reason fails
+            agent_fields = ", ".join(f"{k}: {v}" for k, v in self.__dict__.items() if not k.startswith("_"))
+            return f"Agent {self.agent_type.name} solving: {problem} (fields: {agent_fields}) - Error: {str(e)}"
+
+    def _remember_impl(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
+        """Implementation of memory storage functionality. Returns success status directly."""
+        # Initialize memory if it doesn't exist
+        try:
+            self._memory[key] = value
+        except AttributeError:
+            # Memory not initialized yet, create it
+            self._memory = {key: value}
+        return True
+
+    def _recall_impl(self, sandbox_context: SandboxContext, key: str) -> Any:
+        """Implementation of memory retrieval functionality. Returns the stored value directly."""
+        # Use try/except instead of hasattr to avoid sandbox restrictions
+        try:
+            return self._memory.get(key, None)
+        except AttributeError:
+            # Memory not initialized yet
+            return None
+
+    def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> str:
+        """Implementation of reasoning functionality using py_reason with POET enhancements."""
+        try:
+            from dana.libs.corelib.py_wrappers.py_reason import py_reason
+
+            # Build agent description for context
+            agent_description = self._build_agent_description()
+
+            # Create reasoning prompt
+            reasoning_prompt = f"""
+You are {agent_description}
+
+Please reason about the following premise: {premise}
+
+Apply logical thinking, consider implications, and draw reasonable conclusions based on the available information.
+Return your reasoning process and conclusions.
+"""
+
+            # Prepare options for py_reason
+            options = {
+                "system_message": agent_description,
+                "temperature": 0.7,
+            }
+
+            # Add any additional context
+            if context:
+                options["context"] = context
+
+            # Use py_reason for sophisticated reasoning with POET enhancements
+            result = py_reason(sandbox_context, reasoning_prompt, options)
+
+            return str(result)
+
+        except Exception as e:
+            # Fallback to simple response if py_reason fails
+            agent_fields = ", ".join(f"{k}: {v}" for k, v in self.__dict__.items() if not k.startswith("_"))
+            return f"Agent {self.agent_type.name} reasoning about: {premise} (fields: {agent_fields}) - Error: {str(e)}"
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
         if self._conversation_memory is None:
-            return {"error": "Conversation memory not initialized"}
+            return {
+                "error": "Conversation memory not initialized",
+                "total_messages": 0,
+                "total_turns": 0,
+                "active_turns": 0,
+                "summary_count": 0,
+                "session_count": 0,
+            }
         return self._conversation_memory.get_statistics()
 
     def clear_conversation_memory(self) -> bool:
