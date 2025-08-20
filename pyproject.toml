@@ -36,7 +36,7 @@ dependencies = [
     "llama-index-vector-stores-postgres>=0.5.5",
     "llm-code-executor",
     "mcp",
-    "openai>=1.50.0",
+    "openai>=1.55.3",
 
     # Language Processing & Development Tools
     "jedi>=0.19.2",
@@ -48,6 +48,7 @@ dependencies = [
 
     # Data Processing & Visualization
     "matplotlib",
+    "numpy>=2.2.3",  # Numerical computing library for array operations
     "pandas",
     "seaborn",
 
@@ -60,6 +61,7 @@ dependencies = [
     "websockets",
 
     # Configuration & Utilities
+    "loguru>=0.7.3",  # Better logging library than Python's built-in logging
     "python-dotenv",
     "pyyaml",
     "structlog",
@@ -84,10 +86,16 @@ dependencies = [
     "pytest-mock",
 
     # Agent Integration
-    "python-a2a>=0.5.0",
+    "python-a2a>=0.5.9",
 
     # Additional Tools
     "aicapture",
+    "textual-dev>=1.7.0",
+
+    # Vision & Document Processing
+    "opencv-python>=4.11.0.86",  # Computer vision library for image processing
+    "pillow>=11.1.0",  # Python Imaging Library for image processing
+    "pymupdf>=1.25.3",  # PDF processing and manipulation library
 ]
 
 # Command-line entry points
@@ -106,7 +114,7 @@ dev = [
 
     # Testing
     "pexpect",      # Interactive terminal application testing
-    "pytest-cov",  # Test coverage reporting
+    "pytest-cov",   # Test coverage reporting
 
     # Development Tools
     "textual-dev>=1.7.0",  # Textual development tools
@@ -173,8 +181,6 @@ compile-bytecode = true              # Pre-compile .pyc files for performance
 
 [tool.uv.sources]
 # Future: Custom dependency sources
-
-
 
 # =============================================================================
 # Code Quality Tools
