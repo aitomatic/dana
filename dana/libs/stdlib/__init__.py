@@ -36,3 +36,8 @@ if not __IS_WIRED_IN:
         print(f"DANAPATH: {os.environ['DANAPATH']}")
 
     _ensure_stdlib_in_danapath()
+
+
+import dana.libs.stdlib.vision as __python_vision  # noqa: F401
+
+__all__ = []
