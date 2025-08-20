@@ -12,7 +12,7 @@ from dana.common.exceptions import SandboxError
 from dana.core.lang.ast import LambdaExpression
 from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry import FUNCTION_REGISTRY
 
 
 class LambdaReceiver:
@@ -105,8 +105,8 @@ class LambdaReceiver:
         receiver_types = self.get_receiver_types()
         method_function = self.create_method_function()
 
-        # Register with the universal method registry for structs
-        STRUCT_FUNCTION_REGISTRY.register_method_for_types(receiver_types, method_name, method_function)
+        # Register with the unified method registry for structs
+        FUNCTION_REGISTRY.register_method_for_types(receiver_types, method_name, method_function)
 
 
 class LambdaMethodDispatcher:
@@ -128,7 +128,7 @@ class LambdaMethodDispatcher:
 
         struct_type = obj.__struct_type__
         # Check direct method first
-        if STRUCT_FUNCTION_REGISTRY.has_method(struct_type.name, method_name):
+        if FUNCTION_REGISTRY.has_struct_function(struct_type.name, method_name):
             return True
 
         # Check delegation
@@ -153,7 +153,7 @@ class LambdaMethodDispatcher:
                 # Check if the delegated object can handle the method through registry
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
-                    return STRUCT_FUNCTION_REGISTRY.has_method(delegated_struct_type.name, method_name)
+                    return FUNCTION_REGISTRY.has_struct_function(delegated_struct_type.name, method_name)
                 # For non-struct objects, check if method exists and is callable
                 return hasattr(delegated_object, method_name) and callable(getattr(delegated_object, method_name))
         return False
@@ -176,7 +176,7 @@ class LambdaMethodDispatcher:
             raise SandboxError(f"Object {obj} is not a struct instance")
 
         struct_type = obj.__struct_type__
-        method_function = STRUCT_FUNCTION_REGISTRY.lookup_method(struct_type.name, method_name)
+        method_function = FUNCTION_REGISTRY.lookup_struct_function(struct_type.name, method_name)
 
         # Try direct method first
         if method_function is not None:
@@ -191,7 +191,7 @@ class LambdaMethodDispatcher:
                 # Check if delegated object is a struct with registered methods
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
-                    delegated_method_function = STRUCT_FUNCTION_REGISTRY.lookup_method(delegated_struct_type.name, delegated_method_name)
+                    delegated_method_function = FUNCTION_REGISTRY.lookup_struct_function(delegated_struct_type.name, delegated_method_name)
                     if delegated_method_function is not None:
                         return LambdaMethodDispatcher._execute_method_function(
                             delegated_method_function, delegated_object, args, context, kwargs

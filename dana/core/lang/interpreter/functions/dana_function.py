@@ -25,6 +25,7 @@ class DanaFunction(SandboxFunction, Loggable):
         return_type: str | None = None,
         defaults: dict[str, Any] | None = None,
         name: str | None = None,
+        is_sync: bool = False,
     ):
         """Initialize a Dana function.
 
@@ -35,6 +36,7 @@ class DanaFunction(SandboxFunction, Loggable):
             return_type: The function's return type annotation
             defaults: Default values for parameters
             name: The function name
+            is_sync: Whether this function should execute synchronously (no Promise wrapping)
         """
         super().__init__(context)
         self.body = body
@@ -42,8 +44,9 @@ class DanaFunction(SandboxFunction, Loggable):
         self.return_type = return_type
         self.defaults = defaults or {}
         self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
+        self.is_sync = is_sync  # NEW FIELD: indicates if function should execute synchronously
         self.debug(
-            f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
+            f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}, is_sync={self.is_sync}"
         )
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:

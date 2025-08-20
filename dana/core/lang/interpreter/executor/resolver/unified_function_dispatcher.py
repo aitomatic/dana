@@ -237,6 +237,15 @@ class UnifiedFunctionDispatcher:
             # Fallback to current context for non-DanaFunction objects
             execution_context = context
 
+        # Check if this is a sync function (should not be wrapped in Promise)
+        is_sync_function = isinstance(resolved_func.func, DanaFunction) and getattr(resolved_func.func, "is_sync", False)
+
+        if is_sync_function:
+            # Execute sync function synchronously (no Promise wrapping)
+            self.logger.debug(f"Executing sync function '{func_name}' synchronously (no Promise wrapping)")
+            raw_result = resolved_func.func.execute(execution_context, *evaluated_args, **evaluated_kwargs)
+            return self._assign_and_coerce_result(raw_result, func_name)
+
         # Check if we can create a Promise for this function execution
         if promise_limiter.can_create_promise():
             # Create a computation function that will execute the Dana function

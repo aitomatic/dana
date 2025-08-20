@@ -62,7 +62,7 @@ from dana.core.lang.interpreter.executor.expression.pipe_operation_handler impor
     PipeOperationHandler,
 )
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry import FUNCTION_REGISTRY
 from dana.registry.function_registry import FunctionRegistry
 
 
@@ -444,10 +444,10 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # 1. Try STRUCT_FUNCTION_REGISTRY (fast O(1) lookup)
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method_for_instance(obj, method_name)
+        # 1. Try unified registry (fast O(1) lookup for struct methods)
+        method = FUNCTION_REGISTRY.lookup_struct_function_for_instance(obj, method_name)
         if method is not None:
-            self.debug("DEBUG: Found method in STRUCT_FUNCTION_REGISTRY")
+            self.debug("DEBUG: Found method in unified registry")
 
             # Create a context for the function call
             func_context = context.create_child_context()
