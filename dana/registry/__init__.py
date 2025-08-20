@@ -30,7 +30,9 @@ MODULE_REGISTRY: ModuleRegistry = GLOBAL_REGISTRY.modules
 TYPE_REGISTRY: TypeRegistry = GLOBAL_REGISTRY.types
 
 FUNCTION_REGISTRY: FunctionRegistry = GLOBAL_REGISTRY.functions
-STRUCT_FUNCTION_REGISTRY: StructFunctionRegistry = GLOBAL_REGISTRY.struct_functions
+
+# Note: STRUCT_FUNCTION_REGISTRY has been removed. All struct method operations
+# should go through FUNCTION_REGISTRY which delegates to the internal StructFunctionRegistry automatically.
 
 AGENT_REGISTRY: AgentRegistry = GLOBAL_REGISTRY.agents
 RESOURCE_REGISTRY: ResourceRegistry = GLOBAL_REGISTRY.resources
@@ -74,18 +76,30 @@ def get_struct_type(name: str):
 
 
 def register_struct_function(receiver_type: str, method_name: str, func) -> None:
-    """Register a struct function in the global registry."""
-    STRUCT_FUNCTION_REGISTRY.register_method(receiver_type, method_name, func)
+    """Register a struct function in the global registry.
+
+    Note: This uses the unified FUNCTION_REGISTRY which delegates to the internal StructFunctionRegistry.
+    All struct method operations should go through FUNCTION_REGISTRY for consistency.
+    """
+    FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, func)
 
 
 def lookup_struct_function(receiver_type: str, method_name: str):
-    """Lookup a struct function in the global registry."""
-    return STRUCT_FUNCTION_REGISTRY.lookup_method(receiver_type, method_name)
+    """Lookup a struct function in the global registry.
+
+    Note: This uses the unified FUNCTION_REGISTRY which delegates to the internal StructFunctionRegistry.
+    All struct method operations should go through FUNCTION_REGISTRY for consistency.
+    """
+    return FUNCTION_REGISTRY.lookup_struct_function(receiver_type, method_name)
 
 
 def has_struct_function(receiver_type: str, method_name: str) -> bool:
-    """Check if a struct function exists in the global registry."""
-    return STRUCT_FUNCTION_REGISTRY.has_method(receiver_type, method_name)
+    """Check if a struct function exists in the global registry.
+
+    Note: This uses the unified FUNCTION_REGISTRY which delegates to the internal StructFunctionRegistry.
+    All struct method operations should go through FUNCTION_REGISTRY for consistency.
+    """
+    return FUNCTION_REGISTRY.has_struct_function(receiver_type, method_name)
 
 
 def clear_all() -> None:
@@ -96,7 +110,6 @@ def clear_all() -> None:
 __all__ = [
     "AGENT_REGISTRY",
     "FUNCTION_REGISTRY",
-    "STRUCT_FUNCTION_REGISTRY",
     "AgentRegistry",
     "GLOBAL_REGISTRY",
     "GlobalRegistry",

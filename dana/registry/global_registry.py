@@ -45,8 +45,8 @@ class GlobalRegistry:
         # Module registry (complex multi-storage)
         self.modules = ModuleRegistry()
 
-        # Function registry (simple key-value storage)
-        self.functions = FunctionRegistry()
+        # Function registry (simple key-value storage) with delegation to struct_functions
+        self.functions = FunctionRegistry(struct_function_registry=self.struct_functions)
 
         # Agent instance registry
         self.agents = AgentRegistry()

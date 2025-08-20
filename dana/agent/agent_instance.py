@@ -20,21 +20,21 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 # Runtime function definitions
 def lookup_dana_method(receiver_type: str, method_name: str):
-    from dana.registry import STRUCT_FUNCTION_REGISTRY
+    from dana.registry import FUNCTION_REGISTRY
 
-    return STRUCT_FUNCTION_REGISTRY.lookup_method(receiver_type, method_name)
+    return FUNCTION_REGISTRY.lookup_struct_function(receiver_type, method_name)
 
 
 def register_dana_method(receiver_type: str, method_name: str, func: Callable):
-    from dana.registry import STRUCT_FUNCTION_REGISTRY
+    from dana.registry import FUNCTION_REGISTRY
 
-    return STRUCT_FUNCTION_REGISTRY.register_method(receiver_type, method_name, func)
+    return FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, func)
 
 
 def has_dana_method(receiver_type: str, method_name: str):
-    from dana.registry import STRUCT_FUNCTION_REGISTRY
+    from dana.registry import FUNCTION_REGISTRY
 
-    return STRUCT_FUNCTION_REGISTRY.has_method(receiver_type, method_name)
+    return FUNCTION_REGISTRY.has_struct_function(receiver_type, method_name)
 
 
 # Avoid importing registries at module import time to prevent circular imports.
@@ -227,13 +227,22 @@ class AgentType(StructType):
     @property
     def agent_methods(self) -> dict[str, Callable]:
         """Get all agent methods for this type."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
+        from dana.registry import FUNCTION_REGISTRY
 
         methods = {}
-        # Get all methods registered for this agent type from the global registry
-        for (receiver_type, method_name), method in STRUCT_FUNCTION_REGISTRY._methods.items():
+
+        # First, check the internal struct methods storage
+        for (receiver_type, method_name), (method, _) in FUNCTION_REGISTRY._struct_functions.items():
             if receiver_type == self.name:
                 methods[method_name] = method
+
+        # Then, check the delegated StructFunctionRegistry if it exists
+        if FUNCTION_REGISTRY._struct_function_registry is not None:
+            delegated_registry = FUNCTION_REGISTRY._struct_function_registry
+
+            for (receiver_type, method_name), method in delegated_registry._methods.items():
+                if receiver_type == self.name:
+                    methods[method_name] = method
 
         return methods
 
