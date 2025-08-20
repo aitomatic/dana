@@ -835,7 +835,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         """Extract and register receiver functions from module AST.
 
         This method scans the AST for receiver functions (MethodDefinition nodes)
-        and registers them in the STRUCT_FUNCTION_REGISTRY so they can be called
+        and registers them in the unified FUNCTION_REGISTRY so they can be called
         as methods on struct instances.
 
         Args:
@@ -864,7 +864,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
             context: The execution context
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
+        from dana.registry import FUNCTION_REGISTRY
 
         try:
             # Extract receiver type from the method definition
@@ -896,7 +896,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
 
             # Register the method for all receiver types
             for receiver_type in receiver_types:
-                STRUCT_FUNCTION_REGISTRY.register_method(receiver_type, method_name, method_function)
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, method_function)
                 self.debug(f"Registered receiver function '{method_name}' for type '{receiver_type}' in module '{module_obj.__name__}'")
 
             self.debug(

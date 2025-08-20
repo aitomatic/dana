@@ -272,6 +272,13 @@ class PythonicBuiltinsFactory:
                 (LazyPromise,),
             ],
         },
+        # String conversion function
+        "str": {
+            "func": str,
+            "types": [int, float, bool, list, dict, tuple, set, type(None), LazyPromise],
+            "doc": "Convert a value to a string",
+            "signatures": [(int,), (float,), (bool,), (list,), (dict,), (tuple,), (set,), (type(None),), (LazyPromise,)],
+        },
     }
 
     # Explicitly unsupported functions with clear rationales
