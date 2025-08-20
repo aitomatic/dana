@@ -93,14 +93,25 @@ class DanaSandbox(Loggable):
             self._context.set("system:module_search_paths", module_search_paths)
 
         # In test mode, ensure corelib functions are available by loading them manually
-        if os.getenv("DANA_TEST_MODE") and "system" not in self._interpreter.function_registry._functions:
+        if os.getenv("DANA_TEST_MODE"):
             try:
+                # Register built-in functions (always in test mode to ensure they're available)
+                from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+
+                do_register_py_builtins(self._interpreter.function_registry)
+
+                # Register wrapper functions
                 from pathlib import Path
 
                 from dana.libs.corelib.py_wrappers.register_py_wrappers import _register_python_functions
 
                 py_dir = Path(__file__).parent.parent.parent / "libs" / "corelib" / "py_wrappers"
                 _register_python_functions(py_dir, self._interpreter.function_registry)
+
+                # Debug: Check if functions are now available
+                if self.debug_mode:
+                    self.debug(f"Test mode: Function registry has len: {self._interpreter.function_registry.has('len', None)}")
+                    self.debug(f"Test mode: Function registry has print: {self._interpreter.function_registry.has('print', None)}")
 
             except Exception as e:
                 self.warning(f"Failed to load corelib functions in test mode: {e}")
