@@ -78,12 +78,7 @@ async def update_topic(topic_id: int, topic_data: TopicCreate, db: Session = Dep
 
 
 @router.delete("/{topic_id}")
-async def delete_topic(
-    topic_id: int,
-    force: bool = False,
-    db: Session = Depends(get_db),
-    topic_service=Depends(get_topic_service)
-):
+async def delete_topic(topic_id: int, force: bool = False, db: Session = Depends(get_db), topic_service=Depends(get_topic_service)):
     """Delete a topic. Use force=true to delete associated documents."""
     try:
         success = await topic_service.delete_topic(topic_id, db, force=force)

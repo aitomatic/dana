@@ -566,7 +566,7 @@ class ExpressionTransformer(BaseTransformer):
         location = self.create_location(token)  # Create location from token
 
         # Handle NUMBER tokens specifically
-        if hasattr(token, 'type') and token.type == "NUMBER":
+        if hasattr(token, "type") and token.type == "NUMBER":
             try:
                 if "." in value:
                     return LiteralExpression(value=float(value), location=location)
@@ -577,7 +577,7 @@ class ExpressionTransformer(BaseTransformer):
                 pass
 
         # Handle boolean and None tokens
-        if hasattr(token, 'type'):
+        if hasattr(token, "type"):
             if token.type == "TRUE" or value in ["True", "true", "TRUE"]:
                 return LiteralExpression(value=True, location=location)
             elif token.type == "FALSE" or value in ["False", "false", "FALSE"]:
@@ -608,7 +608,7 @@ class ExpressionTransformer(BaseTransformer):
         # Fallback: try to convert numeric strings to int or float
         try:
             # Try int first (for simple digits)
-            if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+            if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
                 value = int(value)
             else:
                 # Try float

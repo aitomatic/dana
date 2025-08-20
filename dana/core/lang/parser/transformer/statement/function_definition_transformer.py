@@ -44,37 +44,37 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
     def function_def(self, items):
         """Transform a unified function definition rule into a FunctionDefinition node.
-        
+
         Grammar: function_def: [decorators] ["sync"] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
         """
         # Filter out None values and Comments
         relevant_items = self.main_transformer._filter_relevant_items(items)
-        
+
         if len(relevant_items) < 2:
             raise ValueError(f"Function definition must have at least a name and body, got {len(relevant_items)} items")
-        
+
         current_index = 0
         decorators = []
         is_sync = False
-        
+
         # Check for decorators
         if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
             first_item = relevant_items[current_index]
             if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
                 decorators = first_item
                 current_index += 1
-        
+
         # Check for "sync" keyword
         if current_index < len(relevant_items) and isinstance(relevant_items[current_index], Token):
             if relevant_items[current_index].type == "SYNC":
                 is_sync = True
                 current_index += 1
-        
+
         # Skip "def" keyword if present
         if current_index < len(relevant_items) and isinstance(relevant_items[current_index], Token):
             if relevant_items[current_index].type == "DEF" or relevant_items[current_index].value == "def":
                 current_index += 1
-        
+
         # Extract receiver if present
         receiver = None
         if (
@@ -91,25 +91,25 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 elif hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
                     receiver = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
             current_index += 1
-        
+
         # Extract function name
         func_name_token = relevant_items[current_index]
         if not (isinstance(func_name_token, Token) and func_name_token.type == "NAME"):
             raise ValueError(f"Expected function name token, got {func_name_token}")
         func_name = func_name_token.value
         current_index += 1
-        
+
         # Resolve parameters using simplified logic
         parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
-        
+
         # Extract return type
         return_type, current_index = self._extract_return_type(relevant_items, current_index)
-        
+
         # Extract function body
         block_items = self._extract_function_body(relevant_items, current_index)
-        
+
         location = self.main_transformer.create_location(func_name_token)
-        
+
         return FunctionDefinition(
             name=Identifier(name=func_name, location=location),
             parameters=parameters,
@@ -559,7 +559,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         # Find the struct_block - it should be a dict (transformed) or Tree
         for item in items[2:]:  # Skip keyword and name
-            if item is not None and (isinstance(item, dict) or (hasattr(item, 'data') and item.data == 'struct_block')):
+            if item is not None and (isinstance(item, dict) or (hasattr(item, "data") and item.data == "struct_block")):
                 struct_block = item
                 break
 
@@ -587,7 +587,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # or it might already be a TypeHint object from the 'basic_type' rule transformation.
         if not isinstance(type_hint_node, TypeHint):
             # Check if it's a Tree that needs to be transformed
-            if hasattr(type_hint_node, 'data') and type_hint_node.data == 'basic_type':
+            if hasattr(type_hint_node, "data") and type_hint_node.data == "basic_type":
                 # Transform the basic_type Tree using the main transformer
                 type_hint = self.main_transformer.basic_type(type_hint_node.children)
             elif isinstance(type_hint_node, Token):
@@ -705,10 +705,10 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # The struct_block contains: [docstring?] fields_and_functions
         docstring = None
         fields_and_functions = None
-        
+
         for item in items:
             if item is not None:
-                if hasattr(item, 'data') and item.data == 'docstring':
+                if hasattr(item, "data") and item.data == "docstring":
                     docstring = item.children[0].value.strip('"') if item.children else None
                 elif isinstance(item, list):
                     # This should be the transformed fields_and_functions
@@ -716,11 +716,8 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 else:
                     # If it's still a tree, it might be fields_and_functions
                     fields_and_functions = item
-        
-        return {
-            'docstring': docstring,
-            'fields_and_functions': fields_and_functions or []
-        }
+
+        return {"docstring": docstring, "fields_and_functions": fields_and_functions or []}
 
     # === Resource Definitions ===
 
@@ -733,15 +730,15 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # Check if struct_block is transformed (dict format) or raw Tree
         if isinstance(struct_block, dict):
             # Transformed format from struct_block method
-            docstring = struct_block.get('docstring')
-            fields_and_functions = struct_block.get('fields_and_functions', [])
-            
+            docstring = struct_block.get("docstring")
+            fields_and_functions = struct_block.get("fields_and_functions", [])
+
             for item in fields_and_functions:
                 if isinstance(item, StructField):
                     fields.append(item)
                 elif isinstance(item, FunctionDefinition):
                     methods.append(item)
-                    
+
         elif struct_block and hasattr(struct_block, "data") and struct_block.data == "struct_block":
             # Raw Tree format (fallback)
             for child in struct_block.children:
@@ -751,7 +748,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
                     elif child.data == "fields_and_functions":
                         # The fields_and_functions rule should be transformed into a list
                         # by the fields_and_functions method
-                        if hasattr(child, 'children'):
+                        if hasattr(child, "children"):
                             for item in child.children:
                                 if isinstance(item, StructField):
                                     fields.append(item)

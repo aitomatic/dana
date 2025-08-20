@@ -612,13 +612,13 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 # Note: UseStatement functionality has been removed as part of grammar unification
 # def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 #     parser = ParserCache.get_parser("dana")
-# 
+#
 #     if should_raise:
 #         with pytest.raises(Exception):  # noqa: B017
 #             parser.parse(code, do_transform=True)
 #     else:
 #         program = parser.parse(code, do_transform=True)
-# 
+#
 #         # Handle multi-statement cases for variable tests
 #         if "\n" in code:
 #             # Find the use statement (should be the last statement)
@@ -631,9 +631,9 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 #             stmt = use_stmt
 #         else:
 #             stmt = program.statements[0]
-# 
+#
 #         assert isinstance(stmt, UseStatement)
-# 
+#
 #         # For variable test cases, check structure but not exact values
 #         if expected_args is None and expected_kwargs is None:
 #             # Variable test cases - just check that we have the right structure
@@ -655,7 +655,7 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 #                 for actual, expected in zip(stmt.args, expected_args, strict=False):
 #                     assert isinstance(actual, LiteralExpression)
 #                     assert actual.value == expected
-# 
+#
 #             if isinstance(expected_kwargs, dict):
 #                 assert len(stmt.kwargs) == len(expected_kwargs)
 #                 for key, expected_value in expected_kwargs.items():
@@ -668,18 +668,18 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 # def test_use_stmt_complex_expressions():
 #     """Test use statements with complex expressions as arguments."""
 #     parser = ParserCache.get_parser("dana")
-# 
+#
 #     # Test with binary expression
 #     code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
 #     program = parser.parse(code, do_transform=True)
-# 
+#
 #     # Find the use statement
 #     use_stmt = None
 #     for stmt in program.statements:
 #         if isinstance(stmt, UseStatement):
 #             use_stmt = stmt
 #             break
-# 
+#
 #     assert use_stmt is not None
 #     assert isinstance(use_stmt, UseStatement)
 #     assert len(use_stmt.args) == 0

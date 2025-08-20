@@ -46,15 +46,19 @@ class AssignmentTransformer(BaseTransformer):
         """
         # The unified assignment rule can be either a regular assignment or a compound assignment
         # We need to determine which one based on the structure of the items
-        
+
         # If we have only 1 item and it's already a CompoundAssignment, return it directly
         if len(items) == 1 and hasattr(items[0], "__class__") and items[0].__class__.__name__ == "CompoundAssignment":
             return items[0]
-        
+
         # Check for compound assignment (3 items: target, operator, value)
-        if len(items) == 3 and hasattr(items[1], "value") and items[1].value in ["+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", "<<=", ">>="]:
+        if (
+            len(items) == 3
+            and hasattr(items[1], "value")
+            and items[1].value in ["+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", "<<=", ">>="]
+        ):
             return self.compound_assignment(items)
-        
+
         # Check for typed assignment: target, type_hint, value, [comment]
         # Look for TypeHint in the items - could be at index 1 (4 items) or index 2 (with different grammar structure)
         type_hint_index = None
@@ -62,7 +66,7 @@ class AssignmentTransformer(BaseTransformer):
             if item is not None and hasattr(item, "__class__") and item.__class__.__name__ == "TypeHint":
                 type_hint_index = i
                 break
-        
+
         if type_hint_index is not None:
             # Found a type hint, this is a typed assignment
             target_tree = items[0]
@@ -70,23 +74,25 @@ class AssignmentTransformer(BaseTransformer):
             # Find the value - should be after the type hint
             value_tree = None
             for i in range(type_hint_index + 1, len(items)):
-                if items[i] is not None and not (hasattr(items[i], 'type') and items[i].type == 'COMMENT'):
+                if items[i] is not None and not (hasattr(items[i], "type") and items[i].type == "COMMENT"):
                     value_tree = items[i]
                     break
-            return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
-        
+            return AssignmentHelper.create_assignment(
+                target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint
+            )
+
         # Regular assignment without type hint: target "=" expr
         if len(items) >= 2:
             target_tree = items[0]
             # Find the value - it could be at index 1 (no type hint) or index 2 (with type hint that's None)
             value_tree = None
             for i in range(1, len(items)):
-                if items[i] is not None and not (hasattr(items[i], 'type') and items[i].type == 'COMMENT'):
+                if items[i] is not None and not (hasattr(items[i], "type") and items[i].type == "COMMENT"):
                     value_tree = items[i]
                     break
-            
+
             return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), None)
-        
+
         # Fallback for unexpected structure
         raise ValueError(f"Unexpected assignment structure with {len(items)} items: {items}")
 
