@@ -192,30 +192,32 @@ def run_dana_test_file(dana_test_file):
         from tests.conftest import run_dana_test_file
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
-    # Clear struct registry to ensure test isolation
+    # Clear only what's needed for test isolation, not everything
     from dana.__init__ import initialize_module_system, reset_module_system
     from dana.registry import GLOBAL_REGISTRY
 
     registry = GLOBAL_REGISTRY
-    registry.clear_all()
-
-    # Reload core functions after clearing
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
-
-    do_register_py_builtins(registry.functions)
-    register_py_wrappers(registry.functions)
-
-    # Initialize module system for tests that may use imports
-    reset_module_system()
-    initialize_module_system()
-
+    
+    # Clear type registry to prevent struct type conflicts between tests
+    registry.types.clear()
+    
+    # Clear module registry to ensure fresh module loading
+    registry.modules.clear()
+    
+    # Clear agent/resource instances to prevent state bleeding
+    registry.agents.clear()
+    registry.resources.clear()
+    
     # Clear Promise group to prevent bleeding between tests
     from dana.core.concurrency.lazy_promise import _current_promise_group
 
     # Clear the thread-local Promise group
     if hasattr(_current_promise_group, "group"):
         delattr(_current_promise_group, "group")
+
+    # Initialize module system for tests that may use imports
+    reset_module_system()
+    initialize_module_system()
 
     sandbox = DanaSandbox()
     try:
