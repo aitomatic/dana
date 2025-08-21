@@ -1,4 +1,8 @@
 """Documents Querying."""
 
-with use("rag", sources=["../../../../docs/for-engineers", "../../../../docs/for-contributors"]) as dana_docs:
-    print(reason("Teach me Dana syntax for multi-agent collaboration"))
+from resources import RagResource, query, initialize  # TODO: user not needing to import `query` & `initialize`
+
+dana_primers_rag = RagResource(sources=["../../../../docs/primers"])
+dana_primers_rag.initialize()  # TODO: user not needing to initialize
+
+print(dana_primers_rag.query("Dana's 6 core concepts"))  # TODO: return str input, not raw list of candidate pieces
