@@ -9,7 +9,6 @@ from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource a
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 import logging
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -105,12 +104,12 @@ class ProposeKnowledgeStructureTool(BaseTool):
 
         structure_prompt = f"""You are a domain expert creating a comprehensive knowledge structure for: {topic}
 
-TASK: Create a hierarchical knowledge structure with {params['levels']} levels of depth.
+TASK: Create a hierarchical knowledge structure with {params["levels"]} levels of depth.
 
 REQUIREMENTS:
-1. Create {params['subtopics_per_category']} main categories (📁) that cover the domain comprehensively
-2. Under each main category, add {params['subtopics_per_category']} specific subtopics (📄) 
-3. Focus on {params['detail']} - practical, actionable knowledge areas
+1. Create {params["subtopics_per_category"]} main categories (📁) that cover the domain comprehensively
+2. Under each main category, add {params["subtopics_per_category"]} specific subtopics (📄) 
+3. Focus on {params["detail"]} - practical, actionable knowledge areas
 4. Use clear, descriptive names that indicate what knowledge would be generated
 5. Structure should be logical and follow natural learning progression
 

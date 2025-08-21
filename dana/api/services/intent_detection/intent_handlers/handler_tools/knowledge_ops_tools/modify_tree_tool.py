@@ -13,7 +13,6 @@ import logging
 import os
 import shutil
 import json
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -235,16 +234,16 @@ class ModifyTreeTool(BaseTool):
         # Store the old topic name for comparison
         old_topic = modified_node.topic
         cleanup_result = {}
-        
+
         # If new_name is provided, rename the node
         if new_name and new_name != old_topic:
             # Clean up old knowledge files before renaming
             cleanup_result = self._cleanup_knowledge_files(path_parts, "modify")
-            
+
             # Update the node's topic name
             modified_node.topic = new_name
             logger.info(f"Renamed node from '{old_topic}' to '{new_name}'")
-        
+
         return {
             "success": True,
             "operation": "modify",
@@ -340,7 +339,7 @@ class ModifyTreeTool(BaseTool):
 
         # Clean up associated knowledge files
         cleanup_result = self._cleanup_knowledge_files(path_parts, "remove")
-        
+
         return {
             "success": True,
             "operation": "remove",
@@ -688,7 +687,7 @@ Return as JSON with this exact structure:
         creates = [r for r in operation_results if r["operation"] == "create" and r["success"]]
         modifies = [r for r in operation_results if r["operation"] == "modify" and r["success"]]
         removes = [r for r in operation_results if r["operation"] == "remove" and r["success"]]
-        
+
         # Count total files cleaned up
         total_files_removed = sum(r.get("files_removed", 0) for r in operation_results)
 
@@ -779,43 +778,38 @@ Return as JSON with this exact structure:
                 logger.info(f"Tree changes saved after {operation} operation on {tree_path}")
             except Exception as e:
                 logger.error(f"Failed to save tree changes: {e}")
-    
+
     def _build_file_path_for_topic(self, path_parts: list[str]) -> str:
         """Build file path from topic path using '/' separators."""
         return "/".join(path_parts) + "/knowledge.json"
-    
+
     def _cleanup_knowledge_files(self, path_parts: list[str], operation: str = "remove") -> dict:
         """
         Clean up knowledge files when nodes are removed or modified.
-        
+
         Args:
             path_parts: Path from root to the node being removed/modified
             operation: Type of operation ('remove' or 'modify')
-            
+
         Returns:
             Dictionary with cleanup results
         """
-        cleanup_result = {
-            "files_removed": [],
-            "files_not_found": [],
-            "status_updated": False,
-            "errors": []
-        }
-        
+        cleanup_result = {"files_removed": [], "files_not_found": [], "status_updated": False, "errors": []}
+
         if not self.storage_path:
             logger.warning("Storage path not configured, skipping file cleanup")
             return cleanup_result
-            
+
         try:
             # Build the file path for this topic
             relative_path = self._build_file_path_for_topic(path_parts)
             full_file_path = os.path.join(self.storage_path, relative_path)
-            
+
             # For remove operation, also handle subdirectories
             if operation == "remove":
                 # Get the directory path (without /knowledge.json)
                 dir_path = os.path.join(self.storage_path, "/".join(path_parts))
-                
+
                 # Check if directory exists and remove it recursively
                 if os.path.exists(dir_path):
                     if os.path.isdir(dir_path):
@@ -825,7 +819,7 @@ Return as JSON with this exact structure:
                             for file in files:
                                 if file == "knowledge.json":
                                     files_to_remove.append(os.path.join(root, file))
-                        
+
                         # Remove the entire directory tree
                         shutil.rmtree(dir_path)
                         cleanup_result["files_removed"] = files_to_remove
@@ -838,7 +832,7 @@ Return as JSON with this exact structure:
                 else:
                     cleanup_result["files_not_found"].append(dir_path)
                     logger.debug(f"No files found to remove at: {dir_path}")
-                    
+
             elif operation == "modify":
                 # For modify, just remove the single knowledge.json file if it exists
                 # The new name will have its own path
@@ -848,65 +842,65 @@ Return as JSON with this exact structure:
                     logger.info(f"Removed knowledge file for modified node: {full_file_path}")
                 else:
                     cleanup_result["files_not_found"].append(full_file_path)
-                    
+
             # Update knowledge status if configured
             if self.knowledge_status_path and cleanup_result["files_removed"]:
                 self._update_knowledge_status_after_removal(path_parts, cleanup_result["files_removed"])
                 cleanup_result["status_updated"] = True
-                
+
         except Exception as e:
             error_msg = f"Error during file cleanup for {'/'.join(path_parts)}: {str(e)}"
             logger.error(error_msg)
             cleanup_result["errors"].append(error_msg)
-            
+
         return cleanup_result
-    
+
     def _update_knowledge_status_after_removal(self, path_parts: list[str], removed_files: list[str]) -> None:
         """
         Update knowledge status file after removing knowledge files.
-        
+
         Args:
             path_parts: Path to the removed node
             removed_files: List of files that were removed
         """
         if not self.knowledge_status_path:
             return
-            
+
         try:
             # Load existing status
             status_data = {"topics": []}
             if os.path.exists(self.knowledge_status_path):
-                with open(self.knowledge_status_path, 'r') as f:
+                with open(self.knowledge_status_path) as f:
                     status_data = json.load(f)
-            
+
             # Filter out removed topics
             original_count = len(status_data.get("topics", []))
-            
+
             # Remove entries for the deleted topic and its children
             updated_topics = []
             for topic_entry in status_data.get("topics", []):
                 # Check if this topic or its file was removed
                 topic_file = topic_entry.get("file", "")
                 topic_path = topic_entry.get("path", "")
-                
+
                 # Skip if this topic was removed
                 should_keep = True
                 for removed_file in removed_files:
                     if topic_file in removed_file or topic_path.startswith(" > ".join(path_parts)):
                         should_keep = False
                         break
-                        
+
                 if should_keep:
                     updated_topics.append(topic_entry)
-                    
+
             status_data["topics"] = updated_topics
             removed_count = original_count - len(updated_topics)
-            
+
             # Save updated status
-            with open(self.knowledge_status_path, 'w') as f:
+            with open(self.knowledge_status_path, "w") as f:
                 json.dump(status_data, f, indent=2)
-                
+
             logger.info(f"Updated knowledge status: removed {removed_count} entries after node removal")
-            
+
         except Exception as e:
             logger.error(f"Failed to update knowledge status after removal: {e}")

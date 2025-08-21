@@ -9,7 +9,7 @@ from dana.api.core.schemas import DomainKnowledgeTree
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
-from typing import Callable
+from collections.abc import Callable
 import logging
 
 logger = logging.getLogger(__name__)

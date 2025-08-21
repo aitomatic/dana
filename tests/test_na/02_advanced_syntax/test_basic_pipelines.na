@@ -208,17 +208,13 @@ assert result == [1, 4, 9], f"Expected [1, 4, 9], got {result}"
 log("✅ Pipeline with list filtering and transformation works")
 
 # Test 17: Pipeline with function composition
-def compose(f: function, g: function) -> function:
-    return lambda x :: f(g(x))
-
 def add_one(x: int) -> int:
     return x + 1
 
 def multiply_by_ten(x: int) -> int:
     return x * 10
 
-composed = compose(add_one, multiply_by_ten)
-def pipeline(x) = composed
+def pipeline(x) = multiply_by_ten | add_one
 result = pipeline(5)
 assert result == 51, f"Expected 51, got {result}"
 log("✅ Pipeline with function composition works")

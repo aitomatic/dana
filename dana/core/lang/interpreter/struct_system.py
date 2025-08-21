@@ -374,9 +374,9 @@ class StructInstance:
                 # Check if it's a struct instance with registered methods
                 if hasattr(delegated_object, "__struct_type__"):
                     delegated_struct_type = delegated_object.__struct_type__
-                    from dana.registry import STRUCT_FUNCTION_REGISTRY
+                    from dana.registry import FUNCTION_REGISTRY
 
-                    if STRUCT_FUNCTION_REGISTRY.has_method(delegated_struct_type.name, method_name):
+                    if FUNCTION_REGISTRY.has_struct_function(delegated_struct_type.name, method_name):
                         return delegated_object, method_name
 
                 # Also check for direct callable attributes (for non-struct objects)

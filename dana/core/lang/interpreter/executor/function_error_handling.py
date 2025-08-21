@@ -36,30 +36,37 @@ class FunctionExecutionErrorHandler:
         self.logger = logging.getLogger(__name__)
 
     def handle_function_call_error(self, error: Exception, node: FunctionCall, context: Any) -> Any:
-        """Handle errors during function call execution.
+        """Handle function call errors with recovery attempts.
 
         Args:
-            error: The exception that occurred
+            error: The original error
             node: The function call node
             context: The execution context
 
         Returns:
-            Error response or re-raises exception
+            The function execution result if recovery succeeds
+
+        Raises:
+            SandboxError: If recovery fails
         """
-        # Log the error for debugging
-        self.logger.error(f"Function call error for '{node.name}': {error}")
+        # Try recovery strategies in order of preference
+        recovery_strategies = [
+            PositionalErrorRecoveryStrategy(self.executor),
+            # Future: Add more recovery strategies here
+        ]
 
-        # Check if this is a positional argument error that we can recover from
-        if self._is_positional_argument_error(error):
-            recovery_strategy = PositionalErrorRecoveryStrategy(self.executor)
-            return recovery_strategy.attempt_recovery(error, node, context)
+        for strategy in recovery_strategies:
+            if strategy.can_handle(error, {}):  # Empty kwargs for now
+                try:
+                    # The result may be an EagerPromise object - this is expected behavior
+                    # Promise transparency will handle resolution when the result is accessed
+                    return strategy.recover(error, node, None, context, [], {}, node.name, self.executor)
+                except Exception:
+                    # Strategy failed, try next one
+                    continue
 
-        # Check if this is a registry-related error
-        if isinstance(error, FunctionRegistryError):
-            return self._handle_registry_error(error, node)
-
-        # For other errors, re-raise
-        raise error
+        # No recovery possible, raise enhanced error
+        raise self._create_enhanced_sandbox_error(error, node, node.name)
 
     def _is_positional_argument_error(self, error: Exception) -> bool:
         """Check if the error is related to positional arguments.
@@ -201,6 +208,78 @@ class PositionalErrorRecoveryStrategy:
         self.executor = executor
         self.logger = logging.getLogger(__name__)
 
+    def can_handle(self, error: Exception, kwargs: dict) -> bool:
+        """Check if this strategy can handle the given error.
+
+        Args:
+            error: The error to check
+            kwargs: The keyword arguments from the function call
+
+        Returns:
+            True if this strategy can handle the error
+        """
+        # Check if this is a positional argument error
+        return self._is_positional_argument_error(error)
+
+    def recover(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        registry: Any,
+        context: Any,
+        evaluated_args: list,
+        evaluated_kwargs: dict,
+        func_name: str,
+        executor: "FunctionExecutor",
+    ) -> Any:
+        """Attempt to recover from a positional argument error.
+
+        Args:
+            error: The original error
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The function name
+            executor: The function executor
+
+        Returns:
+            Result of recovery attempt (may be an EagerPromise object)
+
+        Raises:
+            Exception: If recovery fails
+        """
+        self.logger.debug(f"Attempting positional error recovery for '{func_name}': {error}")
+
+        # Strategy 1: Try converting positional args to keyword args
+        try:
+            return self._try_keyword_conversion(node, context)
+        except Exception as recovery_error:
+            self.logger.debug(f"Keyword conversion failed: {recovery_error}")
+
+        # Strategy 2: Try with fewer arguments
+        try:
+            return self._try_reduced_args(node, context)
+        except Exception as recovery_error:
+            self.logger.debug(f"Reduced args failed: {recovery_error}")
+
+        # Recovery failed, raise original error
+        self.logger.debug(f"All recovery strategies failed for '{func_name}'")
+        raise error
+
+    def _is_positional_argument_error(self, error: Exception) -> bool:
+        """Check if the error is related to positional arguments.
+
+        Args:
+            error: The error to check
+
+        Returns:
+            True if this is a positional argument error
+        """
+        error_str = str(error).lower()
+        return any(keyword in error_str for keyword in ["positional", "argument", "missing", "required", "unexpected"])
+
     def attempt_recovery(self, error: Exception, node: FunctionCall, context: Any) -> Any:
         """Attempt to recover from a positional argument error.
 
@@ -238,7 +317,7 @@ class PositionalErrorRecoveryStrategy:
             context: The execution context
 
         Returns:
-            Result of function call with keyword arguments
+            Result of function call with keyword arguments (may be an EagerPromise object)
         """
         # This is a simplified implementation
         # In practice, you'd need function signature inspection
@@ -258,6 +337,8 @@ class PositionalErrorRecoveryStrategy:
         # Create a new node with converted arguments
         converted_node = FunctionCall(name=node.name, args=converted_kwargs, location=node.location)
 
+        # The result may be an EagerPromise object - this is expected behavior
+        # Promise transparency will handle resolution when the result is accessed
         return self.executor.execute_function_call(converted_node, context)
 
     def _try_reduced_args(self, node: FunctionCall, context: Any) -> Any:
@@ -268,7 +349,7 @@ class PositionalErrorRecoveryStrategy:
             context: The execution context
 
         Returns:
-            Result of function call with reduced arguments
+            Result of function call with reduced arguments (may be an EagerPromise object)
         """
         if not node.args:
             raise ValueError("No arguments to reduce")
@@ -279,98 +360,12 @@ class PositionalErrorRecoveryStrategy:
         # Find the highest numeric key and remove it
         numeric_keys = [k for k in reduced_args.keys() if k.isdigit()]
         if numeric_keys:
-            highest_key = max(numeric_keys, key=int)
-            del reduced_args[highest_key]
+            max_key = max(numeric_keys, key=int)
+            del reduced_args[max_key]
 
-            # Create a new node with reduced arguments
-            reduced_node = FunctionCall(name=node.name, args=reduced_args, location=node.location)
+        # Create a new node with reduced arguments
+        reduced_node = FunctionCall(name=node.name, args=reduced_args, location=node.location)
 
-            return self.executor.execute_function_call(reduced_node, context)
-
-        raise ValueError("Cannot reduce arguments further")
-
-    def get_recovery_suggestions(self, error: Exception, function_name: str) -> list[str]:
-        """Get suggestions for recovering from the error.
-
-        Args:
-            error: The error that occurred
-            function_name: Name of the function
-
-        Returns:
-            List of recovery suggestions
-        """
-        suggestions = []
-        error_msg = str(error).lower()
-
-        if "too many" in error_msg:
-            suggestions.append(f"Try calling '{function_name}' with fewer arguments")
-            suggestions.append("Check the function signature for required parameters")
-
-        if "missing" in error_msg:
-            suggestions.append(f"Try calling '{function_name}' with additional arguments")
-            suggestions.append("Check if required parameters are missing")
-
-        if "positional" in error_msg:
-            suggestions.append("Try using keyword arguments instead of positional arguments")
-            suggestions.append("Check the parameter order for the function")
-
-        if not suggestions:
-            suggestions.append(f"Check the documentation for function '{function_name}'")
-
-        return suggestions
-
-    def can_handle(self, error: Exception, evaluated_kwargs: dict[str, Any]) -> bool:
-        """Check if this strategy can handle the given error.
-
-        Args:
-            error: The error to check
-            evaluated_kwargs: The evaluated keyword arguments
-
-        Returns:
-            True if this strategy can handle the error
-        """
-        return self._is_positional_argument_error(error)
-
-    def _is_positional_argument_error(self, error: Exception) -> bool:
-        """Check if the error is related to positional arguments.
-
-        Args:
-            error: The exception to check
-
-        Returns:
-            True if this is a positional argument error
-        """
-        error_msg = str(error).lower()
-        positional_indicators = ["takes", "positional argument", "too many positional arguments", "missing", "required positional argument"]
-        return any(indicator in error_msg for indicator in positional_indicators)
-
-    def recover(
-        self,
-        error: Exception,
-        node: FunctionCall,
-        registry: Any,
-        context: Any,
-        evaluated_args: list[Any],
-        evaluated_kwargs: dict[str, Any],
-        func_name: str,
-        executor: Any,
-    ) -> Any:
-        """Recover from the error by trying different execution strategies.
-
-        Args:
-            error: The original error
-            node: The function call node
-            registry: The function registry
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The function name
-            executor: The function executor
-
-        Returns:
-            Result of successful recovery
-
-        Raises:
-            Exception: If recovery fails
-        """
-        return self.attempt_recovery(error, node, context)
+        # The result may be an EagerPromise object - this is expected behavior
+        # Promise transparency will handle resolution when the result is accessed
+        return self.executor.execute_function_call(reduced_node, context)

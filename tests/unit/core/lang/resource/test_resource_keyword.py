@@ -220,10 +220,9 @@ class TestAST:
     def test_resource_definition(self):
         """Test ResourceDefinition AST node."""
         # Without parent (composition-based)
-        definition = ResourceDefinition(name="MyResource", parent_name=None, fields=[], methods=[])
+        definition = ResourceDefinition(name="MyResource", fields=[], methods=[])
 
         assert definition.name == "MyResource"
-        assert definition.parent_name is None
 
     def test_resource_field(self):
         """Test ResourceField AST node."""

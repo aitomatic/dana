@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
 from dana.common.runtime_scopes import RuntimeScopes
+from dana.core.concurrency.promise_limiter import get_global_promise_limiter
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
@@ -64,6 +65,9 @@ class SandboxContext(Loggable):
 
         # Private system LLM resource for efficient access
         self._system_llm_resource: LLMResourceInstance | None = None
+
+        # Initialize PromiseLimiter for safe concurrent execution
+        self._promise_limiter = get_global_promise_limiter()
 
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
@@ -939,3 +943,12 @@ class SandboxContext(Loggable):
             self.info(f"Stored system LLM resource: {llm_resource.model}")
         except Exception as e:
             self.error(f"Failed to set system LLM resource: {e}")
+
+    @property
+    def promise_limiter(self):
+        """Get the PromiseLimiter instance for this context.
+
+        Returns:
+            The PromiseLimiter instance
+        """
+        return self._promise_limiter
