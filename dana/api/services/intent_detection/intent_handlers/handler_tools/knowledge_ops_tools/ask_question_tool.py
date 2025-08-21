@@ -47,7 +47,7 @@ class AskQuestionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="Array of 2-3 specific, actionable options that directly address the user's situation. Each option should be a clear choice that moves toward their goal. Avoid generic Yes/No options - instead use descriptive actions like 'Create comprehensive loan knowledge structure', 'Add basic loan topics only', 'Explore existing knowledge first'. Options should be mutually exclusive and cover the most logical paths forward.",
+                        description="Array of 1-2 specific, actionable options that directly address the user's situation. Avoid withrawn options like 'Cancel/No' options. Each option should be a clear choice that moves toward their goal. Avoid generic Yes/No options - instead use descriptive actions like 'Create comprehensive loan knowledge structure', 'Add basic loan topics only', 'Explore existing knowledge first'. Options should be mutually exclusive and cover the most logical paths forward.",
                         example='["Create comprehensive small business loan knowledge structure", "Add basic loan evaluation topics to existing financial analysis", "Show me Sofia\'s current financial knowledge first", "Get strategic advice on loan advisory capabilities"]',
                     ),
                     BaseArgument(
