@@ -170,6 +170,87 @@ class LLMResourceInstance(ResourceInstance):
         self._llm_resource.with_mock_llm_call(mock_llm_call)
         return self
 
+    def chat_completion(self, messages: list[dict[str, str]], system_prompt: str | None = None, context: dict | None = None) -> str:
+        """
+        Simplified chat completion that handles message formatting and response parsing.
+
+        Args:
+            messages: List of message dictionaries with 'role' and 'content'
+            system_prompt: Optional system prompt to prepend
+            context: Optional additional context to include
+
+        Returns:
+            The extracted text content from the LLM response
+
+        Raises:
+            Exception: If the LLM call fails or response parsing fails
+        """
+        # Build the complete message array
+        formatted_messages = []
+
+        # Add system prompt if provided
+        if system_prompt:
+            formatted_messages.append({"role": "system", "content": system_prompt})
+
+        # Add context if provided
+        if context:
+            context_str = f"Additional context: {context}"
+            formatted_messages.append({"role": "system", "content": context_str})
+
+        # Add the user messages
+        formatted_messages.extend(messages)
+
+        # Create the request
+        request = BaseRequest(arguments={"messages": formatted_messages})
+
+        # Make the query
+        response = self.query_sync(request)
+
+        if not response.success:
+            raise Exception(f"LLM call failed: {response.error}")
+
+        # Extract the text content from the response
+        return self._extract_text_content(response.content)
+
+    def _extract_text_content(self, content: Any) -> str:
+        """
+        Extract text content from various LLM response formats.
+
+        Args:
+            content: The response content from the LLM
+
+        Returns:
+            The extracted text content as a string
+        """
+        if isinstance(content, str):
+            return content
+
+        if isinstance(content, dict):
+            # OpenAI/Anthropic style response
+            if "choices" in content and content["choices"]:
+                first_choice = content["choices"][0]
+                if isinstance(first_choice, dict) and "message" in first_choice:
+                    response_message = first_choice["message"]
+                    if isinstance(response_message, dict) and "content" in response_message:
+                        return response_message["content"]
+                    elif hasattr(response_message, "content"):
+                        return response_message.content
+                    else:
+                        return str(response_message)
+                elif hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                    return first_choice.message.content
+                else:
+                    return str(first_choice)
+            # Direct content fields
+            elif "content" in content:
+                return content["content"]
+            elif "response" in content:
+                return content["response"]
+            else:
+                return str(content)
+        else:
+            return str(content)
+
     # Delegation for any method not explicitly defined
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to the wrapped LLMResource."""

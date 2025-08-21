@@ -101,7 +101,7 @@ class IntentDetectionService(Loggable):
 User just said: "{user_message}"
 Agent name: {agent_name}
 Agent domain: {domain or "not set yet"}
-Recent topics added: {', '.join(recent_topics) if recent_topics else "none yet"}
+Recent topics added: {", ".join(recent_topics) if recent_topics else "none yet"}
 Progress stage: {progress_stage}
 
 Generate a supportive follow-up message that:

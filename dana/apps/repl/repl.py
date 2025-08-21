@@ -142,6 +142,35 @@ class REPL(Loggable):
         Returns:
             A formatted, user-friendly error message
         """
+        # Check for inheritance syntax attempts first
+        if user_input and "(" in user_input and ")" in user_input:
+            import re
+
+            # Look for inheritance patterns: struct/resource/agent_blueprint Name(Parent):
+            inheritance_patterns = [
+                (r"struct\s+(\w+)\s*\(\s*(\w+)\s*\)", "struct"),
+                (r"resource\s+(\w+)\s*\(\s*(\w+)\s*\)", "resource"),
+                (r"agent_blueprint\s+(\w+)\s*\(\s*(\w+)\s*\)", "agent_blueprint"),
+                (r"workflow\s+(\w+)\s*\(\s*(\w+)\s*\)", "workflow"),
+            ]
+
+            for pattern, type_name in inheritance_patterns:
+                match = re.search(pattern, user_input)
+                if match:
+                    child_name, parent_name = match.groups()
+                    return (
+                        f"Dana does not support inheritance for {type_name}s.\n"
+                        f"  Input: {user_input}\n\n"
+                        f"Instead of inheritance, use composition:\n"
+                        f"  {type_name} {child_name}:\n"
+                        f"    _parent: {parent_name}  # Composition with delegation\n"
+                        f"    # Add your own fields here\n\n"
+                        f"Then access parent fields via delegation:\n"
+                        f"  instance = {child_name}()\n"
+                        f"  instance.parent_field  # Delegated from _parent\n\n"
+                        f"Learn more: https://docs.dana-lang.org/structs#composition-and-delegation"
+                    )
+
         # User-friendly rewording for parser errors
         if "Unexpected token" in error_msg:
             # Try to extract the problematic character or symbol
