@@ -1,4 +1,8 @@
 """Mixed Documents & Webpages Querying."""
 
-with use("rag", sources=["https://www.aitomatic.com", "../../../../README.md"]) as aitomatic_and_dana_info:
-    print(reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?"))
+from resources import RagResource
+
+rag = RagResource(sources=["https://www.aitomatic.com", "../../../../README.md"])
+rag.initialize()
+
+print(rag.query("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?"))
