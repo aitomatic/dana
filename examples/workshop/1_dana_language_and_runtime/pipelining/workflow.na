@@ -6,7 +6,7 @@ def plan_trip(location, weather):
 def estimate_cost(trip):
     return reason(f"Estimate the cost of the trip: {trip}. Include a summary of the trip for ease of understanding.")
 
-workflow = plan_trip | estimate_cost
+def workflow(city: str, weather: str = "sunny") = plan_trip | estimate_cost
 
-def __main__(city="Tokyo", weather="sunny"):
-    print(workflow(city, weather))
+def __main__():
+    print(workflow("Tokyo"))
