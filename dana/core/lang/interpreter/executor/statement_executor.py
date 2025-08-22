@@ -31,6 +31,7 @@ from dana.core.lang.ast import (
     FunctionDefinition,
     ImportFromStatement,
     ImportStatement,
+    InterfaceDefinition,
     MethodDefinition,
     PassStatement,
     RaiseStatement,
@@ -97,6 +98,7 @@ class StatementExecutor(BaseExecutor):
             RaiseStatement: self.execute_raise_statement,
             ResourceDefinition: self.execute_resource_definition,
             StructDefinition: self.execute_struct_definition,
+            InterfaceDefinition: self.execute_interface_definition,
             ExportStatement: self.execute_export_statement,
             DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
@@ -451,16 +453,12 @@ class StatementExecutor(BaseExecutor):
         return self.import_handler.execute_export_statement(node, context)
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
-        """Execute a struct definition statement using optimized handler.
-
-        Args:
-            node: The struct definition node
-            context: The execution context
-
-        Returns:
-            None (struct definitions don't produce a value, they register a type)
-        """
+        """Execute a struct definition statement."""
         return self.type_handler.execute_struct_definition(node, context)
+
+    def execute_interface_definition(self, node: InterfaceDefinition, context: SandboxContext) -> None:
+        """Execute an interface definition statement."""
+        return self.type_handler.execute_interface_definition(node, context)
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
         """Execute an agent definition statement using optimized handler.
@@ -474,7 +472,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.agent_handler.execute_agent_definition(node, context)
 
-    def execute_resource_definition(self, node, context: SandboxContext) -> None:
+    def execute_resource_definition(self, node: ResourceDefinition, context: SandboxContext) -> None:
         """Execute a resource definition statement.
 
         Registers a ResourceType in the resource registry and binds a constructor

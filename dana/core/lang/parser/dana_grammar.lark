@@ -69,7 +69,7 @@ except_spec: exception_type ["as" NAME] | "as" NAME
 exception_type: expr
 
 with_stmt: "with" (with_context_manager | NAME "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
-definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT) NAME ":" [COMMENT] struct_block -> definition
+definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT | INTERFACE) NAME ":" [COMMENT] definition_block -> definition
 singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
 
 docstring: MULTILINE_STRING _NL
@@ -78,6 +78,19 @@ fields_and_functions: (field | function_def | sync_function_def)+
 field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
 
 struct_block: _NL _INDENT [docstring] fields_and_functions _DEDENT
+
+// Interface-specific block structure
+interface_block: _NL _INDENT [docstring] interface_members _DEDENT
+
+interface_members: interface_member+
+interface_member: interface_method | embedded_interface | interface_comment
+
+// Interface methods include both behavioral methods and property accessors
+interface_method: NAME "(" [parameters] ")" ["->" basic_type] [COMMENT] _NL
+embedded_interface: NAME [COMMENT] _NL  // For interface embedding
+interface_comment: COMMENT _NL  // Allow standalone comments in interface blocks
+
+definition_block: struct_block | interface_block
 
 singleton_agent_block: _NL _INDENT [docstring] [singleton_agent_fields] _DEDENT
 singleton_agent_fields: singleton_agent_field+
@@ -158,6 +171,7 @@ ASSERT.2: "assert"
 RESOURCE.2: "resource"
 AGENT.2: "agent"
 AGENT_BLUEPRINT.2: "agent_blueprint"
+INTERFACE.4: "interface"
 AS.2: "as"
 PRIVATE.2: "private"
 PUBLIC.2: "public"

@@ -19,10 +19,13 @@ from dana.core.lang.ast import (
     Decorator,
     FunctionDefinition,
     Identifier,
+    InterfaceDefinition,
+    InterfaceMethod,
     Parameter,
     ResourceDefinition,
     StructDefinition,
     StructField,
+    TypedParameter,
     TypeHint,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -490,24 +493,41 @@ class FunctionDefinitionTransformer(BaseTransformer):
         """Transform a unified definition rule into appropriate AST node."""
 
         # Extract keyword, name, optional parent, and block
-        keyword_token = items[0]  # STRUCT, RESOURCE, or AGENT_BLUEPRINT
+        keyword_token = items[0]  # STRUCT, RESOURCE, AGENT_BLUEPRINT, or INTERFACE
         name_token = items[1]
-        struct_block = None
+        definition_block = None
 
-        # Find the struct_block - it should be a dict (transformed) or Tree
+        # Find the definition_block - it should be a dict (transformed) or Tree
         for item in items[2:]:  # Skip keyword and name
-            if item is not None and (isinstance(item, dict) or (hasattr(item, "data") and item.data == "struct_block")):
-                struct_block = item
+            if item is not None and (
+                isinstance(item, dict) or (hasattr(item, "data") and item.data in ["struct_block", "interface_block", "definition_block"])
+            ):
+                definition_block = item
                 break
 
-        fields, methods, docstring = self._parse_struct_block(struct_block)
-
         if keyword_token.value == "struct":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
             return StructDefinition(name=name_token.value, fields=fields, docstring=docstring)
         elif keyword_token.value == "resource":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
             return ResourceDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
         elif keyword_token.value == "agent_blueprint":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
             return AgentDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
+        elif keyword_token.value == "interface":
+            # Handle the case where definition_block is a Tree with definition_block data
+            if hasattr(definition_block, "data") and definition_block.data == "definition_block":
+                # Extract the dict from the Tree
+                if definition_block.children and isinstance(definition_block.children[0], dict):
+                    block_dict = definition_block.children[0]
+                    methods = block_dict.get("methods", [])
+                    embedded_interfaces = block_dict.get("embedded_interfaces", [])
+                    docstring = block_dict.get("docstring", None)
+                else:
+                    methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
+            else:
+                methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
+            return InterfaceDefinition(name=name_token.value, methods=methods, embedded_interfaces=embedded_interfaces, docstring=docstring)
         else:
             raise ValueError(f"Unknown definition keyword: {keyword_token.value}")
 
@@ -675,27 +695,234 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 elif isinstance(item, FunctionDefinition):
                     methods.append(item)
 
-        elif struct_block and hasattr(struct_block, "data") and struct_block.data == "struct_block":
-            # Raw Tree format (fallback)
-            for child in struct_block.children:
-                if hasattr(child, "data"):
-                    if child.data == "docstring":
-                        docstring = child.children[0].value.strip('"')
-                    elif child.data == "fields_and_functions":
-                        # The fields_and_functions rule should be transformed into a list
-                        # by the fields_and_functions method
-                        if hasattr(child, "children"):
-                            for item in child.children:
-                                if isinstance(item, StructField):
-                                    fields.append(item)
-                                elif isinstance(item, FunctionDefinition):
-                                    methods.append(item)
-                        # If child is already transformed (a list), use it directly
-                        elif isinstance(child, list):
-                            for item in child:
-                                if isinstance(item, StructField):
-                                    fields.append(item)
-                                elif isinstance(item, FunctionDefinition):
-                                    methods.append(item)
+        elif struct_block and hasattr(struct_block, "data") and struct_block.data in ["struct_block", "definition_block"]:
+            # Raw Tree format or definition_block containing transformed struct_block
+            if struct_block.data == "definition_block" and struct_block.children and isinstance(struct_block.children[0], dict):
+                # Extract the dict from the definition_block Tree
+                struct_dict = struct_block.children[0]
+                docstring = struct_dict.get("docstring")
+                fields_and_functions = struct_dict.get("fields_and_functions", [])
+
+                for item in fields_and_functions:
+                    if isinstance(item, StructField):
+                        fields.append(item)
+                    elif isinstance(item, FunctionDefinition):
+                        methods.append(item)
+            else:
+                # Traditional Tree traversal
+                for child in struct_block.children:
+                    if hasattr(child, "data"):
+                        if child.data == "docstring":
+                            docstring = child.children[0].value.strip('"')
+                        elif child.data == "fields_and_functions":
+                            # The fields_and_functions rule should be transformed into a list
+                            # by the fields_and_functions method
+                            if hasattr(child, "children"):
+                                for item in child.children:
+                                    if isinstance(item, StructField):
+                                        fields.append(item)
+                                    elif isinstance(item, FunctionDefinition):
+                                        methods.append(item)
+                            # If child is already transformed (a list), use it directly
+                            elif isinstance(child, list):
+                                for item in child:
+                                    if isinstance(item, StructField):
+                                        fields.append(item)
+                                    elif isinstance(item, FunctionDefinition):
+                                        methods.append(item)
 
         return fields, methods, docstring
+
+    def _parse_interface_block(self, interface_block):
+        """Parse an interface block into methods, embedded interfaces, and docstring."""
+
+        methods = []
+        embedded_interfaces = []
+        docstring = None
+
+        if interface_block is None:
+            return methods, embedded_interfaces, docstring
+
+        # Handle transformed dict format
+        if isinstance(interface_block, dict):
+            if "docstring" in interface_block:
+                docstring = interface_block["docstring"]
+            if "methods" in interface_block:
+                methods = interface_block["methods"]
+            if "embedded_interfaces" in interface_block:
+                embedded_interfaces = interface_block["embedded_interfaces"]
+            return methods, embedded_interfaces, docstring
+
+        # Handle Tree format
+        if hasattr(interface_block, "children"):
+            for child in interface_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip("\"'")
+                    elif child.data == "interface_members":
+                        for member in child.children:
+                            if hasattr(member, "data"):
+                                if member.data == "interface_method":
+                                    method = self._parse_interface_method(member)
+                                    if method:
+                                        methods.append(method)
+                                elif member.data == "embedded_interface":
+                                    embedded_name = member.children[0].value
+                                    embedded_interfaces.append(embedded_name)
+
+        return methods, embedded_interfaces, docstring
+
+    def _parse_interface_method(self, method_tree):
+        """Parse an interface method tree into an InterfaceMethod node."""
+
+        if not hasattr(method_tree, "children") or not method_tree.children:
+            return None
+
+        # Extract method name
+        method_name = method_tree.children[0].value
+
+        # Extract parameters
+        parameters = []
+        return_type = None
+        comment = None
+
+        # Parse the method signature
+        for child in method_tree.children:
+            if hasattr(child, "data"):
+                if child.data == "parameters":
+                    for param_tree in child.children:
+                        if hasattr(param_tree, "data") and param_tree.data == "typed_parameter":
+                            param = self._parse_typed_parameter(param_tree)
+                            if param:
+                                parameters.append(param)
+                elif child.data == "basic_type":  # Return type
+                    return_type = self.main_transformer.basic_type(child.children)
+
+        # Extract comment if present
+        for child in method_tree.children:
+            if hasattr(child, "type") and child.type == "COMMENT":
+                comment = child.value.lstrip("#").strip()
+                break
+
+        return InterfaceMethod(name=method_name, parameters=parameters, return_type=return_type, comment=comment)
+
+    def _parse_typed_parameter(self, param_tree):
+        """Parse a typed parameter tree into a TypedParameter node."""
+
+        if not hasattr(param_tree, "children") or not param_tree.children:
+            return None
+
+        # Extract parameter name
+        param_name = param_tree.children[0].value
+
+        # Extract type hint if present
+        type_hint = None
+        default_value = None
+
+        for child in param_tree.children[1:]:
+            if hasattr(child, "data") and child.data == "basic_type":
+                type_hint = self.main_transformer.basic_type(child.children)
+            elif hasattr(child, "data") and child.data == "expr":
+                default_value = self.main_transformer.expression_transformer.transform(child.children)
+
+        return TypedParameter(name=param_name, type_hint=type_hint, default_value=default_value)
+
+    # === Interface Block Parsing ===
+
+    def interface_block(self, items):
+        """Transform an interface block into a dict with methods, embedded interfaces, and docstring."""
+        methods = []
+        embedded_interfaces = []
+        docstring = None
+
+        for item in items:
+            if item is None:
+                continue
+            elif isinstance(item, list):
+                # This is likely the transformed interface_members list
+                for member in item:
+                    if isinstance(member, InterfaceMethod):
+                        methods.append(member)
+                    elif isinstance(member, str):
+                        # Embedded interface name
+                        embedded_interfaces.append(member)
+            elif hasattr(item, "data"):
+                if item.data == "docstring":
+                    docstring = item.children[0].value.strip("\"'")
+                elif item.data == "interface_members":
+                    for member in item.children:
+                        if hasattr(member, "data"):
+                            if member.data == "interface_method":
+                                method = self._parse_interface_method(member)
+                                if method:
+                                    methods.append(method)
+                            elif member.data == "embedded_interface":
+                                embedded_name = member.children[0].value
+                                embedded_interfaces.append(embedded_name)
+
+        return {"methods": methods, "embedded_interfaces": embedded_interfaces, "docstring": docstring}
+
+    def interface_members(self, items):
+        """Transform interface members into a list."""
+        return items
+
+    def interface_member(self, items):
+        """Transform an interface member (method or embedded interface) into the appropriate node."""
+        # This will be handled by the specific methods (interface_method or embedded_interface)
+        return items[0]
+
+    def interface_method(self, items):
+        """Transform an interface method into an InterfaceMethod node."""
+        return self._parse_interface_method_from_items(items)
+
+    def embedded_interface(self, items):
+        """Transform an embedded interface reference into a string."""
+        # Extract the interface name from the token
+        interface_name = items[0].value
+        return interface_name
+
+    def _parse_interface_method_from_items(self, items):
+        """Parse interface method from items list."""
+
+        # Extract method name
+        method_name = items[0].value
+
+        # Extract parameters
+        parameters = []
+        return_type = None
+        comment = None
+
+        # Parse parameters if present - handle both Parameter and TypedParameter objects
+        if len(items) > 1 and isinstance(items[1], list):
+            param_list = items[1]
+            for param_item in param_list:
+                if isinstance(param_item, Parameter):
+                    # Convert Parameter to TypedParameter
+                    typed_param = TypedParameter(
+                        name=param_item.name,
+                        type_hint=param_item.type_hint,
+                        default_value=param_item.default_value,
+                        location=param_item.location,
+                    )
+                    parameters.append(typed_param)
+                elif hasattr(param_item, "data") and param_item.data == "typed_parameter":
+                    param = self._parse_typed_parameter(param_item)
+                    if param:
+                        parameters.append(param)
+
+        # Parse return type if present
+        for item in items:
+            if hasattr(item, "data") and item.data == "basic_type":
+                return_type = self.main_transformer.basic_type(item.children)
+                break
+            elif isinstance(item, TypeHint):
+                return_type = item
+                break
+
+        # Extract comment if present
+        for item in items:
+            if hasattr(item, "type") and item.type == "COMMENT":
+                comment = item.value.lstrip("#").strip()
+                break
+
+        return InterfaceMethod(name=method_name, parameters=parameters, return_type=return_type, comment=comment)

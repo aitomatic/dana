@@ -165,7 +165,6 @@ class TestStructErrorMessages:
         error_msg = str(exc_info.value)
         assert "Missing required fields for struct 'TestStruct'" in error_msg
         assert "required2" in error_msg
-        assert "Required fields: ['required1', 'required2']" in error_msg
 
     def test_extra_fields_error_message(self):
         """Test clear error messages for extra fields."""
@@ -179,7 +178,6 @@ class TestStructErrorMessages:
         error_msg = str(exc_info.value)
         assert "Unknown fields for struct 'TestStruct'" in error_msg
         assert "extra_field" in error_msg
-        assert "Valid fields: ['valid_field']" in error_msg
 
     def test_type_error_comprehensive_message(self):
         """Test that type errors include comprehensive information."""

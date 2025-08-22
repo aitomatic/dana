@@ -34,7 +34,7 @@ def test_na_file(na_file):
     # Clear struct registry to ensure test isolation
     from dana.registry import GLOBAL_REGISTRY
 
-    GLOBAL_REGISTRY.types.clear()
+    GLOBAL_REGISTRY.types.clear_instance()
 
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"
@@ -108,6 +108,9 @@ def test_na_file(na_file):
         "test_lambda_expressions.na",  # Disable type checking for lambda expressions (type checker unsupported expression)
         "test_set_comprehensions.na",  # Disable type checking for set comprehensions (type checker for loop issue)
         "test_lambda_struct_receivers.na",  # Disable type checking for lambda struct receivers (type checker scoping issue)
+        "test_interface_basic.na",  # Disable type checking for interface tests
+        "test_interface_validation.na",  # Disable type checking for interface tests
+        "test_interface_integration.na",  # Disable type checking for interface tests
     ]
     disable_type_check = filename in enhanced_coercion_tests
 

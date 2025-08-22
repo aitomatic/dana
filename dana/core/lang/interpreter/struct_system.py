@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
@@ -81,9 +81,7 @@ class StructType:
 
         missing_fields = required_fields - set(args.keys())
         if missing_fields:
-            raise ValueError(
-                f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(required_fields)}"
-            )
+            raise ValueError(f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}")
 
         # -- allow implicit instance_id --
         # If instance_id is NOT part of declared fields, skip all checks for it
@@ -113,6 +111,15 @@ class StructType:
 
     def _validate_field_type(self, field_name: str, value: Any, expected_type: str) -> bool:
         """Validate that a field value matches the expected type."""
+        # Handle union types (e.g., "dict | None", "str | int")
+        if " | " in expected_type:
+            union_types = [t.strip() for t in expected_type.split(" | ")]
+            # Check if value matches any of the union types
+            for union_type in union_types:
+                if self._validate_field_type(field_name, value, union_type):
+                    return True
+            return False
+
         # Handle None values - in Dana, 'null' maps to None
         if value is None:
             return expected_type in ["null", "None", "any"]
@@ -238,6 +245,116 @@ class StructType:
 
         fields_repr = "{" + ", ".join(field_strs) + "}"
         return f"StructType(name='{self.name}', fields={fields_repr})"
+
+
+@dataclass
+class InterfaceType:
+    """Runtime representation of an interface type definition."""
+
+    name: str
+    methods: dict[str, "InterfaceMethodSpec"]  # Maps method name to method specification
+    embedded_interfaces: list[str] = field(default_factory=list)  # Names of embedded interfaces
+    docstring: str | None = None  # Interface docstring
+    instance_id: str | None = None  # Unique identifier for this interface type
+
+    def __post_init__(self):
+        """Validate interface type after initialization."""
+        if not self.name:
+            raise ValueError("Interface name cannot be empty")
+
+        if not self.methods:
+            raise ValueError(f"Interface '{self.name}' must have at least one method")
+
+        if self.instance_id is None:
+            self.instance_id = f"{self.name}_{id(self)}"
+
+    def __eq__(self, other) -> bool:
+        """Compare interface types for equality, excluding instance_id."""
+        if not isinstance(other, InterfaceType):
+            return False
+
+        return (
+            self.name == other.name
+            and self.methods == other.methods
+            and self.embedded_interfaces == other.embedded_interfaces
+            and self.docstring == other.docstring
+        )
+
+    def get_docstring(self) -> str | None:
+        """Get the interface's docstring."""
+        return self.docstring
+
+    def has_method(self, method_name: str) -> bool:
+        """Check if the interface requires a specific method."""
+        return method_name in self.methods
+
+    def get_method_spec(self, method_name: str) -> "InterfaceMethodSpec | None":
+        """Get the method specification for a specific method."""
+        return self.methods.get(method_name)
+
+    def list_methods(self) -> list[str]:
+        """Get a list of all required method names."""
+        return list(self.methods.keys())
+
+    def get_method_count(self) -> int:
+        """Get the number of methods in the interface."""
+        return len(self.methods)
+
+    def get_embedded_interfaces(self) -> list[str]:
+        """Get a list of embedded interface names."""
+        return self.embedded_interfaces.copy()
+
+    def flatten_methods(self, type_registry: Any = None) -> dict[str, "InterfaceMethodSpec"]:
+        """Flatten the interface by resolving embedded interfaces into a complete method set."""
+        flattened = self.methods.copy()
+
+        if type_registry:
+            for embedded_name in self.embedded_interfaces:
+                embedded_interface = type_registry.get(embedded_name)
+                if isinstance(embedded_interface, InterfaceType):
+                    embedded_methods = embedded_interface.flatten_methods(type_registry)
+                    # Methods in this interface override embedded interface methods
+                    flattened.update(embedded_methods)
+
+        return flattened
+
+
+@dataclass
+class InterfaceMethodSpec:
+    """Specification for a method required by an interface."""
+
+    name: str
+    parameters: list["InterfaceParameterSpec"]
+    return_type: str | None = None  # Type name string
+    comment: str | None = None  # Method description
+
+    def __eq__(self, other) -> bool:
+        """Compare method specifications for equality."""
+        if not isinstance(other, InterfaceMethodSpec):
+            return False
+
+        return (
+            self.name == other.name
+            and self.parameters == other.parameters
+            and self.return_type == other.return_type
+            and self.comment == other.comment
+        )
+
+
+@dataclass
+class InterfaceParameterSpec:
+    """Specification for a parameter in an interface method."""
+
+    name: str
+    type_name: str | None = None  # Type name string
+    has_default: bool = False  # Whether parameter has a default value
+
+    def __eq__(self, other) -> bool:
+        """Compare parameter specifications for equality."""
+        if not isinstance(other, InterfaceParameterSpec):
+            return False
+
+        return self.name == other.name and self.type_name == other.type_name and self.has_default == other.has_default
 
 
 class StructInstance:
@@ -676,22 +793,22 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
     field_defaults = {}
     field_comments = {}
 
-    for field in struct_def.fields:
-        if field.type_hint is None:
-            raise ValueError(f"Field {field.name} has no type hint")
-        if not hasattr(field.type_hint, "name"):
-            raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
-        fields[field.name] = field.type_hint.name  # Store the type name string, not the TypeHint object
-        field_order.append(field.name)
+    for struct_field in struct_def.fields:
+        if struct_field.type_hint is None:
+            raise ValueError(f"Field {struct_field.name} has no type hint")
+        if not hasattr(struct_field.type_hint, "name"):
+            raise ValueError(f"Field {struct_field.name} type hint {struct_field.type_hint} has no name attribute")
+        fields[struct_field.name] = struct_field.type_hint.name  # Store the type name string, not the TypeHint object
+        field_order.append(struct_field.name)
 
         # Handle default value if present
-        if field.default_value is not None:
+        if struct_field.default_value is not None:
             # For now, store the AST node - it will be evaluated when needed
-            field_defaults[field.name] = field.default_value
+            field_defaults[struct_field.name] = struct_field.default_value
 
         # Store field comment if present
-        if field.comment:
-            field_comments[field.name] = field.comment
+        if struct_field.comment:
+            field_comments[struct_field.name] = struct_field.comment
 
     return StructType(
         name=struct_def.name,

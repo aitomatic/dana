@@ -1,0 +1,254 @@
+# Interface System Regression Prevention Tests
+# Critical tests to prevent regression to existing Dana functionality
+# These test the exact functionality that should remain unchanged
+
+log("🛡️ === INTERFACE REGRESSION PREVENTION TESTS ===")
+
+# REGRESSION TEST 1: Existing Struct Definitions Still Work
+# OLD BEHAVIOR: Struct definitions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 1: Existing Struct Definitions")
+struct RegressionStruct:
+    name: str = "test"
+    value: int = 42
+    active: bool = true
+
+instance = RegressionStruct()
+assert instance.name == "test", f"Expected 'test', got '{instance.name}'"
+assert instance.value == 42, f"Expected 42, got {instance.value}"
+assert instance.active == true, f"Expected true, got {instance.active}"
+
+log("✅ FIXED: Existing struct definitions still work")
+
+# REGRESSION TEST 2: Existing Agent Blueprint Definitions Still Work
+# OLD BEHAVIOR: Agent blueprint definitions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 2: Existing Agent Blueprint Definitions")
+agent_blueprint RegressionAgent:
+    domain: str = "regression"
+    confidence: float = 0.8
+
+agent = RegressionAgent()
+assert agent.domain == "regression", f"Expected 'regression', got '{agent.domain}'"
+assert agent.confidence == 0.8, f"Expected 0.8, got {agent.confidence}"
+
+log("✅ FIXED: Existing agent blueprint definitions still work")
+
+# REGRESSION TEST 3: Existing Resource Definitions Still Work
+# OLD BEHAVIOR: Resource definitions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 3: Existing Resource Definitions")
+resource RegressionResource:
+    status: str = "ready"
+    count: int = 0
+
+resource_instance = RegressionResource()
+assert resource_instance.status == "ready", f"Expected 'ready', got '{resource_instance.status}'"
+assert resource_instance.count == 0, f"Expected 0, got {resource_instance.count}"
+
+log("✅ FIXED: Existing resource definitions still work")
+
+# REGRESSION TEST 4: Existing Receiver Functions Still Work
+# OLD BEHAVIOR: Receiver functions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 4: Existing Receiver Functions")
+
+def (obj: RegressionStruct) get_name() -> str:
+    return obj.name
+
+def (obj: RegressionStruct) set_name(name: str) -> None:
+    obj.name = name
+
+def (obj: RegressionStruct) get_value() -> int:
+    return obj.value
+
+def (obj: RegressionStruct) set_value(value: int) -> None:
+    obj.value = value
+
+# Test receiver functions
+name = instance.get_name()
+assert name == "test", f"Expected 'test', got '{name}'"
+
+instance.set_name("updated")
+name = instance.get_name()
+assert name == "updated", f"Expected 'updated', got '{name}'"
+
+value = instance.get_value()
+assert value == 42, f"Expected 42, got {value}"
+
+instance.set_value(100)
+value = instance.get_value()
+assert value == 100, f"Expected 100, got {value}"
+
+log("✅ FIXED: Existing receiver functions still work")
+
+# REGRESSION TEST 5: Existing Function Definitions Still Work
+# OLD BEHAVIOR: Function definitions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 5: Existing Function Definitions")
+
+def test_function(x: int, y: int) -> int:
+    return x + y
+
+def test_function_with_defaults(x: int = 10, y: int = 20) -> int:
+    return x + y
+
+result1 = test_function(5, 3)
+assert result1 == 8, f"Expected 8, got {result1}"
+
+result2 = test_function_with_defaults()
+assert result2 == 30, f"Expected 30, got {result2}"
+
+result3 = test_function_with_defaults(15)
+assert result3 == 35, f"Expected 35, got {result3}"
+
+log("✅ FIXED: Existing function definitions still work")
+
+# REGRESSION TEST 6: Existing Type Annotations Still Work
+# OLD BEHAVIOR: Type annotations work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 6: Existing Type Annotations")
+
+typed_var: str = "test"
+typed_list: list[int] = [1, 2, 3, 4, 5]
+typed_dict: dict[str, int] = {"a": 1, "b": 2}
+
+assert typed_var == "test", f"Expected 'test', got '{typed_var}'"
+assert len(typed_list) == 5, f"Expected 5, got {len(typed_list)}"
+assert typed_dict["a"] == 1, f"Expected 1, got {typed_dict['a']}"
+
+log("✅ FIXED: Existing type annotations still work")
+
+# REGRESSION TEST 7: Existing Control Flow Still Works
+# OLD BEHAVIOR: Control flow statements work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 7: Existing Control Flow")
+
+# Test if statements
+if true:
+    test_result = "if worked"
+else:
+    test_result = "if failed"
+
+assert test_result == "if worked", f"Expected 'if worked', got '{test_result}'"
+
+# Test for loops
+sum_result = 0
+for i in [1, 2, 3, 4, 5]:
+    sum_result = sum_result + i
+
+assert sum_result == 15, f"Expected 15, got {sum_result}"
+
+# Test while loops
+while_result = 0
+counter = 0
+while counter < 3:
+    while_result = while_result + counter
+    counter = counter + 1
+
+assert while_result == 3, f"Expected 3, got {while_result}"
+
+log("✅ FIXED: Existing control flow still works")
+
+# REGRESSION TEST 8: Existing Collections Still Work
+# OLD BEHAVIOR: Collections work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 8: Existing Collections")
+
+# Test lists
+test_list = [1, 2, 3, 4, 5]
+assert len(test_list) == 5, f"Expected 5, got {len(test_list)}"
+assert test_list[0] == 1, f"Expected 1, got {test_list[0]}"
+
+# Test dictionaries
+test_dict = {"key1": "value1", "key2": "value2"}
+assert test_dict["key1"] == "value1", f"Expected 'value1', got '{test_dict['key1']}'"
+assert len(test_dict) == 2, f"Expected 2, got {len(test_dict)}"
+
+# Test sets
+test_set = {1, 2, 3, 4, 5}
+assert len(test_set) == 5, f"Expected 5, got {len(test_set)}"
+
+log("✅ FIXED: Existing collections still work")
+
+# REGRESSION TEST 9: Existing Expressions Still Work
+# OLD BEHAVIOR: Expressions work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 9: Existing Expressions")
+
+# Test arithmetic
+arithmetic_result = 10 + 5 * 2
+assert arithmetic_result == 20, f"Expected 20, got {arithmetic_result}"
+
+# Test comparisons
+comparison_result = 5 > 3 and 10 < 20
+assert comparison_result == true, f"Expected true, got {comparison_result}"
+
+# Test string operations
+string_result = "hello" + " " + "world"
+assert string_result == "hello world", f"Expected 'hello world', got '{string_result}'"
+
+log("✅ FIXED: Existing expressions still work")
+
+# REGRESSION TEST 10: Existing Import System Still Works
+# OLD BEHAVIOR: Import system works normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 10: Existing Import System")
+
+# Test that we can still use built-in functions
+import_result = len("test")
+assert import_result == 4, f"Expected 4, got {import_result}"
+
+# Test that we can still use system functions
+system_result = str(42)
+assert system_result == "42", f"Expected '42', got '{system_result}'"
+
+log("✅ FIXED: Existing import system still works")
+
+# REGRESSION TEST 11: Interface System Doesn't Interfere with Existing Types
+# OLD BEHAVIOR: Existing types work normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 11: Interface System Doesn't Interfere")
+
+# Define an interface (new functionality)
+interface ITest:
+    get_value() -> int
+
+# Define a struct that doesn't implement the interface (should still work)
+struct NonCompliantStruct:
+    value: int = 42
+
+# Create instance (should work normally)
+non_compliant = NonCompliantStruct()
+assert non_compliant.value == 42, f"Expected 42, got {non_compliant.value}"
+
+# Access fields directly (should work normally)
+non_compliant.value = 100
+assert non_compliant.value == 100, f"Expected 100, got {non_compliant.value}"
+
+log("✅ FIXED: Interface system doesn't interfere with existing types")
+
+# REGRESSION TEST 12: Existing Error Handling Still Works
+# OLD BEHAVIOR: Error handling works normally
+# NEW BEHAVIOR: Should continue working unchanged
+log("🔍 Regression Test 12: Existing Error Handling")
+
+# Test try/except
+try_result = "no error"
+try:
+    # This should not raise an error
+    test_value = 10 / 2
+    assert test_value == 5, f"Expected 5, got {test_value}"
+except:
+    try_result = "error occurred"
+
+assert try_result == "no error", f"Expected 'no error', got '{try_result}'"
+
+# Test assertions
+assert true, "This assertion should pass"
+assert 1 == 1, "This assertion should pass"
+
+log("✅ FIXED: Existing error handling still works")
+
+log("🎉 All interface regression prevention tests passed!")
+log("🛡️ No existing functionality was broken by interface system implementation")
