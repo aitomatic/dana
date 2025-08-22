@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { LibraryTable } from '@/components/library';
 import { ConfirmDialog } from '@/components/library/confirm-dialog';
+import { LibraryFileSelectionModal } from '@/components/library/library-file-selection-modal';
 import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload } from 'iconoir-react';
+import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload, MultiplePagesPlus } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentOperations } from '@/hooks/use-api';
 import { useDocumentStore } from '@/stores/document-store';
@@ -37,6 +38,7 @@ const DocumentsTab: React.FC = () => {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
+  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use document store for state management
@@ -81,6 +83,38 @@ const DocumentsTab: React.FC = () => {
 
   const handleAddFileClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleAddFromLibrary = () => {
+    setLibraryModalOpen(true);
+  };
+
+  const handleLibraryFileSelection = async (selectedFileIds: string[]) => {
+    if (!agent_id) {
+      toast.error('No agent selected');
+      return;
+    }
+    
+    try {
+      const documentIds = selectedFileIds.map(id => parseInt(id));
+      console.log('🔗 Associating documents:', { agent_id, documentIds });
+      
+      const result = await apiService.associateDocumentsWithAgent(agent_id, documentIds);
+      console.log('✅ Association result:', result);
+      
+      toast.success(`Successfully added ${selectedFileIds.length} file(s) to agent`);
+      await fetchDocuments({ agent_id: parseInt(agent_id) }); // Refresh the documents list
+      setLibraryModalOpen(false);
+    } catch (error: any) {
+      console.error('❌ Failed to add files to agent:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: error.stack
+      });
+      toast.error('Failed to add files to agent');
+    }
   };
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,11 +173,17 @@ const DocumentsTab: React.FC = () => {
 
     try {
       const documentId = parseInt(selectedItem.id);
+      console.log('🗑️ Deleting document:', { documentId, documentName: selectedItem.name });
+      
       await deleteDocument(documentId);
       toast.success('Document deleted successfully');
+      
+      console.log('🔄 Refreshing documents after deletion...');
       await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
+      
+      console.log('✅ Document deletion and refresh completed');
     } catch (error) {
-      console.error('Failed to delete document:', error);
+      console.error('❌ Failed to delete document:', error);
       toast.error('Failed to delete document');
     } finally {
       setShowDeleteConfirm(false);
@@ -268,6 +308,14 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
+        <Button 
+          onClick={handleAddFromLibrary}
+          disabled={uploadingFiles.length > 0}
+          variant="outline"
+        >
+          <MultiplePagesPlus className="mr-2 w-4 h-4" />
+          Add from Library
+        </Button>
       </div>
       {/* Upload Progress Indicator */}
       {uploadingFiles.length > 0 && (
@@ -326,6 +374,14 @@ const DocumentsTab: React.FC = () => {
         onClose={() => setPdfViewerOpen(false)}
         fileUrl={pdfFileUrl || ''}
         fileName={pdfFileName}
+      />
+
+      {/* Library File Selection Modal */}
+      <LibraryFileSelectionModal
+        isOpen={libraryModalOpen}
+        onClose={() => setLibraryModalOpen(false)}
+        onConfirm={handleLibraryFileSelection}
+        currentAgentId={agent_id || ''}
       />
     </div>
   );

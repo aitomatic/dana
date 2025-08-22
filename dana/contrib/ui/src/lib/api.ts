@@ -403,14 +403,29 @@ class ApiService {
 
   // Document API Methods
   async getDocuments(filters?: DocumentFilters): Promise<DocumentRead[]> {
+    console.log('🌐 API: getDocuments called with filters:', filters);
+    
     const params = new URLSearchParams();
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
     if (filters?.agent_id) params.append('agent_id', filters.agent_id.toString());
 
-    const response = await this.client.get<DocumentRead[]>(`/documents/?${params.toString()}`);
-    return response.data;
+    const url = `/documents/?${params.toString()}`;
+    console.log('🌐 API: Requesting URL:', url);
+    
+    try {
+      const response = await this.client.get<DocumentRead[]>(url);
+      console.log('📥 API: getDocuments response:', {
+        status: response.status,
+        count: response.data?.length || 0,
+        data: response.data?.map(d => ({ id: d.id, name: d.original_filename, agent_id: d.agent_id }))
+      });
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: getDocuments error:', error);
+      throw error;
+    }
   }
 
   async getDocument(documentId: number): Promise<DocumentRead> {
@@ -724,6 +739,29 @@ class ApiService {
       },
     );
     return response.data;
+  }
+
+  async associateDocumentsWithAgent(
+    agentId: string | number,
+    documentIds: number[],
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to associate documents:', { agentId, documentIds });
+    
+    try {
+      const response = await this.client.post(`/agents/${agentId}/documents/associate`, {
+        document_ids: documentIds,
+      });
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      throw error;
+    }
   }
 
   async smartChat(agentId: string | number, message: string, conversationId?: string | number) {
