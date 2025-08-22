@@ -18,10 +18,10 @@ from dana.core.lang.ast import (
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
     create_struct_instance,
     register_struct_from_ast,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestStructTypeValidation:
@@ -29,7 +29,7 @@ class TestStructTypeValidation:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_type_validation_during_instantiation(self):
         """Test that struct instantiation validates field types."""
@@ -147,7 +147,7 @@ class TestStructErrorMessages:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_missing_fields_error_message(self):
         """Test clear error messages for missing fields."""
@@ -206,7 +206,7 @@ class TestStructEdgeCases:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_empty_struct_instantiation(self):
         """Test instantiation with no arguments when fields are required."""
@@ -277,7 +277,7 @@ class TestStructExecutionEdgeCases:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_instantiation_with_type_errors(self):
@@ -291,7 +291,7 @@ struct Point:
 local:point = Point(x="not_a_number", y=20)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert not result.success
         assert "Type validation failed" in str(result.error)
         assert "expected int" in str(result.error)
@@ -308,7 +308,7 @@ local:point = Point(x=10, y=20)
 """
 
         # Execute the struct creation first
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success
 
         # Now test direct field assignment validation through Python
@@ -342,7 +342,7 @@ local:circle = Circle(center=point, radius=5.0)
 local:bad_circle = Circle(center="not_a_point", radius=3.0)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert not result.success
         assert "Type validation failed" in str(result.error)
         assert "expected Point" in str(result.error)

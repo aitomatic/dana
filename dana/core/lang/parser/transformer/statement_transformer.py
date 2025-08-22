@@ -24,8 +24,6 @@ from typing import Any
 from lark import Token, Tree
 
 from dana.core.lang.ast import (
-    AgentPoolStatement,
-    AgentStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -44,7 +42,6 @@ from dana.core.lang.ast import (
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
-    UseStatement,
     WhileLoop,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -65,9 +62,6 @@ AllowedAssignmentValue = (
     | SubscriptExpression
     | AttributeAccess
     | FStringExpression
-    | UseStatement
-    | AgentStatement
-    | AgentPoolStatement
 )
 
 
@@ -173,7 +167,7 @@ class StatementTransformer(BaseTransformer):
         fixed_statements.extend(extracted_assignments)
 
         if extracted_assignments:
-            self.debug(f"✅ PARSER BOUNDARY FIX: moved {len(extracted_assignments)} assignments to program level")
+            pass
 
         return fixed_statements
 
@@ -187,12 +181,10 @@ class StatementTransformer(BaseTransformer):
         for stmt in statements:
             if isinstance(stmt, Assignment) and self._is_local_scoped_assignment(stmt):
                 # This assignment should be at program level
-                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving local assignment '{stmt.target.name}' from nested context to program level")
                 extracted_assignments.append(stmt)
             elif isinstance(stmt, FunctionDefinition):
                 # Function definitions should not be nested inside other functions (except for closures)
                 # For now, treat all nested function definitions as misplaced due to parser boundary bug
-                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving function definition '{stmt.name.name}' from nested context to program level")
                 extracted_functions.append(stmt)
             elif isinstance(stmt, Conditional):
                 # Fix conditional body and else_body
@@ -314,8 +306,12 @@ class StatementTransformer(BaseTransformer):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
 
+    def sync_function_def(self, items):
+        """Transform a sync function definition rule into a FunctionDefinition node."""
+        return self.function_definition_transformer.sync_function_def(items)
+
     def method_def(self, items):
-        """Transform a method definition rule into a MethodDefinition node."""
+        """Transform a method definition rule into a FunctionDefinition node (for backward compatibility)."""
         return self.function_definition_transformer.method_def(items)
 
     def decorators(self, items):
@@ -326,21 +322,26 @@ class StatementTransformer(BaseTransformer):
         """Transform decorator rule into a Decorator node."""
         return self.function_definition_transformer.decorator(items)
 
-    def struct_definition(self, items):
-        """Transform a struct definition rule into a StructDefinition node."""
-        return self.function_definition_transformer.struct_definition(items)
+    def definition(self, items):
+        """Transform a unified definition rule into appropriate AST node."""
+        return self.function_definition_transformer.definition(items)
 
-    def struct_field(self, items):
-        """Transform a struct field rule into a StructField node."""
-        return self.function_definition_transformer.struct_field(items)
+    def field(self, items):
+        """Transform a unified field rule into a StructField node."""
+        return self.function_definition_transformer.field(items)
 
-    def agent_definition(self, items):
-        """Transform an agent definition rule into an AgentDefinition node."""
-        return self.function_definition_transformer.agent_definition(items)
+    # === Agent Singleton Definitions ===
+    def singleton_agent_def(self, items):
+        """Transform a unified singleton agent definition into AST."""
+        return self.function_definition_transformer.singleton_agent_definition(items)
 
-    def agent_field(self, items):
-        """Transform an agent field rule into an AgentField node."""
-        return self.function_definition_transformer.agent_field(items)
+    def agent_alias_def(self, items):
+        """Transform alias-based singleton without block into AST."""
+        return self.function_definition_transformer.agent_alias_def(items)
+
+    def agent_base_def(self, items):
+        """Transform base agent singleton `agent Name` into AST."""
+        return self.function_definition_transformer.agent_base_def(items)
 
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""
@@ -406,18 +407,6 @@ class StatementTransformer(BaseTransformer):
     def assert_stmt(self, items):
         """Transform an assert statement rule into an AssertStatement node."""
         return self.import_simple_statement_transformer.assert_stmt(items)
-
-    def use_stmt(self, items):
-        """Transform a use_stmt rule into a UseStatement node."""
-        return self.agent_context_transformer.use_stmt(items)
-
-    def agent_stmt(self, items):
-        """Transform an agent_stmt rule into an AgentStatement node."""
-        return self.agent_context_transformer.agent_stmt(items)
-
-    def agent_pool_stmt(self, items):
-        """Transform an agent_pool_stmt rule into an AgentPoolStatement node."""
-        return self.agent_context_transformer.agent_pool_stmt(items)
 
     # === Import Statements ===
     def import_stmt(self, items):
@@ -506,23 +495,18 @@ class StatementTransformer(BaseTransformer):
         """
 
         result = []
-        self.debug(f"🔍 Processing {len(statements)} statements for boundary detection")
 
-        for i, stmt in enumerate(statements):
+        for _, stmt in enumerate(statements):
             if stmt is None:
                 continue
-
-            self.debug(f"🔍 Statement {i}: {type(stmt).__name__} (Tree data: {getattr(stmt, 'data', 'N/A')})")
 
             # Check if this statement looks like it should be at program level
             if self._is_program_level_statement(stmt):
                 # Stop processing here - this statement belongs outside the current scope
-                self.debug(f"🛑 Detected program-level statement in block: {type(stmt).__name__}")
                 break
 
             result.append(stmt)
 
-        self.debug(f"✅ Boundary detection complete: kept {len(result)} statements")
         return result
 
     def _is_program_level_statement(self, stmt):
@@ -543,7 +527,7 @@ class StatementTransformer(BaseTransformer):
                             is_local = self._is_assignment_to_local_scope(grandchild)
                             if is_local:
                                 # Add debug logging to confirm detection
-                                self.debug("🎯 Detected local assignment that should be program-level")
+                                pass
                             return is_local
 
         return False

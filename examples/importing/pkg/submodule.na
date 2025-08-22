@@ -1,5 +1,0 @@
-"""A small sub-module."""
-
-__all__ = ['SUBMODULE_CONST']
-
-SUBMODULE_CONST = 'submodule const'

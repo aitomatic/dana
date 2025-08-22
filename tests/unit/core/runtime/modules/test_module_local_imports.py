@@ -8,8 +8,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestModuleLocalImports:
@@ -48,7 +48,7 @@ result2 = math_utils.multiply(4, 7)
         initialize_module_system()
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:result1") == 8
@@ -84,7 +84,7 @@ reversed_text = reverse_string(text)
         initialize_module_system()
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:capitalized") == "Hello World"
@@ -130,7 +130,7 @@ message = utils.welcome("Alice")
         initialize_module_system([str(tmp_path)])
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:message") == "Hello, Alice! Welcome aboard!"
@@ -165,7 +165,7 @@ area = calculations.circle_area(5.0)
         initialize_module_system()
 
         # Run module A
-        result = DanaSandbox.quick_run(module_a)
+        result = DanaSandbox.execute_file_once(module_a)
 
         assert result.success
         expected_area = 3.14159 * 5.0 * 5.0
@@ -202,7 +202,7 @@ value = config.setting
         initialize_module_system([str(standard_dir)])
 
         # Run main module - should find local config first
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:value") == "local"
@@ -245,7 +245,7 @@ total = helper.helper_value + mypackage.data.data_value
         initialize_module_system([str(tmp_path)])
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:total") == 142
@@ -288,12 +288,12 @@ project_info = config.name + " - " + str(config.value)
         # Run first module
         reset_module_system()
         initialize_module_system()
-        result1 = DanaSandbox.quick_run(main1)
+        result1 = DanaSandbox.execute_file_once(main1)
 
         # Reset and run second module
         reset_module_system()
         initialize_module_system()
-        result2 = DanaSandbox.quick_run(main2)
+        result2 = DanaSandbox.execute_file_once(main2)
 
         assert result1.success
         assert result2.success
@@ -314,7 +314,7 @@ import standard_module
 result = standard_module.standard_value
 """
 
-        result = DanaSandbox.quick_eval(code, module_search_paths=[str(tmp_path)])
+        result = DanaSandbox.execute_string_once(code, module_search_paths=[str(tmp_path)])
 
         assert result.success
         assert result.final_context.get("local:result") == "available"
@@ -340,7 +340,7 @@ result = vlm.process(21)
         initialize_module_system()
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert result.success
         assert result.final_context.get("local:result") == 42
@@ -357,7 +357,7 @@ import nonexistent_module
         initialize_module_system()
 
         # Run main module
-        result = DanaSandbox.quick_run(main_module)
+        result = DanaSandbox.execute_file_once(main_module)
 
         assert not result.success
         assert "nonexistent_module" in str(result.error)

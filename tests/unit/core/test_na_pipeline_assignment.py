@@ -23,7 +23,7 @@ def pipeline(x: int) -> int = double | add_ten
 result = pipeline(5)
 """
 
-    result = sandbox.eval(test_code)
+    result = sandbox.execute_string(test_code)
     assert result.success, f"Declarative function pipeline test failed: {result.error}"
 
 
@@ -48,7 +48,7 @@ result2 = math_pipeline(7)
 result3 = math_pipeline(-5)
 """
 
-    result = sandbox.eval(test_code)
+    result = sandbox.execute_string(test_code)
     assert result.success, f"Declarative function pipeline test failed: {result.error}"
 
 
@@ -71,7 +71,7 @@ def complex_pipeline(x: int) -> int = double | square | add_ten
 final_result = complex_pipeline(3)
 """
 
-    result = sandbox.eval(test_code)
+    result = sandbox.execute_string(test_code)
     assert result.success, f"Complex declarative function pipeline test failed: {result.error}"
 
 
@@ -90,7 +90,7 @@ def add_ten(x: int) -> int:
 pipeline = double | add_ten
 """
 
-    result = sandbox.eval(test_code)
+    result = sandbox.execute_string(test_code)
     assert not result.success, "Old pipeline assignment syntax should be rejected"
     assert "Pipe expressions (|) are only allowed in declarative function definitions" in str(
         result.error
@@ -109,7 +109,7 @@ def double(x: int) -> int:
 result = 5 | double
 """
 
-    result = sandbox.eval(test_code)
+    result = sandbox.execute_string(test_code)
     assert not result.success, "Pipe expression in invalid context should be rejected"
     assert "Pipe expressions (|) are only allowed in declarative function definitions" in str(
         result.error

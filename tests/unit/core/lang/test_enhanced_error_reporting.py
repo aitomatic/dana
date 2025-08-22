@@ -29,7 +29,7 @@ y = x.missing_attr  # Error on line 3
             f.flush()
 
             try:
-                result = DanaSandbox.quick_run(f.name)
+                result = DanaSandbox.execute_file_once(f.name)
                 assert result.success is False
                 error = result.error
 
@@ -67,12 +67,19 @@ result = outer_func(None)
             f.flush()
 
             try:
-                result = DanaSandbox.quick_run(f.name)
-                # With async-by-default, errors might be wrapped in promises
+                result = DanaSandbox.execute_file_once(f.name)
+                # With universal EagerPromise wrapping, results are wrapped in promises
                 if result.success:
                     # Check if there's an error in the result
-                    result_str = str(result.result)
-                    assert "bad_attr" in result_str or "inner_func" in result_str
+                    # result.result is now an EagerPromise, so we need to wait for it
+                    try:
+                        result_value = result.result._wait_for_delivery()
+                        result_str = str(result_value)
+                        assert "bad_attr" in result_str or "inner_func" in result_str
+                    except Exception as promise_error:
+                        # If the promise contains an error, check the error message
+                        error_str = str(promise_error)
+                        assert "inner_func" in error_str or "line 3" in error_str or "bad_attr" in error_str
                 else:
                     error = result.error
                     # Check error contains function names in message
@@ -91,7 +98,7 @@ x = 1 +   # Incomplete expression
             f.flush()
 
             try:
-                result = DanaSandbox.quick_run(f.name)
+                result = DanaSandbox.execute_file_once(f.name)
                 assert result.success is False
 
                 # Syntax errors should at least show the file
@@ -111,7 +118,7 @@ result = data["key"].some_method()  # Error on accessing None.some_method
             f.flush()
 
             try:
-                result = DanaSandbox.quick_run(f.name)
+                result = DanaSandbox.execute_file_once(f.name)
                 assert result.success is False
 
                 error_str = str(result.error)
@@ -132,7 +139,7 @@ z = y.second_error  # This won't execute
             f.flush()
 
             try:
-                result = DanaSandbox.quick_run(f.name)
+                result = DanaSandbox.execute_file_once(f.name)
                 assert result.success is False
 
                 error_str = str(result.error)
@@ -154,7 +161,7 @@ z = y.second_error  # This won't execute
         sandbox = DanaSandbox()
 
         # Test simple REPL error - use newline instead of semicolon
-        result = sandbox.eval("x = None\ny = x.missing")
+        result = sandbox.execute_string("x = None\ny = x.missing")
         assert result.success is False
 
         # REPL errors should be concise but still informative

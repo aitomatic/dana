@@ -1,0 +1,325 @@
+# Test basic resource definition and instantiation
+# This file tests the core resource keyword functionality
+
+def test_basic_resource_definition():
+    """Test basic resource definition with fields."""
+    # Define a simple resource
+    resource SimpleResource:
+        name: str = "test"
+        value: int = 42
+        active: bool = true
+    
+    # Create an instance
+    simple = SimpleResource()
+    
+    # Test field access
+    assert simple.name == "test", f"Expected 'test', got '{simple.name}'"
+    assert simple.value == 42, f"Expected 42, got {simple.value}"
+    assert simple.active == true, f"Expected true, got {simple.active}"
+    
+    log("✅ Basic resource definition test passed")
+
+def test_resource_with_custom_values():
+    """Test resource instantiation with custom field values."""
+    resource ConfigResource:
+        host: str = "localhost"
+        port: int = 8080
+        timeout: int = 30
+    
+    # Create with custom values
+    config = ConfigResource(host="example.com", port=9000, timeout=60)
+    
+    # Test custom values
+    assert config.host == "example.com", f"Expected 'example.com', got '{config.host}'"
+    assert config.port == 9000, f"Expected 9000, got {config.port}"
+    assert config.timeout == 60, f"Expected 60, got {config.timeout}"
+    
+    log("✅ Resource with custom values test passed")
+
+def test_resource_field_types():
+    """Test different field types in resources."""
+    resource TypeTestResource:
+        string_field: str = "hello"
+        int_field: int = 123
+        float_field: float = 3.14
+        bool_field: bool = true
+        list_field: list = [1, 2, 3]
+        dict_field: dict = {"key": "value"}
+    
+    # Create instance
+    type_test = TypeTestResource()
+    
+    # Test type preservation - Dana's type() returns strings, not type objects
+    assert type(type_test.string_field) == "str", f"Expected 'str', got '{type(type_test.string_field)}'"
+    assert type(type_test.int_field) == "int", f"Expected 'int', got '{type(type_test.int_field)}'"
+    assert type(type_test.float_field) == "float", f"Expected 'float', got '{type(type_test.float_field)}'"
+    assert type(type_test.bool_field) == "bool", f"Expected 'bool', got '{type(type_test.bool_field)}'"
+    assert type(type_test.list_field) == "list", f"Expected 'list', got '{type(type_test.list_field)}'"
+    assert type(type_test.dict_field) == "dict", f"Expected 'dict', got '{type(type_test.dict_field)}'"
+    
+    log("✅ Resource field types test passed")
+
+def test_resource_inheritance():
+    """Test resource inheritance from BaseResource."""
+    # First, define BaseResource as a struct type so it can be inherited from
+    resource BaseResource:
+        kind: str = "base"
+        name: str = ""
+        version: str = "1.0.0"
+    
+    # Now define a resource that inherits from BaseResource
+    resource TestRAG:
+        sources: list = []
+        chunk_size: int = 1024
+        domain: str = "documents"
+    
+    # Create instance
+    rag = TestRAG(sources=["doc1.pdf", "doc2.pdf"])
+    
+    # Test inherited fields
+    assert rag.kind == "base", f"Expected 'base', got '{rag.kind}'"
+    assert rag.name == "", f"Expected empty string, got '{rag.name}'"
+    assert rag.version == "1.0.0", f"Expected '1.0.0', got '{rag.version}'"
+    
+    # Test custom fields
+    assert len(rag.sources) == 2, f"Expected 2 sources, got {len(rag.sources)}"
+    assert rag.chunk_size == 1024, f"Expected 1024, got {rag.chunk_size}"
+    assert rag.domain == "documents", f"Expected 'documents', got '{rag.domain}'"
+    
+    log("✅ Resource inheritance test passed")
+
+def test_resource_methods():
+    """Test resource methods using struct-function pattern."""
+    resource CalculatorResource:
+        operation: str = "add"
+        default_value: int = 0
+    
+    # Define methods using struct-function pattern
+    def (self: CalculatorResource) add(a: int, b: int) -> int:
+        return a + b
+    
+    def (self: CalculatorResource) multiply(a: int, b: int) -> int:
+        return a * b
+    
+    def (self: CalculatorResource) get_operation() -> str:
+        return self.operation
+    
+    # Create instance
+    calc = CalculatorResource(operation="multiply")
+    
+    # Test method calls
+    result1 = calc.add(5, 3)
+    assert result1 == 8, f"Expected 8, got {result1}"
+    
+    result2 = calc.multiply(4, 6)
+    assert result2 == 24, f"Expected 24, got {result2}"
+    
+    operation = calc.get_operation()
+    assert operation == "multiply", f"Expected 'multiply', got '{operation}'"
+    
+    log("✅ Resource methods test passed")
+
+def test_resource_lifecycle():
+    """Test resource lifecycle methods."""
+    resource LifecycleResource:
+        state: str = "created"
+        initialized: bool = false
+    
+    # Define lifecycle methods
+    def (self: LifecycleResource) start() -> bool:
+        self.state = "running"
+        self.initialized = true
+        return true
+    
+    def (self: LifecycleResource) stop() -> bool:
+        self.state = "stopped"
+        return true
+    
+    def (self: LifecycleResource) is_running() -> bool:
+        return self.state == "running"
+    
+    # Create and test lifecycle
+    lifecycle = LifecycleResource()
+    
+    # Initial state
+    assert lifecycle.state == "created", f"Expected 'created', got '{lifecycle.state}'"
+    assert lifecycle.initialized == false, f"Expected false, got {lifecycle.initialized}"
+    
+    # Start resource
+    start_result = lifecycle.start()
+    assert start_result == true, f"Expected true, got {start_result}"
+    assert lifecycle.state == "running", f"Expected 'running', got '{lifecycle.state}'"
+    assert lifecycle.initialized == true, f"Expected true, got {lifecycle.initialized}"
+    assert lifecycle.is_running() == true, f"Expected true, got {lifecycle.is_running()}"
+    
+    # Stop resource
+    stop_result = lifecycle.stop()
+    assert stop_result == true, f"Expected true, got {stop_result}"
+    assert lifecycle.state == "stopped", f"Expected 'stopped', got '{lifecycle.state}'"
+    assert lifecycle.is_running() == false, f"Expected false, got {lifecycle.is_running()}"
+    
+    log("✅ Resource lifecycle test passed")
+
+def test_resource_query_interface():
+    """Test standard query interface for resources."""
+    resource QueryResource:
+        responses: dict = {"hello": "world", "test": "response"}
+    
+    # Define standard query method
+    def (self: QueryResource) query(request: str) -> str:
+        if request in self.responses:
+            return self.responses[request]
+        return f"Unknown query: {request}"
+    
+    # Create instance
+    query_resource = QueryResource()
+    
+    # Test query interface
+    result1 = query_resource.query("hello")
+    assert result1 == "world", f"Expected 'world', got '{result1}'"
+    
+    result2 = query_resource.query("test")
+    assert result2 == "response", f"Expected 'response', got '{result2}'"
+    
+    result3 = query_resource.query("unknown")
+    assert result3 == "Unknown query: unknown", f"Expected 'Unknown query: unknown', got '{result3}'"
+    
+    log("✅ Resource query interface test passed")
+
+def test_resource_with_comments():
+    """Test resource definition with field comments."""
+    resource CommentedResource:
+        name: str = "default"
+        count: int = 0
+        enabled: bool = true
+    
+    # Create instance
+    commented = CommentedResource()
+    
+    # Test that fields work correctly with comments
+    assert commented.name == "default", f"Expected 'default', got '{commented.name}'"
+    assert commented.count == 0, f"Expected 0, got {commented.count}"
+    assert commented.enabled == true, f"Expected true, got {commented.enabled}"
+    
+    log("✅ Resource with comments test passed")
+
+def test_resource_dict_field_access():
+    """Test that dictionary fields in resources are properly subscriptable."""
+    resource DictResource:
+        processors: dict = {"uppercase": "to_upper", "lowercase": "to_lower"}
+        config: dict = {"timeout": 30, "retries": 3}
+    
+    # Define methods that use dictionary access
+    def (self: DictResource) register_processor(name: str, func: str) -> bool:
+        # This should work - accessing dict field with subscript
+        self.processors[name] = func
+        return true
+    
+    def (self: DictResource) get_processor(name: str) -> str:
+        # This should work - accessing dict field with subscript
+        if name in self.processors:
+            return self.processors[name]
+        return "default"
+    
+    def (self: DictResource) set_config(key: str, value) -> bool:
+        # This should work - accessing dict field with subscript
+        self.config[key] = value
+        return true
+    
+    def (self: DictResource) get_config(key: str):
+        # This should work - accessing dict field with subscript
+        if key in self.config:
+            return self.config[key]
+        return None
+    
+    # Create instance
+    dict_resource = DictResource()
+    
+    # Test initial dictionary access
+    assert dict_resource.processors["uppercase"] == "to_upper", f"Expected 'to_upper', got '{dict_resource.processors['uppercase']}'"
+    assert dict_resource.config["timeout"] == 30, f"Expected 30, got {dict_resource.config['timeout']}"
+    
+    # Test method calls that use dictionary access
+    success = dict_resource.register_processor("reverse", "to_reverse")
+    assert success == true, f"Expected true, got {success}"
+    
+    processor = dict_resource.get_processor("reverse")
+    assert processor == "to_reverse", f"Expected 'to_reverse', got '{processor}'"
+    
+    config_success = dict_resource.set_config("max_size", 1024)
+    assert config_success == true, f"Expected true, got {config_success}"
+    
+    max_size = dict_resource.get_config("max_size")
+    assert max_size == 1024, f"Expected 1024, got {max_size}"
+    
+    # Test direct dictionary access after modification
+    assert dict_resource.processors["reverse"] == "to_reverse", f"Expected 'to_reverse', got '{dict_resource.processors['reverse']}'"
+    assert dict_resource.config["max_size"] == 1024, f"Expected 1024, got {dict_resource.config['max_size']}"
+    
+    log("✅ Resource dictionary field access test passed")
+
+def test_resource_context_manager():
+    """Test that resources can be used as context managers with 'with' statements."""
+    resource ContextResource:
+        is_open: bool = false
+        operation_count: int = 0
+    
+    # Define context manager methods with different names to avoid conflicts
+    def (self: ContextResource) enter_context() -> ContextResource:
+        self.is_open = true
+        self.operation_count += 1
+        return self
+    
+    def (self: ContextResource) exit_context(exc_type, exc_val, exc_tb) -> bool:
+        self.is_open = false
+        return false  # Don't suppress exceptions
+    
+    def (self: ContextResource) perform_operation() -> str:
+        if self.is_open:
+            return "Operation performed successfully"
+        else:
+            return "Resource not open"
+    
+    # Create instance
+    context_resource = ContextResource()
+    
+    # Test initial state
+    assert context_resource.is_open == false, f"Expected false, got {context_resource.is_open}"
+    assert context_resource.operation_count == 0, f"Expected 0, got {context_resource.operation_count}"
+    
+    # Test manual context manager method calls first
+    context_resource.enter_context()
+    assert context_resource.is_open == true, f"Expected true, got {context_resource.is_open}"
+    assert context_resource.operation_count == 1, f"Expected 1, got {context_resource.operation_count}"
+    
+    # Test manual exit
+    context_resource.exit_context(None, None, None)
+    assert context_resource.is_open == false, f"Expected false, got {context_resource.is_open}"
+    
+    # Test that the built-in context manager methods work (from ResourceInstance)
+    with context_resource as res:
+        # The built-in __enter__ method should call start() which should work
+        # Check that we can access the resource
+        assert res.operation_count == 1, f"Expected 1, got {res.operation_count}"
+        
+        # Perform operation using our custom method
+        result = res.perform_operation()
+        assert result == "Resource not open", f"Expected 'Resource not open', got '{result}'"
+    
+    # Check that resource is closed after context (built-in __exit__ calls stop())
+    assert context_resource.is_open == false, f"Expected false, got {context_resource.is_open}"
+    
+    log("✅ Resource context manager test passed")
+
+log_level("INFO")
+test_basic_resource_definition()
+test_resource_with_custom_values()
+test_resource_field_types()
+test_resource_inheritance()
+test_resource_methods()
+test_resource_lifecycle()
+test_resource_query_interface()
+test_resource_with_comments()
+test_resource_dict_field_access()
+test_resource_context_manager()
+log("🎉 All basic resource tests completed successfully!")

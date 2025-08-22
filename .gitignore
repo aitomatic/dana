@@ -74,8 +74,18 @@ uploads
 dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
-agents/
+/agents/
 docs/.ai-only/ai_output/
+
+# act file
+.actrc
+.secrets
+.secrets.example
+tasks.json
+experiments/
+
+.vscode/launch.json.backup
+**/MODULE_ANALYSIS.md
 
 # Contributors-oriented configs
 # =============================

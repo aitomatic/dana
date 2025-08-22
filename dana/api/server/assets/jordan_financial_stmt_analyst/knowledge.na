@@ -1,0 +1,8 @@
+"""
+Knowledge sources for this agent. The following files are available in the ./docs folder:
+- (No files currently listed. Add files to ./docs to make them available.)
+"""
+
+raw_docs = use("rag", sources=["./docs"], description="Company financial statement. Use medium `num_results` : 5 < `num_results` < 12", debug=False)
+docs = use("finance_rag", rag_resource=raw_docs)
+knows = use("knowledge", sources=["./knows/processed_knowledge"], description="Financial statement analysis knowledge. Use small `num_results`=1", force_reload=False, reranking=True)

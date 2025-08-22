@@ -11,8 +11,14 @@ import pytest
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.log_function import log_function
-from dana.core.stdlib.core.print_function import print_function
+from dana.libs.corelib.py_wrappers.py_log import py_log as log_function
+from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+
+
+# register_core_functions is now handled by the corelib registration system
+def register_core_functions(registry):
+    """Placeholder - corelib registration is now automatic."""
+    pass
 
 
 @pytest.mark.deep
@@ -100,8 +106,8 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-        from dana.core.stdlib.core.register_core_functions import register_core_functions
+        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -111,8 +117,8 @@ class TestPrintVsLogFunctions:
         assert registry.has("log")
 
         # Check their registered functions
-        print_func, _, _ = registry.resolve("print")
-        log_func, _, _ = registry.resolve("log")
+        print_func, _, _ = registry.resolve_with_type("print")
+        log_func, _, _ = registry.resolve_with_type("log")
 
         assert print_func is not None
         assert log_func is not None
@@ -154,8 +160,8 @@ class TestPrintVsLogFunctions:
         """Demonstrate the signature differences between print and log functions."""
         import inspect
 
-        from dana.core.stdlib.core.log_function import log_function
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_log import py_log as log_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         print_sig = inspect.signature(print_function)
         log_sig = inspect.signature(log_function)
@@ -199,7 +205,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_basic(self):
         """Test basic log_level function functionality."""
-        from dana.core.stdlib.core.log_level_function import log_level_function
+        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -209,7 +215,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_valid_levels(self):
         """Test log_level function with different valid levels."""
-        from dana.core.stdlib.core.log_level_function import log_level_function
+        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -223,7 +229,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_invalid_level(self):
         """Test log_level function with invalid level."""
-        from dana.core.stdlib.core.log_level_function import log_level_function
+        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -232,7 +238,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_case_insensitive(self):
         """Test log_level function handles case insensitivity."""
-        from dana.core.stdlib.core.log_level_function import log_level_function
+        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -247,7 +253,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_with_options(self):
         """Test log_level function with options parameter."""
-        from dana.core.stdlib.core.log_level_function import log_level_function
+        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -258,8 +264,8 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-        from dana.core.stdlib.core.register_core_functions import register_core_functions
+        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -268,7 +274,7 @@ class TestLogLevelFunction:
         assert registry.has("log_level")
 
         # Check the registered function
-        log_level_func, _, _ = registry.resolve("log_level")
+        log_level_func, _, _ = registry.resolve_with_type("log_level")
         assert log_level_func is not None
 
 
@@ -280,8 +286,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -298,7 +304,7 @@ class TestDynamicHelp:
 
         # Verify core functions are listed
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("local")
+        core_functions = registry.list_functions("system")
 
         # All core functions should appear in the help output
         for func_name in core_functions:
@@ -315,8 +321,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -336,7 +342,7 @@ class TestDynamicHelp:
         def test_function(context, message: str, options=None):
             return f"Test: {message}"
 
-        registry.register("test_func", test_function, "local")
+        registry.register("test_func", test_function, "system")
 
         # Capture updated help output
         sys.stdout = captured_output = StringIO()
@@ -354,15 +360,15 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
+        from dana.apps.repl import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
-        from dana.core.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
 
         # Get core functions from registry
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("local")
+        core_functions = registry.list_functions("system")
 
         # Get completer words from prompt session
         completer = app.prompt_manager.prompt_session.completer
@@ -381,13 +387,13 @@ class TestDynamicHelp:
         from io import StringIO
         from unittest.mock import patch
 
-        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.apps.repl.commands.command_handler import CommandHandler
+        from dana.apps.repl.repl import REPL
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
         from dana.common.terminal_utils import ColorScheme
-        from dana.core.repl.commands.command_handler import CommandHandler
-        from dana.core.repl.repl import REPL
 
         # Create a REPL with normal setup
-        repl = REPL(llm_resource=LLMResource())
+        repl = REPL(llm_resource=LegacyLLMResource())
         colors = ColorScheme(use_colors=False)
         command_handler = CommandHandler(repl, colors)
 
@@ -424,7 +430,7 @@ class TestPrintFunctionWithFStrings:
 
         from dana.core.lang.ast import FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -452,7 +458,7 @@ class TestPrintFunctionWithFStrings:
 
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -480,7 +486,7 @@ class TestPrintFunctionWithFStrings:
         """Test f-string with multiple variables in print function."""
         from dana.core.lang.ast import FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with multiple variables
         context = SandboxContext()
@@ -508,7 +514,7 @@ class TestPrintFunctionWithFStrings:
         """Test f-string with complex expressions in print function."""
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -550,7 +556,7 @@ class TestPrintFunctionWithFStrings:
         """Test f-string with template and expressions style."""
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -583,7 +589,7 @@ class TestPrintFunctionWithFStrings:
         """Test print function error handling with invalid f-strings."""
         from dana.core.lang.ast import FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context without the required variable
         context = SandboxContext()
@@ -611,7 +617,7 @@ class TestPrintFunctionWithFStrings:
         """Test print function with mixed regular and f-string arguments."""
         from dana.core.lang.ast import FStringExpression, Identifier
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.stdlib.core.print_function import print_function
+        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()

@@ -1,0 +1,42 @@
+{
+  "include": [
+    "dana",
+    "tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "**/.pytest_cache",
+    "**/.mypy_cache",
+    "**/.ruff_cache",
+    "**/build",
+    "**/*.egg-info",
+    "examples",
+    "docs",
+    "tmp",
+    "demos"
+  ],
+  "ignore": [
+    "**/dana_grammar_embedded.py"
+  ],
+  "pythonVersion": "3.12",
+  "pythonPlatform": "All",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.12",
+      "pythonPlatform": "All",
+      "extraPaths": [
+        "./dana",
+        "./tests"
+      ]
+    }
+  ],
+  "reportAttributeAccessIssue": "none",
+  "reportCallIssue": "none",
+  "reportInvalidTypeForm": "none",
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+  "reportPossiblyUnboundVariable": "none"
+}

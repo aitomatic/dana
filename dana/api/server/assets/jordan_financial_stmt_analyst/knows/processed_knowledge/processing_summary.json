@@ -1,0 +1,18 @@
+{
+  "input_file": "/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/knows/domain_knowledge_output.json",
+  "output_directory": "/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/knows/processed_knowledge",
+  "files_created": 110,
+  "processing_date": "2025-08-01T09:24:30.409510",
+  "metadata": {
+    "domain": "Financial Statement Analysis",
+    "role": "Senior Financial Analyst",
+    "tasks": [
+      "Analyze Company Performance using Financial Statements"
+    ],
+    "coverage_version": "1.0",
+    "domain_class": "FinancialStmtAnalysisDomain",
+    "analysis_type": "hierarchical_task_focused_tree",
+    "tree_structure": "domain_subdomain_topic",
+    "primary_focus": "tasks_with_role_domain_context"
+  }
+}

@@ -21,8 +21,8 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class BaseExecutor(Loggable):
@@ -88,31 +88,12 @@ class BaseExecutor(Loggable):
 
         node_type = type(node)
 
-        # Debug logging for ReturnStatement
-        if node_type.__name__ == "ReturnStatement":
-            self.debug(f"DEBUG: BaseExecutor.execute called with ReturnStatement: {node}")
-            self.debug(f"DEBUG: ReturnStatement in handlers: {node_type in self._handlers}")
-            self.debug(f"DEBUG: Available handlers: {list(self._handlers.keys())}")
-
-        # Debug logging for TryBlock
-        if node_type.__name__ == "TryBlock":
-            self.debug(f"DEBUG: BaseExecutor.execute called with TryBlock: {node}")
-            self.debug(f"DEBUG: TryBlock in handlers: {node_type in self._handlers}")
-
         if node_type in self._handlers:
             handler = self._handlers[node_type]
-            if node_type.__name__ == "ReturnStatement":
-                self.debug(f"DEBUG: Found ReturnStatement handler: {handler}")
-            if node_type.__name__ == "TryBlock":
-                self.debug(f"DEBUG: Found TryBlock handler: {handler}")
             return handler(node, context)
         else:
             # If this executor can't handle it, try the parent
             if self._parent:
-                if node_type.__name__ == "ReturnStatement":
-                    self.debug(f"DEBUG: ReturnStatement not found in {self.__class__.__name__}, delegating to parent")
-                if node_type.__name__ == "TryBlock":
-                    self.debug(f"DEBUG: TryBlock not found in {self.__class__.__name__}, delegating to parent")
                 return self._parent.execute(node, context)
             else:
                 raise SandboxError(f"Unsupported node type: {node_type}")

@@ -23,7 +23,6 @@ from dana.core.lang.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,
-    DeliverStatement,
     ForLoop,
     ReturnStatement,
     TryBlock,
@@ -36,8 +35,8 @@ from dana.core.lang.interpreter.executor.control_flow.context_manager_handler im
 from dana.core.lang.interpreter.executor.control_flow.control_flow_utils import ControlFlowUtils
 from dana.core.lang.interpreter.executor.control_flow.exception_handler import ExceptionHandler
 from dana.core.lang.interpreter.executor.control_flow.loop_handler import LoopHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class ControlFlowExecutor(BaseExecutor):
@@ -83,7 +82,6 @@ class ControlFlowExecutor(BaseExecutor):
             # Simple control flow statements
             BreakStatement: self.execute_break_statement,
             ContinueStatement: self.execute_continue_statement,
-            DeliverStatement: self.execute_deliver_statement,
             ReturnStatement: self.execute_return_statement,
             # Exception handling
             TryBlock: self.execute_try_block,
@@ -162,48 +160,6 @@ class ControlFlowExecutor(BaseExecutor):
             ContinueException: Always
         """
         return self.control_flow_utils.execute_continue_statement(node, context)
-
-    def execute_deliver_statement(self, node: DeliverStatement, context: SandboxContext) -> Any:
-        """Execute a deliver statement (eager execution with await all).
-
-        Args:
-            node: The deliver statement to execute
-            context: The execution context
-
-        Returns:
-            The delivered value (eagerly evaluated with all promises resolved)
-        """
-        from dana.core.runtime.promise import get_current_promise_group, is_promise, resolve_promise
-
-        # First, resolve all pending promises in parallel (await all strategy)
-        promise_group = get_current_promise_group()
-        pending_promises = promise_group.get_pending_promises()
-
-        if pending_promises:
-            self.debug(f"Resolving {len(pending_promises)} pending promises before deliver")
-            # Resolve all pending promises
-            for promise in pending_promises:
-                resolve_promise(promise)
-
-        # Now evaluate the deliver value
-        if node.value is not None:
-            if self.parent is None:
-                raise RuntimeError("Parent executor not available for deliver value evaluation")
-            value = self.parent.execute(node.value, context)
-
-            # If the value is a promise, resolve it
-            if is_promise(value):
-                value = resolve_promise(value)
-
-            self.debug(f"Executing deliver statement with value: {value}")
-        else:
-            value = None
-            self.debug("Executing deliver statement with no value")
-
-        # Raise DeliverException to terminate function execution immediately
-        from dana.core.lang.interpreter.executor.control_flow.exceptions import DeliverException
-
-        raise DeliverException(value)
 
     def execute_return_statement(self, node: ReturnStatement, context: SandboxContext) -> None:
         """Execute a return statement using utility handler.

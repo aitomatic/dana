@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from dana.__init__ import initialize_module_system, reset_module_system
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 @pytest.mark.deep
@@ -60,7 +60,7 @@ class TestImportPerformance:
         """Test performance of basic import statements."""
 
         def import_simple_math():
-            result = self.sandbox.eval("import simple_math")
+            result = self.sandbox.execute_string("import simple_math")
             assert result.success is True
             return result
 
@@ -79,11 +79,11 @@ class TestImportPerformance:
         """Test performance comparison between Python and Dana imports."""
 
         def import_python():
-            result = self.sandbox.eval("import math.py")
+            result = self.sandbox.execute_string("import math.py")
             assert result.success is True
 
         def import_dana():
-            result = self.sandbox.eval("import simple_math")
+            result = self.sandbox.execute_string("import simple_math")
             assert result.success is True
 
         python_stats = self.measure_execution_time(import_python, iterations=10)
@@ -102,7 +102,7 @@ class TestImportPerformance:
         """Test performance of from-import statements."""
 
         def from_import_operation():
-            result = self.sandbox.eval("from simple_math import add")
+            result = self.sandbox.execute_string("from simple_math import add")
             assert result.success is True
 
         perf_stats = self.measure_execution_time(from_import_operation, iterations=10)
@@ -119,12 +119,12 @@ class TestImportPerformance:
         """Test performance of package imports."""
 
         def import_package():
-            result = self.sandbox.eval("import utils")
+            result = self.sandbox.execute_string("import utils")
             assert result.success is True
             return result
 
         def import_submodule():
-            result = self.sandbox.eval("from utils import factorial")
+            result = self.sandbox.execute_string("from utils import factorial")
             assert result.success is True
             return result
 
@@ -152,7 +152,7 @@ class TestImportPerformance:
             ]
 
             for import_stmt in imports:
-                result = self.sandbox.eval(import_stmt)
+                result = self.sandbox.execute_string(import_stmt)
                 assert result.success is True
 
             return len(imports)
@@ -168,11 +168,11 @@ class TestImportPerformance:
     def test_function_call_performance_after_import(self):
         """Test performance of calling imported functions."""
         # First import the module
-        result = self.sandbox.eval("import simple_math")
+        result = self.sandbox.execute_string("import simple_math")
         assert result.success is True
 
         def call_imported_function():
-            result = self.sandbox.eval("simple_math.add(10, 5)")
+            result = self.sandbox.execute_string("simple_math.add(10, 5)")
             assert result.success is True
             return result
 
@@ -181,7 +181,7 @@ class TestImportPerformance:
 
         # Also test module-level calls vs direct calls
         def direct_module_call():
-            result = self.sandbox.eval("simple_math.add(2, 3)")
+            result = self.sandbox.execute_string("simple_math.add(2, 3)")
             assert result.success is True
             return result
 
@@ -197,12 +197,12 @@ class TestImportPerformance:
         def first_import():
             # Reset sandbox to clear any cached state
             self.sandbox = DanaSandbox()
-            result = self.sandbox.eval("import simple_math")
+            result = self.sandbox.execute_string("import simple_math")
             assert result.success is True
             return result
 
         def repeated_import():
-            result = self.sandbox.eval("import simple_math")
+            result = self.sandbox.execute_string("import simple_math")
             assert result.success is True
             return result
 
@@ -210,7 +210,7 @@ class TestImportPerformance:
         first_stats = self.measure_execution_time(first_import, iterations=3)
 
         # Setup for repeated imports
-        self.sandbox.eval("import simple_math")  # Prime the cache
+        self.sandbox.execute_string("import simple_math")  # Prime the cache
 
         # Measure repeated imports (cache hits)
         repeated_stats = self.measure_execution_time(repeated_import, iterations=10)
@@ -238,7 +238,7 @@ class TestImportPerformance:
             ]
 
             for import_stmt in setup_imports:
-                result = self.sandbox.eval(import_stmt)
+                result = self.sandbox.execute_string(import_stmt)
                 assert result.success is True
 
             # Perform many operations
@@ -252,7 +252,7 @@ class TestImportPerformance:
             ]
 
             for op in operations:
-                result = self.sandbox.eval(op)
+                result = self.sandbox.execute_string(op)
                 assert result.success is True
 
             return len(setup_imports) + len(operations)
@@ -269,15 +269,15 @@ class TestImportPerformance:
         """Provide a comprehensive performance summary."""
         # This test runs various operations and provides a summary
         operations = {
-            "Basic Import": lambda: self.sandbox.eval("import simple_math"),
-            "Python Import": lambda: self.sandbox.eval("import math.py"),
-            "From Import": lambda: self.sandbox.eval("from simple_math import add"),
-            "Package Import": lambda: self.sandbox.eval("import utils"),
-            "Function Call": lambda: self.sandbox.eval("simple_math.add(1, 2)"),
+            "Basic Import": lambda: self.sandbox.execute_string("import simple_math"),
+            "Python Import": lambda: self.sandbox.execute_string("import math.py"),
+            "From Import": lambda: self.sandbox.execute_string("from simple_math import add"),
+            "Package Import": lambda: self.sandbox.execute_string("import utils"),
+            "Function Call": lambda: self.sandbox.execute_string("simple_math.add(1, 2)"),
         }
 
         # Setup for function call test
-        self.sandbox.eval("import simple_math")
+        self.sandbox.execute_string("import simple_math")
 
         summary = {}
         for name, operation in operations.items():

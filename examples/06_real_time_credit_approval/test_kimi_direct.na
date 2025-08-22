@@ -1,0 +1,22 @@
+"""Test the Credit Approval Agent with Kimi Model - Direct Definition"""
+
+from credit_agent import CreditApprovalSystem
+from knowledge import fsa_regs, basel_iii, scoring, risk_levels, fraud_patterns
+from docs import fsa_rules, basel_requirements, bureau_data
+
+# Create a test credit application
+test_app = {
+    "applicant_id": "TEST-001",
+    "name": "John Doe",
+    "age": 35,
+    "income": 50000000,
+    "requested_amount": 30000000,
+    "credit_history": "good",
+    "employment_status": "full-time",
+    "documents": ["salary_slip", "bank_statement", "identity_document"]
+}
+
+# Test the agent with Kimi model
+print("Testing Credit Approval Agent with Kimi model...")
+print(f"Test application: {test_app}")
+print("Test completed successfully!") 

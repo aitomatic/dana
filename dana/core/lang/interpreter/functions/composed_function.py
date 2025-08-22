@@ -94,8 +94,10 @@ class ComposedFunction(SandboxFunction):
         Returns:
             The result of applying right_func to the result of left_func
         """
+
         # Resolve functions if they are strings (lazy resolution)
         left_resolved = self._resolve_function(self.left_func, context)
+
         right_resolved = self._resolve_function(self.right_func, context)
 
         # Apply the left function first
@@ -103,7 +105,9 @@ class ComposedFunction(SandboxFunction):
 
         # Apply the right function to the intermediate result
         # The intermediate result becomes the argument to the right function
-        return right_resolved.execute(context, intermediate_result)
+        final_result = right_resolved.execute(context, intermediate_result)
+
+        return final_result
 
     def _resolve_function(self, func: SandboxFunction | str | Callable, context: SandboxContext) -> SandboxFunction:
         """Resolve a function reference to a SandboxFunction object.
@@ -118,6 +122,7 @@ class ComposedFunction(SandboxFunction):
         Raises:
             SandboxError: If the function cannot be resolved
         """
+
         if isinstance(func, SandboxFunction):
             # Already resolved
             return func
@@ -134,7 +139,7 @@ class ComposedFunction(SandboxFunction):
             # Try to use the stored function registry
             if self._function_registry:
                 try:
-                    resolved_func, func_type, metadata = self._function_registry.resolve(func, None)
+                    resolved_func, func_type, metadata = self._function_registry.resolve_with_type(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
                     elif callable(resolved_func):
@@ -147,7 +152,7 @@ class ComposedFunction(SandboxFunction):
             interpreter = getattr(context, "_interpreter", None)
             if interpreter and hasattr(interpreter, "function_registry"):
                 try:
-                    resolved_func, func_type, metadata = interpreter.function_registry.resolve(func, None)
+                    resolved_func, func_type, metadata = interpreter.function_registry.resolve_with_type(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
                     elif callable(resolved_func):
@@ -198,12 +203,12 @@ class ComposedFunction(SandboxFunction):
                         # Function doesn't expect context - call normally
                         return self.wrapped_func(*args, **kwargs)
                 except (AttributeError, OSError, ValueError):
-                    # Fallback: try calling with context first, then without if it fails
+                    # Fallback: try calling without context first, then with context if it fails
                     try:
-                        return self.wrapped_func(context, *args, **kwargs)
-                    except TypeError:
-                        # If that fails, try without context
                         return self.wrapped_func(*args, **kwargs)
+                    except TypeError:
+                        # If that fails, try with context
+                        return self.wrapped_func(context, *args, **kwargs)
 
             def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
                 # No special context restoration needed for wrapped callables

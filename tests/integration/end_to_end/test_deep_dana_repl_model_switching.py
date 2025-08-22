@@ -22,15 +22,13 @@ class TestDeepDanaREPLModelSwitching(unittest.TestCase):
         # Clean environment and set required API keys
         self.original_env = os.environ.copy()
 
-        # Set API keys for all providers to enable testing
+        # Set API keys for all providers to enable testing (no longer overriding DANA_MOCK_LLM)
         os.environ.update(
             {
                 "OPENAI_API_KEY": "test-openai-key",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",
                 "GROQ_API_KEY": "test-groq-key",
                 "DEEPSEEK_API_KEY": "test-deepseek-key",
-                # Enable mock mode for testing
-                "DANA_MOCK_LLM": "true",
             }
         )
 
@@ -72,7 +70,7 @@ assert anthropic_result is not None, "Anthropic call should succeed"
 
 log("✅ OpenAI -> Anthropic switch successful")"""
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
 
         # Debug the result if it failed
         if not result.success:
@@ -148,7 +146,7 @@ log("✅ OpenAI -> Anthropic switch successful")"""
         log("✅ Error recovery testing successful")
         """
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success)
         self.assertIn("Error recovery testing successful", str(result.output))
 
@@ -192,7 +190,7 @@ log("✅ OpenAI -> Anthropic switch successful")"""
         log("✅ Cloud/Local model switching test successful")
         """
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success)
         self.assertIn("Cloud/Local model switching test successful", str(result.output))
 
@@ -265,7 +263,7 @@ log("✅ OpenAI -> Anthropic switch successful")"""
         log("✅ Comprehensive provider switching successful")
         """
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success)
         self.assertIn("Comprehensive provider switching successful", str(result.output))
 
@@ -314,7 +312,7 @@ log("✅ OpenAI -> Anthropic switch successful")"""
         log("✅ State persistence during model switching verified")
         """
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success)
         self.assertIn("State persistence during model switching verified", str(result.output))
 
@@ -372,7 +370,7 @@ log("✅ OpenAI -> Anthropic switch successful")"""
         log(f"✅ Concurrent usage patterns successful ({success_rate:.1%} success rate)")
         """
 
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success)
         self.assertIn("Concurrent usage patterns successful", str(result.output))
 

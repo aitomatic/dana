@@ -8,9 +8,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import re
-
-from dana.common.error_utils import ErrorUtils
 from dana.core.lang.interpreter.error_context import ErrorContext
 
 
@@ -97,69 +94,84 @@ class EnhancedErrorFormatter:
         Returns:
             Formatted error message in clean developer format
         """
-        # Check for reserved keyword errors first
+        import re  # Ensure re is available in this method
+
+        # Minimal, caret-style formatting for parse errors
         error_msg = str(error)
-        previous_tokens = []  # Initialize to avoid scoping issues
-
-        if "Unexpected token" in error_msg:
-            # Try to extract error details
+        if ("Unexpected token" in error_msg) or ("No terminal matches" in error_msg):
+            # Extract line/column
             line_match = re.search(r"line (\d+), col(?:umn)? (\d+)", error_msg)
+            line_num = None
+            col_num = None
+            if line_match:
+                line_num = int(line_match.group(1))
+                col_num = int(line_match.group(2))
+
+            # Resolve source line from error context if available
+            source_line = ""
+            if error_context and line_num:
+                # Prefer explicit filename; fallback to current_file
+                if error_context.current_location and error_context.current_location.filename:
+                    source_line = error_context.get_source_line(error_context.current_location.filename, line_num) or ""
+                elif error_context.current_file:
+                    source_line = error_context.get_source_line(error_context.current_file, line_num) or ""
+
+            # Try to extract unexpected token for context-specific hinting
             token_match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", error_msg)
+            token_value = token_match.group(2) if token_match else None
 
-            if token_match:
-                token_type, token_value = token_match.groups()
+            # Check for inheritance syntax attempts
+            if source_line and "(" in source_line and ")" in source_line:
+                # Look for inheritance patterns: struct/resource/agent_blueprint Name(Parent):
+                inheritance_patterns = [
+                    (r"struct\s+(\w+)\s*\(\s*(\w+)\s*\)", "struct"),
+                    (r"resource\s+(\w+)\s*\(\s*(\w+)\s*\)", "resource"),
+                    (r"agent_blueprint\s+(\w+)\s*\(\s*(\w+)\s*\)", "agent_blueprint"),
+                    (r"workflow\s+(\w+)\s*\(\s*(\w+)\s*\)", "workflow"),
+                ]
 
-                # Check if this is a reserved keyword error (either direct or in previous tokens)
-                is_reserved_keyword_error = False
-                actual_keyword = None
+                for pattern, type_name in inheritance_patterns:
+                    match = re.search(pattern, source_line)
+                    if match:
+                        child_name, parent_name = match.groups()
+                        lines = [
+                            f"Dana does not support inheritance for {type_name}s.",
+                            f"  Input: {source_line.strip()}",
+                            "",
+                            "Instead of inheritance, use composition:",
+                            f"  {type_name} {child_name}:",
+                            f"    _parent: {parent_name}  # Composition with delegation",
+                            "    # Add your own fields here",
+                            "",
+                            "Then access parent fields via delegation:",
+                            f"  instance = {child_name}()",
+                            "  instance.parent_field  # Delegated from _parent",
+                            "",
+                            "Learn more: https://docs.dana-lang.org/structs#composition-and-delegation",
+                        ]
+                        return "\n".join(lines)
 
-                if token_value in ErrorUtils.RESERVED_KEYWORDS:
-                    is_reserved_keyword_error = True
-                    actual_keyword = token_value
-                else:
-                    # Check if a reserved keyword is in the previous tokens
-                    previous_match = re.search(r"Previous tokens: \[(.*?)\]", error_msg)
-                    if previous_match:
-                        previous_text = previous_match.group(1)
-                        # The previous tokens are in format: Token('AGENT', 'agent')
-                        # We need to extract all Token(...) patterns properly
-                        token_patterns = re.findall(r"Token\('([^']+)', '([^']+)'\)", previous_text)
-                        previous_tokens = []
-                        for token_type, token_value in token_patterns:
-                            previous_tokens.append(f"Token('{token_type}', '{token_value}')")
+            # Build minimal message
+            header = "Syntax Error"
+            if line_num is not None and col_num is not None:
+                header = f"Syntax Error (line {line_num}, column {col_num})"
 
-                        # Use the shared method to find reserved keywords
-                        actual_keyword = ErrorUtils._find_reserved_keyword_in_tokens(previous_tokens)
-                        if actual_keyword:
-                            is_reserved_keyword_error = True
+            caret = ""
+            if col_num is not None:
+                caret = (" " * (col_num - 1)) + "^"
 
-                if is_reserved_keyword_error and actual_keyword:
-                    # Extract expected tokens
-                    expected_tokens = []
+            lines = [header]
+            if source_line:
+                lines.append(source_line)
+                if caret:
+                    lines.append(caret)
 
-                    # Parse expected tokens
-                    expected_match = re.search(r"Expected one of:\s*(.*?)(?:\n|$)", error_msg, re.DOTALL)
-                    if expected_match:
-                        expected_text = expected_match.group(1)
-                        expected_tokens = [line.strip().replace("*", "").strip() for line in expected_text.split("\n") if line.strip()]
-
-                    # Detect context
-                    context = ErrorUtils.detect_reserved_keyword_context(error_msg, expected_tokens, previous_tokens)
-
-                    if context and line_match:
-                        line_num = int(line_match.group(1))
-                        column_num = int(line_match.group(2))
-
-                        # Get source line if available
-                        source_line = ""
-                        if error_context and error_context.current_file and line_num:
-                            source_line = error_context.get_source_line(error_context.current_file, line_num) or ""
-
-                        # Create enhanced error message
-                        enhanced_msg = ErrorUtils.create_reserved_keyword_error_message(
-                            actual_keyword, context, line_num, column_num, source_line
-                        )
-                        return enhanced_msg
+            # Minimal, single-line hint for common reserved keyword misuse
+            if token_value == "resource":
+                lines.append(
+                    "hint: 'resource' is reserved; rename the receiver to the resource type or 'self' (e.g., def (bicycle: Type) method(...):)"
+                )
+            return "\n".join(lines)
 
         # Fall back to original formatting for non-reserved keyword errors
         lines = []
@@ -222,6 +234,46 @@ class EnhancedErrorFormatter:
         elif "not defined" in error_msg:
             lines.append("Root cause: Attempted to use an undefined variable or function")
             lines.append("Suggested fix: Check spelling and ensure variable/function is defined before use")
+        elif "Function" in error_msg and "not found" in error_msg:
+            # Extract function name from error message
+            import re
+
+            func_match = re.search(r"Function '([^']+)'", error_msg)
+            if func_match:
+                func_name = func_match.group(1)
+                lines.append(f"Root cause: Function '{func_name}' is not available in the current scope")
+                lines.append("Suggested fix: Import the function using one of these methods:")
+                lines.append(f'  • use("{func_name}")  # Import from stdlib (if use() is available)')
+                lines.append(f"  • import stdlib.core.{func_name}_functions  # Full import")
+                lines.append("  • Check if the function is available in the current namespace")
+
+                # Provide specific guidance for common functions
+                if func_name in ["reason", "llm", "log", "print", "agent"]:
+                    lines.append("")
+                    lines.append("Note: These are stdlib functions that require explicit import.")
+                    lines.append("If use() is not available, try:")
+                    lines.append(f"  • import stdlib.core.{func_name}_function")
+                    lines.append("  • Or check if the function is available in your Dana environment")
+
+                # Suggest similar function names
+                similar_functions = []
+                if func_name == "no":
+                    similar_functions.append("noop")
+                elif func_name == "yes":
+                    similar_functions.append("noop")
+                elif func_name == "prnt":
+                    similar_functions.append("print")
+                elif func_name == "logg":
+                    similar_functions.append("log")
+
+                if similar_functions:
+                    lines.append("")
+                    lines.append("Did you mean:")
+                    for similar_func in similar_functions:
+                        lines.append(f"  • {similar_func}()")
+            else:
+                lines.append("Root cause: Function not found in the current scope")
+                lines.append("Suggested fix: Import the function using use() or import statements")
         else:
             lines.append("Problem: See error message above")
             lines.append("Debug tip: Check the execution trace above for the source of the error")

@@ -56,7 +56,14 @@ class ParallelFunction(SandboxFunction):
                 result = self._call_function(func, context, *args, **kwargs)
                 results.append(result)
 
-        return results
+        # Auto-resolve any promises in the results
+        from dana.core.concurrency.promise_utils import resolve_if_promise
+
+        resolved_results = []
+        for result in results:
+            resolved_results.append(resolve_if_promise(result))
+
+        return resolved_results
 
     def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """Restore context after function execution (required by SandboxFunction)."""
@@ -78,12 +85,12 @@ class ParallelFunction(SandboxFunction):
         # Handle direct callables
         if callable(func):
             try:
-                # Try calling with context first
-                return func(context, *args, **kwargs)
+                # Try calling without context first (most common case)
+                return func(*args, **kwargs)
             except TypeError:
-                # If that fails, try without context
+                # If that fails, try with context (for functions that expect context)
                 try:
-                    return func(*args, **kwargs)
+                    return func(context, *args, **kwargs)
                 except Exception as e:
                     raise SandboxError(f"Error calling function {func}: {e}")
         else:
@@ -266,7 +273,10 @@ class PipeOperationHandler(Loggable):
 
         # Handle direct callables
         if callable(expr):
-            return expr
+            # Wrap callables in a SandboxFunction-compatible wrapper
+            from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
+
+            return ComposedFunction._wrap_callable(expr, str(expr), context)
 
         # Strict validation: reject non-callable objects early
         raise SandboxError(
@@ -425,7 +435,11 @@ class PipeOperationHandler(Loggable):
                     raise SandboxError(
                         f"Cannot use non-function '{identifier.name}' (value: {resolved_value}) of type {type(resolved_value).__name__} in pipe composition. Only functions are allowed."
                     )
-                return resolved_value
+                # Wrap callables in a SandboxFunction-compatible wrapper
+                from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
+
+                temp_composed = ComposedFunction(None, None, context)
+                return temp_composed._wrap_callable(resolved_value, identifier.name, context)
         except (KeyError, AttributeError):
             pass
 
@@ -438,7 +452,7 @@ class PipeOperationHandler(Loggable):
         ):
             registry = self.parent_executor.parent._function_executor.function_registry
             if registry.has(identifier.name):
-                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                resolved_func, func_type, metadata = registry.resolve_with_type(identifier.name)
                 # Registry should only contain callable functions, but validate to be safe
                 if not callable(resolved_func):
                     raise SandboxError(f"Registry contains non-callable for '{identifier.name}': {type(resolved_func).__name__}")

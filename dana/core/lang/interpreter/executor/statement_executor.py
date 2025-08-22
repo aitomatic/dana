@@ -22,10 +22,9 @@ from typing import Any
 from dana.common.exceptions import SandboxError
 from dana.core.lang.ast import (
     AgentDefinition,
-    AgentPoolStatement,
-    AgentStatement,
     AssertStatement,
     Assignment,
+    BaseAgentSingletonDefinition,
     CompoundAssignment,
     DeclarativeFunctionDefinition,
     ExportStatement,
@@ -35,8 +34,9 @@ from dana.core.lang.ast import (
     MethodDefinition,
     PassStatement,
     RaiseStatement,
+    ResourceDefinition,
+    SingletonAgentDefinition,
     StructDefinition,
-    UseStatement,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
@@ -46,8 +46,9 @@ from dana.core.lang.interpreter.executor.statement import (
     ImportHandler,
     StatementUtils,
 )
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class StatementExecutor(BaseExecutor):
@@ -75,6 +76,7 @@ class StatementExecutor(BaseExecutor):
         self.import_handler = ImportHandler(parent_executor=self, function_registry=self.function_registry)
         self.agent_handler = AgentHandler(parent_executor=self, function_registry=self.function_registry)
         self.statement_utils = StatementUtils(parent_executor=self)
+        self.type_handler = TypeHandler(parent_executor=self)
 
         self.register_handlers()
 
@@ -82,19 +84,19 @@ class StatementExecutor(BaseExecutor):
         """Register handlers for statement node types."""
         self._handlers = {
             AgentDefinition: self.execute_agent_definition,
-            AgentStatement: self.execute_agent_statement,
-            AgentPoolStatement: self.execute_agent_pool_statement,
+            SingletonAgentDefinition: self.execute_singleton_agent_definition,
+            BaseAgentSingletonDefinition: self.execute_base_agent_singleton_definition,
             Assignment: self.execute_assignment,
             CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
-            MethodDefinition: self.execute_method_definition,
             ImportFromStatement: self.execute_import_from_statement,
             ImportStatement: self.execute_import_statement,
+            MethodDefinition: self.execute_method_definition,
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
+            ResourceDefinition: self.execute_resource_definition,
             StructDefinition: self.execute_struct_definition,
-            UseStatement: self.execute_use_statement,
             ExportStatement: self.execute_export_statement,
             DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
@@ -138,7 +140,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_assert_statement(node, context)
 
-    def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).
 
         Args:
@@ -165,7 +167,7 @@ class StatementExecutor(BaseExecutor):
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
 
-    def _execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute Dana module import (import module).
 
         Args:
@@ -173,13 +175,14 @@ class StatementExecutor(BaseExecutor):
             context_name: Name to use in context
             context: The execution context
         """
+        self.error(f"Executing Dana import: {module_name} {context_name}")
         self._ensure_module_system_initialized()
 
         # Handle relative imports
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -207,7 +210,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
 
-    def _execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute from-import of a Python module (.py extension required).
 
         Args:
@@ -250,7 +253,7 @@ class StatementExecutor(BaseExecutor):
             if callable(obj) and self.function_registry:
                 self._register_imported_function(obj, context_name, module_name, name)
 
-    def _execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute Dana module from-import (from module import name).
 
         Args:
@@ -258,13 +261,15 @@ class StatementExecutor(BaseExecutor):
             names: List of (name, alias) tuples to import
             context: The execution context
         """
+        self.error(f"Executing Dana from-import: {module_name} {names}")
+
         self._ensure_module_system_initialized()
 
         # Handle relative imports
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.__init__.init_modules import get_module_loader
 
         loader = get_module_loader()
 
@@ -312,7 +317,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error importing from Dana module '{absolute_module_name}': {e}") from e
 
-    def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
+    def unused_register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry.
 
         Args:
@@ -327,7 +332,7 @@ class StatementExecutor(BaseExecutor):
 
         # Detect function type and set appropriate metadata
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
+        from dana.registry.function_registry import FunctionMetadata
 
         func_type = FunctionType.PYTHON
         context_aware = False
@@ -433,18 +438,6 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_raise_statement(node, context)
 
-    def execute_use_statement(self, node: UseStatement, context: SandboxContext) -> Any:
-        """Execute a use statement using optimized handler.
-
-        Args:
-            node: The use statement to execute
-            context: The execution context
-
-        Returns:
-            A resource object that can be used to call methods
-        """
-        return self.agent_handler.execute_use_statement(node, context)
-
     def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
         """Execute an export statement using optimized handler.
 
@@ -455,7 +448,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None
         """
-        return self.agent_handler.execute_export_statement(node, context)
+        return self.import_handler.execute_export_statement(node, context)
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
         """Execute a struct definition statement using optimized handler.
@@ -467,7 +460,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (struct definitions don't produce a value, they register a type)
         """
-        return self.agent_handler.execute_struct_definition(node, context)
+        return self.type_handler.execute_struct_definition(node, context)
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
         """Execute an agent definition statement using optimized handler.
@@ -481,32 +474,66 @@ class StatementExecutor(BaseExecutor):
         """
         return self.agent_handler.execute_agent_definition(node, context)
 
-    def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
-        """Execute an agent statement using optimized handler.
+    def execute_resource_definition(self, node, context: SandboxContext) -> None:
+        """Execute a resource definition statement.
+
+        Registers a ResourceType in the resource registry and binds a constructor
+        that creates ResourceInstance at runtime.
 
         Args:
-            node: The agent statement to execute
+            node: The ResourceDefinition node
             context: The execution context
 
         Returns:
-            An A2A agent resource object that can be used to call methods
+            None (registers type and constructor in scope)
         """
-        return self.agent_handler.execute_agent_statement(node, context)
+        # Import lazily to avoid circulars
+        from dana.common.exceptions import SandboxError
+        from dana.core.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.resource.resource_registry import ResourceTypeRegistry
 
-    def execute_agent_pool_statement(self, node: AgentPoolStatement, context: SandboxContext) -> Any:
-        """Execute an agent pool statement using optimized handler.
+        try:
+            # Build ResourceType from AST
+            resource_type = create_resource_type_from_ast(node)
 
-        Args:
-            node: The agent pool statement to execute
-            context: The execution context
+            # Evaluate default values in the current context (same approach as structs)
+            if resource_type.field_defaults:
+                evaluated_defaults: dict[str, Any] = {}
+                for field_name, default_expr in resource_type.field_defaults.items():
+                    try:
+                        # Evaluate default values using the parent executor
+                        default_value = self.parent.execute(default_expr, context)
+                        evaluated_defaults[field_name] = default_value
+                    except Exception as e:
+                        raise SandboxError(f"Failed to evaluate default value for resource field '{field_name}': {e}")
+                resource_type.field_defaults = evaluated_defaults
 
-        Returns:
-            An agent pool resource object that can be used to call methods
-        """
-        return self.agent_handler.execute_agent_pool_statement(node, context)
+            # Register the resource type in the resource registry
+            ResourceTypeRegistry.register_resource(resource_type)
+            self.debug(f"Registered resource type: {resource_type.name}")
+
+            # Bind constructor that uses resource registry
+            def resource_constructor(**kwargs):
+                return ResourceTypeRegistry.create_resource_instance(resource_type.name, kwargs)
+
+            context.set(f"local:{node.name}", resource_constructor)
+            return None
+        except Exception as e:
+            raise SandboxError(f"Failed to register resource {node.name}: {e}")
+
+    def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
+        """Execute a singleton agent definition statement using optimized handler."""
+        return self.agent_handler.execute_singleton_agent_definition(node, context)
+
+    def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
+        """Execute a base agent singleton definition statement using optimized handler."""
+        return self.agent_handler.execute_base_agent_singleton_definition(node, context)
 
     def execute_function_definition(self, node: "FunctionDefinition", context: SandboxContext) -> Any:
-        """Execute a function definition, routing to agent handler if appropriate.
+        """Execute a function definition, routing to function executor when available.
+
+        If the function has a receiver, it's treated as a receiver function and registered
+        for struct method dispatch.
 
         Args:
             node: The function definition to execute
@@ -515,38 +542,132 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The defined function
         """
-        # Route to agent handler which can associate methods with agent types
-        self.debug(f"Routing function definition '{node.name.name}' to agent handler")
-        result = self.agent_handler.execute_function_definition(node, context)
-        return result
+        # Check if this is a receiver function (has receiver field)
+        if hasattr(node, "receiver") and node.receiver is not None:
+            # This is a receiver function, handle it like a method definition
+            return self._execute_receiver_function(node, context)
+
+        # Regular function definition
+        if hasattr(self.parent, "_function_executor") and self.parent._function_executor is not None:
+            return self.parent._function_executor.execute_function_definition(node, context)
+        # Fallback to previous behavior
+        return self.agent_handler.execute_function_definition(node, context)
+
+    def _execute_receiver_function(self, node: "FunctionDefinition", context: SandboxContext) -> Any:
+        """Execute a receiver function (FunctionDefinition with receiver) and register it for struct dispatch.
+
+        Args:
+            node: The function definition with receiver to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.registry import FUNCTION_REGISTRY
+
+        self.debug(f"Executing receiver function '{node.name.name}'")
+
+        # First execute the function definition to create the function object
+        # Route to function executor if available
+        if hasattr(self.parent, "_function_executor") and self.parent._function_executor is not None:
+            func = self.parent._function_executor.execute_function_definition(node, context)
+        else:
+            # Fallback to agent handler for function creation
+            func = self.agent_handler.execute_function_definition(node, context)
+
+        # Now register the function as a receiver method
+        try:
+            # Extract receiver type from the function definition
+            receiver_param = node.receiver
+            receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+
+            if not receiver_type_str:
+                self.warning(f"Receiver function '{node.name.name}' has no receiver type")
+                return func
+
+            # Parse union types (e.g., "Point | Circle | Rectangle")
+            receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+            # Extract method name
+            method_name = node.name.name
+
+            # Create a method wrapper that can be called as a method
+            def method_function(receiver, *args, **kwargs):
+                if isinstance(func, DanaFunction):
+                    return func.execute(context, receiver, *args, **kwargs)
+                else:
+                    return func(receiver, *args, **kwargs)
+
+            # Register the method for all receiver types
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, method_function)
+                self.debug(f"Registered receiver function '{method_name}' for type '{receiver_type}'")
+
+            self.debug(f"Successfully registered receiver function '{method_name}' for type '{receiver_type_str}'")
+
+        except Exception as e:
+            self.warning(f"Failed to register receiver function '{node.name.name}': {e}")
+
+        return func
 
     def execute_method_definition(self, node: "MethodDefinition", context: SandboxContext) -> Any:
-        """Execute a method definition with explicit receiver.
+        """Execute a method definition (receiver function) and register it for struct dispatch.
 
         Args:
             node: The method definition to execute
             context: The execution context
 
         Returns:
-            The defined method
+            The defined function
         """
-        # Delegate to function executor which handles method registration
-        if hasattr(self.parent, "_function_executor"):
-            return self.parent._function_executor.execute_method_definition(node, context)
-        else:
-            # Fallback: treat as a regular function definition by creating a FunctionDefinition node
-            # This is for compatibility if the function executor is not available
-            from dana.core.lang.ast import FunctionDefinition
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.registry import FUNCTION_REGISTRY
 
-            func_def = FunctionDefinition(
-                name=node.name,
-                parameters=[node.receiver] + node.parameters,
-                body=node.body,
-                return_type=node.return_type,
-                decorators=node.decorators,
-                location=node.location,
-            )
-            return self.execute_function_definition(func_def, context)
+        self.debug(f"Executing method definition '{node.name.name}'")
+
+        # First execute the function definition to create the function object
+        # Route to function executor if available
+        if hasattr(self.parent, "_function_executor") and self.parent._function_executor is not None:
+            func = self.parent._function_executor.execute_function_definition(node, context)
+        else:
+            # Fallback to agent handler for function creation
+            func = self.agent_handler.execute_function_definition(node, context)
+
+        # Now register the function as a receiver method
+        try:
+            # Extract receiver type from the method definition
+            receiver_param = node.receiver
+            receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+
+            if not receiver_type_str:
+                self.warning(f"Method definition '{node.name.name}' has no receiver type")
+                return func
+
+            # Parse union types (e.g., "Point | Circle | Rectangle")
+            receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+            # Extract method name
+            method_name = node.name.name
+
+            # Create a method wrapper that can be called as a method
+            def method_function(receiver, *args, **kwargs):
+                if isinstance(func, DanaFunction):
+                    return func.execute(context, receiver, *args, **kwargs)
+                else:
+                    return func(receiver, *args, **kwargs)
+
+            # Register the method for all receiver types
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, method_function)
+                self.debug(f"Registered receiver function '{method_name}' for type '{receiver_type}'")
+
+            self.debug(f"Successfully registered receiver function '{method_name}' for type '{receiver_type_str}'")
+
+        except Exception as e:
+            self.warning(f"Failed to register receiver function '{node.name.name}': {e}")
+
+        return func
 
     def execute_declarative_function_definition(self, node: "DeclarativeFunctionDefinition", context: SandboxContext) -> Any:
         """Execute a declarative function definition.
@@ -602,7 +723,7 @@ class StatementExecutor(BaseExecutor):
             import inspect  # noqa: F401
 
             signature = self._create_signature(node.parameters, node.return_type)
-            wrapper.__signature__ = signature
+            wrapper.__signature__ = signature  # type: ignore[attr-defined]
         except ImportError:
             # inspect module not available, skip signature creation
             self.debug("inspect module not available, skipping signature creation for IDE support")
@@ -682,11 +803,30 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The result of executing the composition
         """
-        # Execute the composition expression in the function context
-        composed_func = self.parent.execute(composition, func_context)
+        # Special handling for ListLiteral in declarative function definitions
+        from dana.core.lang.ast import ListLiteral
 
-        # If the composition is a callable, call it with all arguments
-        if callable(composed_func):
+        if isinstance(composition, ListLiteral):
+            # Convert ListLiteral to ParallelFunction for parallel composition
+            from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+
+            pipe_handler = PipeOperationHandler(self.parent)
+            composed_func = pipe_handler._resolve_list_literal(composition, func_context)
+        else:
+            # Execute the composition expression in the function context
+            composed_func = self.parent.execute(composition, func_context)
+
+        # Handle SandboxFunction objects (like ParallelFunction, ComposedFunction)
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+
+        if isinstance(composed_func, SandboxFunction):
+            if args:
+                return composed_func.execute(func_context, *args)
+            else:
+                return composed_func.execute(func_context)
+
+        # If the composition is a regular callable, call it with all arguments
+        elif callable(composed_func):
             if args:
                 return composed_func(*args)  # Pass all arguments, not just the first
             else:

@@ -69,17 +69,20 @@ class ControlFlowUtils(Loggable):
         raise ContinueException()
 
     def execute_return_statement(self, node: ReturnStatement, context: SandboxContext) -> None:
-        """Execute a return statement (lazy execution with Promise[T] creation).
+        """Execute a return statement synchronously.
+
+        Since the function itself is now wrapped in an EagerPromise, return statements
+        can be purely synchronous - they just evaluate and return values directly.
 
         Args:
             node: The return statement to execute
             context: The execution context
 
         Returns:
-            Never returns normally, raises a ReturnException with Promise[T] value
+            Never returns normally, raises a ReturnException
 
         Raises:
-            ReturnException: With the Promise[T] value for lazy evaluation
+            ReturnException: With the evaluated return value
         """
         self._statements_executed += 1
 
@@ -87,54 +90,21 @@ class ControlFlowUtils(Loggable):
             if self.parent_executor is None:
                 raise RuntimeError("Parent executor not available for return value evaluation")
 
-            self.debug("About to create Promise for return statement")
+            self.debug("Processing return statement synchronously")
 
-            # Create a Promise[T] for eager evaluation (concurrent by default)
-            from dana.core.concurrency import EagerPromise
-
-            # Create a computation function that will evaluate the return value when accessed
-            # Capture a copy of the current context to preserve function arguments and local variables
-            # This prevents the context from being modified by restore_context later
-            captured_context = context.copy()
-            captured_node_value = node.value
-
-            def return_computation():
-                self.debug("Return computation function called")
-                self.debug(f"Using captured context: {type(captured_context)}")
-                # Debug: Check what's in the captured context
-                try:
-                    local_vars = captured_context.get_scope("local")
-                    self.debug(f"Captured context local vars: {list(local_vars.keys())}")
-                    # Check if Point struct is available
-                    if "Point" in local_vars:
-                        self.debug(f"Point struct found: {type(local_vars['Point'])}")
-                    else:
-                        self.debug("Point struct NOT found in captured context")
-                    # Debug: Check function arguments
-                    for key, value in local_vars.items():
-                        if key in ["street", "city", "state", "zip_code", "country"]:
-                            self.debug(f"Function arg {key}: {value}")
-                except Exception as e:
-                    self.debug(f"Error accessing captured context: {e}")
-                try:
-                    result = self.parent_executor.execute(captured_node_value, captured_context)
-                    self.debug(f"Return computation result: {result}")
-                    return result
-                except Exception as e:
-                    self.debug(f"Return computation failed with error: {e}")
-                    raise
-
-            # Create Promise[T] wrapper for eager evaluation (concurrent by default)
-            self.debug("Calling EagerPromise.create...")
-            self.debug(f"Return computation function: {return_computation}")
-            promise_value = EagerPromise.create(return_computation, captured_context)
-            self.debug(f"Promise created: {type(promise_value)}")
-            self.debug(f"Executing return statement with Promise[T] value: {type(promise_value)}")
+            # Simply evaluate the return value expression synchronously
+            try:
+                result = self.parent_executor.execute(node.value, context)  # type: ignore
+                self.debug(f"Return statement evaluated to: {result}")
+            except Exception as e:
+                self.debug(f"Return statement evaluation failed: {e}")
+                raise
         else:
-            promise_value = None
+            result = None
             self.debug("Executing return statement with no value")
 
-        raise ReturnException(promise_value)
+        # Raise ReturnException with the direct result (no Promise wrapping)
+        raise ReturnException(result)
 
     def get_performance_stats(self) -> dict[str, Any]:
         """Get control flow utility performance statistics."""

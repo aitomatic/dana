@@ -1,0 +1,12 @@
+"""Function Composition."""
+
+def plan_trip(location, weather):
+    return reason(f"Plan a day trip in {location} with weather being {weather}")
+
+def estimate_cost(trip):
+    return reason(f"Estimate the cost of the trip: {trip}. Include a summary of the trip for ease of understanding.")
+
+def workflow(city: str, weather: str = "sunny") = plan_trip | estimate_cost
+
+def __main__():
+    print(workflow("Tokyo"))

@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.util.env import load_dana_env
+
 
 from .dana_input_args_parser import parse_dana_input_args
 
@@ -30,7 +30,7 @@ def main():
         args.inputs.remove("--debug")
 
     # load the .env file if it exists in the same directory as the script
-    load_dana_env(dot_env_file_path=Path(args.file_path).parent / ".env")
+    # Note: Environment loading is now handled automatically by initlib startup
 
     # Get the file's directory for module search paths
     file_dir = str(Path(args.file_path).parent.resolve())
@@ -47,34 +47,24 @@ def main():
         source_code_with_main_call = f"""
 {source_code}
 
-{MAIN_FUNC_NAME}({
-            ", ".join(
-                [
-                    f"{key}={
-                        json.dumps(
-                            obj=value,
-                            skipkeys=False,
-                            ensure_ascii=False,
-                            check_circular=True,
-                            allow_nan=False,
-                            cls=None,
-                            indent=None,
-                            separators=None,
-                            default=None,
-                            sort_keys=False,
-                        )
-                    }"
-                    for key, value in input_dict.items()
-                ]
-            )
-        })
+{MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
+                                                 skipkeys=False,
+                                                 ensure_ascii=False,
+                                                 check_circular=True,
+                                                 allow_nan=False,
+                                                 cls=None,
+                                                 indent=None,
+                                                 separators=None,
+                                                 default=None,
+                                                 sort_keys=False)}"
+                             for key, value in input_dict.items()])})
 """
 
         # run the appended source code with custom search paths
-        DanaSandbox.quick_eval(
+        DanaSandbox.execute_string_once(
             source_code=source_code_with_main_call, filename=args.file_path, debug_mode=args.debug, module_search_paths=[file_dir]
         )
     # otherwise, run the script
     else:
-        # For regular file execution, we can rely on run_file to set up the search paths
-        DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug)
+        # For regular file execution, we can rely on execute_file to set up the search paths
+        DanaSandbox.execute_file_once(file_path=args.file_path, debug_mode=args.debug)

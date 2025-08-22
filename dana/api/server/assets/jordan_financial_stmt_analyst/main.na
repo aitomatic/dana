@@ -1,0 +1,53 @@
+from workflow import workflow
+from methods import plan_ahead
+from methods import classify_complexity
+from common import State
+from common import FINAL_ANSWER_PROMPT
+
+set_model("openai:gpt-4.1")
+
+agent_blueprint JordanBelfort:
+    name: str = "Jordan Belfort"
+    description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
+    max_iteration: int = 10
+
+def solve(self : JordanBelfort, query: str) -> str:
+    complexity = classify_complexity(query)
+    # print(complexity)
+    if complexity["level"] == "COMPLEX":
+        data = plan_ahead(State(original_problem=query), complexity)
+        print(len(data.steps))
+        for step in data.steps:
+            data.current_step = step
+            data = workflow(data)
+        # data.current_step = str(data.steps)
+        # data = workflow(data)
+    else:
+        data = State(original_problem=query, current_step=query, steps=[])
+        data = workflow(data)
+    print(data.context)
+    return reason(FINAL_ANSWER_PROMPT.format(question=data.original_problem, context=data.context), temperature=0)
+
+this_agent = JordanBelfort()
+    
+
+
+# final_answer = this_agent.solve("What was revenues in Q4. What is growth rate (compute).")
+# final_answer = this_agent.solve("What are the assets at end of 2024 (basic query). What is cash position at end of 2024")
+final_answer = this_agent.solve("Based on 20% quarterly growth in revenue how much cash does company need for next year?")
+# final_answer = this_agent.solve("How much cash is needed to fund this company to profitability based on current growth rates? Give me the comprehensive answer with explanation")
+
+# final_answer = this_agent.solve("What is the quick ratio for Aitomatic ?")
+
+# question = "Based on 20% quarterly growth in revenue how much cash does company need for next year?"
+# question = "How much cash is needed to fund this company to profitability based on current growth rates?"
+# complexity = classify_complexity(question)
+# res = plan_ahead(State(original_problem=question), complexity)
+
+# for step in res.steps:
+#     print(step)
+
+print(final_answer)
+# print(knowledge.filenames)
+
+# print(TOOLS)

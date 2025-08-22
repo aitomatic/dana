@@ -1,303 +1,542 @@
-# Agent Struct Primer
+# Agent Primer
 
 ## TL;DR (1 minute read)
 
 ```dana
-# Define an agent with built-in AI capabilities
-agent QualityInspector:
+# Define reusable agent blueprints (like struct definitions)
+agent_blueprint QualityInspector:
     domain: str = "semiconductor"
     expertise_level: str = "senior"
     tolerance_threshold: float = 0.015
 
-# Create instances and use built-in AI methods
-inspector = QualityInspector(domain="semiconductor")
-plan = inspector.plan("Inspect wafer batch WB-2024-001")
-solution = inspector.solve("High defect rate in etching process")
+# Create instances from blueprints
+inspector = QualityInspector()
+custom_inspector = QualityInspector(expertise_level="expert", tolerance_threshold=0.01)
 
-# Memory and conversation history
+# Create singleton agents
+agent Solo                          # Simple singleton
+agent Jimmy(QualityInspector)       # Singleton from blueprint
+agent Config(QualityInspector):     # Singleton with field overrides
+    expertise_level = "expert"
+
+# Use built-in agent methods
+plan = inspector.plan("Inspect wafer batch WB-2024-001")
+solution = Jimmy.solve("High defect rate in etching process")
+
+# Memory operations (isolated per agent instance)
 inspector.remember("common_defects", ["misalignment", "surface_roughness"])
 defects = inspector.recall("common_defects")
-
-# Override built-in methods with custom logic
-def plan(inspector: QualityInspector, task: str) -> list[str]:
-    return ["Custom step 1", "Custom step 2"]
-
-# Method resolution: custom → built-in AI
-result = inspector.plan("task")  # Uses custom plan()
 ```
 
 ---
 
-**What it is**: The `agent` keyword creates intelligent struct types with built-in AI capabilities. Agents are special structs that inherit from the struct system but add planning, problem-solving, memory, and conversation capabilities out of the box.
+**What it is**: Dana provides two agent forms: `agent_blueprint` for defining reusable agent types, and `agent` for creating singleton instances. Both have built-in methods for planning, problem-solving, and memory management with isolated memory per instance.
 
 ## Key Syntax
 
-**Agent Definition**:
+### Agent Blueprint Definition
 ```dana
-agent AgentName:
+agent_blueprint BlueprintName:
     field1: type = default_value
     field2: type = default_value
 ```
 
-**Built-in Methods**:
+### Blueprint Instance Creation
 ```dana
-# AI-powered planning
-plan = agent.plan("task description", context_optional)
+# Create instance with defaults
+instance = BlueprintName()
 
-# AI-powered problem-solving
-solution = agent.solve("problem description", context_optional)
+# Create instance with custom values
+instance = BlueprintName(field1=value1, field2=value2)
+```
+
+### Singleton Agent Creation
+```dana
+# Simple singleton agent
+agent AgentName
+
+# Singleton from blueprint (inherits all fields)
+agent AgentName(BlueprintName)
+
+# Singleton with field overrides
+agent AgentName(BlueprintName):
+    field1 = new_value
+    field2 = new_value
+```
+
+### Built-in Methods (All Agents)
+```dana
+# Planning method
+plan = agent.plan("task description")
+
+# Problem-solving method
+solution = agent.solve("problem description")
 
 # Memory operations
-agent.remember("key", value)
-value = agent.recall("key")
+agent.remember("key", value)  # Returns true on success
+value = agent.recall("key")   # Returns stored value or None
+
+# Chat method (for simple agents)
+response = agent.chat("message")
+```
+
+## Agent Blueprints
+
+Agent blueprints define reusable agent types, similar to struct definitions:
+
+```dana
+agent_blueprint Person:
+    name: str = "Anonymous"
+    age: int = 0
+    skills: list = []
+
+# Create multiple instances from blueprint
+john = Person(name="John", age=30)
+jane = Person(name="Jane", age=25, skills=["coding", "design"])
+
+# Access fields
+print(john.name)  # "John"
+print(jane.age)   # 25
+```
+
+### Complex Field Types
+
+Agent blueprints support various field types:
+
+```dana
+agent_blueprint ComplexAgent:
+    name: str = "complex"
+    config: dict = {"retries": 3, "timeout": 30}
+    flags: list = ["A", "B", "C"]
+    is_active: bool = true
+    experience_years: int = 5
+
+# Create instance and access fields
+agent_instance = ComplexAgent()
+print(agent_instance.config.get("timeout"))  # 30
+print(len(agent_instance.flags))             # 3
+```
+
+### Blueprint Composition
+
+Agent blueprints support composition through nested structs and field references:
+
+```dana
+# Define base components
+agent_blueprint Address:
+    street: str = "Unknown"
+    city: str = "Unknown"
+    state: str = "Unknown"
+
+agent_blueprint Person:
+    name: str = "Anonymous"
+    age: int = 0
+    address: Address = Address()
+
+# Create instance with composed fields
+my_person = Person(name="John", age=30)
+print(my_person.name)                    # "John"
+print(my_person.address.street)          # "Unknown"
+print(my_person.address.city)            # "Unknown"
+```
+
+## Singleton Agents
+
+Singleton agents create named, persistent instances:
+
+### Simple Singleton
+```dana
+# Create simple singleton
+agent Solo
+
+# Use built-in methods
+response = Solo.chat("hello")
+plan = Solo.plan("daily tasks")
+```
+
+### Singleton from Blueprint
+```dana
+agent_blueprint PersonAgent:
+    name: str = "Person"
+    role: str = "general"
+
+# Singleton inherits all blueprint fields
+agent Jimmy(PersonAgent)
+
+print(Jimmy.name)  # "Person"
+print(Jimmy.role)  # "general"
+```
+
+### Singleton with Field Overrides
+```dana
+agent_blueprint ConfigAgent:
+    name: str = "Config"
+    version: str = "1.0"
+    enabled: bool = true
+
+# Override specific fields
+agent Config(ConfigAgent):
+    version = "2.0"
+    enabled = false
+
+print(Config.name)     # "Config" (inherited)
+print(Config.version)  # "2.0" (overridden)
+print(Config.enabled)  # false (overridden)
 ```
 
 ## Built-in Agent Methods
 
-### 1. `plan(task: str, context: dict | None = None) -> Any`
+### 1. `plan(task: str) -> str`
 
-AI-powered planning that considers the agent's configuration:
+Generates a plan for the given task:
 
 ```dana
-agent QualityInspector:
+agent_blueprint QualityInspector:
+    name: str = "inspector"
     domain: str = "semiconductor"
-    expertise_level: str = "senior"
 
 inspector = QualityInspector()
 
-# Basic planning
+# Generate plan
 plan = inspector.plan("Inspect wafer batch WB-2024-001")
-# Returns: ["1. Perform wafer-level inspection", "2. Check for surface defects", ...]
-
-# With context
-plan = inspector.plan("Optimize process", {"batch_size": 1000, "defect_rate": 0.05})
+# Returns string containing agent name and planning information
 ```
 
-### 2. `solve(problem: str, context: dict | None = None) -> Any`
+### 2. `solve(problem: str) -> str`
 
-AI-powered problem-solving with domain expertise:
+Generates a solution for the given problem:
 
 ```dana
-agent QualityInspector:
-    domain: str = "semiconductor"
+agent_blueprint QualityInspector:
+    name: str = "inspector"
     expertise_level: str = "senior"
 
 inspector = QualityInspector()
 
-# AI-powered problem-solving
+# Generate solution
 solution = inspector.solve("High defect rate in etching process")
-# Returns: {"problem": "High defect rate", "recommendations": [...], ...}
+# Returns string containing agent name and solving information
 ```
 
-### 3. `remember(key: str, value: Any) -> bool` & `recall(key: str) -> Any`
+### 3. `chat(message: str) -> str`
 
-Memory operations for storing and retrieving information:
+Conversational interface (especially useful for simple agents):
 
 ```dana
-agent QualityInspector:
-    domain: str = "semiconductor"
+agent Solo
 
-inspector = QualityInspector()
-
-# Store and retrieve information
-inspector.remember("common_defects", ["misalignment", "surface_roughness"])
-defects = inspector.recall("common_defects")  # ["misalignment", "surface_roughness"]
+# Have a conversation
+response = Solo.chat("hello")
+# Returns conversational response
 ```
 
-## Method Overriding
+### 4. `remember(key: str, value: Any) -> bool` & `recall(key: str) -> Any`
 
-You can override built-in methods with custom logic while maintaining built-in capabilities as fallback:
+Memory operations with isolated storage per agent instance:
 
 ```dana
-agent QualityInspector:
-    domain: str = "semiconductor"
-    expertise_level: str = "senior"
+agent_blueprint DataAgent:
+    name: str = "data_agent"
 
-# Override with custom logic
-def plan(inspector: QualityInspector, task: str) -> list[str]:
-    steps = []
-    if inspector.domain == "semiconductor":
-        steps.append("1. Perform wafer-level inspection")
-        steps.append("2. Check for surface defects")
-    
-    if inspector.expertise_level == "senior":
-        steps.append("3. Senior review and approval")
-    
-    return steps
+agent1 = DataAgent()
+agent2 = DataAgent()
 
-# Create instance
-inspector = QualityInspector()
+# Store in separate instances - memories are isolated
+agent1.remember("key", "value1")
+agent2.remember("key", "value2")
 
-# Uses custom method (not AI)
-plan = inspector.plan("Inspect wafer batch")
-# Returns: ["1. Perform wafer-level inspection", "2. Check for surface defects", "3. Senior review and approval"]
+# Retrieve from each instance
+print(agent1.recall("key"))  # "value1"
+print(agent2.recall("key"))  # "value2"
 ```
 
-**Method Resolution Order**:
-1. **Custom method** defined in current scope (highest priority)
-2. **Built-in AI method** (fallback)
+## Agent Composition Patterns
+
+### Complex Blueprint Composition
+```dana
+agent_blueprint DatabaseConfig:
+    host: str = "localhost"
+    port: int = 5432
+    name: str = "default"
+
+agent_blueprint CacheConfig:
+    enabled: bool = true
+    ttl: int = 300
+
+agent_blueprint AppConfig:
+    name: str = "App"
+    version: str = "1.0"
+    database: DatabaseConfig = DatabaseConfig()
+    cache: CacheConfig = CacheConfig()
+
+# Create instance with composed configuration
+config = AppConfig(version="2.0")
+print(config.name)                    # "App"
+print(config.version)                 # "2.0"
+print(config.database.host)           # "localhost"
+print(config.cache.enabled)           # true
+```
+
+### Singleton with Field Overrides
+```dana
+agent_blueprint OverrideBase:
+    name: str = "Base"
+    value: int = 100
+    enabled: bool = false
+
+# Singleton with selective overrides
+agent OverrideTest(OverrideBase):
+    name = "Override"
+    value = 200
+    enabled = true
+
+print(OverrideTest.name)    # "Override"
+print(OverrideTest.value)   # 200
+print(OverrideTest.enabled) # true
+```
 
 ## Real-World Examples
 
-### Manufacturing Quality Inspector
+### Manufacturing Quality System
 
 ```dana
-agent QualityInspector:
+# Define base blueprint
+agent_blueprint QualityInspector:
+    name: str = "inspector"
     domain: str = "semiconductor"
     expertise_level: str = "senior"
     tolerance_threshold: float = 0.015
-    inspection_tools: list[str] = ["microscope", "spectrometer"]
+    inspection_tools: list = ["microscope", "spectrometer"]
 
-# Create specialized inspectors
-wafer_inspector = QualityInspector(
-    domain="semiconductor",
-    expertise_level="senior",
+# Create blueprint instances for different tasks
+wafer_expert = QualityInspector(
+    name="WaferExpert",
+    expertise_level="expert",
     tolerance_threshold=0.012
 )
 
-pcb_inspector = QualityInspector(
-    domain="electronics",
-    expertise_level="junior",
-    tolerance_threshold=0.05
-)
+# Create singleton agents for persistent roles
+agent PCBInspector(QualityInspector):
+    name = "PCBInspector"
+    domain = "electronics"
+    expertise_level = "junior"
+    tolerance_threshold = 0.05
 
-# Use built-in AI capabilities
-wafer_plan = wafer_inspector.plan("Inspect wafer batch WB-2024-001")
-pcb_solution = pcb_inspector.solve("High defect rate in solder joints")
+# Use both types
+wafer_plan = wafer_expert.plan("Inspect wafer batch WB-2024-001")
+pcb_solution = PCBInspector.solve("High defect rate in solder joints")
 
-# Memory for domain knowledge
-wafer_inspector.remember("common_defects", ["misalignment", "surface_roughness"])
+# Each maintains separate memory
+wafer_expert.remember("batch_results", {"pass": 95, "fail": 5})
+PCBInspector.remember("common_issues", ["cold_joints", "bridges"])
 ```
 
-### Customer Service Agent
-
+### Multi-Agent Collaboration
 ```dana
-agent CustomerServiceAgent:
-    department: str = "general"
-    languages: list[str] = ["english"]
-    expertise_areas: list[str] = ["billing", "technical_support"]
+# Different agent types for collaboration
+agent_blueprint DataAnalyst:
+    specialization: str = "general"
+    tools: list = ["pandas", "numpy"]
 
-# Create specialized agents
-billing_agent = CustomerServiceAgent(
-    department="billing",
-    languages=["english", "spanish"],
-    expertise_areas=["billing", "refunds", "payment_plans"]
-)
+agent_blueprint ReportWriter:
+    style: str = "technical"
+    format: str = "markdown"
 
-# AI-powered responses
-billing_plan = billing_agent.plan("Handle customer billing dispute")
-billing_agent.remember("customer_123", {"previous_issues": ["late_payment"], "preferences": "email"})
+# Create collaborative team
+analyst = DataAnalyst(specialization="financial")
+agent Writer(ReportWriter):
+    style = "executive"
+    format = "pdf"
+
+# Collaborative workflow
+analysis = analyst.solve("Q4 revenue analysis")
+analyst.remember("q4_analysis", analysis)
+
+# Writer can access shared context through memory patterns
+report_plan = Writer.plan("Create executive summary")
 ```
 
-### Custom Method Override Example
-
+### Memory Isolation Demo
 ```dana
-agent FinancialAdvisor:
-    specialization: str = "retirement"
-    certifications: list[str] = ["CFP", "CPA"]
+agent_blueprint MemoryAgent:
+    name: str = "MemoryTest"
+    role: str = "tester"
 
-# Override with domain-specific logic
-def plan(advisor: FinancialAdvisor, goal: str) -> dict:
-    return {
-        "goal": goal,
-        "specialization": advisor.specialization,
-        "steps": ["1. Assess savings", "2. Calculate needs", "3. Develop strategy"],
-        "timeline": "12 months"
+# Create multiple instances
+agent1 = MemoryAgent()
+agent2 = MemoryAgent()
+
+# Also create singletons
+agent Singleton1(MemoryAgent)
+agent Singleton2(MemoryAgent)
+
+# Each maintains separate memory
+agent1.remember("data", "instance1_data")
+agent2.remember("data", "instance2_data")
+Singleton1.remember("data", "singleton1_data")
+Singleton2.remember("data", "singleton2_data")
+
+# Retrieve isolated values
+print(agent1.recall("data"))    # "instance1_data"
+print(agent2.recall("data"))    # "instance2_data"
+print(Singleton1.recall("data")) # "singleton1_data"
+print(Singleton2.recall("data")) # "singleton2_data"
+```
+
+## Advanced Override Patterns
+
+### Complex Data Structure Overrides
+```dana
+agent_blueprint ComplexBase:
+    name: str = "Complex"
+    settings: dict = {"timeout": 30, "retries": 3, "debug": false}
+    tags: list = ["base", "default"]
+
+agent ComplexOverride(ComplexBase):
+    settings = {"timeout": 60, "retries": 5, "debug": true, "new": "value"}
+    tags = ["override", "custom"]
+
+# All fields completely replaced, not merged
+print(ComplexOverride.settings.get("timeout"))  # 60
+print(ComplexOverride.settings.get("new"))      # "value"
+print(ComplexOverride.tags)                     # ["override", "custom"]
+```
+
+### Nested Structure Overrides
+```dana
+agent_blueprint NestedBase:
+    name: str = "Nested"
+    config: dict = {
+        "database": {"host": "localhost", "port": 5432},
+        "cache": {"enabled": false, "ttl": 300}
     }
 
-# Create advisor and use custom methods
-advisor = FinancialAdvisor(specialization="retirement")
-plan = advisor.plan("Save for retirement")
+agent NestedOverride(NestedBase):
+    config = {
+        "database": {"host": "prod.example.com", "port": 5432},
+        "cache": {"enabled": true, "ttl": 600},
+        "logging": {"level": "info"}
+    }
+
+# Access nested overrides
+db = NestedOverride.config.get("database")
+print(db.get("host"))  # "prod.example.com"
 ```
 
 ## Best Practices
 
-### 1. Use Descriptive Field Names
+### 1. Choose the Right Agent Form
 
 ```dana
-# ✅ Good - descriptive and specific
-agent QualityInspector:
-    domain: str = "semiconductor"
-    expertise_level: str = "senior"
-    tolerance_threshold: float = 0.015
+# ✅ Use agent_blueprint for reusable types
+agent_blueprint InspectorType:
+    domain: str = "general"
+    level: str = "junior"
 
-# ❌ Avoid - too generic
-agent Agent:
-    field1: str = "value1"
-    field2: str = "value2"
+# ✅ Create instances for temporary/multiple agents
+temp_inspector = InspectorType(level="senior")
+
+# ✅ Use singleton agents for persistent roles
+agent MainInspector(InspectorType):
+    level = "expert"
 ```
 
-### 2. Method Override Best Practices
+### 2. Memory Management
 
 ```dana
-# ✅ Good - proper parameter naming and type hints
-def plan(inspector: QualityInspector, task: str) -> list[str]:
-    return ["Step 1", "Step 2"]
-
-# ❌ Avoid - using 'agent' parameter name (reserved)
-def plan(agent: QualityInspector, task: str) -> list[str]:
-    return ["Step 1", "Step 2"]
-```
-
-### 3. Memory Management
-
-```dana
-# ✅ Good - use meaningful keys
+# ✅ Good - use meaningful memory keys
 inspector.remember("common_defects", ["misalignment", "surface_roughness"])
-inspector.remember("best_practices", ["calibrate_daily", "check_temperature"])
 
-# ❌ Avoid - unclear keys
-inspector.remember("data1", ["misalignment", "surface_roughness"])
+# ✅ Good - check for missing keys
+defects = inspector.recall("defects")
+if defects == None:
+    inspector.remember("defects", [])
+
+# ✅ Good - leverage memory isolation
+agent1.remember("session_data", {"user": "alice"})
+agent2.remember("session_data", {"user": "bob"})
 ```
 
-### 4. Context-Aware Responses
+### 3. Method Usage Patterns
 
 ```dana
-# ✅ Good - provide relevant context
-plan = inspector.plan("Inspect batch", {
-    "batch_size": 1000,
-    "defect_rate": 0.05,
-    "equipment": "wafer_inspector_3000"
-})
+# ✅ Good - handle empty parameters gracefully
+plan_result = agent.plan("")    # Should still work
+solve_result = agent.solve("")  # Should still work
 
-# ❌ Avoid - no context
-plan = inspector.plan("Inspect batch")
+# ✅ Good - use return values properly
+if agent.remember("key", "value") == true:
+    print("Successfully stored")
+
+# ✅ Good - consistent method calls across agent types
+blueprint_instance = Inspector()
+singleton_agent = MainInspector  # (assuming defined earlier)
+
+plan1 = blueprint_instance.plan("task")
+plan2 = MainInspector.plan("task")  # Same interface
 ```
 
-## Integration with Dana's Type System
-
-Agents work seamlessly with Dana's existing type system:
+### 4. Field Override Best Practices
 
 ```dana
-# Agents can be used in function signatures
-def process_inspection(inspector: QualityInspector, data: bytes) -> dict:
-    plan = inspector.plan("Process inspection data")
-    return {"plan": plan, "data_processed": true}
+# ✅ Good - partial overrides preserve other fields
+agent Config(BaseAgent):
+    timeout = 60  # Override only what needs changing
 
-# Agents can be used in structs
-struct InspectionReport:
-    inspector: QualityInspector
-    findings: list[str]
-    timestamp: str
+# ✅ Good - type consistency in overrides
+agent TypeSafe(BaseAgent):
+    count = 100      # int -> int (good)
+    enabled = true   # bool -> bool (good)
 
-# Agents can be used in lists and other collections
-inspectors = [
-    QualityInspector(domain="semiconductor"),
-    QualityInspector(domain="electronics")
-]
+# ⚠️ Acceptable - type changes are allowed but use carefully
+agent TypeChange(BaseAgent):
+    count = "unlimited"  # int -> str (works but consider implications)
+```
 
-# Process all inspectors
-for inspector in inspectors:
-    plan = inspector.plan("Daily inspection")
+## Testing Agent Functionality
+
+### Memory Persistence Testing
+```dana
+agent_blueprint TestAgent:
+    name: str = "test"
+
+# Test multiple memory operations
+agent_instance = TestAgent()
+agent_instance.remember("key1", "value1")
+agent_instance.remember("key2", "value2")
+agent_instance.remember("key3", "value3")
+
+# All values persist
+print(agent_instance.recall("key1"))  # "value1"
+print(agent_instance.recall("key2"))  # "value2"
+print(agent_instance.recall("key3"))  # "value3"
+```
+
+### Method Performance Testing
+```dana
+agent_blueprint PerformanceAgent:
+    name: str = "perf_test"
+
+agent_instance = PerformanceAgent()
+
+# Multiple rapid method calls work reliably
+for i in range(10):
+    plan_result = agent_instance.plan(f"task {i}")
+    solve_result = agent_instance.solve(f"problem {i}")
+    agent_instance.remember(f"key{i}", f"value{i}")
+    recall_result = agent_instance.recall(f"key{i}")
 ```
 
 ## Summary
 
-Agents in Dana provide:
-- **Built-in Intelligence**: AI-powered planning and problem-solving out of the box
-- **Method Overriding**: Custom behavior while maintaining built-in capabilities
-- **Memory Systems**: Persistent conversation history and domain knowledge
-- **Type Safety**: Full Dana type system integration
-- **Domain Expertise**: Context-aware responses based on agent configuration
+Dana's agent system provides:
+- **Agent Blueprints**: Define reusable agent types with fields and inheritance
+- **Singleton Agents**: Create persistent named agents with optional field overrides
+- **Instance Creation**: Create multiple instances from blueprints for temporary use
+- **Built-in Methods**: Planning, problem-solving, chat, and memory operations
+- **Memory Isolation**: Each agent instance/singleton has its own memory space
+- **Field Access**: Direct access to agent fields and complex data types
+- **Inheritance**: Full support for blueprint inheritance and field overrides
+- **Type Safety**: Consistent interface across all agent forms
 
-Perfect for: AI applications, intelligent systems, domain-specific agents, and rapid AI development. 
+Perfect for: Multi-agent systems, persistent agent roles, collaborative AI applications, and domain-specific agent implementations with memory requirements.

@@ -1,0 +1,66 @@
+# Simple Agent Chat Example in Dana
+# This example demonstrates basic usage of agent.chat() method
+
+# Define a simple conversational agent
+agent SimpleAssistant:
+    name: str = "Dana Assistant"
+    personality: str = "friendly and helpful"
+    expertise: str = "general assistance"
+
+# Create an instance
+assistant = SimpleAssistant()
+
+print("=== Simple Agent Chat Example ===\n")
+
+# Basic conversation
+print("Starting conversation...")
+response1 = assistant.chat("Hello! My name is John.")
+print(f"User: Hello! My name is John.")
+print(f"Assistant: {response1}\n")
+
+response2 = assistant.chat("What can you help me with?")
+print(f"User: What can you help me with?")
+print(f"Assistant: {response2}\n")
+
+# Test memory
+response3 = assistant.chat("Do you remember my name?")
+print(f"User: Do you remember my name?")
+print(f"Assistant: {response3}\n")
+
+# Ask for help
+response4 = assistant.chat("I need help with programming")
+print(f"User: I need help with programming")
+print(f"Assistant: {response4}\n")
+
+# Use other agent methods
+plan = assistant.plan("Help user learn programming")
+print(f"\nPlan for helping with programming: {plan}")
+
+# Store and retrieve information
+assistant.remember("user_name", "John")
+assistant.remember("user_goal", "learn programming")
+
+name = assistant.recall("user_name")
+goal = assistant.recall("user_goal")
+print(f"\nRemembered user name: {name}")
+print(f"Remembered user goal: {goal}")
+
+# Advanced chat with context
+response5 = assistant.chat(
+    "How should I start?",
+    context={"topic": "programming", "level": "beginner"},
+    max_context_turns=2
+)
+print(f"\nUser: How should I start?")
+print(f"Assistant: {response5}")
+
+# Show conversation statistics
+stats = assistant.get_conversation_stats()
+print(f"\n=== Conversation Statistics ===")
+print(f"Total turns: {stats['total_turns']}")
+print(f"Active turns: {stats['active_turns']}")
+print(f"Session count: {stats['session_count']}")
+
+print("\n=== Example Complete ===")
+print("The conversation is automatically saved to: agent_memories/SimpleAssistant_conversation.json")
+print("You can restart this script and the assistant will remember the conversation!") 

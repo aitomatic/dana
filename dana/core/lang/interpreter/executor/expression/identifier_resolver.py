@@ -64,12 +64,8 @@ class IdentifierResolver(Loggable):
         name = node.name
 
         # Strategy 1: Check cache first for performance
-        # TEMPORARILY DISABLED: Cache causing incorrect results
-        # context_hash = hash(str(sorted(context._state.items())))
-        # cache_key = (name, context_hash)
-        # if cache_key in self._identifier_cache:
-        #     self._cache_hits += 1
-        #     return self._identifier_cache[cache_key]
+        # Cache disabled: context hashing causes incorrect results
+        # TODO: Implement stable context fingerprinting for cache keys
 
         self._cache_misses += 1
         self.debug(f"Resolving identifier '{name}' (cache miss)")
@@ -78,21 +74,18 @@ class IdentifierResolver(Loggable):
             # Strategy 2: Try direct context lookup (most common case)
             result = self._try_direct_context_lookup(name, context)
             if result is not None:
-                # self._cache_result(cache_key, result)  # DISABLED
                 return result
 
             # Strategy 3: Try cross-scope search for unscoped variables
             if "." not in name and ":" not in name:
                 result = self._try_cross_scope_search(name, context)
                 if result is not None:
-                    # self._cache_result(cache_key, result)  # DISABLED
                     return result
 
             # Strategy 4: Try scoped identifier resolution
             elif ":" in name or "." in name:
                 result = self._try_scoped_resolution(name, context)
                 if result is not None:
-                    # self._cache_result(cache_key, result)  # DISABLED
                     return result
 
             # Strategy 5: Try function registry via unified dispatcher
@@ -104,7 +97,6 @@ class IdentifierResolver(Loggable):
             # Strategy 6: Try dotted attribute access fallback
             result = self._try_dotted_attribute_access(name, context)
             if result is not None:
-                # self._cache_result(cache_key, result)  # DISABLED
                 return result
 
             # Strategy 7: Try struct type name resolution
@@ -371,10 +363,10 @@ class IdentifierResolver(Loggable):
             The struct type name string if found, None otherwise
         """
         try:
-            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            from dana.registry import TYPE_REGISTRY
 
             # Check if this is a registered struct type name
-            if StructTypeRegistry.exists(name):
+            if TYPE_REGISTRY.exists(name):
                 self.debug(f"Found '{name}' as struct type name")
                 return name  # Return the string name for struct types
 

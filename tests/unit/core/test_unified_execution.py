@@ -4,41 +4,56 @@ Test the reason function works with consistent parameter ordering.
 This test verifies that the reason function can be called correctly in a Dana program.
 """
 
-import os
 import unittest
-from unittest.mock import patch
 
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 
 
-@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_direct_call():
     """Test reason function with direct call to verify basic functionality."""
     # Create context
     context = SandboxContext()
-    llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system:llm_resource", llm_resource)
+    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+    llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+    llm_resource.initialize()
+
+    # Enable mock mode for testing
+    # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+    llm_resource.with_mock_llm_call(True)
+
+    context.set_system_llm_resource(llm_resource)
 
     # Test basic call
     result = reason_function(context, "test prompt")
     assert result is not None
 
 
-@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_parameter_order():
     """Test reason function with different parameter orders to verify robustness."""
     # Create context
     context = SandboxContext()
-    llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system:llm_resource", llm_resource)
+    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+    llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+    llm_resource.initialize()
+
+    # Enable mock mode for testing
+    # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+    llm_resource.with_mock_llm_call(True)
+
+    context.set_system_llm_resource(llm_resource)
 
     # Test with explicit mocking parameter
     result1 = reason_function(context, "test prompt", use_mock=True)
@@ -81,21 +96,8 @@ class TestUnifiedExecution(unittest.TestCase):
         self.reason_calls = []
 
         # Create a mock function that records calls
-        def mock_reason_function(*args, **kwargs):
-            # Extract arguments based on correct signature: (context, prompt, options=None, use_mock=None)
-            context = args[0] if len(args) > 0 else kwargs.get("context", self.context)
-            prompt = args[1] if len(args) > 1 else kwargs.get("prompt", "")
-            options = args[2] if len(args) > 2 else kwargs.get("options", {})
-
-            # Merge any remaining kwargs into options
-            if kwargs:
-                remaining_kwargs = {k: v for k, v in kwargs.items() if k not in ["prompt", "context", "options", "use_mock"]}
-                if remaining_kwargs:
-                    if isinstance(options, dict):
-                        options.update(remaining_kwargs)
-                    else:
-                        options = remaining_kwargs
-
+        def mock_reason_function(context, prompt, options=None, use_mock=None):
+            # The reason function signature is (context, prompt, options=None, use_mock=None)
             self.reason_calls.append({"prompt": prompt, "context": context, "options": options or {}})
             return self.reason_result
 
@@ -103,6 +105,7 @@ class TestUnifiedExecution(unittest.TestCase):
         self.interpreter.function_registry.register(
             name="reason",
             func=mock_reason_function,
+            namespace="system",  # Register in system namespace where the real function is
             func_type=FunctionType.PYTHON,
             overwrite=True,  # Override the real reason function
             trusted_for_context=True,  # Mock function needs context access
@@ -199,7 +202,7 @@ if True:
         """Test function call chaining."""
 
         # Set up a second function to chain with
-        def mock_process(input_text, context):
+        def mock_process(context, input_text):
             return f"Processed: {input_text}"
 
         self.interpreter.function_registry.register(

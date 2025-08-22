@@ -1,118 +1,168 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { IconPlus, IconSearch } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
+import { apiService } from '@/lib/api';
+import { MyAgentTab } from './MyAgentTab';
+import { ExploreTab } from './ExploreTab';
+
+const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
+
+// Tab configuration with URL-friendly identifiers
+const TAB_CONFIG = {
+  explore: 'Explore',
+  my: 'My Agent',
+} as const;
+
+type TabId = keyof typeof TAB_CONFIG;
 
 export default function AgentsPage() {
   const navigate = useNavigate();
-  const { agents, fetchAgents, isLoading } = useAgentStore();
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { agents, fetchAgents } = useAgentStore();
+  const [myAgentSearch, setMyAgentSearch] = useState('');
+  const [exploreSearch, setExploreSearch] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState('All domains');
+  const [creating, setCreating] = useState(false);
+
+  const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+
+  // Get activeTab from URL params, default to 'explore'
+  const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
+  const activeTab = TAB_CONFIG[activeTabId];
+
+  // Function to update activeTab in URL
+  const setActiveTab = (tabId: TabId) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', tabId);
+    setSearchParams(newSearchParams);
+  };
+
+  // Function to fetch prebuilt agents using axios API service
+  const fetchPrebuiltAgents = async () => {
+    try {
+      const data = await apiService.getPrebuiltAgents();
+      setPrebuiltAgents(data);
+    } catch (error) {
+      console.error('Error fetching prebuilt agents:', error);
+      // Set empty array if API fails
+      setPrebuiltAgents([]);
+    }
+  };
+
+  useEffect(() => {
+    // If no agents and no tab specified, default to explore
+    if (agents && agents.length === 0 && !searchParams.get('tab')) {
+      setActiveTab('explore');
+    }
+  }, [agents, searchParams]);
 
   useEffect(() => {
     fetchAgents();
-  }, [fetchAgents]);
+    fetchPrebuiltAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Filter agents by search
-  const filteredAgents = agents.filter(
-    (agent) =>
-      agent.name.toLowerCase().includes(search.toLowerCase()) ||
-      (agent.description || '').toLowerCase().includes(search.toLowerCase()),
-  );
+  // Filter prebuilt agents by domain and search
+  const filteredAgents = prebuiltAgents.filter((agent: any) => {
+    const domain = agent.config?.domain || 'Other';
+    const matchesDomain = selectedDomain === 'All domains' || domain === selectedDomain;
+    const matchesSearch =
+      agent.name.toLowerCase().includes(exploreSearch.toLowerCase()) ||
+      (agent.description || '').toLowerCase().includes(exploreSearch.toLowerCase()) ||
+      (agent.details || '').toLowerCase().includes(exploreSearch.toLowerCase());
+    return matchesDomain && matchesSearch;
+  });
 
-  console.log(filteredAgents);
+  const handleCreateAgent = async () => {
+    setCreating(true);
+    try {
+      // Minimal default agent payload
+      const newAgent = await apiService.createAgent({
+        name: 'Untitled Agent',
+        description: '',
+        config: {},
+      });
+      if (newAgent && newAgent.id) {
+        navigate(`/agents/${newAgent.id}`);
+      }
+    } catch (e) {
+      // Optionally show error toast
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full w-full p-8">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4 w-full max-w-xl">
-          <div className="relative flex-1">
-            <IconSearch className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
-            />
-          </div>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 font-semibold"
-          >
+    <div className="flex flex-col p-8 w-full h-full">
+      {/* Top section with Search and Train Agent button */}
+      <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
+          <div className="relative w-full md:w-72">
             <svg
-              width="20"
-              height="20"
+              className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
               fill="none"
-              viewBox="0 0 24 24"
               stroke="currentColor"
-              className="w-5 h-5"
+              viewBox="0 0 24 24"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M3 6h18M3 12h18M3 18h18"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            Filter
-          </Button>
-        </div>
-        <Button
-          onClick={() => navigate('/agents/create')}
-          variant="default"
-          size="lg"
-          className="ml-4"
-        >
-          <IconPlus className="w-5 h-5 mr-2" />
-          Create New
-        </Button>
-      </div>
-
-      {/* Agents list */}
-      {isLoading ? (
-        <div className="flex justify-center items-center h-full w-full">
-          <span className="text-gray-400 text-lg">Loading agents...</span>
-        </div>
-      ) : filteredAgents.length === 0 ? (
-        <div className="flex justify-center items-center h-full w-full">
-          <div className="flex flex-col items-center max-w-md text-center">
-            <img src={'/static/images/empty-agent.svg'} alt="empty dxa" className="size-48" />
-            <h1 className="py-4 text-2xl font-semibold text-gray-900">No Domain-Expert Agent</h1>
-            <p className="mb-8 leading-relaxed text-gray-600">
-              Create your first Domain-Expert Agent to explore the power of agent
-            </p>
-            <Button onClick={() => navigate('/agents/create')} variant="default" size="lg">
-              <IconPlus className="w-4 h-4" />
-              New Agent
-            </Button>
+            <input
+              type="text"
+              placeholder="Search agents"
+              value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
+              onChange={(e) =>
+                activeTab === 'My Agent'
+                  ? setMyAgentSearch(e.target.value)
+                  : setExploreSearch(e.target.value)
+              }
+              className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:bg-gray-50"
+            />
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredAgents.map((agent) => (
-            <div
-              key={agent.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 flex hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/agents/${agent.id}/chat`)}
-            >
-              <div className="flex flex-col gap-4">
-                <img
-                  src={`/agent-avatar${agent.config?.avatar}`}
-                  alt="Agent avatar"
-                  className="rounded-full w-12 h-12 object-cover border border-gray-200"
-                />
-                <div className="flex flex-col items-start">
-                  <span className="text-xl font-bold text-gray-900">{agent.name}</span>
-                  <span className="text-gray-500 text-base mt-1">
-                    {agent.description || agent?.name || 'No description'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      </div>
+      {/* Tabs */}
+      <div className="flex gap-4 mb-6 border-b border-gray-200">
+        <button
+          className={`py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
+          onClick={() => setActiveTab('explore')}
+        >
+          Pre-trained Agents
+        </button>
+        <button
+          className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
+          onClick={() => setActiveTab('my')}
+        >
+          My Agents
+        </button>
+      </div>
+      {/* Tab Content */}
+      {activeTab === 'My Agent' && (
+        <MyAgentTab
+          agents={agents.filter(
+            (agent) =>
+              agent.name.toLowerCase().includes(myAgentSearch.toLowerCase()) ||
+              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
+          )}
+          navigate={navigate}
+          handleCreateAgent={handleCreateAgent}
+          creating={creating}
+        />
+      )}
+      {activeTab === 'Explore' && (
+        <ExploreTab
+          filteredAgents={filteredAgents}
+          selectedDomain={selectedDomain}
+          setSelectedDomain={setSelectedDomain}
+          navigate={navigate}
+          DOMAINS={DOMAINS}
+          handleCreateAgent={handleCreateAgent}
+          creating={creating}
+        />
       )}
     </div>
   );

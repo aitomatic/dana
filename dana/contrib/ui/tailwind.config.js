@@ -210,6 +210,7 @@ export default {
     },
   },
   plugins: [
+    require('@tailwindcss/typography'),
     {
       handler({ addBase, theme }) {
         addBase({

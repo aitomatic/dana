@@ -17,7 +17,7 @@ from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 
-from dana.core.runtime.modules.core import initialize_module_system
+from dana.__init__ import initialize_module_system
 from dana.integrations.python.to_dana.core.exceptions import DanaCallError
 from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 from dana.integrations.python.to_dana.core.sandbox_interface import SandboxInterface
@@ -103,6 +103,8 @@ class DanaModuleWrapper:
 
                 # Execute through sandbox interface using the new execute_function method
                 result = self._sandbox_interface.execute_function(func_name, args, kwargs)
+                # The result may be an EagerPromise object - this is expected behavior
+                # Promise transparency will handle resolution when the result is accessed
                 return result
 
             except Exception as e:
@@ -176,13 +178,13 @@ class DanaModuleLoader(MetaPathFinder, Loader):
         if module_file:
             if self._debug:
                 print(f"DEBUG: Found Dana module '{fullname}' at {module_file}")
-            
+
             spec = ModuleSpec(fullname, self, origin=str(module_file))
-            
+
             # Set up package attributes for directory packages
             if module_file.is_dir():
                 spec.submodule_search_locations = [str(module_file)]
-            
+
             return spec
 
         return None
@@ -192,7 +194,7 @@ class DanaModuleLoader(MetaPathFinder, Loader):
         module = types.ModuleType(spec.name)
         module.__file__ = spec.origin
         module.__loader__ = self
-        
+
         # Set up package attributes
         origin_path = Path(spec.origin)
         if spec.origin.endswith("__init__.na"):
@@ -209,7 +211,7 @@ class DanaModuleLoader(MetaPathFinder, Loader):
         else:
             # Top-level module
             module.__package__ = ""
-            
+
         return module
 
     def exec_module(self, module: types.ModuleType) -> None:
@@ -228,8 +230,9 @@ class DanaModuleLoader(MetaPathFinder, Loader):
                 # Handle directory packages (no code to execute)
                 module_path = Path(module.__file__)
                 if module_path.is_dir():
-                    # Directory package - create empty wrapper 
+                    # Directory package - create empty wrapper
                     from dana.core.lang.sandbox_context import SandboxContext
+
                     empty_context = SandboxContext()
                     dana_wrapper = DanaModuleWrapper(module.__name__, self._sandbox_interface, empty_context, self._debug)
                 else:
@@ -260,7 +263,7 @@ class DanaModuleLoader(MetaPathFinder, Loader):
     def _find_dana_module(self, fullname: str) -> Path | None:
         """Find a Dana .na file for the given module name."""
         module_name = fullname.split(".")[-1]
-        
+
         # If this is a submodule (contains dots), check if parent package is already loaded
         if "." in fullname:
             parent_name = fullname.rsplit(".", 1)[0]
@@ -270,7 +273,7 @@ class DanaModuleLoader(MetaPathFinder, Loader):
                     # Search in parent package's search locations
                     for parent_path in parent_module.__path__:
                         parent_path_obj = Path(parent_path)
-                        
+
                         # Try direct .na file
                         na_file = parent_path_obj / f"{module_name}.na"
                         if na_file.exists():
@@ -307,25 +310,25 @@ class DanaModuleLoader(MetaPathFinder, Loader):
 
     def _is_dana_package_directory(self, directory: Path) -> bool:
         """Check if a directory qualifies as a Dana package.
-        
+
         A directory is considered a Dana package if it contains:
         - At least one .na file, OR
         - At least one subdirectory that is also a Dana package
-        
+
         Args:
             directory: Directory to check
-            
+
         Returns:
             True if directory is a Dana package, False otherwise
         """
         if not directory.is_dir():
             return False
-            
+
         # Check for direct .na files
         for item in directory.iterdir():
             if item.is_file() and item.suffix == ".na":
                 return True
-                
+
         # Check for subdirectory packages
         for item in directory.iterdir():
             if item.is_dir():
@@ -335,7 +338,7 @@ class DanaModuleLoader(MetaPathFinder, Loader):
                 # Check if subdirectory is itself a Dana package (recursive)
                 if self._is_dana_package_directory(item):
                     return True
-                    
+
         return False
 
     def _is_standard_library_module(self, fullname: str) -> bool:

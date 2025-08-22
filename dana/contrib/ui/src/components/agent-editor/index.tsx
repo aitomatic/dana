@@ -1,7 +1,7 @@
 import { Editor, useMonaco } from '@monaco-editor/react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { editor } from 'monaco-editor';
-import { IconAlertTriangle, IconX } from '@tabler/icons-react';
+// import { IconAlertTriangle, IconX } from '@tabler/icons-react';
 // import { CodeValidationPopup } from '@/components/code-validation-popup';
 // import { Button } from '@/components/ui/button';
 // import { RefreshCw, AlertCircle } from 'lucide-react';
@@ -543,13 +543,49 @@ export const AgentEditor = ({
       monaco.languages.register({ id: 'na' });
       monaco.languages.setMonarchTokensProvider('na', {
         keywords: [
-          'with', 'as', 'private', 'log', 'while', 'True', 'False', 'None', 'break', 'continue', 'if', 'elif', 'else', 'for', 'in', 'return', 'input', 'print', 'def', 'class', 'import', 'from', 'try', 'except', 'finally', 'raise', 'and', 'or', 'not', 'knowledge', 'resources', 'format', 'agent', 'struct', 'use', 'export',
+          'with',
+          'as',
+          'private',
+          'log',
+          'while',
+          'True',
+          'False',
+          'None',
+          'break',
+          'continue',
+          'if',
+          'elif',
+          'else',
+          'for',
+          'in',
+          'return',
+          'input',
+          'print',
+          'def',
+          'class',
+          'import',
+          'from',
+          'try',
+          'except',
+          'finally',
+          'raise',
+          'and',
+          'or',
+          'not',
+          'knowledge',
+          'resources',
+          'format',
+          'agent',
+          'struct',
+          'use',
+          'export',
         ],
         tokenizer: {
           root: [
             // Knowledge blocks
             [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
             // Agent declarations - use custom state
+            [/\bagent_blueprint\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
             [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
             // Struct declarations - use custom state
             [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
@@ -562,7 +598,10 @@ export const AgentEditor = ({
             // Special .na functions
             [/\b(call_resources|reason|plan)\s*(?=\()/, 'function.special'],
             // Regular keywords
-            [/\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|struct|use|export)\b/, 'keyword'],
+            [
+              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|agent_blueprint|struct|use|export)\b/,
+              'keyword',
+            ],
             // Function definitions and calls
             [/\b[a-zA-Z_]\w*(?=\s*\()/, 'function'],
             // Method calls
@@ -1017,54 +1056,6 @@ export const AgentEditor = ({
 
   return (
     <div className={cn('flex flex-col w-full h-full', className)}>
-      {/* Validation Panel */}
-      {enableValidation && !validation.isValid && (
-        <div
-          className={`px-4 py-3 border-b ${isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
-            }`}
-        >
-          <div className="flex gap-2 items-center mb-2">
-            <IconAlertTriangle
-              size={16}
-              className={isDark ? 'text-yellow-400' : 'text-yellow-600'}
-            />
-            <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-yellow-600'}`}>
-              Required Fields Missing
-            </span>
-          </div>
-          <div className="space-y-1">
-            {!validation.hasQuery && (
-              <div className="flex gap-2 items-center">
-                <IconX size={14} className="text-red-500" />
-                <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
-                  Missing or empty{' '}
-                  <code
-                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                      }`}
-                  >
-                    query = "..."
-                  </code>
-                </span>
-              </div>
-            )}
-            {!validation.hasResponse && (
-              <div className="flex gap-2 items-center">
-                <IconX size={14} className="text-red-500" />
-                <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
-                  Missing or empty{' '}
-                  <code
-                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                      }`}
-                  >
-                    response = "..."
-                  </code>
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Editor */}
       <div className="relative flex-1 min-h-0">
         <Editor

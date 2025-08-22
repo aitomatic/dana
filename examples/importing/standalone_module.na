@@ -1,5 +1,0 @@
-"""A standalone module."""
-
-__all__ = ['STANDALONE_CONST']
-
-STANDALONE_CONST = 'standalone const'

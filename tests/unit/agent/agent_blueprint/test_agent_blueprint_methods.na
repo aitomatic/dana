@@ -1,0 +1,265 @@
+# Agent Blueprint Methods Tests
+# Tests for built-in agent methods and method-related functionality
+
+log_level("INFO")
+
+# Test agent for methods testing
+agent_blueprint MethodsTestAgent:
+    name: str = "MethodsTest"
+    role: str = "tester"
+
+# Test 1: Built-in agent methods
+def test_builtin_agent_methods():
+    agent_instance = MethodsTestAgent()
+    
+    # Test plan method
+    plan_result = agent_instance.plan("analyze code quality")
+    if "planning" not in plan_result.lower():
+        return "❌ Agent plan method not working"
+    if "MethodsTest" not in plan_result:
+        return "❌ Agent name not in plan result"
+    
+    # Test solve method
+    solve_result = agent_instance.solve("fix bug in module")
+    if "solving" not in solve_result.lower():
+        return "❌ Agent solve method not working"
+    if "MethodsTest" not in solve_result:
+        return "❌ Agent name not in solve result"
+    
+    # Test memory methods
+    remember_result = agent_instance.remember("bug_location", "line 42")
+    if remember_result != true:
+        return "❌ Agent remember method not working"
+    
+    recall_result = agent_instance.recall("bug_location")
+    if recall_result != "line 42":
+        return "❌ Agent recall method not working"
+    
+    return "✅ Built-in agent methods work"
+
+# Test 2: Agent method chaining
+def test_agent_method_chaining():
+    agent_instance = MethodsTestAgent()
+    
+    # Test that built-in methods work correctly
+    plan_result = agent_instance.plan("complex task")
+    solve_result = agent_instance.solve("complex problem")
+    
+    if "planning" not in plan_result.lower():
+        return "❌ Plan method chaining failed"
+    if "solving" not in solve_result.lower():
+        return "❌ Solve method chaining failed"
+    
+    return "✅ Agent method chaining works"
+
+# Test 3: Agent memory isolation
+def test_agent_memory_isolation():
+    agent1 = MethodsTestAgent()
+    agent2 = MethodsTestAgent()
+    
+    # Store different values in each agent's memory
+    agent1.remember("shared_key", "value1")
+    agent2.remember("shared_key", "value2")
+    
+    # Check that memories are isolated
+    if agent1.recall("shared_key") != "value1":
+        return "❌ Agent 1 memory isolation failed"
+    if agent2.recall("shared_key") != "value2":
+        return "❌ Agent 2 memory isolation failed"
+    
+    return "✅ Agent memory isolation works"
+
+# Test 4: Agent error handling
+def test_agent_error_handling():
+    agent_instance = MethodsTestAgent()
+    
+    # Test memory operations with missing keys
+    missing_result = agent_instance.recall("nonexistent_key")
+    if missing_result != None:
+        return "❌ Agent recall with missing key should return None"
+    
+    # Test that agent methods handle errors gracefully
+    try:
+        plan_result = agent_instance.plan("test task")
+        if "planning" not in plan_result.lower():
+            return "❌ Agent plan method error handling failed"
+    except Exception as e:
+        return f"❌ Agent plan method threw unexpected error: {e}"
+    
+    return "✅ Agent error handling works"
+
+# Test 5: Method return values
+def test_method_return_values():
+    agent_instance = MethodsTestAgent()
+    
+    # Test plan method returns expected result
+    plan_result = agent_instance.plan("test task")
+    if "planning" not in str(plan_result).lower():
+        return "❌ Plan method should return planning result"
+    
+    # Test solve method returns expected result
+    solve_result = agent_instance.solve("test problem")
+    if "solving" not in str(solve_result).lower():
+        return "❌ Solve method should return solving result"
+    
+    # Test remember method returns boolean
+    remember_result = agent_instance.remember("key", "value")
+    if remember_result != true:
+        return "❌ Remember method should return true"
+    
+    # Test recall method returns stored value
+    recall_result = agent_instance.recall("key")
+    if recall_result != "value":
+        return "❌ Recall method should return stored value"
+    
+    return "✅ Method return values are correct"
+
+# Test 6: Method parameter handling
+def test_method_parameter_handling():
+    agent_instance = MethodsTestAgent()
+    
+    # Test plan with different task types
+    plan1 = agent_instance.plan("simple task")
+    plan2 = agent_instance.plan("complex multi-step task")
+    
+    if "planning" not in plan1.lower():
+        return "❌ Plan method failed with simple task"
+    if "planning" not in plan2.lower():
+        return "❌ Plan method failed with complex task"
+    
+    # Test solve with different problem types
+    solve1 = agent_instance.solve("simple problem")
+    solve2 = agent_instance.solve("complex problem with constraints")
+    
+    if "solving" not in solve1.lower():
+        return "❌ Solve method failed with simple problem"
+    if "solving" not in solve2.lower():
+        return "❌ Solve method failed with complex problem"
+    
+    return "✅ Method parameter handling works"
+
+# Test 7: Memory persistence
+def test_memory_persistence():
+    agent_instance = MethodsTestAgent()
+    
+    # Store multiple values
+    agent_instance.remember("key1", "value1")
+    agent_instance.remember("key2", "value2")
+    agent_instance.remember("key3", "value3")
+    
+    # Recall all values
+    if agent_instance.recall("key1") != "value1":
+        return "❌ Memory persistence failed for key1"
+    if agent_instance.recall("key2") != "value2":
+        return "❌ Memory persistence failed for key2"
+    if agent_instance.recall("key3") != "value3":
+        return "❌ Memory persistence failed for key3"
+    
+    return "✅ Memory persistence works"
+
+# Test 8: Method call order independence
+def test_method_call_order_independence():
+    agent_instance = MethodsTestAgent()
+    
+    # Call methods in different orders
+    agent_instance.remember("order_test", "value")
+    plan_result = agent_instance.plan("test task")
+    recall_result = agent_instance.recall("order_test")
+    solve_result = agent_instance.solve("test problem")
+    
+    # All should work regardless of order
+    if recall_result != "value":
+        return "❌ Method call order independence failed for recall"
+    if "planning" not in plan_result.lower():
+        return "❌ Method call order independence failed for plan"
+    if "solving" not in solve_result.lower():
+        return "❌ Method call order independence failed for solve"
+    
+    return "✅ Method call order independence works"
+
+# Test 9: Method with empty parameters
+def test_method_with_empty_parameters():
+    agent_instance = MethodsTestAgent()
+    
+    # Test methods with empty strings
+    plan_result = agent_instance.plan("")
+    solve_result = agent_instance.solve("")
+    
+    # Should handle gracefully
+    if "planning" not in plan_result.lower():
+        return "❌ Plan method failed with empty parameter"
+    if "solving" not in solve_result.lower():
+        return "❌ Solve method failed with empty parameter"
+    
+    return "✅ Methods handle empty parameters"
+
+# Test 10: Method performance
+def test_method_performance():
+    agent_instance = MethodsTestAgent()
+    
+    # Test multiple rapid method calls
+    for i in range(10):
+        plan_result = agent_instance.plan(f"task {i}")
+        solve_result = agent_instance.solve(f"problem {i}")
+        agent_instance.remember(f"key{i}", f"value{i}")
+        recall_result = agent_instance.recall(f"key{i}")
+        
+        if "planning" not in plan_result.lower():
+            return f"❌ Plan method failed on iteration {i}"
+        if "solving" not in solve_result.lower():
+            return f"❌ Solve method failed on iteration {i}"
+        if recall_result != f"value{i}":
+            return f"❌ Memory method failed on iteration {i}"
+    
+    return "✅ Method performance is stable"
+
+# Run methods tests
+log("=== Agent Blueprint Methods Tests ===")
+
+tests = [
+    test_builtin_agent_methods,
+    test_agent_method_chaining,
+    test_agent_memory_isolation,
+    test_agent_error_handling,
+    test_method_return_values,
+    test_method_parameter_handling,
+    test_memory_persistence,
+    test_method_call_order_independence,
+    test_method_with_empty_parameters,
+    test_method_performance
+]
+
+passed = 0
+failed = 0
+
+for i in range(len(tests)):
+    test = tests[i]
+    test_num = i + 1
+    
+    try:
+        result = test()
+        if result.startswith("✅"):
+            log(f"✅ Test {test_num}: {result}")
+            passed += 1
+        else:
+            log(f"❌ Test {test_num}: {result}")
+            failed += 1
+    except Exception as e:
+        log(f"❌ Test {test_num}: Exception - {e}")
+        failed += 1
+
+log(f"\n=== Methods Tests Summary ===")
+log(f"Passed: {passed}")
+log(f"Failed: {failed}")
+log(f"Total: {len(tests)}")
+
+if failed == 0:
+    log("🎉 All methods tests passed!")
+else:
+    log(f"⚠️  {failed} methods tests failed")
+
+{
+    "passed": passed,
+    "failed": failed,
+    "total": len(tests)
+}

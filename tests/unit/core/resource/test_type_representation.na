@@ -1,0 +1,71 @@
+# Test type representation for resources and structs
+# This file tests how type() and __repr__ work for different types
+
+def test_current_type_behavior():
+    """Test the current type() behavior for resources and structs."""
+    
+    # Define a resource
+    resource TestResource:
+        name: str = "test"
+        value: int = 42
+    
+    # Define a struct
+    struct TestStruct:
+        name: str = "test"
+        value: int = 42
+    
+    # Create instances
+    r = TestResource()
+    s = TestStruct()
+    
+    # Test current behavior
+    log(f"type(r) = {type(r)}")
+    log(f"type(s) = {type(s)}")
+    log(f"type(TestResource) = {type(TestResource)}")
+    log(f"type(TestStruct) = {type(TestStruct)}")
+    
+    # Test string representation behavior
+    log(f"str(r) = {str(r)}")
+    log(f"str(s) = {str(s)}")
+    log(f"str(TestResource) = {str(TestResource)}")
+    log(f"str(TestStruct) = {str(TestStruct)}")
+    
+    log("✅ Type representation test completed")
+
+def test_improved_type_information():
+    """Test improved type information using custom functions."""
+    
+    # Define a resource
+    resource UserResource:
+        name: str = "default"
+        age: int = 0
+    
+    # Define a struct
+    struct UserStruct:
+        name: str = "default"
+        age: int = 0
+    
+    # Create instances
+    user_r = UserResource(name="Alice", age=30)
+    user_s = UserStruct(name="Bob", age=25)
+    
+    # Test instance information
+    log(f"user_r = {user_r}")
+    log(f"user_s = {user_s}")
+    
+    # Test that we can access the underlying type information
+    log(f"user_r._type.name = {user_r._type.name}")
+    log(f"user_s._type.name = {user_s._type.name}")
+    
+    # Test that both are instances of their respective base classes
+    # Note: type() returns a string in Dana's sandbox
+    log(f"user_r type: {type(user_r)}")
+    log(f"user_s type: {type(user_s)}")
+    
+    log("✅ Improved type information test completed")
+
+# Run the tests
+test_current_type_behavior()
+test_improved_type_information()
+
+log("🎉 All type representation tests completed!")

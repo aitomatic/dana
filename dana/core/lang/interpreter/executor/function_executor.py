@@ -21,12 +21,13 @@ import logging
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.ast import (
     AttributeAccess,
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
-    MethodDefinition,
+    Parameter,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import (
@@ -36,8 +37,9 @@ from dana.core.lang.interpreter.executor.function_name_utils import FunctionName
 from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import (
     UnifiedFunctionDispatcher,
 )
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import FUNCTION_REGISTRY
+from dana.registry.function_registry import FunctionRegistry
 
 
 class FunctionExecutor(BaseExecutor):
@@ -69,12 +71,11 @@ class FunctionExecutor(BaseExecutor):
         """Register handlers for function-related node types."""
         self._handlers = {
             FunctionDefinition: self.execute_function_definition,
-            MethodDefinition: self.execute_method_definition,
             FunctionCall: self.execute_function_call,
         }
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
-        """Execute a function definition and store it in the context.
+        """Execute a unified function definition (handles both regular functions and methods).
 
         Args:
             node: The function definition to execute
@@ -86,10 +87,17 @@ class FunctionExecutor(BaseExecutor):
         # Create a DanaFunction object instead of a raw dict
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
+        # Extract all parameters (including receiver if present)
+        all_params = []
+        if node.receiver:
+            all_params.append(node.receiver)
+        all_params.extend(node.parameters)
+
         # Extract parameter names and defaults
         param_names = []
         param_defaults = {}
-        for param in node.parameters:
+
+        for i, param in enumerate(all_params):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
@@ -118,16 +126,32 @@ class FunctionExecutor(BaseExecutor):
 
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body,
+            parameters=param_names,
+            context=context,
+            return_type=return_type,
+            defaults=param_defaults,
+            name=node.name.name,
+            is_sync=node.is_sync,
         )
 
-        # Check if this function should be associated with an agent type
-        # Import here to avoid circular imports
-        # Temporarily commented out during migration to unified struct system
-        # from dana.agent.agent_system import register_agent_method_from_function_def
+        # Register based on presence of receiver
+        if node.receiver:
+            # Register as method
+            receiver_types = self._extract_receiver_types(node.receiver)
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, node.name.name, dana_func)
+                self.debug(f"Registered method {node.name.name} for type {receiver_type}")
+        else:
+            # Check if first parameter has a type (backward compatibility for old method detection)
+            first_param_type = None
+            if node.parameters and hasattr(node.parameters[0], "type_hint") and node.parameters[0].type_hint:
+                first_param_type = node.parameters[0].type_hint.name if hasattr(node.parameters[0].type_hint, "name") else None
 
-        # Try to register as agent method if first parameter is an agent type
-        # register_agent_method_from_function_def(node, dana_func)
+            if first_param_type:
+                # Register as a method in the unified registry (backward compatibility)
+                FUNCTION_REGISTRY.register_struct_function(first_param_type, node.name.name, dana_func)
+                self.debug(f"Registered method {node.name.name} for type {first_param_type} (backward compatibility)")
 
         # Apply decorators if present
         if node.decorators:
@@ -139,80 +163,6 @@ class FunctionExecutor(BaseExecutor):
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
             return dana_func
-
-    def execute_method_definition(self, node: MethodDefinition, context: SandboxContext) -> Any:
-        """Execute a method definition and register it in the method registry.
-
-        Args:
-            node: The method definition to execute
-            context: The execution context
-
-        Returns:
-            The defined method
-        """
-        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
-
-        # Extract receiver type(s) from the receiver parameter
-        receiver_param = node.receiver
-        receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
-
-        if not receiver_type_str:
-            raise SandboxError("Method definition requires typed receiver parameter")
-
-        # Parse union types (e.g., "Point | Circle | Rectangle")
-        # Handle spaces around pipe symbols
-        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
-
-        # Validate that all receiver types exist
-        for type_name in receiver_types:
-            if not StructTypeRegistry.exists(type_name):
-                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
-
-        # Extract parameter names (excluding receiver)
-        param_names = []
-        param_defaults = {}
-        for param in node.parameters:
-            if hasattr(param, "name"):
-                param_name = param.name
-                param_names.append(param_name)
-
-                # Extract default value if present
-                if hasattr(param, "default_value") and param.default_value is not None:
-                    try:
-                        default_value = self._evaluate_expression(param.default_value, context)
-                        param_defaults[param_name] = default_value
-                    except Exception as e:
-                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
-
-        # Extract return type if present
-        return_type = None
-        if hasattr(node, "return_type") and node.return_type is not None:
-            if hasattr(node.return_type, "name"):
-                return_type = node.return_type.name
-            else:
-                return_type = str(node.return_type)
-
-        # Create the DanaFunction with receiver as the first parameter
-        all_params = [receiver_param.name] + param_names
-        dana_func = DanaFunction(
-            body=node.body, parameters=all_params, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
-        )
-
-        # Apply decorators if present
-        if node.decorators:
-            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
-            final_func = wrapped_func
-        else:
-            final_func = dana_func
-
-        # Register the method with all receiver types
-        MethodRegistry.register_method(receiver_types, node.name.name, final_func)
-
-        # Also store in context for direct access
-        context.set(f"local:{node.name.name}", final_func)
-
-        return final_func
 
     def _apply_decorators(self, func, decorators, context):
         """Apply decorators to a function, handling both simple and parameterized decorators."""
@@ -234,11 +184,29 @@ class FunctionExecutor(BaseExecutor):
                     evaluated_kwargs[key] = self._evaluate_expression(value_expr, context)
 
                 # Call the decorator factory with arguments
-                actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                try:
+                    actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                except TypeError as e:
+                    # Check if the function expects a context parameter
+                    if "context" in str(e) and "missing" in str(e):
+                        actual_decorator = decorator_func(context, *evaluated_args, **evaluated_kwargs)
+                    elif "multiple values for argument" in str(e):
+                        # Handle case where arguments are passed both positionally and as keywords
+                        # Try calling with context as first argument and only keyword arguments
+                        actual_decorator = decorator_func(context, **evaluated_kwargs)
+                    else:
+                        raise
                 result = actual_decorator(result)
             else:
                 # Simple decorator (no arguments)
-                result = decorator_func(result)
+                try:
+                    result = decorator_func(result)
+                except TypeError as e:
+                    # Check if the function expects a context parameter
+                    if "context" in str(e) and "missing" in str(e):
+                        result = decorator_func(context, result)
+                    else:
+                        raise
 
         return result
 
@@ -257,20 +225,34 @@ class FunctionExecutor(BaseExecutor):
         """Resolve a decorator to a callable function."""
         decorator_name = decorator.name
 
-        # Try function registry first (most common case)
-        if self.function_registry and self.function_registry.has(decorator_name, "core"):
-            func, _, _ = self.function_registry.resolve(decorator_name, "core")
-            return func
+        # Try function registry first - search all namespaces systematically
+        if self.function_registry:
+            # Search all available namespaces in order of preference
+            namespaces_to_check = RuntimeScopes.ALL
 
-        # Try local context
-        try:
-            local_func = context.get(f"local:{decorator_name}")
-            if callable(local_func):
-                return local_func
-        except Exception:
-            pass
+            for namespace in namespaces_to_check:
+                if self.function_registry.has(decorator_name, namespace):
+                    func, _, _ = self.function_registry.resolve_with_type(decorator_name, namespace)
+                    return func
 
-        # Try global context
+            # Fallback: search without specifying namespace (searches all namespaces)
+            if self.function_registry.has(decorator_name):
+                func, _, _ = self.function_registry.resolve_with_type(decorator_name)
+                return func
+
+        # Try context lookups - search all scopes systematically
+        context_scopes = RuntimeScopes.ALL
+
+        for scope in context_scopes:
+            try:
+                # Try scoped lookup: local:decorator_name
+                scoped_func = context.get(f"{scope}:{decorator_name}")
+                if callable(scoped_func):
+                    return scoped_func
+            except Exception:
+                pass
+
+        # Try global context (no scope prefix)
         try:
             global_func = context.get(decorator_name)
             if callable(global_func):
@@ -281,7 +263,7 @@ class FunctionExecutor(BaseExecutor):
         # If all attempts failed, provide helpful error
         available_functions = []
         if self.function_registry:
-            available_functions = self.function_registry.list()
+            available_functions = self.function_registry.list_functions()
 
         raise NameError(f"Decorator '{decorator_name}' not found. Available functions: {available_functions}")
 
@@ -300,7 +282,7 @@ class FunctionExecutor(BaseExecutor):
             return value
 
         # Special handling for Promise objects - DO NOT resolve them (for lazy evaluation)
-        from dana.core.runtime.promise import is_promise
+        from dana.core.concurrency import is_promise
 
         if is_promise(value):
             self.debug(f"Found Promise object in _ensure_fully_evaluated, keeping as Promise: {type(value)}")
@@ -348,10 +330,8 @@ class FunctionExecutor(BaseExecutor):
 
         # Phase 2: Process arguments
         evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
-        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
 
         # Phase 2.5: Check for struct instantiation
-        self.debug("Checking for struct instantiation...")
         # Phase 2.5: Handle method calls (AttributeAccess) before other processing
         from dana.core.lang.ast import AttributeAccess
 
@@ -362,8 +342,6 @@ class FunctionExecutor(BaseExecutor):
         if struct_result is not None:
             self.debug(f"Found struct instantiation, returning: {struct_result}")
             return struct_result
-
-        self.debug("Not a struct instantiation, proceeding with function resolution...")
 
         # Phase 3: Handle special cases before unified dispatcher
         from dana.core.lang.ast import SubscriptExpression
@@ -379,9 +357,15 @@ class FunctionExecutor(BaseExecutor):
             if not callable(actual_function):
                 raise SandboxError(f"Subscript expression resolved to non-callable object: {actual_function}")
 
-            # Call the resolved function with the provided arguments
+            # Call the resolved function with the provided arguments and async detection
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
-            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            import asyncio
+            from dana.common.utils.misc import Misc
+            
+            if asyncio.iscoroutinefunction(actual_function):
+                result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+            else:
+                result = actual_function(*evaluated_args, **evaluated_kwargs)
             self.debug(f"Subscript call result: {result}")
             return result
         elif isinstance(node.name, str) and "SubscriptExpression" in node.name:
@@ -682,10 +666,8 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import (
-            StructTypeRegistry,
-            create_struct_instance,
-        )
+        from dana.core.lang.interpreter.struct_system import create_struct_instance
+        from dana.registry import TYPE_REGISTRY
 
         # Extract the base struct name (remove scope prefix if present)
         # Only check for struct instantiation with string function names
@@ -702,21 +684,16 @@ class FunctionExecutor(BaseExecutor):
 
         # Debug logging
         self.debug(f"Checking struct instantiation for func_name='{func_name}', base_name='{base_name}'")
-        self.debug(f"Registered structs: {StructTypeRegistry.list_types()}")
-        self.debug(f"Struct exists: {StructTypeRegistry.exists(base_name)}")
+        self.debug(f"Registered structs: {TYPE_REGISTRY.list_types()}")
+        self.debug(f"Struct exists: {TYPE_REGISTRY.exists(base_name)}")
 
         # Check if this is a registered struct type
-        if StructTypeRegistry.exists(base_name):
+        if TYPE_REGISTRY.exists(base_name):
             try:
                 # Resolve any promises in the kwargs before struct instantiation
-                resolved_kwargs = {}
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import resolve_if_promise
 
-                for key, value in evaluated_kwargs.items():
-                    if isinstance(value, BasePromise):
-                        resolved_kwargs[key] = value._ensure_resolved()
-                    else:
-                        resolved_kwargs[key] = value
+                resolved_kwargs = {key: resolve_if_promise(value) for key, value in evaluated_kwargs.items()}
 
                 self.debug(f"Creating struct instance for {base_name} with resolved kwargs: {resolved_kwargs}")
                 # Create struct instance using our utility function
@@ -839,6 +816,22 @@ class FunctionExecutor(BaseExecutor):
             except Exception as dana_method_error:
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
+            # Step 2.5: Try struct method delegation for struct instances
+            from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
+            from dana.core.lang.interpreter.struct_system import StructInstance
+
+            if isinstance(target_object, StructInstance):
+                try:
+                    if LambdaMethodDispatcher.can_handle_method_call(target_object, method_name):
+                        self.debug(f"Delegating to LambdaMethodDispatcher for struct method: {method_name}")
+                        result = LambdaMethodDispatcher.dispatch_method_call(
+                            target_object, method_name, *evaluated_args, context=context, **evaluated_kwargs
+                        )
+                        self.debug(f"Struct method delegation successful: {method_name}() = {result}")
+                        return result
+                except Exception as delegation_error:
+                    self.debug(f"Struct method delegation failed: {delegation_error}")
+
             # Step 3: Fallback to Python object method calls
             if hasattr(target_object, method_name):
                 method = getattr(target_object, method_name)
@@ -873,8 +866,7 @@ class FunctionExecutor(BaseExecutor):
     ) -> Any:
         """Execute a function call where the function name is a string representation of a SubscriptExpression.
 
-        This handles cases where the function name is a string like:
-        "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+        This handles cases where the function name is a string representation of a SubscriptExpression.
 
         Args:
             node: The function call node with string representation of SubscriptExpression as name
@@ -890,7 +882,7 @@ class FunctionExecutor(BaseExecutor):
         """
         try:
             # Parse the string representation to extract the object and index
-            # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+            # Parse string representation of SubscriptExpression
             name_str = str(node.name)
 
             # More robust parsing with error handling
@@ -957,10 +949,9 @@ class FunctionExecutor(BaseExecutor):
             object_value = self.parent.execute(Identifier(name=object_name), context)
 
             # Resolve Promise if object_value is a Promise (for dual delivery system)
-            from dana.core.concurrency import BasePromise
+            from dana.core.concurrency import resolve_if_promise
 
-            if isinstance(object_value, BasePromise):
-                object_value = object_value._ensure_resolved()
+            object_value = resolve_if_promise(object_value)
 
             # For LiteralExpression, we need to handle the value directly
             if index_name is not None and index_name.startswith("'") and index_name.endswith("'"):
@@ -1003,7 +994,14 @@ class FunctionExecutor(BaseExecutor):
             if isinstance(actual_function, DanaFunction):
                 result = actual_function.execute(context, *evaluated_args, **evaluated_kwargs)
             else:
-                result = actual_function(*evaluated_args, **evaluated_kwargs)
+                # Execute-time async detection for regular functions
+                import asyncio
+                from dana.common.utils.misc import Misc
+                
+                if asyncio.iscoroutinefunction(actual_function):
+                    result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+                else:
+                    result = actual_function(*evaluated_args, **evaluated_kwargs)
 
             self.debug(f"Subscript call result: {result}")
             return result
@@ -1014,3 +1012,42 @@ class FunctionExecutor(BaseExecutor):
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")
+
+    def _extract_receiver_types(self, receiver_param: Parameter) -> list[str]:
+        """Extract receiver types from a receiver parameter.
+
+        Args:
+            receiver_param: The receiver parameter
+
+        Returns:
+            List of receiver type names
+        """
+        if not receiver_param.type_hint:
+            raise SandboxError("Method definition requires typed receiver parameter")
+
+        receiver_type_str = receiver_param.type_hint.name if hasattr(receiver_param.type_hint, "name") else str(receiver_param.type_hint)
+
+        # Parse union types (e.g., "Point | Circle | Rectangle")
+        # Handle spaces around pipe symbols
+        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+        # Validate that all receiver types exist
+        from dana.registry import TYPE_REGISTRY
+
+        for type_name in receiver_types:
+            # Check both struct registry and resource registry
+            is_struct_type = TYPE_REGISTRY.exists(type_name)
+            is_resource_type = False
+
+            # Check resource registry if available
+            try:
+                from dana.core.resource.resource_registry import ResourceTypeRegistry
+
+                is_resource_type = ResourceTypeRegistry.exists(type_name)
+            except ImportError:
+                pass
+
+            if not is_struct_type and not is_resource_type:
+                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
+
+        return receiver_types

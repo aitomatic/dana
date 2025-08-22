@@ -148,7 +148,7 @@ except ZeroDivisionError:
         """Helper to run Dana code and return result."""
         try:
             with DanaSandbox() as sandbox:
-                result = sandbox.eval(code)
+                result = sandbox.execute_string(code)
                 if not result.success:
                     pytest.fail(f"Dana execution failed: {result.error}")
                 return result
@@ -159,7 +159,7 @@ except ZeroDivisionError:
         """Helper to run Dana code and return context."""
         try:
             with DanaSandbox() as sandbox:
-                result = sandbox.eval(code)
+                result = sandbox.execute_string(code)
                 if not result.success:
                     pytest.fail(f"Dana execution failed: {result.error}")
                 return result.final_context

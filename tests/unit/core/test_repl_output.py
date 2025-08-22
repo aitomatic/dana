@@ -38,8 +38,8 @@ def format_user_error(e, user_input):
 
 
 def run_repl_and_capture_output(input_code):
+    from dana.apps.repl.repl import REPL
     from dana.core.lang.sandbox_context import SandboxContext
-    from dana.core.repl.repl import REPL
 
     repl = REPL(context=SandboxContext())
     old_stdout = sys.stdout
@@ -61,7 +61,7 @@ def run_repl_and_capture_output(input_code):
     "input_code,expected_output",
     [
         ("private:x = 5", "5"),
-        ("if x > 0 print('missing colon')", "Syntax Error:"),
+        ("if x > 0 print('missing colon')", "Syntax Error"),
     ],
 )
 def test_repl_output(input_code, expected_output, request):

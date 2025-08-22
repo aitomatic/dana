@@ -53,7 +53,6 @@ Expression = Union[
     "SetLiteral",
     "TupleLiteral",
     "StructLiteral",
-    "UseStatement",
     "PlaceholderExpression",
     "PipelineExpression",
     "LambdaExpression",
@@ -74,6 +73,7 @@ Statement = Union[
     "MethodDefinition",
     "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
+    "ResourceDefinition",
     "AgentDefinition",
     "ImportStatement",
     "ImportFromStatement",
@@ -85,9 +85,6 @@ Statement = Union[
     "ReturnStatement",
     "RaiseStatement",
     "AssertStatement",
-    "UseStatement",
-    "AgentStatement",
-    "AgentPoolStatement",
     Expression,  # Any expression can be used as a statement
 ]
 
@@ -112,6 +109,7 @@ class BinaryOperator(Enum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
+    FLOOR_DIVIDE = "//"
     MODULO = "%"
     POWER = "**"
     PIPE = "|"
@@ -151,7 +149,7 @@ class LambdaExpression:
 
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
-    body: Expression = None  # Lambda body expression
+    body: Expression | None = None  # Lambda body expression
     location: Location | None = None
 
 
@@ -426,9 +424,6 @@ class Assignment:
         SubscriptExpression,
         AttributeAccess,
         FStringExpression,
-        "UseStatement",  # Added to support function_call_assignment: target = use_stmt
-        "AgentStatement",  # Added to support agent statement assignments
-        "AgentPoolStatement",  # Added to support agent pool statement assignments
         "DeclarativeFunctionDefinition",  # Added to support declarative function definitions
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
@@ -470,7 +465,7 @@ class WhileLoop:
 class ForLoop:
     """For loop statement."""
 
-    target: Identifier
+    target: Union[Identifier, list[Identifier]]  # Support single or multiple targets for tuple unpacking
     iterable: Expression
     body: list[Statement]
     location: Location | None = None
@@ -510,13 +505,15 @@ class WithStatement:
 
 @dataclass
 class FunctionDefinition:
-    """Function definition statement."""
+    """Function definition statement (unified for both regular functions and methods)."""
 
     name: Identifier
     parameters: list[Parameter]
     body: list[Statement]
     return_type: TypeHint | None = None
     decorators: list["Decorator"] = field(default_factory=list)  # Decorators applied to function
+    is_sync: bool = False  # NEW FIELD: indicates if function should execute synchronously
+    receiver: Parameter | None = None  # Optional receiver parameter for methods
     location: Location | None = None
 
 
@@ -530,6 +527,7 @@ class MethodDefinition:
     body: list[Statement]
     return_type: TypeHint | None = None
     decorators: list["Decorator"] = field(default_factory=list)
+    is_sync: bool = False  # NEW FIELD: indicates if method should execute synchronously
     location: Location | None = None
 
 
@@ -556,8 +554,30 @@ class StructDefinition:
 
 
 @dataclass
+class ResourceDefinition:
+    """Resource definition statement (e.g., resource MyRAG: sources: list[str])."""
+
+    name: str
+    fields: list["StructField"] = field(default_factory=list)
+    methods: list["FunctionDefinition"] = field(default_factory=list)
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
 class StructField:
     """A field in a struct definition."""
+
+    name: str
+    type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
+    default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ResourceField:
+    """A field in a resource definition."""
 
     name: str
     type_hint: TypeHint
@@ -595,20 +615,11 @@ class ImportStatement:
 
 @dataclass
 class ImportFromStatement:
-    """From-import statement (e.g., from math import sqrt)."""
+    """From-import statement (e.g., from math import sqrt or from math import *)."""
 
     module: str
     names: list[tuple[str, str | None]]
-    location: Location | None = None
-
-
-@dataclass
-class UseStatement:
-    """Use statement for external resources (e.g., use("mcp", url="..."))."""
-
-    args: list[Expression]  # Positional arguments
-    kwargs: dict[str, Expression]  # Keyword arguments
-    target: Identifier | None = None
+    is_star_import: bool = False
     location: Location | None = None
 
 
@@ -652,14 +663,6 @@ class ReturnStatement:
 
 
 @dataclass
-class DeliverStatement:
-    """Deliver statement for eager execution."""
-
-    value: Expression | None = None
-    location: Location | None = None
-
-
-@dataclass
 class RaiseStatement:
     """Raise statement."""
 
@@ -687,27 +690,6 @@ class ExportStatement:
         return f"export {self.name}"
 
 
-# === Agent Statements ===
-@dataclass
-class AgentStatement:
-    """Agent statement for creating A2A agents (e.g., agent(url="..."))."""
-
-    args: list[Expression]  # Positional arguments
-    kwargs: dict[str, Expression]  # Keyword arguments
-    target: Identifier | None = None  # Optional target for assignment
-    location: Location | None = None
-
-
-@dataclass
-class AgentPoolStatement:
-    """Agent pool statement for creating A2A agent pools (e.g., agent_pool(agents=[...]))."""
-
-    args: list[Expression]  # Positional arguments
-    kwargs: dict[str, Expression]  # Keyword arguments
-    target: Identifier | None = None  # Optional target for assignment
-    location: Location | None = None
-
-
 # === Agent Definitions ===
 
 
@@ -716,17 +698,37 @@ class AgentDefinition:
     """Agent definition statement (e.g., agent SemiconductorInspector: process_type: str, tolerance_threshold: float)."""
 
     name: str
-    fields: list["AgentField"]
+    fields: list["StructField"]
+    methods: list["FunctionDefinition"] = field(default_factory=list)
+    docstring: str | None = None
     location: Location | None = None
 
 
 @dataclass
-class AgentField:
-    """A field in an agent definition."""
+class SingletonAgentDefinition:
+    """Singleton agent definition referencing a blueprint and optional overrides."""
+
+    blueprint_name: str
+    overrides: list["SingletonAgentField"]
+    alias_name: str | None = None
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
+class BaseAgentSingletonDefinition:
+    """Base agent singleton definition (e.g., agent John)."""
+
+    alias_name: str
+    location: Location | None = None
+
+
+@dataclass
+class SingletonAgentField:
+    """An override assignment in a singleton agent definition block."""
 
     name: str
-    type_hint: TypeHint
-    default_value: Expression | None = None
+    value: Expression
     location: Location | None = None
 
 

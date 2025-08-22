@@ -1,0 +1,23 @@
+"""
+Dana Core library (.na) modules.
+
+This directory contains all core library Dana module files that are available
+for import in Dana programs. It will be automatically imported by DanaSandbox
+when the sandbox is initialized.
+"""
+
+# Core library initialization
+# Import all core modules to make their functions available
+
+from .basic_agent import BasicAgent, DanaAgent
+from .core import add_one, add_two, add_three, add_four
+# from . import a2a_agent  # This will trigger registration of A2A_Agent - temporarily disabled due to recursion
+
+__exports__ = [
+    "BasicAgent",
+    "DanaAgent",
+    "add_one",
+    "add_two",
+    "add_three",
+    "add_four",
+]

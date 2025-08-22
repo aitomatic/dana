@@ -2,19 +2,21 @@
 
 import pytest
 
-from dana.core.runtime.modules.core.errors import (
+from dana.core.runtime.modules.errors import (
     CircularImportError,
     ModuleNotFoundError,
 )
-from dana.core.runtime.modules.core.registry import ModuleRegistry
-from dana.core.runtime.modules.core.types import Module, ModuleSpec
+from dana.core.runtime.modules.types import Module, ModuleSpec
+from dana.registry.module_registry import ModuleRegistry
 
 
-def test_registry_singleton():
-    """Test that ModuleRegistry is a singleton."""
+def test_registry_creation():
+    """Test that ModuleRegistry can be created."""
     reg1 = ModuleRegistry()
     reg2 = ModuleRegistry()
-    assert reg1 is reg2
+    # ModuleRegistry is no longer a singleton in the new registry system
+    assert isinstance(reg1, ModuleRegistry)
+    assert isinstance(reg2, ModuleRegistry)
 
 
 def test_module_registration(registry, sample_module):
@@ -66,7 +68,7 @@ def test_circular_dependency_detection(registry):
     registry.add_dependency("mod3", "mod1")
 
     with pytest.raises(CircularImportError) as exc_info:
-        registry.check_circular_dependencies("mod1")
+        registry.check_circular_dependencies_legacy("mod1")
 
     assert exc_info.value.cycle == ["mod1", "mod2", "mod3", "mod1"]
 
@@ -74,10 +76,10 @@ def test_circular_dependency_detection(registry):
 def test_module_not_found(registry):
     """Test handling of non-existent modules."""
     with pytest.raises(ModuleNotFoundError):
-        registry.get_module("nonexistent")
+        registry.get_module_or_raise("nonexistent")
 
-    with pytest.raises(ModuleNotFoundError):
-        registry.get_spec("nonexistent")
+    # get_spec returns None for non-existent modules, doesn't raise
+    assert registry.get_spec("nonexistent") is None
 
 
 def test_module_state_tracking(registry, sample_module):
@@ -104,7 +106,7 @@ def test_registry_clear(registry, sample_module):
     registry.add_alias("alias", "sample")
     registry.add_dependency("sample", "other_module")
 
-    registry.clear()
+    registry.clear_instance()
 
     assert not registry.get_loaded_modules()
     assert not registry.get_specs()

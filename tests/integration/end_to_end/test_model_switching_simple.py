@@ -13,8 +13,8 @@ class TestSimpleModelSwitching(unittest.TestCase):
         """Set up test environment."""
         self.original_env = os.environ.copy()
 
-        # Set API keys and enable mock mode
-        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key", "DANA_MOCK_LLM": "true"})
+        # Set API keys (no longer overriding DANA_MOCK_LLM)
+        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key"})
 
         self.sandbox = DanaSandbox()
 
@@ -43,7 +43,7 @@ log(f"Anthropic: {anthropic_result}")
 log(f"OpenAI success: {openai_result is not None}")
 log(f"Anthropic success: {anthropic_result is not None}")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success, f"Failed: {result.error}")
 
     def test_multiple_provider_switching(self):
@@ -60,7 +60,7 @@ for i in range(len(models)):
 
 log("All model switches completed")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success, f"Failed: {result.error}")
 
     def test_model_switching_with_parameters(self):
@@ -77,7 +77,7 @@ log(f"Anthropic basic: {result2 is not None}")
 
 log("Basic tests completed")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         self.assertTrue(result.success, f"Failed: {result.error}")
 
 

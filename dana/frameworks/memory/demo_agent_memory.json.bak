@@ -1,0 +1,96 @@
+{
+  "conversation_id": "2ce1220b-ef37-4bbd-912b-68a3bacb2fd7",
+  "created_at": "2025-08-03T07:55:21.945345Z",
+  "updated_at": "2025-08-03T07:55:38.160696Z",
+  "history": [
+    {
+      "turn_id": "48944416-1439-4308-b1f4-e78ce13cc895",
+      "user_input": "Hi there!",
+      "agent_response": "Hi there! What would you like to talk about?",
+      "timestamp": "2025-08-03T07:55:21.945717Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "f7566181-eee2-4fdf-8b42-f1446f10ef5c",
+      "user_input": "My name is Bob",
+      "agent_response": "I don't think you've told me your name yet.",
+      "timestamp": "2025-08-03T07:55:21.946141Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "b7379d78-423f-42dd-9f4b-5cb4f968a3ae",
+      "user_input": "What's the weather like today?",
+      "agent_response": "I understand you said: 'What's the weather like today?'. How can I help you with that?",
+      "timestamp": "2025-08-03T07:55:21.946783Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "5ff63bf4-c6c2-40a0-a832-e30bc2ad5b8e",
+      "user_input": "Hi there!",
+      "agent_response": "Hi there! What would you like to talk about?",
+      "timestamp": "2025-08-03T07:55:38.156102Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "cdadcc47-997d-4180-9bf4-0e436e0ac339",
+      "user_input": "My name is Bob",
+      "agent_response": "Yes, I remember your name is Bob.",
+      "timestamp": "2025-08-03T07:55:38.156902Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "856cae61-8d0f-4ac1-bb1f-71dc795b1d87",
+      "user_input": "What's the weather like today?",
+      "agent_response": "I understand you said: 'What's the weather like today?'. How can I help you with that?",
+      "timestamp": "2025-08-03T07:55:38.157381Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "316da3bd-d5ea-4181-af8a-d096cb0fb53d",
+      "user_input": "Can you remember my name?",
+      "agent_response": "I remember we discussed: what's, today?, there!",
+      "timestamp": "2025-08-03T07:55:38.157878Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "c40e5990-4e0e-41cc-8aec-8f0d65719ac8",
+      "user_input": "What have we talked about so far?",
+      "agent_response": "We've had 7 exchanges in our conversation so far.",
+      "timestamp": "2025-08-03T07:55:38.158442Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "ee226384-32f5-4db3-8c76-169380c5c2f1",
+      "user_input": "I'm interested in learning Python",
+      "agent_response": "I understand you said: 'I'm interested in learning Python'. How can I help you with that?",
+      "timestamp": "2025-08-03T07:55:38.158929Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "08bd4dd0-f014-4092-8324-bd85ab2ba8c4",
+      "user_input": "Did I mention my name earlier?",
+      "agent_response": "Yes, I remember your name is Bob.",
+      "timestamp": "2025-08-03T07:55:38.159423Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "067d7db1-94d2-4205-9f5e-7ecd0ee18651",
+      "user_input": "Tell me about Python functions",
+      "agent_response": "I understand you said: 'Tell me about Python functions'. How can I help you with that?",
+      "timestamp": "2025-08-03T07:55:38.159928Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "002d5147-deff-4036-a8f1-ce37e284a320",
+      "user_input": "What topics have we discussed?",
+      "agent_response": "We've had 11 exchanges in our conversation so far.",
+      "timestamp": "2025-08-03T07:55:38.160696Z",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 2,
+    "total_turns": 12
+  }
+}

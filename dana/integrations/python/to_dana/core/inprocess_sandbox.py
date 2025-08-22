@@ -129,7 +129,7 @@ class InProcessSandboxInterface:
             if self._debug:
                 print(f"DEBUG: InProcessSandboxInterface executing Dana code: {dana_code[:100]}{'...' if len(dana_code) > 100 else ''}")
 
-            result = self._sandbox.eval(dana_code, filename="<python-to-dana>")
+            result = self._sandbox.execute_string(dana_code, filename="<python-to-dana>")
 
             if not result.success:
                 raise DanaCallError(f"Dana reasoning failed: {result.error}", original_error=result.error)
@@ -156,7 +156,7 @@ class InProcessSandboxInterface:
             kwargs: Keyword arguments to pass to the function
 
         Returns:
-            The result of the Dana function execution
+            The result of the Dana function execution (may be an EagerPromise object)
 
         Raises:
             DanaCallError: If the Dana function call fails
@@ -183,11 +183,13 @@ class InProcessSandboxInterface:
             if self._debug:
                 print(f"DEBUG: InProcessSandboxInterface executing Dana function call: {call_str}")
 
-            result = self._sandbox.eval(call_str, filename=f"<{func_name}>")
+            result = self._sandbox.execute_string(call_str, filename=f"<{func_name}>")
 
             if not result.success:
                 raise DanaCallError(f"Dana function call failed: {result.error}", original_error=result.error)
 
+            # The result may be an EagerPromise object - this is expected behavior
+            # Promise transparency will handle resolution when the result is accessed
             return result.result
 
         except Exception as e:
@@ -216,7 +218,7 @@ class InProcessSandboxInterface:
                 dana_code = f.read()
 
             # Execute the module through the sandbox
-            result = self._sandbox.eval(dana_code, filename=file_path)
+            result = self._sandbox.execute_string(dana_code, filename=file_path)
 
             if not result.success:
                 raise DanaCallError(f"Dana module execution failed: {result.error}", original_error=result.error)

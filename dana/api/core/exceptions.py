@@ -47,3 +47,57 @@ class CodeGenerationError(DanaAPIException):
     """Raised when code generation fails."""
 
     pass
+
+
+class DomainKnowledgeError(DanaAPIException):
+    """Raised when domain knowledge operations fail."""
+
+    pass
+
+
+class AgentGenerationError(DanaAPIException):
+    """Raised when agent generation fails."""
+
+    pass
+
+
+class LLMServiceError(DanaAPIException):
+    """Raised when LLM service operations fail."""
+
+    pass
+
+
+class ConfigurationError(DanaAPIException):
+    """Raised when configuration is invalid."""
+
+    pass
+
+
+class AuthenticationError(DanaAPIException):
+    """Raised when authentication fails."""
+
+    pass
+
+
+class AuthorizationError(DanaAPIException):
+    """Raised when authorization fails."""
+
+    pass
+
+
+class RateLimitError(DanaAPIException):
+    """Raised when rate limit is exceeded."""
+
+    pass
+
+
+class TimeoutError(DanaAPIException):
+    """Raised when operations timeout."""
+
+    pass
+
+
+class NetworkError(DanaAPIException):
+    """Raised when network operations fail."""
+
+    pass

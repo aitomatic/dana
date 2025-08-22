@@ -19,6 +19,39 @@
       "args": ["${file}", "${input:danaArgs}"],
       "cwd": "${fileDirname}",
       "console": "integratedTerminal"
+    },
+    {
+      "name" : "Debug Dana File",
+      "type": "python",
+      "request": "launch",
+      "module": "dana.core.cli.dana",
+      "args": ["${file}"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
+    },
+    {
+      "name" : "Debug Dana Backend",
+      "type": "python",
+      "request": "launch",
+      "module": "dana.core.cli.dana",
+      "args": ["start"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
+    }, 
+    {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
     }
   ]
 }
