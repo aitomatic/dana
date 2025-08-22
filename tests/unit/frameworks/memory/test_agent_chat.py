@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_instance import AgentInstance, AgentType
+from dana.core.builtin_types.agent_system import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -41,8 +41,8 @@ class TestAgentChat(unittest.TestCase):
         """Clean up test cases."""
         self.init_patcher.stop()
         # Clean up temp files
-        import shutil
         import os
+        import shutil
 
         # Clean up any temporary files created by ConversationMemory
         if hasattr(self, "memory_dir") and self.memory_dir.exists():

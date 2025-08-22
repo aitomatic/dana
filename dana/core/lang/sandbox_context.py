@@ -28,11 +28,11 @@ from dana.core.concurrency.promise_limiter import get_global_promise_limiter
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
-    from dana.agent import AgentInstance
+    from dana.core.builtin_types.agent_system import AgentInstance
+    from dana.core.builtin_types.resource import ResourceInstance
+    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-    from dana.core.resource import ResourceInstance
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class ExecutionStatus(Enum):

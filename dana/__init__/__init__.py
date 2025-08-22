@@ -38,12 +38,17 @@ from .init_libs import initialize_library_system
 
 initialize_library_system()
 
-# 7. Integration System - Set up integration bridges
+# 7. FSM System - Initialize FSM struct type
+from .init_fsm import initialize_fsm_system
+
+initialize_fsm_system()
+
+# 8. Integration System - Set up integration bridges
 from .init_integrations import initialize_integration_system
 
 initialize_integration_system()
 
-# 8. Runtime System - Initialize Parser, Interpreter, and Sandbox
+# 9. Runtime System - Initialize Parser, Interpreter, and Sandbox
 from .init_runtime import initialize_runtime_system
 
 initialize_runtime_system()

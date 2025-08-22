@@ -69,7 +69,7 @@ except_spec: exception_type ["as" NAME] | "as" NAME
 exception_type: expr
 
 with_stmt: "with" (with_context_manager | NAME "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
-definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT) NAME ":" [COMMENT] struct_block -> definition
+definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT | INTERFACE | WORKFLOW) NAME ":" [COMMENT] definition_block -> definition
 singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
 
 docstring: MULTILINE_STRING _NL
@@ -78,6 +78,19 @@ fields_and_functions: (field | function_def | sync_function_def)+
 field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
 
 struct_block: _NL _INDENT [docstring] fields_and_functions _DEDENT
+
+// Interface-specific block structure
+interface_block: _NL _INDENT [docstring] interface_members _DEDENT
+
+interface_members: interface_member+
+interface_member: interface_method | embedded_interface | interface_comment
+
+// Interface methods include both behavioral methods and property accessors
+interface_method: NAME "(" [parameters] ")" ["->" basic_type] [COMMENT] _NL
+embedded_interface: NAME [COMMENT] _NL  // For interface embedding
+interface_comment: COMMENT _NL  // Allow standalone comments in interface blocks
+
+definition_block: struct_block | interface_block
 
 singleton_agent_block: _NL _INDENT [docstring] [singleton_agent_fields] _DEDENT
 singleton_agent_fields: singleton_agent_field+
@@ -158,6 +171,8 @@ ASSERT.2: "assert"
 RESOURCE.2: "resource"
 AGENT.2: "agent"
 AGENT_BLUEPRINT.2: "agent_blueprint"
+INTERFACE.2: "interface"
+WORKFLOW.2: "workflow"
 AS.2: "as"
 PRIVATE.2: "private"
 PUBLIC.2: "public"
@@ -348,7 +363,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|workflow|interface|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
