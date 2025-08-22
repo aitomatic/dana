@@ -45,8 +45,8 @@ class GlobalRegistry:
         # Module registry (complex multi-storage)
         self.modules = ModuleRegistry()
 
-        # Function registry (simple key-value storage)
-        self.functions = FunctionRegistry()
+        # Function registry (simple key-value storage) with delegation to struct_functions
+        self.functions = FunctionRegistry(struct_function_registry=self.struct_functions)
 
         # Agent instance registry
         self.agents = AgentRegistry()
@@ -59,7 +59,7 @@ class GlobalRegistry:
 
     def clear_all(self) -> None:
         """Clear all registries (for testing)."""
-        self.types.clear()
+        self.types.clear_instance()
         self.struct_functions.clear()
         self.modules.clear()
         self.functions.clear()
@@ -81,6 +81,10 @@ class GlobalRegistry:
         """Register a struct type."""
         self.types.register_struct_type(struct_type)
 
+    def register_interface_type(self, interface_type: Any) -> None:
+        """Register an interface type."""
+        self.types.register_interface_type(interface_type)
+
     def get_agent_type(self, name: str) -> Any:
         """Get an agent type by name."""
         return self.types.get_agent_type(name)
@@ -92,6 +96,10 @@ class GlobalRegistry:
     def get_struct_type(self, name: str) -> Any:
         """Get a struct type by name."""
         return self.types.get_struct_type(name)
+
+    def get_interface_type(self, name: str) -> Any:
+        """Get an interface type by name."""
+        return self.types.get_interface_type(name)
 
     # === Struct Function Registration Convenience Methods ===
 

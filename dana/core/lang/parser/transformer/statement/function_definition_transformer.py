@@ -16,17 +16,16 @@ from lark import Token, Tree
 from dana.common.exceptions import ParseError
 from dana.core.lang.ast import (
     AgentDefinition,
-    AgentField,
     Decorator,
     FunctionDefinition,
     Identifier,
-    MethodDefinition,
+    InterfaceDefinition,
+    InterfaceMethod,
     Parameter,
     ResourceDefinition,
-    ResourceField,
-    ResourceMethod,
     StructDefinition,
     StructField,
+    TypedParameter,
     TypeHint,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -47,14 +46,50 @@ class FunctionDefinitionTransformer(BaseTransformer):
     # === Function Definition ===
 
     def function_def(self, items):
-        """Transform a function definition rule into a FunctionDefinition node."""
+        """Transform a unified function definition rule into a FunctionDefinition node.
+
+        Grammar: function_def: [decorators] function_header [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+        """
+        # Filter out None values and Comments
         relevant_items = self.main_transformer._filter_relevant_items(items)
 
         if len(relevant_items) < 2:
             raise ValueError(f"Function definition must have at least a name and body, got {len(relevant_items)} items")
 
-        # Extract decorators (if present) and function name
-        decorators, func_name_token, current_index = self._extract_decorators_and_name(relevant_items)
+        current_index = 0
+        decorators = []
+        is_sync = False
+
+        # Check for decorators
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            first_item = relevant_items[current_index]
+            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
+                decorators = first_item
+                current_index += 1
+
+        # Extract receiver if present
+        receiver = None
+        if (
+            current_index < len(relevant_items)
+            and hasattr(relevant_items[current_index], "data")
+            and relevant_items[current_index].data == "receiver_spec"
+        ):
+            receiver_tree = relevant_items[current_index]
+            if receiver_tree.children:
+                receiver_param = receiver_tree.children[0]
+                # Check if receiver_param is already a transformed Parameter object
+                if isinstance(receiver_param, Parameter):
+                    receiver = receiver_param
+                elif hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
+                    receiver = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
+            current_index += 1
+
+        # Extract function name
+        func_name_token = relevant_items[current_index]
+        if not (isinstance(func_name_token, Token) and func_name_token.type == "NAME"):
+            raise ValueError(f"Expected function name token, got {func_name_token}")
+        func_name = func_name_token.value
+        current_index += 1
 
         # Resolve parameters using simplified logic
         parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
@@ -65,11 +100,87 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # Extract function body
         block_items = self._extract_function_body(relevant_items, current_index)
 
-        # Handle function name extraction
-        if isinstance(func_name_token, Token) and func_name_token.type == "NAME":
-            func_name = func_name_token.value
-        else:
+        location = self.main_transformer.create_location(func_name_token)
+
+        return FunctionDefinition(
+            name=Identifier(name=func_name, location=location),
+            parameters=parameters,
+            body=block_items,
+            return_type=return_type,
+            decorators=decorators,
+            is_sync=is_sync,
+            receiver=receiver,
+            location=location,
+        )
+
+    def sync_function_def(self, items):
+        """Transform a sync function definition rule into a FunctionDefinition node.
+
+        This is the same as function_def but with is_sync=True.
+        """
+        # Call the regular function_def method but set is_sync=True
+        result = self.function_def(items)
+        if isinstance(result, FunctionDefinition):
+            result.is_sync = True
+        return result
+
+    def function_header(self, items):
+        """Transform a function_header rule into a list indicating sync status.
+
+        Grammar: function_header: "def" | "sync" "def"
+        """
+        # Return a list with the tokens to indicate sync status
+        return items
+
+    def unified_function_def(self, items):
+        """Transform a unified function definition rule into a FunctionDefinition node."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+
+        if len(relevant_items) < 2:
+            raise ValueError(f"Function definition must have at least a name and body, got {len(relevant_items)} items")
+
+        current_index = 0
+        decorators = []
+
+        # Check for decorators
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            first_item = relevant_items[current_index]
+            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
+                decorators = first_item
+                current_index += 1
+
+        # Extract receiver if present
+        receiver = None
+        if (
+            current_index < len(relevant_items)
+            and hasattr(relevant_items[current_index], "data")
+            and relevant_items[current_index].data == "receiver_spec"
+        ):
+            receiver_tree = relevant_items[current_index]
+            if receiver_tree.children:
+                receiver_param = receiver_tree.children[0]
+                # Check if receiver_param is already a transformed Parameter object
+                if isinstance(receiver_param, Parameter):
+                    receiver = receiver_param
+                elif hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
+                    receiver = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
+            current_index += 1
+
+        # Extract function name
+        func_name_token = relevant_items[current_index]
+        if not (isinstance(func_name_token, Token) and func_name_token.type == "NAME"):
             raise ValueError(f"Expected function name token, got {func_name_token}")
+        func_name = func_name_token.value
+        current_index += 1
+
+        # Resolve parameters using simplified logic
+        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+
+        # Extract return type
+        return_type, current_index = self._extract_return_type(relevant_items, current_index)
+
+        # Extract function body
+        block_items = self._extract_function_body(relevant_items, current_index)
 
         location = self.main_transformer.create_location(func_name_token)
 
@@ -79,6 +190,8 @@ class FunctionDefinitionTransformer(BaseTransformer):
             body=block_items,
             return_type=return_type,
             decorators=decorators,
+            is_sync=False,
+            receiver=receiver,
             location=location,
         )
 
@@ -141,13 +254,14 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         location = self.main_transformer.create_location(method_name_token)
 
-        return MethodDefinition(
-            receiver=receiver_param,
+        return FunctionDefinition(
             name=Identifier(name=method_name, location=location),
             parameters=parameters,
             body=block_items,
             return_type=return_type,
             decorators=decorators,
+            is_sync=False,  # Methods don't support sync keyword yet
+            receiver=receiver_param,
             location=location,
         )
 
@@ -163,14 +277,24 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 decorators = first_item
                 current_index += 1
 
+        # Check for sync keyword
+        is_sync = False
+        if (
+            current_index < len(relevant_items)
+            and isinstance(relevant_items[current_index], Token)
+            and relevant_items[current_index].type == "SYNC"
+        ):
+            is_sync = True
+            current_index += 1
+
         # The next item should be the function name
         if current_index >= len(relevant_items):
-            raise ValueError("Expected function name after decorators")
+            raise ValueError("Expected function name after decorators and sync keyword")
 
         func_name_token = relevant_items[current_index]
         current_index += 1
 
-        return decorators, func_name_token, current_index
+        return decorators, func_name_token, current_index, is_sync
 
     def _resolve_function_parameters(self, relevant_items, current_index):
         """Resolve function parameters from relevant items."""
@@ -365,40 +489,54 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
     # === Struct Definitions ===
 
-    def struct_definition(self, items):
-        """Transform a struct definition rule into a StructDefinition node."""
-        name_token = items[0]
-        # items are [NAME, optional COMMENT, struct_block]
-        struct_block = items[2] if len(items) > 2 else items[1]
+    def definition(self, items):
+        """Transform a unified definition rule into appropriate AST node."""
 
-        fields = []
-        docstring = None
+        # Extract keyword, name, optional parent, and block
+        keyword_token = items[0]  # STRUCT, RESOURCE, AGENT_BLUEPRINT, or INTERFACE
+        name_token = items[1]
+        definition_block = None
 
-        if hasattr(struct_block, "data") and struct_block.data == "struct_block":
-            # The children of struct_block are NL, INDENT, [docstring], struct_fields, DEDENT...
-            for child in struct_block.children:
-                if hasattr(child, "data") and child.data == "docstring":
-                    # Extract docstring content
-                    docstring = child.children[0].value.strip('"')
-                elif hasattr(child, "data") and child.data == "struct_fields":
-                    struct_fields_tree = child
-                    fields = [field for field in struct_fields_tree.children if isinstance(field, StructField)]
+        # Find the definition_block - it should be a dict (transformed) or Tree
+        for item in items[2:]:  # Skip keyword and name
+            if item is not None and (
+                isinstance(item, dict) or (hasattr(item, "data") and item.data in ["struct_block", "interface_block", "definition_block"])
+            ):
+                definition_block = item
+                break
 
-        return StructDefinition(name=name_token.value, fields=fields, docstring=docstring)
+        if keyword_token.value == "struct":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
+            return StructDefinition(name=name_token.value, fields=fields, docstring=docstring)
+        elif keyword_token.value == "resource":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
+            return ResourceDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
+        elif keyword_token.value == "agent_blueprint":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
+            return AgentDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
+        elif keyword_token.value == "interface":
+            methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
+            return InterfaceDefinition(name=name_token.value, methods=methods, embedded_interfaces=embedded_interfaces, docstring=docstring)
+        else:
+            raise ValueError(f"Unknown definition keyword: {keyword_token.value}")
 
-    def struct_field(self, items):
-        """Transform a struct field rule into a StructField node."""
+    def field(self, items):
+        """Transform a field rule into a StructField node."""
 
         name_token = items[0]
         type_hint_node = items[1]
 
         field_name = name_token.value
 
-        # The type_hint_node should already be a TypeHint object
-        # from the 'basic_type' rule transformation.
+        # The type_hint_node might be a raw Tree that needs transformation
+        # or it might already be a TypeHint object from the 'basic_type' rule transformation.
         if not isinstance(type_hint_node, TypeHint):
-            # Fallback if it's a token
-            if isinstance(type_hint_node, Token):
+            # Check if it's a Tree that needs to be transformed
+            if hasattr(type_hint_node, "data") and type_hint_node.data == "basic_type":
+                # Transform the basic_type Tree using the main transformer
+                type_hint = self.main_transformer.basic_type(type_hint_node.children)
+            elif isinstance(type_hint_node, Token):
+                # Fallback if it's a token
                 type_hint = TypeHint(name=type_hint_node.value)
             else:
                 # This would be an unexpected state
@@ -408,7 +546,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         # Handle optional default value
         default_value = None
-        if len(items) > 2:
+        if len(items) > 2 and items[2] is not None:
             # We have a default value expression
             default_value = self.main_transformer.expression_transformer.transform(items[2])
 
@@ -424,77 +562,22 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         # === Agent Definitions ===
 
-    def agent_definition(self, items):
-        """Transform an agent blueprint definition rule into an AgentDefinition node."""
-        # Items may include a leading keyword token (AGENT_BLUEPRINT)
-        from lark import Token, Tree
-
-        name_token = None
-        agent_block = None
-
-        for it in items:
-            if isinstance(it, Token) and it.type == "NAME" and name_token is None:
-                name_token = it
-            elif isinstance(it, Tree) and getattr(it, "data", None) == "agent_block":
-                agent_block = it
-
-        if name_token is None or agent_block is None:
-            # Fallback to previous positional behavior
-            name_token = items[0]
-            agent_block = items[2] if len(items) > 2 else items[1]
-
-        fields = []
-        if hasattr(agent_block, "data") and agent_block.data == "agent_block":
-            agent_fields_tree = None
-            for child in agent_block.children:
-                if hasattr(child, "data") and child.data == "agent_fields":
-                    agent_fields_tree = child
-                    break
-            if agent_fields_tree:
-                fields = [child for child in agent_fields_tree.children if isinstance(child, AgentField)]
-
-        return AgentDefinition(name=name_token.value, fields=fields)
-
     def singleton_agent_definition(self, items):
-        """Transform a singleton agent definition into a SingletonAgentDefinition node."""
-        from lark import Token, Tree
-
-        blueprint_name = None
-        overrides_block = None
-
-        for it in items:
-            if isinstance(it, Token) and it.type == "NAME" and blueprint_name is None:
-                # This is the blueprint name (first NAME after 'agent (')
-                blueprint_name = it.value
-            elif isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
-                overrides_block = it
-
-        overrides = []
-        if overrides_block is not None:
-            for child in overrides_block.children:
-                if hasattr(child, "data") and child.data == "singleton_agent_fields":
-                    for f in child.children:
-                        from dana.core.lang.ast import SingletonAgentField
-
-                        if isinstance(f, SingletonAgentField):
-                            overrides.append(f)
-
-        from dana.core.lang.ast import SingletonAgentDefinition
-
-        assert blueprint_name is not None
-        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=None)
-
-    def singleton_agent_definition_with_alias(self, items):
-        """Transform alias-based singleton with block: agent Alias(Blueprint): ..."""
+        """Transform a unified singleton agent definition into a SingletonAgentDefinition node."""
         from lark import Token, Tree
 
         alias_name = None
         blueprint_name = None
         overrides_block = None
 
-        # Expect order: AGENT, Alias NAME, '(', Blueprint NAME, ')', ':', block
+        # Parse items: AGENT, [alias_name], '(', blueprint_name, ')', ':', block
         name_tokens = [it for it in items if isinstance(it, Token) and it.type == "NAME"]
-        if len(name_tokens) >= 2:
+
+        if len(name_tokens) == 1:
+            # No alias: agent(Blueprint): ...
+            blueprint_name = name_tokens[0].value
+        elif len(name_tokens) == 2:
+            # With alias: agent Alias(Blueprint): ...
             alias_name = name_tokens[0].value
             blueprint_name = name_tokens[1].value
 
@@ -503,9 +586,12 @@ class FunctionDefinitionTransformer(BaseTransformer):
                 overrides_block = it
 
         overrides = []
+        docstring = None
         if overrides_block is not None:
             for child in overrides_block.children:
-                if hasattr(child, "data") and child.data == "singleton_agent_fields":
+                if hasattr(child, "data") and child.data == "docstring":
+                    docstring = child.children[0].value.strip('"')
+                elif hasattr(child, "data") and child.data == "singleton_agent_fields":
                     for f in child.children:
                         from dana.core.lang.ast import SingletonAgentField
 
@@ -515,9 +601,9 @@ class FunctionDefinitionTransformer(BaseTransformer):
         from dana.core.lang.ast import SingletonAgentDefinition
 
         assert blueprint_name is not None
-        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=alias_name)
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=alias_name, docstring=docstring)
 
-    def singleton_agent_definition_with_alias_simple(self, items):
+    def agent_alias_def(self, items):
         """Transform alias-based singleton without block: agent Alias(Blueprint)"""
         from lark import Token
 
@@ -538,7 +624,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         return SingletonAgentField(name=name_token.value, value=value_expr)
 
-    def base_agent_singleton_definition(self, items):
+    def agent_base_def(self, items):
         """Transform `agent Name` into a BaseAgentSingletonDefinition AST node."""
         from lark import Token
 
@@ -550,140 +636,297 @@ class FunctionDefinitionTransformer(BaseTransformer):
         alias = alias_token.value
         return BaseAgentSingletonDefinition(alias_name=alias)
 
-    def agent_field(self, items):
-        """Transform an agent field rule into an AgentField node.
+    def fields_and_functions(self, items):
+        """Transform a fields_and_functions rule into a list of StructField and FunctionDefinition objects."""
+        result = []
+        for item in items:
+            if item is not None:
+                # The item should already be transformed by the individual field/function rules
+                result.append(item)
+        return result
 
-        Grammar: agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
-        """
-        # Validate minimum required parts (name and type)
-        if len(items) < 2:
-            raise ValueError(f"Agent field must include a name and a type, got {len(items)} item(s): {items}")
+    def struct_block(self, items):
+        """Transform a struct_block rule into a structured format for parsing."""
+        # The struct_block contains: [docstring?] fields_and_functions
+        docstring = None
+        fields_and_functions = None
 
-        name_token = items[0]
-        type_hint_node = items[1]
+        for item in items:
+            if item is not None:
+                if hasattr(item, "data") and item.data == "docstring":
+                    docstring = item.children[0].value.strip('"') if item.children else None
+                elif isinstance(item, list):
+                    # This should be the transformed fields_and_functions
+                    fields_and_functions = item
+                else:
+                    # If it's still a tree, it might be fields_and_functions
+                    fields_and_functions = item
 
-        # Normalize type hint to TypeHint
-        if not isinstance(type_hint_node, TypeHint):
-            if isinstance(type_hint_node, Token):
-                type_hint = TypeHint(name=type_hint_node.value)
-            else:
-                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
-        else:
-            type_hint = type_hint_node
-
-        # Optional default value expression (third positional item before any COMMENT)
-        default_value = None
-        if len(items) > 2:
-            default_candidate = items[2]
-            # Transform only if it looks like an expression tree/token, otherwise ignore
-            try:
-                default_value = self.main_transformer.expression_transformer.transform(default_candidate)
-            except Exception:
-                # If it's a trailing comment token or something non-expr, ignore gracefully
-                default_value = None
-
-        return AgentField(name=name_token.value, type_hint=type_hint, default_value=default_value)
+        return {"docstring": docstring, "fields_and_functions": fields_and_functions or []}
 
     # === Resource Definitions ===
 
-    def resource_definition(self, items):
-        """Transform a resource definition rule into a ResourceDefinition node."""
-        name_token = None
-        parent_name_token = None
-        resource_block = None
+    def _parse_struct_block(self, struct_block):
+        """Parse a struct block to extract fields, functions, and docstring."""
+        fields = []
+        methods = []
+        docstring = None
 
-        # Parse items to extract name, optional parent, and block
-        for _i, item in enumerate(items):
-            if isinstance(item, Token) and item.type == "NAME":
-                if name_token is None:
-                    name_token = item
-                elif parent_name_token is None:
-                    parent_name_token = item
-            elif hasattr(item, "data") and item.data == "resource_block":
-                resource_block = item
+        if struct_block is None:
+            return fields, methods, docstring
 
-        if name_token is None:
-            raise ValueError("Resource definition must have a name")
+        # Handle the case where definition_block is a Tree with definition_block data
+        if hasattr(struct_block, "data") and struct_block.data == "definition_block":
+            # Extract the dict from the definition_block Tree
+            if struct_block.children and isinstance(struct_block.children[0], dict):
+                struct_dict = struct_block.children[0]
+                docstring = struct_dict.get("docstring")
+                fields_and_functions = struct_dict.get("fields_and_functions", [])
 
-        parent_name = parent_name_token.value if parent_name_token else None
-        fields, methods, docstring = self._parse_resource_block(resource_block)
+                for item in fields_and_functions:
+                    if isinstance(item, StructField):
+                        fields.append(item)
+                    elif isinstance(item, FunctionDefinition):
+                        methods.append(item)
+                return fields, methods, docstring
 
-        return ResourceDefinition(name=name_token.value, parent_name=parent_name, fields=fields, methods=methods, docstring=docstring)
+        # Handle transformed dict format
+        if isinstance(struct_block, dict):
+            docstring = struct_block.get("docstring")
+            fields_and_functions = struct_block.get("fields_and_functions", [])
 
-    def resource_field(self, items):
-        """Transform a resource field rule into a ResourceField node."""
-        if len(items) < 2:
-            raise ValueError(f"Resource field must have name and type, got {len(items)} items")
+            for item in fields_and_functions:
+                if isinstance(item, StructField):
+                    fields.append(item)
+                elif isinstance(item, FunctionDefinition):
+                    methods.append(item)
+            return fields, methods, docstring
 
-        name_token = items[0]
-        type_hint_node = items[1]
+        # Handle Tree format
+        if hasattr(struct_block, "data") and struct_block.data == "struct_block":
+            for child in struct_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip('"')
+                    elif child.data == "fields_and_functions":
+                        # The fields_and_functions rule should be transformed into a list
+                        # by the fields_and_functions method
+                        if hasattr(child, "children"):
+                            for item in child.children:
+                                if isinstance(item, StructField):
+                                    fields.append(item)
+                                elif isinstance(item, FunctionDefinition):
+                                    methods.append(item)
+                        # If child is already transformed (a list), use it directly
+                        elif isinstance(child, list):
+                            for item in child:
+                                if isinstance(item, StructField):
+                                    fields.append(item)
+                                elif isinstance(item, FunctionDefinition):
+                                    methods.append(item)
 
-        # Normalize type hint
-        if not isinstance(type_hint_node, TypeHint):
-            if isinstance(type_hint_node, Token):
-                type_hint = TypeHint(name=type_hint_node.value)
-            else:
-                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
-        else:
-            type_hint = type_hint_node
+        return fields, methods, docstring
 
-        # Handle optional default value
-        default_value = None
-        if len(items) > 2:
-            default_value = self.main_transformer.expression_transformer.transform(items[2])
+    def _parse_interface_block(self, interface_block):
+        """Parse an interface block into methods, embedded interfaces, and docstring."""
+
+        methods = []
+        embedded_interfaces = []
+        docstring = None
+
+        if interface_block is None:
+            return methods, embedded_interfaces, docstring
+
+        # Handle the case where definition_block is a Tree with definition_block data
+        if hasattr(interface_block, "data") and interface_block.data == "definition_block":
+            # Extract the dict from the Tree
+            if interface_block.children and isinstance(interface_block.children[0], dict):
+                block_dict = interface_block.children[0]
+                methods = block_dict.get("methods", [])
+                embedded_interfaces = block_dict.get("embedded_interfaces", [])
+                docstring = block_dict.get("docstring", None)
+                return methods, embedded_interfaces, docstring
+
+        # Handle transformed dict format
+        if isinstance(interface_block, dict):
+            if "docstring" in interface_block:
+                docstring = interface_block["docstring"]
+            if "methods" in interface_block:
+                methods = interface_block["methods"]
+            if "embedded_interfaces" in interface_block:
+                embedded_interfaces = interface_block["embedded_interfaces"]
+            return methods, embedded_interfaces, docstring
+
+        # Handle Tree format
+        if hasattr(interface_block, "children"):
+            for child in interface_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip("\"'")
+                    elif child.data == "interface_members":
+                        for member in child.children:
+                            if hasattr(member, "data"):
+                                if member.data == "interface_method":
+                                    method = self._parse_interface_method(member)
+                                    if method:
+                                        methods.append(method)
+                                elif member.data == "embedded_interface":
+                                    embedded_name = member.children[0].value
+                                    embedded_interfaces.append(embedded_name)
+
+        return methods, embedded_interfaces, docstring
+
+    def _parse_interface_method(self, method_tree):
+        """Parse an interface method tree into an InterfaceMethod node."""
+
+        if not hasattr(method_tree, "children") or not method_tree.children:
+            return None
+
+        # Extract method name
+        method_name = method_tree.children[0].value
+
+        # Extract parameters
+        parameters = []
+        return_type = None
+        comment = None
+
+        # Parse the method signature
+        for child in method_tree.children:
+            if hasattr(child, "data"):
+                if child.data == "parameters":
+                    for param_tree in child.children:
+                        if hasattr(param_tree, "data") and param_tree.data == "typed_parameter":
+                            param = self._parse_typed_parameter(param_tree)
+                            if param:
+                                parameters.append(param)
+                elif child.data == "basic_type":  # Return type
+                    return_type = self.main_transformer.basic_type(child.children)
 
         # Extract comment if present
+        for child in method_tree.children:
+            if hasattr(child, "type") and child.type == "COMMENT":
+                comment = child.value.lstrip("#").strip()
+                break
+
+        return InterfaceMethod(name=method_name, parameters=parameters, return_type=return_type, comment=comment)
+
+    def _parse_typed_parameter(self, param_tree):
+        """Parse a typed parameter tree into a TypedParameter node."""
+
+        if not hasattr(param_tree, "children") or not param_tree.children:
+            return None
+
+        # Extract parameter name
+        param_name = param_tree.children[0].value
+
+        # Extract type hint if present
+        type_hint = None
+        default_value = None
+
+        for child in param_tree.children[1:]:
+            if hasattr(child, "data") and child.data == "basic_type":
+                type_hint = self.main_transformer.basic_type(child.children)
+            elif hasattr(child, "data") and child.data == "expr":
+                default_value = self.main_transformer.expression_transformer.transform(child.children)
+
+        return TypedParameter(name=param_name, type_hint=type_hint, default_value=default_value)
+
+    # === Interface Block Parsing ===
+
+    def interface_block(self, items):
+        """Transform an interface block into a dict with methods, embedded interfaces, and docstring."""
+        methods = []
+        embedded_interfaces = []
+        docstring = None
+
+        for item in items:
+            if item is None:
+                continue
+            elif isinstance(item, list):
+                # This is likely the transformed interface_members list
+                for member in item:
+                    if isinstance(member, InterfaceMethod):
+                        methods.append(member)
+                    elif isinstance(member, str):
+                        # Embedded interface name
+                        embedded_interfaces.append(member)
+            elif hasattr(item, "data"):
+                if item.data == "docstring":
+                    docstring = item.children[0].value.strip("\"'")
+                elif item.data == "interface_members":
+                    for member in item.children:
+                        if hasattr(member, "data"):
+                            if member.data == "interface_method":
+                                method = self._parse_interface_method(member)
+                                if method:
+                                    methods.append(method)
+                            elif member.data == "embedded_interface":
+                                embedded_name = member.children[0].value
+                                embedded_interfaces.append(embedded_name)
+
+        return {"methods": methods, "embedded_interfaces": embedded_interfaces, "docstring": docstring}
+
+    def interface_members(self, items):
+        """Transform interface members into a list."""
+        return items
+
+    def interface_member(self, items):
+        """Transform an interface member (method or embedded interface) into the appropriate node."""
+        # This will be handled by the specific methods (interface_method or embedded_interface)
+        return items[0]
+
+    def interface_method(self, items):
+        """Transform an interface method into an InterfaceMethod node."""
+        return self._parse_interface_method_from_items(items)
+
+    def embedded_interface(self, items):
+        """Transform an embedded interface reference into a string."""
+        # Extract the interface name from the token
+        interface_name = items[0].value
+        return interface_name
+
+    def _parse_interface_method_from_items(self, items):
+        """Parse interface method from items list."""
+
+        # Extract method name
+        method_name = items[0].value
+
+        # Extract parameters
+        parameters = []
+        return_type = None
         comment = None
+
+        # Parse parameters if present - handle both Parameter and TypedParameter objects
+        if len(items) > 1 and isinstance(items[1], list):
+            param_list = items[1]
+            for param_item in param_list:
+                if isinstance(param_item, Parameter):
+                    # Convert Parameter to TypedParameter
+                    typed_param = TypedParameter(
+                        name=param_item.name,
+                        type_hint=param_item.type_hint,
+                        default_value=param_item.default_value,
+                        location=param_item.location,
+                    )
+                    parameters.append(typed_param)
+                elif hasattr(param_item, "data") and param_item.data == "typed_parameter":
+                    param = self._parse_typed_parameter(param_item)
+                    if param:
+                        parameters.append(param)
+
+        # Parse return type if present
+        for item in items:
+            if hasattr(item, "data") and item.data == "basic_type":
+                return_type = self.main_transformer.basic_type(item.children)
+                break
+            elif isinstance(item, TypeHint):
+                return_type = item
+                break
+
+        # Extract comment if present
         for item in items:
             if hasattr(item, "type") and item.type == "COMMENT":
                 comment = item.value.lstrip("#").strip()
                 break
 
-        return ResourceField(name=name_token.value, type_hint=type_hint, default_value=default_value, comment=comment)
-
-    def resource_method(self, items):
-        """Transform a resource method rule into a ResourceMethod node."""
-        relevant_items = self.main_transformer._filter_relevant_items(items)
-
-        if len(relevant_items) < 2:
-            raise ValueError(f"Resource method must have at least name and body, got {len(relevant_items)} items")
-
-        # Extract decorators and method name
-        decorators, method_name_token, current_index = self._extract_decorators_and_name(relevant_items)
-
-        # Resolve parameters
-        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
-
-        # Extract return type
-        return_type, current_index = self._extract_return_type(relevant_items, current_index)
-
-        # Extract method body
-        block_items = self._extract_function_body(relevant_items, current_index)
-
-        # Handle method name extraction
-        if isinstance(method_name_token, Token) and method_name_token.type == "NAME":
-            method_name = method_name_token.value
-        else:
-            raise ValueError(f"Expected method name token, got {method_name_token}")
-
-        return ResourceMethod(name=method_name, parameters=parameters, body=block_items, return_type=return_type, decorators=decorators)
-
-    def _parse_resource_block(self, resource_block):
-        """Parse a resource block to extract fields, methods, and docstring."""
-        fields = []
-        methods = []
-        docstring = None
-
-        if resource_block and hasattr(resource_block, "data") and resource_block.data == "resource_block":
-            for child in resource_block.children:
-                if hasattr(child, "data"):
-                    if child.data == "docstring":
-                        docstring = child.children[0].value.strip('"')
-                    elif child.data == "resource_fields_and_methods":
-                        for item in child.children:
-                            if isinstance(item, ResourceField):
-                                fields.append(item)
-                            elif isinstance(item, ResourceMethod):
-                                methods.append(item)
-
-        return fields, methods, docstring
+        return InterfaceMethod(name=method_name, parameters=parameters, return_type=return_type, comment=comment)

@@ -35,14 +35,11 @@ compound_stmt: if_stmt
              | while_stmt
              | for_stmt
              | function_def
-             | method_def
+             | sync_function_def
              | try_stmt
              | with_stmt
-             | struct_def
-             | resource_def
-             | agent_blueprint_def
+             | definition
              | singleton_agent_def
-             | singleton_agent_alias_def
 
 block: _NL _INDENT statements _DEDENT
 
@@ -60,8 +57,10 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
 for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
-function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
-method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+function_def: [decorators] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+sync_function_def: [decorators] "sync" "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+receiver_spec: "(" typed_parameter ")"
+
 try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
 
 // Exception handling clauses
@@ -69,28 +68,31 @@ except_clause: "except" [except_spec] ":" [COMMENT] block
 except_spec: exception_type ["as" NAME] | "as" NAME
 exception_type: expr
 
-with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
-struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
-resource_def: RESOURCE NAME ["(" NAME ")"] ":" [COMMENT] resource_block -> resource_definition
-agent_blueprint_def: AGENT_BLUEPRINT NAME ":" [COMMENT] agent_block -> agent_definition
-singleton_agent_def: AGENT "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
-singleton_agent_alias_def: AGENT NAME "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition_with_alias
+with_stmt: "with" (with_context_manager | NAME "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
+definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT | INTERFACE) NAME ":" [COMMENT] definition_block -> definition
+singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
 
-struct_block: _NL _INDENT [docstring] struct_fields _DEDENT
 docstring: MULTILINE_STRING _NL
-struct_fields: struct_field+
-struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
+fields_and_functions: (field | function_def | sync_function_def)+
 
-resource_block: _NL _INDENT [docstring] resource_fields_and_methods _DEDENT
-resource_fields_and_methods: (resource_field | resource_method)+
-resource_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> resource_field
-resource_method: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block -> resource_method
+field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
 
-agent_block: _NL _INDENT agent_fields _DEDENT
-agent_fields: agent_field+
-agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> agent_field
+struct_block: _NL _INDENT [docstring] fields_and_functions _DEDENT
 
-singleton_agent_block: _NL _INDENT [singleton_agent_fields] _DEDENT
+// Interface-specific block structure
+interface_block: _NL _INDENT [docstring] interface_members _DEDENT
+
+interface_members: interface_member+
+interface_member: interface_method | embedded_interface | interface_comment
+
+// Interface methods include both behavioral methods and property accessors
+interface_method: NAME "(" [parameters] ")" ["->" basic_type] [COMMENT] _NL
+embedded_interface: NAME [COMMENT] _NL  // For interface embedding
+interface_comment: COMMENT _NL  // Allow standalone comments in interface blocks
+
+definition_block: struct_block | interface_block
+
+singleton_agent_block: _NL _INDENT [docstring] [singleton_agent_fields] _DEDENT
 singleton_agent_fields: singleton_agent_field+
 singleton_agent_field: NAME "=" expr [COMMENT] _NL -> singleton_agent_field
 
@@ -137,7 +139,6 @@ simple_stmt: assignment
            | declarative_function_assignment
            | expr_stmt
            | return_stmt
-           | deliver_stmt
            | break_stmt
            | continue_stmt
            | pass_stmt
@@ -145,23 +146,14 @@ simple_stmt: assignment
            | raise_stmt
            | assert_stmt
            | comment_stmt
-           | use_stmt
-           | agent_stmt
-           | agent_pool_stmt
-           | singleton_agent_alias_simple
-           | base_agent_simple
-
-// ===== STATEMENTS THAT RETURN OBJECT =====
-return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
+           | agent_alias
+           | agent_base
 
 comment_stmt: COMMENT
 
-// Use statement for external resources (e.g., MCP servers)
-use_stmt: USE "(" [mixed_arguments] ")"
-agent_stmt: AGENT "(" [mixed_arguments] ")"
-agent_pool_stmt: AGENT_POOL "(" [mixed_arguments] ")"
-singleton_agent_alias_simple: AGENT NAME "(" NAME ")" -> singleton_agent_definition_with_alias_simple
-base_agent_simple: AGENT NAME -> base_agent_singleton_definition
+// Agent statements
+agent_alias: AGENT NAME "(" NAME ")" -> agent_alias_def
+agent_base: AGENT NAME -> agent_base_def
 
 // Keywords
 EXPORT.2: "export"
@@ -170,17 +162,16 @@ FROM.2: "from"
 DEF.2: "def"
 STRUCT.2: "struct"
 RETURN.2: "return"
-DELIVER.2: "deliver"
+SYNC.2: "sync"
 PASS.2: "pass"
 BREAK.2: "break"
 CONTINUE.2: "continue"
 RAISE.2: "raise"
 ASSERT.2: "assert"
-USE.0: "use"
 RESOURCE.2: "resource"
 AGENT.2: "agent"
 AGENT_BLUEPRINT.2: "agent_blueprint"
-AGENT_POOL.2: "agent_pool"
+INTERFACE.4: "interface"
 AS.2: "as"
 PRIVATE.2: "private"
 PUBLIC.2: "public"
@@ -188,14 +179,11 @@ LOCAL.2: "local"
 SYSTEM.2: "system"
 
 // Export statement for module exports
-export_stmt: "export" NAME -> export_list
+export_stmt: "export" export_names -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
-typed_assignment: target ":" basic_type "=" expr [COMMENT]
-simple_assignment: target "=" expr [COMMENT]
-function_call_assignment: target "=" return_object_stmt [COMMENT]
+assignment: target [":" basic_type] "=" expr [COMMENT] | compound_assignment
 declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
 compound_assignment: target compound_op expr
 
@@ -203,7 +191,6 @@ compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
-deliver_stmt: "deliver" [expr]
 break_stmt: "break"
 continue_stmt: "continue"
 pass_stmt: "pass"
@@ -375,7 +362,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|if|else|elif|while|for|def|struct|resource|try|except|finally|raise|assert|import|from|with|use|agent|agent_blueprint|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING

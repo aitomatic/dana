@@ -1,0 +1,5 @@
+struct FileLoader:
+    name : str = "FileLoader"
+
+def (loader: FileLoader) list_files(path: str):
+    return ["file1.txt", "file2.txt", "file3.txt"]

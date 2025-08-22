@@ -12,12 +12,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructType,
 )
-from dana.registry import STRUCT_FUNCTION_REGISTRY, TYPE_REGISTRY
+from dana.registry import FUNCTION_REGISTRY, TYPE_REGISTRY
 
 
 class TestStructDelegation:
@@ -26,12 +26,12 @@ class TestStructDelegation:
     def setup_method(self):
         """Reset registries before each test."""
         TYPE_REGISTRY.clear()
-        STRUCT_FUNCTION_REGISTRY.clear()
+        FUNCTION_REGISTRY.clear()
 
     def teardown_method(self):
         """Reset registries after each test."""
         TYPE_REGISTRY.clear()
-        STRUCT_FUNCTION_REGISTRY.clear()
+        FUNCTION_REGISTRY.clear()
 
     def test_delegatable_fields_identification(self):
         """Test that underscore-prefixed fields are identified as delegatable."""
@@ -181,7 +181,7 @@ class TestStructDelegation:
         def embedded_method(instance, *args, **kwargs):
             return f"method called on {instance.data} with args: {args}"
 
-        STRUCT_FUNCTION_REGISTRY.register_method("EmbeddedStruct", "test_method", embedded_method)
+        FUNCTION_REGISTRY.register_struct_function("EmbeddedStruct", "test_method", embedded_method)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})

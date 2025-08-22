@@ -108,6 +108,9 @@ def test_na_file(na_file):
         "test_lambda_expressions.na",  # Disable type checking for lambda expressions (type checker unsupported expression)
         "test_set_comprehensions.na",  # Disable type checking for set comprehensions (type checker for loop issue)
         "test_lambda_struct_receivers.na",  # Disable type checking for lambda struct receivers (type checker scoping issue)
+        "test_interface_basic.na",  # Disable type checking for interface tests
+        "test_interface_validation.na",  # Disable type checking for interface tests
+        "test_interface_integration.na",  # Disable type checking for interface tests
     ]
     disable_type_check = filename in enhanced_coercion_tests
 
@@ -117,12 +120,7 @@ def test_na_file(na_file):
     # Initialize interpreter first (so real functions get registered)
     interpreter = DanaInterpreter()
 
-    # Use environment variable to enable mocking for reason function if needed
-    original_mock_env = None
-    if "reason(" in program_text:
-        original_mock_env = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "true"
-
+    # No longer overriding DANA_MOCK_LLM - let environment control it
     result = None
     exception_info = None
     try:
@@ -133,13 +131,6 @@ def test_na_file(na_file):
         import traceback
 
         exception_info += "\n" + traceback.format_exc()
-    finally:
-        # Restore original environment
-        if "reason(" in program_text:
-            if original_mock_env is None:
-                os.environ.pop("DANA_MOCK_LLM", None)
-            else:
-                os.environ["DANA_MOCK_LLM"] = original_mock_env
 
     # Check if execution failed with an exception
     if exception_info:

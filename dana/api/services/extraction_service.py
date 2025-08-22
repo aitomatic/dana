@@ -7,8 +7,8 @@ This module provides business logic for handling extracted data storage and rela
 import logging
 import os
 import json
-from datetime import datetime, timezone
-from typing import Any, Dict
+from datetime import datetime, UTC
+from typing import Any
 
 from dana.api.core.models import Document
 from dana.api.core.schemas import DocumentRead
@@ -33,11 +33,7 @@ class ExtractionService:
         os.makedirs(self.extract_data_directory, exist_ok=True)
 
     async def save_extraction_json(
-        self,
-        original_filename: str,
-        extraction_results: Dict[str, Any],
-        source_document_id: int,
-        db_session
+        self, original_filename: str, extraction_results: dict[str, Any], source_document_id: int, db_session
     ) -> DocumentRead:
         """
         Save extraction results as JSON file and create database relationship.
@@ -64,7 +60,7 @@ class ExtractionService:
             # Handle file conflicts by adding timestamp if needed
             json_path = os.path.join(self.extract_data_directory, json_filename)
             if os.path.exists(json_path):
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                 json_filename = f"{base_name}_extraction_results_{timestamp}.json"
                 json_path = os.path.join(self.extract_data_directory, json_filename)
 
@@ -72,10 +68,10 @@ class ExtractionService:
             enhanced_results = {
                 "original_filename": original_filename,
                 "source_document_id": source_document_id,
-                "extraction_date": datetime.now(timezone.utc).isoformat(),
+                "extraction_date": datetime.now(UTC).isoformat(),
                 "total_pages": extraction_results.get("total_pages", 0),
                 "documents": extraction_results.get("documents", []),
-                **extraction_results
+                **extraction_results,
             }
 
             # Save JSON file to disk
@@ -93,7 +89,7 @@ class ExtractionService:
                 mime_type="application/json",
                 source_document_id=source_document_id,
                 topic_id=None,  # No topic association for extraction files
-                agent_id=None   # No agent association for extraction files
+                agent_id=None,  # No agent association for extraction files
             )
 
             db_session.add(document)
@@ -112,7 +108,7 @@ class ExtractionService:
                 topic_id=document.topic_id,
                 agent_id=document.agent_id,
                 created_at=document.created_at,
-                updated_at=document.updated_at
+                updated_at=document.updated_at,
             )
 
         except Exception as e:

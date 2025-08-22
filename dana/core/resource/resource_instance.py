@@ -92,7 +92,7 @@ class ResourceInstance(StructInstance):
         if hasattr(self, method_name):
             return True
 
-        # Check resource type (no inheritance)
+        # Check resource type
         if self.resource_type.has_method(method_name):
             return True
 

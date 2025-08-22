@@ -83,7 +83,7 @@ MATH_CONSTANT = 42
         root_module = root_pkg / "root_module.na"
         root_module.write_text("""
 def root_function() -> str:
-    return "Hello from root"
+    return "From root package"
 """)
 
         sub_module = sub_pkg / "sub_module.na"
@@ -101,7 +101,7 @@ def sub_function() -> str:
             from test_nested_pkg.subpackage.sub_module import sub_function
 
             # Test function calls
-            assert root_function() == "Hello from root"
+            assert root_function() == "From root package"
             assert sub_function() == "Hello from sub"
 
         finally:
@@ -198,7 +198,7 @@ def new_func() -> str:
         child_module = child_dir / "child_mod.na"
         child_module.write_text("""
 def child_function() -> str:
-    return "Child function"
+    return "From child package"
 """)
 
         # Enable Dana imports
@@ -209,7 +209,7 @@ def child_function() -> str:
             from test_parent_pkg.child.child_mod import child_function
 
             # Test function call
-            assert child_function() == "Child function"
+            assert child_function() == "From child package"
 
         finally:
             disable_dana_imports()
@@ -245,7 +245,7 @@ def child_function() -> str:
         deep_module = current_path / "deep_mod.na"
         deep_module.write_text("""
 def deep_function() -> str:
-    return "Deep nested function"
+    return "From deep nested package"
 """)
 
         # Enable Dana imports
@@ -256,7 +256,7 @@ def deep_function() -> str:
             from test_deep_pkg.level1.level2.level3.deep_mod import deep_function
 
             # Test function call
-            assert deep_function() == "Deep nested function"
+            assert deep_function() == "From deep nested package"
 
         finally:
             disable_dana_imports()

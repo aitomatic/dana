@@ -56,45 +56,48 @@ class AskQuestionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    async def _execute(self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> ToolResult:
+    async def _execute(
+        self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = ""
+    ) -> ToolResult:
         """
         Execute sophisticated question with context, decision logic, and formatted options.
         """
         # Build sophisticated, context-rich response
         content = self._build_sophisticated_response(question, context, decision_logic, options, workflow_phase)
-        
+
         return ToolResult(name="ask_question", result=content, require_user=True)
 
-    def _build_sophisticated_response(self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> str:
+    def _build_sophisticated_response(
+        self, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = ""
+    ) -> str:
         """
         Build a sophisticated, context-rich response with clear sections and visual indicators.
         """
         response_parts = []
-        
+
         # Add workflow phase if provided
         if workflow_phase:
             response_parts.append(f"{workflow_phase}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add current state section if context provided
         if context:
             response_parts.append(f"{context}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add decision logic section if provided
         if decision_logic:
             response_parts.append(f"{decision_logic}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add the main question
         response_parts.append(f"{question}")
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add options if provided
         if options and len(options) > 0:
-          
-            for i, option in enumerate(options, 1):
+            for _i, option in enumerate(options, 1):
                 response_parts.append(f"• {option}")
-        
+
         # Join all parts with proper spacing
         return "\n".join(response_parts)
