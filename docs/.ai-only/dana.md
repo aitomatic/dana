@@ -421,6 +421,416 @@ result = pipeline(42)  # true → "Processed: 42" → "Processed: 42 (valid: tru
 - Left-to-right data flow similar to Unix pipes
 - **Function-only validation**: Only callable functions allowed in composition chains
 
+## Benefits of Conditional Pipelines
+- **Declarative Logic**: Clear branching without nested if/else statements
+- **Composable**: Can be combined with other pipeline operations
+- **Reusable**: Conditional logic can be defined once and reused
+- **Type Safe**: Maintains type safety throughout the pipeline
+- **Readable**: Complex branching logic is easy to understand
+
+
+## Concurrency-by-Default
+
+Dana implements **concurrent-by-default** execution through transparent Promise[T] wrapping, enabling automatic parallelism without explicit async/await syntax.
+
+### Core Philosophy
+
+Dana functions are concurrent by default through transparent Promise[T] wrapping:
+- **Automatic Promise Creation**: Return statements automatically create Promise objects when needed
+- **Transparent Typing**: Promise[T] appears and behaves exactly like type T
+- **Zero Syntax Overhead**: No async/await keywords needed
+- **Background Execution**: Computations run in background threads automatically
+
+### Basic Concurrency
+```dana
+# Functions automatically return Promise[T] for concurrent execution
+def fetch_user_data(user_id: int) -> UserData:
+    # All three API calls start immediately in parallel
+    profile = fetch_profile(user_id)      # return creates Promise
+    posts = fetch_posts(user_id)          # return creates Promise  
+    friends = fetch_friends(user_id)      # return creates Promise
+    
+    # Promises resolve when accessed
+    return UserData(
+        profile=profile,    # Blocks here if not ready
+        posts=posts,        # Blocks here if not ready
+        friends=friends     # Blocks here if not ready
+    )
+
+# Usage - completely transparent
+user_data = fetch_user_data(123)  # Promise[UserData] that behaves like UserData
+print(user_data.profile.name)     # Automatic resolution when accessed
+```
+
+### Transparent Promise Behavior
+```dana
+# Promise[Int] behaves exactly like Int
+def compute_value() -> int:
+    return expensive_calculation()  # Returns Promise[Int] that appears as Int
+
+# Usage is completely transparent
+result = compute_value()  # Promise[Int]
+doubled = result * 2      # Works immediately, returns Promise[Int]
+if result > 10:          # Comparison works, blocks if needed
+    print(result)        # Automatic resolution when value needed
+```
+
+### Automatic Parallelism
+Collections automatically process elements in parallel:
+
+```dana
+# Lists automatically process elements in parallel
+users = [fetch_user(1), fetch_user(2), fetch_user(3)]    # All three calls run concurrently
+
+# Dictionaries automatically process values in parallel
+stats = {"users": count_users(), "posts": count_posts()} # Both counts run in parallel
+
+# Sets automatically process elements in parallel
+tags = {fetch_tag("python"), fetch_tag("dana"), fetch_tag("concurrency")}
+
+# F-strings automatically resolve promises in parallel
+user = fetch_user(123)
+post = fetch_post(456)
+message = f"User {user.name} posted: {post.title}"  # Both promises resolve in parallel
+```
+
+### Conditional Computation
+Promises enable efficient conditional computation where expensive work is skipped if not needed:
+
+```dana
+def analyze_data(data: Data) -> Report:
+    basic_stats = compute_basic_stats(data)     # Always computed (eager)
+    
+    if basic_stats.needs_deep_analysis:
+        deep_analysis = return run_ml_analysis(data)  # Only computed if accessed
+        return create_full_report(basic_stats, deep_analysis)
+    else:
+        return create_simple_report(basic_stats)       # deep_analysis never computed
+```
+
+### Mixed Sync/Async Operations
+```dana
+def smart_fetch(key: str) -> Value:
+    if cache.has(key):
+        return cache.get(key)  # Sync return, no Promise
+    return database.query(key)  # Concurrent database call
+
+def process_data(data: Data) -> Result:
+    if data.is_cached():
+        return data.cached_result  # Synchronous, no Promise
+    
+    # Only create Promise for expensive operation
+    return expensive_computation(data)  # Concurrent execution
+```
+
+### Promise Chaining
+Functions can work with promises transparently:
+
+```dana
+def process_chain(input: str) -> Result:
+    parsed = parse_data(input)      # return → Promise
+    validated = validate(parsed)     # Works on Promise transparently
+    transformed = transform(validated)  # Chain continues
+    return transformed              # Final return
+```
+
+### Agent Communication
+Agents communicate through method calls that look blocking but are concurrent:
+
+```dana
+def coordinate_agents():
+    # All agent calls start immediately in parallel
+    plan = inspector.plan("Inspect wafer batch WB-2024-001")
+    solution = validator.solve("High defect rate in etching process")
+    report = analyzer.analyze("Process optimization")
+    
+    # Results resolve when accessed
+    return combine_results(plan, solution, report)
+```
+
+### Error Handling
+Promises preserve error semantics transparently:
+
+```dana
+def may_fail() -> int:
+    return 1 / 0  # Division by zero in Promise
+
+try:
+    value = may_fail()      # No error yet (Promise created)
+    result = value * 2      # Error occurs here when Promise resolves
+except ZeroDivisionError:
+    print("Caught division by zero")
+```
+
+### Performance Characteristics
+
+**Promise Creation Overhead:**
+- EagerPromise: ~1-2ms for thread pool task submission
+- Transparent operations: Near-zero overhead until resolution needed
+- Memory: Small object overhead + computation closure
+
+**Concurrency Benefits:**
+- Parallel I/O: 60-80% speedup for multiple API calls
+- Resource utilization: CPU available during I/O waits
+- Scalability: Thread pool prevents resource exhaustion
+
+**Resolution Costs:**
+- First access: Blocks until computation complete
+- Subsequent access: Cached result, zero cost
+- Failed computations: Exception cached and re-raised
+
+### Best Practices
+
+1. **Use return for all function completions**: Return statements automatically handle Promise creation when needed
+2. **Don't worry about Promise types**: The transparent proxy handles all operations
+3. **Let collections auto-resolve**: Don't manually resolve Promises in collections
+4. **Trust the system**: Write natural code and get concurrent execution automatically
+5. **Use conditional computation**: Leverage lazy evaluation for expensive operations
+
+### Concurrency Rules
+1. **Automatic Promise Creation**: Return statements create EagerPromise for background execution
+2. **Transparent Access**: Promises behave like regular values - accessing blocks if not ready
+3. **Background Execution**: Computations run in background threads automatically
+4. **Thread Safety**: All Promise operations are thread-safe with internal locking
+5. **Error Transparency**: Background exceptions are captured and re-raised on access
+6. **Collection Parallelism**: Lists, dicts, sets, and f-strings automatically process elements in parallel
+
+### Benefits of Concurrency-by-Default
+- **Natural Code**: Write synchronous-looking code that executes concurrently
+- **Automatic Parallelism**: Collections and multiple operations run in parallel automatically
+- **Zero Cognitive Overhead**: No async/await syntax to manage
+- **Performance**: 60-80% faster for I/O-heavy operations
+- **Agent-Optimized**: Perfect for agent workloads with multiple API calls and I/O operations
+- **Resource Efficient**: Thread pool prevents resource exhaustion
+
+
+## Global Registry System
+
+Dana provides a comprehensive global registry system that manages all language components through specialized registries with unified access patterns.
+
+### Core Registries
+
+#### **GLOBAL_REGISTRY** - Unified Registry Interface
+The main entry point that consolidates all specialized registries:
+
+```dana
+# Access the global registry singleton
+from dana.registry import GLOBAL_REGISTRY
+
+# Register types
+GLOBAL_REGISTRY.register_agent_type(my_agent_type)
+GLOBAL_REGISTRY.register_resource_type(my_resource_type)
+GLOBAL_REGISTRY.register_struct_type(my_struct_type)
+
+# Access sub-registries
+types = GLOBAL_REGISTRY.types
+functions = GLOBAL_REGISTRY.functions
+modules = GLOBAL_REGISTRY.modules
+```
+
+#### **TYPE_REGISTRY** - Type Definitions
+Manages agent, resource, and struct type definitions:
+
+```dana
+from dana.registry import TYPE_REGISTRY
+
+# Register type definitions
+TYPE_REGISTRY.register_agent_type(MyAgentType)
+TYPE_REGISTRY.register_resource_type(MyResourceType)
+TYPE_REGISTRY.register_struct_type(MyStructType)
+
+# Retrieve types
+agent_type = TYPE_REGISTRY.get_agent_type("MyAgent")
+resource_type = TYPE_REGISTRY.get_resource_type("MyResource")
+struct_type = TYPE_REGISTRY.get_struct_type("MyStruct")
+```
+
+#### **FUNCTION_REGISTRY** - Function Registration
+Handles function registration and dispatch, including struct functions:
+
+```dana
+from dana.registry import FUNCTION_REGISTRY
+
+# Register regular functions
+FUNCTION_REGISTRY.register("my_function", my_func)
+
+# Register struct functions (methods)
+FUNCTION_REGISTRY.register_struct_function("Point", "translate", translate_point)
+FUNCTION_REGISTRY.register_struct_function("Point", "distance", point_distance)
+
+# Lookup functions
+func = FUNCTION_REGISTRY.lookup("my_function")
+struct_func = FUNCTION_REGISTRY.lookup_struct_function("Point", "translate")
+```
+
+#### **MODULE_REGISTRY** - Module Management
+Tracks module loading, dependencies, and aliases:
+
+```dana
+from dana.registry import MODULE_REGISTRY
+
+# Register modules
+MODULE_REGISTRY.register_module(my_module)
+MODULE_REGISTRY.register_spec(my_spec)
+
+# Set up aliases
+MODULE_REGISTRY.set_alias("short_name", "full_module_name")
+
+# Track dependencies
+MODULE_REGISTRY.add_dependency("module_a", "module_b")
+```
+
+#### **AGENT_REGISTRY** - Agent Instance Tracking
+Manages agent instances and their lifecycle:
+
+```dana
+from dana.registry import AGENT_REGISTRY
+
+# Track agent instances
+agent_id = AGENT_REGISTRY.track_agent_instance(my_agent, "my_agent_name")
+
+# Retrieve instances
+agent = AGENT_REGISTRY.get_agent_instance(agent_id)
+agent_by_name = AGENT_REGISTRY.get_agent_instance_by_name("my_agent_name")
+
+# List all agents
+all_agents = AGENT_REGISTRY.list_agent_instances()
+```
+
+#### **RESOURCE_REGISTRY** - Resource Instance Management
+Handles resource instances and their configurations:
+
+```dana
+from dana.registry import RESOURCE_REGISTRY
+
+# Track resource instances
+resource_id = RESOURCE_REGISTRY.track_resource_instance(my_resource, "my_resource_name")
+
+# Retrieve resources
+resource = RESOURCE_REGISTRY.get_resource_instance(resource_id)
+resource_by_name = RESOURCE_REGISTRY.get_resource_instance_by_name("my_resource_name")
+
+# List all resources
+all_resources = RESOURCE_REGISTRY.list_resource_instances()
+```
+
+#### **WORKFLOW_REGISTRY** - Workflow Instance Tracking
+Manages workflow instances and their execution state:
+
+```dana
+from dana.registry import WORKFLOW_REGISTRY
+
+# Track workflow instances
+workflow_id = WORKFLOW_REGISTRY.track_instance(my_workflow, "my_workflow_name")
+
+# Retrieve workflows
+workflow = WORKFLOW_REGISTRY.get_instance(workflow_id)
+workflow_by_name = WORKFLOW_REGISTRY.get_instance_by_name("my_workflow_name")
+```
+
+### Framework-Specific Registries
+
+#### **KORegistry** - Knowledge Organization Registry
+Manages knowledge organization types and configurations in the KNOWS framework:
+
+```dana
+from dana.frameworks.knows.core.registry import ko_registry
+
+# Register knowledge organization types
+ko_registry.register_ko_type("vector", VectorKO)
+ko_registry.register_ko_type("relational", RelationalKO)
+
+# Register configurations
+ko_registry.register_ko_config("vector", {"dimensions": 768, "metric": "cosine"})
+
+# Create instances
+ko_instance = ko_registry.create_ko_instance("vector", dimensions=512)
+```
+
+#### **DomainRegistry** - Domain Template Registry
+Manages domain templates in the POET framework:
+
+```dana
+from dana.frameworks.poet.domains.registry import get_registry
+
+registry = get_registry()
+
+# Get domain templates
+computation_domain = registry.get_domain("computation")
+scientific_domain = registry.get_domain("computation:scientific")
+
+# List available domains
+available_domains = registry.list_domains()
+```
+
+### Registry Usage Patterns
+
+#### **Automatic Registration**
+Most Dana components are automatically registered when defined:
+
+```dana
+# Agent blueprints are automatically registered
+agent_blueprint MyAgent:
+    field: str = "default"
+
+# Structs are automatically registered
+struct MyStruct:
+    field: int
+
+# Functions are automatically registered when imported
+import my_module  # Functions in my_module are registered automatically
+```
+
+#### **Manual Registration**
+For custom components, manual registration is available:
+
+```dana
+from dana.registry import TYPE_REGISTRY, FUNCTION_REGISTRY
+
+# Register custom types
+class CustomAgent:
+    name = "CustomAgent"
+    # ... implementation
+
+TYPE_REGISTRY.register_agent_type(CustomAgent)
+
+# Register custom functions
+def custom_function(x: int) -> int:
+    return x * 2
+
+FUNCTION_REGISTRY.register("custom_function", custom_function)
+```
+
+#### **Registry Cleanup**
+For testing and development, registries can be cleared:
+
+```dana
+from dana.registry import clear_all
+
+# Clear all registries
+clear_all()
+```
+
+### Registry Benefits
+
+- **Centralized Management**: All Dana components tracked in one place
+- **Type Safety**: Registry ensures proper type registration and lookup
+- **Lifecycle Management**: Automatic tracking of component instances
+- **Dependency Resolution**: Module registry handles import dependencies
+- **Framework Integration**: Specialized registries for different frameworks
+- **Testing Support**: Easy registry cleanup for isolated testing
+- **Performance**: Optimized lookup patterns for different component types
+
+### Registry Rules
+
+1. **Singleton Pattern**: All registries use singleton pattern for global access
+2. **Automatic Registration**: Most components register automatically
+3. **Type-Specific Storage**: Different registries use optimized storage for their component types
+4. **Unified Interface**: GLOBAL_REGISTRY provides unified access to all registries
+5. **Framework Extensibility**: Framework-specific registries can be added as needed
+6. **Thread Safety**: All registry operations are thread-safe
+
+
 ## Module System
 
 ### Dana Module Imports

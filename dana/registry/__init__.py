@@ -66,6 +66,11 @@ def register_interface_type(interface_type) -> None:
     TYPE_REGISTRY.register_interface_type(interface_type)
 
 
+def register_workflow_type(workflow_type) -> None:
+    """Register a workflow type in the global registry."""
+    TYPE_REGISTRY.register_workflow_type(workflow_type)
+
+
 def get_type(name: str) -> Any:
     """Get any type by name from the global registry."""
     return TYPE_REGISTRY.get_type(name)
@@ -89,6 +94,11 @@ def get_resource_type(name: str):
 def get_struct_type(name: str):
     """Get a struct type from the global registry."""
     return TYPE_REGISTRY.get_struct_type(name)
+
+
+def get_workflow_type(name: str):
+    """Get a workflow type from the global registry."""
+    return TYPE_REGISTRY.get_workflow_type(name)
 
 
 def register_struct_function(receiver_type: str, method_name: str, func) -> None:

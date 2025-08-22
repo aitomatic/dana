@@ -1,0 +1,16 @@
+# Core utility functions for Dana standard library
+
+struct FSM:
+    """
+    Finite State Machines are pure data structures that define
+    process states and transitions without embedded behavior.
+    In Dana, FSMs are used to define the states of workflow execution.
+    """
+    states: list[str]   # All possible states
+    initial_state: str  # Starting state
+    current_state: str  # Current execution
+    transitions: dict[tuple[str, str], str]  # (from_state, event) -> to_state
+
+
+# FSM struct is available for workflow definitions
+# The execute function would be implemented in workflow-specific contexts

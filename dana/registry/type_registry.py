@@ -24,6 +24,7 @@ class TypeRegistry:
         self._resource_types: dict[str, Any] = {}
         self._struct_types: dict[str, Any] = {}
         self._interface_types: dict[str, Any] = {}
+        self._workflow_types: dict[str, Any] = {}
 
         # Type metadata storage
         self._type_metadata: dict[str, dict[str, Any]] = {}
@@ -146,6 +147,65 @@ class TypeRegistry:
             True if the resource type is registered
         """
         return name in self._resource_types
+
+    # === Workflow Type Methods ===
+
+    def register_workflow_type(self, workflow_type: Any) -> None:
+        """Register a workflow type.
+
+        Args:
+            workflow_type: The workflow type to register
+        """
+        if not hasattr(workflow_type, "name"):
+            raise ValueError("Workflow type must have a 'name' attribute")
+
+        name = workflow_type.name
+        if name in self._workflow_types:
+            # Check if this is the same workflow definition (idempotent registration)
+            existing = self._workflow_types[name]
+            if self._types_equal(workflow_type, existing):
+                return  # Same definition, don't re-register
+            else:
+                raise ValueError(f"Workflow type '{name}' is already registered with different definition")
+
+        self._workflow_types[name] = workflow_type
+        # Also register in struct types for instantiation compatibility
+        self._struct_types[name] = workflow_type
+        self._type_metadata[name] = {
+            "category": "workflow",
+            "registered_at": self._get_timestamp(),
+        }
+        self._registration_order.append(name)
+
+    def get_workflow_type(self, name: str) -> Any | None:
+        """Get a workflow type by name.
+
+        Args:
+            name: The name of the workflow type
+
+        Returns:
+            The workflow type or None if not found
+        """
+        return self._workflow_types.get(name)
+
+    def list_workflow_types(self) -> list[str]:
+        """List all registered workflow type names.
+
+        Returns:
+            List of workflow type names in registration order
+        """
+        return [name for name in self._registration_order if name in self._workflow_types]
+
+    def has_workflow_type(self, name: str) -> bool:
+        """Check if a workflow type is registered.
+
+        Args:
+            name: The name of the workflow type
+
+        Returns:
+            True if the workflow type is registered
+        """
+        return name in self._workflow_types
 
     # === Struct Type Methods ===
 
