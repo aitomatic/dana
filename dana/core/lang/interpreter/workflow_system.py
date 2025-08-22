@@ -10,8 +10,8 @@ MIT License
 from dataclasses import dataclass
 from typing import Any
 
+from dana.core.builtin_types.fsm_system import create_fsm_struct_type, create_simple_workflow_fsm
 from dana.core.builtin_types.struct_system import StructInstance, StructType
-from dana.core.lang.interpreter.fsm_system import create_fsm_struct_type, create_simple_workflow_fsm
 
 
 @dataclass
@@ -99,6 +99,15 @@ class WorkflowInstance(StructInstance):
         This method defines what the standard workflow fields are,
         keeping the definition close to where they're used.
         """
+
+        # Create a default FSM instance lazily
+        def _get_default_fsm():
+            try:
+                return create_fsm_instance()
+            except Exception:
+                # Fallback to None if FSM creation fails
+                return None
+
         return {
             "name": {
                 "type": "str",
@@ -106,8 +115,8 @@ class WorkflowInstance(StructInstance):
                 "comment": "Name of the workflow",
             },
             "fsm": {
-                "type": "FSM | None",
-                "default": None,  # Will be set to FSM instance during workflow creation
+                "type": "FSM",
+                "default": _get_default_fsm(),
                 "comment": "Finite State Machine for workflow execution",
             },
         }

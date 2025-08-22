@@ -250,7 +250,7 @@ struct FSM:
     states: list[str]                           # All possible states
     initial_state: str                          # Starting state
     current_state: str                          # Current execution state
-    transitions: dict[tuple[str, str], str]     # (from_state, event) -> to_state
+    transitions: dict[str, str]                 # 'from_state:event' -> to_state
 ```
 
 **Motivation**: Making FSMs pure data structures separates process definition from execution logic. This makes workflows more testable, debuggable, and analyzable. The FSM becomes a specification that the workflow execution engine interprets.
@@ -270,7 +270,8 @@ def execute(workflow: Workflow, agent: Agent, data) -> Solution:
     
     while workflow.fsm.current_state not in terminal_states:
         event = handle_current_state(workflow, agent, context)
-        workflow.fsm.current_state = workflow.fsm.transitions[(workflow.fsm.current_state, event.type)]
+        transition_key = f"{workflow.fsm.current_state}:{event.type}"
+        workflow.fsm.current_state = workflow.fsm.transitions[transition_key]
     
     return context["result"]
 ```

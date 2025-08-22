@@ -12,6 +12,18 @@ Usage:
         # FSM field is automatically included with default simple workflow FSM
         # You can override it with a custom FSM if needed
         fsm: FSM = custom_fsm_instance
+
+FSM Structure:
+    struct FSM:
+        states: list[str]                           # All possible states
+        initial_state: str                          # Starting state
+        current_state: str                          # Current execution state
+        transitions: dict[str, str]                 # 'from_state:event' -> to_state
+
+    Example transitions:
+        "START:next" -> "PROCESSING"
+        "PROCESSING:success" -> "COMPLETE"
+        "PROCESSING:error" -> "ERROR"
 """
 
 # FSM struct is now defined in Python and automatically available

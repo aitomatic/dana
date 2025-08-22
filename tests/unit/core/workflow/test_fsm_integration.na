@@ -8,14 +8,14 @@ sync def test_fsm_struct_availability():
         states=["START", "PROCESSING", "COMPLETE"],
         initial_state="START",
         current_state="START",
-        transitions={("START", "next"): "PROCESSING", ("PROCESSING", "next"): "COMPLETE"}
+        transitions={"START:next": "PROCESSING", "PROCESSING:next": "COMPLETE"}
     )
     
     # Test basic FSM functionality
     assert fsm.states == ["START", "PROCESSING", "COMPLETE"], f"Expected states, got {fsm.states}"
     assert fsm.initial_state == "START", f"Expected START, got {fsm.initial_state}"
     assert fsm.current_state == "START", f"Expected START, got {fsm.current_state}"
-    assert fsm.transitions.get(("START", "next")) == "PROCESSING", f"Expected PROCESSING, got {fsm.transitions.get(('START', 'next'))}"
+    assert fsm.transitions.get("START:next") == "PROCESSING", f"Expected PROCESSING, got {fsm.transitions.get('START:next')}"
     
     log("✅ FSM struct instantiation test passed")
 
@@ -47,7 +47,7 @@ sync def test_workflow_custom_fsm():
         states=["INIT", "RUNNING", "DONE"],
         initial_state="INIT",
         current_state="INIT",
-        transitions={("INIT", "start"): "RUNNING", ("RUNNING", "finish"): "DONE"}
+        transitions={"INIT:start": "RUNNING", "RUNNING:finish": "DONE"}
     )
     
     # Define workflow with custom FSM
@@ -72,18 +72,18 @@ sync def test_fsm_state_transitions():
         states=["A", "B", "C"],
         initial_state="A",
         current_state="A",
-        transitions={("A", "next"): "B", ("B", "next"): "C"}
+        transitions={"A:next": "B", "B:next": "C"}
     )
     
     # Test initial state
     assert fsm.current_state == "A", f"Expected A, got {fsm.current_state}"
     
     # Test transition to B
-    fsm.current_state = fsm.transitions.get(("A", "next"))
+    fsm.current_state = fsm.transitions.get("A:next")
     assert fsm.current_state == "B", f"Expected B, got {fsm.current_state}"
     
     # Test transition to C
-    fsm.current_state = fsm.transitions.get(("B", "next"))
+    fsm.current_state = fsm.transitions.get("B:next")
     assert fsm.current_state == "C", f"Expected C, got {fsm.current_state}"
     
     log("✅ FSM state transitions test passed")
