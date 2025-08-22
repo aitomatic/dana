@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
+import { clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
 import { AgentPerformanceComparisonModal } from './AgentPerformanceComparisonModal';
 import { AgentDetailHeader } from './AgentDetailHeader';
 import { AgentDetailSidebar } from './AgentDetailSidebar';
@@ -151,8 +152,8 @@ export default function AgentDetailPage() {
   };
 
   const handleDiscardAndExit = async () => {
-    if (!agent_id || isNaN(Number(agent_id))) {
-      // For prebuilt agents or invalid IDs, just close dialog and navigate
+    if (!agent_id) {
+      // No agent_id, just close dialog and navigate
       setShowCancelConfirmation(false);
       navigate('/agents');
       return;
@@ -160,7 +161,21 @@ export default function AgentDetailPage() {
 
     setIsDeleting(true);
     try {
-      await deleteAgent(parseInt(agent_id));
+      // Clear the smart-chat-storage for this agent before deleting
+      try {
+        await clearSmartChatStorageForAgent(agent_id);
+
+        console.log(`[Storage Cleanup] Cleared smart-chat-storage for agent ${agent_id}`);
+      } catch (storageError) {
+        console.warn('Failed to clear chat storage:', storageError);
+        // Continue with deletion even if storage cleanup fails
+      }
+
+      // Only try to delete if it's a numeric ID (regular agent)
+      if (!isNaN(Number(agent_id))) {
+        await deleteAgent(parseInt(agent_id));
+      }
+
       setShowCancelConfirmation(false);
 
       // No toast message when user chooses "Do not save" - they're discarding unsaved changes
@@ -189,6 +204,21 @@ export default function AgentDetailPage() {
       }
     }
   }, [agent_id, fetchAgent]);
+
+  // Cleanup effect to clear smart-chat-storage when component unmounts
+  useEffect(() => {
+    return () => {
+      // If the component unmounts and we have an agent_id, clear the storage
+      // This handles cases where user navigates away without explicitly saving/discarding
+      if (agent_id) {
+        try {
+          clearSmartChatStorageForAgent(agent_id);
+        } catch (error) {
+          console.warn('Failed to clear storage on unmount:', error);
+        }
+      }
+    };
+  }, [agent_id]);
 
   if (isLoading) {
     return (

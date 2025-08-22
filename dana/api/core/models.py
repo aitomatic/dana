@@ -53,8 +53,8 @@ class Document(Base):
     topic = relationship("Topic", back_populates="documents")
     agent = relationship("Agent", back_populates="documents")
     # Self-referential relationship for extraction files
-    source_document = relationship("Document", remote_side=[id], foreign_keys=[source_document_id])
-    extraction_files = relationship("Document", foreign_keys=[source_document_id], overlaps="source_document")
+    source_document = relationship("Document", remote_side=[id], foreign_keys=[source_document_id], back_populates="extraction_files")
+    extraction_files = relationship("Document", foreign_keys=[source_document_id], back_populates="source_document")
 
 
 class Conversation(Base):
