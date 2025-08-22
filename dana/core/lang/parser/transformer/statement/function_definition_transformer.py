@@ -27,6 +27,7 @@ from dana.core.lang.ast import (
     StructField,
     TypedParameter,
     TypeHint,
+    WorkflowDefinition,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
@@ -517,6 +518,9 @@ class FunctionDefinitionTransformer(BaseTransformer):
         elif keyword_token.value == "interface":
             methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
             return InterfaceDefinition(name=name_token.value, methods=methods, embedded_interfaces=embedded_interfaces, docstring=docstring)
+        elif keyword_token.value == "workflow":
+            fields, methods, docstring = self._parse_struct_block(definition_block)
+            return WorkflowDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
         else:
             raise ValueError(f"Unknown definition keyword: {keyword_token.value}")
 

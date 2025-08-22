@@ -2,7 +2,7 @@ from typing import Any
 
 from dana.common import SandboxContext
 
-from .agent_instance import AgentInstance, AgentType, register_agent_type
+from .agent_system import AgentInstance, AgentType, register_agent_type
 
 
 class GeneralSolver(AgentInstance):

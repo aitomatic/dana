@@ -11,7 +11,7 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.struct_system import InterfaceMethodSpec, InterfaceParameterSpec, InterfaceType
+from dana.core.builtin_types.struct_system import InterfaceMethodSpec, InterfaceParameterSpec, InterfaceType
 from dana.registry import FUNCTION_REGISTRY
 
 

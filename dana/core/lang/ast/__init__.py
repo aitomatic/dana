@@ -598,6 +598,17 @@ class ResourceDefinition:
 
 
 @dataclass
+class WorkflowDefinition:
+    """Workflow definition statement (e.g., workflow MyWorkflow: steps: list[str])."""
+
+    name: str
+    fields: list["StructField"] = field(default_factory=list)
+    methods: list["FunctionDefinition"] = field(default_factory=list)
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
 class StructField:
     """A field in a struct definition."""
 

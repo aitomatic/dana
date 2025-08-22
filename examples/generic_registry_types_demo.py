@@ -7,7 +7,7 @@ agent and resource types with proper type annotations.
 """
 
 # Remove unused import
-from dana.core.lang.interpreter.struct_system import StructInstance
+from dana.core.builtin_types.struct_system import StructInstance
 from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
 
 

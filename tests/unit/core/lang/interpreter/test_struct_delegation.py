@@ -12,11 +12,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
-from dana.core.lang.interpreter.struct_system import (
+from dana.core.builtin_types.struct_system import (
     StructInstance,
     StructType,
 )
+from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
 from dana.registry import FUNCTION_REGISTRY, TYPE_REGISTRY
 
 
