@@ -11,7 +11,7 @@ when the sandbox is initialized.
 
 from .basic_agent import BasicAgent, DanaAgent
 from .core import add_one, add_two, add_three, add_four
-# from .workflow import FSM  # Temporarily disabled due to workflow keyword parsing issues
+from .workflows import FSM
 # from . import a2a_agent  # This will trigger registration of A2A_Agent - temporarily disabled due to recursion
 
 __exports__ = [
@@ -21,4 +21,5 @@ __exports__ = [
     "add_two",
     "add_three",
     "add_four",
+    "FSM",
 ]
