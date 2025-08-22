@@ -1,4 +1,4 @@
-# 26 June 2025: AI Alliance Japan 1st Anniversary: Dana Community Launch Technical Workshop
+# Dana Technical Workshop
 
 ## Agenda
 
