@@ -41,6 +41,12 @@ class ModifyTreeTool(BaseTool):
                 type="object",
                 properties=[
                     BaseArgument(
+                        name="user_message",
+                        type="string",
+                        description="A comprehensive message that acknowledges the user's request and explains what tree operation will be performed",
+                        example="I understand you want to modify the knowledge tree structure. Based on your request, I'll perform the specified tree operations to update Sofia's knowledge organization.",
+                    ),
+                    BaseArgument(
                         name="operation",
                         type="string",
                         description="Type of operation: 'init' for LLM-driven tree initialization, 'bulk' for all tree modifications",
@@ -66,7 +72,7 @@ class ModifyTreeTool(BaseTool):
         self.tree_structure = tree_structure
         self.domain_knowledge_path = domain_knowledge_path
 
-    async def _execute(self, operation: str, tree_path: str = "", bulk_operations: str = "") -> ToolResult:
+    async def _execute(self, operation: str, user_message: str = "", tree_path: str = "", bulk_operations: str = "") -> ToolResult:
         """
         Modify the domain knowledge tree structure.
 
@@ -84,14 +90,17 @@ class ModifyTreeTool(BaseTool):
                     content, updated_tree = self._init_tree(tree_path)
                     if updated_tree:
                         self._save_tree_structure(updated_tree)
+                    content = self._build_structured_response(user_message, operation, content)
             elif operation == "bulk":
                 if not bulk_operations:
                     content = "❌ Error: bulk_operations required for bulk operation"
                 else:
                     content = self._execute_bulk_operations(bulk_operations)
                     self._save_tree_changes("bulk", "multiple operations")
+                    content = self._build_structured_response(user_message, operation, content)
             else:
                 content = f"❌ Invalid operation '{operation}'. Supported: init, bulk"
+                content = self._build_structured_response(user_message, operation, content)
 
             return ToolResult(name="modify_tree", result=content, require_user=False)
 
@@ -904,3 +913,18 @@ Return as JSON with this exact structure:
 
         except Exception as e:
             logger.error(f"Failed to update knowledge status after removal: {e}")
+
+    def _build_structured_response(self, user_message: str, operation: str, content: str) -> str:
+        """Build a structured response with user message and operation content."""
+        response_parts = []
+        
+        # Add user message first (acknowledgment and context)
+        if user_message:
+            response_parts.append(f"{user_message}")
+            response_parts.append("")  # Empty line for spacing
+        
+        # Add the operation content
+        response_parts.append(content)
+        
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)

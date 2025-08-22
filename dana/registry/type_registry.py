@@ -23,6 +23,8 @@ class TypeRegistry:
         self._agent_types: dict[str, Any] = {}
         self._resource_types: dict[str, Any] = {}
         self._struct_types: dict[str, Any] = {}
+        self._interface_types: dict[str, Any] = {}
+        self._workflow_types: dict[str, Any] = {}
 
         # Type metadata storage
         self._type_metadata: dict[str, dict[str, Any]] = {}
@@ -146,6 +148,65 @@ class TypeRegistry:
         """
         return name in self._resource_types
 
+    # === Workflow Type Methods ===
+
+    def register_workflow_type(self, workflow_type: Any) -> None:
+        """Register a workflow type.
+
+        Args:
+            workflow_type: The workflow type to register
+        """
+        if not hasattr(workflow_type, "name"):
+            raise ValueError("Workflow type must have a 'name' attribute")
+
+        name = workflow_type.name
+        if name in self._workflow_types:
+            # Check if this is the same workflow definition (idempotent registration)
+            existing = self._workflow_types[name]
+            if self._types_equal(workflow_type, existing):
+                return  # Same definition, don't re-register
+            else:
+                raise ValueError(f"Workflow type '{name}' is already registered with different definition")
+
+        self._workflow_types[name] = workflow_type
+        # Also register in struct types for instantiation compatibility
+        self._struct_types[name] = workflow_type
+        self._type_metadata[name] = {
+            "category": "workflow",
+            "registered_at": self._get_timestamp(),
+        }
+        self._registration_order.append(name)
+
+    def get_workflow_type(self, name: str) -> Any | None:
+        """Get a workflow type by name.
+
+        Args:
+            name: The name of the workflow type
+
+        Returns:
+            The workflow type or None if not found
+        """
+        return self._workflow_types.get(name)
+
+    def list_workflow_types(self) -> list[str]:
+        """List all registered workflow type names.
+
+        Returns:
+            List of workflow type names in registration order
+        """
+        return [name for name in self._registration_order if name in self._workflow_types]
+
+    def has_workflow_type(self, name: str) -> bool:
+        """Check if a workflow type is registered.
+
+        Args:
+            name: The name of the workflow type
+
+        Returns:
+            True if the workflow type is registered
+        """
+        return name in self._workflow_types
+
     # === Struct Type Methods ===
 
     def register_struct_type(self, struct_type: Any) -> None:
@@ -203,77 +264,64 @@ class TypeRegistry:
         """
         return name in self._struct_types
 
-    # === Backward Compatibility Methods ===
+    # === Interface Type Methods ===
 
-    @classmethod
-    def list_types(cls) -> list[str]:
-        """List all registered struct type names (backward compatibility).
-
-        Returns:
-            List of struct type names
-        """
-        from dana.registry import TYPE_REGISTRY
-
-        return TYPE_REGISTRY.list_struct_types()
-
-    @classmethod
-    def exists(cls, name: str) -> bool:
-        """Check if a struct type exists (backward compatibility).
+    def register_interface_type(self, interface_type: Any) -> None:
+        """Register an interface type.
 
         Args:
-            name: The name of the struct type
-
-        Returns:
-            True if the struct type exists
+            interface_type: The interface type to register
         """
-        from dana.registry import TYPE_REGISTRY
+        if not hasattr(interface_type, "name"):
+            raise ValueError("Interface type must have a 'name' attribute")
 
-        return TYPE_REGISTRY.has_struct_type(name)
+        name = interface_type.name
+        if name in self._interface_types:
+            # Check if this is the same interface definition (idempotent registration)
+            existing = self._interface_types[name]
+            if self._types_equal(interface_type, existing):
+                return  # Same definition, don't re-register
+            else:
+                raise ValueError(f"Interface type '{name}' is already registered with different definition")
 
-    @classmethod
-    def register(cls, struct_type: Any) -> None:
-        """Register a struct type (backward compatibility).
+        self._interface_types[name] = interface_type
+        self._type_metadata[name] = {
+            "category": "interface",
+            "registered_at": self._get_timestamp(),
+        }
+        self._registration_order.append(name)
+
+    def get_interface_type(self, name: str) -> Any | None:
+        """Get an interface type by name.
 
         Args:
-            struct_type: The struct type to register
-        """
-        from dana.registry import TYPE_REGISTRY
-
-        TYPE_REGISTRY.register_struct_type(struct_type)
-
-    @classmethod
-    def create_instance(cls, struct_name: str, values: dict[str, Any]) -> Any:
-        """Create a struct instance (backward compatibility).
-
-        Args:
-            struct_name: The name of the struct type
-            values: The field values for the instance
+            name: The name of the interface type
 
         Returns:
-            The created struct instance
+            The interface type or None if not found
         """
-        from dana.agent import AgentInstance
-        from dana.core.lang.interpreter.struct_system import StructInstance
-        from dana.registry import TYPE_REGISTRY
+        return self._interface_types.get(name)
 
-        struct_type = TYPE_REGISTRY.get_struct_type(struct_name)
-        if struct_type is None:
-            raise ValueError(f"Unknown struct type '{struct_name}'")
+    def list_interface_types(self) -> list[str]:
+        """List all registered interface type names.
 
-        # Check if this is an agent type and create appropriate instance
-        if TYPE_REGISTRY.has_agent_type(struct_name):
-            return AgentInstance(struct_type, values)
-        else:
-            return StructInstance(struct_type, values)
+        Returns:
+            List of interface type names in registration order
+        """
+        return [name for name in self._registration_order if name in self._interface_types]
 
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered types (backward compatibility for testing)."""
-        from dana.registry import TYPE_REGISTRY
+    def has_interface_type(self, name: str) -> bool:
+        """Check if an interface type is registered.
 
-        TYPE_REGISTRY.clear_instance()
+        Args:
+            name: The name of the interface type
 
-    # === Generic Type Methods ===
+        Returns:
+            True if the interface type is registered
+        """
+        return name in self._interface_types
+
+    # === Unified Type Methods ===
 
     def get_type(self, name: str) -> Any | None:
         """Get any type by name (searches all categories).
@@ -284,13 +332,15 @@ class TypeRegistry:
         Returns:
             The type or None if not found
         """
-        # Search in order: agent, resource, struct
+        # Search in order: agent, resource, struct, interface
         if name in self._agent_types:
             return self._agent_types[name]
         elif name in self._resource_types:
             return self._resource_types[name]
         elif name in self._struct_types:
             return self._struct_types[name]
+        elif name in self._interface_types:
+            return self._interface_types[name]
         return None
 
     def has_type(self, name: str) -> bool:
@@ -302,7 +352,7 @@ class TypeRegistry:
         Returns:
             True if the type is registered in any category
         """
-        return name in self._agent_types or name in self._resource_types or name in self._struct_types
+        return name in self._agent_types or name in self._resource_types or name in self._struct_types or name in self._interface_types
 
     def list_all_types(self) -> list[str]:
         """List all registered type names across all categories.
@@ -311,6 +361,41 @@ class TypeRegistry:
             List of all type names in registration order
         """
         return self._registration_order.copy()
+
+    def list_types(self) -> list[str]:
+        """List all registered type names (alias for list_all_types for backward compatibility).
+
+        Returns:
+            List of all type names in registration order
+        """
+        return self.list_all_types()
+
+    def exists(self, name: str) -> bool:
+        """Check if a type exists in any category.
+
+        Args:
+            name: The name of the type to check
+
+        Returns:
+            True if the type exists in any category
+        """
+        return self.has_type(name)
+
+    def clear(self) -> None:
+        """Clear all registries (alias for clear_instance for backward compatibility)."""
+        self.clear_instance()
+
+    def create_instance(self, struct_name: str, data: dict[str, Any]) -> Any:
+        """Create a struct instance from JSON data (alias for create_instance_from_json).
+
+        Args:
+            struct_name: The name of the struct type
+            data: The data to create the instance from
+
+        Returns:
+            The created struct instance
+        """
+        return self.create_instance_from_json(data, struct_name)
 
     def get_type_metadata(self, name: str) -> dict[str, Any] | None:
         """Get metadata for a type.
@@ -327,7 +412,7 @@ class TypeRegistry:
         """Get all types of a specific category.
 
         Args:
-            category: The category ('agent', 'resource', or 'struct')
+            category: The category ('agent', 'resource', 'struct', or 'interface')
 
         Returns:
             Dictionary of type names to types
@@ -338,8 +423,66 @@ class TypeRegistry:
             return self._resource_types.copy()
         elif category == "struct":
             return self._struct_types.copy()
+        elif category == "interface":
+            return self._interface_types.copy()
         else:
             raise ValueError(f"Unknown category: {category}")
+
+    def register(self, type_obj: Any) -> None:
+        """Register a type object (automatically determines category).
+
+        Args:
+            type_obj: The type object to register
+        """
+        if not hasattr(type_obj, "name"):
+            raise ValueError("Type object must have a 'name' attribute")
+
+        # Use explicit type detection for better reliability
+        category = self._detect_type_category(type_obj)
+
+        if category == "agent":
+            self.register_agent_type(type_obj)
+        elif category == "resource":
+            self.register_resource_type(type_obj)
+        elif category == "interface":
+            self.register_interface_type(type_obj)
+        elif category == "struct":
+            self.register_struct_type(type_obj)
+        else:
+            # Fallback to struct type for backward compatibility
+            self.register_struct_type(type_obj)
+
+    def _detect_type_category(self, type_obj: Any) -> str:
+        """Detect the category of a type object using explicit checks.
+
+        Args:
+            type_obj: The type object to categorize
+
+        Returns:
+            Category string: "agent", "resource", "interface", or "struct"
+        """
+        # Check for explicit type attributes first (most reliable)
+        if hasattr(type_obj, "__class__"):
+            class_name = type_obj.__class__.__name__
+
+            # Check for agent types (including agent_blueprint)
+            if class_name == "AgentType" or (hasattr(type_obj, "memory_system") and hasattr(type_obj, "reasoning_capabilities")):
+                return "agent"
+
+            # Check for resource types
+            if class_name == "ResourceType" or (hasattr(type_obj, "has_lifecycle") and type_obj.has_lifecycle):
+                return "resource"
+
+            # Check for interface types
+            if class_name == "InterfaceType" or (hasattr(type_obj, "methods") and hasattr(type_obj, "embedded_interfaces")):
+                return "interface"
+
+            # Check for struct types (default)
+            if class_name == "StructType":
+                return "struct"
+
+        # Fallback to struct type for backward compatibility
+        return "struct"
 
     # === Utility Methods ===
 
@@ -348,6 +491,7 @@ class TypeRegistry:
         self._agent_types.clear()
         self._resource_types.clear()
         self._struct_types.clear()
+        self._interface_types.clear()
         self._type_metadata.clear()
         self._registration_order.clear()
 
@@ -366,12 +510,16 @@ class TypeRegistry:
         cls.validate_json_data(data, struct_name)
 
         # Create the instance
-        from dana.agent import AgentInstance
-        from dana.core.lang.interpreter.struct_system import StructInstance
+        from dana.core.builtin_types.agent_system import AgentInstance
+        from dana.core.builtin_types.struct_system import StructInstance
 
         # Check if this is an agent type and create appropriate instance
         if TYPE_REGISTRY.has_agent_type(struct_name):
             return AgentInstance(struct_type, data)
+        elif TYPE_REGISTRY.has_workflow_type(struct_name):
+            from dana.core.builtin_types.workflow_system import WorkflowInstance
+
+            return WorkflowInstance(struct_type, data)
         else:
             return StructInstance(struct_type, data)
 

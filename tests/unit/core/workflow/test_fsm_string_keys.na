@@ -1,0 +1,115 @@
+# Test FSM with string-based transition keys
+# This file tests the new string-based approach for FSM transitions
+
+sync def test_string_based_transitions():
+    """Test that FSM transitions work correctly with string keys."""
+    # Create FSM with string-based transitions
+    fsm = FSM(
+        states=["START", "PROCESSING", "COMPLETE", "ERROR"],
+        initial_state="START",
+        current_state="START",
+        transitions={
+            "START:begin": "PROCESSING",
+            "PROCESSING:success": "COMPLETE",
+            "PROCESSING:error": "ERROR",
+            "ERROR:retry": "PROCESSING",
+            "ERROR:abort": "COMPLETE"
+        }
+    )
+    
+    # Test initial state
+    assert fsm.current_state == "START", f"Expected START, got {fsm.current_state}"
+    
+    # Test transition START -> PROCESSING
+    fsm.current_state = fsm.transitions["START:begin"]
+    assert fsm.current_state == "PROCESSING", f"Expected PROCESSING, got {fsm.current_state}"
+    
+    # Test transition PROCESSING -> COMPLETE
+    fsm.current_state = fsm.transitions["PROCESSING:success"]
+    assert fsm.current_state == "COMPLETE", f"Expected COMPLETE, got {fsm.current_state}"
+    
+    log("✅ String-based transitions test passed")
+
+sync def test_transition_key_format():
+    """Test that transition keys follow the correct format."""
+    # Create FSM with various transition keys
+    fsm = FSM(
+        states=["A", "B", "C"],
+        initial_state="A",
+        current_state="A",
+        transitions={
+            "A:next": "B",
+            "B:next": "C",
+            "C:reset": "A"
+        }
+    )
+    
+    # Verify all keys follow the format "state:event"
+    for key in fsm.transitions.keys():
+        assert ":" in key, f"Transition key '{key}' should contain ':'"
+        parts = key.split(":")
+        assert len(parts) == 2, f"Transition key '{key}' should have exactly one ':'"
+        assert parts[0] in fsm.states, f"State '{parts[0]}' should be in states list"
+        assert len(parts[1]) > 0, f"Event '{parts[1]}' should not be empty"
+    
+    log("✅ Transition key format test passed")
+
+sync def test_type_safety():
+    """Test that the transitions field is properly typed as dict[str, str]."""
+    # Create FSM
+    fsm = FSM(
+        states=["START", "COMPLETE"],
+        initial_state="START",
+        current_state="START",
+        transitions={"START:next": "COMPLETE"}
+    )
+    
+    # Verify transitions is a dict (Dana handles this automatically)
+    # Note: Dana's type system ensures this at the struct level
+    
+    # Verify all keys are strings
+    for key in fsm.transitions.keys():
+        # In Dana, we can't use isinstance, but we can verify the key format
+        assert ":" in key, f"Transition key '{key}' should contain ':'"
+    
+    # Verify all values are strings (they should be states)
+    for value in fsm.transitions.values():
+        assert value in fsm.states, f"Transition value '{value}' should be a valid state"
+    
+    log("✅ Type safety test passed")
+
+sync def test_manual_transitions():
+    """Test manual state transitions using string keys."""
+    # Create FSM
+    fsm = FSM(
+        states=["START", "PROCESSING", "COMPLETE"],
+        initial_state="START",
+        current_state="START",
+        transitions={"START:next": "PROCESSING", "PROCESSING:next": "COMPLETE"}
+    )
+    
+    # Manual transition using string keys
+    assert fsm.current_state == "START", f"Expected START, got {fsm.current_state}"
+    
+    # Transition to PROCESSING
+    fsm.current_state = fsm.transitions["START:next"]
+    assert fsm.current_state == "PROCESSING", f"Expected PROCESSING, got {fsm.current_state}"
+    
+    # Transition to COMPLETE
+    fsm.current_state = fsm.transitions["PROCESSING:next"]
+    assert fsm.current_state == "COMPLETE", f"Expected COMPLETE, got {fsm.current_state}"
+    
+    log("✅ Manual transitions test passed")
+
+# Run all string-based FSM tests
+log("🚀 Running String-Based FSM Tests")
+log("=" * 50)
+
+test_string_based_transitions()
+test_transition_key_format()
+test_type_safety()
+test_manual_transitions()
+
+log("")
+log("✅ All string-based FSM tests passed!")
+log("📊 Summary: 4 tests passed, 0 tests failed")

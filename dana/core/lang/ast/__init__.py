@@ -73,6 +73,7 @@ Statement = Union[
     "MethodDefinition",
     "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
+    "InterfaceDefinition",
     "ResourceDefinition",
     "AgentDefinition",
     "ImportStatement",
@@ -554,8 +555,51 @@ class StructDefinition:
 
 
 @dataclass
+class InterfaceDefinition:
+    """Interface definition statement (e.g., interface IAgent: plan(problem: str) -> IWorkflow)."""
+
+    name: str
+    methods: list["InterfaceMethod"]
+    embedded_interfaces: list[str] = field(default_factory=list)  # Names of embedded interfaces
+    docstring: str | None = None  # Docstring extracted from preceding string literal
+    location: Location | None = None
+
+
+@dataclass
+class TypedParameter:
+    """A parameter with type information for interface methods."""
+
+    name: str
+    type_hint: TypeHint | None = None
+    default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class InterfaceMethod:
+    """A method signature in an interface definition."""
+
+    name: str
+    parameters: list["TypedParameter"]
+    return_type: TypeHint | None = None
+    comment: str | None = None  # Method description from inline comment
+    location: Location | None = None
+
+
+@dataclass
 class ResourceDefinition:
     """Resource definition statement (e.g., resource MyRAG: sources: list[str])."""
+
+    name: str
+    fields: list["StructField"] = field(default_factory=list)
+    methods: list["FunctionDefinition"] = field(default_factory=list)
+    docstring: str | None = None
+    location: Location | None = None
+
+
+@dataclass
+class WorkflowDefinition:
+    """Workflow definition statement (e.g., workflow MyWorkflow: steps: list[str])."""
 
     name: str
     fields: list["StructField"] = field(default_factory=list)

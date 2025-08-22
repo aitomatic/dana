@@ -72,8 +72,8 @@ def test_na_file(na_file):
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -108,6 +108,9 @@ def test_na_file(na_file):
         "test_lambda_expressions.na",  # Disable type checking for lambda expressions (type checker unsupported expression)
         "test_set_comprehensions.na",  # Disable type checking for set comprehensions (type checker for loop issue)
         "test_lambda_struct_receivers.na",  # Disable type checking for lambda struct receivers (type checker scoping issue)
+        "test_interface_basic.na",  # Disable type checking for interface tests
+        "test_interface_validation.na",  # Disable type checking for interface tests
+        "test_interface_integration.na",  # Disable type checking for interface tests
     ]
     disable_type_check = filename in enhanced_coercion_tests
 

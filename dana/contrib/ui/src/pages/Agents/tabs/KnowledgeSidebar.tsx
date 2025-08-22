@@ -13,6 +13,7 @@ interface KnowledgeContent {
   total_questions: number;
   answers_by_topics: Record<string, string>;
   user_instructions?: string[];
+  structured_data?: any;
 }
 
 interface KnowledgeSidebarProps {
@@ -74,9 +75,9 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               <h5 className="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
                 Research Questions
               </h5>
-              <ul className="mb-4 space-y-2 ml-8">
+              <ul className="mb-4 ml-8 space-y-2">
                 {questions.map((question, qIndex) => (
-                  <li key={qIndex} className="text-sm text-gray-700 rounded-md list-disc">
+                  <li key={qIndex} className="text-sm list-disc text-gray-700 rounded-md">
                     {/* <Info size={12} className="inline mr-2 text-blue-500" /> */}
                     {question}
                   </li>
@@ -165,15 +166,26 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
     );
   };
 
+  const renderStructuredData = () => {
+    return (
+      <div className="mb-6">
+        <div className="p-4 bg-gray-50 rounded-lg border">
+          <pre className="overflow-x-auto text-xs text-gray-700 whitespace-pre-wrap">
+            {JSON.stringify(content, null, 2)}
+          </pre>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex fixed inset-0 z-50">
       {/* Background overlay */}
-      <div className="flex-1  " onClick={onClose} />
-
+      <div className="flex-1" onClick={onClose} />
       {/* Sidebar */}
-      <div className="flex flex-col w-200 max-h-full bg-white border-l border-gray-200 shadow-xl">
+      <div className="flex flex-col max-h-full bg-white border-l border-gray-200 shadow-xl w-200">
         {/* Header */}
-        <div className="flex justify-between items-center py-2 px-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex justify-between items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {formatTopicName(topicPath)}
@@ -212,24 +224,32 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
 
           {!loading && !error && content && (
             <div className="space-y-6">
-              {/* Description */}
-              {/* {content.knowledge_area_description && (
-                <div>
-                  <h4 className="mb-2 text-sm font-semibold text-gray-700">Description</h4>
-                  <p className="text-sm leading-relaxed text-gray-600">
-                    {content.knowledge_area_description}
-                  </p>
-                </div>
-              )} */}
+              {/* Content V2 - Structured Data */}
+              {content.structured_data && renderStructuredData()}
 
-              {/* User Instructions */}
-              {renderUserInstructions()}
+              {/* Content V1 - Legacy Format */}
+              {!content.structured_data && (
+                <>
+                  {/* Description */}
+                  {/* {content.knowledge_area_description && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-semibold text-gray-700">Description</h4>
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        {content.knowledge_area_description}
+                      </p>
+                    </div>
+                  )} */}
 
-              {/* Q&A Pairs by Topic */}
-              {renderQAndAPairs()}
+                  {/* User Instructions */}
+                  {renderUserInstructions()}
 
-              {/* Metadata */}
-              {renderMetadata()}
+                  {/* Q&A Pairs by Topic */}
+                  {renderQAndAPairs()}
+
+                  {/* Metadata */}
+                  {renderMetadata()}
+                </>
+              )}
             </div>
           )}
         </div>

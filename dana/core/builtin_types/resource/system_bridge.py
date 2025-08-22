@@ -2,7 +2,7 @@
 System Resource Bridge
 
 This module provides bridges between system-level resources (dana.common.sys_resource)
-and higher-level Dana resources (dana.core.resource). This allows sophisticated
+and higher-level Dana resources (dana.core.builtin_types.resource). This allows sophisticated
 system resources to be exposed through the standard Dana resource interface.
 
 The bridge pattern enables:
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dana.common.types import BaseRequest, BaseResponse
-from dana.core.resource import BaseResource, ResourceState
+from dana.core.builtin_types.resource import BaseResource, ResourceState
 
 
 @dataclass
