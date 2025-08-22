@@ -66,12 +66,12 @@ const WorkflowsTab: React.FC = () => {
         const [name, pipeline] = line.split(' = ', 2);
         const steps = pipeline.split('|').map((step) => step.trim());
 
-        workflow_definitions.push({
-          name: name.trim(),
-          steps,
-          pipeline: pipeline.trim(),
-          description: `Pipeline: ${steps.join(' → ')}`,
-        });
+                 workflow_definitions.push({
+           name: name.trim(),
+           steps,
+           pipeline: pipeline.trim(),
+           description: `${steps.join(' → ')}`,
+         });
       }
     }
 
@@ -159,45 +159,49 @@ const WorkflowsTab: React.FC = () => {
           <div key={index} className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h4 className="text-lg font-semibold text-gray-900">{workflow.name}</h4>
-                {workflow.description && (
-                  <p className="mt-1 text-sm text-gray-600">{workflow.description}</p>
-                )}
-              </div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Pipeline
-              </span>
+                                 <h4 className="text-lg font-semibold text-gray-900">{workflow.name}</h4>
+                 {workflow.description && (
+                   <p className="mt-1 text-sm text-gray-600">{workflow.description}</p>
+                 )}
+               </div>
+               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                 Workflow
+               </span>
             </div>
 
-            {/* Pipeline Visualization */}
-            <div className="mb-4">
-              <div className="flex overflow-x-auto items-center pb-2 space-x-3">
-                {workflow.steps.map((step, stepIndex) => (
-                  <React.Fragment key={stepIndex}>
-                    <div className="flex-shrink-0 px-4 py-2 min-w-max bg-blue-50 rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-blue-800">{step}</span>
-                    </div>
-                    {stepIndex < workflow.steps.length - 1 && (
-                      <div className="flex-shrink-0 text-gray-400">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
+                         {/* Pipeline Visualization */}
+             <div className="mb-6">
+               <h5 className="text-sm font-medium text-gray-700 mb-4">Workflow Steps</h5>
+               <div className="relative">
+                 {workflow.steps.map((step, stepIndex) => (
+                   <div key={stepIndex} className="relative">
+                     {/* Step Card */}
+                     <div className="flex items-center mb-3">
+                       {/* Step Number Circle */}
+                       <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-4 z-10 relative">
+                         <span className="text-sm font-bold text-white">{stepIndex + 1}</span>
+                       </div>
+                       
+                       {/* Step Content */}
+                       <div className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
+                         <span className="text-sm font-medium text-gray-800 font-mono">{step}</span>
+                       </div>
+                     </div>
+                     
+                     {/* Connector Line */}
+                     {stepIndex < workflow.steps.length - 1 && (
+                       <div className="absolute left-4 top-8 w-0.5 h-6 bg-blue-300"></div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             </div>
 
             {/* Raw Pipeline */}
             <div className="p-3 bg-gray-50 rounded-md">
-              <h5 className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-                Pipeline Code
-              </h5>
+                           <h5 className="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+               Code
+             </h5>
               <code className="font-mono text-sm text-gray-800 break-all">
                 {workflow.name} = {workflow.pipeline}
               </code>
