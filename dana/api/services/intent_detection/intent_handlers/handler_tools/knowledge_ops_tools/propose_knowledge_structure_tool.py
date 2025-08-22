@@ -211,7 +211,6 @@ Generate the refined structure:"""
         response_parts.append("""💡 **Next Steps:**
 - Review the proposed structure above carefully
 - Identify any areas you'd like to modify, expand, or remove  
-- Consider if the depth and breadth match your needs
 - Once satisfied, we'll add this structure to your knowledge tree
 """)
         

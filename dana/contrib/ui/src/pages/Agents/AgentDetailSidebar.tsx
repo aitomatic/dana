@@ -176,6 +176,7 @@ const SmartAgentChat: React.FC<{
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Create agent-specific store
   const agentStore = useMemo(() => {
@@ -220,6 +221,71 @@ const SmartAgentChat: React.FC<{
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const [previousAgentId, setPreviousAgentId] = useState<string | null>(null);
+  const [hasShownWelcomeMessage, setHasShownWelcomeMessage] = useState(false);
+  const welcomeMessageTimeoutRef = useRef<number | null>(null);
+
+  // Function to show welcome message with typing effect
+  const showWelcomeMessageWithTypingEffect = useCallback((displayName: string, agentDomain: string) => {
+    // Prevent duplicate welcome messages
+    if (hasShownWelcomeMessage) {
+      return null;
+    }
+
+    // Mark that we're showing a welcome message
+    setHasShownWelcomeMessage(true);
+    
+    // Show typing effect for 2 seconds before displaying the welcome message
+    setIsTyping(true);
+    
+    const timeoutId = setTimeout(() => {
+      setIsTyping(false);
+      addMessage({
+        sender: 'agent',
+        text: displayName
+          ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
+Now let's shape it into an agent that really works for you. To begin, tell me:
+- What kind of ${agentDomain.toLowerCase()} expertise should it focus on?
+- Who will this agent primarily assist (e.g. individuals, analysts, business owners)?
+
+💡 Tip: If you have a **job description**, you can paste it here — I'll use it to tailor the agent's knowledge base.`
+          : `Exciting — you're about to build your own custom agent from the ground up! 🚀
+
+To get started, let's define its foundation:
+
+- What **domain or expertise** should your agent specialize in? (e.g. healthcare, semiconductor, education)
+- **Who** will it assist? (e.g. financial analysts, IT engineers)?
+
+💡 Tip: You can provide a **job description**, and I'll draft the starting expertise for your agent.`,
+      });
+    }, 2000);
+
+    // Store the timeout ID for cleanup purposes
+    welcomeMessageTimeoutRef.current = timeoutId;
+    return timeoutId;
+  }, [addMessage, hasShownWelcomeMessage]);
+
+  // Function to show fallback welcome message with typing effect
+  const showFallbackWelcomeMessageWithTypingEffect = useCallback(() => {
+    // Prevent duplicate welcome messages
+    if (hasShownWelcomeMessage) {
+      return null;
+    }
+
+    // Mark that we're showing a welcome message
+    setHasShownWelcomeMessage(true);
+    
+    // Show typing effect for 2 seconds before displaying the fallback welcome message
+    setIsTyping(true);
+    
+    const timeoutId = setTimeout(() => {
+      setIsTyping(false);
+      addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+    }, 2000);
+
+    // Store the timeout ID for cleanup purposes
+    welcomeMessageTimeoutRef.current = timeoutId;
+    return timeoutId;
+  }, [addMessage, hasShownWelcomeMessage]);
 
   // Agent switch detection and cleanup
   useEffect(() => {
@@ -228,10 +294,18 @@ const SmartAgentChat: React.FC<{
       console.log(`[Agent Switch] Switching from ${previousAgentId} to ${agent_id}`);
       
       if (previousAgentId) {
+        // Clear any pending welcome message timeout
+        if (welcomeMessageTimeoutRef.current) {
+          clearTimeout(welcomeMessageTimeoutRef.current);
+          welcomeMessageTimeoutRef.current = null;
+        }
+        
         // Clear messages from previous agent
         clearMessages();
         setHasLoadedHistory(false);
         setIsLoadingHistory(false);
+        setIsTyping(false);
+        setHasShownWelcomeMessage(false);
       }
       
       setPreviousAgentId(agent_id);
@@ -267,6 +341,12 @@ const SmartAgentChat: React.FC<{
       // Clean up all state when component unmounts
       console.log(`[Unmount] Cleaning up component for agent ${agent_id}`);
       
+      // Clear any pending welcome message timeout
+      if (welcomeMessageTimeoutRef.current) {
+        clearTimeout(welcomeMessageTimeoutRef.current);
+        welcomeMessageTimeoutRef.current = null;
+      }
+      
       // Clear smart-chat-storage when component unmounts
       cleanupOnExit();
       
@@ -274,6 +354,8 @@ const SmartAgentChat: React.FC<{
       setHasLoadedHistory(false);
       setIsLoadingHistory(false);
       setPreviousAgentId(null);
+      setIsTyping(false);
+      setHasShownWelcomeMessage(false);
       
       // Clear any pending operations
       if (loading) {
@@ -388,24 +470,9 @@ const SmartAgentChat: React.FC<{
             const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
             const selectedAgent = useAgentStore.getState().selectedAgent;
             const agentDomain = selectedAgent?.config?.domain || 'Domain';
-            addMessage({
-              sender: 'agent',
-              text: displayName
-                ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
-Now let's shape it into an agent that really works for you. To begin, tell me:
-- What kind of ${agentDomain.toLowerCase()} expertise should it focus on?
-- Who will this agent primarily assist (e.g. individuals, analysts, business owners)?
-
-💡 Tip: If you have a **job description**, you can paste it here — I'll use it to tailor the agent's knowledge base.`
-                : `Exciting — you’re about to build your own custom agent from the ground up! 🚀
-
-To get started, let’s define its foundation:
-
-- What **domain or expertise** should your agent specialize in? (e.g. healthcare, semiconductor, education)
-- **Who** will it assist? (e.g. financial analysts, IT engineers)?
-
-💡 Tip: You can provide a **job description**, and I’ll draft the starting expertise for your agent.`,
-            });
+            
+            // Use the centralized function to show welcome message with typing effect
+            showWelcomeMessageWithTypingEffect(displayName, agentDomain);
           }
         }
         setHasLoadedHistory(true);
@@ -413,7 +480,8 @@ To get started, let’s define its foundation:
         console.error('Failed to fetch chat history:', e);
         // Only add welcome message if we don't have any messages
         if (getMessageCount() === 0) {
-          addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+          // Use the centralized function to show fallback welcome message with typing effect
+          showFallbackWelcomeMessageWithTypingEffect();
         }
         setHasLoadedHistory(true);
       } finally {
@@ -472,12 +540,31 @@ To get started, let’s define its foundation:
   // Manual message clearing function for agent switches
   const clearMessagesForNewAgent = useCallback(() => {
     if (agentStore) {
+      // Clear any pending welcome message timeout
+      if (welcomeMessageTimeoutRef.current) {
+        clearTimeout(welcomeMessageTimeoutRef.current);
+        welcomeMessageTimeoutRef.current = null;
+      }
+      
       clearMessages();
       setHasLoadedHistory(false);
       setIsLoadingHistory(false);
+      setIsTyping(false);
+      setHasShownWelcomeMessage(false);
       console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
     }
   }, [agentStore, clearMessages, agent_id]);
+
+  // Cleanup effect for welcome message timeouts
+  useEffect(() => {
+    return () => {
+      // Clear any pending welcome message timeout when component unmounts or dependencies change
+      if (welcomeMessageTimeoutRef.current) {
+        clearTimeout(welcomeMessageTimeoutRef.current);
+        welcomeMessageTimeoutRef.current = null;
+      }
+    };
+  }, [showWelcomeMessageWithTypingEffect, showFallbackWelcomeMessageWithTypingEffect]);
 
   // Debug utility to check store state
   const debugStoreState = useCallback(() => {
@@ -669,6 +756,16 @@ To get started, let’s define its foundation:
               </div>
             );
           })}
+          {isTyping && (
+            <div className="flex gap-2 items-center self-start px-3 py-2 text-left bg-white rounded-sm border border-gray-100">
+              <div className="flex gap-1">
+                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              
+            </div>
+          )}
           <ProcessingStatusHistory
             messages={processingStatusHistory}
             isExpanded={isHistoryExpanded}

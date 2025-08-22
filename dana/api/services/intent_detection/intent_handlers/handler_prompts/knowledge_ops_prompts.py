@@ -82,10 +82,9 @@ User: "Add startup valuation knowledge"
 → modify_tree (add approved structure)
 → ask_question (offer knowledge generation)
 
-Pattern D: Knowledge Generation (Always Gated)
+Pattern D: Knowledge Generation
 User: "Generate content for DCF modeling"
 → explore_knowledge (verify topic exists)
-→ ask_question (confirm scope: single topic vs all_leaves)
 → generate_knowledge (actual generation)
 → attempt_completion (confirm results)
 
