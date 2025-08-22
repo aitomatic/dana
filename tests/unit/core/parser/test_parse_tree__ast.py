@@ -196,7 +196,7 @@ def test_statement_assignment():
     st = StatementTransformer()
     target = Identifier(name="x")  # No automatic local: prefix
     value = LiteralExpression(value=1)
-    stmt = st.simple_assignment([target, value])
+    stmt = st.assignment([target, value])
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.value == 1
 

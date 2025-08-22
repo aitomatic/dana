@@ -1,13 +1,14 @@
 """
 Resource AST Processing
 
-Functions to create ResourceType from AST nodes with inheritance support.
+Functions to create ResourceType from AST nodes.
 """
 
 from typing import Any
 
-from dana.core.lang.ast import ResourceDefinition
-from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+from dana.core.lang.ast import FunctionDefinition, ResourceDefinition
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+from dana.registry import FUNCTION_REGISTRY
 
 from .resource_type import ResourceType
 
@@ -16,39 +17,22 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
     """
     Create a ResourceType from a ResourceDefinition AST node.
 
-    Handles inheritance by merging parent fields and defaults.
+    Processes resource methods as FunctionDefinition nodes and registers them.
 
     Args:
         resource_def: The ResourceDefinition AST node
         context: Optional sandbox context for evaluating default values
 
     Returns:
-        ResourceType with fields and default values, including inherited fields
+        ResourceType with fields and default values
     """
-    # Start with inherited fields if parent exists
+    # Initialize fields and metadata
     fields: dict[str, str] = {}
     field_order: list[str] = []
     field_defaults: dict[str, Any] = {}
     field_comments: dict[str, str] = {}
-    parent_type: ResourceType | None = None
 
-    # Handle inheritance by merging parent fields
-    if resource_def.parent_name:
-        parent_type = StructTypeRegistry.get(resource_def.parent_name)
-        if parent_type is None:
-            raise ValueError(f"Parent resource '{resource_def.parent_name}' not found for '{resource_def.name}'")
-
-        # Copy parent fields first (inheritance order: parent fields come first)
-        fields.update(parent_type.fields)
-        field_order.extend(parent_type.field_order)
-
-        if parent_type.field_defaults:
-            field_defaults.update(parent_type.field_defaults)
-
-        if hasattr(parent_type, "field_comments") and parent_type.field_comments:
-            field_comments.update(parent_type.field_comments)
-
-    # Add child fields (child fields override parent fields with same name)
+    # Process resource fields
     for field in resource_def.fields:
         if field.type_hint is None:
             raise ValueError(f"Field {field.name} has no type hint")
@@ -69,11 +53,67 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
         if getattr(field, "comment", None):
             field_comments[field.name] = field.comment
 
-    return ResourceType(
+    # Create the resource type
+    resource_type = ResourceType(
         name=resource_def.name,
         fields=fields,
         field_order=field_order,
         field_defaults=field_defaults if field_defaults else None,
         field_comments=field_comments,
         docstring=resource_def.docstring,
+    )
+
+    # Process resource methods (FunctionDefinition nodes)
+    for method_def in resource_def.methods:
+        if isinstance(method_def, FunctionDefinition):
+            # Create DanaFunction from FunctionDefinition
+            dana_func = _create_dana_function_from_definition(method_def, context)
+
+            # Register the method in unified registry
+            # Resource methods are registered with the resource type name as the receiver type
+            FUNCTION_REGISTRY.register_struct_function(resource_def.name, method_def.name.name, dana_func)
+
+    return resource_type
+
+
+def _create_dana_function_from_definition(func_def: FunctionDefinition, context=None) -> DanaFunction:
+    """
+    Create a DanaFunction from a FunctionDefinition AST node.
+
+    Args:
+        func_def: The FunctionDefinition node
+        context: Optional execution context
+
+    Returns:
+        DanaFunction object
+    """
+    # Extract parameter names and defaults
+    param_names = []
+    param_defaults = {}
+
+    # Handle parameters (including receiver if present)
+    all_params = []
+    if func_def.receiver:
+        all_params.append(func_def.receiver)
+    all_params.extend(func_def.parameters)
+
+    for param in all_params:
+        if hasattr(param, "name"):
+            param_name = param.name
+            param_names.append(param_name)
+
+            # Extract default value if present
+            if hasattr(param, "default_value") and param.default_value is not None:
+                param_defaults[param_name] = param.default_value
+
+    # Create DanaFunction
+    return DanaFunction(
+        name=func_def.name.name,
+        parameters=param_names,
+        defaults=param_defaults,
+        body=func_def.body,
+        return_type=func_def.return_type,
+        decorators=func_def.decorators,
+        is_sync=func_def.is_sync,
+        location=func_def.location,
     )

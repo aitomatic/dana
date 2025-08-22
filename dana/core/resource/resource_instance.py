@@ -44,8 +44,10 @@ class ResourceInstance(StructInstance):
             resource_type: The resource type definition
             values: Initial field values
         """
-        # Call parent constructor
-        super().__init__(resource_type, values or {})
+        # Call parent constructor (import registry lazily to avoid circular import)
+        from dana.registry import RESOURCE_REGISTRY
+
+        super().__init__(resource_type, values or {}, RESOURCE_REGISTRY)
 
         # Resource-specific attributes for composition
         self._backend = None
@@ -90,7 +92,7 @@ class ResourceInstance(StructInstance):
         if hasattr(self, method_name):
             return True
 
-        # Check resource type (no inheritance)
+        # Check resource type
         if self.resource_type.has_method(method_name):
             return True
 

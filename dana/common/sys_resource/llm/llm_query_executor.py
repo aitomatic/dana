@@ -366,6 +366,7 @@ class LLMQueryExecutor(Loggable):
         # Make the API call
         try:
             # Make the actual API call (aisuite is synchronous)
+            self.info(f"Making API call to {request_params['model']} with payload: {request_params}")
             response: ChatCompletion = self._client.chat.completions.create(
                 **request_params,
             )

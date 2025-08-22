@@ -5,16 +5,10 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 
 import unittest
 
-from dana.agent import (
-    AgentInstance,
-    AgentType,
-    AgentTypeRegistry,
-    create_agent_instance,
-    get_agent_type,
-    register_agent_type,
-)
+from dana.agent import AgentInstance, AgentType, create_agent_instance
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
 
 
 class TestAgentStructType(unittest.TestCase):
@@ -136,14 +130,22 @@ class TestAgentInstance(unittest.TestCase):
         values = {"name": "Alice", "age": 30}
         agent_instance = AgentInstance(self.agent_type, values)
 
+        # Set up LLM resource in context for agent methods
+        from tests.conftest import create_mock_llm_resource
+
+        llm_resource = create_mock_llm_resource()
+        self.sandbox_context.set_system_llm_resource(llm_resource)
+
         # Test plan method
         plan_result = agent_instance.plan(self.sandbox_context, "test task")
-        self.assertIn("planning", plan_result.lower())
+        # Since DANA_MOCK_LLM is true, we should get a mock response
+        self.assertIn("mock", plan_result.lower())
         self.assertIn("TestAgent", plan_result)
 
         # Test solve method
         solve_result = agent_instance.solve(self.sandbox_context, "test problem")
-        self.assertIn("solving", solve_result.lower())
+        # Since DANA_MOCK_LLM is true, we should get a mock response
+        self.assertIn("mock", solve_result.lower())
         self.assertIn("TestAgent", solve_result)
 
         # Test memory methods
@@ -182,17 +184,18 @@ class TestAgentTypeRegistry(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.registry = AgentTypeRegistry()
+        self.registry = TYPE_REGISTRY
+        # Clear registry to ensure clean state for each test
+        self.registry.clear()
 
     def test_singleton_pattern(self):
-        """Test that AgentTypeRegistry is a singleton."""
-        # Note: The registry is not actually a singleton in the current implementation
-        # This test is updated to reflect the actual behavior
-        registry1 = AgentTypeRegistry()
-        registry2 = AgentTypeRegistry()
+        """Test that global_agent_type_registry follows singleton pattern."""
+        # The global registry should be a singleton
+        registry1 = TYPE_REGISTRY
+        registry2 = TYPE_REGISTRY
 
-        # They should be different instances in the current implementation
-        self.assertIsNot(registry1, registry2)
+        # They should be the same instance with singleton pattern
+        self.assertIs(registry1, registry2)
 
     def test_register_and_get_agent_type(self):
         """Test registering and retrieving agent types."""
@@ -203,6 +206,7 @@ class TestAgentTypeRegistry(unittest.TestCase):
 
         # Retrieve the agent type
         retrieved_type = self.registry.get_agent_type("TestAgent")
+        # Check that we get the same agent type back (object identity should be preserved)
         self.assertIs(retrieved_type, agent_type)
 
     def test_get_nonexistent_agent_type(self):
@@ -231,9 +235,13 @@ class TestHelperFunctions(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
+
+    def tearDown(self):
+        """Clean up after tests."""
+
+        TYPE_REGISTRY.clear()
 
     def test_register_agent_type(self):
         """Test register_agent_type helper function."""
@@ -284,9 +292,13 @@ class TestAgentStructIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
+
+    def tearDown(self):
+        """Clean up after tests."""
+
+        TYPE_REGISTRY.clear()
 
     def test_agent_type_in_struct_registry(self):
         """Test that agent types are registered in struct registry."""

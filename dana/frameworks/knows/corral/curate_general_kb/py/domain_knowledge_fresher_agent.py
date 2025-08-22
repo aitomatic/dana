@@ -1,4 +1,4 @@
-from dana.core.stdlib.core.reason_function import reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 from dana.core.lang.sandbox_context import SandboxContext
 import yaml
 import logging
@@ -21,6 +21,10 @@ class DomainKnowledgeFresherAgent:
 
     def assess_domain_confidence(self, knowledge_area_description: str, questions: dict, previous_assessment: dict = None) -> dict:
         """Assess LLM confidence using dynamic topic-based framework"""
+
+        # Handle None default argument
+        if previous_assessment is None:
+            previous_assessment = {}
 
         # Extract topic names from questions dict
         if previous_assessment is None:
@@ -94,7 +98,7 @@ OUTPUT FORMAT:
         # Build criteria section
         criteria_section = ""
         for i, topic in enumerate(key_topics, 1):
-            criteria_section += f"{i}. **{topic}**  key knowledge about {topic}\n    "
+            criteria_section += f"{i}. **{topic}**  key knowledge about {topic}\n    "
 
         # Build output format
         output_format = "{\n"
@@ -121,13 +125,13 @@ KNOWLEDGE TOPICS (ask for each topic):
 
 QUALITY RULES:
 " Use domain-specific terms, tools, or standards where they add clarity.  
-" Keep each question 1520 words, one sentence, no run-ons.  
-" No overlap in scope: one topic � one question.  
+" Keep each question 15 20 words, one sentence, no run-ons.  
+" No overlap in scope: one topic one question.  
 " Phrase so a subject-matter expert can give concrete, practical knowledge.  
 " Focus on learning and understanding rather than implementation steps.
 " Never mention "topic," "criterion," or variable names inside the questions.  
 
-OUTPUT FORMAT (strict)  return ONLY this:
+OUTPUT FORMAT (strict)  return ONLY this:
 {output_format}
 """
 
@@ -142,10 +146,22 @@ OUTPUT FORMAT (strict)  return ONLY this:
 
         # Generate initial questions
         questions = self.generate_initial_domain_questions(knowledge_area_description, key_topics)
+
+        # Ensure questions is a dictionary
+        if not isinstance(questions, dict):
+            print(f"Warning: Expected dictionary but got {type(questions)}. Creating fallback structure.")
+            questions = {}
+            # Create fallback structure with default topics
+            if not key_topics:
+                key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
+            for topic in key_topics:
+                safe_topic = topic.lower().replace(" ", "_").replace("-", "_")
+                questions[safe_topic] = []
+
         iteration = 1
         previous_assessment = {}
 
-        print("= Starting iterative question generation...")
+        print("= Starting iterative question generation...")
 
         while iteration <= self.max_iterations:
             # Count total questions
@@ -154,6 +170,12 @@ OUTPUT FORMAT (strict)  return ONLY this:
 
             # Assess confidence
             confidence_result = self.assess_domain_confidence(knowledge_area_description, questions, previous_assessment)
+
+            # Ensure confidence_result is a dictionary
+            if not isinstance(confidence_result, dict):
+                print(f"Warning: Expected confidence_result dictionary but got {type(confidence_result)}. Using fallback values.")
+                confidence_result = {"overall_confidence": 0.0, "gaps": []}
+
             confidence_score = confidence_result.get("overall_confidence", 0.0)
             gaps = confidence_result.get("gaps", [])
 
@@ -187,9 +209,26 @@ OUTPUT FORMAT (strict)  return ONLY this:
                 if gap_topic_names:
                     improved_questions = self.generate_targeted_domain_questions(knowledge_area_description, gap_topic_names, questions)
 
+                    # Ensure improved_questions is a dictionary
+                    if not isinstance(improved_questions, dict):
+                        print(f"Warning: Expected improved_questions dictionary but got {type(improved_questions)}. Skipping improvement.")
+                        improved_questions = {}
+
                     # Append new questions to existing arrays
                     for topic_key, new_questions_array in improved_questions.items():
+                        # Ensure new_questions_array is a list
+                        if not isinstance(new_questions_array, list):
+                            print(f"Warning: Expected list for topic {topic_key} but got {type(new_questions_array)}. Converting to list.")
+                            new_questions_array = [str(new_questions_array)] if new_questions_array else []
+
                         if topic_key in questions:
+                            # Ensure questions[topic_key] is a list
+                            if not isinstance(questions[topic_key], list):
+                                print(
+                                    f"Warning: Expected list for existing topic {topic_key} but got {type(questions[topic_key])}. Converting to list."
+                                )
+                                questions[topic_key] = [str(questions[topic_key])] if questions[topic_key] else []
+
                             questions[topic_key].extend(new_questions_array)
                         else:
                             questions[topic_key] = new_questions_array
@@ -201,11 +240,23 @@ OUTPUT FORMAT (strict)  return ONLY this:
         # Final assessment
         final_confidence = self.assess_domain_confidence(knowledge_area_description, questions, previous_assessment)
 
+        # Ensure final_confidence is a dictionary
+        if not isinstance(final_confidence, dict):
+            print(f"Warning: Expected final_confidence dictionary but got {type(final_confidence)}. Using fallback values.")
+            final_confidence = {"overall_confidence": 0.0, "per_criterion": {}}
+
         # Convert questions dict to flat list
         questions_list = []
         for _, question_array in questions.items():
             if question_array:
-                questions_list.extend([q for q in question_array if q and q.strip()])
+                # Ensure question_array is a list
+                if isinstance(question_array, list):
+                    questions_list.extend([q for q in question_array if q and q.strip()])
+                else:
+                    # Handle case where question_array is not a list
+                    question_str = str(question_array).strip()
+                    if question_str:
+                        questions_list.append(question_str)
 
         result = {
             "knowledge_area_description": knowledge_area_description,

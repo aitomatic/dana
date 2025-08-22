@@ -12,7 +12,6 @@ import pytest
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 from dana.core.lang.parser.dana_parser import parse_program
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -33,7 +32,9 @@ def pytest_configure(config):
 def test_na_file(na_file):
     """Test that a .na file can be parsed and executed without errors."""
     # Clear struct registry to ensure test isolation
-    StructTypeRegistry.clear()
+    from dana.registry import GLOBAL_REGISTRY
+
+    GLOBAL_REGISTRY.types.clear()
 
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"
@@ -52,8 +53,16 @@ def test_na_file(na_file):
     context = SandboxContext()
 
     # Clear registries to ensure test isolation
-    StructTypeRegistry.clear()
-    MethodRegistry.clear()
+    from dana.registry import GLOBAL_REGISTRY
+
+    GLOBAL_REGISTRY.clear_all()
+
+    # Reload core functions after clearing
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+    do_register_py_builtins(GLOBAL_REGISTRY.functions)
+    register_py_wrappers(GLOBAL_REGISTRY.functions)
 
     # Initialize LLM resource if needed
     if "reason(" in program_text:
@@ -108,12 +117,7 @@ def test_na_file(na_file):
     # Initialize interpreter first (so real functions get registered)
     interpreter = DanaInterpreter()
 
-    # Use environment variable to enable mocking for reason function if needed
-    original_mock_env = None
-    if "reason(" in program_text:
-        original_mock_env = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "true"
-
+    # No longer overriding DANA_MOCK_LLM - let environment control it
     result = None
     exception_info = None
     try:
@@ -124,13 +128,6 @@ def test_na_file(na_file):
         import traceback
 
         exception_info += "\n" + traceback.format_exc()
-    finally:
-        # Restore original environment
-        if "reason(" in program_text:
-            if original_mock_env is None:
-                os.environ.pop("DANA_MOCK_LLM", None)
-            else:
-                os.environ["DANA_MOCK_LLM"] = original_mock_env
 
     # Check if execution failed with an exception
     if exception_info:

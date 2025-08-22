@@ -15,22 +15,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana"
-version = "0.25.8.8"
+version = "0.5.0.pre0"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
-    {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
+    { name = "Christopher Nguyen", email = "ctn@aitomatic.com" },
+]
+maintainers = [
+    {name = "Vinh Luong", email = "vinh@aitomatic.com"},
+    {name = "Annie Ha", email = "annie@aitomatic.com"},
+    {name = "Lam Nguyen", email = "lam@aitomatic.com"},
+    {name = "Roy Vu", email = "roy@aitomatic.com"},
+    {name = "Sang Dinh", email = "sang@aitomatic.com"},
 ]
 
 # Core dependencies organized by functionality
 dependencies = [
     # AI/LLM Integration
-    "google-cloud-aiplatform",
     "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
+    "google-cloud-aiplatform",
     "httpx>=0.27.0",
-    "mcp",
-    "llm-code-executor",
     "llama-index",
     "openai>=1.55.3",
     # Language Processing
@@ -52,12 +57,15 @@ dependencies = [
     # Interactive Features
     "prompt-toolkit",
     "pygments",
+    "textual",
+    "pyperclip",
     # Web Automation
     "playwright",
     # API Server
     "fastapi",
     "uvicorn",
-    # Testing Framework (needed for Dana runtime)
+    # Testing Frameworks
+    # "datest",  # TODO: publish `datest` on PyPI
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
@@ -68,6 +76,7 @@ dependencies = [
     "python-a2a>=0.5.9",
     # Misc / Other
     "tqdm",
+    "aicapture",
     "python-lsp-server[all]>=1.13.0",
     "pyright>=1.1.403",
     "jedi>=0.19.2",
@@ -75,18 +84,94 @@ dependencies = [
     "llama-index-llms-cohere>=0.5.0",
     "llama-index-vector-stores-duckdb>=0.4.6",
     "llama-index-vector-stores-postgres>=0.5.5",
+    "llm-code-executor",
+    "mcp",
+    "openai>=1.55.3",
+
+    # Language Processing & Development Tools
+    "jedi>=0.19.2",
+    "lark",
+    "lsprotocol",
+    "pygls",
+    "pyright>=1.1.403",
+    "python-lsp-server[all]>=1.13.0",
+
+    # Data Processing & Visualization
+    "matplotlib",
+    "numpy>=2.2.3",  # Numerical computing library for array operations
+    "pandas",
+    "seaborn",
+
+    # Database & Storage
+    "sqlalchemy",
+
+    # Networking & I/O
+    "aiohttp",
+    "aioconsole",
+    "websockets",
+
+    # Configuration & Utilities
+    "loguru>=0.7.3",  # Better logging library than Python's built-in logging
+    "python-dotenv",
+    "pyyaml",
+    "structlog",
+    "tqdm",
+
+    # Interactive Features & UI
+    "prompt-toolkit",
+    "pygments",
+    "pyperclip",
+    "textual",
+
+    # Web Automation
+    "playwright",
+
+    # API Server
+    "fastapi",
+    "uvicorn",
+
+    # Testing Framework (needed for Dana runtime)
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+
+    # Agent Integration
+    "python-a2a>=0.5.9",
+
+    # Additional Tools
+    "aicapture",
+    "textual-dev>=1.7.0",
+
+    # Vision & Document Processing
+    "opencv-python>=4.11.0.86",  # Computer vision library for image processing
+    "pillow>=11.1.0",  # Python Imaging Library for image processing
+    "pymupdf>=1.25.3",  # PDF processing and manipulation library
 ]
+
+# Command-line entry points
+[project.scripts]
+dana = "dana.apps.cli.__main__:main"
+dana-ls = "dana.core.lang.lsp.server:main"
 
 # Optional dependency groups
 [project.optional-dependencies]
 dev = [
-    "ruff",       # Fast Python linter
-    "pylint",     # Additional code analysis
-    "mypy",       # Static type checking
-    "pre-commit", # Git hooks for code quality
-    "pytest-cov", # Test coverage reporting
-    "build",      # Package building tool
-    "twine",      # PyPI upload tool
+    # Code Quality & Linting
+    "mypy",         # Static type checking
+    "pre-commit",   # Git hooks for code quality
+    "pylint",       # Additional code analysis
+    "ruff",         # Fast Python linter
+
+    # Testing
+    "pexpect",      # Interactive terminal application testing
+    "pytest-cov",   # Test coverage reporting
+
+    # Development Tools
+    "textual-dev>=1.7.0",  # Textual development tools
+
+    # Build & Distribution
+    "build",        # Package building tool
+    "twine",        # PyPI upload tool
 ]
 
 docs = [
@@ -101,40 +186,36 @@ docs = [
     "pymdown-extensions[extra]",
 
     # Auto-sync and Generation
-    "mkdocs-gen-files",              # Generate docs from code structure
-    "mkdocs-literate-nav",           # Auto-generate navigation
+    "mkdocs-gen-files",               # Generate docs from code structure
+    "mkdocs-literate-nav",            # Auto-generate navigation
 
     # Validation Tools
-    "mkdocs-htmlproofer-plugin",     # Broken link detection
-    "linkcheckmd",                   # Fast async link checking
-    "doc8",                          # Documentation style checking
+    "doc8",                           # Documentation style checking
+    "linkcheckmd",                    # Fast async link checking
+    "mkdocs-htmlproofer-plugin",      # Broken link detection
 
     # Advanced Features
-    "mkdocs-redirects",              # Handle URL changes
-    "mkdocs-awesome-nav",            # Advanced navigation control
-    "mkdocs-print-site-plugin",      # PDF export for offline reading
-    "mkdocs-include-markdown-plugin",# Reusable content blocks
-    "mkdocs-macros-plugin",          # Variables and templating
-    "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
+    "mkdocs-awesome-nav",             # Advanced navigation control
+    "mkdocs-include-markdown-plugin", # Reusable content blocks
+    "mkdocs-macros-plugin",           # Variables and templating
+    "mkdocs-print-site-plugin",       # PDF export for offline reading
+    "mkdocs-redirects",               # Handle URL changes
+    "mkdocs-table-reader-plugin",     # Data tables from CSV/JSON
 ]
-
-# Command-line entry points
-[project.scripts]
-dana = "dana.core.cli.dana:main"
-dana-ls = "dana.core.lang.lsp.server:main"
 
 # =============================================================================
 # Package Configuration
 # =============================================================================
 
 [tool.setuptools]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
+dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
@@ -142,22 +223,14 @@ dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 [tool.uv]
 package = true
-preview = true                      # Enable preview features
-resolution = "highest"              # Use highest compatible versions
-prerelease = "disallow"             # Avoid pre-release versions
-python-preference = "only-managed"  # Use uv-managed Python installations
-compile-bytecode = true             # Pre-compile .pyc files for performance
-
+preview = true                       # Enable preview features
+resolution = "highest"               # Use highest compatible versions
+prerelease = "disallow"              # Avoid pre-release versions
+python-preference = "only-managed"   # Use uv-managed Python installations
+compile-bytecode = true              # Pre-compile .pyc files for performance
 
 [tool.uv.sources]
 # Future: Custom dependency sources
-
-[dependency-groups]
-dev = [
-    "pre-commit",
-    "build",
-    "twine",
-]
 
 # =============================================================================
 # Code Quality Tools
@@ -173,38 +246,43 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort (import sorting)
-    "B",   # bugbear (common Python gotchas)
-    "UP",  # pyupgrade (modern Python features)
-    "N801", "N803", "N804",  # naming conventions
-    "F821", "F822", "F841", "F401",  # undefined names, unused variables/imports
+    "B",    # bugbear (common Python gotchas)
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modern Python features)
+    "N801", # naming conventions - class names
+    "N803", # naming conventions - argument names
+    "N804", # naming conventions - first argument names
+    "F401", # unused imports
+    "F821", # undefined names
+    "F822", # undefined names in __all__
+    "F841", # unused variables
 ]
 
 ignore = [
-    "E203",  # Whitespace before ':' (conflicts with Black)
-    "E402",  # Module level import not at top of file (intentional in CLI)
-    "E501",  # Line too long (handled by line-length)
-    "B008",  # Function call in default argument
-    "B010",  # setattr in class body
-    "B904",  # raise ... from ...
-    "N802",  # Function name should be lowercase
-    "I001",  # import block is un-sorted or un-formatted
+    "B008",   # Function call in default argument
+    "B010",   # setattr in class body
+    "B024",   # Abstract base class without abstract methods (design pattern choice)
+    "B904",   # raise ... from ...
+    "E203",   # Whitespace before ':' (conflicts with Black)
+    "E402",   # Module level import not at top of file (intentional in CLI)
+    "E501",   # Line too long (handled by line-length)
+    "F403",   # import * used; unable to detect undefined names (acceptable in __init__.py)
+    "I001",   # import block is un-sorted or un-formatted
+    "N802",   # Function name should be lowercase
     "UP007",  # use `X | Y` for type annotations
-    "F403",  # import * used; unable to detect undefined names (acceptable in __init__.py)
-    "B024",  # Abstract base class without abstract methods (design pattern choice)
 ]
 
 exclude = [
-    "*.na",           # Dana language files
-    ".git",           # Version control
-    ".venv",          # Virtual environment
-    "dana.egg-info",  # Build artifacts
-    "__pycache__",    # Python cache
-    ".pytest_cache",  # Pytest cache
-    ".ruff_cache",    # Ruff cache
-    "**/.archived/**", # Archived/legacy code
+    "*.na",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "dana.egg-info",
+    "**/.archived/**",
 ]
 
 [tool.pyright]
@@ -214,13 +292,13 @@ reportAssignmentType = false
 
 [tool.mypy]
 python_version = "3.12"
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+warn_redundant_casts = true
 warn_return_any = true
 warn_unused_configs = true
-warn_redundant_casts = true
 warn_unused_ignores = true
-disallow_any_generics = true
-check_untyped_defs = true
-no_implicit_reexport = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"

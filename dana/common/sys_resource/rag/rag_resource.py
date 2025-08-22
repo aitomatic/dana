@@ -53,20 +53,14 @@ class RAGResource(BaseSysResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        # Use DANAPATH if set, otherwise default to .cache/rag
-        # if cache_dir is None:
-        danapath = os.environ.get("DANAPATH")
-
-        if danapath and danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
-            danapath = None
-
+        danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
         self.force_reload = force_reload
         self.debug = debug
         self.reranking = reranking
         self.initial_multiplier = initial_multiplier
-        self.sources = sources
+        self.sources = self._resolve_sources(sources, danapath)
 
         cache_dir = self._resolve_cache_dir(cache_dir, danapath)
 
@@ -87,6 +81,24 @@ class RAGResource(BaseSysResource):
         else:
             self._llm_reranker = None
 
+    def _get_danapath(self) -> str:
+        # Use DANAPATH if set, otherwise default to .cache/rag
+        # if cache_dir is None:
+        danapaths = os.environ.get("DANAPATH")
+
+        danapaths = danapaths.split(":")
+
+        danapath = None
+
+        for _path in danapaths:
+            if _path.endswith("stdlib") and "libs" in _path and "dana" in _path:
+                continue
+            if "agents" in _path:
+                danapath = _path
+                break
+
+        return danapath
+
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
         for src in sources:
@@ -100,6 +112,11 @@ class RAGResource(BaseSysResource):
         return new_sources
 
     def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
+        # If cache_dir is absolute, use it as is
+        if cache_dir and os.path.isabs(cache_dir):
+            return cache_dir
+
+        # If cache_dir is relative, try to combine it with DANAPATH
         if danapath:
             if cache_dir:
                 return os.path.join(danapath, cache_dir)

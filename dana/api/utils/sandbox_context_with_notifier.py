@@ -230,9 +230,11 @@ class SandboxContextWithNotifier(SandboxContext):
         Returns:
             A new SandboxContextWithNotifier with the same state and notifier
         """
-        new_context = SandboxContextWithNotifier()
+        new_context = SandboxContextWithNotifier(parent=self._parent, manager=self._manager, notifier=self._notifier)
         new_context.set_state(self.get_state())
         new_context.set_notifier(self._notifier)
+
+        self._copy_attributes(new_context, skip_state=False, skip_resources=False)
 
         # Also copy resource and agent registrations (same as parent)
         import copy
@@ -247,6 +249,97 @@ class SandboxContextWithNotifier(SandboxContext):
             new_context._SandboxContext__agents[scope] = copy.copy(self._SandboxContext__agents[scope])
 
         return new_context
+
+    def merge(self, other: "SandboxContext") -> None:
+        """
+        Merge another context into this one and notify about changes.
+
+        Args:
+            other: The context to merge from
+        """
+        from dana.common.runtime_scopes import RuntimeScopes
+
+        # Get current state before merging for notifications
+        old_state = self.get_state()
+
+        # Call parent implementation to merge
+        super().merge(other)
+
+        # Get new state after merging
+        new_state = self.get_state()
+
+        # Notify about all changes
+        for scope in RuntimeScopes.ALL:
+            if scope in old_state or scope in new_state:
+                old_scope = old_state.get(scope, {})
+                new_scope = new_state.get(scope, {})
+
+                # Find all variables that changed
+                all_vars = set(old_scope.keys()) | set(new_scope.keys())
+
+                for var_name in all_vars:
+                    old_value = old_scope.get(var_name)
+                    new_value = new_scope.get(var_name)
+
+                    # Only notify if value actually changed
+                    if old_value != new_value:
+                        self._notify_change(scope, var_name, old_value, new_value)
+
+    def set_scope(self, scope: str, context: dict[str, Any] | None = None) -> None:
+        """
+        Set a value in a specific scope and notify about changes.
+
+        Args:
+            scope: The scope to set in
+            context: The context to set
+        """
+        from dana.common.runtime_scopes import RuntimeScopes
+
+        if scope not in RuntimeScopes.ALL:
+            # Let parent handle the error
+            super().set_scope(scope, context)
+            return
+
+        # Get old values for notification
+        old_scope = self._state.get(scope, {}).copy()
+        new_scope = context or {}
+
+        # Call parent implementation
+        super().set_scope(scope, context)
+
+        # Notify about all changes
+        all_vars = set(old_scope.keys()) | set(new_scope.keys())
+
+        for var_name in all_vars:
+            old_value = old_scope.get(var_name)
+            new_value = new_scope.get(var_name)
+
+            # Only notify if value actually changed
+            if old_value != new_value:
+                self._notify_change(scope, var_name, old_value, new_value)
+
+    def create_child_context(self) -> "SandboxContextWithNotifier":
+        """
+        Create a child context that inherits from this context with notifier.
+
+        A child context:
+        - Has its own fresh local scope
+        - Shares global scopes (private, public, system) with the parent
+        - Inherits the parent's interpreter and other properties
+        - Inherits the notifier from the parent
+        - Is useful for function execution where you need isolated local variables
+          but want to maintain access to global state
+
+        Returns:
+            A new SandboxContextWithNotifier that is a child of this context
+        """
+        # Create child with this context as parent, and pass the notifier
+        child_context = SandboxContextWithNotifier(parent=self, manager=self._manager, notifier=self._notifier)
+
+        # Copy attributes but skip state and resources (inherited via parent chain)
+        self._copy_attributes(child_context, skip_state=True, skip_resources=True)
+
+        return child_context
 
     @classmethod
     def from_dict(

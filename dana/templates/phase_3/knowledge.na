@@ -1,0 +1,2 @@
+doc_kb = use("rag", sources=["./docs"])
+contextual_kb = use("rag", sources=["./knows"])

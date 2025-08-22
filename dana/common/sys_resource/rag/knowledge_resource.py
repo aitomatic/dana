@@ -1,5 +1,3 @@
-import os
-
 from llama_index.core import Settings
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import (
@@ -57,24 +55,16 @@ class KnowledgeResource(RAGResource):
         reranking: bool,
         initial_multiplier: int,
     ):
+        danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
-        self.sources = sources
+        self.sources = self._resolve_sources(sources, danapath)
         self.force_reload = force_reload
         self.debug = debug
         self.reranking = reranking
         self.initial_multiplier = initial_multiplier
-        # Use DANAPATH if set, otherwise default to .cache/rag
-        # if cache_dir is None:
-        danapath = os.environ.get("DANAPATH")
 
-        if danapath:
-            if cache_dir:
-                cache_dir = os.path.join(danapath, cache_dir)
-            else:
-                cache_dir = os.path.join(danapath, ".cache", "rag")
-        else:
-            cache_dir = ".cache/rag"
+        cache_dir = self._resolve_cache_dir(cache_dir, danapath)
 
         self._cache_manager = UnifiedCacheManager(cache_dir)
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager, loader=KnowledgeLoader())
@@ -160,7 +150,10 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
-        knowledge_resource = KnowledgeResource(sources=["agents/financial_stmt_analysis/knows/processed_knowledge"], force_reload=True)
+        knowledge_resource = KnowledgeResource(
+            sources=["/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/test_new_knows/processed_knowledge"],
+            force_reload=True,
+        )
         await knowledge_resource.initialize()
         res = await knowledge_resource.get_plan("What is the capital expenditure for the company?", num_results=10)
         print(res)

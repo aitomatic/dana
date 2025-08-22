@@ -5,9 +5,10 @@ Tests coexistence, method dispatch priority, and registry integration.
 
 import unittest
 
-from dana.agent import AgentInstance, AgentType, create_agent_instance, register_agent_type
+from dana.agent import AgentInstance, AgentType, create_agent_instance
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry import register_agent_type
 
 
 class TestAgentStructCoexistence(unittest.TestCase):
@@ -16,9 +17,9 @@ class TestAgentStructCoexistence(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import GLOBAL_REGISTRY
 
-        StructTypeRegistry.clear()
+        GLOBAL_REGISTRY.types.clear()
 
         # Create a regular struct type
         self.struct_type = StructType(
@@ -62,7 +63,7 @@ class TestAgentStructCoexistence(unittest.TestCase):
     def test_registry_coexistence(self):
         """Test that both types exist in their respective registries."""
         # Check that agent type is in the agent registry
-        from dana.agent import get_agent_type
+        from dana.registry import get_agent_type
 
         agent_registry_type = get_agent_type("TestAgent")
 
@@ -87,9 +88,9 @@ class TestMethodDispatchPriority(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import GLOBAL_REGISTRY
 
-        StructTypeRegistry.clear()
+        GLOBAL_REGISTRY.types.clear()
 
         self.agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
         register_agent_type(self.agent_type)
@@ -97,21 +98,41 @@ class TestMethodDispatchPriority(unittest.TestCase):
     def test_builtin_agent_methods_work(self):
         """Test that built-in agent methods work through dispatch."""
         context = SandboxContext()
+
+        # Set up LLM resource in context for agent methods with mock mode enabled
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        context.set_system_llm_resource(llm_resource)
+
         agent_instance = create_agent_instance("TestAgent", {"name": "test"}, context)
 
-        # Test that built-in methods work
+        # Test that built-in methods work with mock responses
         plan_result = agent_instance.plan(context, "test task")
-        self.assertIn("planning", plan_result.lower())
-        self.assertIn("TestAgent", plan_result)
+        if hasattr(plan_result, "_wait_for_delivery"):
+            plan_result = plan_result._wait_for_delivery()
+        # Mock response format: "This is a mock response. In a real scenario, I would provide a thoughtful answer to: [prompt]"
+        self.assertIn("mock response", plan_result.lower())
+        self.assertIn("thoughtful answer", plan_result.lower())
 
         solve_result = agent_instance.solve(context, "test problem")
-        self.assertIn("solving", solve_result.lower())
-        self.assertIn("TestAgent", solve_result)
+        if hasattr(solve_result, "_wait_for_delivery"):
+            solve_result = solve_result._wait_for_delivery()
+        self.assertIn("mock response", solve_result.lower())
+        self.assertIn("thoughtful answer", solve_result.lower())
 
         remember_result = agent_instance.remember(context, "key", "value")
+        if hasattr(remember_result, "_wait_for_delivery"):
+            remember_result = remember_result._wait_for_delivery()
         self.assertTrue(remember_result)
 
         recall_result = agent_instance.recall(context, "key")
+        if hasattr(recall_result, "_wait_for_delivery"):
+            recall_result = recall_result._wait_for_delivery()
         self.assertEqual(recall_result, "value")
 
     def test_custom_methods_override_builtin(self):
@@ -119,11 +140,24 @@ class TestMethodDispatchPriority(unittest.TestCase):
         # This would require custom method registration
         # For now, we test that built-in methods work as expected
         context = SandboxContext()
+
+        # Set up LLM resource in context for agent methods with mock mode enabled
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+        llm_resource.with_mock_llm_call(True)  # Enable mock mode
+        context.set_system_llm_resource(llm_resource)
+
         agent_instance = create_agent_instance("TestAgent", {"name": "test"}, context)
 
-        # Built-in methods should work
+        # Built-in methods should work with mock responses
         plan_result = agent_instance.plan(context, "test task")
-        self.assertIn("planning", plan_result.lower())
+        if hasattr(plan_result, "_wait_for_delivery"):
+            plan_result = plan_result._wait_for_delivery()
+        self.assertIn("mock response", plan_result.lower())
 
         # Custom methods would be tested here when implemented
         # For now, we verify the method dispatch system works
@@ -180,9 +214,9 @@ class TestAgentRegistryIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+        from dana.registry import GLOBAL_REGISTRY
 
-        StructTypeRegistry.clear()
+        GLOBAL_REGISTRY.types.clear()
 
     def test_agent_type_registration_in_struct_registry(self):
         """Test that agent types are properly registered in struct registry."""
@@ -192,7 +226,7 @@ class TestAgentRegistryIntegration(unittest.TestCase):
         register_agent_type(agent_type)
 
         # Check that it's in the agent registry
-        from dana.agent import get_agent_type
+        from dana.registry import get_agent_type
 
         agent_registry_type = get_agent_type("TestAgent")
         self.assertIs(agent_registry_type, agent_type)

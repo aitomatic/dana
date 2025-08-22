@@ -18,9 +18,10 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
+from dana.core.concurrency.promise_limiter import get_global_promise_limiter
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.collection_executor import CollectionExecutor
 from dana.core.lang.interpreter.executor.control_flow_executor import (
@@ -31,9 +32,9 @@ from dana.core.lang.interpreter.executor.function_executor import FunctionExecut
 from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
 from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
 from dana.core.lang.interpreter.executor.traversal import OptimizedASTTraversal
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.interpreter.hooks import HookRegistry, HookType
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 class DanaExecutor(BaseExecutor):
@@ -52,6 +53,7 @@ class DanaExecutor(BaseExecutor):
     - Consistent function parameter handling
     - Every node evaluation produces a value
     - AST traversal optimizations with caching and safety
+    - PromiseLimiter integration for safe concurrent execution
 
     Usage:
         executor = DanaExecutor(function_registry)
@@ -67,6 +69,9 @@ class DanaExecutor(BaseExecutor):
         """
         super().__init__(parent=None, function_registry=function_registry)  # type: ignore
         self._output_buffer = []  # Buffer for capturing print output
+
+        # Initialize PromiseLimiter for safe concurrent execution
+        self._promise_limiter = get_global_promise_limiter()
 
         # Initialize specialized executors - pass function_registry to ExpressionExecutor
         self._expression_executor = ExpressionExecutor(parent_executor=self, function_registry=function_registry)
@@ -276,3 +281,12 @@ class DanaExecutor(BaseExecutor):
             else:
                 # No location info available, re-raise original
                 raise
+
+    @property
+    def promise_limiter(self):
+        """Get the PromiseLimiter instance for this executor.
+
+        Returns:
+            The PromiseLimiter instance
+        """
+        return self._promise_limiter

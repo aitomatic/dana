@@ -1,0 +1,222 @@
+/* Enhanced KaTeX Styling for Math Formulas */
+
+/* Import KaTeX fonts and base styles */
+@import url('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css');
+
+/* Base KaTeX container styling */
+.katex {
+  font-size: 1.1em !important;
+  line-height: 1.2 !important;
+  text-indent: 0 !important;
+  text-rendering: auto !important;
+  font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
+}
+
+/* Inline math styling */
+.katex-inline {
+  padding: 0.1rem 0.2rem !important;
+  margin: 0 0.1rem !important;
+  background: transparent !important;
+  border-radius: 3px !important;
+  font-size: 1em !important;
+  vertical-align: middle !important;
+}
+
+/* Display math styling */
+.katex-display {
+  margin: 1.5rem 0 !important;
+  padding: 1.5rem 2rem !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  text-align: center !important;
+  position: relative !important;
+  overflow-x: auto !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Display math with overflow handling */
+.katex-display > .katex {
+  display: inline-block !important;
+  text-align: left !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+}
+
+/* KaTeX element styling */
+.katex .base {
+  position: relative !important;
+  white-space: nowrap !important;
+  width: min-content !important;
+}
+
+/* Mathematical symbols and operators */
+.katex .mord {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
+}
+
+.katex .mop {
+  font-family: 'KaTeX_Operators', 'Times New Roman', serif !important;
+}
+
+.katex .mbin {
+  font-family: 'KaTeX_Operators', 'Times New Roman', serif !important;
+}
+
+.katex .mrel {
+  font-family: 'KaTeX_Operators', 'Times New Roman', serif !important;
+}
+
+.katex .mopen,
+.katex .mclose {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
+}
+
+.katex .mpunct {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif !important;
+}
+
+/* Special mathematical fonts */
+.katex .mathscr {
+  font-family: 'KaTeX_Script', cursive !important;
+}
+
+.katex .mathcal {
+  font-family: 'KaTeX_Caligraphic', cursive !important;
+}
+
+.katex .mathfrak {
+  font-family: 'KaTeX_Fraktur', serif !important;
+}
+
+.katex .mathbb {
+  font-family: 'KaTeX_AMS', serif !important;
+}
+
+/* Mathematical symbols and operators */
+.katex .mord.mathdefault,
+.katex .mop.mathdefault {
+  font-family: 'KaTeX_Math', 'Times New Roman', serif !important;
+  font-style: italic !important;
+}
+
+/* Fractions */
+.katex .frac-line {
+  border-bottom-width: 0.04em !important;
+  border-bottom-style: solid !important;
+}
+
+/* Subscripts and superscripts */
+.katex .sub {
+  font-size: 0.8em !important;
+  vertical-align: -0.1em !important;
+}
+
+.katex .sup {
+  font-size: 0.8em !important;
+  vertical-align: 0.1em !important;
+}
+
+/* Square roots */
+.katex .sqrt > .root {
+  margin-left: 0.27777778em !important;
+  margin-right: -0.55555556em !important;
+}
+
+/* Integrals */
+.katex .op-symbol.large-op {
+  font-size: 1.2em !important;
+}
+
+/* Sums and products */
+.katex .op-symbol.small-op {
+  font-size: 0.9em !important;
+}
+
+/* Matrix and array styling */
+.katex .array {
+  vertical-align: middle !important;
+}
+
+.katex .array > .lbrace {
+  margin-right: 0.1em !important;
+}
+
+.katex .array > .rbrace {
+  margin-left: 0.1em !important;
+}
+
+/* Align environment */
+.katex .align {
+  text-align: left !important;
+}
+
+.katex .align > * {
+  text-align: left !important;
+}
+
+/* Cases environment */
+.katex .cases {
+  text-align: left !important;
+}
+
+/* Responsive math */
+@media (max-width: 768px) {
+  .katex-display {
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    font-size: 0.9em !important;
+  }
+  
+  .katex-inline {
+    font-size: 0.9em !important;
+  }
+}
+
+/* Dark theme support */
+.markdown-body-dark .katex-display {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+.markdown-body-dark .katex {
+  color: #f8fafc !important;
+}
+
+/* User message context (gray background) */
+.markdown-body-user .katex-display {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  border-color: #d1d5db !important;
+}
+
+/* Agent message context (white background) */
+.markdown-body-agent .katex-display {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Error handling for KaTeX */
+.katex-error {
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 4px !important;
+  padding: 0.5rem !important;
+  font-family: monospace !important;
+}
+
+/* Loading state for KaTeX */
+.katex-loading {
+  opacity: 0.6 !important;
+  transition: opacity 0.3s ease !important;
+}
+
+/* Print styles */
+@media print {
+  .katex-display {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}

@@ -29,9 +29,9 @@ from dana.core.lang.ast import (
     WhileLoop,
 )
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.interpreter.functions.python_function import PythonFunction
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionRegistry
 
 
 # --- Literals ---
@@ -212,9 +212,8 @@ def test_fstring_literal():
         ]
     )
     interpreter.execute_program(program, context)
-    # Get the value and ensure it's evaluated
-    result = interpreter.get_evaluated("private:result", context)
-    assert result == "foo42"
+    # The F-string should be evaluated during execution
+    assert context.get("private:result") == "foo42"
 
 
 # --- More Arithmetic ---

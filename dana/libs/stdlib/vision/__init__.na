@@ -1,0 +1,100 @@
+# Add local aicapture to Python path
+import os.py as os
+from aicapture.vision_parser.py import VisionParser
+from aicapture.vid_capture.py import VidCapture
+from aicapture.settings.py import MAX_CONCURRENT_TASKS, ImageQuality
+from aicapture.vision_parser.py import DEFAULT_PROMPT
+from typing.py import Optional, Dict, Any
+
+# Initialize parsers
+def _get_vision_parser(config: Optional[Dict] = None) -> VisionParser:
+    """Get a configured VisionParser instance."""
+    if config is None:
+        config = {}
+    
+    return VisionParser(
+        vision_model=config.get('vision_model', None),
+        cache_dir=config.get('cache_dir', None),
+        max_concurrent_tasks=config.get('max_concurrent_tasks', MAX_CONCURRENT_TASKS),
+        image_quality=config.get('image_quality', ImageQuality.DEFAULT),
+        invalidate_cache=config.get('invalidate_cache', False),
+        cloud_bucket=config.get('cloud_bucket', None),
+        prompt=config.get('prompt', DEFAULT_PROMPT),
+        dpi=config.get('dpi', 333)
+    )
+
+def _get_vid_capture(config: Optional[Dict] = None) -> VidCapture:
+    """Get a configured VidCapture instance."""
+    if config is None:
+        config = {}
+    
+    from aicapture.vid_capture.py import VideoConfig
+    
+    video_config = VideoConfig(
+        max_duration_seconds=config.get('max_duration_seconds', 30),
+        frame_rate=config.get('frame_rate', 2),
+        target_frame_size=config.get('target_frame_size', (768, 768)),
+        resize_frames=config.get('resize_frames', True),
+        cache_dir=config.get('cache_dir', None),
+        cloud_bucket=config.get('cloud_bucket', None)
+    )
+    
+    return VidCapture(
+        config=video_config,
+        vision_model=config.get('vision_model', None),
+        invalidate_cache=config.get('invalidate_cache', False)
+    )
+
+def vision_extract(file_path: str, prompt: Optional[str] = None, config: Optional[Dict] = None) -> Dict[str, Any]:
+    """
+    Unified function to process various file types supported by aicapture.
+    
+    Args:
+        file_path (str): Path to the file to process
+        prompt (Optional[str]): Custom prompt for processing. If None, uses default prompts
+        config (Optional[Dict]): Configuration dictionary for the processors
+        
+    Returns:
+        Dict[str, Any]: Processing results. Structure varies by file type:
+        - PDF/Images: Returns structured content with file metadata and page content
+        - Videos: Returns extracted knowledge as string
+        
+    Supported file types:
+        - PDF: .pdf
+        - Images: .jpg, .jpeg, .png, .tiff, .tif, .webp, .bmp
+        - Videos: .mp4, .avi, .mov, .mkv
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    file_ext = os.path.splitext(file_path)[1].lower()
+    
+    # Handle PDF files
+    if file_ext == '.pdf':
+        parser = _get_vision_parser(config)
+        if prompt:
+            parser.prompt = prompt
+        return parser.process_pdf_async(file_path)
+    elif file_ext in ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp', '.bmp']:
+        parser = _get_vision_parser(config)
+        if prompt:
+            parser.prompt = prompt
+        return parser.process_image_async(file_path)
+    elif file_ext in ['.mp4', '.avi', '.mov', '.mkv']:
+        vid_capture = _get_vid_capture(config)
+        if not prompt:
+            # Use default prompt for videos if none provided
+            # prompt = "Extract and describe the key content, actions, and information shown in this video."
+            prompt = DEFAULT_PROMPT
+        
+        result = vid_capture.process_video_async(file_path, prompt)
+        return {
+            "file_object": {
+                "file_name": os.path.basename(file_path),
+                "file_full_path": os.path.abspath(file_path),
+                "file_type": "video",
+                "content": result
+            }
+        }
+    else:
+        raise ValueError(f"Unsupported file type: {file_ext}. Supported types: PDF, Images (jpg, jpeg, png, tiff, tif, webp, bmp)") # TODO: Add video support

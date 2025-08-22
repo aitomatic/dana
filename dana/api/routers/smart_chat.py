@@ -28,8 +28,10 @@ from dana.api.services.intent_detection_service import (
 from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeManager
 from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.api.routers.agents import clear_agent_cache
+from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+from dana.api.services.auto_knowledge_generator import get_auto_knowledge_generator
 import os
-from datetime import datetime, UTC
 import json
 
 logger = logging.getLogger(__name__)
@@ -58,6 +60,86 @@ def _get_all_topics_from_tree(tree) -> list[str]:
 
     traverse(tree.root)
     return topics
+
+
+def _is_complex_knowledge_request(entities: dict[str, Any], user_message: str) -> bool:
+    """
+    Determine if a knowledge request is complex and should use KnowledgeOpsHandler.
+
+    Complex indicators:
+    - Multiple topics or complex topic paths
+    - Keywords indicating multi-step processes
+    - Requests for validation, approval, or generation
+    - Complex instructions or detailed requirements
+    """
+    # Check for complex keywords in user message
+    complex_keywords = [
+        "generate",
+        "create",
+        "build",
+        "develop",
+        "comprehensive",
+        "detailed",
+        "validate",
+        "verify",
+        "check",
+        "approve",
+        "review",
+        "analyze",
+        "multi-step",
+        "workflow",
+        "process",
+        "plan",
+        "strategy",
+        "complete",
+        "thorough",
+        "extensive",
+        "in-depth",
+        "advanced",
+    ]
+
+    message_lower = user_message.lower()
+    has_complex_keywords = any(keyword in message_lower for keyword in complex_keywords)
+
+    # Check for multiple topics or complex topic structure
+    topics = entities.get("knowledge_path", [])
+    has_multiple_topics = isinstance(topics, list) and len(topics) > 2
+
+    # Check for detailed instructions or requirements
+    details = entities.get("details", "")
+    has_detailed_instructions = len(details) > 100 if details else False
+
+    # Check for instruction text (indicates complex workflow)
+    instruction_text = entities.get("instruction_text", "")
+    has_instruction_text = len(instruction_text) > 50 if instruction_text else False
+
+    # Check message length (longer messages often indicate complexity)
+    is_long_message = len(user_message) > 200
+
+    # Determine complexity
+    complexity_score = 0
+    if has_complex_keywords:
+        complexity_score += 2
+    if has_multiple_topics:
+        complexity_score += 1
+    if has_detailed_instructions:
+        complexity_score += 1
+    if has_instruction_text:
+        complexity_score += 1
+    if is_long_message:
+        complexity_score += 1
+
+    # Consider complex if score >= 2
+    is_complex = complexity_score >= 2
+
+    logger.info(f"Complexity analysis for '{user_message[:50]}...': score={complexity_score}, is_complex={is_complex}")
+    logger.info(f"  - Complex keywords: {has_complex_keywords}")
+    logger.info(f"  - Multiple topics: {has_multiple_topics}")
+    logger.info(f"  - Detailed instructions: {has_detailed_instructions}")
+    logger.info(f"  - Instruction text: {has_instruction_text}")
+    logger.info(f"  - Long message: {is_long_message}")
+
+    return is_complex
 
 
 @router.post("/{agent_id}/smart-chat")
@@ -226,6 +308,138 @@ async def smart_chat(
         agent_lock.release()
 
 
+@router.get("/{agent_id}/knowledge-generation/status")
+async def get_knowledge_generation_status(
+    agent_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get the current status of knowledge generation for an agent.
+    """
+    try:
+        # Get the agent to find its folder_path
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+
+        # Get the auto knowledge generator
+        auto_generator = get_auto_knowledge_generator(agent_id, folder_path)
+
+        # Get generation status
+        status = auto_generator.get_generation_status()
+
+        return status
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting knowledge generation status for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/knowledge-generation/generate-all")
+async def generate_all_knowledge(
+    agent_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Generate knowledge for all pending/failed topics for an agent.
+    """
+    try:
+        # Get the agent to find its folder_path
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+
+        # Get the auto knowledge generator
+        auto_generator = get_auto_knowledge_generator(agent_id, folder_path)
+
+        # Generate all knowledge
+        result = await auto_generator.generate_all_knowledge()
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating all knowledge for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/knowledge-generation/stop")
+async def stop_knowledge_generation(
+    agent_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Stop the current knowledge generation process for an agent.
+    """
+    try:
+        # Get the agent to find its folder_path
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+
+        # Get the auto knowledge generator
+        auto_generator = get_auto_knowledge_generator(agent_id, folder_path)
+
+        # Stop generation
+        result = auto_generator.stop_generation()
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping knowledge generation for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/knowledge-generation/retry-failed")
+async def retry_failed_knowledge_generation(
+    agent_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Retry all failed knowledge generation topics for an agent.
+    """
+    try:
+        # Get the agent to find its folder_path
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+
+        # Get the auto knowledge generator
+        auto_generator = get_auto_knowledge_generator(agent_id, folder_path)
+
+        # Retry failed topics
+        result = auto_generator.retry_failed_topics()
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrying failed knowledge generation for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 async def _get_recent_chat_history(agent_id: int, db: Session, limit: int = 10) -> list[MessageData]:
     """Get recent chat history for an agent."""
     try:
@@ -272,25 +486,53 @@ async def _process_based_on_intent(
     """
 
     if intent == "add_information":
-        return await _process_add_information_intent(
-            entities,
-            agent,
-            domain_service,
-            llm_tree_manager,
-            current_domain_tree,
-            chat_history,
-            db,
-        )
+        # Check if this is a complex request that should use KnowledgeOpsHandler
+        if _is_complex_knowledge_request(entities, user_message):
+            logger.info(f"🔄 Routing complex add_information to KnowledgeOpsHandler for agent {agent.id}")
+            return await _process_complex_knowledge_intent(
+                entities,
+                user_message,
+                agent,
+                domain_service,
+                current_domain_tree,
+                chat_history,
+                db,
+            )
+        else:
+            logger.info(f"⚡ Using fast path for simple add_information for agent {agent.id}")
+            return await _process_add_information_intent(
+                entities,
+                agent,
+                domain_service,
+                llm_tree_manager,
+                current_domain_tree,
+                chat_history,
+                db,
+            )
 
     elif intent == "remove_information":
-        return await _process_remove_information_intent(
-            entities,
-            agent,
-            domain_service,
-            llm_tree_manager,
-            current_domain_tree,
-            db,
-        )
+        # Check if this is a complex request that should use KnowledgeOpsHandler
+        if _is_complex_knowledge_request(entities, user_message):
+            logger.info(f"🔄 Routing complex remove_information to KnowledgeOpsHandler for agent {agent.id}")
+            return await _process_complex_knowledge_intent(
+                entities,
+                user_message,
+                agent,
+                domain_service,
+                current_domain_tree,
+                chat_history,
+                db,
+            )
+        else:
+            logger.info(f"⚡ Using fast path for simple remove_information for agent {agent.id}")
+            return await _process_remove_information_intent(
+                entities,
+                agent,
+                domain_service,
+                llm_tree_manager,
+                current_domain_tree,
+                db,
+            )
 
     elif intent == "instruct":
         return await _process_instruct_intent(
@@ -300,6 +542,9 @@ async def _process_based_on_intent(
     elif intent == "refresh_domain_knowledge":
         return await _process_refresh_knowledge_intent(user_message, agent.id, domain_service, db)
 
+    elif intent == "generate_all_knowledge":
+        return await _process_generate_all_knowledge_intent(agent, db)
+
     elif intent == "update_agent_properties":
         return await _process_update_agent_intent(entities, user_message, agent, db)
 
@@ -308,6 +553,159 @@ async def _process_based_on_intent(
 
     else:  # general_query
         return await _process_general_query_intent(user_message, agent)
+
+
+async def _process_complex_knowledge_intent(
+    entities: dict[str, Any],
+    user_message: str,
+    agent: Agent,
+    domain_service: DomainKnowledgeService,
+    current_domain_tree: DomainKnowledgeTree | None,
+    chat_history: list[MessageData],
+    db: Session,
+) -> dict[str, Any]:
+    """
+    Process complex knowledge operations using KnowledgeOpsHandler.
+    This handles multi-step, LLM-driven knowledge workflows.
+    """
+
+    logger.info(f"🔄 Processing complex knowledge request for agent {agent.id}: {user_message[:100]}...")
+
+    try:
+        # Build agent folder paths
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent.id}")
+
+        # Knowledge file paths
+        domain_knowledge_path = os.path.join(folder_path, "domain_knowledge.json")
+        knows_folder = os.path.join(folder_path, "knows")
+        knowledge_status_path = os.path.join(knows_folder, "knowledge_status.json")
+
+        # Ensure directories exist
+        os.makedirs(folder_path, exist_ok=True)
+        os.makedirs(knows_folder, exist_ok=True)
+
+        # Create LLM resource
+        llm = LLMResource()
+
+        # Create KnowledgeOpsHandler
+        handler = KnowledgeOpsHandler(
+            domain_knowledge_path=domain_knowledge_path,
+            llm=llm,
+            domain=agent.description or "General",
+            role=agent.name or "Domain Expert",
+            knowledge_status_path=knowledge_status_path,
+        )
+
+        # Create intent request
+        intent_request = IntentDetectionRequest(
+            user_message=user_message,
+            chat_history=chat_history,
+            current_domain_tree=current_domain_tree,
+            agent_id=agent.id,
+        )
+
+        logger.info(f"🚀 Starting KnowledgeOpsHandler workflow for agent {agent.id}")
+
+        # Execute the handler
+        result = await handler.handle(intent_request)
+
+        logger.info(f"✅ KnowledgeOpsHandler completed for agent {agent.id}: status={result.get('status')}")
+
+        # Convert KnowledgeOpsHandler result to smart_chat format
+        if result.get("status") == "success":
+            return {
+                "processor": "complex_knowledge",
+                "success": True,
+                "agent_response": result.get("message", "Complex knowledge operation completed successfully."),
+                "updates_applied": ["Complex knowledge workflow executed"],
+                "conversation": result.get("conversation", []),
+                "final_result": result.get("final_result", {}),
+            }
+        elif result.get("status") == "user_input_required":
+            return {
+                "processor": "complex_knowledge",
+                "success": False,
+                "agent_response": "I need more information to complete this knowledge operation. Please provide additional details.",
+                "updates_applied": [],
+                "requires_user_input": True,
+                "conversation": result.get("conversation", []),
+            }
+        else:
+            return {
+                "processor": "complex_knowledge",
+                "success": False,
+                "agent_response": f"Complex knowledge operation failed: {result.get('message', 'Unknown error')}",
+                "updates_applied": [],
+            }
+
+    except Exception as e:
+        logger.error(f"❌ Error in complex knowledge processing for agent {agent.id}: {e}", exc_info=True)
+        return {
+            "processor": "complex_knowledge",
+            "success": False,
+            "agent_response": f"Sorry, I encountered an error while processing your complex knowledge request: {str(e)}",
+            "updates_applied": [],
+        }
+
+
+async def _process_generate_all_knowledge_intent(
+    agent: Agent,
+    db: Session,
+) -> dict[str, Any]:
+    """
+    Process generate_all_knowledge intent - generates knowledge for all pending/failed topics.
+    """
+
+    logger.info(f"🔄 Processing generate_all_knowledge for agent {agent.id}")
+
+    try:
+        # Get agent folder path
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent.id}")
+
+        # Get the auto knowledge generator
+        auto_generator = get_auto_knowledge_generator(agent.id, folder_path)
+
+        # Generate all knowledge
+        generation_result = await auto_generator.generate_all_knowledge()
+
+        if generation_result["success"]:
+            if generation_result["total_topics"] > 0:
+                return {
+                    "processor": "generate_all_knowledge",
+                    "success": True,
+                    "agent_response": f"Started generating knowledge for {generation_result['total_topics']} topics. This will run in the background. You can check the status anytime.",
+                    "updates_applied": [f"Started generation for {generation_result['total_topics']} topics"],
+                    "generation_details": generation_result,
+                }
+            else:
+                return {
+                    "processor": "generate_all_knowledge",
+                    "success": True,
+                    "agent_response": "All knowledge topics are already up to date. No generation needed.",
+                    "updates_applied": [],
+                    "generation_details": generation_result,
+                }
+        else:
+            return {
+                "processor": "generate_all_knowledge",
+                "success": False,
+                "agent_response": f"Failed to start knowledge generation: {generation_result['message']}",
+                "updates_applied": [],
+                "generation_details": generation_result,
+            }
+
+    except Exception as e:
+        logger.error(f"❌ Error in generate_all_knowledge for agent {agent.id}: {e}", exc_info=True)
+        return {
+            "processor": "generate_all_knowledge",
+            "success": False,
+            "agent_response": f"Sorry, I encountered an error while starting knowledge generation: {str(e)}",
+            "updates_applied": [],
+        }
 
 
 async def _process_add_information_intent(
@@ -321,7 +719,7 @@ async def _process_add_information_intent(
 ) -> dict[str, Any]:
     """Process add_information intent using LLM-powered tree management."""
 
-    topics = entities.get("topics")
+    topics = entities.get("knowledge_path")
     parent = entities.get("parent")
     details = entities.get("details")
 
@@ -431,69 +829,62 @@ async def _process_add_information_intent(
                 clear_agent_cache(folder_path)
                 logger.info(f"Cleared RAG cache for agent {agent.id} after adding topics")
 
-                # --- Trigger knowledge generation for new/pending topics ---
+                # --- Auto-trigger knowledge generation for newly added topics ---
                 try:
-                    knows_folder = os.path.join(folder_path, "knows")
-                    os.makedirs(knows_folder, exist_ok=True)
-                    status_path = os.path.join(knows_folder, "knowledge_status.json")
-                    status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent.id))
-                    now_str = datetime.now(UTC).isoformat() + "Z"
-                    # Get the latest tree
-                    leaf_paths = []
+                    # Get the auto knowledge generator for this agent
+                    auto_generator = get_auto_knowledge_generator(agent.id, folder_path)
 
-                    def collect_leaf_paths(node, path_so_far, is_root=False):
-                        # Skip adding root topic to path to match original knowledge status format
-                        if is_root:
-                            path = path_so_far
+                    # Collect newly added topics
+                    new_topics = []
+                    for topic in topics:
+                        # Check if this topic was actually newly added (not a duplicate)
+                        if topic not in duplicate_topics:
+                            # Find the topic in the updated tree to get its full path
+                            def find_topic_path(node, target_topic, current_path=None):
+                                if current_path is None:
+                                    current_path = []
+
+                                if node.topic == target_topic:
+                                    return current_path + [node.topic]
+
+                                for child in getattr(node, "children", []):
+                                    result = find_topic_path(child, target_topic, current_path + [node.topic])
+                                    if result:
+                                        return result
+                                return None
+
+                            topic_path = find_topic_path(update_response.updated_tree.root, topic)
+                            print(f"🔍 Looking for topic '{topic}' in tree")
+                            print(f"🔍 Found path: {topic_path}")
+
+                            if topic_path:
+                                # Convert path to area name format
+                                area_name = " - ".join(topic_path)
+                                new_topics.append(area_name)
+                                print(f"✅ Added to auto-generation: {area_name}")
+                            else:
+                                # If we can't find the exact path, use the topic name directly
+                                print(f"⚠️ Could not find path for topic '{topic}', using topic name directly")
+                                new_topics.append(topic)
+
+                    # Auto-generate knowledge for new topics
+                    if new_topics:
+                        logger.info(f"Auto-generating knowledge for {len(new_topics)} new topics: {new_topics}")
+                        generation_result = await auto_generator.generate_for_new_topics(new_topics)
+
+                        if generation_result["success"]:
+                            logger.info(f"Auto-generation started: {generation_result['message']}")
+                            if generation_result["topics_generated"]:
+                                print(f"🚀 Auto-started generation for: {generation_result['topics_generated']}")
                         else:
-                            path = path_so_far + [node.topic]
+                            logger.warning(f"Auto-generation failed: {generation_result['message']}")
+                    else:
+                        logger.info("No new topics to auto-generate")
 
-                        if not getattr(node, "children", []):
-                            leaf_paths.append((path, node))
-                        for child in getattr(node, "children", []):
-                            collect_leaf_paths(child, path, is_root=False)
-
-                    collect_leaf_paths(update_response.updated_tree.root, [], is_root=True)
-
-                    # Load existing status data and preserve all existing entries
-                    existing_status_data = status_manager.load()
-
-                    # Create a set of new leaf paths to identify what's actually new
-                    new_leaf_paths = set()
-                    for path, _leaf_node in leaf_paths:
-                        area_name = " - ".join(path)
-                        new_leaf_paths.add(area_name)
-
-                    # Find existing paths to identify what's already known
-                    existing_paths = set(entry["path"] for entry in existing_status_data["topics"])
-
-                    # Only add truly new topics, don't modify existing ones
-                    for path, _leaf_node in leaf_paths:
-                        area_name = " - ".join(path)
-
-                        # Only add topics that don't already exist in the status file
-                        if area_name not in existing_paths:
-                            safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
-                            file_name = f"{safe_area}.json"
-
-                            # Add only new topics with pending status
-                            status_manager.add_or_update_topic(
-                                path=area_name,
-                                file=file_name,
-                                last_topic_update=now_str,
-                                status="pending",  # New topics start as pending
-                            )
-                    # Remove topics that are no longer in the tree
-                    all_paths = set([" - ".join(path) for path, _ in leaf_paths])
-                    for entry in status_manager.load()["topics"]:
-                        if entry["path"] not in all_paths:
-                            status_manager.remove_topic(entry["path"])
-                    # Only queue topics with status 'pending' or 'failed'
-                    pending = status_manager.get_pending_or_failed()
-                    print(f"[smart-chat] {len(pending)} topics to generate (pending or failed)")
                 except Exception as e:
-                    print(f"[smart-chat] Error triggering knowledge generation: {e}")
-                # --- End trigger ---
+                    logger.error(f"Error in auto knowledge generation: {e}")
+                    print(f"[smart-chat] Error in auto knowledge generation: {e}")
+                # --- End auto-trigger ---
 
                 # Prepare response message considering duplicates
                 if duplicate_topics:
@@ -544,7 +935,7 @@ async def _process_remove_information_intent(
 ) -> dict[str, Any]:
     """Process remove_information intent to remove topics from knowledge tree."""
 
-    topics = entities.get("topics", [])
+    topics = entities.get("knowledge_path", [])
 
     print("🗑️ Processing remove_information intent:")
     print(f"  - Topics to remove: {topics}")
@@ -749,16 +1140,6 @@ async def _process_remove_information_intent(
 
                         # Remove ALL knowledge files that contain the removed topics in their path
                         for topic in topics_to_remove:
-                            # Normalize topic name for file matching
-                            (
-                                topic.replace("/", "_")
-                                .replace(" ", "_")
-                                .replace("-", "_")
-                                .replace("(", "_")
-                                .replace(")", "_")
-                                .replace(",", "_")
-                            )
-
                             # Find and remove files that have the topic as a specific path component
                             if os.path.exists(knows_folder):
                                 for filename in os.listdir(knows_folder):
@@ -856,60 +1237,60 @@ async def _process_update_agent_intent(entities: dict[str, Any], user_message: s
     if "name" in entities and entities["name"]:
         agent.name = entities["name"].strip()
         updated_fields.append("name")
-    if "role" in entities and entities["role"]:
-        agent.description = entities["role"].strip()
-        updated_fields.append("role")
-    # Save specialties and skills to config
+    if "domain" in entities and entities["domain"]:
+        agent.description = entities["domain"].strip()
+        updated_fields.append("domain")
+    # Save topics and tasks to config
     # Create a new dict to ensure SQLAlchemy detects the change
     config = dict(agent.config) if agent.config else {}
 
-    # Handle specialties - accumulate instead of overwrite
-    if "specialties" in entities and entities["specialties"]:
-        new_specialties = entities["specialties"]
-        if isinstance(new_specialties, str):
+    # Handle topics - accumulate instead of overwrite
+    if "topics" in entities and entities["topics"]:
+        new_topics = entities["topics"]
+        if isinstance(new_topics, str):
             # Split comma-separated string into list
-            new_specialties = [s.strip() for s in new_specialties.split(",") if s.strip()]
-        elif not isinstance(new_specialties, list):
-            new_specialties = [str(new_specialties)]
+            new_topics = [s.strip() for s in new_topics.split(",") if s.strip()]
+        elif not isinstance(new_topics, list):
+            new_topics = [str(new_topics)]
 
-        # Get existing specialties and merge with new ones
-        existing_specialties = config.get("specialties", [])
-        if not isinstance(existing_specialties, list):
-            existing_specialties = []
+        # Get existing topics and merge with new ones
+        existing_topics = config.get("topics", [])
+        if not isinstance(existing_topics, list):
+            existing_topics = []
 
         # Combine and deduplicate (case-insensitive)
-        combined_specialties = existing_specialties.copy()
-        for new_spec in new_specialties:
-            # Check if this specialty already exists (case-insensitive)
-            if not any(new_spec.lower() == existing.lower() for existing in combined_specialties):
-                combined_specialties.append(new_spec)
+        combined_topics = existing_topics.copy()
+        for new_topic in new_topics:
+            # Check if this topic already exists (case-insensitive)
+            if not any(new_topic.lower() == existing.lower() for existing in combined_topics):
+                combined_topics.append(new_topic)
 
-        config["specialties"] = combined_specialties
-        updated_fields.append("specialties")
+        config["topics"] = combined_topics
+        updated_fields.append("topics")
 
-    # Handle skills - accumulate instead of overwrite
-    if "skills" in entities and entities["skills"]:
-        new_skills = entities["skills"]
-        if isinstance(new_skills, str):
+    # Handle tasks - accumulate instead of overwrite
+    if "tasks" in entities and entities["tasks"]:
+        new_tasks = entities["tasks"]
+        if isinstance(new_tasks, str):
             # Split comma-separated string into list
-            new_skills = [s.strip() for s in new_skills.split(",") if s.strip()]
-        elif not isinstance(new_skills, list):
-            new_skills = [str(new_skills)]
+            new_tasks = [s.strip() for s in new_tasks.split(",") if s.strip()]
+        elif not isinstance(new_tasks, list):
+            new_tasks = [str(new_tasks)]
 
-        # Get existing skills and merge with new ones
-        existing_skills = config.get("skills", [])
-        if not isinstance(existing_skills, list):
-            existing_skills = []
+        # Get existing tasks and merge with new ones
+        existing_tasks = config.get("tasks", [])
+        if not isinstance(existing_tasks, list):
+            existing_tasks = []
 
         # Combine and deduplicate (case-insensitive)
-        combined_skills = existing_skills.copy()
-        for new_skill in new_skills:
-            # Check if this skill already exists (case-insensitive)
-            if not any(new_skill.lower() == existing.lower() for existing in combined_skills):
-                combined_skills.append(new_skill)
+        combined_tasks = existing_tasks.copy()
+        for new_task in new_tasks:
+            # Check if this task already exists (case-insensitive)
+            if not any(new_task.lower() == existing.lower() for existing in combined_tasks):
+                combined_tasks.append(new_task)
 
-        config["skills"] = combined_skills
-        updated_fields.append("skills")
+        config["tasks"] = combined_tasks
+        updated_fields.append("tasks")
     agent.config = config
     if updated_fields:
         db.commit()
@@ -956,7 +1337,7 @@ async def _process_instruct_intent(
 
     # Extract instruction text and topics from entities
     instruction_text = entities.get("instruction_text", "")
-    topics = entities.get("topics", [])
+    topics = entities.get("knowledge_path", [])
 
     print("🎯 Processing instruct intent:")
     print(f"  - Instruction text: {instruction_text}")
@@ -1054,7 +1435,7 @@ async def _update_instruction_as_knowledge(
 
         # This path must exist in the tree
         matching_leaves = [([topic for topic in topics if topic != "root"], None)]
-        for path, _leaf_node in matching_leaves:
+        for path, _ in matching_leaves:
             area_name = " - ".join(path)
             safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
             file_name = f"{safe_area}.json"

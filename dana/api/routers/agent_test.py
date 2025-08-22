@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import uuid
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,8 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
+from dana.api.utils.streaming_function_override import streaming_print_override
+from dana.api.utils.streaming_stdout import StdoutContextManager
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
 from dana.core.lang.dana_sandbox import DanaSandbox
@@ -58,6 +61,86 @@ class VariableUpdateManager:
                 # Remove disconnected WebSocket
                 self.disconnect(websocket_id)
 
+    async def send_log_message(
+        self,
+        websocket_id: str,
+        level: str,
+        message: str,
+    ):
+        """Send a log message via WebSocket"""
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                log_message = {
+                    "type": "log_message",
+                    "level": level,
+                    "message": message,
+                    "timestamp": asyncio.get_event_loop().time(),
+                }
+                await websocket.send_text(json.dumps(log_message))
+            except Exception as e:
+                logger.error(f"Failed to send log message via WebSocket: {e}")
+                # Remove disconnected WebSocket
+                self.disconnect(websocket_id)
+
+    async def send_bulk_evaluation_progress(
+        self,
+        websocket_id: str,
+        progress: int,
+        current_question: int,
+        total_questions: int,
+        successful_count: int,
+        failed_count: int,
+        estimated_time_remaining: float,
+    ):
+        """Send bulk evaluation progress update via WebSocket"""
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                message = {
+                    "type": "bulk_evaluation_progress",
+                    "progress": progress,
+                    "current_question": current_question,
+                    "total_questions": total_questions,
+                    "successful_count": successful_count,
+                    "failed_count": failed_count,
+                    "estimated_time_remaining": estimated_time_remaining,
+                    "timestamp": asyncio.get_event_loop().time(),
+                }
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.error(f"Failed to send bulk evaluation progress via WebSocket: {e}")
+                self.disconnect(websocket_id)
+
+    async def send_bulk_evaluation_result(
+        self,
+        websocket_id: str,
+        question_index: int,
+        question: str,
+        response: str,
+        response_time: float,
+        status: str,
+        error: str | None = None,
+    ):
+        """Send individual question result via WebSocket"""
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                message = {
+                    "type": "bulk_evaluation_result",
+                    "question_index": question_index,
+                    "question": question,
+                    "response": response,
+                    "response_time": response_time,
+                    "status": status,
+                    "error": error,
+                    "timestamp": asyncio.get_event_loop().time(),
+                }
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.error(f"Failed to send bulk evaluation result via WebSocket: {e}")
+                self.disconnect(websocket_id)
+
 
 variable_update_manager = VariableUpdateManager()
 
@@ -72,6 +155,42 @@ def create_websocket_notifier(websocket_id: str | None = None):
                 await variable_update_manager.send_variable_update(websocket_id, scope, var_name, old_value, new_value)
 
     return variable_change_notifier
+
+
+class ThreadSafeLogCollector:
+    """Thread-safe log collector that can be read from async context."""
+
+    def __init__(self, websocket_id: str):
+        self.websocket_id = websocket_id
+        self.logs = []
+        self._lock = threading.Lock()
+
+    def add_log(self, level: str, message: str):
+        """Add a log message (called from execution thread)."""
+        with self._lock:
+            self.logs.append({"websocket_id": self.websocket_id, "level": level, "message": message})
+            pass  # Log collected successfully
+
+    def get_and_clear_logs(self):
+        """Get all logs and clear the collector (called from async context)."""
+        with self._lock:
+            logs = self.logs.copy()
+            self.logs.clear()
+            return logs
+
+
+def create_sync_log_collector(websocket_id: str | None = None):
+    """Create a synchronous log collector for thread-safe log streaming."""
+    if not websocket_id:
+        return lambda level, message: None, None
+
+    collector = ThreadSafeLogCollector(websocket_id)
+
+    def log_streamer(level: str, message: str) -> None:
+        """Synchronous log streamer that collects logs."""
+        collector.add_log(level, message)
+
+    return log_streamer, collector
 
 
 class AgentTestRequest(BaseModel):
@@ -92,6 +211,229 @@ class AgentTestResponse(BaseModel):
     success: bool
     agent_response: str
     error: str | None = None
+
+
+# Bulk Evaluation Models
+class BulkEvaluationQuestion(BaseModel):
+    """Individual question for bulk evaluation"""
+
+    question: str
+    expected_answer: str | None = None
+    context: str | None = None
+    category: str | None = None
+
+
+class BulkEvaluationRequest(BaseModel):
+    """Request model for bulk agent evaluation"""
+
+    agent_code: str
+    questions: list[BulkEvaluationQuestion]
+    agent_name: str | None = "Georgia"
+    agent_description: str | None = "A test agent"
+    context: dict[str, Any] | None = None
+    folder_path: str | None = None
+    websocket_id: str | None = None
+    batch_size: int = 5  # Questions to process in parallel
+
+
+class BulkEvaluationResult(BaseModel):
+    """Result for a single question in bulk evaluation"""
+
+    question: str
+    response: str
+    response_time: float
+    status: str  # 'success' or 'error'
+    error: str | None = None
+    expected_answer: str | None = None
+    question_index: int
+
+
+class BulkEvaluationResponse(BaseModel):
+    """Response model for bulk evaluation"""
+
+    success: bool
+    results: list[BulkEvaluationResult]
+    total_questions: int
+    successful_count: int
+    failed_count: int
+    total_time: float
+    average_response_time: float
+    error: str | None = None
+
+
+async def _execute_single_question(
+    question_data: BulkEvaluationQuestion,
+    question_index: int,
+    base_request: BulkEvaluationRequest,
+) -> BulkEvaluationResult:
+    """Execute a single question and return the result."""
+    start_time = asyncio.get_event_loop().time()
+
+    try:
+        # Create individual test request
+        test_request = AgentTestRequest(
+            agent_code=base_request.agent_code,
+            message=question_data.question,
+            agent_name=base_request.agent_name,
+            agent_description=base_request.agent_description,
+            context=base_request.context,
+            folder_path=base_request.folder_path,
+            websocket_id=None,  # Don't use WebSocket for individual questions
+        )
+
+        # Execute the test
+        if base_request.folder_path:
+            response = await _execute_folder_based_agent(test_request, base_request.folder_path)
+        else:
+            response = await _execute_code_based_agent(test_request)
+
+        end_time = asyncio.get_event_loop().time()
+        response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+
+        if response.success:
+            return BulkEvaluationResult(
+                question=question_data.question,
+                response=response.agent_response,
+                response_time=response_time,
+                status="success",
+                expected_answer=question_data.expected_answer,
+                question_index=question_index,
+            )
+        else:
+            return BulkEvaluationResult(
+                question=question_data.question,
+                response="",
+                response_time=response_time,
+                status="error",
+                error=response.error,
+                expected_answer=question_data.expected_answer,
+                question_index=question_index,
+            )
+
+    except Exception as e:
+        end_time = asyncio.get_event_loop().time()
+        response_time = (end_time - start_time) * 1000
+
+        return BulkEvaluationResult(
+            question=question_data.question,
+            response="",
+            response_time=response_time,
+            status="error",
+            error=str(e),
+            expected_answer=question_data.expected_answer,
+            question_index=question_index,
+        )
+
+
+async def _process_bulk_evaluation(request: BulkEvaluationRequest) -> BulkEvaluationResponse:
+    """Process bulk evaluation with progress updates via WebSocket."""
+    total_questions = len(request.questions)
+    results: list[BulkEvaluationResult] = []
+    successful_count = 0
+    failed_count = 0
+    start_time = asyncio.get_event_loop().time()
+
+    logger.info(f"Starting bulk evaluation of {total_questions} questions with batch size {request.batch_size}")
+
+    # Send initial progress
+    if request.websocket_id:
+        await variable_update_manager.send_bulk_evaluation_progress(
+            request.websocket_id,
+            progress=0,
+            current_question=0,
+            total_questions=total_questions,
+            successful_count=0,
+            failed_count=0,
+            estimated_time_remaining=total_questions * 3.0,  # Initial estimate: 3 seconds per question
+        )
+
+    # Process questions in batches
+    for i in range(0, total_questions, request.batch_size):
+        batch_questions = request.questions[i : i + request.batch_size]
+        batch_tasks = []
+
+        # Create tasks for current batch
+        for j, question in enumerate(batch_questions):
+            question_index = i + j
+            task = _execute_single_question(question, question_index, request)
+            batch_tasks.append(task)
+
+        # Execute batch concurrently
+        batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+
+        # Process batch results
+        for batch_result in batch_results:
+            if isinstance(batch_result, Exception):
+                # Handle exception
+                failed_count += 1
+                error_result = BulkEvaluationResult(
+                    question="",
+                    response="",
+                    response_time=0.0,
+                    status="error",
+                    error=str(batch_result),
+                    question_index=len(results),
+                )
+                results.append(error_result)
+            else:
+                results.append(batch_result)
+                if batch_result.status == "success":
+                    successful_count += 1
+                else:
+                    failed_count += 1
+
+                # Send individual result via WebSocket
+                if request.websocket_id:
+                    await variable_update_manager.send_bulk_evaluation_result(
+                        request.websocket_id,
+                        question_index=batch_result.question_index,
+                        question=batch_result.question,
+                        response=batch_result.response,
+                        response_time=batch_result.response_time,
+                        status=batch_result.status,
+                        error=batch_result.error,
+                    )
+
+        # Calculate progress and send update
+        completed_questions = len(results)
+        progress = int((completed_questions / total_questions) * 100)
+
+        # Estimate remaining time based on average response time so far
+        current_time = asyncio.get_event_loop().time()
+        elapsed_time = current_time - start_time
+        avg_time_per_question = elapsed_time / completed_questions if completed_questions > 0 else 3.0
+        estimated_time_remaining = (total_questions - completed_questions) * avg_time_per_question
+
+        if request.websocket_id:
+            await variable_update_manager.send_bulk_evaluation_progress(
+                request.websocket_id,
+                progress=progress,
+                current_question=completed_questions,
+                total_questions=total_questions,
+                successful_count=successful_count,
+                failed_count=failed_count,
+                estimated_time_remaining=estimated_time_remaining,
+            )
+
+        # Small delay between batches to prevent overwhelming the system
+        if i + request.batch_size < total_questions:
+            await asyncio.sleep(0.1)
+
+    end_time = asyncio.get_event_loop().time()
+    total_time = end_time - start_time
+    avg_response_time = sum(r.response_time for r in results) / len(results) if results else 0.0
+
+    logger.info(f"Bulk evaluation completed: {successful_count} successful, {failed_count} failed, {total_time:.2f}s total")
+
+    return BulkEvaluationResponse(
+        success=True,
+        results=results,
+        total_questions=total_questions,
+        successful_count=successful_count,
+        failed_count=failed_count,
+        total_time=total_time,
+        average_response_time=avg_response_time,
+    )
 
 
 async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: str) -> AgentTestResponse:
@@ -129,8 +471,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
         # Add the response line at the end
         escaped_message = request.message.replace("\\", "\\\\").replace('"', '\\"')
+        # NOTE : REMEBER TO PUT escaped_message in triple quotes
         additional_code = (
-            f'\n\n# Test execution\nuser_query = "{escaped_message}"\nresponse = this_agent.solve(user_query)\nprint(response)\n'
+            f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = this_agent.solve(user_query)\nprint(response)\n'
         )
         temp_content = original_content + additional_code
 
@@ -144,8 +487,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
         os.environ["DANAPATH"] = abs_folder_path
         print("os DANAPATH", os.environ.get("DANAPATH"))
 
-        # Create a WebSocket-enabled notifier
+        # Create a WebSocket-enabled notifier and log collector
         notifier = create_websocket_notifier(request.websocket_id)
+        log_streamer, log_collector = create_sync_log_collector(request.websocket_id)
 
         # Run all potentially blocking operations in a separate thread
         with ThreadPoolExecutor(max_workers=1) as executor:
@@ -160,11 +504,21 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                 sandbox_context.set("system:agent_instance_id", str(Path(folder_path).stem))
 
                 try:
-                    result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
+                    # Create sandbox and override print function for streaming
+                    sandbox = DanaSandbox(context=sandbox_context)
+                    sandbox._ensure_initialized()  # Make sure function registry is available
 
-                    if hasattr(result, "error"):
+                    # Override both Dana print function and Python stdout for complete coverage
+                    # with streaming_print_override(sandbox.function_registry, log_streamer):
+                    with streaming_print_override(sandbox.function_registry, log_streamer):
+                        with StdoutContextManager(log_streamer):
+                            # result = DanaSandbox.execute_file_once(temp_file_path, context=sandbox_context)
+                            result = sandbox.execute_file(temp_file_path)
+
+                    if hasattr(result, "error") and result.error is not None:
                         logger.error(f"Error: {result.error}")
                         logger.exception(result.error)
+                        print(f"\033[31mSandbox error: {result.error}\033[0m")
 
                     state = sandbox_context.get_state()
                     response_text = state.get("local", {}).get("response", "")
@@ -185,17 +539,48 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     return None
 
                 finally:
+                    # Clean up the sandbox
+                    if "sandbox" in locals():
+                        sandbox._cleanup()
+
                     # Clean up the context to prevent state leakage
                     sandbox_context.shutdown()
 
                     # Clear global registries to prevent struct/module conflicts between runs
                     from dana.__init__.init_modules import reset_module_system
-                    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                    from dana.registry import GLOBAL_REGISTRY
 
-                    StructTypeRegistry.clear()
+                    registry = GLOBAL_REGISTRY
+                    registry.clear_all()
                     reset_module_system()
 
-            result = await asyncio.get_event_loop().run_in_executor(executor, run_agent_test)
+            # Start periodic log sending while execution runs
+            async def periodic_log_sender():
+                while True:
+                    if log_collector:
+                        logs = log_collector.get_and_clear_logs()
+                        for log_msg in logs:
+                            await variable_update_manager.send_log_message(log_msg["websocket_id"], log_msg["level"], log_msg["message"])
+                    await asyncio.sleep(0.1)  # Send logs every 100ms
+
+            # Start both the execution and log sender
+            log_sender_task = asyncio.create_task(periodic_log_sender()) if log_collector else None
+
+            try:
+                result = await asyncio.get_event_loop().run_in_executor(executor, run_agent_test)
+            finally:
+                if log_sender_task:
+                    log_sender_task.cancel()
+                    try:
+                        await log_sender_task
+                    except asyncio.CancelledError:
+                        pass
+
+                    # Send any remaining logs
+                    if log_collector:
+                        logs = log_collector.get_and_clear_logs()
+                        for log_msg in logs:
+                            await variable_update_manager.send_log_message(log_msg["websocket_id"], log_msg["level"], log_msg["message"])
 
         print("--------------------------------")
         print(f"Result: {result}")
@@ -209,8 +594,8 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
             return AgentTestResponse(success=True, agent_response=response_text or result, error=None)
         else:
             # Multi-file execution failed, use LLM fallback
-            logger.warning(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
-            print(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
+            logger.warning(f"Multi-file agent execution failed: {result}, using LLM fallback")
+            print(f"Multi-file agent execution failed: {result}, using LLM fallback")
 
             llm_response = await _llm_fallback(request.agent_name, request.agent_description, request.message)
 
@@ -386,9 +771,10 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
 
                 # Clear global registries to prevent struct/module conflicts between runs
                 from dana.__init__.init_modules import reset_module_system
-                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.registry import GLOBAL_REGISTRY
 
-                StructTypeRegistry.clear()
+                registry = GLOBAL_REGISTRY
+                registry.clear_all()
                 reset_module_system()
 
         result = await loop.run_in_executor(None, run_code_based_agent)
@@ -492,6 +878,78 @@ async def test_agent(request: AgentTestRequest):
             error_msg = f"Error testing agent: {str(e)}. LLM fallback also failed: {str(llm_error)}"
             print(error_msg)
             return AgentTestResponse(success=False, agent_response="", error=error_msg)
+
+
+@router.post("/bulk", response_model=BulkEvaluationResponse)
+async def bulk_evaluate_agent(request: BulkEvaluationRequest):
+    """
+    Perform bulk evaluation of an agent with multiple questions
+
+    This endpoint allows you to test an agent with multiple questions in parallel,
+    providing progress updates via WebSocket and returning comprehensive results.
+
+    Args:
+        request: BulkEvaluationRequest containing agent code, questions, and configuration
+
+    Returns:
+        BulkEvaluationResponse with results for all questions and summary statistics
+    """
+    try:
+        # Validate request
+        if not request.questions:
+            raise HTTPException(status_code=400, detail="No questions provided")
+
+        if len(request.questions) > 1000:
+            raise HTTPException(status_code=400, detail="Maximum 1000 questions allowed")
+
+        if request.batch_size < 1 or request.batch_size > 50:
+            raise HTTPException(status_code=400, detail="Batch size must be between 1 and 50")
+
+        # Validate all questions have content
+        for i, question in enumerate(request.questions):
+            if not question.question.strip():
+                raise HTTPException(status_code=400, detail=f"Question {i + 1} is empty")
+
+        logger.info(f"Starting bulk evaluation of {len(request.questions)} questions")
+
+        # Send initial log message if WebSocket is available
+        if request.websocket_id:
+            await variable_update_manager.send_log_message(
+                request.websocket_id, "info", f"Starting bulk evaluation of {len(request.questions)} questions..."
+            )
+
+        # Process bulk evaluation
+        result = await _process_bulk_evaluation(request)
+
+        # Send completion log message
+        if request.websocket_id:
+            await variable_update_manager.send_log_message(
+                request.websocket_id, "info", f"Bulk evaluation completed: {result.successful_count}/{result.total_questions} successful"
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Error in bulk evaluation: {str(e)}"
+        logger.error(error_msg)
+        logger.exception(e)
+
+        # Send error via WebSocket if available
+        if request.websocket_id:
+            await variable_update_manager.send_log_message(request.websocket_id, "error", error_msg)
+
+        return BulkEvaluationResponse(
+            success=False,
+            results=[],
+            total_questions=len(request.questions) if request.questions else 0,
+            successful_count=0,
+            failed_count=0,
+            total_time=0.0,
+            average_response_time=0.0,
+            error=error_msg,
+        )
 
 
 @router.websocket("/ws/{websocket_id}")

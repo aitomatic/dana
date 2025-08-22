@@ -2,6 +2,7 @@
 Simple tests for RAGResource class.
 """
 
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -17,7 +18,9 @@ class TestRAGResource:
         """Test basic initialization."""
         sources = ["test.txt"]
         resource = RAGResource(sources=sources)
-        assert resource.sources == sources
+        # Sources should be resolved to absolute paths
+        expected_sources = [str(Path("test.txt").resolve())]
+        assert resource.sources == expected_sources
         assert resource._is_ready is False
 
     @pytest.mark.asyncio
@@ -34,7 +37,9 @@ class TestRAGResource:
         await resource.initialize()
 
         assert resource._is_ready is True
-        mock_orchestrator._preprocess.assert_called_once_with(sources, False)
+        # The _preprocess call should use resolved absolute paths
+        expected_sources = [str(Path("test.txt").resolve())]
+        mock_orchestrator._preprocess.assert_called_once_with(expected_sources, False)
 
     @pytest.mark.asyncio
     async def test_retrieve_basic(self):

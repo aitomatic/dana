@@ -4,9 +4,9 @@ import json
 import logging
 from typing import Any
 
-from dana.api.core.schemas import DomainKnowledgeTree, DomainKnowledgeUpdateResponse, DomainNode
+from dana.api.core.schemas import DomainKnowledgeTree, DomainNode, DomainKnowledgeUpdateResponse
 from dana.common.mixins.loggable import Loggable
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class LLMTreeManager(Loggable):
 
     def __init__(self):
         super().__init__()
-        self.llm = LegacyLLMResource()
+        self.llm = LLMResource()
 
     async def add_topic_to_knowledge(
         self,
@@ -986,14 +986,19 @@ If moving existing topics, use:
                 # Check if topic exists in the tree
                 existing_node = self._find_topic_in_tree_simple(current_tree.root, topic)
                 if existing_node:
+                    # Check if node has children - default to removing children with parent
+                    # This prevents orphaned "not generated" children
+                    has_children = existing_node.children and len(existing_node.children) > 0
                     changes_to_apply.append(
                         {
                             "action": "remove_node",
                             "topic_to_remove": topic,
-                            "preserve_children": True,  # Always preserve children by default
+                            "preserve_children": False,  # Remove children with parent to avoid orphaned nodes
                         }
                     )
                     topics_found.append(topic)
+                    if has_children:
+                        print(f"  ⚠️ Removing '{topic}' along with {len(existing_node.children)} children to avoid orphaned nodes")
                 else:
                     topics_not_found.append(topic)
 

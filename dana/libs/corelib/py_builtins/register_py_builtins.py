@@ -15,8 +15,8 @@ from dana.common.exceptions import SandboxError
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.concurrency import LazyPromise
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.registry.function_registry import FunctionMetadata, FunctionRegistry
 
 from .type_wrapper import create_type_wrapper
 
@@ -40,13 +40,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_max(*args):
         """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("max expected at least 1 argument, got 0")
@@ -66,13 +63,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_min(*args):
         """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 0:
             raise TypeError("min expected at least 1 argument, got 0")
@@ -92,13 +86,10 @@ class PythonicBuiltinsFactory:
     @staticmethod
     def _smart_sum(*args):
         """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
-        # Resolve any LazyPromise objects in arguments
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, LazyPromise):
-                resolved_args.append(arg._ensure_resolved())
-            else:
-                resolved_args.append(arg)
+        # Resolve any Promise objects in arguments
+        from dana.core.concurrency import resolve_if_promise
+
+        resolved_args = [resolve_if_promise(arg) for arg in args]
 
         if len(resolved_args) == 1:
             return sum(resolved_args[0])  # sum([1,2,3])
@@ -280,6 +271,13 @@ class PythonicBuiltinsFactory:
                 (type({}.items()),),
                 (LazyPromise,),
             ],
+        },
+        # String conversion function
+        "str": {
+            "func": str,
+            "types": [int, float, bool, list, dict, tuple, set, type(None), LazyPromise],
+            "doc": "Convert a value to a string",
+            "signatures": [(int,), (float,), (bool,), (list,), (dict,), (tuple,), (set,), (type(None),), (LazyPromise,)],
         },
     }
 

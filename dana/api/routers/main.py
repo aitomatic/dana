@@ -59,6 +59,7 @@ def get_root_info():
             "documents": "/api/documents",
             "topics": "/api/topics",
             "agent-test": "/api/agent-test",
+            "extract-documents": "/api/extract-documents",
         },
     }
 

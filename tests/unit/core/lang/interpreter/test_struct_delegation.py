@@ -8,16 +8,16 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
 from unittest.mock import Mock
 
+import pytest
+
+from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
 from dana.core.lang.interpreter.struct_system import (
-    StructType,
     StructInstance,
-    StructTypeRegistry,
-    TypeAwareMethodRegistry,
+    StructType,
 )
-from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+from dana.registry import FUNCTION_REGISTRY, TYPE_REGISTRY
 
 
 class TestStructDelegation:
@@ -25,13 +25,13 @@ class TestStructDelegation:
 
     def setup_method(self):
         """Reset registries before each test."""
-        StructTypeRegistry.clear()
-        TypeAwareMethodRegistry.clear()
+        TYPE_REGISTRY.clear()
+        FUNCTION_REGISTRY.clear()
 
     def teardown_method(self):
         """Reset registries after each test."""
-        StructTypeRegistry.clear()
-        TypeAwareMethodRegistry.clear()
+        TYPE_REGISTRY.clear()
+        FUNCTION_REGISTRY.clear()
 
     def test_delegatable_fields_identification(self):
         """Test that underscore-prefixed fields are identified as delegatable."""
@@ -42,7 +42,7 @@ class TestStructDelegation:
             field_order=["_delegatable", "regular", "_another"],
             field_comments={},
         )
-        StructTypeRegistry.register(struct_type)
+        TYPE_REGISTRY.register(struct_type)
 
         instance = StructInstance(struct_type, {"_delegatable": "test", "regular": "normal", "_another": 42})
 
@@ -56,7 +56,7 @@ class TestStructDelegation:
         embedded_type = StructType(
             name="EmbeddedStruct", fields={"data": "str", "value": "int"}, field_order=["data", "value"], field_comments={}
         )
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type
         main_type = StructType(
@@ -65,7 +65,7 @@ class TestStructDelegation:
             field_order=["_embedded", "regular"],
             field_comments={},
         )
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "embedded_data", "value": 123})
@@ -80,11 +80,11 @@ class TestStructDelegation:
         """Test field assignment through delegation."""
         # Create embedded struct type
         embedded_type = StructType(name="EmbeddedStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "original"})
@@ -104,7 +104,7 @@ class TestStructDelegation:
             field_order=["shared_field", "first_unique"],
             field_comments={},
         )
-        StructTypeRegistry.register(first_type)
+        TYPE_REGISTRY.register(first_type)
 
         second_type = StructType(
             name="SecondStruct",
@@ -112,7 +112,7 @@ class TestStructDelegation:
             field_order=["shared_field", "second_unique"],
             field_comments={},
         )
-        StructTypeRegistry.register(second_type)
+        TYPE_REGISTRY.register(second_type)
 
         # Create main struct with delegation fields in specific order
         main_type = StructType(
@@ -121,7 +121,7 @@ class TestStructDelegation:
             field_order=["_first", "_second"],  # _first comes first
             field_comments={},
         )
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         first_instance = StructInstance(first_type, {"shared_field": "from_first", "first_unique": "unique_first"})
@@ -137,11 +137,11 @@ class TestStructDelegation:
         """Test that explicit field access bypasses delegation."""
         # Create embedded struct type
         embedded_type = StructType(name="EmbeddedStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "embedded_data"})
@@ -159,7 +159,7 @@ class TestStructDelegation:
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "any"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create main instance
         main_instance = StructInstance(main_type, {"_embedded": embedded_mock})
@@ -175,17 +175,17 @@ class TestStructDelegation:
         """Test method delegation through LambdaMethodDispatcher."""
         # Create embedded struct type with registered method
         embedded_type = StructType(name="EmbeddedStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Register a method for the embedded struct
         def embedded_method(instance, *args, **kwargs):
             return f"method called on {instance.data} with args: {args}"
 
-        TypeAwareMethodRegistry.register_method("EmbeddedStruct", "test_method", embedded_method)
+        FUNCTION_REGISTRY.register_struct_function("EmbeddedStruct", "test_method", embedded_method)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "embedded_data"})
@@ -204,7 +204,7 @@ class TestStructDelegation:
         """Test that fields without underscore prefix don't delegate."""
         # Create embedded struct type
         embedded_type = StructType(name="EmbeddedStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type with regular (non-delegating) field
         main_type = StructType(
@@ -213,7 +213,7 @@ class TestStructDelegation:
             field_order=["embedded"],
             field_comments={},
         )
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "embedded_data"})
@@ -231,11 +231,11 @@ class TestStructDelegation:
         embedded_type = StructType(
             name="EmbeddedStruct", fields={"available_field": "str"}, field_order=["available_field"], field_comments={}
         )
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"available_field": "test"})
@@ -253,13 +253,13 @@ class TestStructDelegation:
         """Test deeply nested delegation."""
         # Create deeply nested struct types
         inner_type = StructType(name="InnerStruct", fields={"inner_data": "str"}, field_order=["inner_data"], field_comments={})
-        StructTypeRegistry.register(inner_type)
+        TYPE_REGISTRY.register(inner_type)
 
         middle_type = StructType(name="MiddleStruct", fields={"_inner": "InnerStruct"}, field_order=["_inner"], field_comments={})
-        StructTypeRegistry.register(middle_type)
+        TYPE_REGISTRY.register(middle_type)
 
         outer_type = StructType(name="OuterStruct", fields={"_middle": "MiddleStruct"}, field_order=["_middle"], field_comments={})
-        StructTypeRegistry.register(outer_type)
+        TYPE_REGISTRY.register(outer_type)
 
         # Create instances
         inner_instance = StructInstance(inner_type, {"inner_data": "deep_value"})
@@ -276,7 +276,7 @@ class TestStructDelegation:
         """Test delegation behavior when delegatable fields are None."""
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_optional": "any"}, field_order=["_optional"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instance with None delegatable field
         main_instance = StructInstance(main_type, {"_optional": None})
@@ -292,7 +292,7 @@ class TestStructDelegation:
         regular_type = StructType(
             name="RegularStruct", fields={"field1": "str", "field2": "int"}, field_order=["field1", "field2"], field_comments={}
         )
-        StructTypeRegistry.register(regular_type)
+        TYPE_REGISTRY.register(regular_type)
 
         # Create instance
         instance = StructInstance(regular_type, {"field1": "test", "field2": 42})
@@ -318,11 +318,11 @@ class TestStructDelegation:
         """Test that delegation lookups don't cause performance issues."""
         # Create embedded struct type
         embedded_type = StructType(name="EmbeddedStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type
         main_type = StructType(name="MainStruct", fields={"_embedded": "EmbeddedStruct"}, field_order=["_embedded"], field_comments={})
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"data": "test_data"})
@@ -343,7 +343,7 @@ class TestStructDelegation:
         embedded_type = StructType(
             name="EmbeddedStruct", fields={"embedded_field": "str"}, field_order=["embedded_field"], field_comments={}
         )
-        StructTypeRegistry.register(embedded_type)
+        TYPE_REGISTRY.register(embedded_type)
 
         # Create main struct type with mixed field types
         main_type = StructType(
@@ -352,7 +352,7 @@ class TestStructDelegation:
             field_order=["direct_field", "_delegatable", "another_direct"],
             field_comments={},
         )
-        StructTypeRegistry.register(main_type)
+        TYPE_REGISTRY.register(main_type)
 
         # Create instances
         embedded_instance = StructInstance(embedded_type, {"embedded_field": "delegated_value"})

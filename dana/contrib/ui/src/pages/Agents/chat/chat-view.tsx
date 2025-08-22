@@ -9,12 +9,16 @@ import ChatSession from './chat-session';
 import { cn } from '@/lib/utils';
 
 import ChatBox from './chat-box';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // Stores
 import { useChatStore } from '@/stores/chat-store';
 
 // Hooks
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+
+// Components
+import LogViewer from '@/components/LogViewer';
 
 interface AgentChatViewProps {
   isSidebarCollapsed: boolean;
@@ -31,6 +35,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const navigate = useNavigate();
   const [files] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState<string>('');
+  const [showLogs, setShowLogs] = useState(false);
+  const [hideLogs, setHideLogs] = useState(false);
 
   // Generate unique WebSocket ID for this chat session
   const [websocketId] = useState(
@@ -52,8 +58,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     createSessionConversation,
   } = useChatStore();
 
-  // WebSocket for variable updates
-  const { updates, disconnect } = useVariableUpdates(websocketId, {
+  // WebSocket for variable updates and log streaming
+  const { updates, logUpdates, disconnect, clearLogUpdates } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -148,6 +154,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
     try {
       clearError();
+      clearLogUpdates(); // Clear previous logs when starting new request
+      setHideLogs(false); // Show logs section when starting new request
 
       let effectiveConversationId = conversationId;
 
@@ -239,7 +247,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
   return (
     <div className="flex w-full h-full">
-      <div className="w-full overflow-y-auto scrollbar-hide h-[calc(100vh-64px)] fade-in">
+      <div className="w-full overflow-y-auto custom-scrollbar h-[calc(100vh-64px)] fade-in">
         {conversationId || messages.length > 0 ? (
           <div className="flex justify-center items-center w-full h-full">
             <div className="flex relative justify-center items-center w-full h-full">
@@ -249,7 +257,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
               >
                 <div
                   className={cn(
-                    'flex relative flex-col justify-between w-full h-full',
+                    'grid grid-rows-[1fr_max-content_max-content] justify-between w-full h-full',
                     isSidebarCollapsed ? 'pr-6 pl-10' : 'px-4',
                     'max-w-[760px] 3xl:max-w-[1200px]',
                     'opacity-100',
@@ -258,7 +266,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
+                    className="overflow-y-auto flex-1 items-center pt-2 pb-4 custom-scrollbar fade-in"
                   >
                     <ChatSession
                       messages={messages}
@@ -266,6 +274,65 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                       currentStep={currentStep}
                     />
                   </div>
+
+                  {/* Collapsible Live Logs Section */}
+                  {(isSending || logUpdates.length > 0) && !hideLogs && (
+                    <div className="border-t pb-6 border-gray-200 dark:border-gray-700 w-full max-w-[760px] 3xl:max-w-[1200px]">
+                      {/* Toggle Button */}
+                      <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer flex-1"
+                          onClick={() => setShowLogs(!showLogs)}
+                        >
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            Backend Logs
+                          </span>
+                          {isSending && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
+                            </div>
+                          )}
+                          {logUpdates.length > 0 && (
+                            <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full font-medium">
+                              {logUpdates.length}
+                            </span>
+                          )}
+                          {showLogs ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          )}
+                        </div>
+
+                        {/* Close button */}
+                        {!isSending && (
+                          <button
+                            onClick={() => {
+                              setHideLogs(true);
+                              setShowLogs(false);
+                            }}
+                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                            title="Hide logs"
+                          >
+                            <X className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Logs Content - Only show when expanded */}
+                      {showLogs && (
+                        <div className="px-4 pb-4">
+                          <LogViewer
+                            logs={logUpdates}
+                            showTimestamps={true}
+                            autoScroll={true}
+                            maxHeight="200px"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Fixed chat box at bottom */}
                   <div className="sticky bottom-6 w-full bg-background">

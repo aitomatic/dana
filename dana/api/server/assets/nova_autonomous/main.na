@@ -1,0 +1,19 @@
+from workflows import solve_query
+from common import ExecutionState
+from common import EXECUTION_CONFIG
+
+log_level("debug")
+
+agent_blueprint NovaAutonomous:
+    name: str = "Nova"
+    description: str = "Autonomous task execution agent with adaptive planning, validation, web search, and document analysis capabilities. Can analyze uploaded documents alongside web research."
+    
+def solve(self: NovaAutonomous, query: str) -> str:
+    state = ExecutionState(original_query=query)
+    response = solve_query(state)
+    return response
+
+this_agent = NovaAutonomous()
+
+response = this_agent.solve("Plan me a 2 week trip to the US for 2 people")
+print(response)

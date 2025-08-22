@@ -18,9 +18,9 @@ from typing import TYPE_CHECKING, cast
 
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.registry.module_registry import ModuleRegistry
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
-from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
 
 if TYPE_CHECKING:
@@ -381,39 +381,58 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         if not module_obj.__file__:
             raise ImportError(f"No file path for module {module_obj.__name__}")
 
+        # Check for circular imports before starting to load
+        if self.registry.is_module_loading(module_obj.__name__):
+            from .errors import CircularImportError
+
+            raise CircularImportError([module_obj.__name__])
+
         # Start loading lifecycle
         self.registry.start_loading(module_obj.__name__)
         try:
             origin_path = Path(module_obj.__file__)
 
-            # Directory package - execute __init__.na if present; otherwise nothing to execute
+            # Handle both directory packages and __init__.na files
             if origin_path.is_dir():
+                # Directory package without __init__.na (namespace package)
                 init_file = origin_path / "__init__.na"
                 if not init_file.is_file():
+                    # Namespace package: populate with available submodules
+                    self._populate_namespace_package(module_obj, origin_path)
                     self.registry.finish_loading(module_obj.__name__)
                     return
-                # 1) Read and parse from __init__.na
-                source = self._read_source(init_file)
-                ast = self._parse_source(source, module_obj.__name__, str(init_file))
+                # Directory with __init__.na - populate before executing
+                self._populate_package_with_submodules(module_obj, origin_path)
+            elif origin_path.name == "__init__.na":
+                # Package __init__.na file - populate the parent directory
+                package_dir = origin_path.parent
+                self._populate_package_with_submodules(module_obj, package_dir)
 
-                # 2) Create execution context and seed it
+                # 2) Read and parse from __init__.na
+                source = self._read_source(origin_path)
+                ast = self._parse_source(source, module_obj.__name__, str(origin_path))
+
+                # 3) Create execution context and seed it
                 interpreter, context = self._create_execution_context(module_obj, origin_path)
                 self._seed_context_from_module(context, module_obj)
 
-                # 3) Execute AST
+                # 4) Execute AST
                 self._execute_ast(interpreter, ast, context)
 
-                # 4) Publish results back to module/public scopes
+                # 4.5) Register receiver functions from AST
+                self._register_receiver_functions_from_ast(ast, module_obj, context)
+
+                # 5) Publish results back to module/public scopes
                 public_vars = self._collect_public_vars(context)
                 self._publish_scopes_to_module(module_obj, context, public_vars)
                 self._merge_public_into_root(context, public_vars)
                 self._expose_system_vars(module_obj, context)
 
-                # 5) Determine and apply exports
+                # 6) Determine and apply exports
                 exports = self._determine_exports(module_obj, context, public_vars)
                 self._apply_exports(module_obj, exports)
 
-                # 6) Post-process: enable intra-module function calls and log
+                # 7) Post-process: enable intra-module function calls and log
                 self._setup_module_function_context(module_obj, interpreter, context)
 
                 return
@@ -428,6 +447,9 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
 
             # 3) Execute AST
             self._execute_ast(interpreter, ast, context)
+
+            # 3.5) Register receiver functions from AST
+            self._register_receiver_functions_from_ast(ast, module_obj, context)
 
             # 4) Publish results back to module/public scopes
             public_vars = self._collect_public_vars(context)
@@ -474,6 +496,10 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         context = SandboxContext()
         context._interpreter = interpreter  # Bind interpreter
 
+        # Set the current file being executed (used for error reporting AND Python import resolution)
+        if origin_path:
+            context.error_context.set_file(str(origin_path))
+
         # Set current module and package for relative import resolution
         context._current_module = module.__name__
         if origin_path and (origin_path.name == "__init__.na" or origin_path.is_dir()):
@@ -495,7 +521,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
 
     def _execute_ast(self, interpreter: DanaInterpreter, ast, context: SandboxContext) -> None:
         """Execute parsed AST inside the given context."""
-        interpreter._execute(ast, context)
+        interpreter.execute_program(ast, context)
 
     def _collect_public_vars(self, context: SandboxContext) -> dict[str, object]:
         """Collect public scope variables from the execution context."""
@@ -578,7 +604,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
             context: The execution context
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+        from dana.registry.function_registry import FunctionMetadata, FunctionType
 
         # Find all DanaFunction objects in the module
         dana_functions = {}
@@ -698,3 +724,184 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
                     return True
 
         return False
+
+    def _populate_namespace_package(self, module_obj: Module, package_dir: Path) -> None:
+        """Populate a namespace package with its available submodules.
+
+        This method finds all immediate submodules in a namespace package directory
+        and creates lazy-loading attributes for them on the namespace package module.
+
+        Args:
+            module_obj: The namespace package module to populate
+            package_dir: Directory containing the namespace package
+        """
+        # Find all immediate submodules
+        for item in package_dir.iterdir():
+            if item.is_file() and item.suffix == ".na":
+                # Direct .na file submodule
+                submodule_name = item.stem
+                full_submodule_name = f"{module_obj.__name__}.{submodule_name}"
+
+                # Create a lazy-loading property for this submodule
+                self._add_lazy_submodule(module_obj, submodule_name, full_submodule_name)
+
+            elif item.is_dir():
+                # Check if this directory is a package (has __init__.na or is namespace package)
+                submodule_name = item.name
+                full_submodule_name = f"{module_obj.__name__}.{submodule_name}"
+
+                if (item / "__init__.na").exists() or self._is_dana_package_directory(item):
+                    # Create a lazy-loading property for this subpackage
+                    self._add_lazy_submodule(module_obj, submodule_name, full_submodule_name)
+
+    def _add_lazy_submodule(self, module_obj: Module, submodule_name: str, full_submodule_name: str) -> None:
+        """Add a lazy-loading submodule attribute to a namespace package.
+
+        Args:
+            module_obj: The namespace package module
+            submodule_name: Name of the submodule (local name)
+            full_submodule_name: Fully qualified name of the submodule
+        """
+
+        # Create a property that loads the submodule on first access
+        def old_get_submodule():
+            # Try to get from cache first
+            if hasattr(module_obj, f"__{submodule_name}_cached__"):
+                return getattr(module_obj, f"__{submodule_name}_cached__")
+
+            # Load the submodule
+            try:
+                spec = self.find_spec(full_submodule_name)
+                if spec is None:
+                    raise AttributeError(f"Submodule '{submodule_name}' not found in namespace package '{module_obj.__name__}'")
+
+                submodule = self.create_module(spec)
+                if submodule is None:
+                    raise AttributeError(f"Could not create submodule '{submodule_name}'")
+
+                self.exec_module(submodule)
+
+                # Cache the result
+                setattr(module_obj, f"__{submodule_name}_cached__", submodule)
+                return submodule
+
+            except Exception as e:
+                raise AttributeError(f"Error loading submodule '{submodule_name}': {e}") from e
+
+        # Create a getter function for the submodule
+        def get_submodule():
+            try:
+                # Use the import machinery to load the submodule
+                submodule_spec = self.find_spec(full_submodule_name)
+                if submodule_spec:
+                    submodule = self.create_module(submodule_spec)
+                    self.exec_module(submodule)
+                    return submodule
+                else:
+                    raise ImportError(f"No module named '{full_submodule_name}'")
+            except Exception as e:
+                # Provide better error context for circular import issues
+                if "circular import" in str(e).lower() or "partially initialized" in str(e).lower():
+                    raise AttributeError(f"Circular import detected while loading '{submodule_name}': {e}") from e
+                else:
+                    raise AttributeError(f"Error loading submodule '{submodule_name}': {e}") from e
+
+        # For now, always use lazy loading to avoid infinite loops
+        # The import handler will handle the actual loading when needed
+        def lazy_loader():
+            return get_submodule()
+
+        # Don't execute immediately during population to avoid circular loops
+        # Just make the module available for import by setting it as an attribute
+        # but defer actual execution until import time
+        setattr(module_obj, submodule_name, lazy_loader)
+        self.debug(f"Created lazy loader for {module_obj.__name__}.{submodule_name}")
+
+    def _populate_package_with_submodules(self, module_obj: Module, package_dir: Path) -> None:
+        """Populate a regular package (with __init__.na) with its available submodules.
+
+        This method is similar to _populate_namespace_package but for regular packages.
+        It ensures that submodules are available as attributes before the __init__.na
+        file is executed, preventing import failures during package initialization.
+
+        Args:
+            module_obj: The package module to populate
+            package_dir: Directory containing the package
+        """
+        # Reuse the same logic as namespace packages
+        self._populate_namespace_package(module_obj, package_dir)
+
+    def _register_receiver_functions_from_ast(self, ast, module_obj: Module, context) -> None:
+        """Extract and register receiver functions from module AST.
+
+        This method scans the AST for receiver functions (MethodDefinition nodes)
+        and registers them in the unified FUNCTION_REGISTRY so they can be called
+        as methods on struct instances.
+
+        Args:
+            ast: The parsed AST of the module
+            module_obj: The module object being loaded
+            context: The execution context
+        """
+        from dana.core.lang.ast import MethodDefinition
+
+        try:
+            # Scan through all statements in the AST
+            for statement in ast.statements:
+                if isinstance(statement, MethodDefinition):
+                    self._register_receiver_function(statement, module_obj, context)
+
+        except Exception as e:
+            # Log warning but don't fail module loading
+            self.warning(f"Failed to register receiver functions from module '{module_obj.__name__}': {e}")
+
+    def _register_receiver_function(self, method_def, module_obj: Module, context) -> None:
+        """Register a single receiver function in the struct function registry.
+
+        Args:
+            method_def: The method definition AST node
+            module_obj: The module object being loaded
+            context: The execution context
+        """
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.registry import FUNCTION_REGISTRY
+
+        try:
+            # Extract receiver type from the method definition
+            receiver_param = method_def.receiver
+            receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+
+            if not receiver_type_str:
+                self.warning(f"Method definition in module '{module_obj.__name__}' has no receiver type")
+                return
+
+            # Parse union types (e.g., "Point | Circle | Rectangle")
+            receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+            # Extract method name
+            method_name = method_def.name.name
+
+            # Create a function that can be called as a method
+            def method_function(receiver, *args, **kwargs):
+                # Get the function from the module context
+                func = context.get(method_name)
+                if func is None:
+                    raise AttributeError(f"Method '{method_name}' not found in module '{module_obj.__name__}'")
+
+                # Call the function with receiver as first argument
+                if isinstance(func, DanaFunction):
+                    return func.execute(context, receiver, *args, **kwargs)
+                else:
+                    return func(receiver, *args, **kwargs)
+
+            # Register the method for all receiver types
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, method_name, method_function)
+                self.debug(f"Registered receiver function '{method_name}' for type '{receiver_type}' in module '{module_obj.__name__}'")
+
+            self.debug(
+                f"Successfully registered receiver function '{method_name}' for type '{receiver_type_str}' in module '{module_obj.__name__}'"
+            )
+
+        except Exception as e:
+            self.warning(f"Failed to register receiver function '{method_def.name.name}' from module '{module_obj.__name__}': {e}")
