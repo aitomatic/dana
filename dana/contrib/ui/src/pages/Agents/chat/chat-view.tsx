@@ -8,7 +8,7 @@ import ChatSession from './chat-session';
 // import ChatBox from './chat-box';
 import { cn } from '@/lib/utils';
 
-import ChatBox from './chat-box';
+import ChatBox, { type ChatBoxRef } from './chat-box';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // Stores
@@ -43,6 +43,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     () => `chatview-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
   );
 
+  // Refs to control ChatBox input state for global functions
+  const chatBoxRef = useRef<ChatBoxRef | null>(null);
+
   const {
     messages,
     isSending,
@@ -63,6 +66,48 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     maxUpdates: 50,
     autoConnect: true,
   });
+
+  // Set up global functions for HTMLRenderer to use
+  useEffect(() => {
+    // Function to set input text in the chat box
+    const setInputText = (text: string) => {
+      if (chatBoxRef.current?.setMessage) {
+        chatBoxRef.current.setMessage(text);
+      }
+    };
+
+    // Function to send the current message
+    const sendCurrentMessage = () => {
+      if (chatBoxRef.current?.submitMessage) {
+        chatBoxRef.current.submitMessage();
+      }
+    };
+
+    // Function to send a message directly without setting input
+    const sendMessageDirect = (messageText: string) => {
+      if (chatBoxRef.current?.sendMessageDirect) {
+        chatBoxRef.current.sendMessageDirect(messageText);
+      }
+    };
+
+    // Set up global functions on window object
+    (window as any).setInput = setInputText;
+    (window as any).setInputText = setInputText;
+    (window as any).sendMessage = sendCurrentMessage;
+    (window as any).handleSendMessage = sendCurrentMessage;
+    (window as any).submitMessage = sendCurrentMessage;
+    (window as any).sendMessageDirect = sendMessageDirect;
+
+    // Cleanup function
+    return () => {
+      delete (window as any).setInput;
+      delete (window as any).setInputText;
+      delete (window as any).sendMessage;
+      delete (window as any).handleSendMessage;
+      delete (window as any).submitMessage;
+      delete (window as any).sendMessageDirect;
+    };
+  }, []);
 
   // Handle variable updates - show step changes for thinking messages
   useEffect(() => {
@@ -220,6 +265,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
               agentId={agentId}
               placeholder="Ask me anything"
               handleSendMessage={onSendMessage}
+              ref={chatBoxRef} // Pass the ref to ChatBox
             />
           </div>
         </div>
@@ -342,6 +388,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                       agentId={agentId}
                       placeholder="Ask me anything"
                       handleSendMessage={onSendMessage}
+                      ref={chatBoxRef} // Pass the ref to ChatBox
                     />
                   </div>
                 </div>
