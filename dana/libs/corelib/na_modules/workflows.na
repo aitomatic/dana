@@ -1,4 +1,11 @@
-# Core utility functions for Dana standard library
+"""
+Workflows module for Dana standard library.
+
+This module provides a FSM struct for workflow definitions.
+
+workflow MyWorkflow:
+    fsm: FSM = None
+"""
 
 struct FSM:
     """
@@ -10,7 +17,3 @@ struct FSM:
     initial_state: str  # Starting state
     current_state: str  # Current execution
     transitions: dict[tuple[str, str], str]  # (from_state, event) -> to_state
-
-
-# FSM struct is available for workflow definitions
-# The execute function would be implemented in workflow-specific contexts
