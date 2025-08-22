@@ -344,8 +344,6 @@ class DocumentService:
             logger.error(f"Error getting file path for document {document_id}: {e}")
             raise
 
-
-
     def _get_mime_type(self, filename: str) -> str:
         """
         Determine MIME type from filename extension.
@@ -426,7 +424,6 @@ class DocumentService:
 
                 # Create agent-specific cache directory
                 cache_dir = os.path.abspath(os.path.join(folder_path, ".cache/rag"))
-                
 
                 # Create RAG resource with force_reload to rebuild index
                 rag_resource = RAGResource(

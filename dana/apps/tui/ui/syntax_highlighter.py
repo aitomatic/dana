@@ -44,7 +44,6 @@ class DanaSyntaxHighlighter:
         "resource",
         "agent",
         "agent_blueprint",
-        "agent_pool",
         # Type annotations
         "int",
         "float",

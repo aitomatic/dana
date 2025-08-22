@@ -10,8 +10,6 @@ together correctly, including:
 5. Error handling
 """
 
-import os
-
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -327,10 +325,7 @@ def test_end_to_end_function_integration():
 
 def test_reason_function_integration():
     """Test the reason function integration with proper LLM resource setup."""
-    # Save original environment
-    original_mock_env = os.environ.get("DANA_MOCK_LLM")
-    os.environ["DANA_MOCK_LLM"] = "true"
-
+    # No longer overriding DANA_MOCK_LLM - let environment control it
     try:
         context = SandboxContext()
         interpreter = DanaInterpreter()
@@ -385,11 +380,8 @@ def test_reason_function_integration():
             assert len(str(e)) > 0
 
     finally:
-        # Restore environment
-        if original_mock_env is None:
-            os.environ.pop("DANA_MOCK_LLM", None)
-        else:
-            os.environ["DANA_MOCK_LLM"] = original_mock_env
+        # No longer overriding DANA_MOCK_LLM - let environment control it
+        pass
 
 
 def test_comprehensive_function_scenarios():

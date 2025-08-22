@@ -74,10 +74,10 @@ def run_targeted_tests():
     log("\n2. Testing struct methods...")
     try:
         info = data.get_info()
-        results["struct_methods"] = info
+        results["struct_functions"] = info
         log(f"✅ Struct methods work: {info}")
     except Exception as e:
-        results["struct_methods"] = f"❌ Failed: {e}"
+        results["struct_functions"] = f"❌ Failed: {e}"
         log(f"❌ Struct methods failed: {e}")
     
     # Test agent creation

@@ -30,32 +30,35 @@ class AttemptCompletionTool(BaseTool):
     async def _execute(self, summary: str) -> ToolResult:
         # Context-validated completion detection - check actual state, not just phrases
         # First, check for obvious non-completion indicators
-        if any(phrase in summary.lower() for phrase in [
-            "would be generated",
-            "will be generated", 
-            "preview",
-            "overview",
-            "sample content",
-            "brief description",
-            "what would be",
-            "sample facts",
-            "sample procedures",
-            "no new artifacts",
-            "already processed",
-            "deemed complete"
-        ]):
+        if any(
+            phrase in summary.lower()
+            for phrase in [
+                "would be generated",
+                "will be generated",
+                "preview",
+                "overview",
+                "sample content",
+                "brief description",
+                "what would be",
+                "sample facts",
+                "sample procedures",
+                "no new artifacts",
+                "already processed",
+                "deemed complete",
+            ]
+        ):
             is_completion = False
         else:
             # Check for completion indicators
             completion_indicators = [
                 "knowledge generation complete",
-                "workflow is now complete", 
+                "workflow is now complete",
                 "all knowledge has been generated",
                 "generation workflow complete",
                 "successfully generated",
-                "workflow finished"
+                "workflow finished",
             ]
-            
+
             # Only mark as completion if summary contains strong completion language
             # AND doesn't contain contradictory information
             is_completion = any(phrase in summary.lower() for phrase in completion_indicators)

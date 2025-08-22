@@ -70,10 +70,10 @@ class ResourceType(StructType):
 
     def has_method(self, method_name: str) -> bool:
         """Check if this resource type has a method."""
-        # Check STRUCT_FUNCTION_REGISTRY
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
+        # Check unified FUNCTION_REGISTRY
+        from dana.registry import FUNCTION_REGISTRY
 
-        if STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name):
+        if FUNCTION_REGISTRY.lookup_struct_function(self.name, method_name):
             return True
 
         # Check current type attributes
@@ -83,13 +83,13 @@ class ResourceType(StructType):
         return False
 
     def add_resource_method(self, method_name: str, method: Any) -> None:
-        """Add a resource-specific method to the STRUCT_FUNCTION_REGISTRY."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
+        """Add a resource-specific method to the unified FUNCTION_REGISTRY."""
+        from dana.registry import FUNCTION_REGISTRY
 
-        STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
+        FUNCTION_REGISTRY.register_struct_function(self.name, method_name, method)
 
     def get_resource_method(self, method_name: str) -> Any | None:
         """Get a resource method by name."""
-        from dana.registry import STRUCT_FUNCTION_REGISTRY
+        from dana.registry import FUNCTION_REGISTRY
 
-        return STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, method_name)
+        return FUNCTION_REGISTRY.lookup_struct_function(self.name, method_name)

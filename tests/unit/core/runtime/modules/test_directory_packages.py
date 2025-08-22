@@ -76,7 +76,7 @@ def root_function() -> str:
         sub_module = sub_pkg / "sub_utils.na"
         sub_module.write_text("""
 def sub_function() -> str:
-    return "From sub package"
+    return "Hello from sub"
 """)
 
         # Create driver module that imports from nested packages
@@ -97,7 +97,7 @@ sub_result = sub_function()
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:root_result") == "From root package"
-        assert result.final_context.get("local:sub_result") == "From sub package"
+        assert result.final_context.get("local:sub_result") == "Hello from sub"
 
     def test_directory_package_import_as_module(self, tmp_path):
         """Test importing directory package as a module."""

@@ -27,7 +27,7 @@ from dana.core.lang.ast import (
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
-    MethodDefinition,
+    Parameter,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import (
@@ -38,7 +38,7 @@ from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher im
     UnifiedFunctionDispatcher,
 )
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry import FUNCTION_REGISTRY
 from dana.registry.function_registry import FunctionRegistry
 
 
@@ -71,12 +71,11 @@ class FunctionExecutor(BaseExecutor):
         """Register handlers for function-related node types."""
         self._handlers = {
             FunctionDefinition: self.execute_function_definition,
-            MethodDefinition: self.execute_method_definition,
             FunctionCall: self.execute_function_call,
         }
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
-        """Execute a function definition and store it in the context.
+        """Execute a unified function definition (handles both regular functions and methods).
 
         Args:
             node: The function definition to execute
@@ -88,19 +87,20 @@ class FunctionExecutor(BaseExecutor):
         # Create a DanaFunction object instead of a raw dict
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
+        # Extract all parameters (including receiver if present)
+        all_params = []
+        if node.receiver:
+            all_params.append(node.receiver)
+        all_params.extend(node.parameters)
+
         # Extract parameter names and defaults
         param_names = []
         param_defaults = {}
-        first_param_type = None  # Track the type of the first parameter for method registration
 
-        for i, param in enumerate(node.parameters):
+        for i, param in enumerate(all_params):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
-
-                # Extract type information from the first parameter
-                if i == 0 and hasattr(param, "type_hint") and param.type_hint:
-                    first_param_type = param.type_hint.name if hasattr(param.type_hint, "name") else None
 
                 # Extract default value if present
                 if hasattr(param, "default_value") and param.default_value is not None:
@@ -126,14 +126,32 @@ class FunctionExecutor(BaseExecutor):
 
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body,
+            parameters=param_names,
+            context=context,
+            return_type=return_type,
+            defaults=param_defaults,
+            name=node.name.name,
+            is_sync=node.is_sync,
         )
 
-        # Check if this is a method definition (first parameter has a type)
-        if first_param_type:
-            # Register as a method in the STRUCT_FUNCTION_REGISTRY
-            STRUCT_FUNCTION_REGISTRY.register_method(first_param_type, node.name.name, dana_func)
-            self.debug(f"Registered method {node.name.name} for type {first_param_type}")
+        # Register based on presence of receiver
+        if node.receiver:
+            # Register as method
+            receiver_types = self._extract_receiver_types(node.receiver)
+            for receiver_type in receiver_types:
+                FUNCTION_REGISTRY.register_struct_function(receiver_type, node.name.name, dana_func)
+                self.debug(f"Registered method {node.name.name} for type {receiver_type}")
+        else:
+            # Check if first parameter has a type (backward compatibility for old method detection)
+            first_param_type = None
+            if node.parameters and hasattr(node.parameters[0], "type_hint") and node.parameters[0].type_hint:
+                first_param_type = node.parameters[0].type_hint.name if hasattr(node.parameters[0].type_hint, "name") else None
+
+            if first_param_type:
+                # Register as a method in the unified registry (backward compatibility)
+                FUNCTION_REGISTRY.register_struct_function(first_param_type, node.name.name, dana_func)
+                self.debug(f"Registered method {node.name.name} for type {first_param_type} (backward compatibility)")
 
         # Apply decorators if present
         if node.decorators:
@@ -145,92 +163,6 @@ class FunctionExecutor(BaseExecutor):
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
             return dana_func
-
-    def execute_method_definition(self, node: MethodDefinition, context: SandboxContext) -> Any:
-        """Execute a method definition and register it in the method registry.
-
-        Args:
-            node: The method definition to execute
-            context: The execution context
-
-        Returns:
-            The defined method
-        """
-        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.registry import TYPE_REGISTRY
-
-        # Extract receiver type(s) from the receiver parameter
-        receiver_param = node.receiver
-        receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
-
-        if not receiver_type_str:
-            raise SandboxError("Method definition requires typed receiver parameter")
-
-        # Parse union types (e.g., "Point | Circle | Rectangle")
-        # Handle spaces around pipe symbols
-        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
-
-        # Validate that all receiver types exist
-        for type_name in receiver_types:
-            # Check both struct registry and resource registry
-            is_struct_type = TYPE_REGISTRY.exists(type_name)
-            is_resource_type = False
-
-            # Check resource registry if available
-            try:
-                from dana.core.resource.resource_registry import ResourceTypeRegistry
-
-                is_resource_type = ResourceTypeRegistry.exists(type_name)
-            except ImportError:
-                pass
-
-            if not is_struct_type and not is_resource_type:
-                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
-
-        # Extract parameter names (excluding receiver)
-        param_names = []
-        param_defaults = {}
-        for param in node.parameters:
-            if hasattr(param, "name"):
-                param_name = param.name
-                param_names.append(param_name)
-
-                # Extract default value if present
-                if hasattr(param, "default_value") and param.default_value is not None:
-                    try:
-                        default_value = self._evaluate_expression(param.default_value, context)
-                        param_defaults[param_name] = default_value
-                    except Exception as e:
-                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
-
-        # Extract return type if present
-        return_type = None
-        if hasattr(node, "return_type") and node.return_type is not None:
-            if hasattr(node.return_type, "name"):
-                return_type = node.return_type.name
-            else:
-                return_type = str(node.return_type)
-
-        # Create the DanaFunction with receiver as the first parameter
-        all_params = [receiver_param.name] + param_names
-        dana_func = DanaFunction(
-            body=node.body, parameters=all_params, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
-        )
-
-        # Apply decorators if present
-        if node.decorators:
-            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
-            final_func = wrapped_func
-        else:
-            final_func = dana_func
-
-        # Register the method with all receiver types
-        STRUCT_FUNCTION_REGISTRY.register_method_for_types(receiver_types, node.name.name, final_func)
-
-        # Also store in context for direct access
-        context.set(f"local:{node.name.name}", final_func)
-
-        return final_func
 
     def _apply_decorators(self, func, decorators, context):
         """Apply decorators to a function, handling both simple and parameterized decorators."""
@@ -885,7 +817,7 @@ class FunctionExecutor(BaseExecutor):
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
             # Step 2.5: Try struct method delegation for struct instances
-            from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+            from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
             from dana.core.lang.interpreter.struct_system import StructInstance
 
             if isinstance(target_object, StructInstance):
@@ -1080,3 +1012,42 @@ class FunctionExecutor(BaseExecutor):
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")
+
+    def _extract_receiver_types(self, receiver_param: Parameter) -> list[str]:
+        """Extract receiver types from a receiver parameter.
+
+        Args:
+            receiver_param: The receiver parameter
+
+        Returns:
+            List of receiver type names
+        """
+        if not receiver_param.type_hint:
+            raise SandboxError("Method definition requires typed receiver parameter")
+
+        receiver_type_str = receiver_param.type_hint.name if hasattr(receiver_param.type_hint, "name") else str(receiver_param.type_hint)
+
+        # Parse union types (e.g., "Point | Circle | Rectangle")
+        # Handle spaces around pipe symbols
+        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+        # Validate that all receiver types exist
+        from dana.registry import TYPE_REGISTRY
+
+        for type_name in receiver_types:
+            # Check both struct registry and resource registry
+            is_struct_type = TYPE_REGISTRY.exists(type_name)
+            is_resource_type = False
+
+            # Check resource registry if available
+            try:
+                from dana.core.resource.resource_registry import ResourceTypeRegistry
+
+                is_resource_type = ResourceTypeRegistry.exists(type_name)
+            except ImportError:
+                pass
+
+            if not is_struct_type and not is_resource_type:
+                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
+
+        return receiver_types

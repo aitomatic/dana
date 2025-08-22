@@ -1,8 +1,8 @@
 """Documents Querying."""
 
-from resources import RagResource
+from resources import RagResource, query, initialize  # TODO: user not needing to import `query` & `initialize`
 
-rag = RagResource(sources=["../../../../docs/primers"])
-rag.initialize()
+dana_primers_rag = RagResource(sources=["../../../../docs/primers"])
+dana_primers_rag.initialize()  # TODO: user not needing to initialize
 
-print(rag.query("What are Dana's 6 core concepts?"))
+print(dana_primers_rag.query("Dana's 6 core concepts"))  # TODO: return str input, not raw list of candidate pieces

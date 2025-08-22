@@ -1,7 +1,7 @@
 """
 Dana Resource System - New Implementation
 
-This module provides the new resource system that leverages struct inheritance
+This module provides the new resource system that uses composition and delegation
 and provides a unified type system approach.
 
 Copyright © 2025 Aitomatic, Inc.

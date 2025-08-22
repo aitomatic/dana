@@ -908,7 +908,7 @@ async def bulk_evaluate_agent(request: BulkEvaluationRequest):
         # Validate all questions have content
         for i, question in enumerate(request.questions):
             if not question.question.strip():
-                raise HTTPException(status_code=400, detail=f"Question {i+1} is empty")
+                raise HTTPException(status_code=400, detail=f"Question {i + 1} is empty")
 
         logger.info(f"Starting bulk evaluation of {len(request.questions)} questions")
 
