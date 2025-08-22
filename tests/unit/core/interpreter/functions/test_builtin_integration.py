@@ -22,19 +22,19 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test with list
-        result = interpreter._eval("len([1, 2, 3, 4, 5])", context=context)
+        result = interpreter._eval_source_code("len([1, 2, 3, 4, 5])", context=context)
         assert result == 5
 
         # Test with string
-        result = interpreter._eval('len("hello")', context=context)
+        result = interpreter._eval_source_code('len("hello")', context=context)
         assert result == 5
 
         # Test with empty list
-        result = interpreter._eval("len([])", context=context)
+        result = interpreter._eval_source_code("len([])", context=context)
         assert result == 0
 
         # Test with dictionary
-        result = interpreter._eval('len({"a": 1, "b": 2})', context=context)
+        result = interpreter._eval_source_code('len({"a": 1, "b": 2})', context=context)
         assert result == 2
 
     def test_sum_function_integration(self):
@@ -43,15 +43,15 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test with list of integers
-        result = interpreter._eval("sum([1, 2, 3, 4, 5])", context=context)
+        result = interpreter._eval_source_code("sum([1, 2, 3, 4, 5])", context=context)
         assert result == 15
 
         # Test with empty list
-        result = interpreter._eval("sum([])", context=context)
+        result = interpreter._eval_source_code("sum([])", context=context)
         assert result == 0
 
         # Test with tuple
-        result = interpreter._eval("sum((10, 20, 30))", context=context)
+        result = interpreter._eval_source_code("sum((10, 20, 30))", context=context)
         assert result == 60
 
     def test_max_min_functions_integration(self):
@@ -60,18 +60,18 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test max
-        result = interpreter._eval("max([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("max([1, 5, 3, 9, 2])", context=context)
         assert result == 9
 
         # Test min
-        result = interpreter._eval("min([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("min([1, 5, 3, 9, 2])", context=context)
         assert result == 1
 
         # Test with negative numbers
-        result = interpreter._eval("max([-5, -2, -8, -1])", context=context)
+        result = interpreter._eval_source_code("max([-5, -2, -8, -1])", context=context)
         assert result == -1
 
-        result = interpreter._eval("min([-5, -2, -8, -1])", context=context)
+        result = interpreter._eval_source_code("min([-5, -2, -8, -1])", context=context)
         assert result == -8
 
     def test_smart_wrapper_functions_integration(self):
@@ -80,85 +80,85 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test max() with multiple arguments (new Python-style syntax)
-        result = interpreter._eval("max(1, 5, 3, 9, 2)", context=context)
+        result = interpreter._eval_source_code("max(1, 5, 3, 9, 2)", context=context)
         assert result == 9
 
-        result = interpreter._eval("max(10, 3)", context=context)
+        result = interpreter._eval_source_code("max(10, 3)", context=context)
         assert result == 10
 
-        result = interpreter._eval("max(-5, -2, -8, -1)", context=context)
+        result = interpreter._eval_source_code("max(-5, -2, -8, -1)", context=context)
         assert result == -1
 
         # Test max() with iterables (backward compatibility)
-        result = interpreter._eval("max([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("max([1, 5, 3, 9, 2])", context=context)
         assert result == 9
 
-        result = interpreter._eval("max((10, 3, 7))", context=context)
+        result = interpreter._eval_source_code("max((10, 3, 7))", context=context)
         assert result == 10
 
         # Test min() with multiple arguments (new Python-style syntax)
-        result = interpreter._eval("min(1, 5, 3, 9, 2)", context=context)
+        result = interpreter._eval_source_code("min(1, 5, 3, 9, 2)", context=context)
         assert result == 1
 
-        result = interpreter._eval("min(10, 3)", context=context)
+        result = interpreter._eval_source_code("min(10, 3)", context=context)
         assert result == 3
 
-        result = interpreter._eval("min(-5, -2, -8, -1)", context=context)
+        result = interpreter._eval_source_code("min(-5, -2, -8, -1)", context=context)
         assert result == -8
 
         # Test min() with iterables (backward compatibility)
-        result = interpreter._eval("min([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("min([1, 5, 3, 9, 2])", context=context)
         assert result == 1
 
-        result = interpreter._eval("min((10, 3, 7))", context=context)
+        result = interpreter._eval_source_code("min((10, 3, 7))", context=context)
         assert result == 3
 
         # Test sum() with start parameter (new functionality)
-        result = interpreter._eval("sum([1, 2, 3], 10)", context=context)
+        result = interpreter._eval_source_code("sum([1, 2, 3], 10)", context=context)
         assert result == 16
 
-        result = interpreter._eval("sum((1, 2, 3), 5)", context=context)
+        result = interpreter._eval_source_code("sum((1, 2, 3), 5)", context=context)
         assert result == 11
 
         # Test sum() without start parameter (backward compatibility)
-        result = interpreter._eval("sum([1, 2, 3])", context=context)
+        result = interpreter._eval_source_code("sum([1, 2, 3])", context=context)
         assert result == 6
 
-        result = interpreter._eval("sum((1, 2, 3))", context=context)
+        result = interpreter._eval_source_code("sum((1, 2, 3))", context=context)
         assert result == 6
 
         # Test the original problematic pattern from curate.na
-        result = interpreter._eval('max(len(["item1", "item2", "item3"]), 1)', context=context)
+        result = interpreter._eval_source_code('max(len(["item1", "item2", "item3"]), 1)', context=context)
         assert result == 3
 
-        result = interpreter._eval("max(len([]), 1)", context=context)
+        result = interpreter._eval_source_code("max(len([]), 1)", context=context)
         assert result == 1
 
-        result = interpreter._eval('min(len(["single"]), 5)', context=context)
+        result = interpreter._eval_source_code('min(len(["single"]), 5)', context=context)
         assert result == 1
 
         # Test basic_* versions still work (strict iterable-only)
-        result = interpreter._eval("basic_max([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("basic_max([1, 5, 3, 9, 2])", context=context)
         assert result == 9
 
-        result = interpreter._eval("basic_min([1, 5, 3, 9, 2])", context=context)
+        result = interpreter._eval_source_code("basic_min([1, 5, 3, 9, 2])", context=context)
         assert result == 1
 
-        result = interpreter._eval("basic_sum([1, 2, 3])", context=context)
+        result = interpreter._eval_source_code("basic_sum([1, 2, 3])", context=context)
         assert result == 6
 
         # Test mixed numeric types work
-        result = interpreter._eval("max(1, 2.5, 3)", context=context)
+        result = interpreter._eval_source_code("max(1, 2.5, 3)", context=context)
         assert result == 3
 
-        result = interpreter._eval("min(1.5, 2, 0.5)", context=context)
+        result = interpreter._eval_source_code("min(1.5, 2, 0.5)", context=context)
         assert result == 0.5
 
         # Test single argument cases
-        result = interpreter._eval("max(42)", context=context)
+        result = interpreter._eval_source_code("max(42)", context=context)
         assert result == 42
 
-        result = interpreter._eval("min(42)", context=context)
+        result = interpreter._eval_source_code("min(42)", context=context)
         assert result == 42
 
     def test_type_conversion_integration(self):
@@ -167,30 +167,30 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test int conversion
-        result = interpreter._eval('int("42")', context=context)
+        result = interpreter._eval_source_code('int("42")', context=context)
         assert result == 42
 
-        result = interpreter._eval("int(3.14)", context=context)
+        result = interpreter._eval_source_code("int(3.14)", context=context)
         assert result == 3
 
         # Test float conversion
-        result = interpreter._eval('float("3.14")', context=context)
+        result = interpreter._eval_source_code('float("3.14")', context=context)
         assert result == 3.14
 
-        result = interpreter._eval("float(42)", context=context)
+        result = interpreter._eval_source_code("float(42)", context=context)
         assert result == 42.0
 
         # Test bool conversion
-        result = interpreter._eval('bool("hello")', context=context)
+        result = interpreter._eval_source_code('bool("hello")', context=context)
         assert result
 
-        result = interpreter._eval('bool("")', context=context)
+        result = interpreter._eval_source_code('bool("")', context=context)
         assert not result
 
-        result = interpreter._eval("bool(0)", context=context)
+        result = interpreter._eval_source_code("bool(0)", context=context)
         assert not result
 
-        result = interpreter._eval("bool(1)", context=context)
+        result = interpreter._eval_source_code("bool(1)", context=context)
         assert result
 
     def test_abs_round_integration(self):
@@ -199,23 +199,23 @@ class TestBuiltinIntegrationBasic:
         context = SandboxContext()
 
         # Test abs
-        result = interpreter._eval("abs(-5)", context=context)
+        result = interpreter._eval_source_code("abs(-5)", context=context)
         assert result == 5
 
-        result = interpreter._eval("abs(3.14)", context=context)
+        result = interpreter._eval_source_code("abs(3.14)", context=context)
         assert result == 3.14
 
-        result = interpreter._eval("abs(-3.14)", context=context)
+        result = interpreter._eval_source_code("abs(-3.14)", context=context)
         assert result == 3.14
 
         # Test round
-        result = interpreter._eval("round(3.14)", context=context)
+        result = interpreter._eval_source_code("round(3.14)", context=context)
         assert result == 3
 
-        result = interpreter._eval("round(3.64)", context=context)
+        result = interpreter._eval_source_code("round(3.64)", context=context)
         assert result == 4
 
-        result = interpreter._eval("round(3.14159, 2)", context=context)
+        result = interpreter._eval_source_code("round(3.14159, 2)", context=context)
         assert result == 3.14
 
 
@@ -229,15 +229,15 @@ class TestBuiltinIntegrationAdvanced:
         context = SandboxContext()
 
         # Nested len and sum
-        result = interpreter._eval("len([sum([1, 2]), sum([3, 4]), sum([5, 6])])", context=context)
+        result = interpreter._eval_source_code("len([sum([1, 2]), sum([3, 4]), sum([5, 6])])", context=context)
         assert result == 3
 
         # Nested max and abs
-        result = interpreter._eval("max([abs(-5), abs(-2), abs(-8)])", context=context)
+        result = interpreter._eval_source_code("max([abs(-5), abs(-2), abs(-8)])", context=context)
         assert result == 8
 
         # Complex nesting
-        result = interpreter._eval("sum([len([1, 2, 3]), len([4, 5]), len([6])])", context=context)
+        result = interpreter._eval_source_code("sum([len([1, 2, 3]), len([4, 5]), len([6])])", context=context)
         assert result == 6  # 3 + 2 + 1
 
     def test_function_calls_with_variables(self):
@@ -250,7 +250,7 @@ class TestBuiltinIntegrationAdvanced:
 total = sum(numbers)
 count = len(numbers)
 average = total / count"""
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # Check the results
         assert context.get("total") == 15
@@ -263,15 +263,15 @@ average = total / count"""
         context = SandboxContext()
 
         # Test sorted
-        result = interpreter._eval("sorted([3, 1, 4, 1, 5])", context=context)
+        result = interpreter._eval_source_code("sorted([3, 1, 4, 1, 5])", context=context)
         assert result == [1, 1, 3, 4, 5]
 
         # Test reversed (convert to list for comparison)
-        result = list(interpreter._eval("reversed([1, 2, 3, 4, 5])", context=context))
+        result = list(interpreter._eval_source_code("reversed([1, 2, 3, 4, 5])", context=context))
         assert result == [5, 4, 3, 2, 1]
 
         # Test enumerate (convert to list for comparison)
-        result = list(interpreter._eval('enumerate(["a", "b", "c"])', context=context))
+        result = list(interpreter._eval_source_code('enumerate(["a", "b", "c"])', context=context))
         assert result == [(0, "a"), (1, "b"), (2, "c")]
 
     def test_logic_functions_integration(self):
@@ -280,26 +280,26 @@ average = total / count"""
         context = SandboxContext()
 
         # Test all
-        result = interpreter._eval("all([True, True, True])", context=context)
+        result = interpreter._eval_source_code("all([True, True, True])", context=context)
         assert result
 
-        result = interpreter._eval("all([True, False, True])", context=context)
+        result = interpreter._eval_source_code("all([True, False, True])", context=context)
         assert not result
 
-        result = interpreter._eval("all([1, 2, 3])", context=context)
+        result = interpreter._eval_source_code("all([1, 2, 3])", context=context)
         assert result
 
-        result = interpreter._eval("all([1, 0, 3])", context=context)
+        result = interpreter._eval_source_code("all([1, 0, 3])", context=context)
         assert not result
 
         # Test any
-        result = interpreter._eval("any([False, True, False])", context=context)
+        result = interpreter._eval_source_code("any([False, True, False])", context=context)
         assert result
 
-        result = interpreter._eval("any([False, False, False])", context=context)
+        result = interpreter._eval_source_code("any([False, False, False])", context=context)
         assert not result
 
-        result = interpreter._eval("any([0, 1, 0])", context=context)
+        result = interpreter._eval_source_code("any([0, 1, 0])", context=context)
         assert result
 
     def test_range_function_integration(self):
@@ -308,15 +308,15 @@ average = total / count"""
         context = SandboxContext()
 
         # Test single argument range
-        result = list(interpreter._eval("range(5)", context=context))
+        result = list(interpreter._eval_source_code("range(5)", context=context))
         assert result == [0, 1, 2, 3, 4]
 
         # Test two argument range
-        result = list(interpreter._eval("range(2, 7)", context=context))
+        result = list(interpreter._eval_source_code("range(2, 7)", context=context))
         assert result == [2, 3, 4, 5, 6]
 
         # Test three argument range
-        result = list(interpreter._eval("range(0, 10, 2)", context=context))
+        result = list(interpreter._eval_source_code("range(0, 10, 2)", context=context))
         assert result == [0, 2, 4, 6, 8]
 
 
@@ -330,15 +330,15 @@ class TestBuiltinErrorHandling:
 
         # Test len with invalid type
         with pytest.raises((TypeError, SandboxError)):
-            interpreter._eval("len(42)", context=context)
+            interpreter._eval_source_code("len(42)", context=context)
 
         # Test sum with invalid type
         with pytest.raises((TypeError, SandboxError)):
-            interpreter._eval('sum("hello")', context=context)
+            interpreter._eval_source_code('sum("hello")', context=context)
 
         # Test max with invalid content
         with pytest.raises(SandboxError):
-            interpreter._eval("max([])", context=context)
+            interpreter._eval_source_code("max([])", context=context)
 
     def test_unsupported_function_errors(self):
         """Test that unsupported functions raise appropriate errors."""
@@ -347,19 +347,19 @@ class TestBuiltinErrorHandling:
 
         # Test eval is blocked
         with pytest.raises(SandboxError) as exc_info:
-            interpreter._eval('eval("1 + 1")', context=context)
+            interpreter._eval_source_code('eval("1 + 1")', context=context)
         assert "eval" in str(exc_info.value)
         assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
         # Test open is blocked
         with pytest.raises(SandboxError) as exc_info:
-            interpreter._eval('open("test.txt")', context=context)
+            interpreter._eval_source_code('open("test.txt")', context=context)
         assert "open" in str(exc_info.value)
         assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
         # Test exec is blocked
         with pytest.raises(SandboxError) as exc_info:
-            interpreter._eval('exec("x = 1")', context=context)
+            interpreter._eval_source_code('exec("x = 1")', context=context)
         assert "exec" in str(exc_info.value)
         assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
@@ -370,13 +370,13 @@ class TestBuiltinErrorHandling:
 
         # Test sum with non-numeric content
         with pytest.raises(SandboxError) as exc_info:
-            interpreter._eval('sum(["hello", "world"])', context=context)
+            interpreter._eval_source_code('sum(["hello", "world"])', context=context)
         assert "sum" in str(exc_info.value)
         assert "failed" in str(exc_info.value) or "not found" in str(exc_info.value)
 
         # Test int conversion with invalid string
         with pytest.raises(SandboxError) as exc_info:
-            interpreter._eval('int("hello")', context=context)
+            interpreter._eval_source_code('int("hello")', context=context)
         assert "int" in str(exc_info.value)
         assert "failed" in str(exc_info.value) or "not found" in str(exc_info.value)
 
@@ -387,46 +387,52 @@ class TestBuiltinErrorHandling:
 
         # Test max/min with empty sequences
         with pytest.raises((ValueError, SandboxError)) as exc_info:
-            interpreter._eval("max([])", context=context)
+            interpreter._eval_source_code("max([])", context=context)
         assert "empty" in str(exc_info.value) or "arg is an empty sequence" in str(exc_info.value)
 
         with pytest.raises((ValueError, SandboxError)) as exc_info:
-            interpreter._eval("min(())", context=context)
+            interpreter._eval_source_code("min(())", context=context)
         assert "empty" in str(exc_info.value) or "arg is an empty sequence" in str(exc_info.value)
 
         # Test max/min with no arguments
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("max()", context=context)
+            interpreter._eval_source_code("max()", context=context)
         assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
 
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("min()", context=context)
+            interpreter._eval_source_code("min()", context=context)
         assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
 
         # Test sum with too many arguments
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("sum([1, 2, 3], 10, 20)", context=context)
-        assert "expected at most 2 arguments" in str(exc_info.value) or "too many" in str(exc_info.value)
+            interpreter._eval_source_code("sum([1, 2, 3], 10, 20)", context=context)
+        error_msg = str(exc_info.value)
+        assert (
+            "expected at most 2 arguments" in error_msg
+            or "too many" in error_msg
+            or "Invalid arguments" in error_msg
+            or "got (list, int, int)" in error_msg
+        )
 
         # Test sum with no arguments
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("sum()", context=context)
+            interpreter._eval_source_code("sum()", context=context)
         assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
 
         # Test max/min with non-comparable types (should still work in Python but may have issues)
         with pytest.raises(SandboxError):
-            interpreter._eval('max("hello", 42)', context=context)
+            interpreter._eval_source_code('max("hello", 42)', context=context)
 
         with pytest.raises(SandboxError):
-            interpreter._eval('min(["list"], {"dict": 1})', context=context)
+            interpreter._eval_source_code('min(["list"], {"dict": 1})', context=context)
 
         # Test that basic_* versions still enforce strict validation
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("basic_max(1, 2, 3)", context=context)
+            interpreter._eval_source_code("basic_max(1, 2, 3)", context=context)
         assert "Invalid arguments" in str(exc_info.value) or "not found" in str(exc_info.value)
 
         with pytest.raises((TypeError, SandboxError)) as exc_info:
-            interpreter._eval("basic_sum([1, 2], 10)", context=context)
+            interpreter._eval_source_code("basic_sum([1, 2], 10)", context=context)
         assert "Invalid arguments" in str(exc_info.value) or "not found" in str(exc_info.value)
 
 
@@ -439,7 +445,7 @@ class TestBuiltinFunctionPrecedence:
         context = SandboxContext()
 
         # Core functions should be available
-        result = interpreter._eval("len([1, 2, 3])", context=context)
+        result = interpreter._eval_source_code("len([1, 2, 3])", context=context)
         assert result == 3
 
     def test_user_function_precedence(self):
@@ -450,11 +456,11 @@ class TestBuiltinFunctionPrecedence:
         # Define a custom len function
         code = """def len(obj):
     return 999"""
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # According to Dana language design, registry functions (built-ins) have precedence
         # over user-defined functions, so the built-in len() should still be called
-        result = interpreter._eval("len([1, 2, 3])", context=context)
+        result = interpreter._eval_source_code("len([1, 2, 3])", context=context)
         assert result == 3  # Built-in len() returns actual length, not user-defined 999
 
     def test_function_lookup_order(self):
@@ -463,23 +469,23 @@ class TestBuiltinFunctionPrecedence:
         context = SandboxContext()
 
         # Initially, built-in len should work
-        result = interpreter._eval("len([1, 2, 3, 4])", context=context)
+        result = interpreter._eval_source_code("len([1, 2, 3, 4])", context=context)
         assert result == 4
 
         # Define a user function with the same name
         code = """def len(obj):
     return 888"""
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # Registry functions have precedence over user-defined functions in Dana
         # This is the correct behavior according to the function resolution order:
         # 1. Function registry first (system functions)
         # 2. Context scope hierarchy (user functions)
-        result = interpreter._eval("len([1, 2, 3, 4])", context=context)
+        result = interpreter._eval_source_code("len([1, 2, 3, 4])", context=context)
         assert result == 4  # Built-in len() still returns actual length
 
         # However, the user-defined function should be accessible via explicit scoping
-        user_len_result = interpreter._eval("local:len([1, 2, 3, 4])", context=context)
+        user_len_result = interpreter._eval_source_code("local:len([1, 2, 3, 4])", context=context)
         assert user_len_result == 888  # User-defined function returns custom value
 
 
@@ -509,7 +515,7 @@ sorted_data = sorted(data)
 all_positive = all([True, True, True])
 any_large = any([True, False, True])"""
 
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # Verify results
         assert context.get("total") == 175
@@ -540,7 +546,7 @@ min_val = min(numbers)
 # Range operations
 indices = list(range(5))"""
 
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # Verify results
         assert context.get("val1") == 3.7
@@ -571,7 +577,7 @@ sorted_words = sorted(words)
 all_non_empty = all([True, True, True])
 any_long_words = any([False, True, False])"""
 
-        interpreter._eval(code, context=context)
+        interpreter._eval_source_code(code, context=context)
 
         # Verify results
         assert context.get("len1") == 5  # "hello"
@@ -600,7 +606,7 @@ class TestFStringFunctionArguments:
         interpreter = DanaInterpreter()
 
         # Execute print with f-string
-        interpreter._eval('print(f"{local:message}")', context=context)
+        interpreter._eval_source_code('print(f"{local:message}")', context=context)
 
         # Get and check output
         captured = capsys.readouterr()
@@ -624,7 +630,7 @@ class TestFStringFunctionArguments:
 
         try:
             # Execute reason with f-string - this should work without any patching
-            result = interpreter._eval('reason(f"{local:query}")', context=context)
+            result = interpreter._eval_source_code('reason(f"{local:query}")', context=context)
 
             # The key test: if f-string evaluation works, the function should execute successfully
             # If f-strings weren't evaluated, we'd get an error about FStringExpression not being a string
@@ -658,8 +664,8 @@ class TestFStringFunctionArguments:
 
         try:
             # Execute both functions with the same f-string
-            interpreter._eval('print(f"The answer is {local:value}")', context=context)
-            reason_result = interpreter._eval('reason(f"The answer is {local:value}")', context=context)
+            interpreter._eval_source_code('print(f"The answer is {local:value}")', context=context)
+            reason_result = interpreter._eval_source_code('reason(f"The answer is {local:value}")', context=context)
 
             # Get print output
             captured = capsys.readouterr()
@@ -691,15 +697,15 @@ class TestFStringFunctionArguments:
         interpreter = DanaInterpreter()
 
         # Test f-string with len function
-        result = interpreter._eval('f"Length: {len(local:numbers)}"', context=context)
+        result = interpreter._eval_source_code('f"Length: {len(local:numbers)}"', context=context)
         assert result == "Length: 5"
 
         # Test f-string with sum function
-        result = interpreter._eval('f"Sum: {sum(local:numbers)}"', context=context)
+        result = interpreter._eval_source_code('f"Sum: {sum(local:numbers)}"', context=context)
         assert result == "Sum: 15"
 
         # Test f-string with max function
-        result = interpreter._eval('f"Max: {max(local:numbers)}"', context=context)
+        result = interpreter._eval_source_code('f"Max: {max(local:numbers)}"', context=context)
         assert result == "Max: 5"
 
     def test_nested_fstring_function_calls(self):
@@ -710,7 +716,7 @@ class TestFStringFunctionArguments:
         interpreter = DanaInterpreter()
 
         # Test nested function calls in f-string
-        result = interpreter._eval(
+        result = interpreter._eval_source_code(
             'f"Stats: len={len(local:data)}, sum={sum(local:data)}, avg={sum(local:data)/len(local:data)}"', context=context
         )
         assert result == "Stats: len=3, sum=60, avg=20.0"

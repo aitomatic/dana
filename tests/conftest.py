@@ -6,6 +6,9 @@ from pathlib import Path
 
 import pytest
 
+pytest_plugins = ["pytest_asyncio"]
+
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
@@ -191,10 +194,17 @@ def run_dana_test_file(dana_test_file):
     """
     # Clear struct registry to ensure test isolation
     from dana.__init__ import initialize_module_system, reset_module_system
-    from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
+    from dana.registry import GLOBAL_REGISTRY
 
-    StructTypeRegistry.clear()
-    MethodRegistry.clear()
+    registry = GLOBAL_REGISTRY
+    registry.clear_all()
+
+    # Reload core functions after clearing
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+    do_register_py_builtins(registry.functions)
+    register_py_wrappers(registry.functions)
 
     # Initialize module system for tests that may use imports
     reset_module_system()

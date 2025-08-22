@@ -1,31 +1,36 @@
 {
     "llm": {
         "preferred_models": [
+            "huggingface:openai/gpt-oss-120b",
+            "huggingface:openai/gpt-oss-20b",
+            "openai:gpt-4.1-mini",
+            "anthropic:kimi-k2-0711-preview",
+            "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
+            "moonshot:kimi",
+            "openrouter:gpt-4o-mini",
+            "anthropic:claude-3-5-sonnet-20240620",
+            "azure:gpt-4",
             "azure:gpt-4o-mini",
             "azure:gpt-4o",
-	    "anthropic:kimi-k2-0711-preview",
-            "openai:gpt-4.1-mini",
-            "openai:gpt-4o-mini",
-            "local",
-            "openai:gpt-4.1",
-            "openai:gpt-4.1-nano",
-            "openai:gpt-4o",
-            "anthropic:claude-3-5-sonnet-20240620",
-            "groq:llama3-70b-8192",
-            "mistral:mistral-large-latest",
-            "google:gemini-1.5-pro-latest",
-            "deepseek:deepseek-chat",
             "cohere:command",
+            "deepseek:deepseek-chat",
+            "google:gemini-1.5-pro-latest",
+            "groq:llama3-70b-8192",
             "ibm_watsonx:ibm/granite-20b-multilingual",
-            "xai:grok-3-mini-fast",
-            "xai:grok-4-0709",
-            "xai:grok-3",
-            "xai:grok-3-mini",
-            "xai:grok-3-fast",
+            "local",
+            "mistral:mistral-large-latest",
+            "openai:gpt-4.1-mini",
+            "openai:gpt-4.1-nano",
+            "openai:gpt-4.1",
+            "openai:gpt-4o-mini",
+            "openai:gpt-4o",
             "xai:grok-2-vision-1212",
-            "xai:grok-beta",
-            "azure:gpt-4",
-	    "moonshot:kimi"
+            "xai:grok-3-fast",
+            "xai:grok-3-mini-fast",
+            "xai:grok-3-mini",
+            "xai:grok-3",
+            "xai:grok-4-0709",
+            "xai:grok-beta"
         ],
         "provider_configs": {
             "local": {
@@ -33,6 +38,14 @@
                 "base_url": "http://localhost:8000/v1",
                 "model_name": "microsoft/Phi-3.5-mini-instruct"
             },
+	    "huggingface": {
+		"api_key": "env:HF_TOKEN",
+		"base_url": "https://router.huggingface.co/v1"
+	    },
+	    "openrouter": {
+		"api_key": "env:OPENROUTER_API_KEY",
+		"base_url": "https://openrouter.ai/api/v1"
+	    },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "base_url": "https://api.openai.com/v1"

@@ -23,7 +23,8 @@ class TypeHandler(Loggable):
         Registers a struct type and binds a constructor into the local scope.
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_type_from_ast
+        from dana.core.lang.interpreter.struct_system import create_struct_type_from_ast
+        from dana.registry import TYPE_REGISTRY
 
         try:
             struct_type = create_struct_type_from_ast(node)
@@ -40,12 +41,12 @@ class TypeHandler(Loggable):
                 struct_type.field_defaults = evaluated_defaults
 
             # Register the struct type
-            StructTypeRegistry.register(struct_type)
+            TYPE_REGISTRY.register(struct_type)
             self.debug(f"Registered struct type: {struct_type.name}")
 
             # Register struct constructor function in the context
             def struct_constructor(**kwargs):
-                return StructTypeRegistry.create_instance(struct_type.name, kwargs)
+                return TYPE_REGISTRY.create_instance(struct_type.name, kwargs)
 
             context.set(f"local:{node.name}", struct_constructor)
             return None

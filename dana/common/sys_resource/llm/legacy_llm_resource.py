@@ -170,7 +170,7 @@ class LegacyLLMResource(BaseSysResource):
 
         # --- Determine the model ---
         # Priority: constructor arg -> find available -> None (let user figure it out)
-        if model:
+        if model and model != "auto":
             # Accept any explicitly provided model without validation
             self._model = model
             self.debug(f"Using explicitly set model: {self._model}")
@@ -769,6 +769,7 @@ class LegacyLLMResource(BaseSysResource):
             return {}
 
         # Use the consolidated helper method for all model-specific transformations
+        self.info(f"Getting AISuite config for model: {self._model} with provider config: {resolved_config}")
         return self._get_aisuite_config_for_model(self._model, resolved_config)
 
     def _get_provider_from_model(self, model_name: str) -> str | None:

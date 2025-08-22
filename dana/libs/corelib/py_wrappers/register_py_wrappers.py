@@ -16,7 +16,7 @@ from pathlib import Path
 
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.registry.function_registry import FunctionRegistry
 
 
 def _register_python_functions(py_dir: Path, registry: FunctionRegistry) -> list[str]:

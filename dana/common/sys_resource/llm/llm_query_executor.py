@@ -367,7 +367,6 @@ class LLMQueryExecutor(Loggable):
         # Make the API call
         try:
             # Make the actual API call (aisuite is synchronous)
-            
             response: ChatCompletion = await asyncio.to_thread(
                 self._client.chat.completions.create,
                 **request_params,

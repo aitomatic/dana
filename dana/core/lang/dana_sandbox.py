@@ -92,11 +92,6 @@ class DanaSandbox(Loggable):
         if module_search_paths:
             self._context.set("system:module_search_paths", module_search_paths)
 
-        # Add system functions to local context for easy access
-        if "system" in self._interpreter.function_registry._functions:
-            for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
-                self._context.set(f"local:{func_name}", func)
-
         # In test mode, ensure corelib functions are available by loading them manually
         if os.getenv("DANA_TEST_MODE") and "system" not in self._interpreter.function_registry._functions:
             try:
@@ -107,10 +102,6 @@ class DanaSandbox(Loggable):
                 py_dir = Path(__file__).parent.parent.parent / "libs" / "corelib" / "py_wrappers"
                 _register_python_functions(py_dir, self._interpreter.function_registry)
 
-                # Add the newly registered functions to the context
-                if "system" in self._interpreter.function_registry._functions:
-                    for func_name, (func, _func_type, _metadata) in self._interpreter.function_registry._functions["system"].items():
-                        self._context.set(f"local:{func_name}", func)
             except Exception as e:
                 self.warning(f"Failed to load corelib functions in test mode: {e}")
 
@@ -183,7 +174,7 @@ class DanaSandbox(Loggable):
                     with open(startup_file, encoding="utf-8") as f:
                         startup_code = f.read()
 
-                    self._interpreter._eval(
+                    self._interpreter._eval_source_code(
                         startup_code,
                         context=self._context,
                         filename="<dana-init-na>",
@@ -489,7 +480,7 @@ class DanaSandbox(Loggable):
                 source_code = f.read()
 
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=str(file_path))
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
@@ -559,7 +550,7 @@ class DanaSandbox(Loggable):
 
         try:
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval(source_code, context=self._context, filename=filename)
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=filename)
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
@@ -689,12 +680,6 @@ class DanaSandbox(Loggable):
     def context(self) -> SandboxContext:
         """Public accessor for the sandbox execution context."""
         return self._context
-
-    def _deprecated_load_file(self, file_path: str) -> None:
-        """Load and evaluate a Dana file in the sandbox context."""
-        with open(file_path, encoding="utf-8") as f:
-            source_code = f.read()
-        self.execute_string(source_code, filename=file_path)
 
     @property
     def function_registry(self):

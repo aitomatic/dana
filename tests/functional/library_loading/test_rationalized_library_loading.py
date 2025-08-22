@@ -48,10 +48,10 @@ class TestRationalizedLibraryLoading:
 
         # Check if preloaded functions are stored in the registry module
         import dana  # noqa: F401
-        import dana.core.lang.interpreter.functions.function_registry as registry_module
+        import dana.registry.function_registry as registry_module  # noqa: F401
 
-        assert hasattr(registry_module, "_preloaded_functions")
-
+        # Note: _preloaded_functions is no longer used in the new registry system
+        # The new system uses the global registry for function registration
         # Verify that corelib functions are available when DanaInterpreter is created
         from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
@@ -130,7 +130,7 @@ result
         # (This is tested by the fact that corelib functions are registered first)
 
         # List all available functions to verify registration order
-        all_functions = registry.list()
+        all_functions = registry.list_functions()
 
         # Verify corelib functions are present
         corelib_functions = ["sum_range", "is_odd", "is_even", "factorial"]
@@ -165,33 +165,20 @@ result
         assert interpreter is not None, "Interpreter should be created successfully"
 
     def test_preloading_required(self):
-        """Test that preloading is required for corelib functions to be available."""
-        # Temporarily remove preloaded functions to test behavior
+        """Test that corelib functions are available through the global registry system."""
+        # The current architecture loads corelib functions through the global registry
+        # during startup, not through the deprecated _preloaded_functions mechanism
         import dana  # noqa: F401
-        import dana.core.lang.interpreter.functions.function_registry as registry_module
+        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
-        original_preloaded = getattr(registry_module, "_preloaded_functions", None)
+        # Create interpreter - corelib functions should be available
+        interpreter = DanaInterpreter()
+        registry = interpreter.function_registry
 
-        try:
-            # Remove preloaded functions
-            if hasattr(registry_module, "_preloaded_functions"):
-                delattr(registry_module, "_preloaded_functions")
-
-            # Create interpreter - corelib functions should NOT be available
-            from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-
-            interpreter = DanaInterpreter()
-            registry = interpreter.function_registry
-
-            # Verify corelib functions are NOT available when preloading fails
-            corelib_functions = ["sum_range", "is_odd", "is_even", "factorial"]
-            for func_name in corelib_functions:
-                assert not registry.has(func_name), f"Corelib function {func_name} should NOT be available when preloading fails"
-
-        finally:
-            # Restore preloaded functions
-            if original_preloaded is not None:
-                registry_module._preloaded_functions = original_preloaded
+        # Verify corelib functions are available (they're loaded through global registry)
+        corelib_functions = ["sum_range", "is_odd", "is_even", "factorial"]
+        for func_name in corelib_functions:
+            assert registry.has(func_name), f"Corelib function {func_name} should be available through global registry"
 
     def test_test_mode_startup(self):
         """Test that test mode startup works correctly."""

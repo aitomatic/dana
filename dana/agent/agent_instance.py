@@ -13,8 +13,26 @@ from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.concurrency.promise_factory import PromiseFactory
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType, universal_dana_method_registry
+from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+
+# Avoid importing registries at module import time to prevent circular imports.
+# Import needed registries lazily inside methods.
+
+# --- Registry Integration ---
+# Import the centralized registry from the new location
+
+# Re-export for backward compatibility
+__all__ = getattr(globals(), "__all__", [])
+__all__.extend(
+    [
+        "AgentTypeRegistry",
+        "global_agent_type_registry",
+        "register_agent_type",
+        "get_agent_type",
+        "create_agent_instance",
+    ]
+)
 
 # --- Default Agent Method Implementations ---
 
@@ -162,13 +180,17 @@ class AgentType(StructType):
         self.merge_additional_fields(additional_fields)
 
         # Register default agent methods (defined by AgentInstance)
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         default_methods = AgentInstance.get_default_dana_methods()
         for method_name, method in default_methods.items():
-            universal_dana_method_registry.register_method(self.name, method_name, method)
+            STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
 
         # Register any custom agent methods that were passed in during initialization
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
         for method_name, method in self._temp_agent_methods.items():
-            universal_dana_method_registry.register_method(self.name, method_name, method)
+            STRUCT_FUNCTION_REGISTRY.register_method(self.name, method_name, method)
 
         # Clean up temporary storage since the registry is now the source of truth
         del self._temp_agent_methods
@@ -178,25 +200,30 @@ class AgentType(StructType):
 
     def add_agent_method(self, name: str, method: Callable) -> None:
         """Add an agent-specific method to the universal registry."""
-        universal_dana_method_registry.register_method(self.name, name, method)
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        STRUCT_FUNCTION_REGISTRY.register_method(self.name, name, method)
 
     def has_agent_method(self, name: str) -> bool:
         """Check if this agent type has a specific method."""
-        return universal_dana_method_registry.has_method(self.name, name)
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        return STRUCT_FUNCTION_REGISTRY.has_method(self.name, name)
 
     def get_agent_method(self, name: str) -> Callable | None:
         """Get an agent method by name."""
-        return universal_dana_method_registry.lookup_method(self.name, name)
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        return STRUCT_FUNCTION_REGISTRY.lookup_method(self.name, name)
 
     @property
     def agent_methods(self) -> dict[str, Callable]:
         """Get all agent methods for this type."""
-        methods = {}
-        # Get all methods registered for this agent type from the registry
-        from dana.core.lang.interpreter.struct_system import TypeAwareMethodRegistry
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
 
-        # Access the internal registry to find all methods for this agent type
-        for (receiver_type, method_name), method in TypeAwareMethodRegistry._methods.items():
+        methods = {}
+        # Get all methods registered for this agent type from the global registry
+        for (receiver_type, method_name), method in STRUCT_FUNCTION_REGISTRY._methods.items():
             if receiver_type == self.name:
                 methods[method_name] = method
 
@@ -220,15 +247,53 @@ class AgentInstance(StructInstance):
         if not isinstance(struct_type, AgentType):
             raise TypeError(f"AgentStructInstance requires AgentStructType, got {type(struct_type)}")
 
-        # Initialize the base StructInstance
-        super().__init__(struct_type, values)
-
         # Initialize agent-specific state
         self._memory = {}
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
         self._llm_resource: LegacyLLMResource = None  # Lazy initialization
         self._llm_resource_instance = None  # Lazy initialization
+
+        # Initialize TUI metrics
+        self._metrics = {
+            "is_running": False,
+            "current_step": "idle",
+            "elapsed_time": 0.0,
+            "tokens_per_sec": 0.0,
+        }
+
+        # Initialize the base StructInstance
+        from dana.registry import AGENT_REGISTRY
+
+        super().__init__(struct_type, values, AGENT_REGISTRY)
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Get current agent metrics for TUI display.
+
+        Returns:
+            Dictionary containing:
+            - is_running: bool - Whether agent is currently processing
+            - current_step: str - Current processing step
+            - elapsed_time: float - Time elapsed for current operation
+            - tokens_per_sec: float - Token processing rate
+        """
+        return self._metrics.copy()
+
+    def update_metric(self, key: str, value: Any) -> None:
+        """Update a specific metric value.
+
+        Args:
+            key: The metric key to update
+            value: The new value for the metric
+        """
+        if key in self._metrics:
+            self._metrics[key] = value
+
+    @property
+    def name(self) -> str:
+        """Get the agent's name for TUI compatibility."""
+        # Return the instance name field value, not the struct type name
+        return self._values.get("name", "unnamed_agent")
 
     @staticmethod
     def get_default_dana_methods() -> dict[str, Callable]:
@@ -268,42 +333,54 @@ class AgentInstance(StructInstance):
 
     def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "plan")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "plan")
         if method:
             return method(self, sandbox_context, task, context)
         return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "solve")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "solve")
         if method:
             return method(self, sandbox_context, problem, context)
         return default_solve_method(self, sandbox_context, problem, context)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
         """Execute agent memory storage method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "remember")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "remember")
         if method:
             return method(self, sandbox_context, key, value)
         return default_remember_method(self, sandbox_context, key, value)
 
     def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Execute agent memory retrieval method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "recall")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "recall")
         if method:
             return method(self, sandbox_context, key)
         return default_recall_method(self, sandbox_context, key)
 
     def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> Any:
         """Execute agent reasoning method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "reason")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "reason")
         if method:
             return method(self, sandbox_context, premise, context)
         return default_reason_method(self, sandbox_context, premise, context)
 
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
-        method = universal_dana_method_registry.lookup_method(self.__struct_type__.name, "chat")
+        from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+        method = STRUCT_FUNCTION_REGISTRY.lookup_method(self.__struct_type__.name, "chat")
         if method:
             return method(self, sandbox_context, message, context, max_context_turns)
         return default_chat_method(self, sandbox_context, message, context, max_context_turns)
@@ -360,8 +437,6 @@ class AgentInstance(StructInstance):
                 **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens"]},
             )
 
-            print(f"CTN >>> LLM resource: {self._llm_resource}")
-
             # Create the LLM resource instance
             self._llm_resource_instance = LLMResourceType.create_instance(
                 self._llm_resource,
@@ -384,19 +459,25 @@ class AgentInstance(StructInstance):
             # First, try to use the agent's own LLM resource
             if self._llm_resource_instance is None:
                 self._initialize_llm_resource()
-                print(f"CTN >>> Initialized agent's own LLM resource: {self._llm_resource_instance}")
 
             if self._llm_resource_instance and self._llm_resource_instance.is_available:
-                print(f"CTN >>> Using agent's own LLM resource: {self._llm_resource_instance}")
                 return self._llm_resource_instance
 
             # Fallback to sandbox context if agent's LLM is not available
             if sandbox_context is not None:
-                # Look for LLM resource in agent's available resources
-                resources = sandbox_context.get_resources()
-                for _, resource in resources.items():
-                    if hasattr(resource, "kind") and resource.kind == "llm":
-                        return resource
+                # Use the system LLM resource from context
+                system_llm = sandbox_context.get_system_llm_resource()
+                if system_llm is not None:
+                    return system_llm
+
+                # Fallback to looking for any LLM resource in context
+                try:
+                    resources = sandbox_context.get_resources()
+                    for _, resource in resources.items():
+                        if hasattr(resource, "kind") and resource.kind == "llm":
+                            return resource
+                except Exception:
+                    pass
             return None
         except Exception:
             return None
@@ -570,66 +651,14 @@ class AgentInstance(StructInstance):
         return True
 
 
-# --- Agent Type Registry ---
-
-
-class AgentTypeRegistry:
-    """Registry for agent struct types.
-
-    Extends the existing StructTypeRegistry to handle agent types.
-    """
-
-    def __init__(self):
-        self._agent_types: dict[str, AgentType] = {}
-
-    def register_agent_type(self, agent_type: AgentType) -> None:
-        """Register an agent struct type."""
-        self._agent_types[agent_type.name] = agent_type
-
-    def get_agent_type(self, name: str) -> AgentType | None:
-        """Get an agent struct type by name."""
-        return self._agent_types.get(name)
-
-    def list_agent_types(self) -> list[str]:
-        """List all registered agent type names."""
-        return list(self._agent_types.keys())
-
-    def create_agent_instance(self, name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
-        """Create an agent struct instance."""
-        agent_type = self.get_agent_type(name)
-        if not agent_type:
-            raise ValueError(f"Unknown agent type: {name}")
-
-        # Create instance with field values
-        instance = AgentInstance(agent_type, field_values)
-
-        return instance
-
-
-# --- Global Registry Instance ---
-
-# Global registry for agent struct types
-agent_type_registry = AgentTypeRegistry()
-
-
-# --- Utility Functions ---
-
-
-def register_agent_type(agent_type: AgentType) -> None:
-    """Register an agent struct type in the global registry."""
-    agent_type_registry.register_agent_type(agent_type)
-
-    # Also register in the struct registry so method dispatch can find it
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-
-    StructTypeRegistry.register(agent_type)
-
-
-def get_agent_type(name: str) -> AgentType | None:
-    """Get an agent struct type from the global registry."""
-    return agent_type_registry.get_agent_type(name)
-
-
-def create_agent_instance(name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
-    """Create an agent struct instance using the global registry."""
-    return agent_type_registry.create_agent_instance(name, field_values, context)
+# Re-export for backward compatibility
+__all__ = getattr(globals(), "__all__", [])
+__all__.extend(
+    [
+        "AgentTypeRegistry",
+        "global_agent_type_registry",
+        "register_agent_type",
+        "get_agent_type",
+        "create_agent_instance",
+    ]
+)

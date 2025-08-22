@@ -12,7 +12,8 @@ from unittest.mock import patch
 
 from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 from dana.core.lang.interpreter.prompt_enhancement import PromptEnhancer, enhance_prompt_for_type
-from dana.core.lang.interpreter.struct_system import StructType, StructTypeRegistry
+from dana.core.lang.interpreter.struct_system import StructType
+from dana.registry import TYPE_REGISTRY
 
 
 class TestDanaStructPromptEnhancement:
@@ -20,7 +21,7 @@ class TestDanaStructPromptEnhancement:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.enhancer = PromptEnhancer()
 
     def test_enhance_for_dana_struct_basic(self):
@@ -29,7 +30,7 @@ class TestDanaStructPromptEnhancement:
         test_struct = StructType(
             name="TestStruct", fields={"name": "str", "value": "int"}, field_order=["name", "value"], field_comments={}
         )
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Create type context
         type_context = TypeContext(
@@ -58,7 +59,7 @@ class TestDanaStructPromptEnhancement:
             field_order=["id", "data", "items", "metadata"],
             field_comments={},
         )
-        StructTypeRegistry.register(complex_struct)
+        TYPE_REGISTRY.register(complex_struct)
 
         # Create type context
         type_context = TypeContext(
@@ -101,7 +102,7 @@ class TestDanaStructPromptEnhancement:
             field_order=["required_field", "optional_field", "nested_field"],
             field_comments={},
         )
-        StructTypeRegistry.register(validation_struct)
+        TYPE_REGISTRY.register(validation_struct)
 
         # Create type context
         type_context = TypeContext(
@@ -127,7 +128,7 @@ class TestDanaStructPromptEnhancement:
             field_order=["first", "second", "third"],
             field_comments={},
         )
-        StructTypeRegistry.register(ordered_struct)
+        TYPE_REGISTRY.register(ordered_struct)
 
         # Create type context
         type_context = TypeContext(
@@ -148,7 +149,7 @@ class TestDanaStructPromptEnhancement:
     def test_enhance_for_dana_struct_error_handling(self):
         """Test that errors in struct enhancement are handled gracefully."""
         # Mock StructTypeRegistry to raise an exception
-        with patch("dana.core.lang.interpreter.struct_system.StructTypeRegistry") as mock_registry:
+        with patch("dana.registry.type_registry.TypeRegistry") as mock_registry:
             mock_registry.exists.return_value = True
             mock_registry.get_schema.side_effect = Exception("Schema error")
 
@@ -168,7 +169,7 @@ class TestDanaStructPromptEnhancement:
         """Test the convenience function enhance_prompt_for_type."""
         # Register a test struct
         test_struct = StructType(name="ConvenienceStruct", fields={"field": "str"}, field_order=["field"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Create type context
         type_context = TypeContext(
@@ -187,7 +188,7 @@ class TestDanaStructPromptEnhancement:
         """Test that struct enhancement works with different context types."""
         # Register a test struct
         test_struct = StructType(name="ContextStruct", fields={"data": "str"}, field_order=["data"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Test with different context types
         context_types = [ContextType.ASSIGNMENT, ContextType.FUNCTION_PARAMETER, ContextType.RETURN_VALUE, ContextType.EXPRESSION]
@@ -208,7 +209,7 @@ class TestDanaStructPromptEnhancement:
         """Test that struct enhancement works with different confidence levels."""
         # Register a test struct
         test_struct = StructType(name="ConfidenceStruct", fields={"value": "int"}, field_order=["value"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Test with different confidence levels
         confidence_levels = [0.5, 0.8, 1.0]
@@ -229,7 +230,7 @@ class TestDanaStructPromptEnhancement:
         """Test that metadata is preserved in the enhanced prompt context."""
         # Register a test struct
         test_struct = StructType(name="MetadataStruct", fields={"info": "str"}, field_order=["info"], field_comments={})
-        StructTypeRegistry.register(test_struct)
+        TYPE_REGISTRY.register(test_struct)
 
         # Create type context with metadata
         metadata = {"source": "test", "version": "1.0"}
@@ -254,7 +255,7 @@ class TestDanaStructPromptEnhancementIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_curate_na_struct_types(self):
         """Test prompt enhancement for the actual struct types used in curate.na."""
@@ -291,7 +292,7 @@ class TestDanaStructPromptEnhancementIntegration:
         # Register all struct types
         for name, definition in struct_definitions.items():
             struct_type = StructType(name=name, fields=definition["fields"], field_order=definition["order"], field_comments={})
-            StructTypeRegistry.register(struct_type)
+            TYPE_REGISTRY.register(struct_type)
 
         enhancer = PromptEnhancer()
 
@@ -321,7 +322,7 @@ class TestDanaStructPromptEnhancementIntegration:
 
         for name, fields, order in structs:
             struct_type = StructType(name=name, fields=fields, field_order=order, field_comments={})
-            StructTypeRegistry.register(struct_type)
+            TYPE_REGISTRY.register(struct_type)
 
         enhancer = PromptEnhancer()
 

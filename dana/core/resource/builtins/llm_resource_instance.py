@@ -33,12 +33,12 @@ class LLMResourceInstance(ResourceInstance):
             llm_resource: The LLMResource instance to wrap
             values: Additional field values for the resource instance
         """
-        # Initialize with the provided resource type and values
-        super().__init__(resource_type, values or {})
-
         # Store the wrapped LLMResource
         self._llm_resource = llm_resource
         self._backend = llm_resource  # Set backend for compatibility
+
+        # Initialize with the provided resource type and values
+        super().__init__(resource_type, values or {})
 
     @property
     def llm_resource(self) -> "LegacyLLMResource":
@@ -119,8 +119,6 @@ class LLMResourceInstance(ResourceInstance):
         try:
             self._llm_resource.startup()
             self.state = "STARTED"
-            print(f"CTN >>> LLM resource started: {self._llm_resource}")
-            print(f"CTN >>> LLM resource is_available: {self.is_available}")
             return True
         except Exception as e:
             self.state = "ERROR"
@@ -178,6 +176,10 @@ class LLMResourceInstance(ResourceInstance):
         # Don't delegate ResourceInstance-specific attributes that should come from parent
         if name in ["struct_type", "_fields", "_field_order"]:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+        # Do NOT delegate if _llm_resource has not been initialized yet
+        if "_llm_resource" not in self.__dict__:
+            raise AttributeError(name)
 
         # Delegate to wrapped LLMResource
         return getattr(self._llm_resource, name)

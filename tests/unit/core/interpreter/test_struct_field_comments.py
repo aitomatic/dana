@@ -11,7 +11,8 @@ MIT License
 from dana.core.lang.ast import StructDefinition, StructField, TypeHint
 from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 from dana.core.lang.interpreter.prompt_enhancement import PromptEnhancer
-from dana.core.lang.interpreter.struct_system import StructType, StructTypeRegistry, create_struct_type_from_ast
+from dana.core.lang.interpreter.struct_system import StructType, create_struct_type_from_ast
+from dana.registry import TYPE_REGISTRY
 
 
 class TestStructFieldComments:
@@ -19,7 +20,7 @@ class TestStructFieldComments:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_struct_field_with_comment(self):
         """Test that struct fields with comments are properly captured."""
@@ -105,7 +106,7 @@ class TestStructFieldComments:
             field_order=["name", "age"],
             field_comments={"name": "the name of the person", "age": "the age in years"},
         )
-        StructTypeRegistry.register(struct_type)
+        TYPE_REGISTRY.register(struct_type)
 
         # Create type context
         type_context = TypeContext(
@@ -126,7 +127,7 @@ class TestStructFieldComments:
         """Test that prompt enhancement works without field comments."""
         # Register a struct type without field comments
         struct_type = StructType(name="TestPerson", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
-        StructTypeRegistry.register(struct_type)
+        TYPE_REGISTRY.register(struct_type)
 
         # Create type context
         type_context = TypeContext(
@@ -149,7 +150,7 @@ class TestStructFieldCommentsIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
 
     def test_mixed_comments_and_no_comments(self):
         """Test struct with some fields having comments and others not."""
