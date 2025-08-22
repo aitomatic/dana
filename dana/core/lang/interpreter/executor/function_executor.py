@@ -97,7 +97,7 @@ class FunctionExecutor(BaseExecutor):
         param_names = []
         param_defaults = {}
 
-        for i, param in enumerate(all_params):
+        for _, param in enumerate(all_params):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
@@ -660,7 +660,7 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import create_struct_instance
+        from dana.core.builtin_types.struct_system import create_struct_instance
         from dana.registry import TYPE_REGISTRY
 
         # Extract the base struct name (remove scope prefix if present)
@@ -811,8 +811,8 @@ class FunctionExecutor(BaseExecutor):
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
             # Step 2.5: Try struct method delegation for struct instances
+            from dana.core.builtin_types.struct_system import StructInstance
             from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
-            from dana.core.lang.interpreter.struct_system import StructInstance
 
             if isinstance(target_object, StructInstance):
                 try:
@@ -1028,7 +1028,7 @@ class FunctionExecutor(BaseExecutor):
 
             # Check resource registry if available
             try:
-                from dana.core.resource.resource_registry import ResourceTypeRegistry
+                from dana.core.builtin_types.resource.resource_registry import ResourceTypeRegistry
 
                 is_resource_type = ResourceTypeRegistry.exists(type_name)
             except ImportError:

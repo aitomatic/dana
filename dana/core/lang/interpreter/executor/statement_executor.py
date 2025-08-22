@@ -489,8 +489,8 @@ class StatementExecutor(BaseExecutor):
         """
         # Import lazily to avoid circulars
         from dana.common.exceptions import SandboxError
-        from dana.core.resource.resource_ast import create_resource_type_from_ast
-        from dana.core.resource.resource_registry import ResourceTypeRegistry
+        from dana.core.builtin_types.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.builtin_types.resource.resource_registry import ResourceTypeRegistry
 
         try:
             # Build ResourceType from AST
@@ -536,7 +536,7 @@ class StatementExecutor(BaseExecutor):
         """
         # Import lazily to avoid circulars
         from dana.common.exceptions import SandboxError
-        from dana.core.lang.interpreter.workflow_system import create_workflow_type_from_ast
+        from dana.core.builtin_types.workflow_system import create_workflow_type_from_ast
         from dana.registry import TYPE_REGISTRY
 
         try:

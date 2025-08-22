@@ -10,8 +10,8 @@ MIT License
 from dataclasses import dataclass
 from typing import Any
 
+from dana.core.builtin_types.fsm_system import create_fsm_struct_type, create_simple_workflow_fsm
 from dana.core.builtin_types.struct_system import StructInstance, StructType
-from dana.core.lang.interpreter.fsm_system import create_fsm_struct_type, create_simple_workflow_fsm
 
 
 @dataclass
