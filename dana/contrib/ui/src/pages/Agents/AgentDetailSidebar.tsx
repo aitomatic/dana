@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
-import { useSmartChatStore, createSmartChatStore, clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
+import { createSmartChatStore, clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
@@ -186,7 +186,6 @@ const SmartAgentChat: React.FC<{
   // Use agent-specific store methods
   const messages = agentStore ? agentStore((s) => s.messages) : [];
   const addMessage = agentStore ? agentStore((s) => s.addMessage) : () => {};
-  const removeMessage = agentStore ? agentStore((s) => s.removeMessage) : () => {};
   const removeMessageById = agentStore ? agentStore((s) => s.removeMessageById) : () => {};
   const clearMessages = agentStore ? agentStore((s) => s.clearMessages) : () => {};
   const setMessages = agentStore ? agentStore((s) => s.setMessages) : () => {};
@@ -199,11 +198,11 @@ const SmartAgentChat: React.FC<{
         sendMessage();
       }
     };
-    
+
     (window as any).setInput = (value: string) => {
       setInput(value);
     };
-    
+
     return () => {
       delete (window as any).sendMessage;
       delete (window as any).setInput;
@@ -226,14 +225,14 @@ const SmartAgentChat: React.FC<{
     if (agent_id && agent_id !== previousAgentId) {
       // Agent has changed, reset state and clear messages
       console.log(`[Agent Switch] Switching from ${previousAgentId} to ${agent_id}`);
-      
+
       if (previousAgentId) {
         // Clear messages from previous agent
         clearMessages();
         setHasLoadedHistory(false);
         setIsLoadingHistory(false);
       }
-      
+
       setPreviousAgentId(agent_id);
     }
   }, [agent_id, previousAgentId, clearMessages]);
@@ -266,15 +265,15 @@ const SmartAgentChat: React.FC<{
     return () => {
       // Clean up all state when component unmounts
       console.log(`[Unmount] Cleaning up component for agent ${agent_id}`);
-      
+
       // Clear smart-chat-storage when component unmounts
       cleanupOnExit();
-      
+
       // Reset all local state
       setHasLoadedHistory(false);
       setIsLoadingHistory(false);
       setPreviousAgentId(null);
-      
+
       // Clear any pending operations
       if (loading) {
         setLoading(false);
@@ -372,7 +371,7 @@ const SmartAgentChat: React.FC<{
   useEffect(() => {
     const fetchHistory = async () => {
       if (!agent_id || !agentStore || isLoadingHistory || hasLoadedHistory) return;
-      
+
       setIsLoadingHistory(true);
       try {
         const history = await apiService.getSmartChatHistory(agent_id);
@@ -420,7 +419,7 @@ To get started, let’s define its foundation:
         setIsLoadingHistory(false);
       }
     };
-    
+
     fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agent_id, agentName, agentStore]);
@@ -446,7 +445,9 @@ To get started, let’s define its foundation:
 
   // Debug effect to track message changes
   useEffect(() => {
-    console.log(`[Debug] Messages changed: ${getMessageCount()} messages, hasLoadedHistory: ${hasLoadedHistory}, agent_id: ${agent_id}`);
+    console.log(
+      `[Debug] Messages changed: ${getMessageCount()} messages, hasLoadedHistory: ${hasLoadedHistory}, agent_id: ${agent_id}`,
+    );
   }, [messages, hasLoadedHistory, agent_id]);
 
   // Message recovery mechanism
@@ -469,28 +470,28 @@ To get started, let’s define its foundation:
     }
   }, [hasLoadedHistory, getMessageCount, agent_id, agentStore]);
 
-  // Manual message clearing function for agent switches
-  const clearMessagesForNewAgent = useCallback(() => {
-    if (agentStore) {
-      clearMessages();
-      setHasLoadedHistory(false);
-      setIsLoadingHistory(false);
-      console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
-    }
-  }, [agentStore, clearMessages, agent_id]);
+  // // Manual message clearing function for agent switches
+  // const clearMessagesForNewAgent = useCallback(() => {
+  //   if (agentStore) {
+  //     clearMessages();
+  //     setHasLoadedHistory(false);
+  //     setIsLoadingHistory(false);
+  //     console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
+  //   }
+  // }, [agentStore, clearMessages, agent_id]);
 
-  // Debug utility to check store state
-  const debugStoreState = useCallback(() => {
-    if (agentStore) {
-      const state = agentStore.getState();
-      console.log(`[Debug Store] Agent ${agent_id} store state:`, {
-        messageCount: state.messages.length,
-        hasLoadedHistory,
-        isLoadingHistory,
-        previousAgentId
-      });
-    }
-  }, [agentStore, agent_id, hasLoadedHistory, isLoadingHistory, previousAgentId]);
+  // // Debug utility to check store state
+  // const debugStoreState = useCallback(() => {
+  //   if (agentStore) {
+  //     const state = agentStore.getState();
+  //     console.log(`[Debug Store] Agent ${agent_id} store state:`, {
+  //       messageCount: state.messages.length,
+  //       hasLoadedHistory,
+  //       isLoadingHistory,
+  //       previousAgentId,
+  //     });
+  //   }
+  // }, [agentStore, agent_id, hasLoadedHistory, isLoadingHistory, previousAgentId]);
 
   const sendMessage = async () => {
     if (!input.trim() || !agent_id || !agentStore) return;
@@ -508,10 +509,10 @@ To get started, let’s define its foundation:
 
     try {
       // Add thinking message with unique ID
-      const thinkingMsg = { 
-        sender: 'agent' as const, 
+      const thinkingMsg = {
+        sender: 'agent' as const,
         text: 'Thinking...',
-        id: `thinking-${Date.now()}-${Math.random()}`
+        id: `thinking-${Date.now()}-${Math.random()}`,
       };
       addMessage(thinkingMsg);
       thinkingMessageId = thinkingMsg.id!;
@@ -562,12 +563,12 @@ To get started, let’s define its foundation:
       }
     } catch (e) {
       console.error('Failed to send message:', e);
-      
+
       // Remove the thinking message by ID if it exists
       if (thinkingMessageId) {
         removeMessageById(thinkingMessageId);
       }
-      
+
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
     } finally {
       setLoading(false);
@@ -674,7 +675,7 @@ To get started, let’s define its foundation:
             isExpanded={isHistoryExpanded}
             onToggle={() => setIsHistoryExpanded(!isHistoryExpanded)}
           />
-          
+
           <div ref={bottomRef} />
         </div>
         <div className="p-3">
