@@ -71,7 +71,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="text-sm text-muted-foreground">
-              {state === 'collapsed' ? `${packageJson.version}` : `Ver-${packageJson.version}`}
+              {state === 'collapsed' ? `${packageJson.version}` : `Version-${packageJson.version}`}
             </span>
           </TooltipTrigger>
           <TooltipContent side="right">Version {packageJson.version}</TooltipContent>

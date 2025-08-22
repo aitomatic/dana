@@ -1,0 +1,510 @@
+# Test workflow integration with other Dana features
+# This file tests how workflows work with agents, resources, and other Dana systems
+
+sync def test_workflow_with_agents():
+    """Test workflow usage with agent blueprints and instances."""
+    # Define a workflow
+    workflow DataAnalysisWorkflow:
+        data_source: str = "database"
+        analysis_type: str = "statistical"
+        batch_size: int = 1000
+    
+    # Define agent blueprint
+    agent_blueprint DataAnalyst:
+        name: str = "DataAnalyst"
+        domain: str = "analysis"
+        expertise: str = "statistical"
+    
+    # Define workflow methods
+    def (self: DataAnalysisWorkflow) run_analysis(agent: DataAnalyst) -> str:
+        return f"Running {self.analysis_type} analysis on {self.data_source} with batch size {self.batch_size}"
+    
+    def (self: DataAnalysisWorkflow) get_config() -> dict:
+        return {
+            "data_source": self.data_source,
+            "analysis_type": self.analysis_type,
+            "batch_size": self.batch_size
+        }
+    
+    # Create workflow instance
+    analysis_workflow = DataAnalysisWorkflow(
+        data_source="api",
+        analysis_type="machine_learning",
+        batch_size=500
+    )
+    
+    # Create agent instance
+    analyst = DataAnalyst()
+    
+    # Test that agent can access workflow fields
+    assert analyst.name == "DataAnalyst", f"Expected 'DataAnalyst', got '{analyst.name}'"
+    assert analyst.domain == "analysis", f"Expected 'analysis', got '{analyst.domain}'"
+    assert analyst.expertise == "statistical", f"Expected 'statistical', got '{analyst.expertise}'"
+    
+    # Test workflow functionality
+    config = analysis_workflow.get_config()
+    assert config.get("data_source") == "api", f"Expected 'api', got '{config.get('data_source')}'"
+    assert config.get("analysis_type") == "machine_learning", f"Expected 'machine_learning', got '{config.get('analysis_type')}'"
+    assert config.get("batch_size") == 500, f"Expected 500, got '{config.get('batch_size')}'"
+    
+    # Test workflow-agent interaction
+    result = analysis_workflow.run_analysis(analyst)
+    assert "Running machine_learning analysis on api" in result, f"Expected analysis message, got '{result}'"
+    assert "batch size 500" in result, f"Expected batch size in result, got '{result}'"
+    
+    log("✅ Workflow with agents test passed")
+
+sync def test_workflow_with_agent_methods():
+    """Test workflow usage within agent methods."""
+    # Define workflows
+    workflow DocumentProcessor:
+        documents: list = []
+        processing_rules: dict = {}
+    
+    workflow APIClient:
+        base_url: str = "http://api.example.com"
+        timeout: int = 30
+    
+    # Define workflow methods
+    def (self: DocumentProcessor) add_document(doc_id: str, content: str) -> bool:
+        self.documents.append({"id": doc_id, "content": content})
+        return true
+    
+    def (self: DocumentProcessor) process_documents() -> list:
+        processed = []
+        for doc in self.documents:
+            processed.append(f"Processed: {doc.get('id')}")
+        return processed
+    
+    def (self: APIClient) get(endpoint: str) -> str:
+        return f"GET {self.base_url}/{endpoint} (timeout: {self.timeout}s)"
+    
+    def (self: APIClient) post(endpoint: str, data: str) -> str:
+        return f"POST {self.base_url}/{endpoint} with data: {data}"
+    
+    # Define agent blueprint
+    agent_blueprint ResearchAgent:
+        name: str = "Researcher"
+        specialization: str = "data_analysis"
+    
+    # Create workflow instances
+    doc_processor = DocumentProcessor()
+    api_client = APIClient(base_url="http://research.api.com", timeout=60)
+    
+    # Create agent instance
+    researcher = ResearchAgent()
+    
+    # Test agent can use workflows through methods
+    # Add documents to processor
+    success1 = doc_processor.add_document("doc1", "Research findings on AI")
+    success2 = doc_processor.add_document("doc2", "Machine learning algorithms")
+    success3 = doc_processor.add_document("doc3", "Data analysis techniques")
+    
+    assert success1 == true, f"Expected true, got '{success1}'"
+    assert success2 == true, f"Expected true, got '{success2}'"
+    assert success3 == true, f"Expected true, got '{success3}'"
+    
+    # Process documents
+    processed_docs = doc_processor.process_documents()
+    assert len(processed_docs) == 3, f"Expected 3, got '{len(processed_docs)}'"
+    assert "Processed: doc1" in processed_docs, f"Expected 'Processed: doc1' in results"
+    assert "Processed: doc2" in processed_docs, f"Expected 'Processed: doc2' in results"
+    assert "Processed: doc3" in processed_docs, f"Expected 'Processed: doc3' in results"
+    
+    # Test API client
+    api_result = api_client.get("papers")
+    assert "GET http://research.api.com/papers" in api_result, f"Expected API call, got '{api_result}'"
+    assert "timeout: 60s" in api_result, f"Expected timeout info, got '{api_result}'"
+    
+    post_result = api_client.post("submit", "research_data")
+    assert "POST http://research.api.com/submit" in post_result, f"Expected POST call, got '{post_result}'"
+    assert "research_data" in post_result, f"Expected data in POST, got '{post_result}'"
+    
+    log("✅ Workflow with agent methods test passed")
+
+sync def test_workflow_with_resources():
+    """Test workflow integration with resources."""
+    # Define resource
+    resource DataStore:
+        endpoint: str = "http://data.example.com"
+        api_key: str = ""
+        cache_enabled: bool = true
+    
+    # Define workflow
+    workflow DataPipeline:
+        source: DataStore = DataStore()
+        processing_steps: list = []
+        output_format: str = "json"
+    
+    # Define resource methods
+    def (self: DataStore) fetch_data(query: str) -> str:
+        return f"Data from {self.endpoint}: {query}"
+    
+    def (self: DataStore) get_status() -> str:
+        return f"Connected to {self.endpoint}, cache: {self.cache_enabled}"
+    
+    # Define workflow methods
+    def (self: DataPipeline) add_step(step: str) -> bool:
+        self.processing_steps.append(step)
+        return true
+    
+    def (self: DataPipeline) execute_pipeline(query: str) -> str:
+        # Fetch data from source
+        data = self.source.fetch_data(query)
+        
+        # Process through steps
+        result = f"Pipeline result: {data}"
+        for step in self.processing_steps:
+            result = result + f" -> {step}"
+        
+        return result + f" -> {self.output_format}"
+    
+    # Create resource instance
+    data_store = DataStore(endpoint="http://custom.data.com", api_key="secret123")
+    
+    # Create workflow instance
+    pipeline = DataPipeline(
+        source=data_store,
+        output_format="csv"
+    )
+    
+    # Test resource functionality
+    status = data_store.get_status()
+    assert "Connected to http://custom.data.com" in status, f"Expected status to contain endpoint, got '{status}'"
+    assert "cache: true" in status, f"Expected status to contain cache info, got '{status}'"
+    
+    data = data_store.fetch_data("user_data")
+    assert "Data from http://custom.data.com: user_data" in data, f"Expected data to contain query, got '{data}'"
+    
+    # Test workflow-resource integration
+    pipeline.add_step("validate")
+    pipeline.add_step("transform")
+    pipeline.add_step("aggregate")
+    
+    result = pipeline.execute_pipeline("sales_data")
+    assert "Pipeline result: Data from http://custom.data.com: sales_data" in result, f"Expected pipeline result, got '{result}'"
+    assert "-> validate" in result, f"Expected validation step, got '{result}'"
+    assert "-> transform" in result, f"Expected transformation step, got '{result}'"
+    assert "-> aggregate" in result, f"Expected aggregation step, got '{result}'"
+    assert "-> csv" in result, f"Expected output format, got '{result}'"
+    
+    log("✅ Workflow with resources test passed")
+
+sync def test_workflow_concurrency():
+    """Test workflow concurrency and safety."""
+    # Define workflow with concurrency support
+    workflow ConcurrentWorkflow:
+        active_tasks: list = []
+        completed_tasks: list = []
+        max_concurrent: int = 3
+    
+    # Define concurrency methods
+    def (self: ConcurrentWorkflow) start_task(task_id: str) -> str:
+        if len(self.active_tasks) < self.max_concurrent:
+            self.active_tasks.append(task_id)
+            return f"Started task {task_id}"
+        else:
+            return f"Task {task_id} queued (max concurrent: {self.max_concurrent})"
+    
+    def (self: ConcurrentWorkflow) complete_task(task_id: str) -> str:
+        if task_id in self.active_tasks:
+            self.active_tasks.remove(task_id)
+            self.completed_tasks.append(task_id)
+            return f"Completed task {task_id}"
+        else:
+            return f"Task {task_id} not found in active tasks"
+    
+    def (self: ConcurrentWorkflow) get_status() -> dict:
+        return {
+            "active": self.active_tasks,
+            "completed": self.completed_tasks,
+            "max_concurrent": self.max_concurrent,
+            "available_slots": self.max_concurrent - len(self.active_tasks)
+        }
+    
+    # Create workflow instance
+    concurrent_workflow = ConcurrentWorkflow(max_concurrent=2)
+    
+    # Test concurrent task management
+    result1 = concurrent_workflow.start_task("task1")
+    assert "Started task task1" in result1, f"Expected task start, got '{result1}'"
+    
+    result2 = concurrent_workflow.start_task("task2")
+    assert "Started task task2" in result2, f"Expected task start, got '{result2}'"
+    
+    result3 = concurrent_workflow.start_task("task3")
+    assert "queued" in result3, f"Expected task queued, got '{result3}'"
+    
+    # Check status
+    status = concurrent_workflow.get_status()
+    assert len(status["active"]) == 2, f"Expected 2 active tasks, got '{len(status['active'])}'"
+    assert status["available_slots"] == 0, f"Expected 0 available slots, got '{status['available_slots']}'"
+    
+    # Complete a task
+    complete_result = concurrent_workflow.complete_task("task1")
+    assert "Completed task task1" in complete_result, f"Expected task completion, got '{complete_result}'"
+    
+    # Check updated status
+    updated_status = concurrent_workflow.get_status()
+    assert len(updated_status["active"]) == 1, f"Expected 1 active task, got '{len(updated_status['active'])}'"
+    assert len(updated_status["completed"]) == 1, f"Expected 1 completed task, got '{len(updated_status['completed'])}'"
+    assert updated_status["available_slots"] == 1, f"Expected 1 available slot, got '{updated_status['available_slots']}'"
+    
+    # Now task3 should be able to start
+    result4 = concurrent_workflow.start_task("task3")
+    assert "Started task task3" in result4, f"Expected task start, got '{result4}'"
+    
+    log("✅ Workflow concurrency test passed")
+
+sync def test_workflow_promise_integration():
+    """Test workflow integration with promise system."""
+    # Define workflow with promise support
+    workflow PromiseWorkflow:
+        pending_tasks: list = []
+        results: dict = {}
+    
+    # Define promise-like methods
+    def (self: PromiseWorkflow) create_task(task_id: str, operation: str) -> str:
+        self.pending_tasks.append({"id": task_id, "operation": operation, "status": "pending"})
+        return f"Created task {task_id} for {operation}"
+    
+    def (self: PromiseWorkflow) execute_task(task_id: str) -> str:
+        # Find task
+        task = None
+        for t in self.pending_tasks:
+            if t.get("id") == task_id:
+                task = t
+                break
+        
+        if task:
+            task["status"] = "executing"
+            result = f"Executed {task.get('operation')} for {task_id}"
+            task["status"] = "completed"
+            self.results[task_id] = result
+            return result
+        else:
+            return f"Task {task_id} not found"
+    
+    def (self: PromiseWorkflow) get_task_status(task_id: str) -> str:
+        for task in self.pending_tasks:
+            if task.get("id") == task_id:
+                return f"Task {task_id}: {task.get('status')}"
+        return f"Task {task_id} not found"
+    
+    def (self: PromiseWorkflow) get_results() -> dict:
+        return self.results.copy()
+    
+    # Create workflow instance
+    promise_workflow = PromiseWorkflow()
+    
+    # Test task creation and execution
+    create_result1 = promise_workflow.create_task("task1", "data_processing")
+    assert "Created task task1" in create_result1, f"Expected task creation, got '{create_result1}'"
+    
+    create_result2 = promise_workflow.create_task("task2", "analysis")
+    assert "Created task task2" in create_result2, f"Expected task creation, got '{create_result2}'"
+    
+    # Check task status
+    status1 = promise_workflow.get_task_status("task1")
+    assert "pending" in status1, f"Expected pending status, got '{status1}'"
+    
+    # Execute tasks
+    exec_result1 = promise_workflow.execute_task("task1")
+    assert "Executed data_processing for task1" in exec_result1, f"Expected execution result, got '{exec_result1}'"
+    
+    exec_result2 = promise_workflow.execute_task("task2")
+    assert "Executed analysis for task2" in exec_result2, f"Expected execution result, got '{exec_result2}'"
+    
+    # Check updated status
+    status2 = promise_workflow.get_task_status("task1")
+    assert "completed" in status2, f"Expected completed status, got '{status2}'"
+    
+    # Get results
+    results = promise_workflow.get_results()
+    assert len(results) == 2, f"Expected 2 results, got '{len(results)}'"
+    assert "Executed data_processing for task1" in results.get("task1", ""), f"Expected task1 result"
+    assert "Executed analysis for task2" in results.get("task2", ""), f"Expected task2 result"
+    
+    log("✅ Workflow promise integration test passed")
+
+sync def test_workflow_struct_integration():
+    """Test workflow integration with struct system."""
+    # Define struct
+    struct DataPoint:
+        timestamp: str
+        value: float
+        category: str
+    
+    # Define workflow that uses structs
+    workflow StructIntegrationWorkflow:
+        data_points: list = []
+        aggregations: dict = {}
+    
+    # Define workflow methods that work with structs
+    def (self: StructIntegrationWorkflow) add_data_point(point: DataPoint) -> bool:
+        self.data_points.append(point)
+        return true
+    
+    def (self: StructIntegrationWorkflow) aggregate_by_category() -> dict:
+        result = {}
+        for point in self.data_points:
+            category = point.category
+            if category not in result:
+                result[category] = []
+            result[category].append(point.value)
+        return result
+    
+    def (self: StructIntegrationWorkflow) get_statistics() -> dict:
+        if len(self.data_points) == 0:
+            return {"count": 0, "categories": 0}
+        
+        categories = set()
+        total_value = 0.0
+        
+        for point in self.data_points:
+            categories.add(point.category)
+            total_value = total_value + point.value
+        
+        return {
+            "count": len(self.data_points),
+            "categories": len(categories),
+            "total_value": total_value,
+            "average_value": total_value / len(self.data_points)
+        }
+    
+    # Create workflow instance
+    struct_workflow = StructIntegrationWorkflow()
+    
+    # Create data points
+    point1 = DataPoint(timestamp="2024-01-01", value=10.5, category="sales")
+    point2 = DataPoint(timestamp="2024-01-02", value=15.2, category="sales")
+    point3 = DataPoint(timestamp="2024-01-01", value=5.1, category="expenses")
+    
+    # Add data points to workflow
+    success1 = struct_workflow.add_data_point(point1)
+    success2 = struct_workflow.add_data_point(point2)
+    success3 = struct_workflow.add_data_point(point3)
+    
+    assert success1 == true, f"Expected true, got '{success1}'"
+    assert success2 == true, f"Expected true, got '{success2}'"
+    assert success3 == true, f"Expected true, got '{success3}'"
+    
+    # Test aggregation
+    aggregation = struct_workflow.aggregate_by_category()
+    assert len(aggregation) == 2, f"Expected 2 categories, got '{len(aggregation)}'"
+    assert len(aggregation.get("sales", [])) == 2, f"Expected 2 sales points, got '{len(aggregation.get('sales', []))}'"
+    assert len(aggregation.get("expenses", [])) == 1, f"Expected 1 expense point, got '{len(aggregation.get('expenses', []))}'"
+    
+    # Test statistics
+    stats = struct_workflow.get_statistics()
+    assert stats["count"] == 3, f"Expected 3, got '{stats['count']}'"
+    assert stats["categories"] == 2, f"Expected 2, got '{stats['categories']}'"
+    assert stats["total_value"] == 30.8, f"Expected 30.8, got '{stats['total_value']}'"
+    assert abs(stats["average_value"] - 10.27) < 0.01, f"Expected ~10.27, got '{stats['average_value']}'"
+    
+    log("✅ Workflow struct integration test passed")
+
+sync def test_workflow_function_integration():
+    """Test workflow integration with function system."""
+    # Define utility functions
+    def calculate_average(values: list) -> float:
+        if len(values) == 0:
+            return 0.0
+        total = 0.0
+        for value in values:
+            total = total + value
+        return total / len(values)
+    
+    def filter_by_threshold(values: list, threshold: float) -> list:
+        result = []
+        for value in values:
+            if value >= threshold:
+                result.append(value)
+        return result
+    
+    def transform_data(data: dict, transform_type: str) -> dict:
+        if transform_type == "normalize":
+            # Simple normalization
+            values = list(data.values())
+            if len(values) > 0:
+                max_val = max(values)
+                if max_val > 0:
+                    return {k: v / max_val for k, v in data.items()}
+        elif transform_type == "scale":
+            # Simple scaling
+            return {k: v * 2 for k, v in data.items()}
+        return data.copy()
+    
+    # Define workflow that uses functions
+    workflow FunctionIntegrationWorkflow:
+        data: dict = {}
+        processed_data: dict = {}
+    
+    # Define workflow methods that use external functions
+    def (self: FunctionIntegrationWorkflow) add_data(key: str, value: float) -> bool:
+        self.data[key] = value
+        return true
+    
+    def (self: FunctionIntegrationWorkflow) process_data(threshold: float, transform: str) -> dict:
+        # Use external functions
+        values = list(self.data.values())
+        filtered_values = filter_by_threshold(values, threshold)
+        average = calculate_average(filtered_values)
+        
+        # Transform data
+        transformed = transform_data(self.data, transform)
+        
+        # Store results
+        self.processed_data = {
+            "original": self.data.copy(),
+            "filtered_count": len(filtered_values),
+            "average": average,
+            "transformed": transformed
+        }
+        
+        return self.processed_data
+    
+    def (self: FunctionIntegrationWorkflow) get_summary() -> str:
+        if len(self.processed_data) == 0:
+            return "No data processed"
+        
+        return f"Processed {self.processed_data.get('filtered_count', 0)} items, avg: {self.processed_data.get('average', 0):.2f}"
+    
+    # Create workflow instance
+    function_workflow = FunctionIntegrationWorkflow()
+    
+    # Add data
+    function_workflow.add_data("item1", 10.0)
+    function_workflow.add_data("item2", 5.0)
+    function_workflow.add_data("item3", 15.0)
+    function_workflow.add_data("item4", 3.0)
+    
+    # Process data
+    result = function_workflow.process_data(threshold=5.0, transform="normalize")
+    
+    assert result.get("filtered_count") == 3, f"Expected 3, got '{result.get('filtered_count')}'"
+    assert abs(result.get("average") - 10.0) < 0.01, f"Expected ~10.0, got '{result.get('average')}'"
+    assert len(result.get("transformed", {})) == 4, f"Expected 4 transformed items, got '{len(result.get('transformed', {}))}'"
+    
+    # Test summary
+    summary = function_workflow.get_summary()
+    assert "Processed 3 items" in summary, f"Expected summary to contain processed count, got '{summary}'"
+    assert "avg: 10.00" in summary, f"Expected summary to contain average, got '{summary}'"
+    
+    log("✅ Workflow function integration test passed")
+
+# Run all integration tests
+log("🚀 Running Workflow Integration Tests")
+log("=" * 50)
+
+test_workflow_with_agents()
+test_workflow_with_agent_methods()
+test_workflow_with_resources()
+test_workflow_concurrency()
+test_workflow_promise_integration()
+test_workflow_struct_integration()
+test_workflow_function_integration()
+
+log("")
+log("✅ All workflow integration tests passed!")
+log("📊 Summary: 7 tests passed, 0 tests failed")

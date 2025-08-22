@@ -3,6 +3,7 @@ Deep Document Extraction routers - routing for document extraction endpoints usi
 """
 
 import logging
+import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -42,8 +43,30 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
         if not document:
             raise FileNotFoundError(f"Document not found with ID: {request.document_id}")
 
-        if not document.file_path:
+        # Fix: Handle file paths that have "File" prepended to them
+        file_path = str(document.file_path) if document.file_path else ""
+        if not file_path:
             raise FileNotFoundError(f"Document {request.document_id} has no file path")
+
+        if file_path.startswith("File "):
+            logger.warning("File path has 'File' prefix, removing it: '%s'", file_path)
+            file_path = file_path[5:]  # Remove "File " prefix
+            logger.info("Corrected file path: '%s'", file_path)
+
+        # Resolve to absolute path if it's relative
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
+            logger.info("Resolved to absolute path: '%s'", file_path)
+
+        # If the file path is just a filename, try to find it in the uploads directory
+        if os.path.basename(file_path) == file_path:
+            logger.warning("File path is just a filename, looking in uploads directory: '%s'", file_path)
+            uploads_path = os.path.join("uploads", file_path)
+            if os.path.exists(uploads_path):
+                file_path = os.path.abspath(uploads_path)
+                logger.info("Found file in uploads directory: '%s'", file_path)
+            else:
+                logger.error("File not found in uploads directory: '%s'", uploads_path)
 
         # Create service instance
         if request.use_deep_extraction:
@@ -52,7 +75,7 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
             service = LlamaIndexExtractionService()
 
         # Extract document - now just handles the extraction logic
-        result = await service.extract(file_path=str(document.file_path), prompt=request.prompt, config=request.config)
+        result = await service.extract(file_path=file_path, prompt=request.prompt, config=request.config)
 
         logger.info("Successfully extracted document ID: %s", request.document_id)
         return result

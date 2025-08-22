@@ -1,6 +1,7 @@
 {
     "llm": {
         "preferred_models": [
+            "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
             "huggingface:openai/gpt-oss-120b",
             "huggingface:openai/gpt-oss-20b",
             "openai:gpt-4.1-mini",

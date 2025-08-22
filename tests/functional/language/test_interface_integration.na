@@ -1,0 +1,376 @@
+# Test: Interface Integration with Dana Systems
+# Purpose: Test interface integration with agents, resources, and other Dana features
+# Category: Language - Interface System
+
+log("🔄 === INTERFACE INTEGRATION TESTS ===")
+
+# Test 1: Interface with Agent Blueprints
+log("🔍 Test 1: Interface with Agent Blueprints")
+
+interface IAgentInterface:
+    plan(problem: str) -> str
+    solve(problem: str) -> str
+    get_domain() -> str
+    set_domain(domain: str) -> None
+    get_confidence() -> float
+    set_confidence(confidence: float) -> None
+
+# Define agent blueprint that implements the interface
+agent_blueprint InterfaceAgent:
+    domain: str = "general"
+    confidence: float = 0.8
+
+# Implement interface methods using receiver functions
+def (instance: InterfaceAgent) plan(problem: str) -> str:
+    return f"Planning {problem} in domain {instance.domain}"
+
+def (instance: InterfaceAgent) solve(problem: str) -> str:
+    return f"Solving {problem} with confidence {instance.confidence}"
+
+def (instance: InterfaceAgent) get_domain() -> str:
+    return instance.domain
+
+def (instance: InterfaceAgent) set_domain(domain: str) -> None:
+    instance.domain = domain
+
+def (instance: InterfaceAgent) get_confidence() -> float:
+    return instance.confidence
+
+def (instance: InterfaceAgent) set_confidence(confidence: float) -> None:
+    instance.confidence = confidence
+
+# Create agent instance and test interface compliance
+agent_instance = InterfaceAgent(domain="AI", confidence=0.9)
+
+# Test interface methods
+plan_result = agent_instance.plan("test problem")
+assert "Planning test problem in domain AI" in plan_result, f"Expected planning result, got '{plan_result}'"
+
+solve_result = agent_instance.solve("test problem")
+assert "Solving test problem with confidence 0.9" in solve_result, f"Expected solving result, got '{solve_result}'"
+
+domain = agent_instance.get_domain()
+assert domain == "AI", f"Expected 'AI', got '{domain}'"
+
+agent_instance.set_domain("Machine Learning")
+domain = agent_instance.get_domain()
+assert domain == "Machine Learning", f"Expected 'Machine Learning', got '{domain}'"
+
+confidence = agent_instance.get_confidence()
+assert confidence == 0.9, f"Expected 0.9, got {confidence}"
+
+agent_instance.set_confidence(0.95)
+confidence = agent_instance.get_confidence()
+assert confidence == 0.95, f"Expected 0.95, got {confidence}"
+
+log("✅ Agent blueprint interface integration successful")
+
+# Test 2: Interface with Resources
+log("🔍 Test 2: Interface with Resources")
+
+interface IResourceInterface:
+    initialize() -> bool
+    get_status() -> str
+    set_status(status: str) -> None
+    process_request(request: str) -> str
+    cleanup() -> bool
+
+# Define resource that implements the interface
+resource InterfaceResource:
+    status: str = "initialized"
+    request_count: int = 0
+
+# Implement interface methods using receiver functions
+def (instance: InterfaceResource) initialize() -> bool:
+    instance.status = "ready"
+    return true
+
+def (instance: InterfaceResource) get_status() -> str:
+    return instance.status
+
+def (instance: InterfaceResource) set_status(status: str) -> None:
+    instance.status = status
+
+def (instance: InterfaceResource) process_request(request: str) -> str:
+    instance.request_count = instance.request_count + 1
+    return f"Processed request {instance.request_count}: {request}"
+
+def (instance: InterfaceResource) cleanup() -> bool:
+    instance.status = "cleaned"
+    return true
+
+# Create resource instance and test interface compliance
+resource_instance = InterfaceResource()
+
+# Test interface methods
+init_result = resource_instance.initialize()
+assert init_result == true, f"Expected true, got {init_result}"
+
+status = resource_instance.get_status()
+assert status == "ready", f"Expected 'ready', got '{status}'"
+
+resource_instance.set_status("processing")
+status = resource_instance.get_status()
+assert status == "processing", f"Expected 'processing', got '{status}'"
+
+request_result = resource_instance.process_request("test request")
+assert "Processed request 1: test request" in request_result, f"Expected request result, got '{request_result}'"
+
+cleanup_result = resource_instance.cleanup()
+assert cleanup_result == true, f"Expected true, got {cleanup_result}"
+
+status = resource_instance.get_status()
+assert status == "cleaned", f"Expected 'cleaned', got '{status}'"
+
+log("✅ Resource interface integration successful")
+
+# Test 3: Interface with Structs and Functions
+log("🔍 Test 3: Interface with Structs and Functions")
+
+interface IDataProcessor:
+    process_data(data: list) -> list
+    get_processed_count() -> int
+    reset_count() -> None
+    get_config() -> dict
+    set_config(config: dict) -> None
+
+struct DataProcessorStruct:
+    processed_count: int = 0
+    config: dict = {}
+
+def (processor: DataProcessorStruct) process_data(data: list) -> list:
+    result = []
+    for item in data:
+        result.append(item * 2)
+    processor.processed_count = processor.processed_count + len(data)
+    return result
+
+def (processor: DataProcessorStruct) get_processed_count() -> int:
+    return processor.processed_count
+
+def (processor: DataProcessorStruct) reset_count() -> None:
+    processor.processed_count = 0
+
+def (processor: DataProcessorStruct) get_config() -> dict:
+    return processor.config
+
+def (processor: DataProcessorStruct) set_config(config: dict) -> None:
+    processor.config = config
+
+# Create processor instance and test interface compliance
+processor = DataProcessorStruct()
+
+# Test data processing
+input_data = [1, 2, 3, 4, 5]
+result_data = processor.process_data(input_data)
+assert result_data == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {result_data}"
+
+count = processor.get_processed_count()
+assert count == 5, f"Expected 5, got {count}"
+
+# Test config handling
+config = {"multiplier": 3, "enabled": true}
+processor.set_config(config)
+retrieved_config = processor.get_config()
+assert retrieved_config["multiplier"] == 3, f"Expected 3, got {retrieved_config['multiplier']}"
+assert retrieved_config["enabled"] == true, f"Expected true, got {retrieved_config['enabled']}"
+
+# Test reset
+processor.reset_count()
+count = processor.get_processed_count()
+assert count == 0, f"Expected 0, got {count}"
+
+log("✅ Struct and function interface integration successful")
+
+# Test 4: Interface with Embedded Interfaces in Complex Systems
+log("🔍 Test 4: Interface with Embedded Interfaces in Complex Systems")
+
+interface ILogger:
+    log(message: str) -> None
+    get_log_level() -> str
+    set_log_level(level: str) -> None
+
+interface IConfigurable:
+    get_config() -> dict
+    set_config(config: dict) -> None
+    reload_config() -> bool
+
+interface IProcessable:
+    process(input: any) -> any
+    get_processing_stats() -> dict
+
+interface IComplexSystem:
+    ILogger        # Embedded interface
+    IConfigurable  # Embedded interface
+    IProcessable   # Embedded interface
+    start() -> bool
+    stop() -> bool
+    get_status() -> str
+
+struct ComplexSystemStruct:
+    log_level: str = "info"
+    config: dict = {}
+    processing_stats: dict = {}
+    is_running: bool = false
+
+# Implement all methods from embedded interfaces plus additional methods
+def (instance: ComplexSystemStruct) log(message: str) -> None:
+    # Simulate logging
+    pass
+
+def (instance: ComplexSystemStruct) get_log_level() -> str:
+    return instance.log_level
+
+def (instance: ComplexSystemStruct) set_log_level(level: str) -> None:
+    instance.log_level = level
+
+def (instance: ComplexSystemStruct) get_config() -> dict:
+    return instance.config
+
+def (instance: ComplexSystemStruct) set_config(config: dict) -> None:
+    instance.config = config
+
+def (instance: ComplexSystemStruct) reload_config() -> bool:
+    return true
+
+def (instance: ComplexSystemStruct) process(input: any) -> any:
+    instance.processing_stats["processed_count"] = instance.processing_stats.get("processed_count", 0) + 1
+    return f"Processed: {input}"
+
+def (instance: ComplexSystemStruct) get_processing_stats() -> dict:
+    return instance.processing_stats
+
+def (instance: ComplexSystemStruct) start() -> bool:
+    instance.is_running = true
+    return true
+
+def (instance: ComplexSystemStruct) stop() -> bool:
+    instance.is_running = false
+    return true
+
+def (instance: ComplexSystemStruct) get_status() -> str:
+    if instance.is_running:
+        return "running"
+    return "stopped"
+
+# Create complex system instance and test interface compliance
+complex_system = ComplexSystemStruct()
+
+# Test embedded interface methods
+level = complex_system.get_log_level()
+assert level == "info", f"Expected 'info', got '{level}'"
+
+complex_system.set_log_level("debug")
+level = complex_system.get_log_level()
+assert level == "debug", f"Expected 'debug', got '{level}'"
+
+config = {"setting": "value"}
+complex_system.set_config(config)
+retrieved_config = complex_system.get_config()
+assert retrieved_config["setting"] == "value", f"Expected 'value', got '{retrieved_config['setting']}'"
+
+reload_result = complex_system.reload_config()
+assert reload_result == true, f"Expected true, got {reload_result}"
+
+# Test processing
+process_result = complex_system.process("test input")
+assert "Processed: test input" in process_result, f"Expected processed result, got '{process_result}'"
+
+stats = complex_system.get_processing_stats()
+assert stats["processed_count"] == 1, f"Expected 1, got {stats['processed_count']}"
+
+# Test system methods
+start_result = complex_system.start()
+assert start_result == true, f"Expected true, got {start_result}"
+
+status = complex_system.get_status()
+assert status == "running", f"Expected 'running', got '{status}'"
+
+stop_result = complex_system.stop()
+assert stop_result == true, f"Expected true, got {stop_result}"
+
+status = complex_system.get_status()
+assert status == "stopped", f"Expected 'stopped', got '{status}'"
+
+log("✅ Complex system interface integration successful")
+
+# Test 5: Interface with Function Parameters
+log("🔍 Test 5: Interface with Function Parameters")
+
+interface IProcessor:
+    process(data: str) -> str
+    get_name() -> str
+
+struct SimpleProcessor:
+    name: str = "SimpleProcessor"
+
+def (processor: SimpleProcessor) process(data: str) -> str:
+    return f"{processor.name} processed: {data}"
+
+def (processor: SimpleProcessor) get_name() -> str:
+    return processor.name
+
+# Function that takes an interface type as parameter
+def process_with_interface(processor: IProcessor, data: str) -> str:
+    return processor.process(data)
+
+def get_processor_name(processor: IProcessor) -> str:
+    return processor.get_name()
+
+# Create processor and test function integration
+simple_processor = SimpleProcessor()
+
+# Test function with interface parameter
+result = process_with_interface(simple_processor, "test data")
+assert "SimpleProcessor processed: test data" in result, f"Expected processed result, got '{result}'"
+
+name = get_processor_name(simple_processor)
+assert name == "SimpleProcessor", f"Expected 'SimpleProcessor', got '{name}'"
+
+log("✅ Function parameter interface integration successful")
+
+# Test 6: Interface with Collections
+log("🔍 Test 6: Interface with Collections")
+
+interface ICollectionItem:
+    get_id() -> str
+    get_value() -> any
+    set_value(value: any) -> None
+
+struct CollectionItemStruct:
+    id: str = ""
+    value: any = None
+
+def (item: CollectionItemStruct) get_id() -> str:
+    return item.id
+
+def (item: CollectionItemStruct) get_value() -> any:
+    return item.value
+
+def (item: CollectionItemStruct) set_value(value: any) -> None:
+    item.value = value
+
+# Function that works with collections of interface types
+def process_collection(items: list[ICollectionItem]) -> list[str]:
+    results = []
+    for item in items:
+        results.append(f"{item.get_id()}: {item.get_value()}")
+    return results
+
+# Create collection of items
+items = [
+    CollectionItemStruct(id="item1", value="value1"),
+    CollectionItemStruct(id="item2", value="value2"),
+    CollectionItemStruct(id="item3", value="value3")
+]
+
+# Test collection processing
+results = process_collection(items)
+assert len(results) == 3, f"Expected 3 results, got {len(results)}"
+assert "item1: value1" in results, f"Expected 'item1: value1' in results"
+assert "item2: value2" in results, f"Expected 'item2: value2' in results"
+assert "item3: value3" in results, f"Expected 'item3: value3' in results"
+
+log("✅ Collection interface integration successful")
+
+log("🎉 All interface integration tests passed successfully!")

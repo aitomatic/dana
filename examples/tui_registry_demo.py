@@ -6,7 +6,7 @@ This demonstrates how the TUI app automatically responds to agent
 registration and unregistration events from the global registry.
 """
 
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.builtin_types.struct_system import StructInstance, StructType
 from dana.registry import AGENT_REGISTRY
 
 

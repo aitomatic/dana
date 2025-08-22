@@ -65,8 +65,8 @@ def test_na_file(na_file):
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()

@@ -5,8 +5,8 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 
 import unittest
 
-from dana.agent import AgentInstance, AgentType, create_agent_instance
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.builtin_types.agent_system import AgentInstance, AgentType, create_agent_instance
+from dana.core.builtin_types.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
 
