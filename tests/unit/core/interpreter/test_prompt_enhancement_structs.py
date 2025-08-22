@@ -10,9 +10,9 @@ MIT License
 
 from unittest.mock import patch
 
+from dana.core.builtin_types.struct_system import StructType
 from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 from dana.core.lang.interpreter.prompt_enhancement import PromptEnhancer, enhance_prompt_for_type
-from dana.core.lang.interpreter.struct_system import StructType
 from dana.registry import TYPE_REGISTRY
 
 
