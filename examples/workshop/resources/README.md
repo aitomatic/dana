@@ -1,4 +1,4 @@
-# Dana Language and Runtime Highlights
+# Dana Technical Workshop: Dana Resources
 
 - [Built-In Reasoning](builtin_reasoning.na)
 
