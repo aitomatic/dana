@@ -357,9 +357,15 @@ class FunctionExecutor(BaseExecutor):
             if not callable(actual_function):
                 raise SandboxError(f"Subscript expression resolved to non-callable object: {actual_function}")
 
-            # Call the resolved function with the provided arguments
+            # Call the resolved function with the provided arguments and async detection
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
-            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            import asyncio
+            from dana.common.utils.misc import Misc
+            
+            if asyncio.iscoroutinefunction(actual_function):
+                result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+            else:
+                result = actual_function(*evaluated_args, **evaluated_kwargs)
             self.debug(f"Subscript call result: {result}")
             return result
         elif isinstance(node.name, str) and "SubscriptExpression" in node.name:
@@ -988,7 +994,14 @@ class FunctionExecutor(BaseExecutor):
             if isinstance(actual_function, DanaFunction):
                 result = actual_function.execute(context, *evaluated_args, **evaluated_kwargs)
             else:
-                result = actual_function(*evaluated_args, **evaluated_kwargs)
+                # Execute-time async detection for regular functions
+                import asyncio
+                from dana.common.utils.misc import Misc
+                
+                if asyncio.iscoroutinefunction(actual_function):
+                    result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+                else:
+                    result = actual_function(*evaluated_args, **evaluated_kwargs)
 
             self.debug(f"Subscript call result: {result}")
             return result
