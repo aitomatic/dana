@@ -1,4 +1,4 @@
-# System of Agents Demo
+# `[TODO: UPDATE]` Multi-Agent System
 
 This directory demonstrates a multi-agent system built with Dana, featuring a General-Management Agent (GMA) that orchestrates specialist agents to accomplish complex tasks.
 
