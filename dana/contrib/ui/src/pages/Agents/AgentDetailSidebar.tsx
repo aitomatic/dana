@@ -224,30 +224,31 @@ const SmartAgentChat: React.FC<{
   const welcomeMessageTimeoutRef = useRef<number | null>(null);
 
   // Function to show welcome message with typing effect
-  const showWelcomeMessageWithTypingEffect = useCallback((displayName: string, agentDomain: string) => {
-    // Prevent duplicate welcome messages
-    if (hasShownWelcomeMessage) {
-      return null;
-    }
+  const showWelcomeMessageWithTypingEffect = useCallback(
+    (displayName: string, agentDomain: string) => {
+      // Prevent duplicate welcome messages
+      if (hasShownWelcomeMessage) {
+        return null;
+      }
 
-    // Mark that we're showing a welcome message
-    setHasShownWelcomeMessage(true);
-    
-    // Show typing effect for 2 seconds before displaying the welcome message
-    setIsTyping(true);
-    
-    const timeoutId = setTimeout(() => {
-      setIsTyping(false);
-      addMessage({
-        sender: 'agent',
-        text: displayName
-          ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
+      // Mark that we're showing a welcome message
+      setHasShownWelcomeMessage(true);
+
+      // Show typing effect for 2 seconds before displaying the welcome message
+      setIsTyping(true);
+
+      const timeoutId = setTimeout(() => {
+        setIsTyping(false);
+        addMessage({
+          sender: 'agent',
+          text: displayName
+            ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
 Now let's shape it into an agent that really works for you. To begin, tell me:
 - What kind of ${agentDomain.toLowerCase()} expertise should it focus on?
 - Who will this agent primarily assist (e.g. individuals, analysts, business owners)?
 
 💡 Tip: If you have a **job description**, you can paste it here — I'll use it to tailor the agent's knowledge base.`
-          : `Exciting — you're about to build your own custom agent from the ground up! 🚀
+            : `Exciting — you're about to build your own custom agent from the ground up! 🚀
 
 To get started, let's define its foundation:
 
@@ -255,13 +256,15 @@ To get started, let's define its foundation:
 - **Who** will it assist? (e.g. financial analysts, IT engineers)?
 
 💡 Tip: You can provide a **job description**, and I'll draft the starting expertise for your agent.`,
-      });
-    }, 2000);
+        });
+      }, 2000);
 
-    // Store the timeout ID for cleanup purposes
-    welcomeMessageTimeoutRef.current = timeoutId;
-    return timeoutId;
-  }, [addMessage, hasShownWelcomeMessage]);
+      // Store the timeout ID for cleanup purposes
+      welcomeMessageTimeoutRef.current = timeoutId;
+      return timeoutId;
+    },
+    [addMessage, hasShownWelcomeMessage],
+  );
 
   // Function to show fallback welcome message with typing effect
   const showFallbackWelcomeMessageWithTypingEffect = useCallback(() => {
@@ -272,10 +275,10 @@ To get started, let's define its foundation:
 
     // Mark that we're showing a welcome message
     setHasShownWelcomeMessage(true);
-    
+
     // Show typing effect for 2 seconds before displaying the fallback welcome message
     setIsTyping(true);
-    
+
     const timeoutId = setTimeout(() => {
       setIsTyping(false);
       addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
@@ -298,7 +301,7 @@ To get started, let's define its foundation:
           clearTimeout(welcomeMessageTimeoutRef.current);
           welcomeMessageTimeoutRef.current = null;
         }
-        
+
         // Clear messages from previous agent
         clearMessages();
         setHasLoadedHistory(false);
@@ -339,13 +342,13 @@ To get started, let's define its foundation:
     return () => {
       // Clean up all state when component unmounts
       console.log(`[Unmount] Cleaning up component for agent ${agent_id}`);
-      
+
       // Clear any pending welcome message timeout
       if (welcomeMessageTimeoutRef.current) {
         clearTimeout(welcomeMessageTimeoutRef.current);
         welcomeMessageTimeoutRef.current = null;
       }
-      
+
       // Clear smart-chat-storage when component unmounts
       cleanupOnExit();
 
@@ -355,7 +358,7 @@ To get started, let's define its foundation:
       setPreviousAgentId(null);
       setIsTyping(false);
       setHasShownWelcomeMessage(false);
-      
+
       // Clear any pending operations
       if (loading) {
         setLoading(false);
@@ -469,7 +472,7 @@ To get started, let's define its foundation:
             const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
             const selectedAgent = useAgentStore.getState().selectedAgent;
             const agentDomain = selectedAgent?.config?.domain || 'Domain';
-            
+
             // Use the centralized function to show welcome message with typing effect
             showWelcomeMessageWithTypingEffect(displayName, agentDomain);
           }
@@ -539,22 +542,22 @@ To get started, let's define its foundation:
   }, [hasLoadedHistory, getMessageCount, agent_id, agentStore]);
 
   // Manual message clearing function for agent switches
-  const clearMessagesForNewAgent = useCallback(() => {
-    if (agentStore) {
-      // Clear any pending welcome message timeout
-      if (welcomeMessageTimeoutRef.current) {
-        clearTimeout(welcomeMessageTimeoutRef.current);
-        welcomeMessageTimeoutRef.current = null;
-      }
-      
-      clearMessages();
-      setHasLoadedHistory(false);
-      setIsLoadingHistory(false);
-      setIsTyping(false);
-      setHasShownWelcomeMessage(false);
-      console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
-    }
-  }, [agentStore, clearMessages, agent_id]);
+  // const clearMessagesForNewAgent = useCallback(() => {
+  //   if (agentStore) {
+  //     // Clear any pending welcome message timeout
+  //     if (welcomeMessageTimeoutRef.current) {
+  //       clearTimeout(welcomeMessageTimeoutRef.current);
+  //       welcomeMessageTimeoutRef.current = null;
+  //     }
+
+  //     clearMessages();
+  //     setHasLoadedHistory(false);
+  //     setIsLoadingHistory(false);
+  //     setIsTyping(false);
+  //     setHasShownWelcomeMessage(false);
+  //     console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
+  //   }
+  // }, [agentStore, clearMessages, agent_id]);
 
   // Cleanup effect for welcome message timeouts
   useEffect(() => {
@@ -568,17 +571,17 @@ To get started, let's define its foundation:
   }, [showWelcomeMessageWithTypingEffect, showFallbackWelcomeMessageWithTypingEffect]);
 
   // Debug utility to check store state
-  const debugStoreState = useCallback(() => {
-    if (agentStore) {
-      const state = agentStore.getState();
-      console.log(`[Debug Store] Agent ${agent_id} store state:`, {
-        messageCount: state.messages.length,
-        hasLoadedHistory,
-        isLoadingHistory,
-        previousAgentId
-      });
-    }
-  }, [agentStore, agent_id, hasLoadedHistory, isLoadingHistory, previousAgentId]);
+  // const debugStoreState = useCallback(() => {
+  //   if (agentStore) {
+  //     const state = agentStore.getState();
+  //     console.log(`[Debug Store] Agent ${agent_id} store state:`, {
+  //       messageCount: state.messages.length,
+  //       hasLoadedHistory,
+  //       isLoadingHistory,
+  //       previousAgentId
+  //     });
+  //   }
+  // }, [agentStore, agent_id, hasLoadedHistory, isLoadingHistory, previousAgentId]);
 
   const sendMessage = async () => {
     if (!input.trim() || !agent_id || !agentStore) return;
@@ -760,11 +763,19 @@ To get started, let's define its foundation:
           {isTyping && (
             <div className="flex gap-2 items-center self-start px-3 py-2 text-left bg-white rounded-sm border border-gray-100">
               <div className="flex gap-1">
-                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                ></div>
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                ></div>
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                ></div>
               </div>
-              
             </div>
           )}
           <ProcessingStatusHistory
