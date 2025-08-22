@@ -114,12 +114,21 @@ class StructType:
         # Handle union types (e.g., "dict | None", "str | int")
         if " | " in expected_type:
             union_types = [t.strip() for t in expected_type.split(" | ")]
-            # Check if value matches any of the union types
+            # Check if value matches any of the union types (non-recursive)
             for union_type in union_types:
-                if self._validate_field_type(field_name, value, union_type):
+                if self._validate_single_type(field_name, value, union_type):
                     return True
             return False
 
+        # Use the non-recursive single type validation
+        return self._validate_single_type(field_name, value, expected_type)
+
+    def _validate_single_type(self, field_name: str, value: Any, expected_type: str) -> bool:
+        """Validate that a field value matches a single expected type (non-recursive).
+
+        This method handles individual type validation without recursion to avoid
+        performance issues with deeply nested union types.
+        """
         # Handle None values - in Dana, 'null' maps to None
         if value is None:
             return expected_type in ["null", "None", "any"]

@@ -377,21 +377,52 @@ class TypeRegistry:
         if not hasattr(type_obj, "name"):
             raise ValueError("Type object must have a 'name' attribute")
 
-        # Determine category based on type object attributes or class
+        # Use explicit type detection for better reliability
+        category = self._detect_type_category(type_obj)
+
+        if category == "agent":
+            self.register_agent_type(type_obj)
+        elif category == "resource":
+            self.register_resource_type(type_obj)
+        elif category == "interface":
+            self.register_interface_type(type_obj)
+        elif category == "struct":
+            self.register_struct_type(type_obj)
+        else:
+            # Fallback to struct type for backward compatibility
+            self.register_struct_type(type_obj)
+
+    def _detect_type_category(self, type_obj: Any) -> str:
+        """Detect the category of a type object using explicit checks.
+
+        Args:
+            type_obj: The type object to categorize
+
+        Returns:
+            Category string: "agent", "resource", "interface", or "struct"
+        """
+        # Check for explicit type attributes first (most reliable)
         if hasattr(type_obj, "__class__"):
             class_name = type_obj.__class__.__name__
-            if "Agent" in class_name:
-                self.register_agent_type(type_obj)
-            elif "Resource" in class_name:
-                self.register_resource_type(type_obj)
-            elif "Interface" in class_name:
-                self.register_interface_type(type_obj)
-            else:
-                # Default to struct type
-                self.register_struct_type(type_obj)
-        else:
-            # Default to struct type if we can't determine category
-            self.register_struct_type(type_obj)
+
+            # Check for agent types (including agent_blueprint)
+            if class_name == "AgentType" or (hasattr(type_obj, "memory_system") and hasattr(type_obj, "reasoning_capabilities")):
+                return "agent"
+
+            # Check for resource types
+            if class_name == "ResourceType" or (hasattr(type_obj, "has_lifecycle") and type_obj.has_lifecycle):
+                return "resource"
+
+            # Check for interface types
+            if class_name == "InterfaceType" or (hasattr(type_obj, "methods") and hasattr(type_obj, "embedded_interfaces")):
+                return "interface"
+
+            # Check for struct types (default)
+            if class_name == "StructType":
+                return "struct"
+
+        # Fallback to struct type for backward compatibility
+        return "struct"
 
     # === Utility Methods ===
 

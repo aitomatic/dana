@@ -34,7 +34,7 @@ def test_na_file(na_file):
     # Clear struct registry to ensure test isolation
     from dana.registry import GLOBAL_REGISTRY
 
-    GLOBAL_REGISTRY.types.clear_instance()
+    GLOBAL_REGISTRY.types.clear()
 
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"
