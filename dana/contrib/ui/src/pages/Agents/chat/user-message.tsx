@@ -1,6 +1,6 @@
 import FileIcon from '@/components/file-icon';
 import { cn } from '@/lib/utils';
-import { MarkdownViewerSmall } from './markdown-viewer';
+import { HybridRenderer } from './hybrid-renderer';
 
 const FilePreview = ({ file }: { file: any }) => {
   const ext = file?.s3_url?.split('.')?.pop();
@@ -41,14 +41,14 @@ const MessageContent = ({ message }: { message: any }) => {
               <FilePreview key={file.id} file={file} />
             ))}
           </div>
-          <div
-            className={cn(
-              'flex flex-wrap w-full text-sm xl:text-base font-normal text-gray-900 break-words',
-              isSplitScreen ? 'max-w-full 3xl:max-w-full' : 'max-w-[630px] 3xl:max-w-[1085px]',
-            )}
-          >
-            <MarkdownViewerSmall>{message?.message || message?.data?.message}</MarkdownViewerSmall>
-          </div>
+                  <div
+          className={cn(
+            'flex flex-wrap w-full text-sm xl:text-base font-normal text-gray-900 break-words',
+            isSplitScreen ? 'max-w-full 3xl:max-w-full' : 'max-w-[630px] 3xl:max-w-[1085px]',
+          )}
+        >
+          <HybridRenderer content={message?.message || message?.data?.message} backgroundContext="user" />
+        </div>
         </div>
       );
     default:
@@ -59,7 +59,7 @@ const MessageContent = ({ message }: { message: any }) => {
             isSplitScreen ? 'max-w-full 3xl:max-w-full' : 'max-w-[630px] 3xl:max-w-[1085px]',
           )}
         >
-          <MarkdownViewerSmall>{message?.message || message?.data?.message}</MarkdownViewerSmall>
+          <HybridRenderer content={message?.message || message?.data?.message} backgroundContext="user" />
         </div>
       );
   }
