@@ -363,7 +363,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|workflow|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|workflow|interface|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
