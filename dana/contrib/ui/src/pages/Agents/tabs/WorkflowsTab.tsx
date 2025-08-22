@@ -156,44 +156,73 @@ const WorkflowsTab: React.FC = () => {
       <div className="space-y-6">
         <h3 className="text-base font-medium text-gray-800">Workflow Definitions</h3>
         {workflows.workflow_definitions.map((workflow, index) => (
-          <div key={index} className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                                 <h4 className="text-lg font-semibold text-gray-900">{workflow.name}</h4>
+                     <div key={index} className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+             <div className="flex justify-between items-start mb-6">
+               <div>
+                 <h4 className="text-xl font-bold text-gray-900 mb-2">{workflow.name}</h4>
                  {workflow.description && (
-                   <p className="mt-1 text-sm text-gray-600">{workflow.description}</p>
+                   <p className="text-sm text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-100 inline-block">
+                     {workflow.description}
+                   </p>
                  )}
                </div>
-               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
                  Workflow
                </span>
-            </div>
+             </div>
 
-                         {/* Pipeline Visualization */}
+                         {/* Enhanced Pipeline Visualization */}
              <div className="mb-6">
-               <h5 className="text-sm font-medium text-gray-700 mb-4">Workflow Steps</h5>
+               <h5 className="text-sm font-medium text-gray-700 mb-4 flex items-center">
+                 <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                 </svg>
+                 Workflow Steps
+               </h5>
                <div className="relative">
                  {workflow.steps.map((step, stepIndex) => (
                    <div key={stepIndex} className="relative">
                      {/* Step Card */}
-                     <div className="flex items-center mb-3">
-                       {/* Step Number Circle */}
-                       <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-4 z-10 relative">
+                     <div className="flex items-center mb-4">
+                       {/* Enhanced Step Number Circle */}
+                       <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-5 z-10 relative shadow-lg">
                          <span className="text-sm font-bold text-white">{stepIndex + 1}</span>
+                         {/* Glow effect */}
+                         <div className="absolute inset-0 bg-blue-400 rounded-full opacity-20 animate-pulse"></div>
                        </div>
                        
-                       {/* Step Content */}
-                       <div className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
-                         <span className="text-sm font-medium text-gray-800 font-mono">{step}</span>
+                       {/* Enhanced Step Content */}
+                       <div className="flex-1 bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                         <div className="flex items-center justify-between">
+                           <span className="text-sm font-semibold text-gray-800 font-mono">{step}</span>
+                           {/* Step type indicator */}
+                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                             stepIndex === 0 ? 'bg-green-100 text-green-800' :
+                             stepIndex === workflow.steps.length - 1 ? 'bg-purple-100 text-purple-800' :
+                             'bg-blue-100 text-blue-800'
+                           }`}>
+                             {stepIndex === 0 ? 'Input' : 
+                              stepIndex === workflow.steps.length - 1 ? 'Output' : 'Process'}
+                           </span>
+                         </div>
+                         {/* Step description placeholder */}
+                         <p className="text-xs text-gray-500 mt-1">
+                           {stepIndex === 0 ? 'Initial data processing' :
+                            stepIndex === workflow.steps.length - 1 ? 'Final result generation' :
+                            'Data transformation step'}
+                         </p>
                        </div>
                      </div>
                      
-                     {/* Connector Line */}
+                     {/* Curved Connector Line */}
                      {stepIndex < workflow.steps.length - 1 && (
-                       <div className="absolute left-4 top-8 w-0.5 h-6 bg-blue-300"></div>
+                       <div className="absolute left-5 top-10 w-0.5 h-8 bg-gradient-to-b from-blue-400 to-blue-200"></div>
                      )}
                    </div>
                  ))}
+                 
+                 {/* Workflow Flow Indicator */}
+                 <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-600 via-blue-400 to-blue-200 opacity-30"></div>
                </div>
              </div>
 
