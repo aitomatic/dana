@@ -22,9 +22,9 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
     cell: ({ row }) => {
       const item = row.original;
       return (
-        <div className="flex space-x-3">
+        <div className="grid grid-cols-[max-content_1fr] gap-2">
           <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />
-          <div className="flex flex-col">
+          <div className="flex flex-col truncate">
             <span className="font-medium text-gray-900">{item.name}</span>
           </div>
         </div>

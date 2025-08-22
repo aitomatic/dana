@@ -7,8 +7,8 @@ This module tests struct instantiation and field access execution in the Dana in
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestStructExecution:
@@ -16,7 +16,7 @@ class TestStructExecution:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_definition_execution(self):
@@ -27,7 +27,7 @@ struct Point:
     y: int
 """
 
-        execution_result: ExecutionResult = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.execute_string(code)
 
         # Execution should succeed
         assert execution_result.success is True
@@ -36,10 +36,10 @@ struct Point:
         assert execution_result.result is None
 
         # But the struct should be registered
-        assert StructTypeRegistry.exists("Point")
+        assert TYPE_REGISTRY.exists("Point")
 
         # Check the registered struct type
-        struct_type = StructTypeRegistry.get("Point")
+        struct_type = TYPE_REGISTRY.get("Point")
         assert struct_type is not None
         assert struct_type.name == "Point"
         assert len(struct_type.fields) == 2
@@ -58,7 +58,7 @@ struct Point:
 local:point = Point(x=10, y=20)
 """
 
-        execution_result: ExecutionResult = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.execute_string(code)
 
         # Check if execution succeeded
         if not execution_result.success:
@@ -88,7 +88,7 @@ local:x_value = point.x
 local:y_value = point.y
 """
 
-        execution_result: ExecutionResult = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.execute_string(code)
 
         # Check field access results
         assert execution_result.final_context is not None
@@ -109,7 +109,7 @@ local:user1 = User(name="Alice", active=true)
 local:user2 = User(name="Bob", active=false)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         user1 = result.final_context.get("local:user1")
@@ -139,7 +139,7 @@ local:original_x = point.x
 # For now, just test that we can access the field
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         point = result.final_context.get("local:point")
@@ -166,7 +166,7 @@ local:profile = UserProfile(
 )
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         profile = result.final_context.get("local:profile")
@@ -189,7 +189,7 @@ struct Point:
 local:point = Point(x=10)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert not result.success, "Expected struct instantiation to fail"
         assert "Missing required fields" in str(result.error), f"Expected missing fields error, got: {result.error}"
 
@@ -204,7 +204,7 @@ struct Point:
 local:point = Point(x=10, y=20, z=30)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert not result.success, "Expected struct instantiation to fail"
         assert "Unknown fields" in str(result.error), f"Expected unknown fields error, got: {result.error}"
 
@@ -223,7 +223,7 @@ local:center_point = Point(x=0, y=0)
 local:circle = Circle(center=center_point, radius=5.0)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         center_point = result.final_context.get("local:center_point")
@@ -252,7 +252,7 @@ class TestStructIntegrationWithDanaFeatures:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_with_functions(self):
@@ -268,7 +268,7 @@ def create_origin() -> Point:
 local:origin = create_origin()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         origin = result.final_context.get("local:origin")
@@ -295,7 +295,7 @@ else:
     local:status = "inactive"
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         status = result.final_context.get("local:status")
@@ -315,7 +315,7 @@ for point in points:
     local:sum_x = sum_x + point.x
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
 
         assert result.final_context is not None
         sum_x = result.final_context.get("local:sum_x")

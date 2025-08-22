@@ -18,7 +18,7 @@ struct User:
 
 struct AccessRequest:
     user_id: str
-    resource: str
+    resource_name: str
     action: str
     timestamp: str
     context: dict
@@ -42,7 +42,7 @@ test_user = User(
 
 test_request = AccessRequest(
     user_id="user123",
-    resource="sensitive_data",
+    resource_name="sensitive_data",
     action="read",
     timestamp="2024-01-15T10:30:00Z",
     context={"ip": "192.168.1.100", "location": "office"}
@@ -92,7 +92,7 @@ def evaluate_access_request(user: User, request: AccessRequest) -> AccessResult:
     
     elif user.role == "manager":
         # Managers have conditional access
-        if request.resource == "sensitive_data":
+        if request.resource_name == "sensitive_data":
             if "admin" in user.permissions:
                 if request.context["location"] == "office":
                     return AccessResult(
@@ -149,7 +149,7 @@ def evaluate_access_request(user: User, request: AccessRequest) -> AccessResult:
     
     elif user.role == "employee":
         # Employees have most restricted access
-        if request.resource == "sensitive_data":
+        if request.resource_name == "sensitive_data":
             return AccessResult(
                 granted=false,
                 reason="Employees cannot access sensitive data",
@@ -207,7 +207,7 @@ assert result2.granted == false
 assert result2.level == "denied"
 
 # Test 3: Employee accessing non-sensitive data from office
-test_request.resource = "public_data"
+test_request.resource_name = "public_data"
 result3 = evaluate_access_request(test_user, test_request)
 log(f"Employee public access: {result3.granted} - {result3.reason}")
 assert result3.granted == true
@@ -239,7 +239,7 @@ admin_user = User(
 
 admin_request = AccessRequest(
     user_id="admin456",
-    resource="top_secret",
+    resource_name="top_secret",
     action="delete",
     timestamp="2024-01-15T11:00:00Z",
     context={"ip": "192.168.1.1", "location": "secure_room"}

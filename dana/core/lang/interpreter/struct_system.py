@@ -20,7 +20,10 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from dana.registry import StructRegistry
 
 
 @dataclass
@@ -31,8 +34,9 @@ class StructType:
     fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
     field_comments: dict[str, str]  # Maps field name to comment/description
-    field_defaults: dict[str, Any] = None  # Maps field name to default value
+    field_defaults: dict[str, Any] | None = None  # Maps field name to default value
     docstring: str | None = None  # Struct docstring
+    instance_id: str | None = None  # ← add this so the interpreter can pass it in
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -50,6 +54,23 @@ class StructType:
         if not hasattr(self, "field_comments"):
             self.field_comments = {}
 
+        if self.instance_id is None:
+            self.instance_id = f"{self.name}_{id(self)}"
+
+    def __eq__(self, other) -> bool:
+        """Compare struct types for equality, excluding instance_id."""
+        if not isinstance(other, StructType):
+            return False
+
+        return (
+            self.name == other.name
+            and self.fields == other.fields
+            and self.field_order == other.field_order
+            and self.field_comments == other.field_comments
+            and self.field_defaults == other.field_defaults
+            and self.docstring == other.docstring
+        )
+
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
         """Validate that provided arguments match struct field requirements."""
         # Check all required fields are present (fields without defaults)
@@ -63,6 +84,12 @@ class StructType:
             raise ValueError(
                 f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(required_fields)}"
             )
+
+        # -- allow implicit instance_id --
+        # If instance_id is NOT part of declared fields, skip all checks for it
+        if "instance_id" in args and "instance_id" not in self.fields:
+            # remove it just for validation purposes
+            args = {k: v for k, v in args.items() if k != "instance_id"}
 
         # Check no extra fields are provided
         extra_fields = set(args.keys()) - set(self.fields.keys())
@@ -98,60 +125,125 @@ class StructType:
         if expected_type == "float" and isinstance(value, int | float):
             return True
 
-        # Basic type validation
-        type_mapping = {
-            "str": str,
-            "int": int,
-            "float": float,
-            "list": list,
-            "dict": dict,
-            "any": object,  # 'any' accepts anything
-        }
+        # Handle string type
+        if expected_type == "str":
+            return isinstance(value, str)
 
-        expected_python_type = type_mapping.get(expected_type)
-        if expected_python_type:
-            return isinstance(value, expected_python_type)
+        # Handle integer type
+        if expected_type == "int":
+            return isinstance(value, int)
 
-        # Handle struct types (for nested structs)
-        # Check if the expected type is a registered struct
-        if StructTypeRegistry.exists(expected_type):
-            return isinstance(value, StructInstance) and value._type.name == expected_type
+        # Handle list type
+        if expected_type == "list":
+            return isinstance(value, list)
 
-        # Unknown type - for now, accept it (could be a custom type we don't know about)
-        # In a more complete implementation, we'd have a type registry
+        # Handle dict type
+        if expected_type == "dict":
+            return isinstance(value, dict)
+
+        # Handle any type
+        if expected_type == "any":
+            return True
+
+        # Handle custom struct types
+        from dana.registry import TYPE_REGISTRY
+
+        if TYPE_REGISTRY.exists(expected_type):
+            # Check if value is a StructInstance of the expected type
+            if isinstance(value, StructInstance):
+                return value._type.name == expected_type
+            else:
+                # Value is not a struct instance but expected type is a struct
+                return False
+
+        # For other custom types, we'll be more permissive during runtime
+        # Type checking should catch most issues during compilation
         return True
 
-    def get_field_type(self, field_name: str) -> str | None:
-        """Get the type name for a specific field."""
-        return self.fields.get(field_name)
-
-    def get_field_comment(self, field_name: str) -> str | None:
-        """Get the comment/description for a specific field."""
-        return self.field_comments.get(field_name)
-
     def get_docstring(self) -> str | None:
-        """Get the struct docstring."""
+        """Get the struct's docstring."""
         return self.docstring
 
-    def get_field_description(self, field_name: str) -> str:
-        """Get a formatted description of a field including type and comment."""
-        field_type = self.fields.get(field_name, "unknown")
-        comment = self.field_comments.get(field_name)
+    def get_field_comment(self, field_name: str) -> str | None:
+        """Get the comment for a specific field."""
+        return self.field_comments.get(field_name)
 
+    def get_field_description(self, field_name: str) -> str:
+        """Get the description for a specific field including name, type, and comment."""
+        if field_name not in self.fields:
+            raise ValueError(f"Field '{field_name}' not found in struct '{self.name}'")
+
+        field_type = self.fields[field_name]
+        description = f"{field_name}: {field_type}"
+
+        # Add comment if available
+        comment = self.get_field_comment(field_name)
         if comment:
-            return f"{field_name}: {field_type}  # {comment}"
-        else:
-            return f"{field_name}: {field_type}"
+            description += f"  # {comment}"
+
+        return description
+
+    def merge_additional_fields(self, additional_fields: dict[str, str | dict[str, Any]], prepend: bool = True) -> None:
+        """Merge additional fields into this struct type.
+
+        Args:
+            additional_fields: Dictionary mapping field names to either:
+                              - Type name string (e.g., 'str', 'int')
+                              - Field config dict with keys: 'type', 'default', 'comment'
+            prepend: If True, add fields at the beginning of field_order. If False, append at the end.
+        """
+        # Collect new fields to add
+        fields_to_add = []
+
+        for field_name, field_spec in additional_fields.items():
+            if field_name not in self.fields:
+                fields_to_add.append((field_name, field_spec))
+
+                if isinstance(field_spec, str):
+                    # Simple case: field_name -> type_name
+                    self.fields[field_name] = field_spec
+                elif isinstance(field_spec, dict):
+                    # Complex case: field_name -> {type, default, comment}
+                    if "type" not in field_spec:
+                        raise ValueError(f"Field '{field_name}' config must include 'type' key")
+
+                    self.fields[field_name] = field_spec["type"]
+
+                    if "default" in field_spec:
+                        if self.field_defaults is None:
+                            self.field_defaults = {}
+                        self.field_defaults[field_name] = field_spec["default"]
+
+                    if "comment" in field_spec:
+                        if not hasattr(self, "field_comments") or self.field_comments is None:
+                            self.field_comments = {}
+                        self.field_comments[field_name] = field_spec["comment"]
+                else:
+                    raise ValueError(f"Field '{field_name}' spec must be string or dict, got {type(field_spec)}")
+
+        # Update field_order with new fields
+        if fields_to_add:
+            new_field_names = [field_name for field_name, _ in fields_to_add]
+            if prepend:
+                self.field_order = new_field_names + self.field_order
+            else:
+                self.field_order.extend(new_field_names)
 
     def __repr__(self) -> str:
-        field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
-        return f"StructType({self.name}, fields=[{', '.join(field_strs)}])"
+        """String representation showing struct type with field information."""
+        field_strs = []
+        for field_name in self.field_order:
+            field_type = self.fields[field_name]
+            field_strs.append(f"{field_name}: {field_type}")
+
+        fields_repr = "{" + ", ".join(field_strs) + "}"
+        return f"StructType(name='{self.name}', fields={fields_repr})"
 
 
 class StructInstance:
     """Runtime representation of a struct instance (Go-style data container)."""
 
-    def __init__(self, struct_type: StructType, values: dict[str, Any]):
+    def __init__(self, struct_type: StructType, values: dict[str, Any], registry: Optional["StructRegistry"] = None):
         """Create a new struct instance.
 
         Args:
@@ -178,6 +270,61 @@ class StructInstance:
             field_type = struct_type.fields.get(field_name)
             coerced_values[field_name] = self._coerce_value(value, field_type)
         self._values = coerced_values
+        self._registry = registry
+        self._is_initialized = False
+        self._is_registered = False
+
+        # -- allow implicit instance_id --
+        # self.__dict__['instance_id'] = f"{self._type.name}_{id(self)}"
+        self.instance_id = f"{self._type.name}_{id(self)}"
+
+        self.initialize()
+
+    def initialize(self) -> None:
+        """Initialize the struct instance."""
+        if not self._is_initialized:
+            if self._registry is not None and not self._is_registered:
+                self._registry.track_instance(self)
+                self._is_registered = True
+
+            self._is_initialized = True
+
+    def cleanup(self) -> None:
+        """Cleanup the struct instance."""
+        # Very defensively access attributes since we could be called during/after __del__()
+        registry = getattr(self, "_registry", None)
+        is_registered = getattr(self, "_is_registered", False)
+        instance_id = getattr(self, "instance_id", None)
+
+        if registry is not None and is_registered and instance_id:
+            registry.untrack_instance(instance_id)
+            setattr(self, "_is_registered", False)
+
+    def __enter__(self) -> "StructInstance":
+        """Enter the context of the struct instance."""
+        self.initialize()
+        return super().__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the context of the struct instance."""
+        self.cleanup()
+        return super().__exit__(exc_type, exc_value, traceback)
+
+    def __del__(self) -> None:
+        """Delete the struct instance."""
+        try:
+            self.cleanup()
+        except Exception:
+            # Avoid exceptions in __del__ as they can cause issues
+            pass  # Ignore errors in GC
+
+    async def __aenter__(self) -> "StructInstance":
+        """Async enter the context of the struct instance."""
+        return self.__enter__()
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        """Async exit the context of the struct instance."""
+        return self.__exit__(exc_type, exc_value, traceback)
 
     @property
     def struct_type(self) -> StructType:
@@ -189,14 +336,139 @@ class StructInstance:
         """Get the struct type definition (for compatibility with method calls)."""
         return self._type
 
+    def _get_delegatable_fields(self) -> list[str]:
+        """Get list of delegatable fields (those with underscore prefix) in declaration order.
+
+        Returns:
+            List of field names that are delegatable (start with underscore)
+        """
+        return [field_name for field_name in self._type.field_order if field_name.startswith("_")]
+
+    def _find_delegated_field_access(self, field_name: str) -> tuple[Any, str] | None:
+        """Find if a field can be accessed through delegation.
+
+        Args:
+            field_name: The field name to look for
+
+        Returns:
+            Tuple of (delegated_object, field_name) if found, None otherwise
+        """
+        for delegatable_field in self._get_delegatable_fields():
+            delegated_object = self._values.get(delegatable_field)
+            if delegated_object is not None and hasattr(delegated_object, field_name):
+                return delegated_object, field_name
+        return None
+
+    def _find_delegated_method_access(self, method_name: str) -> tuple[Any, str] | None:
+        """Find if a method can be accessed through delegation.
+
+        Args:
+            method_name: The method name to look for
+
+        Returns:
+            Tuple of (delegated_object, method_name) if found, None otherwise
+        """
+        for delegatable_field in self._get_delegatable_fields():
+            delegated_object = self._values.get(delegatable_field)
+            if delegated_object is not None:
+                # Check if it's a struct instance with registered methods
+                if hasattr(delegated_object, "__struct_type__"):
+                    delegated_struct_type = delegated_object.__struct_type__
+                    from dana.registry import STRUCT_FUNCTION_REGISTRY
+
+                    if STRUCT_FUNCTION_REGISTRY.has_method(delegated_struct_type.name, method_name):
+                        return delegated_object, method_name
+
+                # Also check for direct callable attributes (for non-struct objects)
+                if hasattr(delegated_object, method_name):
+                    attr = getattr(delegated_object, method_name)
+                    if callable(attr):
+                        return delegated_object, method_name
+        return None
+
     def __getattr__(self, name: str) -> Any:
-        """Get field value using dot notation."""
+        """Get field value using dot notation with delegation support."""
+
+        # 1) Prevent recursion during early initialization (before _values exists)
+        if "_values" not in self.__dict__:
+            return super().__getattribute__(name)
+
+        # 2) Allow access to internal bookkeeping attributes
+        if name.startswith("_") and name in ["_type", "_values", "_llm_resource"]:
+            return super().__getattribute__(name)
+
+        # 3) Access declared struct fields directly
+        if name in self._type.fields:
+            return self._values.get(name)
+
+        # 4) Try field/method delegation
+        delegation_result = self._find_delegated_field_access(name)
+        if delegation_result is not None:
+            delegated_object, field_name = delegation_result
+            return getattr(delegated_object, field_name)
+
+        method_delegation_result = self._find_delegated_method_access(name)
+        if method_delegation_result is not None:
+            delegated_object, method_name = method_delegation_result
+            return getattr(delegated_object, method_name)
+
+        # 5) Fallback: allow access to private attributes that aren't struct fields
         if name.startswith("_"):
+            return super().__getattribute__(name)
+
+        # 6) Otherwise: raise helpful struct field error
+        available_fields = sorted(self._type.fields.keys())
+        suggestion = self._find_similar_field(name, available_fields)
+        suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
+
+        delegatable_fields = self._get_delegatable_fields()
+        if delegatable_fields:
+            available_delegated_fields = []
+            for delegatable_field in delegatable_fields:
+                delegated_object = self._values.get(delegatable_field)
+                if delegated_object is not None:
+                    if hasattr(delegated_object, "__dict__"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{attr}" for attr in vars(delegated_object)])
+                    elif hasattr(delegated_object, "_type") and hasattr(delegated_object._type, "fields"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{field}" for field in delegated_object._type.fields])
+            if available_delegated_fields:
+                suggestion_text += f" Available through delegation: {sorted(available_delegated_fields)[:5]}"
+
+        raise AttributeError(
+            f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+        )
+
+    def __deprecated_getattr__(self, name: str) -> Any:
+        """Get field value using dot notation with delegation support."""
+        # If runtime is still initializing (e.g. before _values exists),
+        # # delegate to default Python lookup to avoid recursion
+        if "_values" not in self.__dict__:
+            return super().__getattribute__(name)
+
+        # Special handling for truly internal attributes (like _type, _values)
+        if name.startswith("_") and name in ["_type", "_values"]:
             # Allow access to internal attributes
             return super().__getattribute__(name)
 
         if name in self._type.fields:
             return self._values.get(name)
+
+        # Try delegation for field access
+        delegation_result = self._find_delegated_field_access(name)
+        if delegation_result is not None:
+            delegated_object, field_name = delegation_result
+            return getattr(delegated_object, field_name)
+
+        # Try delegation for method access
+        method_delegation_result = self._find_delegated_method_access(name)
+        if method_delegation_result is not None:
+            delegated_object, method_name = method_delegation_result
+            return getattr(delegated_object, method_name)
+
+        # If it's an underscore field that doesn't exist in struct fields,
+        # fall back to Python attribute access
+        if name.startswith("_"):
+            return super().__getattribute__(name)
 
         available_fields = sorted(self._type.fields.keys())
 
@@ -204,11 +476,28 @@ class StructInstance:
         suggestion = self._find_similar_field(name, available_fields)
         suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-        raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
+        # Enhanced error message that mentions delegation
+        delegatable_fields = self._get_delegatable_fields()
+        if delegatable_fields:
+            available_delegated_fields = []
+            for delegatable_field in delegatable_fields:
+                delegated_object = self._values.get(delegatable_field)
+                if delegated_object is not None:
+                    if hasattr(delegated_object, "__dict__"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{attr}" for attr in vars(delegated_object)])
+                    elif hasattr(delegated_object, "_type") and hasattr(delegated_object._type, "fields"):
+                        available_delegated_fields.extend([f"{delegatable_field}.{field}" for field in delegated_object._type.fields])
+
+            if available_delegated_fields:
+                suggestion_text += f" Available through delegation: {sorted(available_delegated_fields)[:5]}"
+
+        raise AttributeError(
+            f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+        )
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """Set field value using dot notation."""
-        if name.startswith("_"):
+        """Set field value using dot notation with delegation support."""
+        if name.startswith("_") or name == "instance_id":
             # Allow setting internal attributes
             super().__setattr__(name, value)
             return
@@ -225,6 +514,13 @@ class StructInstance:
                 )
             self._values[name] = value
         elif hasattr(self, "_type"):
+            # Try delegation for field assignment
+            delegation_result = self._find_delegated_field_access(name)
+            if delegation_result is not None:
+                delegated_object, field_name = delegation_result
+                setattr(delegated_object, field_name, value)
+                return
+
             # Struct type is initialized, reject unknown fields
             available_fields = sorted(self._type.fields.keys())
 
@@ -232,7 +528,9 @@ class StructInstance:
             suggestion = self._find_similar_field(name, available_fields)
             suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-            raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
+            raise AttributeError(
+                f"Struct '{self._type.name}' has no field or delegated access '{name}'.{suggestion_text} Available fields: {available_fields}"
+            )
         else:
             # Struct type not yet initialized (during __init__)
             super().__setattr__(name, value)
@@ -241,6 +539,11 @@ class StructInstance:
         """Coerce a value to the expected field type if possible."""
         if field_type is None:
             return value
+
+        # Handle None values - None can be assigned to any type
+        # This allows for optional/nullable types in Dana
+        if value is None:
+            return None
 
         # Numeric coercion: int → float
         if field_type == "float" and isinstance(value, int):
@@ -349,223 +652,7 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
-class MethodRegistry:
-    """Global registry for struct methods with explicit receivers."""
-
-    _instance: Optional["MethodRegistry"] = None
-    _methods: dict[tuple[str, str], Any] = {}  # (type_name, method_name) -> DanaFunction
-
-    def __new__(cls) -> "MethodRegistry":
-        """Singleton pattern for global registry."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    @classmethod
-    def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
-        """Register a method for one or more receiver types.
-
-        Args:
-            receiver_types: List of struct type names (from union types)
-            method_name: Name of the method
-            function: The DanaFunction to register
-        """
-        for type_name in receiver_types:
-            key = (type_name, method_name)
-            if key in cls._methods:
-                raise ValueError(f"Method '{method_name}' already defined for type '{type_name}'")
-            cls._methods[key] = function
-
-    @classmethod
-    def get_method(cls, type_name: str, method_name: str) -> Any | None:
-        """Get a method for a specific type."""
-        return cls._methods.get((type_name, method_name))
-
-    @classmethod
-    def has_method(cls, type_name: str, method_name: str) -> bool:
-        """Check if a method exists for a type."""
-        return (type_name, method_name) in cls._methods
-
-    @classmethod
-    def get_methods_for_type(cls, type_name: str) -> dict[str, Any]:
-        """Get all methods for a specific type."""
-        return {method_name: func for (t_name, method_name), func in cls._methods.items() if t_name == type_name}
-
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered methods (for testing)."""
-        cls._methods.clear()
-
-
-class StructTypeRegistry:
-    """Global registry for struct types."""
-
-    _instance: Optional["StructTypeRegistry"] = None
-    _types: dict[str, StructType] = {}
-
-    def __new__(cls) -> "StructTypeRegistry":
-        """Singleton pattern for global registry."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    @classmethod
-    def register(cls, struct_type: StructType) -> None:
-        """Register a new struct type."""
-        if struct_type.name in cls._types:
-            # Check if this is the same struct definition
-            existing_struct = cls._types[struct_type.name]
-            if existing_struct.fields == struct_type.fields and existing_struct.field_order == struct_type.field_order:
-                # Same struct definition - allow idempotent registration
-                return
-            else:
-                raise ValueError(
-                    f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique."
-                )
-
-        cls._types[struct_type.name] = struct_type
-
-    @classmethod
-    def get(cls, struct_name: str) -> StructType | None:
-        """Get a struct type by name."""
-        return cls._types.get(struct_name)
-
-    @classmethod
-    def exists(cls, struct_name: str) -> bool:
-        """Check if a struct type is registered."""
-        return struct_name in cls._types
-
-    @classmethod
-    def list_types(cls) -> list[str]:
-        """Get list of all registered struct type names."""
-        return sorted(cls._types.keys())
-
-    @classmethod
-    def clear(cls) -> None:
-        """Clear all registered struct types (for testing)."""
-        cls._types.clear()
-
-    @classmethod
-    def create_instance(cls, struct_name: str, values: dict[str, Any]) -> StructInstance:
-        """Create a struct instance by name."""
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
-
-        # Check if this is an agent struct type
-        from dana.agent import AgentStructType, AgentStructInstance
-
-        if isinstance(struct_type, AgentStructType):
-            return AgentStructInstance(struct_type, values)
-        else:
-            return StructInstance(struct_type, values)
-
-    @classmethod
-    def get_schema(cls, struct_name: str) -> dict[str, Any]:
-        """Get JSON schema for a struct type.
-
-        Args:
-            struct_name: Name of the struct type
-
-        Returns:
-            JSON schema dictionary for the struct
-
-        Raises:
-            ValueError: If struct type not found
-        """
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
-
-        # Generate JSON schema
-        properties = {}
-        required = []
-
-        for field_name in struct_type.field_order:
-            field_type = struct_type.fields[field_name]
-            properties[field_name] = cls._type_to_json_schema(field_type)
-            required.append(field_name)
-
-        return {
-            "type": "object",
-            "properties": properties,
-            "required": required,
-            "additionalProperties": False,
-            "title": struct_name,
-            "description": f"Schema for {struct_name} struct",
-        }
-
-    @classmethod
-    def _type_to_json_schema(cls, type_name: str) -> dict[str, Any]:
-        """Convert Dana type name to JSON schema type definition."""
-        type_mapping = {
-            "str": {"type": "string"},
-            "int": {"type": "integer"},
-            "float": {"type": "number"},
-            "bool": {"type": "boolean"},
-            "list": {"type": "array"},
-            "dict": {"type": "object"},
-            "any": {},  # Accept any type
-        }
-
-        # Check for built-in types first
-        if type_name in type_mapping:
-            return type_mapping[type_name]
-
-        # Check for registered struct types
-        if cls.exists(type_name):
-            return {"type": "object", "description": f"Reference to {type_name} struct", "$ref": f"#/definitions/{type_name}"}
-
-        # Unknown type - treat as any
-        return {"description": f"Unknown type: {type_name}"}
-
-    @classmethod
-    def validate_json(cls, json_data: dict[str, Any], struct_name: str) -> bool:
-        """Validate JSON data against struct schema.
-
-        Args:
-            json_data: JSON data to validate
-            struct_name: Name of the struct type to validate against
-
-        Returns:
-            True if valid
-
-        Raises:
-            ValueError: If validation fails or struct type not found
-        """
-        struct_type = cls.get(struct_name)
-        if struct_type is None:
-            available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
-
-        # Use existing struct validation
-        try:
-            struct_type.validate_instantiation(json_data)
-            return True
-        except ValueError as e:
-            raise ValueError(f"JSON validation failed for struct '{struct_name}': {e}")
-
-    @classmethod
-    def create_instance_from_json(cls, json_data: dict[str, Any], struct_name: str) -> StructInstance:
-        """Create struct instance from validated JSON data.
-
-        Args:
-            json_data: JSON data to convert
-            struct_name: Name of the struct type
-
-        Returns:
-            StructInstance created from JSON data
-
-        Raises:
-            ValueError: If validation fails or struct type not found
-        """
-        # Validate first
-        cls.validate_json(json_data, struct_name)
-
-        # Create instance
-        return cls.create_instance(struct_name, json_data)
+# === Utility Functions (restored for backward compatibility) ===
 
 
 def create_struct_type_from_ast(struct_def, context=None) -> StructType:
@@ -608,22 +695,26 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
 
     return StructType(
         name=struct_def.name,
+        instance_id=f"{struct_def.name}_{id(struct_def)}",  # TODO: is this for the type or the instance?
         fields=fields,
         field_order=field_order,
-        field_defaults=field_defaults or None,
+        field_defaults=field_defaults if field_defaults else None,
         field_comments=field_comments,
         docstring=struct_def.docstring,
     )
 
 
-# Convenience functions for common operations
 def register_struct_from_ast(struct_def) -> StructType:
     """Register a struct type from AST definition."""
     struct_type = create_struct_type_from_ast(struct_def)
-    StructTypeRegistry.register(struct_type)
+    from dana.registry import TYPE_REGISTRY
+
+    TYPE_REGISTRY.register(struct_type)
     return struct_type
 
 
 def create_struct_instance(struct_name: str, **kwargs) -> StructInstance:
     """Create a struct instance with keyword arguments."""
-    return StructTypeRegistry.create_instance(struct_name, kwargs)
+    from dana.registry import TYPE_REGISTRY
+
+    return TYPE_REGISTRY.create_instance(struct_name, kwargs)

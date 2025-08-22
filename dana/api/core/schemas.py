@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Union
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AgentBase(BaseModel):
@@ -90,6 +91,7 @@ class DocumentRead(DocumentBase):
     filename: str
     file_size: int
     mime_type: str
+    source_document_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -100,6 +102,12 @@ class DocumentUpdate(BaseModel):
     original_filename: str | None = None
     topic_id: int | None = None
     agent_id: int | None = None
+
+
+class ExtractionDataRequest(BaseModel):
+    original_filename: str
+    extraction_results: dict
+    source_document_id: int  # ID of the raw PDF file
 
 
 class RunNAFileRequest(BaseModel):
@@ -160,8 +168,26 @@ class ChatRequest(BaseModel):
 
     message: str
     conversation_id: int | None = None
-    agent_id: int
+    agent_id: Union[int, str]  # Support both integer IDs and string keys for prebuilt agents
     context: dict[str, Any] | None = None
+    websocket_id: str | None = None
+
+    @field_validator("agent_id")
+    @classmethod
+    def validate_agent_id(cls, v):
+        """Validate agent_id field"""
+        if isinstance(v, int):
+            if v <= 0:
+                raise ValueError("agent_id must be a positive integer")
+        elif isinstance(v, str):
+            if not v.strip():
+                raise ValueError("agent_id string cannot be empty")
+            # For string agent_ids, they should be numeric (representing a number) or valid prebuilt agent keys
+            if not v.isdigit() and not v.replace("_", "").isalnum():
+                raise ValueError("agent_id string must be numeric or a valid prebuilt agent key (alphanumeric with underscores)")
+        else:
+            raise ValueError("agent_id must be either an integer or a string")
+        return v
 
 
 class ChatResponse(BaseModel):
@@ -182,6 +208,8 @@ class MessageData(BaseModel):
 
     role: str  # 'user' or 'assistant'
     content: str
+    require_user: bool = False
+    treat_as_tool: bool = False
 
 
 class AgentGenerationRequest(BaseModel):
@@ -426,3 +454,153 @@ class KnowledgeUploadRequest(BaseModel):
     agent_folder: str | None = None
     conversation_context: list[MessageData] | None = None  # Current conversation
     agent_info: dict | None = None  # Current agent info for regeneration
+
+
+# Domain Knowledge Schemas
+class DomainNode(BaseModel):
+    """A single node in the domain knowledge tree"""
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    topic: str
+    children: list[DomainNode] = []
+
+
+class DomainKnowledgeTree(BaseModel):
+    """Complete domain knowledge tree structure"""
+
+    root: DomainNode
+    last_updated: datetime | None = None
+    version: int = 1
+
+
+class IntentDetectionRequest(BaseModel):
+    """Request for LLM-based intent detection"""
+
+    user_message: str
+    chat_history: list[MessageData] = []
+    current_domain_tree: DomainKnowledgeTree | None = None
+    agent_id: int
+
+    def get_conversation_str(self, include_latest_user_message: bool = True) -> str:
+        conversation = ""
+        for i, message in enumerate(self.chat_history):
+            conversation += f"{message.role}: {message.content}{'\n' if i % 2 == 0 else '\n\n'}"
+        if include_latest_user_message:
+            conversation += f"user: {self.user_message}"
+        return conversation
+
+
+class IntentDetectionResponse(BaseModel):
+    """Response from LLM intent detection"""
+
+    intent: str  # 'add_information', 'refresh_domain_knowledge', 'general_query'
+    entities: dict[str, Any] = {}  # Extracted entities (topic, parent, etc.)
+    confidence: float | None = None
+    explanation: str | None = None
+    additional_data: dict[str, Any] = {}  # Store additional intents and other data
+
+
+class DomainKnowledgeUpdateRequest(BaseModel):
+    """Request to update domain knowledge tree"""
+
+    agent_id: int
+    intent: str
+    entities: dict[str, Any] = {}
+    user_message: str = ""
+
+
+class DomainKnowledgeUpdateResponse(BaseModel):
+    """Response for domain knowledge update"""
+
+    success: bool
+    updated_tree: DomainKnowledgeTree | None = None
+    changes_summary: str | None = None
+    error: str | None = None
+
+
+class DomainKnowledgeVersionRead(BaseModel):
+    """Read schema for domain knowledge version"""
+
+    id: int
+    agent_id: int
+    version: int
+    change_summary: str | None
+    change_type: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DomainKnowledgeVersionWithTree(DomainKnowledgeVersionRead):
+    """Domain knowledge version with tree data included"""
+
+    tree_data: dict[str, Any]
+
+
+class RevertDomainKnowledgeRequest(BaseModel):
+    """Request to revert domain knowledge to a specific version"""
+
+    version_id: int
+
+
+class ChatWithIntentRequest(BaseModel):
+    """Extended chat request with intent detection"""
+
+    message: str
+    conversation_id: int | None = None
+    agent_id: int
+    context: dict[str, Any] = {}
+    detect_intent: bool = True  # Whether to run intent detection
+
+
+class ChatWithIntentResponse(BaseModel):
+    """Extended chat response with intent handling"""
+
+    success: bool
+    message: str
+    conversation_id: int
+    message_id: int
+    agent_response: str
+    context: dict[str, Any] = {}
+
+    # Intent detection results
+    detected_intent: str | None = None
+    domain_tree_updated: bool = False
+    updated_tree: DomainKnowledgeTree | None = None
+
+    error: str | None = None
+
+
+# Visual Document Extraction schemas
+class DeepExtractionRequest(BaseModel):
+    """Request schema for visual document extraction endpoint"""
+
+    document_id: int
+    prompt: str | None = None
+    use_deep_extraction: bool = False
+    config: dict[str, Any] | None = None
+
+
+class PageContent(BaseModel):
+    """Schema for a single page content"""
+
+    page_number: int
+    page_content: str
+    page_hash: str
+
+
+class FileObject(BaseModel):
+    """Schema for file object in extraction response"""
+
+    file_name: str
+    cache_key: str
+    total_pages: int
+    total_words: int
+    file_full_path: str
+    pages: list[PageContent]
+
+
+class ExtractionResponse(BaseModel):
+    """Response schema for deep extraction endpoint"""
+
+    file_object: FileObject

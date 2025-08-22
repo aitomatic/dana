@@ -26,7 +26,7 @@ class TestImportEdgeCases:
 
         for invalid_name in invalid_names:
             try:
-                result = self.sandbox.eval(f"import {invalid_name}")
+                result = self.sandbox.execute_string(f"import {invalid_name}")
                 # Should either fail at parse time or import time
                 if result.success:
                     pytest.fail(f"Expected import of '{invalid_name}' to fail, but it succeeded")
@@ -36,7 +36,7 @@ class TestImportEdgeCases:
 
     def test_from_import_nonexistent_attribute(self):
         """Test importing non-existent attributes from valid modules."""
-        result = self.sandbox.eval("from math.py import nonexistent_function")
+        result = self.sandbox.execute_string("from math.py import nonexistent_function")
 
         assert result.success is False
         assert "cannot import name" in str(result.error).lower()
@@ -51,8 +51,8 @@ class TestImportEdgeCases:
     def test_import_case_sensitivity(self):
         """Test that module imports are case sensitive."""
         # Try importing with wrong case
-        result1 = self.sandbox.eval("import MATH.py")  # Should fail
-        result2 = self.sandbox.eval("import Math.py")  # Should fail
+        result1 = self.sandbox.execute_string("import MATH.py")  # Should fail
+        result2 = self.sandbox.execute_string("import Math.py")  # Should fail
 
         assert result1.success is False
         assert result2.success is False
@@ -69,39 +69,39 @@ class TestImportEdgeCases:
         ]
 
         for alias in valid_aliases:
-            result = self.sandbox.eval(f"import math.py as {alias}")
+            result = self.sandbox.execute_string(f"import math.py as {alias}")
             assert result.success is True, f"Valid alias '{alias}' should work"
 
     def test_import_alias_overwrites_existing_variable(self):
         """Test that import aliases can overwrite existing variables."""
         # Set a variable
-        result1 = self.sandbox.eval("x = 42")
+        result1 = self.sandbox.execute_string("x = 42")
         assert result1.success is True
 
         # Import with same name
-        result2 = self.sandbox.eval("import math.py as x")
+        result2 = self.sandbox.execute_string("import math.py as x")
         assert result2.success is True
 
         # Check that x is now the math module
-        result3 = self.sandbox.eval("x.pi")
+        result3 = self.sandbox.execute_string("x.pi")
         assert result3.success is True
         assert abs(result3.result - 3.141592653589793) < 1e-10
 
     def test_multiple_imports_same_module(self):
         """Test importing the same module multiple times."""
         # Import same module multiple times
-        result1 = self.sandbox.eval("import math.py")
-        result2 = self.sandbox.eval("import math.py as m")
-        result3 = self.sandbox.eval("from math.py import pi")
+        result1 = self.sandbox.execute_string("import math.py")
+        result2 = self.sandbox.execute_string("import math.py as m")
+        result3 = self.sandbox.execute_string("from math.py import pi")
 
         assert result1.success is True
         assert result2.success is True
         assert result3.success is True
 
         # All should work
-        pi1 = self.sandbox.eval("math.pi")
-        pi2 = self.sandbox.eval("m.pi")
-        pi3 = self.sandbox.eval("pi")
+        pi1 = self.sandbox.execute_string("math.pi")
+        pi2 = self.sandbox.execute_string("m.pi")
+        pi3 = self.sandbox.execute_string("pi")
 
         assert pi1.success is True
         assert pi2.success is True
@@ -117,7 +117,7 @@ class TestImportEdgeCases:
         """Test that 'from module import *' is properly handled."""
         # This should either fail with parse error or specific error message
         try:
-            result = self.sandbox.eval("from math.py import *")
+            result = self.sandbox.execute_string("from math.py import *")
             # If it parses, it should fail with appropriate error
             assert result.success is False
             assert "not supported" in str(result.error).lower() or "unexpected" in str(result.error).lower()
@@ -129,7 +129,7 @@ class TestImportEdgeCases:
         """Test importing modules with long paths."""
         # Test with very long (but valid) module name
         long_name = "a" * 100 + ".py"
-        result = self.sandbox.eval(f"import {long_name}")
+        result = self.sandbox.execute_string(f"import {long_name}")
 
         assert result.success is False
         assert any(phrase in str(result.error).lower() for phrase in ["not found", "no module named"])
@@ -145,7 +145,7 @@ class TestImportEdgeCases:
 
         for invalid_import in invalid_aliases:
             try:
-                result = self.sandbox.eval(invalid_import)
+                result = self.sandbox.execute_string(invalid_import)
                 # Should either fail at parse or import time
                 if result.success:
                     pytest.fail(f"Expected '{invalid_import}' to fail, but it succeeded")
@@ -164,7 +164,7 @@ class TestImportEdgeCases:
         ]
 
         for module_name in keyword_modules:
-            result = self.sandbox.eval(f"import {module_name}")
+            result = self.sandbox.execute_string(f"import {module_name}")
             # These should fail (module not found)
             assert result.success is False
 
@@ -177,7 +177,7 @@ class TestImportEdgeCases:
         ]
 
         for module_name in unicode_modules:
-            result = self.sandbox.eval(f"import {module_name}")
+            result = self.sandbox.execute_string(f"import {module_name}")
             # These should fail (module not found), but shouldn't crash the parser
             assert result.success is False
 
@@ -186,14 +186,14 @@ class TestImportEdgeCases:
         # Test various error scenarios and check message quality
 
         # Module not found
-        result1 = self.sandbox.eval("import nonexistent.py")
+        result1 = self.sandbox.execute_string("import nonexistent.py")
         assert result1.success is False
         error_msg1 = str(result1.error).lower()
         assert any(phrase in error_msg1 for phrase in ["not found", "no module named", "cannot find"])
         assert "nonexistent" in error_msg1
 
         # From-import name not found
-        result2 = self.sandbox.eval("from math.py import nonexistent")
+        result2 = self.sandbox.execute_string("from math.py import nonexistent")
         assert result2.success is False
         error_msg2 = str(result2.error).lower()
         assert "cannot import name" in error_msg2
@@ -206,31 +206,31 @@ class TestImportEdgeCases:
         sandbox2 = DanaSandbox()
 
         # Import in sandbox1
-        result1 = sandbox1.eval("import math.py as mathematics")
+        result1 = sandbox1.execute_string("import math.py as mathematics")
         assert result1.success is True
 
         # Verify it works in sandbox1
-        pi_result1 = sandbox1.eval("mathematics.pi")
+        pi_result1 = sandbox1.execute_string("mathematics.pi")
         assert pi_result1.success is True
 
         # Verify it doesn't exist in sandbox2
-        pi_result2 = sandbox2.eval("mathematics.pi")
+        pi_result2 = sandbox2.execute_string("mathematics.pi")
         assert pi_result2.success is False
 
         # Import different alias in sandbox2
-        result2 = sandbox2.eval("import math.py as calc")
+        result2 = sandbox2.execute_string("import math.py as calc")
         assert result2.success is True
 
         # Verify both work correctly in their respective sandboxes
-        pi_result1_again = sandbox1.eval("mathematics.pi")
-        pi_result2_new = sandbox2.eval("calc.pi")
+        pi_result1_again = sandbox1.execute_string("mathematics.pi")
+        pi_result2_new = sandbox2.execute_string("calc.pi")
 
         assert pi_result1_again.success is True
         assert pi_result2_new.success is True
 
         # And that they're still isolated
-        calc_in_1 = sandbox1.eval("calc.pi")
-        math_in_2 = sandbox2.eval("mathematics.pi")
+        calc_in_1 = sandbox1.execute_string("calc.pi")
+        math_in_2 = sandbox2.execute_string("mathematics.pi")
 
         assert calc_in_1.success is False
         assert math_in_2.success is False

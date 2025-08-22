@@ -6,6 +6,9 @@ from pathlib import Path
 
 import pytest
 
+pytest_plugins = ["pytest_asyncio"]
+
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
@@ -46,7 +49,7 @@ def configure_test_logging():
     logging.getLogger("dana.dana").setLevel(logging.ERROR)
     logging.getLogger("dana.common").setLevel(logging.ERROR)
     logging.getLogger("dana.api").setLevel(logging.ERROR)
-    logging.getLogger("dana.common.resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("dana.common.sys_resource.llm_resource").setLevel(logging.ERROR)
     logging.getLogger("dana.api.client").setLevel(logging.ERROR)
     logging.getLogger("dana.api.server").setLevel(logging.ERROR)
 
@@ -84,6 +87,38 @@ def configure_llm_mocking(request):
         yield
         if original_value:
             os.environ["DANA_MOCK_LLM"] = original_value
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clear_promise_groups():
+    """Clear Promise groups at the start of each test session to prevent bleeding."""
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again at the end of the session
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def clear_promise_groups_per_test():
+    """Clear Promise groups before each test to prevent bleeding."""
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups before test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again after test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
 
 
 # Universal Dana (.na) file test integration
@@ -158,19 +193,36 @@ def run_dana_test_file(dana_test_file):
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
     # Clear struct registry to ensure test isolation
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry, MethodRegistry
-    from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+    from dana.__init__ import initialize_module_system, reset_module_system
+    from dana.registry import GLOBAL_REGISTRY
 
-    StructTypeRegistry.clear()
-    MethodRegistry.clear()
+    registry = GLOBAL_REGISTRY
+    registry.clear_all()
+
+    # Reload core functions after clearing
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+
+    do_register_py_builtins(registry.functions)
+    register_py_wrappers(registry.functions)
 
     # Initialize module system for tests that may use imports
     reset_module_system()
     initialize_module_system()
 
+    # Clear Promise group to prevent bleeding between tests
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear the thread-local Promise group
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
     sandbox = DanaSandbox()
     try:
-        result = sandbox.run_file(dana_test_file)
+        result = sandbox.execute_file(dana_test_file)
         assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
     finally:
         sandbox._cleanup()
+        # Clear Promise group again after test
+        if hasattr(_current_promise_group, "group"):
+            delattr(_current_promise_group, "group")

@@ -146,14 +146,14 @@ class PromptEnhancer(Loggable):
         """Get struct schema and type information."""
         try:
             # Import here to avoid circular imports
-            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            from dana.registry import TYPE_REGISTRY
 
-            if not StructTypeRegistry.exists(expected_type):
+            if not TYPE_REGISTRY.exists(expected_type):
                 self.debug(f"Unknown struct type: {expected_type}")
                 return None
 
-            struct_schema = StructTypeRegistry.get_schema(expected_type)
-            struct_type = StructTypeRegistry.get(expected_type)
+            struct_schema = TYPE_REGISTRY.get_schema(expected_type)
+            struct_type = TYPE_REGISTRY.get(expected_type)
 
             if not struct_schema or not struct_type:
                 self.debug(f"Could not get schema for struct type: {expected_type}")

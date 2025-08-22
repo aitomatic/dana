@@ -162,6 +162,9 @@ class TypeChecker:
             self.check_import_statement(statement)
         elif isinstance(statement, ImportFromStatement):
             self.check_import_from_statement(statement)
+        # Agent-related definitions are declarative; no static type checking required
+        elif self._is_agent_declarative(statement):
+            return
         elif isinstance(statement, Identifier):
             self.check_identifier(statement)
         elif isinstance(statement, AssertStatement):
@@ -184,6 +187,16 @@ class TypeChecker:
             pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
+
+    def _is_agent_declarative(self, statement: Any) -> bool:
+        try:
+            from dana.core.lang.ast import AgentDefinition as _AgentDef
+            from dana.core.lang.ast import BaseAgentSingletonDefinition as _BaseAgentSingletonDef
+            from dana.core.lang.ast import SingletonAgentDefinition as _SingletonAgentDef
+
+            return isinstance(statement, _AgentDef | _SingletonAgentDef | _BaseAgentSingletonDef)
+        except Exception:
+            return False
 
     def check_assignment(self, node: Assignment) -> None:
         """Check an assignment for type errors."""
@@ -568,6 +581,7 @@ class TypeChecker:
             BinaryOperator.SUBTRACT,
             BinaryOperator.MULTIPLY,
             BinaryOperator.DIVIDE,
+            BinaryOperator.FLOOR_DIVIDE,
             BinaryOperator.MODULO,
             BinaryOperator.POWER,
         ]:

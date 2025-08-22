@@ -13,10 +13,11 @@ import type {
   ConversationCreate,
   ConversationWithMessages,
 } from '@/types/conversation';
+import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-const API_TIMEOUT = 30000; // 30 seconds
+const API_TIMEOUT = 3000000; // 5 minutes
 
 // API Response Types
 export interface ApiResponse<T = any> {
@@ -70,8 +71,9 @@ export interface ApiError {
 export interface ChatRequest {
   message: string;
   conversation_id?: number;
-  agent_id: number;
+  agent_id: number | string; // Support both integer IDs and string keys for prebuilt agents
   context?: Record<string, any>;
+  websocket_id?: string;
 }
 
 export interface ChatResponse {
@@ -124,7 +126,7 @@ export interface MultiFileProject {
 
 export interface AgentGenerationResponse {
   success: boolean;
-  dana_code?: string;  // Optional in Phase 1
+  dana_code?: string; // Optional in Phase 1
   agent_name?: string;
   agent_description?: string;
   capabilities?: AgentCapabilities;
@@ -203,46 +205,10 @@ export interface CodeFixResponse {
   error?: string;
 }
 
-// Phase 1 specific schemas
-export interface AgentDescriptionRequest {
-  messages: MessageData[];
-  agent_id?: number;
-  agent_data?: any; // Current agent object for modification
-}
-
-export interface AgentDescriptionResponse {
-  success: boolean;
-  agent_id: number;
-  agent_name?: string;
-  agent_description?: string;
-  capabilities?: AgentCapabilities;
-  follow_up_message?: string;
-  suggested_questions?: string[];
-  ready_for_code_generation: boolean;
-  error?: string;
-  folder_path?: string;
-  agent_folder?: string;
-}
-
 // Phase 2 specific schemas
 export interface AgentCodeGenerationRequest {
   agent_id: number;
   multi_file?: boolean;
-}
-
-// Agent Deployment Types
-export interface AgentDeployRequest {
-  name: string;
-  description: string;
-  config: Record<string, any>;
-  dana_code?: string;
-  multi_file_project?: MultiFileProject;
-}
-
-export interface AgentDeployResponse {
-  success: boolean;
-  agent?: AgentRead;
-  error?: string;
 }
 
 // Agent Test API Types
@@ -253,6 +219,7 @@ export interface AgentTestRequest {
   agent_description?: string;
   context?: Record<string, any>;
   folder_path?: string;
+  websocket_id?: string;
 }
 
 export interface AgentTestResponse {
@@ -261,13 +228,68 @@ export interface AgentTestResponse {
   error?: string;
 }
 
+// Bulk Evaluation Types
+export interface BulkEvaluationQuestion {
+  question: string;
+  expected_answer?: string;
+  context?: string;
+  category?: string;
+}
+
+export interface BulkEvaluationRequest {
+  agent_code: string;
+  questions: BulkEvaluationQuestion[];
+  agent_name?: string;
+  agent_description?: string;
+  context?: Record<string, any>;
+  folder_path?: string;
+  websocket_id?: string;
+  batch_size?: number;
+}
+
+export interface BulkEvaluationResult {
+  question: string;
+  response: string;
+  response_time: number;
+  status: string;
+  error?: string;
+  expected_answer?: string;
+  question_index: number;
+}
+
+export interface BulkEvaluationResponse {
+  success: boolean;
+  results: BulkEvaluationResult[];
+  total_questions: number;
+  successful_count: number;
+  failed_count: number;
+  total_time: number;
+  average_response_time: number;
+  error?: string;
+}
+
+// Knowledge Status Types
+export interface KnowledgeTopicStatus {
+  id: string;
+  path: string;
+  file: string;
+  status: 'pending' | 'in_progress' | 'success' | 'failed';
+  last_generated: string | null;
+  last_topic_update: string;
+  error: string | null;
+}
+
+export interface KnowledgeStatusResponse {
+  topics: KnowledgeTopicStatus[];
+}
+
 export interface ProcessAgentDocumentsRequest {
   document_folder: string;
   conversation: string | string[];
   summary: string;
-  agent_data?: Record<string, any>;  // Include current agent data (name, description, capabilities, etc.)
-  current_code?: string;  // Current dana code to be updated
-  multi_file_project?: MultiFileProject;  // Current multi-file project structure
+  agent_data?: Record<string, any>; // Include current agent data (name, description, capabilities, etc.)
+  current_code?: string; // Current dana code to be updated
+  multi_file_project?: MultiFileProject; // Current multi-file project structure
 }
 
 export interface ProcessAgentDocumentsResponse {
@@ -277,8 +299,8 @@ export interface ProcessAgentDocumentsResponse {
   agent_description?: string;
   processing_details?: Record<string, any>;
   // Include updated code with RAG integration
-  dana_code?: string;  // Updated single-file code
-  multi_file_project?: MultiFileProject;  // Updated multi-file project with RAG integration
+  dana_code?: string; // Updated single-file code
+  multi_file_project?: MultiFileProject; // Updated multi-file project with RAG integration
   error?: string;
 }
 
@@ -373,8 +395,9 @@ class ApiService {
     return response.data;
   }
 
-  async deleteTopic(topicId: number): Promise<{ message: string }> {
-    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}`);
+  async deleteTopic(topicId: number, force: boolean = false): Promise<{ message: string }> {
+    const params = force ? '?force=true' : '';
+    const response = await this.client.delete<{ message: string }>(`/topics/${topicId}${params}`);
     return response.data;
   }
 
@@ -384,6 +407,7 @@ class ApiService {
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
+    if (filters?.agent_id) params.append('agent_id', filters.agent_id.toString());
 
     const response = await this.client.get<DocumentRead[]>(`/documents/?${params.toString()}`);
     return response.data;
@@ -409,6 +433,42 @@ class ApiService {
     return response.data;
   }
 
+  // Raw upload for a single file (no title/description required)
+  async uploadDocumentRaw(
+    file: File,
+    options?: { topic_id?: number; agent_id?: number; build_index?: boolean },
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.topic_id !== undefined) formData.append('topic_id', String(options.topic_id));
+    if (options?.agent_id !== undefined) formData.append('agent_id', String(options.agent_id));
+    if (options?.build_index !== undefined)
+      formData.append('build_index', String(options.build_index));
+    const response = await this.client.post<DocumentRead>('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  // Visual Document Deep Extraction
+  async deepExtract(request: {
+    document_id: number;
+    prompt?: string;
+    config?: Record<string, any>;
+  }): Promise<{
+    file_object: {
+      file_name: string;
+      cache_key: string;
+      total_pages: number;
+      total_words: number;
+      file_full_path: string;
+      pages: Array<{ page_number: number; page_content: string; page_hash: string }>;
+    };
+  }> {
+    const response = await this.client.post('/extract-documents/deep-extract', request);
+    return response.data;
+  }
+
   async updateDocument(documentId: number, document: DocumentUpdate): Promise<DocumentRead> {
     const response = await this.client.put<DocumentRead>(`/documents/${documentId}`, document);
     return response.data;
@@ -416,6 +476,16 @@ class ApiService {
 
   async deleteDocument(documentId: number): Promise<{ message: string }> {
     const response = await this.client.delete<{ message: string }>(`/documents/${documentId}`);
+    return response.data;
+  }
+
+  // Save extraction results as JSON file
+  async saveExtractionData(request: {
+    original_filename: string;
+    extraction_results: Record<string, any>;
+    source_document_id: number;
+  }): Promise<DocumentRead> {
+    const response = await this.client.post<DocumentRead>('/documents/save-extraction', request);
     return response.data;
   }
 
@@ -446,12 +516,6 @@ class ApiService {
     return response.data;
   }
 
-  // Agent Deployment API Methods
-  async deployAgent(request: AgentDeployRequest): Promise<AgentDeployResponse> {
-    const response = await this.client.post<AgentDeployResponse>('/agents/deploy', request);
-    return response.data;
-  }
-
   // File Operations API Methods
   async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
     const encodedPath = encodeURIComponent(filePath);
@@ -461,9 +525,7 @@ class ApiService {
     return response.data;
   }
 
-  async uploadKnowledgeFile(
-    formData: FormData,
-  ): Promise<{
+  async uploadKnowledgeFile(formData: FormData): Promise<{
     success: boolean;
     file_path?: string;
     error?: string;
@@ -499,32 +561,37 @@ class ApiService {
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
     const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
-      timeout: 300000,
-    });
-    return response.data;
-  }
-
-  // Phase 1: Agent description refinement
-  async describeAgent(request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
-    const response = await this.client.post<AgentDescriptionResponse>('/agents/describe', request, {
-      timeout: 300000,
+      timeout: API_TIMEOUT,
     });
     return response.data;
   }
 
   // Phase 2: Code generation from existing description
-  async generateAgentCode(agentId: number, request: AgentCodeGenerationRequest): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>(`/agents/${agentId}/generate-code`, request, {
-      timeout: 300000,
-    });
+  async generateAgentCode(
+    agentId: number,
+    request: AgentCodeGenerationRequest,
+  ): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(
+      `/agents/${agentId}/generate-code`,
+      request,
+      {
+        timeout: 3000000,
+      },
+    );
     return response.data;
   }
 
   // Process Agent Documents for Deep Training
-  async processAgentDocuments(request: ProcessAgentDocumentsRequest): Promise<ProcessAgentDocumentsResponse> {
-    const response = await this.client.post<ProcessAgentDocumentsResponse>('/agents/process-agent-documents', request, {
-      timeout: 600000, // 10 minutes timeout for document processing
-    });
+  async processAgentDocuments(
+    request: ProcessAgentDocumentsRequest,
+  ): Promise<ProcessAgentDocumentsResponse> {
+    const response = await this.client.post<ProcessAgentDocumentsResponse>(
+      '/agents/process-agent-documents',
+      request,
+      {
+        timeout: 600000, // 10 minutes timeout for document processing
+      },
+    );
     return response.data;
   }
 
@@ -543,17 +610,10 @@ class ApiService {
     };
     multi_file?: boolean;
   }): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>('/agents/generate-from-prompt', request, {
-      timeout: 300000,
-    });
-    return response.data;
-  }
-
-  // Update agent description during Phase 1
-  async updateAgentDescription(agentId: number, request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
-    const response = await this.client.post<AgentDescriptionResponse>(`/agents/${agentId}/update-description`, request, {
-      timeout: 300000,
-    });
+    const response = await this.client.post<AgentGenerationResponse>(
+      '/agents/generate-from-prompt',
+      request,
+    );
     return response.data;
   }
 
@@ -566,7 +626,14 @@ class ApiService {
   // Agent Test API Methods
   async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
     const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
-      timeout: 300000,
+      timeout: 3000000,
+    });
+    return response.data;
+  }
+
+  async bulkEvaluateAgent(request: BulkEvaluationRequest): Promise<BulkEvaluationResponse> {
+    const response = await this.client.post<BulkEvaluationResponse>('/agent-test/bulk', request, {
+      timeout: 3000000,
     });
     return response.data;
   }
@@ -636,6 +703,165 @@ class ApiService {
       console.warn('API not available:', error);
       return false;
     }
+  }
+
+  async uploadAgentDocument(
+    agentId: string | number,
+    file: File,
+    topicId?: string | number,
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (topicId) formData.append('topic_id', topicId.toString());
+    const response = await this.client.post<DocumentRead>(
+      `/agents/${agentId}/documents`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+    return response.data;
+  }
+
+  async smartChat(agentId: string | number, message: string, conversationId?: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/smart-chat`, {
+      message,
+      conversation_id: conversationId,
+    });
+    return response.data;
+  }
+
+  async getSmartChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=smart_chat`);
+    return response.data; // Should be an array of { sender, text }
+  }
+
+  async getTestChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=test_chat`);
+    return response.data; // Should be an array of { sender, text, created_at }
+  }
+
+  async getAllChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=all`);
+    return response.data; // Should be an array of { sender, text, type, created_at }
+  }
+
+  async getDomainKnowledge(agentId: string | number): Promise<DomainKnowledgeResponse> {
+    const response = await this.client.get(`/agents/${agentId}/domain-knowledge`);
+    return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
+  }
+
+  // Agent File Management API Methods
+  async getAgentFiles(agentId: number): Promise<{
+    files: Array<{
+      name: string;
+      path: string;
+      full_path: string;
+      size: number;
+      modified: number;
+      type: 'dana' | 'document' | 'other';
+    }>;
+    message?: string;
+  }> {
+    const response = await this.client.get(`/agents/${agentId}/files`);
+    return response.data;
+  }
+
+  async getAgentFileContent(
+    agentId: number,
+    filePath: string,
+  ): Promise<{
+    content: string;
+    encoding: string;
+    file_path: string;
+    file_name: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.get(`/agents/${agentId}/files/${encodedPath}`);
+    return response.data;
+  }
+
+  async updateAgentFileContent(
+    agentId: number,
+    filePath: string,
+    content: string,
+    encoding: string = 'utf-8',
+  ): Promise<{
+    success: boolean;
+    message: string;
+    file_path: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.put(`/agents/${agentId}/files/${encodedPath}`, {
+      content,
+      encoding,
+    });
+    return response.data;
+  }
+
+  async generateKnowledge(agentId: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/generate-knowledge`);
+    return response.data;
+  }
+
+  async getKnowledgeStatus(agentId: string | number): Promise<KnowledgeStatusResponse> {
+    const response = await this.client.get(`/agents/${agentId}/knowledge-status`);
+    return response.data;
+  }
+
+  async getTopicKnowledgeContent(
+    agentId: string | number,
+    topicPath: string,
+  ): Promise<{
+    success: boolean;
+    topic_path: string;
+    content?: any;
+    message?: string;
+    file_path?: string;
+  }> {
+    const encodedTopicPath = encodeURIComponent(topicPath);
+    const response = await this.client.get(
+      `/agents/${agentId}/knowledge-content/${encodedTopicPath}`,
+    );
+    return response.data;
+  }
+
+  async testAgentById(
+    agentId: string | number,
+    message: string,
+    context?: Record<string, any>,
+    websocket_id?: string,
+  ): Promise<{
+    success: boolean;
+    agent_response: string;
+    error?: string;
+    agent_id: number;
+    agent_name: string;
+  }> {
+    const response = await this.client.post(`/agents/${agentId}/test`, {
+      message,
+      context: context || { user_id: 'test_user', session_id: 'chat_session' },
+      websocket_id,
+    });
+    return response.data;
+  }
+
+  // Get prebuilt agents for the Explore tab
+  async getPrebuiltAgents(): Promise<any[]> {
+    const response = await this.client.get('/agents/prebuilt');
+    return response.data;
+  }
+
+  // Clone agent from prebuilt agent
+  async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
+      prebuilt_key: prebuiltKey,
+    });
+    return response.data;
   }
 }
 

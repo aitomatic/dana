@@ -1,0 +1,8 @@
+agent_blueprint JohnAgent:
+    name: str = "John"
+
+# Define singleton with alias, no overrides
+agent Jimmy(JohnAgent)
+
+# Should be an agent instance capable of plan/solve
+_ = Jimmy.plan("hello") 

@@ -41,6 +41,11 @@ class UnifiedTypeCoercion(Loggable):
         if isinstance(value, target_type):
             return True
 
+        # Support None values - None can be assigned to any type
+        # This allows for optional/nullable types in Dana
+        if value is None:
+            return True
+
         # Enhanced: Support float -> int coercion (with truncation warning)
         if target_type is int and isinstance(value, float):
             return True
@@ -91,6 +96,11 @@ class UnifiedTypeCoercion(Loggable):
         """
         if isinstance(value, target_type):
             return value
+
+        # Handle None values - None can be assigned to any type
+        # This allows for optional/nullable types in Dana
+        if value is None:
+            return None
 
         if not self.can_coerce(value, target_type):
             raise TypeError(f"Cannot safely coerce {type(value).__name__} to {target_type.__name__}")

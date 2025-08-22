@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { ChatPlusIn, Tools } from 'iconoir-react';
+import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,13 @@ import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chat-store';
 import type { ConversationRead } from '@/types/conversation';
 
-const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete }: {
+const ConversationItem = ({
+  conversation,
+  isActive,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
   conversation: ConversationRead;
   isActive: boolean;
   onSelect: () => void;
@@ -27,15 +33,16 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
     <div
       key={conversation.id}
       className={cn(
-        'flex rounded-lg px-4 py-2 w-full cursor-pointer group relative',
+        'flex relative items-center px-4 w-full rounded-lg cursor-pointer group',
+        'h-10', // 40px height
         isActive ? 'bg-gray-100' : 'hover:bg-gray-50',
       )}
       onClick={onSelect}
     >
-      <div className="flex flex-col flex-1 min-w-0 gap-2">
+      <div className="flex flex-col flex-1">
         <div
           className={cn(
-            'min-w-0 truncate text-sm font-medium',
+            'min-w-0 text-sm font-medium truncate',
             'animate-slideIn',
             isActive ? 'text-gray-700' : 'text-gray-500',
           )}
@@ -48,7 +55,10 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
   );
 };
 
-const ConversationActions = ({ onRename, onDelete }: {
+const ConversationActions = ({
+  onRename,
+  onDelete,
+}: {
   conversation: ConversationRead;
   onRename: () => void;
   onDelete: () => void;
@@ -56,7 +66,7 @@ const ConversationActions = ({ onRename, onDelete }: {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex justify-center items-center rounded-md opacity-0 transition-opacity cursor-pointer hover:bg-gray-100 size-8 group-hover:opacity-100">
           <IconDotsVertical size={16} className="text-gray-600" />
         </div>
       </DropdownMenuTrigger>
@@ -79,7 +89,10 @@ interface ConversationsSidebarProps {
   agentId?: string;
 }
 
-const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) => {
+const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
+  setIsSidebarCollapsed,
+  agentId,
+}) => {
   const navigate = useNavigate();
   const { conversation_id } = useParams();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -93,12 +106,28 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     fetchConversations,
     updateConversation,
     deleteConversation,
+    // Session conversation methods for prebuilt agents
+    getSessionConversations,
+    deleteSessionConversation,
   } = useChatStore();
+
+  console.log('agentId', agentId, typeof agentId);
+
+  // Get session conversations for prebuilt agents
+  const sessionConversations = typeof agentId === 'string' ? getSessionConversations(agentId) : [];
+  const allConversations =
+    typeof agentId === 'string' && isNaN(Number(agentId)) ? sessionConversations : conversations;
 
   // Fetch conversations when agentId changes
   useEffect(() => {
     if (agentId) {
-      fetchConversations(parseInt(agentId));
+      // Check if this is a numeric agent ID (regular agent) vs string ID (prebuilt agent)
+      const numericAgentId = Number(agentId);
+      if (!isNaN(numericAgentId) && numericAgentId > 0) {
+        // This is a regular agent with numeric ID - fetch conversations from database
+        fetchConversations(numericAgentId);
+      }
+      // For prebuilt agents (string IDs), conversations are handled via session storage
     }
   }, [agentId, fetchConversations]);
 
@@ -112,7 +141,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
         setIsRenameOpen(false);
         setNewName('');
         // Refresh conversations
-        if (agentId) {
+        if (agentId && !isNaN(Number(agentId))) {
           fetchConversations(parseInt(agentId));
         }
       } catch (error) {
@@ -129,14 +158,26 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   const confirmDelete = async () => {
     if (selectedConversation) {
       try {
-        await deleteConversation(selectedConversation.id);
+        // Check if this is a session conversation
+        const isSessionConv = 'agentId' in selectedConversation;
+
+        if (isSessionConv) {
+          // Delete session conversation
+          deleteSessionConversation(selectedConversation.id.toString());
+        } else {
+          // Delete regular conversation
+          await deleteConversation(selectedConversation.id);
+        }
+
         setIsDeleteOpen(false);
+
         // If we're currently viewing this conversation, navigate to agent chat
-        if (conversation_id && parseInt(conversation_id) === selectedConversation.id) {
+        if (conversation_id === String(selectedConversation.id)) {
           navigate(`/agents/${agentId}/chat`);
         }
-        // Refresh conversations
-        if (agentId) {
+
+        // Refresh conversations for regular agents
+        if (!isSessionConv && agentId && !isNaN(Number(agentId))) {
           fetchConversations(parseInt(agentId));
         }
       } catch (error) {
@@ -149,6 +190,15 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     navigate(`/agents/${agentId}/chat/${conversation.id}`);
   };
 
+  const handleSelectSessionConversation = (sessionConversation: any) => {
+    navigate(`/agents/${agentId}/chat/${sessionConversation.id}`);
+  };
+
+  const handleDeleteSession = (sessionConversation: any) => {
+    setSelectedConversation(sessionConversation);
+    setIsDeleteOpen(true);
+  };
+
   const handleOpenRename = (conversation: ConversationRead) => {
     setSelectedConversation(conversation);
     setNewName(conversation.title || '');
@@ -159,44 +209,54 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     navigate(`/agents/${agentId}/chat`);
   };
 
-  // const handleCreateConversation = async () => {
-  //   if (agentId) {
-  //     try {
-  //       await createConversation({
-  //         title: "New conversation",
-  //         agent_id: parseInt(agentId),
-  //       });
-  //       // Refresh conversations
-  //       fetchConversations(parseInt(agentId));
-  //     } catch (error) {
-  //       console.error('Failed to create conversation:', error);
-  //     }
-  //   }
-  // };
-
   return (
-    <div className="flex flex-col h-full bg-background border-r border-gray-200 dark:border-gray-300">
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-300">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
-        <div className="flex flex-row items-center">
+    <div className="flex flex-col h-full border-r border-gray-200 bg-background dark:border-gray-300">
+      <div className="flex justify-between items-center px-2 py-3 border-b border-gray-200 dark:border-gray-300">
+        <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                <Tools
-                  onClick={() => { }}
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
+                <Menu
+                  onClick={() => setIsSidebarCollapsed(true)}
                   width={18}
                   height={18}
-                  className="text-gray-600 cursor-pointer"
+                  className="text-gray-600 dark:text-gray-300 cursor-pointer"
                   strokeWidth={1.5}
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Manage Agent</TooltipContent>
+            <TooltipContent side="bottom">Collapse Panel</TooltipContent>
           </Tooltip>
+          <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
+        </div>
+        <div className="flex flex-row items-center">
+          {agentId && !isNaN(Number(agentId)) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
+                  <Settings
+                    onClick={() => {
+                      navigate(`/agents/${agentId}`);
+                    }}
+                    width={18}
+                    height={18}
+                    className="text-gray-600 dark:text-gray-300 cursor-pointer"
+                    strokeWidth={1.5}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Train Agent</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                <ChatPlusIn onClick={handleNewChat} width={18} height={18} className="text-gray-600" />
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
+                <ChatPlusIn
+                  onClick={handleNewChat}
+                  width={18}
+                  height={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">New chat</TooltipContent>
@@ -204,23 +264,36 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
-        <div className="flex flex-col gap-3 px-2">
+      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll custom-scrollbar">
+        <div className="flex flex-col gap-3 px-2 mt-3">
           {isLoading ? (
-            <div className="flex items-center justify-center p-4">
+            <div className="flex justify-center items-center p-4">
               <div className="text-sm text-gray-500">Loading conversations...</div>
             </div>
-          ) : conversations.length > 0 ? (
-            conversations.map((conversation: ConversationRead) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                isActive={conversation.id === parseInt(conversation_id || '0')}
-                onSelect={() => handleSelectConversation(conversation)}
-                onRename={() => handleOpenRename(conversation)}
-                onDelete={() => handleDelete(conversation)}
-              />
-            ))
+          ) : allConversations.length > 0 ? (
+            allConversations.map((conversation: ConversationRead | any) => {
+              // Handle both regular conversations and session conversations
+              const isSessionConv = 'agentId' in conversation; // Session conversations have agentId property
+              const conversationId = isSessionConv ? conversation.id : conversation.id;
+              const isActive = Number(conversationId) === Number(conversation_id);
+
+              return (
+                <ConversationItem
+                  key={conversationId}
+                  conversation={conversation}
+                  isActive={isActive}
+                  onSelect={() =>
+                    isSessionConv
+                      ? handleSelectSessionConversation(conversation)
+                      : handleSelectConversation(conversation)
+                  }
+                  onRename={() => handleOpenRename(conversation)}
+                  onDelete={() =>
+                    isSessionConv ? handleDeleteSession(conversation) : handleDelete(conversation)
+                  }
+                />
+              );
+            })
           ) : (
             <span className="pl-3 text-sm text-gray-400">History is empty</span>
           )}

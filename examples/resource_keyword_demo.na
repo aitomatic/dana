@@ -1,0 +1,129 @@
+# Dana Resource Keyword Demo
+# 
+# This example demonstrates the new resource keyword functionality
+# showing how to define and use resources within agents.
+
+# Define a custom RAG resource 
+resource CustomRAG(BaseResource):
+    kind: str = "rag"
+    sources: list[str] = []
+    domain: str = "custom"
+    chunk_size: int = 1024
+    embedding_model: str = "sentence-transformers"
+    
+    def initialize() -> bool:
+        # Custom initialization logic
+        print(f"Initializing CustomRAG with {len(self.sources)} sources")
+        return true
+    
+    def query(request: BaseRequest) -> BaseResponse:
+        # Custom query implementation
+        query_text = request.arguments.get("query", "")
+        return BaseResponse(
+            success=true,
+            content=f"Custom RAG response for: {query_text}",
+            error=None
+        )
+
+# Define a specialized financial resource
+resource FinancialRAG(CustomRAG):
+    sources = ["financial_reports.pdf", "market_analysis.txt"]
+    domain = "finance"
+    description = "Financial document analysis resource"
+    tags = ["finance", "rag", "analysis"]
+
+# Agent that uses resources - only agents can access resources!
+agent DataAnalyst:
+    name: str = "DataAnalyst"
+    
+    # Define resources within agent scope
+    private:financial_docs: FinancialRAG = FinancialRAG(
+        sources=["quarterly_reports.pdf", "earnings_calls.txt"],
+        description="Q4 financial analysis documents"
+    )
+    
+    private:market_data: MCPResource = MCPResource(
+        endpoint="http://localhost:8880/market-data",
+        description="Real-time market data service",
+        capabilities=["price_data", "volume_analysis"]
+    )
+    
+    def analyze_company(company: str) -> str:
+        # Start resources if needed
+        if not self.financial_docs.is_running():
+            self.financial_docs.start()
+        
+        if not self.market_data.is_running():
+            self.market_data.start()
+        
+        # Use resources to gather data
+        financial_context = self.financial_docs.query({
+            "query": f"Financial performance of {company}"
+        })
+        
+        market_context = self.market_data.call_tool("get_stock_data", {
+            "symbol": company,
+            "period": "1y"
+        })
+        
+        # Use reason() with resource context
+        analysis = reason(f"""
+        Analyze {company} based on:
+        Financial docs: {financial_context.content}
+        Market data: {market_context}
+        
+        Provide a comprehensive investment recommendation.
+        """)
+        
+        return analysis
+    
+    def share_financial_data(target_agent: agent) -> ResourceHandle:
+        # Create portable handle for resource transfer
+        handle = to_handle(self.financial_docs)
+        return handle
+
+# Another agent that can receive transferred resources
+agent InvestmentAdvisor:
+    name: str = "InvestmentAdvisor"
+    
+    def receive_financial_data(handle: ResourceHandle) -> bool:
+        # Reconstruct resource from handle
+        private:received_docs: FinancialRAG = from_handle(handle)
+        return private:received_docs.initialize()
+    
+    def make_recommendation(company: str) -> str:
+        # Use received resource
+        if "received_docs" in private:
+            context = private:received_docs.query({
+                "query": f"Investment outlook for {company}"
+            })
+            
+            return reason(f"""
+            Based on shared financial data: {context.content}
+            Provide investment recommendation for {company}
+            """)
+        
+        return "No financial data available for analysis"
+
+# Demonstrate usage
+analyst = DataAnalyst()
+advisor = InvestmentAdvisor()
+
+# Analyst performs analysis
+analysis = analyst.analyze_company("AAPL")
+print(f"Analysis result: {analysis}")
+
+# Transfer resource between agents
+financial_handle = analyst.share_financial_data(advisor)
+advisor.receive_financial_data(financial_handle)
+
+# Advisor uses transferred resource
+recommendation = advisor.make_recommendation("AAPL")
+print(f"Investment recommendation: {recommendation}")
+
+# Example of agent-only access enforcement
+# This would cause a runtime error:
+# direct_resource = MCPResource(endpoint="http://example.com")  # Error: not in agent context
+# result = direct_resource.query({"test": "query"})             # Error: not in agent context
+
+print("Resource keyword demo completed successfully!")

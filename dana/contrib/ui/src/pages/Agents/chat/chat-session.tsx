@@ -11,6 +11,7 @@ interface ChatSessionProps {
   botAvatar?: string;
   isMessageFeedback?: boolean;
   className?: string;
+  currentStep?: string;
 }
 
 const ChatSession: React.FC<ChatSessionProps> = ({
@@ -18,7 +19,8 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   isBotThinking,
   botAvatar,
   isMessageFeedback = false,
-  className
+  className,
+  currentStep,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -55,15 +57,15 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   }, [containerRef, listRef, messages, isBotThinking]);
 
   return (
-    <div className="flex overflow-scroll flex-col flex-1 w-full scrollbar-hide">
-      <div className="flex overflow-scroll flex-col flex-1 scrollbar-hide">
+    <div className="flex overflow-scroll flex-col flex-1 w-full custom-scrollbar">
+      <div className="flex overflow-scroll flex-col flex-1 custom-scrollbar">
         <div
-          className={cn('flex overflow-y-scroll flex-col flex-1 max-h-full scrollbar-hide')}
+          className={cn('flex overflow-y-scroll flex-col flex-1 max-h-full custom-scrollbar')}
           ref={containerRef}
         >
           <div
             className={cn(
-              'flex overflow-y-scroll flex-col flex-1 pb-8 h-full scrollbar-hide chat-wrapper',
+              'flex overflow-y-scroll flex-col flex-1 pb-8 h-full custom-scrollbar chat-wrapper',
               isScrollEnable ? '' : 'justify-end',
             )}
             ref={listRef}
@@ -98,7 +100,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
                 return <UserMessage key={index} message={messageForComponent} />;
               }
             })}
-            {isBotThinking && <BotThinking avatar={botAvatar} />}
+            {isBotThinking && <BotThinking avatar={botAvatar} currentStep={currentStep} />}
             <div id="bottom-of-chat" />
           </div>
         </div>

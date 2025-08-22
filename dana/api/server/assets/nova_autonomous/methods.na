@@ -1,0 +1,363 @@
+from common import ExecutionState
+from common import TaskResult
+from common import TASK_FULFILLMENT_PROMPT
+from common import QUERY_COMPLETION_PROMPT
+from common import TASK_PLANNING_PROMPT
+from common import TASK_REPLANNING_PROMPT
+from common import FINAL_RESPONSE_PROMPT
+from common import EXECUTION_CONFIG
+from tools import websearch
+from knowledge import docs
+from knowledge import knowledge
+
+def create_execution_plan(query: str) -> list:
+    """Create initial execution plan for the given query"""
+    prompt = TASK_PLANNING_PROMPT.format(query=query)
+    tasks: list = reason(prompt, temperature=EXECUTION_CONFIG["default_temperature"])
+    return tasks
+
+def execute_task_with_validation(task: str, task_results: list) -> TaskResult:
+    """Execute a single task and return the result"""
+    print(f"\n--- Executing: {task} ---")
+    
+    # Check if we have uploaded documents
+    has_docs = check_for_documents()
+    
+    # Determine if the task requires web search
+    needs_search = should_use_websearch(task)
+    
+    # Determine if task can use document knowledge
+    needs_docs = should_use_documents(task) and has_docs
+    
+    # Gather information from multiple sources
+    context_parts = []
+    
+    if needs_docs:
+        print("📄 Searching uploaded documents...")
+        doc_query = extract_document_query(task)
+        doc_results = docs.query(doc_query, num_results=8)
+        context_parts.append(f"Document Results: {doc_results}")
+    
+    if needs_search:
+        print(f"🌐 Searching web...: {task}")
+        search_query = extract_search_query(task)
+        search_results = websearch.openai_websearch(query=search_query)
+        context_parts.append(f"Web Search Results: {search_results}")
+        print(f"🌐 Web Search Done")
+    
+    # Always include domain knowledge
+    if needs_docs or needs_search:
+        domain_knowledge = knowledge.query(task, num_results=2)
+        context_parts.append(f"Domain Knowledge: {domain_knowledge}")
+    
+    # Execute task with all gathered context
+    if context_parts:
+        combined_context = "\n\n".join(context_parts)
+        prompt = f"""
+        Task: {task}
+        
+        Information Sources:
+        {combined_context}
+        
+        Previous Results: {task_results}
+        
+        Based on all available information sources and previous task results, complete this task thoroughly.
+        Synthesize information from documents, web search, and domain knowledge to provide a comprehensive response.
+        """
+        
+        result = reason(prompt, resources=[knowledge], temperature=EXECUTION_CONFIG["default_temperature"])
+    else:
+        # Execute task using previous results and reasoning only
+        result = reason(f"Execute task: {task}. Historical results: {task_results}", 
+                       resources=[knowledge], temperature=EXECUTION_CONFIG["default_temperature"])
+    
+    return TaskResult(
+        task=task,
+        result=result,
+        status="executed"
+    )
+
+def should_use_websearch(task: str) -> bool:
+    """Determine if a task requires web search"""
+    search_keywords = [
+        "research", "find", "search", "look up", "investigate", "analyze", 
+        "compare", "current", "latest", "price", "cost", "review", "market",
+        "flights", "hotels", "restaurants", "attractions", "weather"
+    ]
+    task_lower = task.lower()
+    
+    for keyword in search_keywords:
+        if keyword in task_lower:
+            return True
+    return False
+
+def extract_search_query(task: str) -> str:
+    """Extract a search query from the task description"""
+    # Use reasoning to convert task to search query
+    prompt = f"""
+    Convert this task into a concise web search query (2-5 words):
+    Task: {task}
+    
+    Return only the search query, nothing else.
+    """
+    
+    search_query = reason(prompt, temperature=0.1)
+    return search_query.strip()
+
+def should_use_documents(task: str) -> bool:
+    """Determine if a task can benefit from uploaded documents"""
+    doc_keywords = [
+        "analyze", "review", "examine", "study", "report", "document", 
+        "data", "information", "details", "content", "file", "uploaded",
+        "summarize", "extract", "find in", "according to", "based on",
+        "budget", "plan", "proposal", "specification", "requirements"
+    ]
+    task_lower = task.lower()
+    
+    for keyword in doc_keywords:
+        if keyword in task_lower:
+            return True
+    return False
+
+def extract_document_query(task: str) -> str:
+    """Extract a document search query from the task description"""
+    prompt = f"""
+    Convert this task into a document search query for finding relevant information:
+    Task: {task}
+    
+    Return a query that would find relevant content in uploaded documents (3-7 words).
+    Focus on key concepts, not action words.
+    """
+    
+    doc_query = reason(prompt, temperature=0.1)
+    return doc_query.strip()
+
+def check_for_documents() -> bool:
+    """Check if there are any documents available in the docs folder"""
+    # For now, assume docs are available and let the query handle errors
+    # This avoids the MCP tool call issue
+    return True
+
+def check_task_fulfillment(task_result: TaskResult) -> TaskResult:
+    """Check if the task result fulfills the task requirements"""
+    prompt = TASK_FULFILLMENT_PROMPT.format(
+        task=task_result.task,
+        result=task_result.result
+    )
+    
+    evaluation: dict = reason(prompt, enable_ipv=True, temperature=0)
+    task_result.evaluation = evaluation
+    
+    if evaluation.get('fulfilled', False):
+        task_result.status = "completed"
+        print(f"✓ Task completed successfully: {task_result.task}")
+    else:
+        task_result.status = "failed"
+        task_result.feedback = evaluation.get('feedback', 'Task did not meet requirements')
+        print(f"✗ Task failed: {task_result.task} - {task_result.feedback}")
+    
+    return task_result
+
+def check_query_completion(query: str, task_results: list) -> bool:
+    """Check if the current results are sufficient to answer the user query"""
+    prompt = QUERY_COMPLETION_PROMPT.format(
+        query=query,
+        task_results=task_results
+    )
+    
+    completion_check: bool = reason(prompt, enable_ipv=True, temperature=0)
+    return completion_check
+
+def update_task_plan(state: ExecutionState, failed_task: str, feedback: str) -> list:
+    """Update the task plan based on results and failures"""
+    prompt = TASK_REPLANNING_PROMPT.format(
+        failed_task=failed_task,
+        feedback=feedback,
+        original_query=state.original_query,
+        remaining_tasks=state.remaining_tasks,
+        completed_tasks=state.completed_tasks,
+        task_results=state.task_results
+    )
+    
+    updated_tasks = reason(prompt, enable_ipv=True, temperature=EXECUTION_CONFIG["default_temperature"])
+    return updated_tasks
+
+def execute_task_pipeline(state: ExecutionState) -> ExecutionState:
+    """Execute a single iteration of the task pipeline"""
+    if not state.remaining_tasks:
+        return state
+        
+    # Get current task
+    current_task = state.remaining_tasks.pop(0)
+    state.current_task = current_task
+    
+    print(f"\n=== Iteration {state.iteration_count + 1} ===")
+    print(f"Current task: {current_task}")
+    print(f"Remaining tasks: {len(state.remaining_tasks)}")
+    
+    # Execute task with validation
+    task_result = execute_task_with_validation(current_task, state.task_results)
+    task_result = check_task_fulfillment(task_result)
+    
+    # Add result to state
+    state.task_results.append(task_result)
+    
+    if task_result.status == "completed":
+        state.completed_tasks.append(current_task)
+        
+        # Check if we can answer the query now
+        if check_query_completion(state.original_query, state.task_results):
+            print(f"\n🎉 Query can be answered! Stopping execution.")
+            state.query_completed = True
+            
+    elif task_result.status == "failed":
+        # Update task plan based on failure
+        updated_tasks = update_task_plan(state, current_task, task_result.feedback)
+        state.remaining_tasks = updated_tasks
+        print(f"Updated task plan due to failure: {updated_tasks}")
+    
+    return state
+
+def generate_final_response(state: ExecutionState) -> str:
+    """Generate the final response based on completed tasks"""
+    # Extract format preference from original query if any
+    format_preference = "default"
+    original_query = state.original_query
+    if "facebook post" in original_query.lower():
+        format_preference = "Write as a series of Facebook posts"
+    
+    prompt = FINAL_RESPONSE_PROMPT.format(
+        original_query=original_query,
+        task_results=state.task_results,
+        format_preference=format_preference
+    )
+    
+    response = reason(prompt, enable_ipv=True, temperature=EXECUTION_CONFIG["default_temperature"])
+    return response
+
+# Workflow pipeline functions (following Jordan's pattern)
+
+def plan_ahead(state: ExecutionState) -> ExecutionState:
+    """Create execution plan for complex queries"""
+    tasks = create_execution_plan(state.original_query)
+    state.steps = tasks
+    state.context = ""
+    state.iteration_count = 0
+    return state
+
+def classify_complexity(state: ExecutionState) -> ExecutionState:
+    """Classify query complexity to determine execution approach"""
+    complexity_prompt = f"""
+    Classify this query's complexity level:
+    
+    Query: {state.original_query}
+    
+    SIMPLE: Direct lookup, single calculation, or straightforward question
+    - Examples: "What is the capital of France?", "Convert 100 USD to EUR"
+    
+    COMPLEX: Multi-step analysis, planning, comparisons, or comprehensive research
+    - Examples: "Plan a 2-week trip", "Compare investment options", "Analyze market trends"
+    
+    Return only: SIMPLE or COMPLEX
+    """
+    
+    result = reason(complexity_prompt, temperature=0.1)
+    
+    if "SIMPLE" in result.upper():
+        state.complexity = {"level": "SIMPLE"}
+    else:
+        state.complexity = {"level": "COMPLEX"}
+    
+    return state
+
+def execute_step(state: ExecutionState) -> ExecutionState:
+    """Execute a single step in the workflow"""
+    if state.current_step and state.current_step != "":
+        # Execute the current step
+        task_result = execute_task_with_validation(state.current_step, state.task_results)
+        state.task_results.append(task_result)
+        
+        # Add result to context
+        context_addition = f"\nStep: {task_result.task}\nResult: {task_result.result}\nStatus: {task_result.status}\n"
+        state.context = state.context + context_addition
+        
+        # Check if this step completed the query
+        completed = check_query_completion(state.original_query, state.task_results)
+        state.query_completed = completed
+        
+        print(f"Step completed: {task_result.task}")
+        print(f"Status: {task_result.status}")
+        
+    return state
+
+def compress_context(state: ExecutionState) -> ExecutionState:
+    """Compress context if it gets too long (following Jordan's pattern)"""
+    # Simple compression - keep only essential information
+    if len(state.context) > 5000:  # If context is getting long
+        compression_prompt = f"""
+        Compress this execution context while preserving all key information and results:
+        
+        Original Query: {state.original_query}
+        Current Context: {state.context}
+        
+        Create a concise summary that maintains all important findings, data, and conclusions.
+        """
+        
+        compressed = reason(compression_prompt, temperature=0.1)
+        state.context = compressed
+        print("Context compressed to maintain efficiency")
+    
+    return state
+
+def validate_completion(state: ExecutionState) -> ExecutionState:
+    """Validate if the current step execution completed successfully"""
+    if state.task_results:
+        latest_result = state.task_results[-1]
+        if latest_result.status == "failed":
+            print(f"⚠️ Task failed: {latest_result.feedback}")
+            # Could add retry logic or alternative approach here
+        elif latest_result.status == "completed":
+            print(f"✅ Task completed successfully")
+    
+    return state
+
+# Additional pipe-friendly functions for workflow composition
+
+def initialize_simple_query(state: ExecutionState) -> ExecutionState:
+    """Initialize state for simple query execution"""
+    state.current_step = state.original_query
+    state.steps = [state.original_query]
+    state.context = ""
+    return state
+
+def initialize_complex_query(state: ExecutionState) -> ExecutionState:
+    """Initialize state for complex query execution"""
+    state.context = ""
+    state.iteration_count = 0
+    return state
+
+def execute_multi_step(state: ExecutionState) -> ExecutionState:
+    """Execute multiple steps with iteration control"""
+    for step in state.steps:
+        if state.iteration_count >= state.max_iterations:
+            print(f"⚠️ Maximum iterations ({state.max_iterations}) reached.")
+            break
+            
+        state.current_step = step
+        state = workflow_single_step(state)
+
+        is_completed = state.query_completed
+        if is_completed:
+            print("🎉 Query completed successfully!")
+            break
+            
+        state.iteration_count = state.iteration_count + 1
+    
+    return state
+
+def workflow_single_step(state: ExecutionState) -> ExecutionState:
+    """Execute single workflow step pipeline"""
+    state = execute_step(state)
+    state = compress_context(state)
+    state = validate_completion(state)
+    return state

@@ -45,11 +45,16 @@ class Document(Base):
     mime_type = Column(String)
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=True)
     agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True)
+    # For JSON extraction files: link to the original PDF document
+    source_document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     topic = relationship("Topic", back_populates="documents")
     agent = relationship("Agent", back_populates="documents")
+    # Self-referential relationship for extraction files
+    source_document = relationship("Document", remote_side=[id], foreign_keys=[source_document_id])
+    extraction_files = relationship("Document", foreign_keys=[source_document_id], overlaps="source_document")
 
 
 class Conversation(Base):
@@ -72,3 +77,13 @@ class Message(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     conversation = relationship("Conversation", back_populates="messages")
+
+
+class AgentChatHistory(Base):
+    __tablename__ = "agent_chat_history"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
+    sender = Column(String, nullable=False)  # 'user' or 'agent'
+    text = Column(Text, nullable=False)
+    type = Column(String, nullable=False, default="chat_with_dana_build")
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))

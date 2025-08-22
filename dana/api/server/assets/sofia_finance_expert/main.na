@@ -1,0 +1,28 @@
+from workflows import workflow
+from common import RetrievalPackage
+from common import PLAN_PROMPT
+from knowledge import knowledge
+from knowledge import doc
+
+agent_blueprint Sofia:
+    name: str = "Sofia"
+    description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
+
+def solve(self : Sofia, query: str) -> str:
+    steps : list = reason(PLAN_PROMPT.format(problem=query), resources=[knowledge], temperature=0.1)
+    context = ""
+    for step in steps:
+        package = RetrievalPackage(query=str(step), context=context, original_problem=query)
+        answer = workflow(package)
+        context = context + f"Step {step['step']}: {step['action']}\nAnswer: {answer}\n\n"
+    final_prompt = f"""
+    Using only the information in **Context**, write one concise paragraph (≤120 words) that fully answers the **Question**, including every critical number, date, and fact.
+
+    Context: 
+    {context}
+    Question: 
+    {query}
+    """
+    return reason(final_prompt, temperature=0.1)
+
+this_agent = Sofia()

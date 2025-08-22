@@ -119,6 +119,11 @@
   --warning-900: 120 53 15; /* #78350F */
   --warning-950: 69 26 3; /* #451A03 */
 
+  /* Purple/Indigo colors */
+  --purple-25: 253 252 255; /* #FDFCFF */
+  --purple-50: 250 245 255; /* #FAF5FF */
+  --indigo-25: 248 250 255; /* #F8FAFF */
+
   --radius: 0.625rem;
 
   /* Custom shadow variables */
@@ -133,10 +138,18 @@
 
   /* Shadow definitions */
   --shadow-xs: 0 1px 2px 0 rgba(var(--shadow-color), var(--shadow-opacity-sm));
-  --shadow: 0 1px 3px 0 rgba(var(--shadow-color), var(--shadow-opacity-default)), 0 1px 2px 0 rgba(var(--shadow-color), 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(var(--shadow-color), var(--shadow-opacity-md)), 0 2px 4px -1px rgba(var(--shadow-color), 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(var(--shadow-color), var(--shadow-opacity-lg)), 0 4px 6px -2px rgba(var(--shadow-color), 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(var(--shadow-color), var(--shadow-opacity-xl)), 0 10px 10px -5px rgba(var(--shadow-color), 0.04);
+  --shadow:
+    0 1px 3px 0 rgba(var(--shadow-color), var(--shadow-opacity-default)),
+    0 1px 2px 0 rgba(var(--shadow-color), 0.06);
+  --shadow-md:
+    0 4px 6px -1px rgba(var(--shadow-color), var(--shadow-opacity-md)),
+    0 2px 4px -1px rgba(var(--shadow-color), 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(var(--shadow-color), var(--shadow-opacity-lg)),
+    0 4px 6px -2px rgba(var(--shadow-color), 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgba(var(--shadow-color), var(--shadow-opacity-xl)),
+    0 10px 10px -5px rgba(var(--shadow-color), 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(var(--shadow-color), var(--shadow-opacity-2xl));
   --shadow-inner: inset 0 2px 4px 0 rgba(var(--shadow-color), var(--shadow-opacity-inner));
 
@@ -213,6 +226,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .scrollbar-hide::-webkit-scrollbar {
@@ -223,4 +238,117 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+
+  /* Custom thin scrollbar with hover visibility */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgb(var(--gray-300));
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .custom-scrollbar:hover {
+    scrollbar-color: rgb(var(--gray-300)) transparent;
+  }
+}
+
+/* Custom Toast Styles */
+.toast-custom {
+  @apply bg-white rounded-lg border border-gray-200 shadow-lg;
+  font-family: var(--font-family-sans);
+}
+
+.toast-success {
+  @apply text-green-800 bg-green-50 border-green-200;
+}
+
+.toast-error {
+  @apply text-red-800 bg-red-50 border-red-200;
+}
+
+.toast-warning {
+  @apply text-yellow-800 bg-yellow-50 border-yellow-200;
+}
+
+.toast-info {
+  @apply text-blue-800 bg-blue-50 border-blue-200;
+}
+
+/* Toast Close Button Styling */
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button] {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+  border: none !important;
+  color: currentColor !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]:hover {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]::before,
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 12px !important;
+  height: 2px !important;
+  background: currentColor !important;
+  border-radius: 1px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]::before {
+  transform: rotate(45deg) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]::after {
+  transform: rotate(-45deg) !important;
+}
+
+/* Toast animation styles */
+.toast-enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.toast-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.3s ease-out;
+}
+
+.toast-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-exit-active {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease-in;
 }

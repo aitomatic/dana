@@ -10,35 +10,31 @@ import pytest
 from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.pythonic.function_factory import (
-    PythonicFunctionFactory,
-    register_pythonic_builtins,
-)
+
+# Import the real PythonicFunctionFactory
+from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
+from dana.registry.function_registry import FunctionRegistry
 
 
 def test_pythonic_function_factory_basic():
     """Test basic functionality of the PythonicFunctionFactory."""
-    factory = PythonicFunctionFactory()
-
     # Test getting available functions
-    available = factory.get_available_functions()
+    available = PythonicFunctionFactory.get_available_functions()
     assert "len" in available
     assert "sum" in available
     assert "max" in available
     assert "min" in available
 
     # Test getting function info
-    len_info = factory.get_function_info("len")
+    len_info = PythonicFunctionFactory.get_function_info("len")
     assert len_info["doc"] == "Return the length of an object"
     assert len_info["func"] == len
 
 
 def test_create_len_function():
     """Test creating and using the len function."""
-    factory = PythonicFunctionFactory()
-    len_func = factory.create_function("len")
+    len_func = PythonicFunctionFactory.create_function("len")
 
     context = SandboxContext()
 
@@ -57,8 +53,7 @@ def test_create_len_function():
 
 def test_create_sum_function():
     """Test creating and using the sum function."""
-    factory = PythonicFunctionFactory()
-    sum_func = factory.create_function("sum")
+    sum_func = PythonicFunctionFactory.create_function("sum")
 
     context = SandboxContext()
 
@@ -73,9 +68,8 @@ def test_create_sum_function():
 
 def test_create_max_min_functions():
     """Test creating and using max/min functions."""
-    factory = PythonicFunctionFactory()
-    max_func = factory.create_function("max")
-    min_func = factory.create_function("min")
+    max_func = PythonicFunctionFactory.create_function("max")
+    min_func = PythonicFunctionFactory.create_function("min")
 
     context = SandboxContext()
 
@@ -90,10 +84,9 @@ def test_create_max_min_functions():
 
 def test_type_conversion_functions():
     """Test type conversion functions."""
-    factory = PythonicFunctionFactory()
-    int_func = factory.create_function("int")
-    float_func = factory.create_function("float")
-    bool_func = factory.create_function("bool")
+    int_func = PythonicFunctionFactory.create_function("int")
+    float_func = PythonicFunctionFactory.create_function("float")
+    bool_func = PythonicFunctionFactory.create_function("bool")
 
     context = SandboxContext()
 
@@ -116,8 +109,7 @@ def test_type_conversion_functions():
 
 def test_type_validation():
     """Test that type validation works correctly."""
-    factory = PythonicFunctionFactory()
-    len_func = factory.create_function("len")
+    len_func = PythonicFunctionFactory.create_function("len")
 
     context = SandboxContext()
 
@@ -137,7 +129,9 @@ def test_register_pythonic_builtins():
     registry = FunctionRegistry()
 
     # Register the built-ins
-    register_pythonic_builtins(registry)
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+
+    do_register_py_builtins(registry)
 
     # Test that functions are registered
     assert registry.has("len")
@@ -167,7 +161,9 @@ def test_function_lookup_order():
     registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
     # Now register built-ins (should overwrite custom function for safety)
-    register_pythonic_builtins(registry)
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+
+    do_register_py_builtins(registry)
 
     # The built-in function should now take precedence
     context = SandboxContext()
@@ -191,8 +187,7 @@ def test_integration_with_interpreter():
 
 def test_error_handling():
     """Test error handling in built-in functions."""
-    factory = PythonicFunctionFactory()
-    sum_func = factory.create_function("sum")
+    sum_func = PythonicFunctionFactory.create_function("sum")
 
     context = SandboxContext()
 
@@ -211,18 +206,16 @@ def test_error_handling():
 
 def test_unknown_function():
     """Test handling of unknown function names."""
-    factory = PythonicFunctionFactory()
 
     with pytest.raises(SandboxError) as exc_info:
-        factory.create_function("unknown_function")
+        PythonicFunctionFactory.create_function("unknown_function")
 
     assert "not a recognized built-in function" in str(exc_info.value)
 
 
 def test_type_function():
     """Test the supported type() function."""
-    factory = PythonicFunctionFactory()
-    type_func = factory.create_function("type")
+    type_func = PythonicFunctionFactory.create_function("type")
     context = SandboxContext()
     assert type_func(context, 42) == "int"
     assert type_func(context, "hello") == "str"

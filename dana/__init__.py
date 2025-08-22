@@ -4,20 +4,20 @@ Dana - Domain-Aware Neurosymbolic Agents
 A language and framework for building domain-expert multi-agent systems.
 """
 
-from importlib.metadata import version
-
-from dana.integrations.python.to_dana import dana as dana_module
-
-from .common import DANA_LOGGER
-from .core import DanaInterpreter, DanaParser, DanaSandbox
-
-__version__ = version("dana")
+from dana.__init__ import (
+    __version__,
+    DANA_LOGGER,
+    DanaParser,
+    DanaInterpreter,
+    DanaSandbox,
+    py2na,
+)
 
 __all__ = [
+    "__version__",
+    "DANA_LOGGER",
     "DanaParser",
     "DanaInterpreter",
     "DanaSandbox",
-    "DANA_LOGGER",
-    "__version__",
-    "dana_module",
+    "py2na",
 ]

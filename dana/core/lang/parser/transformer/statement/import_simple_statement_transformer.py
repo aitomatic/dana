@@ -122,13 +122,13 @@ class ImportSimpleStatementTransformer(BaseTransformer):
         """Transform a from_import rule into an ImportFromStatement node.
 
         Grammar:
-            from_import: FROM (relative_module_path | module_path) IMPORT import_name_list
+            from_import: FROM (relative_module_path | module_path) IMPORT (import_name_list | STAR)
             import_name_list: import_name ("," import_name)*
             import_name: NAME ["as" NAME]
             module_path: NAME ("." NAME)*
             relative_module_path: DOT+ [module_path]
 
-        Parse tree structure: [FROM, module_path_or_relative, IMPORT, import_name_list_tree]
+        Parse tree structure: [FROM, module_path_or_relative, IMPORT, import_name_list_tree_or_star]
         """
         # Get the module_path or relative_module_path (first item, FROM token already consumed)
         module_path_item = items[0]
@@ -172,16 +172,21 @@ class ImportSimpleStatementTransformer(BaseTransformer):
                 # Fallback to string representation
                 module = str(module_path_item)
 
-        # Get the import_name_list (third item after FROM and module_path)
-        # Structure: [module_path_or_relative, import_name_list_tree]
+        # Get the import_name_list or STAR (third item after FROM and module_path)
+        # Structure: [module_path_or_relative, import_name_list_tree_or_star]
         import_names = []
+        is_star_import = False
 
         if len(items) >= 2:
-            import_name_list_item = items[1]
+            import_item = items[1]
 
-            if isinstance(import_name_list_item, Tree) and getattr(import_name_list_item, "data", None) == "import_name_list":
+            # Check if it's a star import
+            if isinstance(import_item, Token) and import_item.type == "STAR":
+                is_star_import = True
+                import_names = []  # Empty list for star imports
+            elif isinstance(import_item, Tree) and getattr(import_item, "data", None) == "import_name_list":
                 # Extract all import names from the list
-                for child in import_name_list_item.children:
+                for child in import_item.children:
                     if isinstance(child, Tree) and getattr(child, "data", None) == "import_name":
                         # Extract name and optional alias from import_name
                         name = ""
@@ -201,14 +206,14 @@ class ImportSimpleStatementTransformer(BaseTransformer):
                             import_names.append((name, alias))
             else:
                 # Fallback: treat as single import (backward compatibility)
-                if isinstance(import_name_list_item, Token) and import_name_list_item.type == "NAME":
-                    import_names.append((import_name_list_item.value, None))
+                if isinstance(import_item, Token) and import_item.type == "NAME":
+                    import_names.append((import_item.value, None))
 
-        # If no names were extracted, create a default empty list
-        if not import_names:
+        # If no names were extracted and not a star import, create a default empty list
+        if not import_names and not is_star_import:
             import_names = [("", None)]
 
-        return ImportFromStatement(module=module, names=import_names)
+        return ImportFromStatement(module=module, names=import_names, is_star_import=is_star_import)
 
     # === Argument Handling ===
 

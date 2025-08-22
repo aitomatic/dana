@@ -1,0 +1,155 @@
+# Test: Attribute Assignments
+# Purpose: Test attribute assignments with dictionary syntax
+# Category: Basic Syntax - Basic Assignments and Variables
+
+log("Starting Attribute Assignments test")
+
+# Test 1: Basic attribute assignment
+obj = {"name": "Dana", "version": "1.0", "status": "inactive"}
+obj["status"] = "active"
+assert obj["status"] == "active", f"Expected 'active', got {obj['status']}"
+log("✅ Basic attribute assignment works")
+
+# Test 2: Attribute assignment with different data types
+config = {"debug": false}
+config["timeout"] = 30
+config["retries"] = 3
+config["message"] = "Hello World"
+
+assert config["timeout"] == 30, f"Expected 30, got {config['timeout']}"
+assert config["retries"] == 3, f"Expected 3, got {config['retries']}"
+assert config["message"] == "Hello World", f"Expected 'Hello World', got {config['message']}"
+log("✅ Attribute assignment with different data types works")
+
+# Test 3: Attribute reassignment
+user = {"name": "Alice", "age": 25}
+user["age"] = 26
+assert user["age"] == 26, f"Expected 26, got {user['age']}"
+log("✅ Attribute reassignment works")
+
+# Test 4: Nested attribute assignment
+nested = {"level1": {"level2": {"value": 10}}}
+nested["level1"]["level2"]["value"] = 20
+assert nested["level1"]["level2"]["value"] == 20, f"Expected 20, got {nested['level1']['level2']['value']}"
+log("✅ Nested attribute assignment works")
+
+# Test 5: Attribute assignment with expressions
+data = {"base": 10}
+data["result"] = data["base"] * 2 + 5
+assert data["result"] == 25, f"Expected 25, got {data['result']}"
+log("✅ Attribute assignment with expressions works")
+
+# Test 6: Attribute assignment with function calls
+def get_value():
+    return 42
+
+obj = {"existing": "value"}
+obj["computed"] = get_value()
+assert obj["computed"] == 42, f"Expected 42, got {obj['computed']}"
+log("✅ Attribute assignment with function calls works")
+
+# Test 7: Multiple attribute assignments
+settings = {}
+settings["debug"] = true
+settings["timeout"] = 30
+settings["retries"] = 3
+settings["host"] = "localhost"
+settings["port"] = 8080
+
+assert settings["debug"] == true, f"Expected true, got {settings['debug']}"
+assert settings["timeout"] == 30, f"Expected 30, got {settings['timeout']}"
+assert settings["retries"] == 3, f"Expected 3, got {settings['retries']}"
+assert settings["host"] == "localhost", f"Expected 'localhost', got {settings['host']}"
+assert settings["port"] == 8080, f"Expected 8080, got {settings['port']}"
+log("✅ Multiple attribute assignments work")
+
+# Test 8: Attribute assignment with None
+config = {"existing": "value"}
+config["empty"] = None
+assert config["empty"] == None, f"Expected None, got {config['empty']}"
+log("✅ Attribute assignment with None works")
+
+# Test 9: Attribute assignment with lists
+data = {"numbers": [1, 2, 3]}
+data["numbers"].append(4)
+assert len(data["numbers"]) == 4, f"Expected 4, got {len(data['numbers'])}"
+assert data["numbers"][3] == 4, f"Expected 4, got {data['numbers'][3]}"
+log("✅ Attribute assignment with lists works")
+
+# Test 10: Attribute assignment with dictionaries
+config = {"settings": {"debug": false}}
+config["settings"]["timeout"] = 30
+assert config["settings"]["timeout"] == 30, f"Expected 30, got {config['settings']['timeout']}"
+log("✅ Attribute assignment with dictionaries works")
+
+# Test 11: Attribute assignment with negative numbers
+obj = {"positive": 10}
+obj["negative"] = -5
+assert obj["negative"] == -5, f"Expected -5, got {obj['negative']}"
+log("✅ Attribute assignment with negative numbers works")
+
+# Test 12: Attribute assignment with zero values
+data = {"non_zero": 10}
+data["zero_int"] = 0
+data["zero_float"] = 0.0
+data["empty_string"] = ""
+
+assert data["zero_int"] == 0, f"Expected 0, got {data['zero_int']}"
+assert data["zero_float"] == 0.0, f"Expected 0.0, got {data['zero_float']}"
+assert data["empty_string"] == "", f"Expected empty string, got '{data['empty_string']}'"
+log("✅ Attribute assignment with zero values works")
+
+# Test 13: Attribute assignment with boolean values
+flags = {"existing": true}
+flags["enabled"] = false
+flags["visible"] = true
+flags["hidden"] = false
+
+assert flags["enabled"] == false, f"Expected false, got {flags['enabled']}"
+assert flags["visible"] == true, f"Expected true, got {flags['visible']}"
+assert flags["hidden"] == false, f"Expected false, got {flags['hidden']}"
+log("✅ Attribute assignment with boolean values works")
+
+# Test 14: Attribute assignment with string concatenation
+message = {"greeting": "Hello"}
+message["full"] = message["greeting"] + " " + "World"
+assert message["full"] == "Hello World", f"Expected 'Hello World', got {message['full']}"
+log("✅ Attribute assignment with string concatenation works")
+
+# Test 15: Attribute assignment with arithmetic operations
+calc = {"base": 10}
+calc["result"] = calc["base"] + 5 * 2
+assert calc["result"] == 20, f"Expected 20, got {calc['result']}"
+log("✅ Attribute assignment with arithmetic operations works")
+
+# Test 16: Attribute assignment with conditional expressions
+status = {"active": true}
+status["message"] = "active" if status["active"] else "inactive"
+assert status["message"] == "active", f"Expected 'active', got {status['message']}"
+log("✅ Attribute assignment with conditional expressions works")
+
+# Test 17: Attribute assignment with list operations
+data = {"items": [1, 2, 3]}
+data["items"][0] = 10
+assert data["items"][0] == 10, f"Expected 10, got {data['items'][0]}"
+log("✅ Attribute assignment with list operations works")
+
+# Test 18: Attribute assignment with dictionary operations
+config = {"params": {"timeout": 30}}
+config["params"]["retries"] = 3
+assert config["params"]["retries"] == 3, f"Expected 3, got {config['params']['retries']}"
+log("✅ Attribute assignment with dictionary operations works")
+
+# Test 19: Attribute assignment with complex nested structures
+complex_obj = {"level1": {"level2": {"level3": {"value": 1}}}}
+complex_obj["level1"]["level2"]["level3"]["value"] = 100
+assert complex_obj["level1"]["level2"]["level3"]["value"] == 100, f"Expected 100, got {complex_obj['level1']['level2']['level3']['value']}"
+log("✅ Attribute assignment with complex nested structures works")
+
+# Test 20: Attribute assignment with large numbers
+data = {"small": 10}
+data["large"] = 1000000
+assert data["large"] == 1000000, f"Expected 1000000, got {data['large']}"
+log("✅ Attribute assignment with large numbers works")
+
+log("Attribute Assignments test completed successfully") 

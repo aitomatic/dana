@@ -50,15 +50,22 @@ class DanaTransformer(Transformer):
         is called on DanaTransformer that it doesn't directly implement, this method looks for it
         in the specialized transformers.
         """
-        # Check each transformer for the requested method
-        # If found, delegate the call to that transformer. This enables seamless routing of
-        # transformation methods (e.g., assignment, expr, f_string, variable) to the correct handler.
-        for transformer in [
-            self.statement_transformer,
-            self.expression_transformer,
-            self.fstring_transformer,
-            self.variable_transformer,
-        ]:
+        # Prefer function-definition transformer first (many statement rules land there)
+        possible_transformers = []
+        # Some rules are implemented on the statement transformer's function sub-transformer
+        if hasattr(self.statement_transformer, "function_definition_transformer"):
+            possible_transformers.append(self.statement_transformer.function_definition_transformer)
+        # Then check other transformers
+        possible_transformers.extend(
+            [
+                self.statement_transformer,
+                self.expression_transformer,
+                self.fstring_transformer,
+                self.variable_transformer,
+            ]
+        )
+
+        for transformer in possible_transformers:
             if hasattr(transformer, name):
                 return getattr(transformer, name)
 

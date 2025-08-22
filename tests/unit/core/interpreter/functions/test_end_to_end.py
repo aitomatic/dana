@@ -10,6 +10,8 @@ together correctly, including:
 5. Error handling
 """
 
+import os
+
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -189,7 +191,7 @@ def test_unified_interpreter_execution_comprehensive():
             Assignment(target=Identifier("local:a"), value=LiteralExpression(10)),
             Assignment(target=Identifier("local:b"), value=LiteralExpression(20)),
             Assignment(
-                target=Identifier("local:sum"),
+                target=Identifier("system:sum"),
                 value=BinaryExpression(left=Identifier("local:a"), operator=BinaryOperator.ADD, right=Identifier("local:b")),
             ),
         ]
@@ -198,7 +200,7 @@ def test_unified_interpreter_execution_comprehensive():
     assert result == 30  # Result of last statement
     assert context.get("local:a") == 10
     assert context.get("local:b") == 20
-    assert context.get("local:sum") == 30
+    assert context.get("system:sum") == 30
 
     # Test 5: Complex expression evaluation
     complex_expr = BinaryExpression(
@@ -324,13 +326,8 @@ def test_end_to_end_function_integration():
 
 
 def test_reason_function_integration():
-    """Test reason function integration in end-to-end scenarios.
-
-    Consolidates tests from tests/dana/functions/reason_function/ directory.
-    """
-    import os
-
-    # Setup environment for mocking
+    """Test the reason function integration with proper LLM resource setup."""
+    # Save original environment
     original_mock_env = os.environ.get("DANA_MOCK_LLM")
     os.environ["DANA_MOCK_LLM"] = "true"
 
@@ -338,8 +335,22 @@ def test_reason_function_integration():
         context = SandboxContext()
         interpreter = DanaInterpreter()
 
+        # Set up LLM resource in context using the new system
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        llm_resource.initialize()
+
+        # Enable mock mode for testing
+        # LLMResourceInstance wraps LegacyLLMResource directly, no bridge needed
+        llm_resource.with_mock_llm_call(True)
+
+        context.set_system_llm_resource(llm_resource)
+
         # Test 1: Basic reason function call
-        result = interpreter.call_function("reason", ["What is 2 + 2?"])
+        result = interpreter.call_function("reason", ["What is 2 + 2?"], context=context)
         assert result is not None
 
         # Handle POETResult wrapper if present
@@ -356,17 +367,17 @@ def test_reason_function_integration():
         context.set("question", "What is the square root of 16?")
 
         # This would normally use f-strings, but we'll test direct calls
-        result = interpreter.call_function("reason", [f"Topic: {context.get('topic')} - {context.get('question')}"])
+        result = interpreter.call_function("reason", [f"Topic: {context.get('topic')} - {context.get('question')}"], context=context)
         assert result is not None
 
         # Test 3: Reason function with options
-        result = interpreter.call_function("reason", ["Explain gravity"])
+        result = interpreter.call_function("reason", ["Explain gravity"], context=context)
         assert result is not None
 
         # Test 4: Reason function error handling
         try:
             # Test with invalid input
-            result = interpreter.call_function("reason", [None])
+            result = interpreter.call_function("reason", [None], context=context)
             # Should either handle gracefully or raise appropriate error
             assert result is not None or True  # Either succeeds or raises exception
         except Exception as e:

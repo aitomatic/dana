@@ -16,9 +16,9 @@ from dana.core.lang.ast import (
     AgentDefinition,
     AgentPoolStatement,
     AgentStatement,
-    ExportStatement,
+    BaseAgentSingletonDefinition,
     FunctionDefinition,
-    StructDefinition,
+    SingletonAgentDefinition,
     UseStatement,
 )
 from dana.core.lang.sandbox_context import SandboxContext
@@ -68,6 +68,7 @@ class AgentHandler(Loggable):
 
         # Set target name for agent
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
@@ -75,14 +76,10 @@ class AgentHandler(Loggable):
         # Trace resource operation
         self._trace_resource_operation("agent", target_name if target else "anonymous", len(args), len(kwargs))
 
-        # Call the agent function through the registry
-        if self.function_registry is not None:
-            result = self.function_registry.call("agent", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_statement")
-            result = None
-
-        return result
+        # Grammar-based agent(...) is deprecated; guide users to a2a_agent()
+        raise SandboxError(
+            "The 'agent(...)' statement is deprecated. Use a2a_agent(url=...) or import a module and call its functions directly."
+        )
 
     def execute_agent_pool_statement(self, node: AgentPoolStatement, context: SandboxContext) -> Any:
         """Execute an agent pool statement with optimized processing.
@@ -113,6 +110,7 @@ class AgentHandler(Loggable):
 
         # Set target name for agent pool
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
@@ -150,6 +148,7 @@ class AgentHandler(Loggable):
 
         # Set target name for resource
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.split(".")[-1] if isinstance(target, str) else (target.name if hasattr(target, "name") else str(target))
             kwargs["_name"] = target_name
@@ -166,152 +165,139 @@ class AgentHandler(Loggable):
 
         return result
 
-    def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
-        """Execute an export statement with optimized processing.
-
-        Args:
-            node: The export statement node
-            context: The execution context
-
-        Returns:
-            None
-        """
-        # Get the name to export
-        name = node.name
-
-        # Get the value from the local scope (validation step)
-        try:
-            context.get_from_scope(name, scope="local")
-        except Exception:
-            # If the value doesn't exist yet, that's okay - it might be defined later
-            pass
-
-        # Add to exports efficiently
-        if not hasattr(context, "_exports"):
-            context._exports = set()
-        context._exports.add(name)
-
-        # Trace export operation
-        self._trace_resource_operation("export", name, 0, 0)
-
-        # Return None since export statements don't produce a value
-        return None
-
-    def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
-        """Execute a struct definition statement with optimized processing.
-
-        Args:
-            node: The struct definition node
-            context: The execution context
-
-        Returns:
-            None (struct definitions don't produce a value, they register a type)
-        """
-        # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_type_from_ast
-
-        # Create the struct type and evaluate default values
-        try:
-            struct_type = create_struct_type_from_ast(node)
-
-            # Evaluate default values in the current context
-            if struct_type.field_defaults:
-                evaluated_defaults = {}
-                for field_name, default_expr in struct_type.field_defaults.items():
-                    try:
-                        # Evaluate the default value expression
-                        default_value = self.parent_executor.parent.execute(default_expr, context)
-                        evaluated_defaults[field_name] = default_value
-                    except Exception as e:
-                        raise SandboxError(f"Failed to evaluate default value for field '{field_name}': {e}")
-                struct_type.field_defaults = evaluated_defaults
-
-            # Register the struct type
-            StructTypeRegistry.register(struct_type)
-            self.debug(f"Registered struct type: {struct_type.name}")
-
-            # Register struct constructor function in the context
-            # This allows `instance = MyStruct(field1=value1, field2=value2)` syntax
-            def struct_constructor(**kwargs):
-                return StructTypeRegistry.create_instance(struct_type.name, kwargs)
-
-            context.set(f"local:{node.name}", struct_constructor)
-
-            # Trace struct registration
-            self._trace_resource_operation("struct", node.name, len(node.fields), 0)
-
-        except Exception as e:
-            raise SandboxError(f"Failed to register struct {node.name}: {e}")
-
-        return None
+    # Note: export and struct definition responsibilities moved to dedicated handlers
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
-        """Execute an agent definition statement with optimized processing.
-
-        Args:
-            node: The agent definition node
-            context: The execution context
-
-        Returns:
-            None (agent definitions don't produce a value, they register a type)
         """
-        # Import here to avoid circular imports
-        from dana.agent import AgentStructType, register_agent_struct_type
-
-        # Create and register the agent struct type using the unified struct system
+        Register an agent blueprint as an AgentType and constructor (instantiable).
+        """
         try:
-            # Extract field information from AST
+            # Create AgentStructType (blueprint)
             fields = {}
             field_order = []
             field_defaults = {}
 
-            for field_def in node.fields:
-                field_name = field_def.name
-                field_type = field_def.type_hint.name if hasattr(field_def.type_hint, "name") else str(field_def.type_hint)
-                fields[field_name] = field_type
-                field_order.append(field_name)
+            for field in node.fields:
+                if field.type_hint is None or not hasattr(field.type_hint, "name"):
+                    raise SandboxError(f"Field {field.name} has invalid type hint")
+                fields[field.name] = field.type_hint.name
+                field_order.append(field.name)
+                if field.default_value is not None:
+                    # Evaluate default in current context
+                    default_value = self.parent_executor.parent.execute(field.default_value, context)
+                    field_defaults[field.name] = default_value
 
-                # Extract default value if present
-                if hasattr(field_def, "default_value") and field_def.default_value is not None:
-                    try:
-                        default_value = self.parent_executor.parent.execute(field_def.default_value, context)
-                        field_defaults[field_name] = default_value
-                    except Exception as e:
-                        self.debug(f"Failed to evaluate default value for field {field_name}: {e}")
-                        pass
+            from dana.agent import AgentType
+            from dana.registry import register_agent_type
 
-            # Create AgentStructType
-            agent_type = AgentStructType(
+            agent_type = AgentType(
                 name=node.name,
                 fields=fields,
                 field_order=field_order,
-                field_comments={},  # Agent fields don't have comments yet
-                field_defaults=field_defaults,
+                field_comments={},
+                field_defaults=field_defaults or {},
                 docstring=getattr(node, "docstring", None),
             )
 
-            # Register the agent type
-            register_agent_struct_type(agent_type)
-            self.debug(f"Registered agent struct type: {agent_type.name}")
-
-            # Store reference to this agent type for method association
+            register_agent_type(agent_type)
+            self.debug(f"Registered agent blueprint type: {agent_type.name}")
             self._last_agent_type = agent_type
 
-            # Register agent constructor function in the context
-            # This allows `agent_instance = TestAgent(name="test")` syntax
+            # Register constructor in context to create instances
             def agent_constructor(**kwargs):
-                # Use the struct registry's create_instance but ensure it creates an AgentStructInstance
-                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.registry import TYPE_REGISTRY
 
-                return StructTypeRegistry.create_instance(agent_type.name, kwargs)
+                return TYPE_REGISTRY.create_instance(agent_type.name, kwargs)
 
             context.set(f"local:{node.name}", agent_constructor)
-
-            # Trace agent registration
-            self._trace_resource_operation("agent_definition", node.name, len(node.fields), 0)
+            self._trace_resource_operation("agent_blueprint", node.name, len(node.fields), 0)
 
         except Exception as e:
-            raise SandboxError(f"Failed to register agent {node.name}: {e}")
+            raise SandboxError(f"Failed to register agent blueprint {node.name}: {e}")
+
+        return None
+
+    def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
+        """Create and bind a singleton agent instance from a blueprint with optional overrides."""
+        try:
+            # Find the blueprint type
+            from dana.agent import AgentInstance, AgentType
+            from dana.registry import get_agent_type, register_agent_type
+
+            blueprint_type = get_agent_type(node.blueprint_name)
+            if blueprint_type is None:
+                raise SandboxError(f"Unknown agent blueprint '{node.blueprint_name}'")
+
+            # Evaluate overrides
+            overrides: dict[str, Any] = {}
+            for f in node.overrides or []:
+                overrides[f.name] = self.parent_executor.parent.execute(f.value, context)
+
+            # Merge with defaults from the type
+            merged_defaults: dict[str, Any] = {}
+            if getattr(blueprint_type, "field_defaults", None):
+                field_defaults = blueprint_type.field_defaults
+                if field_defaults:
+                    merged_defaults.update(field_defaults)
+            merged_defaults.update(overrides)
+
+            # If an alias is provided, create a derived AgentType that inherits blueprint fields/methods
+            instance_type = blueprint_type
+            if node.alias_name:
+                derived = AgentType(
+                    name=node.alias_name,
+                    fields=dict(getattr(blueprint_type, "fields", {})),
+                    field_order=list(getattr(blueprint_type, "field_order", [])),
+                    field_defaults=dict(merged_defaults) if merged_defaults else {},
+                    field_comments=dict(getattr(blueprint_type, "field_comments", {})),
+                )
+                # Inherit agent methods and capabilities
+                if hasattr(blueprint_type, "_initial_agent_methods"):
+                    derived._initial_agent_methods.update(blueprint_type._initial_agent_methods)
+                if hasattr(blueprint_type, "reasoning_capabilities") and blueprint_type.reasoning_capabilities:
+                    derived.reasoning_capabilities.extend(blueprint_type.reasoning_capabilities)
+
+                register_agent_type(derived)
+                instance_type = derived
+
+            # Create the instance
+            instance = AgentInstance(instance_type, merged_defaults)
+
+            # Bind the singleton: prefer alias, else bind to blueprint name
+            bind_name = node.alias_name or node.blueprint_name
+            context.set(f"local:{bind_name}", instance)
+            self._trace_resource_operation("agent_singleton", bind_name, 0, len(merged_defaults))
+
+        except Exception as e:
+            raise SandboxError(f"Failed to register singleton agent from blueprint {node.blueprint_name}: {e}")
+
+        return None
+
+    def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
+        """Create a base AgentType with default methods and bind an instance to the alias name."""
+        try:
+            from dana.agent import AgentInstance, AgentType
+            from dana.registry import register_agent_type
+
+            # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
+            base_type = AgentType(
+                name=node.alias_name,
+                fields={"name": "str"},
+                field_order=["name"],
+                field_defaults={"name": node.alias_name},
+                field_comments={},
+            )
+            register_agent_type(base_type)
+
+            # Create instance with default name
+            instance = AgentInstance(base_type, {})
+
+            # Bind to alias
+            context.set(f"local:{node.alias_name}", instance)
+            self._trace_resource_operation("agent_singleton_base", node.alias_name, 0, 0)
+
+        except Exception as e:
+            raise SandboxError(f"Failed to create base agent '{node.alias_name}': {e}")
 
         return None
 

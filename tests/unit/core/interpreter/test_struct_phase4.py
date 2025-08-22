@@ -7,8 +7,8 @@ This module tests the transformation of method calls (obj.method()) to function 
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
-    StructTypeRegistry,
 )
+from dana.registry import TYPE_REGISTRY
 
 
 class TestMethodSyntaxTransformation:
@@ -16,7 +16,7 @@ class TestMethodSyntaxTransformation:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_basic_method_syntax_transformation(self):
@@ -36,7 +36,7 @@ local:distance_result = point.distance()
 local:distance_method_result = distance(point)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both calls should produce the same result
@@ -63,7 +63,7 @@ local:result_direct = add_offset(point, 5, 3)
 local:result_method = point.add_offset(5, 3)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both results should be equivalent
@@ -92,7 +92,7 @@ local:result_direct = scale(rect, x_factor=2.0, y_factor=1.5)
 local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -122,7 +122,7 @@ local:type_direct = get_type(point)
 local:type_method = point.get_type()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both calls should produce the same result
@@ -142,7 +142,7 @@ local:point = Point(x=1, y=2)
 local:result = point.nonexistent_method()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert not result.success
         # Check for the improved error message format
         assert "has no method" in str(result.error) or "not found" in str(result.error)
@@ -153,7 +153,7 @@ class TestStructMethodIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_methods_in_loops(self):
@@ -176,7 +176,7 @@ for doubled_num in doubled:
     local:final_values.append(doubled_num.value)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -206,7 +206,7 @@ else:
 local:final_count = counter.count
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -234,7 +234,7 @@ local:step2 = step1.add_text("World")
 local:final = step2.finalize()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -263,7 +263,7 @@ local:area = circle.get_area()
 local:center_x = circle.get_center_x()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -296,7 +296,7 @@ local:result1 = point1.add_point(point2)  # Should call add_point(point1, point2
 local:result2 = point1.add_scalar(5)      # Should call add_scalar(point1, 5)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -328,7 +328,7 @@ local:updated1 = config.update_config("new_name")
 local:updated2 = config.update_config("new_name", 20)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -349,7 +349,7 @@ class TestAdvancedStructFeatures:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        StructTypeRegistry.clear()
+        TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
     def test_struct_methods_with_multiple_signatures(self):
@@ -381,7 +381,7 @@ local:normalized1 = vector.normalize()      # Default length=1.0
 local:normalized2 = vector.normalize(2.0)   # Custom length
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -420,7 +420,10 @@ local:as_string = data.process()
 local:as_int = data.process(as_string=false)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
+        print(f"DEBUG: Execution success: {result.success}")
+        if not result.success:
+            print(f"DEBUG: Execution error: {result.error}")
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -428,5 +431,20 @@ local:as_int = data.process(as_string=false)
         as_int = result.final_context.get("local:as_int")
 
         # Promises are automatically resolved by default
+        print(f"DEBUG: as_string = {as_string} (type: {type(as_string)})")
+        print(f"DEBUG: as_int = {as_int} (type: {type(as_int)})")
+
+        # Debug: Check if as_string is an EagerPromise
+        if hasattr(as_string, "_value"):
+            print(f"DEBUG: as_string._value = {as_string._value}")
+        if hasattr(as_string, "result"):
+            print(f"DEBUG: as_string.result = {as_string.result}")
+
+        # Debug: Check what's in the local scope
+        local_scope = result.final_context._state.get("local", {})
+        print(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
+        for k, v in local_scope.items():
+            print(f"DEBUG: {k} -> {type(v)}")
+
         assert as_string == "42"
         assert as_int == 42

@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.core.repl.dana_repl_app import DanaREPLApp
+from dana.apps.repl import DanaREPLApp
 
 # Mark all tests in this file as live tests
 pytestmark = [pytest.mark.asyncio, pytest.mark.live]
@@ -154,23 +154,23 @@ async def test_dana_repl_promise_command():
     mock_inputs = [
         "/promise x = 42",  # Test /promise with assignment
         "x",  # Check that x has the resolved value
-        "/promise 10 + 5",  # Test /promise with expression  
+        "/promise 10 + 5",  # Test /promise with expression
         "exit",
     ]
 
-    with patch("dana.core.repl.ui.prompt_session_manager.PromptSession.prompt_async") as mock_prompt:
+    with patch("dana.apps.repl.ui.prompt_session_manager.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs
 
         app = DanaREPLApp()
-        
+
         # Capture stdout to verify promise display
         captured_output = []
         original_print = builtins.print
-        
+
         def capture_print(*args, **kwargs):
             captured_output.append(" ".join(str(arg) for arg in args))
             original_print(*args, **kwargs)
-        
+
         with patch("builtins.print", side_effect=capture_print):
             await app.run()
 

@@ -72,6 +72,7 @@ class ErrorUtils:
 
     # Reserved keywords in Dana
     RESERVED_KEYWORDS = {
+        "resource",
         "agent",
         "agent_pool",
         "struct",
@@ -505,4 +506,9 @@ class ErrorUtils:
             return msg.replace("Error: ", "").strip()
         # Deduplicate error prefixes
         msg = re.sub(r"^(Error: )+", "Error: ", msg.strip())
-        return f"Error: {msg.strip()}"
+
+        # Don't add "Error:" prefix if the message already contains it or is a formatted error
+        if "Error:" in msg or "=== Dana Runtime Error ===" in msg:
+            return msg.strip()
+        else:
+            return f"Error: {msg.strip()}"

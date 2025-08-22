@@ -9,11 +9,11 @@ from abc import abstractmethod
 from typing import Any
 
 from dana.common.mixins import ToolCallable
-from dana.common.resource import BaseResource
+from dana.common.sys_resource import BaseSysResource
 from dana.common.types import BaseRequest, BaseResponse
 
 
-class BaseIO(BaseResource):
+class BaseIO(BaseSysResource):
     """Base class for I/O resources.
 
     This abstract class defines the interface for handling input/output operations

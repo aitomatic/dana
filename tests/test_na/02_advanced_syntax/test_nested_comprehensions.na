@@ -1,0 +1,69 @@
+# Test: Nested Comprehensions
+# Purpose: Test nested comprehensions and complex comprehension patterns
+# Category: Advanced Syntax - Comprehensions
+
+log("`for ... for ...` Nested Comprehensions is not supported for now")
+
+# Test 1: Basic nested list comprehensions
+# Note: Nested comprehensions (for .. for ...) are not currently supported
+
+# matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# flattened = [item for row in matrix for item in row]
+# assert flattened == [1, 2, 3, 4, 5, 6, 7, 8, 9], f"Expected [1, 2, 3, 4, 5, 6, 7, 8, 9], got {flattened}"
+# log("✅ Basic nested list comprehensions works")
+
+# # Test 2: Nested comprehensions with conditions and transformations
+# matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# squared_even = [item * item for row in matrix for item in row if item % 2 == 0]
+# assert squared_even == [4, 16, 36, 64], f"Expected [4, 16, 36, 64], got {squared_even}"
+# log("✅ Nested comprehensions with conditions and transformations works")
+
+# # Test 3: Nested set comprehensions
+# matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# unique_even = {item for row in matrix for item in row if item % 2 == 0}
+# assert unique_even == {2, 4, 6, 8}, f"Expected {2, 4, 6, 8}, got {unique_even}"
+# log("✅ Nested set comprehensions works")
+
+# # Test 4: Nested dictionary comprehensions
+# data = [{"name": "Alice", "scores": [85, 90, 88]}, {"name": "Bob", "scores": [92, 87, 91]}]
+# all_scores = {f"{person['name']}_{i}": score for person in data for i, score in enumerate(person['scores'])}
+# expected = {"Alice_0": 85, "Alice_1": 90, "Alice_2": 88, "Bob_0": 92, "Bob_1": 87, "Bob_2": 91}
+# assert all_scores == expected, f"Expected {expected}, got {all_scores}"
+# log("✅ Nested dictionary comprehensions works")
+
+# # Test 5: Nested comprehensions with function calls
+# def square(x: int) -> int:
+#     return x * x
+
+# def is_even(x: int) -> bool:
+#     return x % 2 == 0
+
+# matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# squared_even_numbers = [square(item) for row in matrix for item in row if is_even(item)]
+# assert squared_even_numbers == [4, 16, 36, 64], f"Expected [4, 16, 36, 64], got {squared_even_numbers}"
+# log("✅ Nested comprehensions with function calls works")
+
+# # Test 6: Nested comprehensions with complex data structures
+# nested_data = [
+#     {"name": "Alice", "grades": [85, 90, 88]},
+#     {"name": "Bob", "grades": [92, 87, 91]},
+#     {"name": "Charlie", "grades": [78, 85, 82]}
+# ]
+# high_scores = [grade for student in nested_data for grade in student["grades"] if grade >= 85]
+# assert high_scores == [85, 90, 88, 92, 87, 91, 85], f"Expected [85, 90, 88, 92, 87, 91, 85], got {high_scores}"
+# log("✅ Nested comprehensions with complex data structures works")
+
+# # Test 7: Nested comprehensions with conditional expressions
+# matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+# parity_labels = ["even" if item % 2 == 0 else "odd" for row in matrix for item in row]
+# expected = ["odd", "even", "odd", "even", "odd", "even", "odd", "even", "odd"]
+# assert parity_labels == expected, f"Expected {expected}, got {parity_labels}"
+# log("✅ Nested comprehensions with conditional expressions works")
+
+# # Test 8: Nested comprehensions with empty collections
+# empty_lists = [[], [1, 2], [], [3, 4, 5]]
+# non_empty_items = [item for sublist in empty_lists for item in sublist]
+# assert non_empty_items == [1, 2, 3, 4, 5], f"Expected [1, 2, 3, 4, 5], got {non_empty_items}"
+# log("✅ Nested comprehensions with empty collections works")
+
+log("Nested Comprehensions test skipped - feature not currently supported") 

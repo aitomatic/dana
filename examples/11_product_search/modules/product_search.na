@@ -1,0 +1,49 @@
+# Product Search Module
+# Handles search operations including part number and vector similarity search
+
+from config import SEARCH_CONFIG, get_tabular_index_config
+from modules.data_access import standardize_vector_results, dedupe_results
+
+def search_products(context: dict) -> list:
+    """Combined search using tabular_index for both part number and vector search"""
+    enhanced = context["enhanced"]
+    
+    # Initialize tabular_index with complete configuration
+    tabular_index_config = get_tabular_index_config()
+    product_data = use("tabular_index", tabular_index_config=tabular_index_config)
+    
+    results = []
+    
+    # Part number search (if available)
+    if enhanced.get("mfr_part_num") and enhanced["mfr_part_num"] != "":
+        part_results = search_by_part_number(
+            enhanced["mfr_part_num"], 
+            product_data, 
+            SEARCH_CONFIG.part_search_limit
+        )
+        results.extend(part_results)
+    
+    # Vector similarity search
+    search_query = build_search_query(enhanced)
+    vector_results = product_data.retrieve(
+        search_query, 
+        top_k=SEARCH_CONFIG.vector_search_limit
+    )
+    results.extend(standardize_vector_results(vector_results))
+    
+    return dedupe_results(results, SEARCH_CONFIG.max_results)
+
+def search_by_part_number(part_num: str, product_data, limit: int) -> list:
+    """Search for exact part number matches using tabular_index filtering"""
+    # Use retrieve with the part number as query to find matches
+    matches = product_data.retrieve(part_num, top_k=limit)
+    return standardize_vector_results(matches)
+
+def build_search_query(enhanced: dict) -> str:
+    """Build search query from enhanced data"""
+    refined = enhanced.get("refined_query", "")
+    weighted = enhanced.get("most_weighted_keyword", "")
+    
+    if SEARCH_CONFIG.use_weighted_terms and weighted != "":
+        return f"{refined} {weighted}"
+    return refined

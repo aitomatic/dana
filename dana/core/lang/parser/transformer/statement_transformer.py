@@ -173,7 +173,7 @@ class StatementTransformer(BaseTransformer):
         fixed_statements.extend(extracted_assignments)
 
         if extracted_assignments:
-            self.debug(f"✅ PARSER BOUNDARY FIX: moved {len(extracted_assignments)} assignments to program level")
+            pass
 
         return fixed_statements
 
@@ -187,12 +187,10 @@ class StatementTransformer(BaseTransformer):
         for stmt in statements:
             if isinstance(stmt, Assignment) and self._is_local_scoped_assignment(stmt):
                 # This assignment should be at program level
-                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving local assignment '{stmt.target.name}' from nested context to program level")
                 extracted_assignments.append(stmt)
             elif isinstance(stmt, FunctionDefinition):
                 # Function definitions should not be nested inside other functions (except for closures)
                 # For now, treat all nested function definitions as misplaced due to parser boundary bug
-                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving function definition '{stmt.name.name}' from nested context to program level")
                 extracted_functions.append(stmt)
             elif isinstance(stmt, Conditional):
                 # Fix conditional body and else_body
@@ -341,6 +339,35 @@ class StatementTransformer(BaseTransformer):
     def agent_field(self, items):
         """Transform an agent field rule into an AgentField node."""
         return self.function_definition_transformer.agent_field(items)
+
+    def resource_definition(self, items):
+        """Transform a resource definition rule into a ResourceDefinition node."""
+        return self.function_definition_transformer.resource_definition(items)
+
+    def resource_field(self, items):
+        """Transform a resource field rule into a ResourceField node."""
+        return self.function_definition_transformer.resource_field(items)
+
+    def resource_method(self, items):
+        """Transform a resource method rule into a ResourceMethod node."""
+        return self.function_definition_transformer.resource_method(items)
+
+    # === Agent Singleton Definitions ===
+    def singleton_agent_definition(self, items):
+        """Transform non-alias singleton agent definition into AST."""
+        return self.function_definition_transformer.singleton_agent_definition(items)
+
+    def singleton_agent_definition_with_alias(self, items):
+        """Transform alias-based singleton with block into AST."""
+        return self.function_definition_transformer.singleton_agent_definition_with_alias(items)
+
+    def singleton_agent_definition_with_alias_simple(self, items):
+        """Transform alias-based singleton without block into AST."""
+        return self.function_definition_transformer.singleton_agent_definition_with_alias_simple(items)
+
+    def base_agent_singleton_definition(self, items):
+        """Transform base agent singleton `agent Name` into AST."""
+        return self.function_definition_transformer.base_agent_singleton_definition(items)
 
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""
@@ -506,23 +533,18 @@ class StatementTransformer(BaseTransformer):
         """
 
         result = []
-        self.debug(f"🔍 Processing {len(statements)} statements for boundary detection")
 
-        for i, stmt in enumerate(statements):
+        for _, stmt in enumerate(statements):
             if stmt is None:
                 continue
-
-            self.debug(f"🔍 Statement {i}: {type(stmt).__name__} (Tree data: {getattr(stmt, 'data', 'N/A')})")
 
             # Check if this statement looks like it should be at program level
             if self._is_program_level_statement(stmt):
                 # Stop processing here - this statement belongs outside the current scope
-                self.debug(f"🛑 Detected program-level statement in block: {type(stmt).__name__}")
                 break
 
             result.append(stmt)
 
-        self.debug(f"✅ Boundary detection complete: kept {len(result)} statements")
         return result
 
     def _is_program_level_statement(self, stmt):
@@ -543,7 +565,7 @@ class StatementTransformer(BaseTransformer):
                             is_local = self._is_assignment_to_local_scope(grandchild)
                             if is_local:
                                 # Add debug logging to confirm detection
-                                self.debug("🎯 Detected local assignment that should be program-level")
+                                pass
                             return is_local
 
         return False
