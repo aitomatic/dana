@@ -386,11 +386,25 @@ const SmartAgentChat: React.FC<{
           // Only add welcome message if we don't have any messages
           if (getMessageCount() === 0) {
             const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
+            const selectedAgent = useAgentStore.getState().selectedAgent;
+            const agentDomain = selectedAgent?.config?.domain || 'Domain';
             addMessage({
               sender: 'agent',
               text: displayName
-                ? `Hi! I'm here to help you to train **${displayName}**. Here are the next steps I'd recommend to make ${displayName} better:`
-                : `Hi! I'm Dana. I'm here to help you to train your agent. First of all, what expertise your agent should have?`,
+                ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
+Now let's shape it into an agent that really works for you. To begin, tell me:
+- What kind of ${agentDomain.toLowerCase()} expertise should it focus on?
+- Who will this agent primarily assist (e.g. individuals, analysts, business owners)?
+
+💡 Tip: If you have a **job description**, you can paste it here — I'll use it to tailor the agent's knowledge base.`
+                : `Exciting — you’re about to build your own custom agent from the ground up! 🚀
+
+To get started, let’s define its foundation:
+
+- What **domain or expertise** should your agent specialize in? (e.g. healthcare, semiconductor, education)
+- **Who** will it assist? (e.g. financial analysts, IT engineers)?
+
+💡 Tip: You can provide a **job description**, and I’ll draft the starting expertise for your agent.`,
             });
           }
         }
