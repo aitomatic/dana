@@ -515,18 +515,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
             fields, methods, docstring = self._parse_struct_block(definition_block)
             return AgentDefinition(name=name_token.value, fields=fields, methods=methods, docstring=docstring)
         elif keyword_token.value == "interface":
-            # Handle the case where definition_block is a Tree with definition_block data
-            if hasattr(definition_block, "data") and definition_block.data == "definition_block":
-                # Extract the dict from the Tree
-                if definition_block.children and isinstance(definition_block.children[0], dict):
-                    block_dict = definition_block.children[0]
-                    methods = block_dict.get("methods", [])
-                    embedded_interfaces = block_dict.get("embedded_interfaces", [])
-                    docstring = block_dict.get("docstring", None)
-                else:
-                    methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
-            else:
-                methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
+            methods, embedded_interfaces, docstring = self._parse_interface_block(definition_block)
             return InterfaceDefinition(name=name_token.value, methods=methods, embedded_interfaces=embedded_interfaces, docstring=docstring)
         else:
             raise ValueError(f"Unknown definition keyword: {keyword_token.value}")
@@ -683,22 +672,13 @@ class FunctionDefinitionTransformer(BaseTransformer):
         methods = []
         docstring = None
 
-        # Check if struct_block is transformed (dict format) or raw Tree
-        if isinstance(struct_block, dict):
-            # Transformed format from struct_block method
-            docstring = struct_block.get("docstring")
-            fields_and_functions = struct_block.get("fields_and_functions", [])
+        if struct_block is None:
+            return fields, methods, docstring
 
-            for item in fields_and_functions:
-                if isinstance(item, StructField):
-                    fields.append(item)
-                elif isinstance(item, FunctionDefinition):
-                    methods.append(item)
-
-        elif struct_block and hasattr(struct_block, "data") and struct_block.data in ["struct_block", "definition_block"]:
-            # Raw Tree format or definition_block containing transformed struct_block
-            if struct_block.data == "definition_block" and struct_block.children and isinstance(struct_block.children[0], dict):
-                # Extract the dict from the definition_block Tree
+        # Handle the case where definition_block is a Tree with definition_block data
+        if hasattr(struct_block, "data") and struct_block.data == "definition_block":
+            # Extract the dict from the definition_block Tree
+            if struct_block.children and isinstance(struct_block.children[0], dict):
                 struct_dict = struct_block.children[0]
                 docstring = struct_dict.get("docstring")
                 fields_and_functions = struct_dict.get("fields_and_functions", [])
@@ -708,28 +688,42 @@ class FunctionDefinitionTransformer(BaseTransformer):
                         fields.append(item)
                     elif isinstance(item, FunctionDefinition):
                         methods.append(item)
-            else:
-                # Traditional Tree traversal
-                for child in struct_block.children:
-                    if hasattr(child, "data"):
-                        if child.data == "docstring":
-                            docstring = child.children[0].value.strip('"')
-                        elif child.data == "fields_and_functions":
-                            # The fields_and_functions rule should be transformed into a list
-                            # by the fields_and_functions method
-                            if hasattr(child, "children"):
-                                for item in child.children:
-                                    if isinstance(item, StructField):
-                                        fields.append(item)
-                                    elif isinstance(item, FunctionDefinition):
-                                        methods.append(item)
-                            # If child is already transformed (a list), use it directly
-                            elif isinstance(child, list):
-                                for item in child:
-                                    if isinstance(item, StructField):
-                                        fields.append(item)
-                                    elif isinstance(item, FunctionDefinition):
-                                        methods.append(item)
+                return fields, methods, docstring
+
+        # Handle transformed dict format
+        if isinstance(struct_block, dict):
+            docstring = struct_block.get("docstring")
+            fields_and_functions = struct_block.get("fields_and_functions", [])
+
+            for item in fields_and_functions:
+                if isinstance(item, StructField):
+                    fields.append(item)
+                elif isinstance(item, FunctionDefinition):
+                    methods.append(item)
+            return fields, methods, docstring
+
+        # Handle Tree format
+        if hasattr(struct_block, "data") and struct_block.data == "struct_block":
+            for child in struct_block.children:
+                if hasattr(child, "data"):
+                    if child.data == "docstring":
+                        docstring = child.children[0].value.strip('"')
+                    elif child.data == "fields_and_functions":
+                        # The fields_and_functions rule should be transformed into a list
+                        # by the fields_and_functions method
+                        if hasattr(child, "children"):
+                            for item in child.children:
+                                if isinstance(item, StructField):
+                                    fields.append(item)
+                                elif isinstance(item, FunctionDefinition):
+                                    methods.append(item)
+                        # If child is already transformed (a list), use it directly
+                        elif isinstance(child, list):
+                            for item in child:
+                                if isinstance(item, StructField):
+                                    fields.append(item)
+                                elif isinstance(item, FunctionDefinition):
+                                    methods.append(item)
 
         return fields, methods, docstring
 
@@ -742,6 +736,16 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         if interface_block is None:
             return methods, embedded_interfaces, docstring
+
+        # Handle the case where definition_block is a Tree with definition_block data
+        if hasattr(interface_block, "data") and interface_block.data == "definition_block":
+            # Extract the dict from the Tree
+            if interface_block.children and isinstance(interface_block.children[0], dict):
+                block_dict = interface_block.children[0]
+                methods = block_dict.get("methods", [])
+                embedded_interfaces = block_dict.get("embedded_interfaces", [])
+                docstring = block_dict.get("docstring", None)
+                return methods, embedded_interfaces, docstring
 
         # Handle transformed dict format
         if isinstance(interface_block, dict):
