@@ -36,23 +36,23 @@ const extractMessageContent = (message: any) => {
   return message?.data?.message || '';
 };
 
-const extractMessageSources = (message: any) => {
-  if (
-    typeof message?.data?.citations === 'object' &&
-    message?.data?.citations !== null &&
-    !Array.isArray(message?.data?.citations) &&
-    Object.keys(message?.data?.citations).length > 0
-  ) {
-    return Object.values(message.data.citations);
-  }
+// const extractMessageSources = (message: any) => {
+//   if (
+//     typeof message?.data?.citations === 'object' &&
+//     message?.data?.citations !== null &&
+//     !Array.isArray(message?.data?.citations) &&
+//     Object.keys(message?.data?.citations).length > 0
+//   ) {
+//     return Object.values(message.data.citations);
+//   }
 
-  return [
-    ...(message?.data?.citations || []),
-    ...(message?.data?.meta_data?.citations || []),
-    ...(message?.data?.meta_data?.result?.citations || []),
-    ...(message?.data?.message?.message?.citations || []),
-  ].filter(Boolean);
-};
+//   return [
+//     ...(message?.data?.citations || []),
+//     ...(message?.data?.meta_data?.citations || []),
+//     ...(message?.data?.meta_data?.result?.citations || []),
+//     ...(message?.data?.message?.message?.citations || []),
+//   ].filter(Boolean);
+// };
 
 const BotMessage = ({
   message,
@@ -80,7 +80,7 @@ const BotMessage = ({
   // No local handler needed
 
   const messageContent = extractMessageContent(message);
-  const messageSources = extractMessageSources(message);
+  // const messageSources = extractMessageSources(message);
 
   // Typing animation effect
   useEffect(() => {
@@ -125,10 +125,10 @@ const BotMessage = ({
 
   return (
     <div className="flex gap-2 items-start py-4 pl-6 w-full">
-      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
-        <img 
-          className="w-full h-full object-cover" 
-          src={avatarSrc} 
+      <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
+        <img
+          className="object-cover w-full h-full"
+          src={avatarSrc}
           alt="Agent avatar"
           onError={(e) => {
             // Fallback to colored circle if image fails to load
@@ -136,7 +136,7 @@ const BotMessage = ({
             target.style.display = 'none';
             const parent = target.parentElement;
             if (parent) {
-              parent.className = `w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold`;
+              parent.className = `flex justify-center items-center w-8 h-8 text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400 rounded-full`;
               parent.innerHTML = `<span className="text-white">A</span>`;
             }
           }}
@@ -155,8 +155,8 @@ const BotMessage = ({
             className={cn(
               'flex flex-col',
               message?.data?.meta_data?.type === 'dxa:prosea:user_input' &&
-              isLastMessage &&
-              'bg-blue-50 rounded-xl p-4 border border-blue-100',
+                isLastMessage &&
+                'bg-blue-50 rounded-xl p-4 border border-blue-100',
             )}
           >
             {contributedMessage && (

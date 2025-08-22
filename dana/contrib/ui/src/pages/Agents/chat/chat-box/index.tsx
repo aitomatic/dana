@@ -44,7 +44,7 @@ interface ChatBoxProps {
 }
 
 const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
-  ({ handleSendMessage, placeholder, id, agentId, isShowUpload = false, files }, ref) => {
+  ({ handleSendMessage, placeholder, id, agentId, isShowUpload = false }, ref) => {
     const [message, setMessage] = useState<string | null>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -209,8 +209,8 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
     // Memoized controls area - doesn't rerender when message changes except for the SendButton
     const ControlsArea = useMemo(
       () => (
-        <div className={cn('flex flex-row-reverse items-end w-full h-10 gap-2 justify-between')}>
-          <div className={cn('w-full justify-between flex items-center gap-4')}>
+        <div className={cn('flex flex-row-reverse gap-2 justify-between items-end w-full h-10')}>
+          <div className={cn('flex gap-4 justify-between items-center w-full')}>
             {MemoizedSendButton}
           </div>
         </div>
@@ -228,7 +228,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
           onChange={handleFileInputChange}
         />
         <form
-          className="bottom-0 left-0 right-0 flex w-full border border-gray-200 dark:border-gray-100 rounded-xl"
+          className="flex right-0 bottom-0 left-0 w-full rounded-xl border border-gray-200 dark:border-gray-100"
           onSubmit={(e) => {
             e.preventDefault();
             if (!isSubmitting) {
@@ -241,12 +241,12 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
           }}
         >
           {viewType === 'input' && (
-            <div className="flex flex-col w-full gap-2 p-3 bg-background dark:bg-gray-50 rounded-xl">
+            <div className="flex flex-col gap-2 p-3 w-full rounded-xl bg-background dark:bg-gray-50">
               {/* File upload progress indicator */}
               {uploadingFiles.length > 0 && (
                 <div className="p-2 mb-2 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2">
-                    <IconLoader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <IconLoader2 className="w-4 h-4 text-blue-600 animate-spin" />
                     <div className="text-sm text-blue-700">
                       Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}
                       ...
@@ -261,7 +261,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
                   {uploadedFiles.map((file) => (
                     <div
                       key={file.id}
-                      className="flex items-center space-x-2 px-2 py-1 bg-gray-100 rounded-lg text-sm"
+                      className="flex items-center px-2 py-1 space-x-2 text-sm bg-gray-100 rounded-lg"
                     >
                       <span className="text-gray-700">{file.name}</span>
                       {file.status === 'success' && (
@@ -274,7 +274,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
                         </button>
                       )}
                       {file.status === 'error' && (
-                        <span className="text-red-500 text-xs">Error</span>
+                        <span className="text-xs text-red-500">Error</span>
                       )}
                     </div>
                   ))}

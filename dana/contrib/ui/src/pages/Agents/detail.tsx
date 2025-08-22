@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
-import { createSmartChatStore, clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
+import { clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
 import { AgentPerformanceComparisonModal } from './AgentPerformanceComparisonModal';
 import { AgentDetailHeader } from './AgentDetailHeader';
 import { AgentDetailSidebar } from './AgentDetailSidebar';
@@ -164,7 +164,7 @@ export default function AgentDetailPage() {
       // Clear the smart-chat-storage for this agent before deleting
       try {
         await clearSmartChatStorageForAgent(agent_id);
-        
+
         console.log(`[Storage Cleanup] Cleared smart-chat-storage for agent ${agent_id}`);
       } catch (storageError) {
         console.warn('Failed to clear chat storage:', storageError);
@@ -175,7 +175,7 @@ export default function AgentDetailPage() {
       if (!isNaN(Number(agent_id))) {
         await deleteAgent(parseInt(agent_id));
       }
-      
+
       setShowCancelConfirmation(false);
 
       // No toast message when user chooses "Do not save" - they're discarding unsaved changes
