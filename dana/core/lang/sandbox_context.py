@@ -931,7 +931,13 @@ class SandboxContext(Loggable):
         try:
             return cast("LLMResourceInstance", self.get_resource("system_llm"))
         except KeyError:
-            return None
+            from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+            sys_llm_resource = LLMResourceInstance(resource_type=LLMResourceType(),
+                                                   llm_resource=LegacyLLMResource())
+            self.set_system_llm_resource(sys_llm_resource)
+            return sys_llm_resource
 
     def set_system_llm_resource(self, llm_resource: "LLMResourceInstance") -> None:
         """Set the system LLM resource.
