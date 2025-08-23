@@ -29,6 +29,12 @@ class ProposeKnowledgeStructureTool(BaseTool):
                 type="object",
                 properties=[
                     BaseArgument(
+                        name="user_message",
+                        type="string",
+                        description="A comprehensive message that acknowledges the user's request, explains the approach, and sets context for the knowledge structure proposal",
+                        example="I understand you want to add comprehensive knowledge about cryptocurrency to Sofia's expertise. Based on your request, I'll create a structured breakdown covering all essential areas.",
+                    ),
+                    BaseArgument(
                         name="topic",
                         type="string",
                         description="The main topic or domain to create knowledge structure for (e.g., 'cryptocurrency', 'machine learning', 'financial analysis')",
@@ -53,7 +59,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    async def _execute(self, topic: str, focus_areas: str = "", depth_level: str = "comprehensive") -> ToolResult:
+    async def _execute(self, topic: str, user_message: str = "", focus_areas: str = "", depth_level: str = "comprehensive") -> ToolResult:
         """
         Generate hierarchical knowledge structure for a new topic domain.
 
@@ -66,21 +72,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
             structure_content = self._generate_topic_structure(topic, focus_areas, depth_level)
 
             # Format the response for user review
-            content = f"""🏗️ Proposed Knowledge Structure: {topic.title()}
-
-{structure_content}
-
-💡 **Next Steps:**
-- Review the proposed structure above carefully
-- Identify any areas you'd like to modify, expand, or remove  
-- Consider if the depth and breadth match your needs
-- Once satisfied, we'll add this structure to your knowledge tree
-
-📋 **Structure Guidelines:**
-- Main categories (📁) represent broad topic areas
-- Subtopics (📄) are specific knowledge areas for content generation
-- Structure can be refined iteratively before adding to tree
-"""
+            content = self._build_structured_response(user_message, topic, structure_content)
 
             return ToolResult(name="propose_knowledge_structure", result=content, require_user=True)
 
@@ -123,15 +115,14 @@ DOMAIN CONTEXT:
 FORMAT REQUIREMENTS:
 - Use 📁 for main categories (folders)
 - Use 📄 for specific subtopics (knowledge generation targets)
-- Use proper indentation (├── and └──) for tree structure
+- Use proper indentation for tree structure
 - Each subtopic should be specific enough for focused knowledge generation
 
 EXAMPLE FORMAT:
-📁 Category Name
-  ├── 📄 Specific Subtopic 1
-  ├── 📄 Specific Subtopic 2
-  ├── 📄 Specific Subtopic 3
-  └── 📄 Specific Subtopic 4
+📁 **Category Name**
+  - 📄 Specific Subtopic 1
+  - 📄 Specific Subtopic 2
+  - 📄 Specific Subtopic 3
 
 Generate the complete knowledge structure now:"""
 
@@ -152,22 +143,17 @@ Generate the complete knowledge structure now:"""
             logger.error(f"Failed to generate topic structure: {e}")
             # Fallback structure
             return f"""📁 {topic.title()} Fundamentals
-  ├── 📄 Core Concepts
-  ├── 📄 Key Principles
-  ├── 📄 Basic Terminology
-  └── 📄 Getting Started
 
-📁 {topic.title()} Applications
-  ├── 📄 Common Use Cases
-  ├── 📄 Best Practices
-  ├── 📄 Real-World Examples
-  └── 📄 Implementation Strategies
 
-📁 Advanced {topic.title()}
-  ├── 📄 Advanced Concepts
-  ├── 📄 Specialized Areas
-  ├── 📄 Expert Techniques
-  └── 📄 Future Trends
+📁 **Application of {topic.title()} **
+  - 📄 Specific Subtopic 1
+  - 📄 Specific Subtopic 2
+  - 📄 Specific Subtopic 3
+
+📁 **Advanced {topic.title()}**
+  - 📄 Advanced Subtopic 1
+  - 📄 Advanced Subtopic 2
+  - 📄 Advanced Subtopic 3
 
 ⚠️ Note: This is a fallback structure due to generation error. Please refine as needed."""
 
@@ -202,3 +188,30 @@ Generate the refined structure:"""
         except Exception as e:
             logger.error(f"Failed to refine structure: {e}")
             return f"❌ Error refining structure: {str(e)}\n\nOriginal structure:\n{current_structure}"
+
+    def _build_structured_response(self, user_message: str, topic: str, structure_content: str) -> str:
+        """Build a structured response with user message and knowledge structure."""
+        response_parts = []
+
+        # Add user message first (acknowledgment and context)
+        if user_message:
+            response_parts.append(f"{user_message}")
+            response_parts.append("")  # Empty line for spacing
+
+        # Add the main structure header
+        response_parts.append(f"🏗️ **Proposed Knowledge Structure:** {topic.title()}")
+        response_parts.append("")  # Empty line for spacing
+
+        # Add the structure content
+        response_parts.append(structure_content)
+        response_parts.append("")  # Empty line for spacing
+
+        # Add next steps and guidelines
+        response_parts.append("""💡 **Next Steps:**
+- Review the proposed structure above carefully
+- Identify any areas you'd like to modify, expand, or remove  
+- Once satisfied, we'll add this structure to your knowledge tree
+""")
+
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)

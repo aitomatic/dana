@@ -31,6 +31,12 @@ class PreviewKnowledgeTopicTool(BaseTool):
                 type="object",
                 properties=[
                     BaseArgument(
+                        name="user_message",
+                        type="string",
+                        description="A comprehensive message that acknowledges the user's request and explains what the preview will show",
+                        example="I understand you want to see a preview of what knowledge would be generated for investing. This will help you decide whether to add this topic to Sofia's knowledge structure.",
+                    ),
+                    BaseArgument(
                         name="topic",
                         type="string",
                         description="The topic to generate a preview for (e.g., 'investing', 'risk management', 'cryptocurrency')",
@@ -49,7 +55,7 @@ class PreviewKnowledgeTopicTool(BaseTool):
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    async def _execute(self, topic: str, context: str = "") -> ToolResult:
+    async def _execute(self, topic: str, user_message: str = "", context: str = "") -> ToolResult:
         """
         Generate a lightweight preview of knowledge content for a topic.
 
@@ -65,21 +71,7 @@ class PreviewKnowledgeTopicTool(BaseTool):
             preview_content = self._generate_topic_preview(topic, context)
 
             # Format the response for user review
-            content = f"""🔍 Knowledge Preview: {topic.title()}
-
-{preview_content}
-
-💡 **This is a preview of what would be generated for {topic}.**
-
-During structure planning, this helps you understand what content your agent would learn about {topic}. This is NOT actual knowledge generation - just a preview to help you make informed decisions about your knowledge structure.
-
-**Next Steps:**
-• Add this topic to your knowledge structure
-• Modify the topic focus or scope  
-• Preview a different topic
-• Continue with structure planning
-
-**Ready for your decision on this topic preview!**"""
+            content = self._build_preview_response(user_message, topic, preview_content)
 
             return ToolResult(name="preview_knowledge_topic", result=content, require_user=True)
 
@@ -161,6 +153,39 @@ Generate the preview content now:"""
 • Balance theoretical knowledge with practical application
 
 ⚠️ Note: This is a basic preview due to generation error. The actual content would be more comprehensive and domain-specific."""
+
+    def _build_preview_response(self, user_message: str, topic: str, preview_content: str) -> str:
+        """Build a structured preview response with user message and preview content."""
+        response_parts = []
+
+        # Add user message first (acknowledgment and context)
+        if user_message:
+            response_parts.append(f"{user_message}")
+            response_parts.append("")  # Empty line for spacing
+
+        # Add the main preview header
+        response_parts.append(f"🔍 **Knowledge Preview:** {topic.title()}")
+        response_parts.append("")  # Empty line for spacing
+
+        # Add the preview content
+        response_parts.append(preview_content)
+        response_parts.append("")  # Empty line for spacing
+
+        # Add explanation and next steps
+        response_parts.append(f"""💡 **This is a preview of what would be generated for {topic}.**
+
+During structure planning, this helps you understand what content your agent would learn about {topic}. This is NOT actual knowledge generation - just a preview to help you make informed decisions about your knowledge structure.
+
+**Next Steps:**
+• Add this topic to your knowledge structure
+• Modify the topic focus or scope  
+• Preview a different topic
+• Continue with structure planning
+
+**Ready for your decision on this topic preview!**""")
+
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)
 
     def get_topic_summary(self, topic: str) -> str:
         """Get a brief summary of the topic for logging/debugging."""

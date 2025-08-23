@@ -5,7 +5,8 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool 
     BaseArgument,
     ToolResult,
 )
-from dana.api.core.schemas import DomainKnowledgeTree
+from dana.api.core.schemas import DomainKnowledgeTree, DomainNode
+from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
@@ -26,6 +27,7 @@ class GenerateKnowledgeTool(BaseTool):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         notifier: Callable[[str, str, str, float | None], None] | None = None,
+        agent_id: str | None = None,
     ):
         self.knowledge_status_path = knowledge_status_path
         self.storage_path = storage_path
@@ -34,23 +36,23 @@ class GenerateKnowledgeTool(BaseTool):
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
         self.notifier = notifier
+
+        # Initialize KnowledgeStatusManager
+        self.status_manager = None
+        if knowledge_status_path:
+            self.status_manager = KnowledgeStatusManager(knowledge_status_path, agent_id)
+
         tool_info = BaseToolInformation(
             name="generate_knowledge",
-            description="Generate knowledge for topics. Can generate for a single topic or automatically for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'. IMPORTANT NOTE: Running this tool takes a long time. Therefore, this tool CANNOT be used until you have received the command or approval from the user to generate knowledge EXPLICITLY.",
+            description="Generate knowledge for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
-                        name="mode",
+                        name="user_message",
                         type="string",
-                        description="Generation mode: 'single' for one topic or 'all_leaves' for all leaf nodes",
-                        example="single",
-                    ),
-                    BaseArgument(
-                        name="topic",
-                        type="string",
-                        description="Topic to generate knowledge about (required for single mode)",
-                        example="Current Ratio Analysis",
+                        description="A comprehensive message that acknowledges the user's request and explains what knowledge generation will be performed",
+                        example="I understand you want to generate comprehensive knowledge for all topics in the tree structure. This will create detailed facts, procedures, and heuristics to enhance the agent's capabilities.",
                     ),
                     BaseArgument(
                         name="counts",
@@ -62,58 +64,67 @@ class GenerateKnowledgeTool(BaseTool):
                         name="context",
                         type="string",
                         description="Additional context from the plan",
-                        example="Focus on liquidity analysis for financial analysts",
+                        example="Focus on practical applications and real-world scenarios",
                     ),
                 ],
-                required=["mode"],
+                required=[],
             ),
         )
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    async def _execute(self, mode: str, topic: str = "", counts: str = "", context: str = "") -> ToolResult:
+    async def _execute(self, user_message: str = "", counts: str = "", context: str = "") -> ToolResult:
         try:
-            if mode == "all_leaves":
-                return await self._generate_for_all_leaves(counts, context)
-            elif mode == "single":
-                if not topic:
-                    return ToolResult(
-                        name="generate_knowledge", result="❌ Error: Topic is required for single mode generation", require_user=False
-                    )
-                return await self._generate_for_single_topic(topic, counts, context)
-            else:
-                return ToolResult(
-                    name="generate_knowledge", result=f"❌ Error: Invalid mode '{mode}'. Use 'single' or 'all_leaves'", require_user=False
-                )
+            return await self._generate_for_all_leaves(user_message, counts, context)
         except Exception as e:
             logger.error(f"Failed to generate knowledge: {e}")
-            return ToolResult(name="generate_knowledge", result=f"❌ Error generating knowledge: {str(e)}", require_user=False)
+            return ToolResult(
+                name="generate_knowledge",
+                result=self._build_structured_response(user_message, f"❌ Error generating knowledge: {str(e)}"),
+                require_user=False,
+            )
 
-    async def _generate_for_all_leaves(self, counts: str, context: str) -> ToolResult:
+    async def _extract_leaf_paths(self, node: DomainNode, current_path: list[str] = None) -> list[list[str]]:
+        """Recursively extract all paths from root to leaf nodes."""
+        if current_path is None:
+            current_path = []
+        topic = node.topic
+        new_path = current_path + [topic]
+        children = node.children
+
+        if not children:  # Leaf node
+            return [new_path]
+
+        all_paths = []
+        for child in children:
+            all_paths.extend(await self._extract_leaf_paths(child, new_path))
+        return all_paths
+
+    async def _initialize_path_in_status_manager(self, path_parts: list[str]) -> None:
+        """Initialize a path in the status manager if it doesn't exist."""
+        if not self.status_manager:
+            return
+
+        path_str = self._path_parts_to_string(path_parts)
+
+        # Only add if topic doesn't already exist
+        if not self.status_manager.get_topic_entry(path_str):
+            from datetime import datetime, UTC
+
+            current_time = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            file_path = self._build_file_path_from_path_parts(path_parts)
+            self.status_manager.add_or_update_topic(path_str, file_path, current_time, "pending")
+
+    async def _generate_for_all_leaves(self, user_message: str, counts: str, context: str) -> ToolResult:
         """Generate knowledge for all leaf nodes in the tree structure."""
         if not self.tree_structure or not self.tree_structure.root:
             return ToolResult(
-                name="generate_knowledge", result="❌ Error: No tree structure available for all_leaves mode", require_user=False
+                name="generate_knowledge",
+                result=self._build_structured_response(user_message, "❌ Error: No tree structure available for all_leaves mode"),
+                require_user=False,
             )
 
-        # Extract all leaf paths from the tree
-        def extract_leaf_paths(node, current_path=None):
-            """Recursively extract all paths from root to leaf nodes."""
-            if current_path is None:
-                current_path = []
-            topic = node.topic
-            new_path = current_path + [topic]
-            children = node.children
-
-            if not children:  # Leaf node
-                return [new_path]
-
-            all_paths = []
-            for child in children:
-                all_paths.extend(extract_leaf_paths(child, new_path))
-            return all_paths
-
-        all_leaf_paths = extract_leaf_paths(self.tree_structure.root)
+        all_leaf_paths = await self._extract_leaf_paths(self.tree_structure.root)
         logger.info(f"Found {len(all_leaf_paths)} leaf nodes to process")
 
         # Stream initial progress
@@ -128,7 +139,8 @@ class GenerateKnowledgeTool(BaseTool):
 
         for i, path in enumerate(all_leaf_paths):
             leaf_topic = path[-1]  # Last element in path is the leaf topic
-            path_str = " → ".join(path)
+            # Exclude root node in path string to match knowledge status format
+            path_str = self._path_parts_to_string(path)
 
             # Calculate progress percentage
             progress = (i / len(all_leaf_paths)) if len(all_leaf_paths) > 0 else 0.0
@@ -143,9 +155,9 @@ class GenerateKnowledgeTool(BaseTool):
 
             try:
                 # Check if already generated
-                if self.knowledge_status_path:
-                    status_check = self._check_knowledge_status(leaf_topic)
-                    if status_check["skip"]:
+                if self.status_manager:
+                    path_str = self._path_parts_to_string(path)
+                    if self.status_manager.is_success(path_str):
                         generation_results.append(f"⏭️ Skipped '{leaf_topic}' - already complete")
                         # Stream skip notification
                         if self.notifier:
@@ -154,9 +166,12 @@ class GenerateKnowledgeTool(BaseTool):
                             )
                         continue
 
+                # Initialize status manager for the current path if it hasn't been done yet
+                await self._initialize_path_in_status_manager(path)
+
                 # Generate knowledge for this leaf
                 leaf_context = f"{context}\nTree path: {path_str}\nFocus on this specific aspect within the broader context."
-                result = await self._generate_single_knowledge(leaf_topic, counts, leaf_context)
+                result = await self._generate_single_knowledge(path, counts, leaf_context)
 
                 if "Error" not in result:
                     successful_generations += 1
@@ -229,50 +244,14 @@ class GenerateKnowledgeTool(BaseTool):
                 1.0,
             )
 
-        return ToolResult(name="generate_knowledge", result=content, require_user=False)
+        return ToolResult(name="generate_knowledge", result=self._build_structured_response(user_message, content), require_user=False)
 
-    async def _generate_for_single_topic(self, topic: str, counts: str, context: str) -> ToolResult:
-        """Generate knowledge for a single topic."""
-        # Stream start notification
-        if self.notifier:
-            await self.notifier("generate_knowledge", f"📝 Starting knowledge generation for: {topic}", "in_progress", 0.0)
-
-        # Check knowledge status first
-        if self.knowledge_status_path:
-            status_check = self._check_knowledge_status(topic)
-            if status_check["skip"]:
-                # Stream skip notification
-                if self.notifier:
-                    await self.notifier("generate_knowledge", f"⏭️ Skipped '{topic}' - already complete", "finish", 1.0)
-                return ToolResult(
-                    name="generate_knowledge",
-                    result=f"""📚 Knowledge Generation Skipped
-
-Topic: {topic}
-Status: {status_check["status"]}
-Reason: {status_check["reason"]}
-
-✅ This topic already has successful knowledge generation.
-No action needed - knowledge is up to date.""",
-                    require_user=False,
-                )
-
-        # Stream progress update - starting generation
-        if self.notifier:
-            await self.notifier("generate_knowledge", f"🧠 Generating knowledge artifacts for: {topic}", "in_progress", 0.5)
-
-        # Generate the knowledge
-        result_content = await self._generate_single_knowledge(topic, counts, context)
-
-        # Stream completion
-        if self.notifier:
-            await self.notifier("generate_knowledge", f"✅ Completed knowledge generation for: {topic}", "finish", 1.0)
-
-        return ToolResult(name="generate_knowledge", result=result_content, require_user=False)
-
-    async def _generate_single_knowledge(self, topic: str, counts: str, context: str) -> str:
-        """Core method to generate knowledge for a single topic."""
+    async def _generate_single_knowledge(self, path_parts: list[str], counts: str, context: str) -> str:
+        """Core method to generate knowledge for a single path."""
         try:
+            # Extract the actual topic name for generation (last part of path)
+            topic = path_parts[-1] if path_parts else "unknown"
+
             # Always generate all types: facts, procedures, heuristics
             types_list = ["facts", "procedures", "heuristics"]
 
@@ -287,7 +266,7 @@ No action needed - knowledge is up to date.""",
 **Key Tasks You Must Support**:
 {tasks_str}
 
-**Additional Context**: {context}
+**Additional Constraints for this generation**: {context}
 **Target Counts**: {counts if counts else "appropriate amounts of each"}
 
 Generate knowledge that is immediately applicable and relevant for a {self.role} performing the above tasks. Focus on practical, actionable knowledge that supports real-world scenarios in {self.domain}.
@@ -339,11 +318,11 @@ Return as JSON:
                 arguments={
                     "messages": [{"role": "user", "content": knowledge_prompt}],
                     "temperature": 0.1,
-                    "max_tokens": 1500,  # Increased for comprehensive generation
+                    "max_tokens": 8000,  # Increased for comprehensive generation
                 }
             )
 
-            response = Misc.safe_asyncio_run(self.llm.query, llm_request)
+            response = await self.llm.query(llm_request)
             result = Misc.text_to_dict(Misc.get_response_content(response))
 
             # Format the comprehensive output
@@ -402,7 +381,7 @@ Return as JSON:
             persistence_info = ""
             if self.storage_path:
                 try:
-                    persistence_info = self._persist_knowledge(topic, content, result, total_artifacts)
+                    persistence_info = self._persist_knowledge(path_parts, content, result, total_artifacts)
                 except Exception as e:
                     logger.error(f"Failed to persist knowledge to disk: {e}")
                     persistence_info = f"\n⚠️ Warning: Knowledge generated but not saved to disk: {str(e)}"
@@ -412,212 +391,43 @@ Return as JSON:
                 content += persistence_info
 
             # Update knowledge status to success
-            if self.knowledge_status_path:
-                self._update_knowledge_status(topic, "success", f"Generated {total_artifacts} artifacts")
+            if self.status_manager:
+                path_str = self._path_parts_to_string(path_parts)
+                self.status_manager.set_status(path_str, "success")
 
             return content
 
         except Exception as e:
-            logger.error(f"Failed to generate knowledge for topic {topic}: {e}")
+            path_str = self._path_parts_to_string(path_parts)
+            logger.error(f"Failed to generate knowledge for path {path_str}: {e}")
             # Update status to failed on error
-            if self.knowledge_status_path:
-                self._update_knowledge_status(topic, "failed", str(e))
-            return f"❌ Error generating knowledge for {topic}: {str(e)}"
+            if self.status_manager:
+                path_str = self._path_parts_to_string(path_parts)
+                self.status_manager.set_status(path_str, "failed", str(e))
+            return f"❌ Error generating knowledge for {path_str}: {str(e)}"
 
-    def _check_knowledge_status(self, topic: str) -> dict:
-        """Check if knowledge generation is needed for the given topic."""
-        try:
-            from pathlib import Path
-            import json
+    def _path_parts_to_string(self, path_parts: list[str]) -> str:
+        """Convert path parts to string format (excluding root node)."""
+        return " - ".join(path_parts[1:]) if len(path_parts) > 1 else " - ".join(path_parts)
 
-            status_file = Path(self.knowledge_status_path)
-            if not status_file.exists():
-                # No status file means no topics have been processed yet
-                return {"skip": False, "status": "not_started", "reason": "No status file found"}
+    def _build_file_path_from_path_parts(self, path_parts: list[str]) -> str:
+        """Build file path from a list of path parts (excluding root) by converting ' - ' to '/' and adding '/knowledge.json'."""
+        # For file paths, we need to include the root node
+        # The path_parts excludes the root, so add it back
 
-            with open(status_file) as f:
-                status_data = json.load(f)
+        # Convert to file path format with "/" separators
+        file_path = "/".join(path_parts)
+        # Add "/knowledge.json" suffix
+        return file_path + "/knowledge.json"
 
-            # Handle new structured format with topics array
-            topics = status_data.get("topics", [])
-
-            # Find topic by path or topic name
-            topic_entry = None
-            for t in topics:
-                # Check if path contains the topic or if topic name matches
-                if topic in t.get("path", "") or t.get("path", "").split(" - ")[-1] == topic:
-                    topic_entry = t
-                    break
-
-            if not topic_entry:
-                # Topic not found in status, needs to be added
-                return {"skip": False, "status": "not_started", "reason": "Topic not found in status file"}
-
-            current_status = topic_entry.get("status", "pending")
-
-            if current_status == "success":
-                last_generated = topic_entry.get("last_generated")
-                return {
-                    "skip": True,
-                    "status": current_status,
-                    "reason": f"Topic already completed successfully on {last_generated or 'unknown date'}",
-                }
-            else:
-                return {"skip": False, "status": current_status, "reason": f"Topic needs generation (current status: {current_status})"}
-
-        except Exception as e:
-            logger.error(f"Error checking knowledge status: {e}")
-            # Default to generating if we can't read status
-            return {"skip": False, "status": "error", "reason": f"Status check failed: {e}"}
-
-    def _update_knowledge_status(self, topic: str, status: str, message: str = "") -> None:
-        """Update the knowledge generation status for the given topic using the structured format."""
-        try:
-            from pathlib import Path
-            from datetime import datetime, UTC
-            import json
-            import uuid
-
-            status_file = Path(self.knowledge_status_path)
-
-            # Load existing status data or create new structure
-            if status_file.exists():
-                with open(status_file) as f:
-                    status_data = json.load(f)
-            else:
-                status_data = {"topics": [], "agent_id": "1"}
-                # Ensure parent directory exists
-                status_file.parent.mkdir(parents=True, exist_ok=True)
-
-            # Ensure topics array exists
-            if "topics" not in status_data:
-                status_data["topics"] = []
-
-            # Find existing topic entry
-            topic_entry = None
-            for t in status_data["topics"]:
-                # Check if path contains the topic or if topic name matches
-                if topic in t.get("path", "") or t.get("path", "").split(" - ")[-1] == topic:
-                    topic_entry = t
-                    break
-
-            current_time = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-
-            if topic_entry:
-                # Update existing entry
-                topic_entry["status"] = status
-                topic_entry["last_topic_update"] = current_time
-                if status == "success":
-                    topic_entry["last_generated"] = current_time
-                    topic_entry["error"] = None
-                elif status == "failed":
-                    topic_entry["error"] = message
-                    topic_entry["last_generated"] = None
-            else:
-                # Create new topic entry
-                # Build full path from tree structure (with " - " separators like the example)
-                full_path = self._build_full_path_for_topic(topic)
-
-                # Build file path independently (with "/" separators and /knowledge.json)
-                actual_file_path = self._build_file_path_for_topic(topic)
-
-                new_entry = {
-                    "id": str(uuid.uuid4()),
-                    "path": full_path,
-                    "file": actual_file_path,
-                    "status": status,
-                    "last_generated": current_time if status == "success" else None,
-                    "last_topic_update": current_time,
-                    "error": message if status == "failed" else None,
-                }
-                status_data["topics"].append(new_entry)
-
-            # Save updated status
-            with open(status_file, "w") as f:
-                json.dump(status_data, f, indent=2)
-
-            logger.info(f"Updated knowledge status for '{topic}': {status}")
-
-        except Exception as e:
-            logger.error(f"Failed to update knowledge status: {e}")
-
-    def _build_full_path_for_topic(self, topic: str) -> str:
-        """Build full path from root to topic using tree structure with ' - ' separators."""
-        if not self.tree_structure or not self.tree_structure.root:
-            # Fallback: use domain if no tree structure
-            return f"{self.domain} - {topic}"
-
-        # Find the path to the topic in the tree
-        def find_path_to_topic(node, target_topic, current_path=None):
-            if current_path is None:
-                current_path = []
-
-            current_path = current_path + [node.topic]
-
-            # Check if this is the target topic
-            if node.topic == target_topic:
-                return current_path
-
-            # Search in children
-            for child in node.children:
-                path = find_path_to_topic(child, target_topic, current_path)
-                if path:
-                    return path
-
-            return None
-
-        path = find_path_to_topic(self.tree_structure.root, topic)
-        if path:
-            return " - ".join(path)
-        else:
-            # Fallback if topic not found in tree
-            return f"{self.tree_structure.root.topic} - {topic}"
-
-    def _build_file_path_for_topic(self, topic: str) -> str:
-        """Build file path from root to topic using tree structure with '/' separators."""
-        if not self.tree_structure or not self.tree_structure.root:
-            # Fallback: use domain if no tree structure
-            return f"{self.domain}/{topic}/knowledge.json"
-
-        # Find the path to the topic in the tree
-        def find_path_to_topic(node, target_topic, current_path=None):
-            if current_path is None:
-                current_path = []
-
-            current_path = current_path + [node.topic]
-
-            # Check if this is the target topic
-            if node.topic == target_topic:
-                return current_path
-
-            # Search in children
-            for child in node.children:
-                path = find_path_to_topic(child, target_topic, current_path)
-                if path:
-                    return path
-
-            return None
-
-        path = find_path_to_topic(self.tree_structure.root, topic)
-        if path:
-            # Convert to file path format with / separators
-            return "/".join(path) + "/knowledge.json"
-        else:
-            # Fallback if topic not found in tree
-            return f"{self.tree_structure.root.topic}/{topic}/knowledge.json"
-
-    def _get_knowledge_file_path(self, topic: str) -> str:
-        """Wrapper for backward compatibility - use _build_file_path_for_topic directly."""
-        return self._build_file_path_for_topic(topic)
-
-    def _persist_knowledge(self, topic: str, content: str, result_data: dict, total_artifacts: int) -> str:
+    def _persist_knowledge(self, path_parts: list[str], content: str, result_data: dict, total_artifacts: int) -> str:
         """Persist generated knowledge to disk storage."""
         from pathlib import Path
         from datetime import datetime, UTC
         import json
 
         # Get the file path structure
-        file_path = self._build_file_path_for_topic(topic)
+        file_path = self._build_file_path_from_path_parts(path_parts)
 
         # Create full path from storage directory
         storage_dir = Path(self.storage_path)
@@ -628,7 +438,7 @@ Return as JSON:
 
         # Prepare knowledge data for storage
         knowledge_data = {
-            "topic": topic,
+            "topic": path_parts[-1] if path_parts else "unknown",
             "generated_at": datetime.now(UTC).isoformat(),
             "total_artifacts": total_artifacts,
             "content_summary": f"Generated {total_artifacts} knowledge artifacts",
@@ -647,3 +457,18 @@ Return as JSON:
 📊 File Size: {full_file_path.stat().st_size} bytes
 🕒 Saved At: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}
 ✅ Status: Ready for agent usage"""
+
+    def _build_structured_response(self, user_message: str, content: str) -> str:
+        """Build a structured response with user message and generation content."""
+        response_parts = []
+
+        # Add user message first (acknowledgment and context)
+        if user_message:
+            response_parts.append(f"{user_message}")
+            response_parts.append("")  # Empty line for spacing
+
+        # Add the generation content
+        response_parts.append(content)
+
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)
