@@ -13,6 +13,7 @@ import traceback
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import List
 
 from fastapi import (
     APIRouter,
@@ -29,7 +30,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
 from dana.api.core.database import engine, get_db
-from dana.api.core.models import Agent, AgentChatHistory
+from dana.api.core.models import Agent, AgentChatHistory, Document
 from dana.api.core.schemas import (
     AgentCreate,
     AgentGenerationRequest,
@@ -40,6 +41,7 @@ from dana.api.core.schemas import (
     CodeValidationResponse,
     DocumentRead,
 )
+from pydantic import BaseModel
 from dana.api.server.server import ws_manager
 from dana.api.services.agent_deletion_service import AgentDeletionService, get_agent_deletion_service
 from dana.api.services.agent_manager import AgentManager, get_agent_manager
@@ -61,6 +63,10 @@ from dana.api.services.knowledge_status_manager import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+class AssociateDocumentsRequest(BaseModel):
+    document_ids: List[int]
 
 
 def clear_agent_cache(agent_folder_path: str) -> None:
@@ -997,6 +1003,79 @@ async def upload_agent_document(
         raise
     except Exception as e:
         logger.error(f"Error uploading document to agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/documents/associate")
+async def associate_documents_with_agent(
+    agent_id: int,
+    request_body: AssociateDocumentsRequest,
+    db: Session = Depends(get_db),
+    document_service: DocumentService = Depends(get_document_service),
+):
+    """Associate existing documents with an agent."""
+    try:
+        # Extract document_ids from request body
+        document_ids = request_body.document_ids
+        if not document_ids:
+            raise HTTPException(status_code=400, detail="document_ids is required and must not be empty")
+        
+        # Validate document_ids is a list of integers
+        if not isinstance(document_ids, list):
+            raise HTTPException(status_code=400, detail="document_ids must be a list")
+        
+        # Get the agent to verify it exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        # Get folder_path from agent config
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            # Generate folder path and save it to config
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+            os.makedirs(folder_path, exist_ok=True)
+
+            # Update config with folder_path
+            updated_config = agent.config.copy() if agent.config else {}
+            updated_config["folder_path"] = folder_path
+            agent.config = updated_config
+
+            # Force update by marking as dirty
+            flag_modified(agent, "config")
+
+            db.commit()
+            db.refresh(agent)
+
+        # Update documents to associate them with the agent
+        updated_count = 0
+        for doc_id in document_ids:
+            document = db.query(Document).filter(Document.id == doc_id).first()
+            if document:
+                # Check if document is already associated with this agent
+                if document.agent_id == agent_id:
+                    continue
+                
+                # Update the document's agent_id
+                document.agent_id = agent_id
+                updated_count += 1
+
+        if updated_count > 0:
+            db.commit()
+            
+            # Clear cache to force RAG rebuild with new documents
+            clear_agent_cache(folder_path)
+
+        return {
+            "success": True,
+            "message": f"Successfully associated {updated_count} document(s) with agent {agent_id}",
+            "updated_count": updated_count,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error associating documents with agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
