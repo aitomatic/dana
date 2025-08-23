@@ -2,7 +2,7 @@
 # 
 # This demonstrates the core workflow capabilities in a simple, working format
 
-import dana.frameworks.workflow as wf
+import dana.builtin_types.workflow_system as wf
 
 # Initialize components
 log("🔧 Initializing Document Processing Pipeline...")

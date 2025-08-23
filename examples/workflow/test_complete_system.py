@@ -8,9 +8,9 @@ This demonstrates the full workflow system with:
 - Phase 3: Context Engineering (KNOWS integration, knowledge curation)
 """
 
-from dana.frameworks.workflow.core.workflow_engine import WorkflowEngine
-from dana.frameworks.workflow.core.workflow_step import WorkflowStep
-from dana.frameworks.workflow.context_engineering import ContextAwareWorkflowEngine
+from dana.builtin_types.workflow_system.context_engineering import ContextAwareWorkflowEngine
+from dana.builtin_types.workflow_system.core.workflow_engine import WorkflowEngine
+from dana.builtin_types.workflow_system.core.workflow_step import WorkflowStep
 
 
 def add_ten(x):

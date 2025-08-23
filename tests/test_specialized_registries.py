@@ -2,7 +2,7 @@
 Tests for specialized registries (AgentRegistry and ResourceRegistry).
 """
 
-from dana.core.builtin_types.struct_system import StructInstance
+from dana.builtin_types.struct_system import StructInstance
 from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
 
 

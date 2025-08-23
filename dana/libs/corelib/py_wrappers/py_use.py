@@ -11,9 +11,9 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Union
 
+from dana.builtin_types.resource import ResourceInstance
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
-from dana.core.builtin_types.resource import ResourceInstance
 from dana.core.lang.sandbox_context import SandboxContext
 
 

@@ -6,7 +6,7 @@ This demonstrates how to use the new event handler functionality
 with AGENT_REGISTRY and RESOURCE_REGISTRY.
 """
 
-from dana.core.builtin_types.struct_system import StructInstance, StructType
+from dana.builtin_types.struct_system import StructInstance, StructType
 from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
 
 

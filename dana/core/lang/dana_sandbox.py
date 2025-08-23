@@ -16,10 +16,10 @@ from typing import Any
 
 from dana.api.client import APIClient
 from dana.api.server import APIServiceManager
+from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 from dana.common.mixins.loggable import Loggable
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
-from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext

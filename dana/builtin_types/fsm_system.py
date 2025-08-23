@@ -10,7 +10,7 @@ MIT License
 
 from typing import Any
 
-from dana.core.builtin_types.struct_system import StructType
+from dana.builtin_types.struct_system import StructType
 
 
 def _make_transition_key(from_state: str, event: str) -> str:

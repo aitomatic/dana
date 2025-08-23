@@ -1,0 +1,26 @@
+# Word-Based Math Problem Test
+
+agent MathAgent
+
+print("🔤 Testing Word-Based Math Problems")
+print("=" * 40)
+
+print("\n📊 Test 1: How many times")
+print("Result:", MathAgent.solve("4 is how many times 2?"))
+
+print("\n📊 Test 2: Addition words")
+print("Result:", MathAgent.solve("What is 7 plus 3?"))
+
+print("\n📊 Test 3: Multiplication words")
+print("Result:", MathAgent.solve("What is 6 times 8?"))
+
+print("\n📊 Test 4: Division words")
+print("Result:", MathAgent.solve("What is 20 divided by 4?"))
+
+print("\n📊 Test 5: Subtraction words")
+print("Result:", MathAgent.solve("What is 15 minus 7?"))
+
+print("\n📊 Test 6: Mixed symbolic + word")
+print("Result:", MathAgent.solve("Calculate 5 + 3"))
+
+print("\n✅ Word math tests completed!")

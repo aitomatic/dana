@@ -25,9 +25,9 @@ def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
     Returns:
         Configured LLMResourceInstance with mock mode enabled
     """
+    from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name=name, model=model))
     llm_resource.initialize()

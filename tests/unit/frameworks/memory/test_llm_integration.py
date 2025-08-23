@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+from dana.builtin_types.agent_system import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -100,7 +100,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -125,7 +125,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Test with context")
+                response = agent.chat("Test with context", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -154,7 +154,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat should return an error message when LLM fails
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -173,7 +173,11 @@ class TestLLMIntegration(unittest.TestCase):
                 agent = self.create_test_agent()
 
                 # Chat should work with fallback response
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
+
+                # Wait for the Promise to resolve
+                if hasattr(response, "_wait_for_delivery"):
+                    response = response._wait_for_delivery()
 
                 # Should get a fallback response
                 self.assertIn("Hello", response)
@@ -194,7 +198,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -219,7 +223,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -244,8 +248,8 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Test multiple chat calls
-                response1 = agent.chat(self.sandbox_context, "First message")
-                response2 = agent.chat(self.sandbox_context, "Second message")
+                response1 = agent.chat("First message", sandbox_context=self.sandbox_context)
+                response2 = agent.chat("Second message", sandbox_context=self.sandbox_context)
 
                 # Wait for both Promises to resolve
                 if hasattr(response1, "_wait_for_delivery"):
@@ -275,7 +279,7 @@ class TestLLMIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -295,7 +299,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def create_test_agent(self):
         """Create a test agent for integration tests."""
-        from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+        from dana.builtin_types.agent_system import AgentInstance, AgentType
 
         agent_type = AgentType(
             name="TestAgent",
@@ -307,7 +311,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_sandbox_context_creation(self):
         """Test that SandboxContext is created properly."""
-        from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+        from dana.builtin_types.agent_system import AgentInstance, AgentType
 
         agent_type = AgentType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
         agent = AgentInstance(agent_type, {"purpose": "testing"})
@@ -333,7 +337,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Test wrapper function behavior
-                response = agent.chat(self.sandbox_context, "Test wrapper function")
+                response = agent.chat("Test wrapper function", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):

@@ -18,7 +18,7 @@ sys.path.insert(0, str(project_root))
 
 from dana.apps.tui.core.events import Done, Status, Token
 from dana.apps.tui.core.runtime import DanaSandbox
-from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+from dana.builtin_types.agent_system import AgentInstance, AgentType
 
 
 class MockTestAgent(AgentInstance):
