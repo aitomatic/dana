@@ -49,6 +49,7 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import sys
 
@@ -107,55 +108,42 @@ def show_help():
 
 
 def execute_file(file_path, debug=False, script_args=None):
-    """Execute a DANA file using the new DanaSandbox API."""
+    """Execute a Dana file using the new DanaSandbox API."""
     # if developer puts an .env file in the script's directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
-    print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
+    file_path: Path = Path(file_path)
 
-    # Handle script arguments if provided
-    if script_args:
-        # Get the file's directory for module search paths
-        file_dir = str(os.path.dirname(os.path.abspath(file_path)))
+    print_header(f"Dana Execution: {file_path.name}", colors=colors)
 
-        with open(file_path, encoding="utf-8") as f:
-            source_code = f.read()
+    source_code: str = file_path.read_text(encoding="utf-8")
 
-        # Check if there is a special `def __main__(...)` function
-        if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
-            # Parse input arguments into a dictionary
-            input_dict = parse_dana_input_args(script_args)
+    if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
+        # Handle script arguments if provided
+        input_dict = parse_dana_input_args(script_args) if script_args else {}
 
-            # Append source code with main function call
-            source_code_with_main_call = f"""
+        # Append source code with main function call
+        source_code: str = f"""
 {source_code}
 
-__main__({", ".join([f"{key}={json.dumps(obj=value,
-                                         skipkeys=False,
-                                         ensure_ascii=False,
-                                         check_circular=True,
-                                         allow_nan=False,
-                                         cls=None,
-                                         indent=None,
-                                         separators=None,
-                                         default=None,
-                                         sort_keys=False)}"
-                     for key, value in input_dict.items()])})
+{MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
+                                                 skipkeys=False,
+                                                 ensure_ascii=False,
+                                                 check_circular=True,
+                                                 allow_nan=False,
+                                                 cls=None,
+                                                 indent=None,
+                                                 separators=None,
+                                                 default=None,
+                                                 sort_keys=False)}"
+                             for key, value in input_dict.items()])})
 """
 
-            # Run the appended source code with custom search paths
-            result = DanaSandbox.execute_string_once(
-                source_code=source_code_with_main_call,
-                filename=file_path,
-                debug_mode=debug,
-                module_search_paths=[file_dir]
-            )
-        else:
-            # For regular file execution without __main__ function, use standard execution
-            result = DanaSandbox.execute_file_once(file_path, debug_mode=debug)
-    else:
-        # Use the new DanaSandbox API for standard execution
-        result = DanaSandbox.execute_file_once(file_path, debug_mode=debug)
+    # Run the source code with custom search paths
+    result = DanaSandbox.execute_string_once(source_code=source_code,
+                                             filename=str(file_path),
+                                             debug_mode=debug,
+                                             module_search_paths=[str(file_path.parent.resolve())])
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")
