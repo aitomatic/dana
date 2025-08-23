@@ -120,7 +120,7 @@ def create_app():
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
     app.include_router(domain_knowledge_router, prefix="/api")
-    if os.getenv("USE_SMART_CHAT_V2", "false").lower() == "true":
+    if os.getenv("USE_SMART_CHAT_V2", "true").lower() == "true":
         from ..routers.smart_chat_v2 import router as smart_chat_v2_router
 
         app.include_router(smart_chat_v2_router, prefix="/api")

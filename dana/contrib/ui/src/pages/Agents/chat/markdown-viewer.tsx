@@ -201,7 +201,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
 
   return (
     <div
-      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
+      className="overflow-x-auto mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
       <SyntaxHighlighter
@@ -215,6 +215,10 @@ const MermaidBlock = ({ content }: { content: string }) => {
           padding: '1rem',
           background: 'rgb(30, 30, 30)',
           fontSize: '0.875rem',
+          width: '100%',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -232,7 +236,7 @@ export const CodeBlock = ({ content, language }: { content: string; language: st
 
   return (
     <div
-      className="grid overflow-hidden relative grid-cols-1 mt-2 mb-4 w-full rounded-lg border border-gray-200"
+      className="overflow-x-auto mt-2 mb-4 w-full rounded-lg border border-gray-200"
       id={blockId}
     >
       <SyntaxHighlighter
@@ -245,6 +249,10 @@ export const CodeBlock = ({ content, language }: { content: string; language: st
           lineHeight: 1.6,
           padding: '1rem',
           fontSize: '0.875rem',
+          width: '100%',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -285,8 +293,11 @@ export const MarkdownViewerSmall = ({
     // Handle markdown code block wrapping
     if (content.startsWith('```markdown')) {
       content = content.substring(12);
-    }
-    if (content.startsWith('```') && !content.startsWith('```c')) {
+      // If the content ends with ```, remove it
+      if (content.endsWith('```')) {
+        content = content.slice(0, -3);
+      }
+    } else if (content.startsWith('```') && !content.startsWith('```c')) {
       content = content.substring(3);
       if (content.endsWith('```')) {
         content = content.slice(0, -3);
@@ -339,136 +350,163 @@ export const MarkdownViewerSmall = ({
   return (
     <div
       className={cn(
-        `markdown-body markdown-body-${theme} markdown-body-${backgroundContext} w-full ${textSizeClasses}`,
+        `w-full markdown-body markdown-body-${theme} markdown-body-${backgroundContext} ${textSizeClasses}`,
         classname,
       )}
     >
-      <ReactMarkdown
-        remarkPlugins={remarkPlugins}
-        rehypePlugins={rehypePlugins}
-        components={{
-          code: ({ className, children }: CodeProps) => {
-            const content = String(children).trim();
-            const languageMatch = /language-(\w+)/.exec(className || '');
-            const language = languageMatch ? languageMatch[1] : '';
-            const isInline = !className;
-            const isMermaid = language === 'mermaid';
-            const isReact =
-              language === 'jsx' ||
-              language === 'tsx' ||
-              content.includes('import React') ||
-              content.includes("from 'react'") ||
-              content.includes('from "react"');
+      {refinedContent ? (
+        <ReactMarkdown
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
+          components={{
+            code: ({ className, children }: CodeProps) => {
+              const content = String(children).trim();
+              const languageMatch = /language-(\w+)/.exec(className || '');
+              const language = languageMatch ? languageMatch[1] : '';
+              const isInline = !className;
+              const isMermaid = language === 'mermaid';
+              const isReact =
+                language === 'jsx' ||
+                language === 'tsx' ||
+                content.includes('import React') ||
+                content.includes("from 'react'") ||
+                content.includes('from "react"');
 
-            const isRechart =
-              content.includes('import { ') &&
-              (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
+              const isRechart =
+                content.includes('import { ') &&
+                (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
 
-            // Handle inline code
-            if (isInline) {
-              const isHook = /^use[A-Z]/.test(content);
-              const isType = /^[A-Z][A-Za-z0-9]*$/.test(content);
-              const isVariable = /^[a-z_$][a-zA-Z0-9_$]*$/.test(content);
-              const isSingleWord = content.split(/\s+/).length === 1;
+              // Handle inline code
+              if (isInline) {
+                const isHook = /^use[A-Z]/.test(content);
+                const isType = /^[A-Z][A-Za-z0-9]*$/.test(content);
+                const isVariable = /^[a-z_$][a-zA-Z0-9_$]*$/.test(content);
+                const isSingleWord = content.split(/\s+/).length === 1;
 
-              return (
-                <code
-                  className={cn(
-                    `font-mono font-normal px-1.5 py-0.5 rounded ${textSizeClasses}`,
-                    isHook
-                      ? 'bg-purple-100 text-purple-800'
-                      : isType
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : isVariable
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-gray-50 text-gray-900',
-                    isSingleWord ? 'inline-block' : '',
-                  )}
-                >
-                  {content}
-                </code>
-              );
-            }
-
-            // Handle mermaid blocks with separate component
-            if (isMermaid) {
-              return <MermaidBlock content={content} />;
-            }
-
-            // Handle React code blocks with separate component
-            if (isReact && isRechart) {
-              return <ReactCodeBlock content={content} />;
-            }
-
-            // Handle regular code blocks with separate component
-            return <CodeBlock content={content} language={language} />;
-          },
-
-          ul: ({ children }: any) => (
-            <ul className={`${textSizeClasses} text-gray-900`}>{children}</ul>
-          ),
-          li: ({ children }: any) => (
-            <li className={`${textSizeClasses} text-gray-900 list-disc`}>{children}</li>
-          ),
-          p: ({ children }: ParagraphProps) => {
-            // Helper function to enhance financial terms
-            const enhanceFinancialTerms = (text: string) => {
-              const financialTerms = [
-                'Future Value',
-                'FV',
-                'Present Value',
-                'PV',
-                'Net Present Value',
-                'NPV',
-                'Internal Rate of Return',
-                'IRR',
-                'Return on Investment',
-                'ROI',
-                'Debt-to-Income Ratio',
-                'DTI',
-                'Savings Rate',
-                'interest rate',
-                'discount rate',
-                'cash flow',
-              ];
-
-              let result = text;
-              financialTerms.forEach((term) => {
-                const regex = new RegExp(`\\b(${term})\\b`, 'gi');
-                result = result.replace(regex, `<span class="financial-term">$1</span>`);
-              });
-              return result;
-            };
-
-            if (Array.isArray(children)) {
-              // Check if any of the children items contain @ mentions
-              const hasAtMention = children.some(
-                (child) => typeof child === 'string' && child.includes('@'),
-              );
-
-              if (hasAtMention) {
                 return (
-                  <p className={`py-1 ${textSizeClasses} text-gray-900`}>
+                  <code
+                    className={cn(
+                      `font-mono font-normal px-1.5 py-0.5 rounded ${textSizeClasses}`,
+                      isHook
+                        ? 'bg-purple-100 text-purple-800'
+                        : isType
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : isVariable
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-gray-50 text-gray-900',
+                      isSingleWord ? 'inline-block' : '',
+                    )}
+                  >
+                    {content}
+                  </code>
+                );
+              }
+
+              // Handle mermaid blocks with separate component
+              if (isMermaid) {
+                return <MermaidBlock content={content} />;
+              }
+
+              // Handle React code blocks with separate component
+              if (isReact && isRechart) {
+                return <ReactCodeBlock content={content} />;
+              }
+
+              // Handle regular code blocks with separate component
+              return <CodeBlock content={content} language={language} />;
+            },
+
+            ul: ({ children }: any) => (
+              <ul className={`text-gray-900 ${textSizeClasses}`}>{children}</ul>
+            ),
+            li: ({ children }: any) => (
+              <li className={`list-disc text-gray-900 ${textSizeClasses}`}>{children}</li>
+            ),
+            p: ({ children }: ParagraphProps) => {
+              // Helper function to enhance financial terms
+              const enhanceFinancialTerms = (text: string) => {
+                const financialTerms = [
+                  'Future Value',
+                  'FV',
+                  'Present Value',
+                  'PV',
+                  'Net Present Value',
+                  'NPV',
+                  'Internal Rate of Return',
+                  'IRR',
+                  'Return on Investment',
+                  'ROI',
+                  'Debt-to-Income Ratio',
+                  'DTI',
+                  'Savings Rate',
+                  'interest rate',
+                  'discount rate',
+                  'cash flow',
+                ];
+
+                let result = text;
+                financialTerms.forEach((term) => {
+                  const regex = new RegExp(`\\b(${term})\\b`, 'gi');
+                  result = result.replace(regex, `<span class="financial-term">$1</span>`);
+                });
+                return result;
+              };
+
+              if (Array.isArray(children)) {
+                // Check if any of the children items contain @ mentions
+                const hasAtMention = children.some(
+                  (child) => typeof child === 'string' && child.includes('@'),
+                );
+
+                if (hasAtMention) {
+                  return (
+                    <p className={`py-1 text-gray-900 ${textSizeClasses}`}>
+                      {children.map((child, index) => {
+                        if (typeof child === 'string' && child.includes('@')) {
+                          const parts = child.split(regex);
+                          return (
+                            <Fragment key={index}>
+                              {parts.map((part, partIndex) => {
+                                if (part.startsWith('@')) {
+                                  // Use the enhanced MentionSpan component
+                                  return <MentionSpan key={partIndex} mention={part} />;
+                                }
+                                return (
+                                  <span
+                                    key={partIndex}
+                                    dangerouslySetInnerHTML={{
+                                      __html: enhanceFinancialTerms(part),
+                                    }}
+                                  />
+                                );
+                              })}
+                            </Fragment>
+                          );
+                        }
+                        if (typeof child === 'string') {
+                          // Skip rendering if the child only contains a $ symbol
+                          const trimmedContent = child.trim();
+                          if (trimmedContent === '$' || trimmedContent === '') {
+                            return null;
+                          }
+
+                          return (
+                            <span
+                              key={index}
+                              dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(child) }}
+                            />
+                          );
+                        }
+                        return child;
+                      })}
+                    </p>
+                  );
+                }
+
+                // Handle array children without @ mentions
+                return (
+                  <p className={`py-1 text-gray-900 ${textSizeClasses}`}>
                     {children.map((child, index) => {
-                      if (typeof child === 'string' && child.includes('@')) {
-                        const parts = child.split(regex);
-                        return (
-                          <Fragment key={index}>
-                            {parts.map((part, partIndex) => {
-                              if (part.startsWith('@')) {
-                                // Use the enhanced MentionSpan component
-                                return <MentionSpan key={partIndex} mention={part} />;
-                              }
-                              return (
-                                <span
-                                  key={partIndex}
-                                  dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(part) }}
-                                />
-                              );
-                            })}
-                          </Fragment>
-                        );
-                      }
                       if (typeof child === 'string') {
                         // Skip rendering if the child only contains a $ symbol
                         const trimmedContent = child.trim();
@@ -489,193 +527,196 @@ export const MarkdownViewerSmall = ({
                 );
               }
 
-              // Handle array children without @ mentions
-              return (
-                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
-                  {children.map((child, index) => {
-                    if (typeof child === 'string') {
-                      // Skip rendering if the child only contains a $ symbol
-                      const trimmedContent = child.trim();
-                      if (trimmedContent === '$' || trimmedContent === '') {
-                        return null;
+              // Handle string children with @ mentions
+              if (typeof children === 'string' && children.includes('@')) {
+                const parts = children.split(regex);
+                return (
+                  <p className={`py-1 text-gray-900 ${textSizeClasses}`}>
+                    {parts.map((part, index) => {
+                      if (part.startsWith('@')) {
+                        // Use the enhanced MentionSpan component
+                        return <MentionSpan key={index} mention={part} />;
                       }
-
                       return (
                         <span
                           key={index}
-                          dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(child) }}
+                          dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(part) }}
                         />
                       );
-                    }
-                    return child;
-                  })}
-                </p>
-              );
-            }
-
-            // Handle string children with @ mentions
-            if (typeof children === 'string' && children.includes('@')) {
-              const parts = children.split(regex);
-              return (
-                <p className={`py-1 ${textSizeClasses} text-gray-900`}>
-                  {parts.map((part, index) => {
-                    if (part.startsWith('@')) {
-                      // Use the enhanced MentionSpan component
-                      return <MentionSpan key={index} mention={part} />;
-                    }
-                    return (
-                      <span
-                        key={index}
-                        dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(part) }}
-                      />
-                    );
-                  })}
-                </p>
-              );
-            }
-
-            // Default paragraph rendering with financial term enhancement
-            if (typeof children === 'string') {
-              // Skip rendering if the paragraph only contains a $ symbol
-              const trimmedContent = children.trim();
-              if (trimmedContent === '$' || trimmedContent === '') {
-                return null;
-              }
-
-              return (
-                <p
-                  className={`py-1 ${textSizeClasses} text-gray-900`}
-                  dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(children) }}
-                />
-              );
-            }
-
-            // For non-string children (React elements), render normally without financial term enhancement
-            return <p className={`py-1 ${textSizeClasses} text-gray-900`}>{children}</p>;
-          },
-
-          table: ({ children }: TableProps) => (
-            <div className="overflow-x-auto my-4 w-full">
-              <table className="overflow-hidden w-full rounded border border-gray-200 border-collapse">
-                {children}
-              </table>
-            </div>
-          ),
-          thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
-          tbody: ({ children }: TableProps) => (
-            <tbody className="divide-y divide-gray-200">{children}</tbody>
-          ),
-          tr: ({ children }: TableRowProps) => <tr>{children}</tr>,
-          th: ({ children }: TableCellProps) => {
-            return (
-              <th
-                className={`px-4 py-3 text-sm font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr`}
-              >
-                {children}
-              </th>
-            );
-          },
-          td: ({ children }: TableCellProps) => {
-            // Handle React elements directly when they're passed as children
-            if (
-              children &&
-              typeof children === 'object' &&
-              '$$typeof' in children &&
-              children.$$typeof === Symbol.for('react.element')
-            ) {
-              return (
-                <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
-              );
-            }
-
-            // Process array of children that might contain React elements
-            if (Array.isArray(children)) {
-              const hasReactElements = children.some(
-                (child) =>
-                  child &&
-                  typeof child === 'object' &&
-                  child.$$typeof === Symbol.for('react.element'),
-              );
-
-              if (hasReactElements) {
-                return (
-                  <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
+                    })}
+                  </p>
                 );
               }
-            }
 
-            // For string content, continue with the existing logic
-            const content = Array.isArray(children)
-              ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
-              : String(children || '');
+              // Default paragraph rendering with financial term enhancement
+              if (typeof children === 'string') {
+                // Skip rendering if the paragraph only contains a $ symbol
+                const trimmedContent = children.trim();
+                if (trimmedContent === '$' || trimmedContent === '') {
+                  return null;
+                }
 
-            // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-              return `<strong>${text}</strong>`;
-            });
+                return (
+                  <p
+                    className={`py-1 text-gray-900 ${textSizeClasses}`}
+                    dangerouslySetInnerHTML={{ __html: enhanceFinancialTerms(children) }}
+                  />
+                );
+              }
 
-            const parts = formattedContent.split(/(\[\[\d+\]\])/);
+              // For non-string children (React elements), render normally without financial term enhancement
+              return <p className={`py-1 text-gray-900 ${textSizeClasses}`}>{children}</p>;
+            },
 
-            if (parts?.length === 1) {
+            table: ({ children }: TableProps) => (
+              <div className="overflow-x-auto my-4 w-full">
+                <table
+                  className="w-full rounded border border-gray-200 border-collapse table-fixed"
+                  style={{ tableLayout: 'fixed', width: '100%' }}
+                >
+                  {children}
+                </table>
+              </div>
+            ),
+            pre: ({ children }: any) => (
+              <div className="overflow-x-auto my-4 w-full">
+                <pre
+                  className="overflow-x-auto p-4 w-full text-sm bg-gray-100 rounded-lg"
+                  style={{
+                    maxWidth: '100%',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {children}
+                </pre>
+              </div>
+            ),
+            thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
+            tbody: ({ children }: TableProps) => (
+              <tbody className="divide-y divide-gray-200">{children}</tbody>
+            ),
+            tr: ({ children }: TableRowProps) => <tr>{children}</tr>,
+            th: ({ children }: TableCellProps) => {
               return (
-                <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>{children}</td>
+                <th
+                  className={`px-4 py-3 text-sm font-medium tracking-wider text-left text-gray-900 uppercase break-words border-b border-gray-200 first:rounded-tl last:rounded-tr`}
+                >
+                  {children}
+                </th>
               );
-            }
+            },
+            td: ({ children }: TableCellProps) => {
+              // Handle React elements directly when they're passed as children
+              if (
+                children &&
+                typeof children === 'object' &&
+                '$$typeof' in children &&
+                children.$$typeof === Symbol.for('react.element')
+              ) {
+                return (
+                  <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                    {children}
+                  </td>
+                );
+              }
 
-            return (
-              <td className={`px-4 py-3 text-gray-900 border-b border-gray-200`}>
+              // Process array of children that might contain React elements
+              if (Array.isArray(children)) {
+                const hasReactElements = children.some(
+                  (child) =>
+                    child &&
+                    typeof child === 'object' &&
+                    child.$$typeof === Symbol.for('react.element'),
+                );
+
+                if (hasReactElements) {
+                  return (
+                    <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                      {children}
+                    </td>
+                  );
+                }
+              }
+
+              // For string content, continue with the existing logic
+              const content = Array.isArray(children)
+                ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
+                : String(children || '');
+
+              // Handle bold type formatting with asterisks
+              const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+                return `<strong>${text}</strong>`;
+              });
+
+              const parts = formattedContent.split(/(\[\[\d+\]\])/);
+
+              if (parts?.length === 1) {
+                return (
+                  <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                    {children}
+                  </td>
+                );
+              }
+
+              return (
+                <td className={`px-4 py-3 text-gray-900 break-words border-b border-gray-200`}>
+                  <span className="inline-flex flex-wrap gap-1 items-center">
+                    {parts?.map((part, index) => {
+                      return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                    })}
+                  </span>
+                </td>
+              );
+            },
+
+            text: ({ children }) => {
+              const content = Array.isArray(children)
+                ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
+                : String(children);
+
+              // Check for @ mentions in text content
+              if (content.includes('@')) {
+                const parts = content.split(regex);
+                return (
+                  <span className="inline-flex flex-wrap items-center">
+                    {parts.map((part, idx) => {
+                      if (part.startsWith('@')) {
+                        return <MentionSpan key={idx} mention={part} />;
+                      }
+                      return <span key={idx}>{part}</span>;
+                    })}
+                  </span>
+                );
+              }
+
+              // Handle bold type formatting with asterisks
+              const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+                return `<strong>${text}</strong>`;
+              });
+
+              const parts = formattedContent.split(/(\[\[\d+\]\])/);
+
+              if (parts.length === 1) {
+                return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
+              }
+
+              return (
                 <span className="inline-flex flex-wrap gap-1 items-center">
-                  {parts?.map((part, index) => {
+                  {parts.map((part, index) => {
                     return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                   })}
                 </span>
-              </td>
-            );
-          },
-
-          text: ({ children }) => {
-            const content = Array.isArray(children)
-              ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
-              : String(children);
-
-            // Check for @ mentions in text content
-            if (content.includes('@')) {
-              const parts = content.split(regex);
-              return (
-                <span className="inline-flex flex-wrap items-center">
-                  {parts.map((part, idx) => {
-                    if (part.startsWith('@')) {
-                      return <MentionSpan key={idx} mention={part} />;
-                    }
-                    return <span key={idx}>{part}</span>;
-                  })}
-                </span>
               );
-            }
-
-            // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-              return `<strong>${text}</strong>`;
-            });
-
-            const parts = formattedContent.split(/(\[\[\d+\]\])/);
-
-            if (parts.length === 1) {
-              return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
-            }
-
-            return (
-              <span className="inline-flex flex-wrap gap-1 items-center">
-                {parts.map((part, index) => {
-                  return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                })}
-              </span>
-            );
-          },
-        }}
-      >
-        {refinedContent}
-      </ReactMarkdown>
+            },
+          }}
+        >
+          {refinedContent}
+        </ReactMarkdown>
+      ) : (
+        <div className="italic text-gray-500">No content to display</div>
+      )}
     </div>
   );
 };

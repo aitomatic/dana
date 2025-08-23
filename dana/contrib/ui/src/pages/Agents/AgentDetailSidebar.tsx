@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
-import { useSmartChatStore } from '@/stores/smart-chat-store';
+import { createSmartChatStore, clearSmartChatStorageForAgent } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp, Expand, Collapse } from 'iconoir-react';
-import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { HybridRenderer } from './chat/hybrid-renderer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
 // Constants for resize functionality
@@ -116,43 +116,46 @@ const ProcessingStatusHistory: React.FC<{
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left border border-gray-200 rounded-lg bg-gray-50">
+    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+        className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
       >
         {isExpanded ? <Collapse className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
         Show thinking ({messages.length})
       </button>
-      
+
       {isExpanded && (
-        <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
+        <div className="flex overflow-y-auto flex-col gap-3 max-h-60">
           {messages.map((msg) => (
-            <div key={msg.id} className="flex flex-col gap-2 p-2 border border-gray-200 rounded bg-white">
+            <div
+              key={msg.id}
+              className="flex flex-col gap-2 p-2 bg-white rounded border border-gray-200"
+            >
               <div className="flex gap-2 items-center">
                 {msg.status === 'in_progress' && (
                   <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
                 )}
                 {msg.status === 'finish' && (
-                  <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-green-500 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
                 {msg.status === 'error' && (
-                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                  <div className="flex justify-center items-center w-4 h-4 bg-red-500 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
                 <span className="text-sm font-medium text-gray-600">{msg.toolName}</span>
-                <span className="text-xs text-gray-400 ml-auto">
+                <span className="ml-auto text-xs text-gray-400">
                   {msg.timestamp.toLocaleTimeString()}
                 </span>
               </div>
               <span className="text-sm text-gray-600">{msg.message}</span>
               {msg.progression !== undefined && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full h-2 bg-gray-200 rounded-full">
                   <div
-                    className="bg-gray-600 h-2 rounded-full transition-all duration-300"
+                    className="h-2 bg-gray-600 rounded-full transition-all duration-300"
                     style={{ width: `${msg.progression * 100}%` }}
                   ></div>
                 </div>
@@ -173,18 +176,198 @@ const SmartAgentChat: React.FC<{
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  const messages = useSmartChatStore((s) => s.messages);
-  const addMessage = useSmartChatStore((s) => s.addMessage);
-  const removeMessage = useSmartChatStore((s) => s.removeMessage);
-  const clearMessages = useSmartChatStore((s) => s.clearMessages);
-  const setMessages = useSmartChatStore((s) => s.setMessages);
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Create agent-specific store
+  const agentStore = useMemo(() => {
+    if (!agent_id) return null;
+    return createSmartChatStore(agent_id);
+  }, [agent_id]);
+
+  // Use agent-specific store methods
+  const messages = agentStore ? agentStore((s) => s.messages) : [];
+  const addMessage = agentStore ? agentStore((s) => s.addMessage) : () => {};
+  const removeMessageById = agentStore ? agentStore((s) => s.removeMessageById) : () => {};
+  const clearMessages = agentStore ? agentStore((s) => s.clearMessages) : () => {};
+  const setMessages = agentStore ? agentStore((s) => s.setMessages) : () => {};
+  const getMessageCount = agentStore ? agentStore((s) => s.getMessageCount) : () => 0;
+
+  // Make sendMessage globally available for HTMLRenderer to call
+  useEffect(() => {
+    (window as any).sendMessage = () => {
+      if (input.trim() && agent_id) {
+        sendMessage();
+      }
+    };
+
+    (window as any).setInput = (value: string) => {
+      setInput(value);
+    };
+
+    return () => {
+      delete (window as any).sendMessage;
+      delete (window as any).setInput;
+    };
+  }, [input, agent_id]);
+
   // fetchAgent removed - now using direct API calls to avoid loading skeleton
   const { setAgentDetailActiveTab, setKnowledgeBaseActiveSubTab } = useUIStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const [isThinking, setIsThinking] = useState(false);
-  const [thinkingMessage, setThinkingMessage] = useState('Thinking...');
-  const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>([]);
+  const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>(
+    [],
+  );
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
+  const [previousAgentId, setPreviousAgentId] = useState<string | null>(null);
+  const [hasShownWelcomeMessage, setHasShownWelcomeMessage] = useState(false);
+  const welcomeMessageTimeoutRef = useRef<number | null>(null);
+
+  // Function to show welcome message with typing effect
+  const showWelcomeMessageWithTypingEffect = useCallback(
+    (displayName: string, agentDomain: string) => {
+      // Prevent duplicate welcome messages
+      if (hasShownWelcomeMessage) {
+        return null;
+      }
+
+      // Mark that we're showing a welcome message
+      setHasShownWelcomeMessage(true);
+
+      // Show typing effect for 2 seconds before displaying the welcome message
+      setIsTyping(true);
+
+      const timeoutId = setTimeout(() => {
+        setIsTyping(false);
+        addMessage({
+          sender: 'agent',
+          text: displayName
+            ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
+Now let's shape it into an agent that really works for you. To begin, tell me:
+- What kind of ${agentDomain.toLowerCase()} expertise should it focus on?
+- Who will this agent primarily assist (e.g. individuals, analysts, business owners)?
+
+💡 Tip: If you have a **job description**, you can paste it here — I'll use it to tailor the agent's knowledge base.`
+            : `Exciting — you're about to build your own custom agent from the ground up! 🚀
+
+To get started, let's define its foundation:
+
+- What **domain or expertise** should your agent specialize in? (e.g. healthcare, semiconductor, education)
+- **Who** will it assist? (e.g. financial analysts, IT engineers)?
+
+💡 Tip: You can provide a **job description**, and I'll draft the starting expertise for your agent.`,
+        });
+      }, 2000);
+
+      // Store the timeout ID for cleanup purposes
+      welcomeMessageTimeoutRef.current = timeoutId;
+      return timeoutId;
+    },
+    [addMessage, hasShownWelcomeMessage],
+  );
+
+  // Function to show fallback welcome message with typing effect
+  const showFallbackWelcomeMessageWithTypingEffect = useCallback(() => {
+    // Prevent duplicate welcome messages
+    if (hasShownWelcomeMessage) {
+      return null;
+    }
+
+    // Mark that we're showing a welcome message
+    setHasShownWelcomeMessage(true);
+
+    // Show typing effect for 2 seconds before displaying the fallback welcome message
+    setIsTyping(true);
+
+    const timeoutId = setTimeout(() => {
+      setIsTyping(false);
+      addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+    }, 2000);
+
+    // Store the timeout ID for cleanup purposes
+    welcomeMessageTimeoutRef.current = timeoutId;
+    return timeoutId;
+  }, [addMessage, hasShownWelcomeMessage]);
+
+  // Agent switch detection and cleanup
+  useEffect(() => {
+    if (agent_id && agent_id !== previousAgentId) {
+      // Agent has changed, reset state and clear messages
+      console.log(`[Agent Switch] Switching from ${previousAgentId} to ${agent_id}`);
+
+      if (previousAgentId) {
+        // Clear any pending welcome message timeout
+        if (welcomeMessageTimeoutRef.current) {
+          clearTimeout(welcomeMessageTimeoutRef.current);
+          welcomeMessageTimeoutRef.current = null;
+        }
+
+        // Clear messages from previous agent
+        clearMessages();
+        setHasLoadedHistory(false);
+        setIsLoadingHistory(false);
+        setIsTyping(false);
+        setHasShownWelcomeMessage(false);
+      }
+
+      setPreviousAgentId(agent_id);
+    }
+  }, [agent_id, previousAgentId, clearMessages]);
+
+  // Cleanup function to clear smart-chat-storage when user leaves training view
+  const cleanupOnExit = useCallback(() => {
+    if (agent_id) {
+      try {
+        clearSmartChatStorageForAgent(agent_id);
+        console.log(`[Exit Cleanup] Cleared smart-chat-storage for agent ${agent_id}`);
+      } catch (error) {
+        console.warn('Failed to clear storage on exit:', error);
+      }
+    }
+  }, [agent_id]);
+
+  // Cleanup effect for agent changes
+  useEffect(() => {
+    return () => {
+      // When component unmounts or agent changes, ensure cleanup
+      if (agent_id && previousAgentId && agent_id !== previousAgentId) {
+        console.log(`[Cleanup] Cleaning up messages for agent ${previousAgentId}`);
+        // The agent-specific store will handle its own cleanup
+      }
+    };
+  }, [agent_id, previousAgentId]);
+
+  // Comprehensive cleanup effect for component unmounting
+  useEffect(() => {
+    return () => {
+      // Clean up all state when component unmounts
+      console.log(`[Unmount] Cleaning up component for agent ${agent_id}`);
+
+      // Clear any pending welcome message timeout
+      if (welcomeMessageTimeoutRef.current) {
+        clearTimeout(welcomeMessageTimeoutRef.current);
+        welcomeMessageTimeoutRef.current = null;
+      }
+
+      // Clear smart-chat-storage when component unmounts
+      cleanupOnExit();
+
+      // Reset all local state
+      setHasLoadedHistory(false);
+      setIsLoadingHistory(false);
+      setPreviousAgentId(null);
+      setIsTyping(false);
+      setHasShownWelcomeMessage(false);
+
+      // Clear any pending operations
+      if (loading) {
+        setLoading(false);
+      }
+    };
+  }, [agent_id, loading, cleanupOnExit]);
+
+  // Option click handling is now done directly in HTMLRenderer
+  // No global handlers needed
 
   // WebSocket integration for real-time updates
   const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
@@ -197,9 +380,9 @@ const SmartAgentChat: React.FC<{
       timestamp: new Date(),
     };
 
-    setProcessingStatusHistory(prev => {
+    setProcessingStatusHistory((prev) => {
       // If this is an update to an existing tool, replace it
-      const existingIndex = prev.findIndex(msg => msg.toolName === message.tool_name);
+      const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
       if (existingIndex !== -1) {
         const updated = [...prev];
         updated[existingIndex] = newStatusMessage;
@@ -211,13 +394,16 @@ const SmartAgentChat: React.FC<{
 
     // Don't clear processing status - keep it in history
     // Only remove very old messages (older than 1 hour) to prevent memory issues
-    setTimeout(() => {
-      setProcessingStatusHistory(prev => 
-        prev.filter(msg => 
-          Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000 // 1 hour
-        )
-      );
-    }, 60 * 60 * 1000);
+    setTimeout(
+      () => {
+        setProcessingStatusHistory((prev) =>
+          prev.filter(
+            (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
+          ),
+        );
+      },
+      60 * 60 * 1000,
+    );
   }, []);
 
   const { connectionState } = useSmartChatWebSocket({
@@ -261,20 +447,6 @@ const SmartAgentChat: React.FC<{
     });
   };
 
-  // Humanized thinking messages
-  const thinkingMessages = [
-    'Let me think about this...',
-    'Processing your request...',
-    'Analyzing what you need...',
-    'Working on that for you...',
-    'Gathering my thoughts...',
-    'One moment while I consider this...',
-    'Let me work through this...',
-    'Thinking through your request...',
-    'Processing this information...',
-    'Just a second, organizing my response...',
-  ];
-
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -283,32 +455,136 @@ const SmartAgentChat: React.FC<{
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!agent_id) return;
-      clearMessages(); // Prevent duplicate messages in dev/StrictMode
+      if (!agent_id || !agentStore || isLoadingHistory || hasLoadedHistory) return;
+
+      setIsLoadingHistory(true);
       try {
         const history = await apiService.getSmartChatHistory(agent_id);
         if (Array.isArray(history) && history.length > 0) {
-          setMessages(history);
+          // Only set messages if we don't already have them or if they're different
+          const currentMessageCount = getMessageCount();
+          if (currentMessageCount === 0 || currentMessageCount !== history.length) {
+            setMessages(history);
+          }
         } else {
-          const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
-          clearMessages();
-          addMessage({
-            sender: 'agent',
-            text: displayName
-              ? `Hi! I'm here to help you to train **${displayName}**. Here are the next steps I'd recommend to make ${displayName} better:`
-              : `Hi! I'm Dana. I'm here to help you to train your agent. First of all, what expertise your agent should have?`,
-          });
+          // Only add welcome message if we don't have any messages
+          if (getMessageCount() === 0) {
+            const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
+            const selectedAgent = useAgentStore.getState().selectedAgent;
+            const agentDomain = selectedAgent?.config?.domain || 'Domain';
+
+            // Use the centralized function to show welcome message with typing effect
+            showWelcomeMessageWithTypingEffect(displayName, agentDomain);
+          }
         }
+        setHasLoadedHistory(true);
       } catch (e) {
-        addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+        console.error('Failed to fetch chat history:', e);
+        // Only add welcome message if we don't have any messages
+        if (getMessageCount() === 0) {
+          // Use the centralized function to show fallback welcome message with typing effect
+          showFallbackWelcomeMessageWithTypingEffect();
+        }
+        setHasLoadedHistory(true);
+      } finally {
+        setIsLoadingHistory(false);
       }
     };
+
     fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agent_id]);
+  }, [agent_id, agentName, agentStore]);
+
+  // Cleanup effect to handle component unmounting
+  useEffect(() => {
+    return () => {
+      // Clean up any pending operations when component unmounts
+      if (loading) {
+        setLoading(false);
+      }
+    };
+  }, [loading]);
+
+  // Effect to ensure message persistence across re-renders (but not across agents)
+  useEffect(() => {
+    // If we have messages but haven't loaded history, don't overwrite them
+    // But only if we're still on the same agent
+    if (getMessageCount() > 0 && !hasLoadedHistory && agent_id === previousAgentId) {
+      setHasLoadedHistory(true);
+    }
+  }, [getMessageCount, hasLoadedHistory, agent_id, previousAgentId]);
+
+  // Debug effect to track message changes
+  useEffect(() => {
+    console.log(
+      `[Debug] Messages changed: ${getMessageCount()} messages, hasLoadedHistory: ${hasLoadedHistory}, agent_id: ${agent_id}`,
+    );
+  }, [messages, hasLoadedHistory, agent_id]);
+
+  // Message recovery mechanism
+  useEffect(() => {
+    // If we had messages but they're suddenly gone, try to recover them
+    if (hasLoadedHistory && getMessageCount() === 0 && agent_id && agentStore) {
+      console.warn('[Recovery] Messages were lost, attempting to restore from API...');
+      const recoverMessages = async () => {
+        try {
+          const history = await apiService.getSmartChatHistory(agent_id);
+          if (Array.isArray(history) && history.length > 0) {
+            setMessages(history);
+            console.log(`[Recovery] Successfully restored ${history.length} messages`);
+          }
+        } catch (e) {
+          console.error('[Recovery] Failed to restore messages:', e);
+        }
+      };
+      recoverMessages();
+    }
+  }, [hasLoadedHistory, getMessageCount, agent_id, agentStore]);
+
+  // Manual message clearing function for agent switches
+  // const clearMessagesForNewAgent = useCallback(() => {
+  //   if (agentStore) {
+  //     // Clear any pending welcome message timeout
+  //     if (welcomeMessageTimeoutRef.current) {
+  //       clearTimeout(welcomeMessageTimeoutRef.current);
+  //       welcomeMessageTimeoutRef.current = null;
+  //     }
+
+  //     clearMessages();
+  //     setHasLoadedHistory(false);
+  //     setIsLoadingHistory(false);
+  //     setIsTyping(false);
+  //     setHasShownWelcomeMessage(false);
+  //     console.log(`[Manual Clear] Cleared messages for agent ${agent_id}`);
+  //   }
+  // }, [agentStore, clearMessages, agent_id]);
+
+  // Cleanup effect for welcome message timeouts
+  useEffect(() => {
+    return () => {
+      // Clear any pending welcome message timeout when component unmounts or dependencies change
+      if (welcomeMessageTimeoutRef.current) {
+        clearTimeout(welcomeMessageTimeoutRef.current);
+        welcomeMessageTimeoutRef.current = null;
+      }
+    };
+  }, [showWelcomeMessageWithTypingEffect, showFallbackWelcomeMessageWithTypingEffect]);
+
+  // Debug utility to check store state
+  // const debugStoreState = useCallback(() => {
+  //   if (agentStore) {
+  //     const state = agentStore.getState();
+  //     console.log(`[Debug Store] Agent ${agent_id} store state:`, {
+  //       messageCount: state.messages.length,
+  //       hasLoadedHistory,
+  //       isLoadingHistory,
+  //       previousAgentId
+  //     });
+  //   }
+  // }, [agentStore, agent_id, hasLoadedHistory, isLoadingHistory, previousAgentId]);
 
   const sendMessage = async () => {
-    if (!input.trim() || !agent_id) return;
+    if (!input.trim() || !agent_id || !agentStore) return;
 
     // Add user message
     const userMsg = { sender: 'user' as const, text: input };
@@ -318,13 +594,25 @@ const SmartAgentChat: React.FC<{
     setInput('');
     setLoading(true);
 
+    // Store the thinking message ID for later removal
+    let thinkingMessageId: string | null = null;
+
     try {
-      setIsThinking(true);
-      setThinkingMessage(thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]);
+      // Add thinking message with unique ID
+      const thinkingMsg = {
+        sender: 'agent' as const,
+        text: 'Thinking...',
+        id: `thinking-${Date.now()}-${Math.random()}`,
+      };
+      addMessage(thinkingMsg);
+      thinkingMessageId = thinkingMsg.id!;
+
       const response = await apiService.smartChat(agent_id, userInput);
 
-      // Remove the thinking message
-      removeMessage(messages.length - 1); // Remove the last message (thinking message)
+      // Remove the thinking message by ID if it exists
+      if (thinkingMessageId) {
+        removeMessageById(thinkingMessageId);
+      }
 
       // Add the actual response
       addMessage({
@@ -364,12 +652,16 @@ const SmartAgentChat: React.FC<{
         }
       }
     } catch (e) {
-      // Remove the thinking message
-      removeMessage(messages.length - 1);
+      console.error('Failed to send message:', e);
+
+      // Remove the thinking message by ID if it exists
+      if (thinkingMessageId) {
+        removeMessageById(thinkingMessageId);
+      }
+
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
     } finally {
       setLoading(false);
-      setIsThinking(false);
     }
   };
 
@@ -411,8 +703,14 @@ const SmartAgentChat: React.FC<{
     <>
       <div className="flex overflow-y-auto flex-col h-full group">
         <div className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar">
+          {isLoadingHistory && (
+            <div className="flex gap-2 items-center self-start px-3 py-2 text-left">
+              <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+              <span className="text-sm text-gray-700">Loading chat history...</span>
+            </div>
+          )}
           {messages.map((msg, idx) => {
-            const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
+            const isThinking = msg.id && msg.id.startsWith('thinking-');
             const isWelcomeMessage =
               msg.sender === 'agent' &&
               (msg.text.includes("Hi! I'm Dana") ||
@@ -422,12 +720,13 @@ const SmartAgentChat: React.FC<{
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
-                  ? 'border border-gray-100 bg-gray-50'
-                  : isThinking
-                    ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left bg-white'
-                  }`}
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
+                    ? 'border border-gray-100 bg-gray-50'
+                    : isThinking
+                      ? ' self-start text-left border border-gray-100'
+                      : ' self-start text-left bg-white'
+                }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center px-3 py-2">
@@ -436,11 +735,10 @@ const SmartAgentChat: React.FC<{
                   </div>
                 ) : (
                   <>
-                    <MarkdownViewerSmall 
+                    <HybridRenderer
+                      content={msg.text}
                       backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
-                    >
-                      {msg.text}
-                    </MarkdownViewerSmall>
+                    />
                     {isWelcomeMessage && (
                       <div className="flex flex-col gap-2 mt-3">
                         <button
@@ -462,10 +760,22 @@ const SmartAgentChat: React.FC<{
               </div>
             );
           })}
-          {isThinking && (
-            <div className="flex gap-2 items-center self-start px-3 py-2 text-left">
-              <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-              <span className="text-sm text-gray-700">{thinkingMessage}</span>
+          {isTyping && (
+            <div className="flex gap-2 items-center self-start px-3 py-2 text-left bg-white rounded-sm border border-gray-100">
+              <div className="flex gap-1">
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                ></div>
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                ></div>
+                <div
+                  className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                ></div>
+              </div>
             </div>
           )}
           <ProcessingStatusHistory
@@ -473,6 +783,7 @@ const SmartAgentChat: React.FC<{
             isExpanded={isHistoryExpanded}
             onToggle={() => setIsHistoryExpanded(!isHistoryExpanded)}
           />
+
           <div ref={bottomRef} />
         </div>
         <div className="p-3">
@@ -571,7 +882,18 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
-         
+          <div className="flex gap-1 items-center">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                connectionState === 'connected'
+                  ? 'bg-green-500'
+                  : connectionState === 'connecting'
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
+              }`}
+            />
+            <span className="text-xs text-gray-500 capitalize">{connectionState}</span>
+          </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat

@@ -7,6 +7,7 @@ interface ExtractionControlsProps {
   showPromptInput: boolean;
   onShowPromptInput: () => void;
   onDeepExtractWithPrompt: () => void;
+  onDeepExtractWithoutPrompt: () => void;
   isEditing: boolean;
   onEdit: () => void;
   onSave: () => void;
@@ -16,8 +17,8 @@ export const ExtractionControls = ({
   isDeepExtracted,
   isDeepExtracting,
   showPromptInput,
-  onShowPromptInput,
   onDeepExtractWithPrompt,
+  onDeepExtractWithoutPrompt,
   isEditing,
   onEdit,
   onSave,
@@ -25,8 +26,15 @@ export const ExtractionControls = ({
   if (!isDeepExtracted && !showPromptInput) {
     return (
       <div className="flex gap-2 items-center">
-        <Button variant="secondary" size="sm" className="text-gray-700" onClick={onShowPromptInput}>
-          Extract with Prompt
+        <Button
+          variant="secondary"
+          size="sm"
+          className="text-gray-700"
+          onClick={onDeepExtractWithoutPrompt}
+          disabled={isDeepExtracting}
+          leftSection={isDeepExtracting && <SystemRestart className="animate-spin size-4" />}
+        >
+          {isDeepExtracting ? 'Extracting...' : 'Deep Extract'}
         </Button>
         {!isDeepExtracting &&
           (isEditing ? (
@@ -84,30 +92,22 @@ export const ExtractionControls = ({
   if (isDeepExtracted) {
     return (
       <div className="flex gap-2 items-center">
-        <Button
-          variant="secondary"
-          size="sm"
-          className="text-gray-700"
-          onClick={onShowPromptInput}
-          disabled={isDeepExtracting}
-        >
-          Extract Again
-        </Button>
-        {isEditing ? (
-          <Button variant="secondary" size="sm" className="text-gray-700" onClick={onSave}>
-            Save
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="text-gray-700"
-            leftSection={<EditPencil />}
-            onClick={onEdit}
-          >
-            Edit
-          </Button>
-        )}
+        {!isDeepExtracting &&
+          (isEditing ? (
+            <Button variant="secondary" size="sm" className="text-gray-700" onClick={onSave}>
+              Save
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-gray-700"
+              leftSection={<EditPencil />}
+              onClick={onEdit}
+            >
+              Edit
+            </Button>
+          ))}
       </div>
     );
   }

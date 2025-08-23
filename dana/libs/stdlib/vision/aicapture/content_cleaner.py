@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict
+from typing import Any
 
 
 class ContentCleaner:
@@ -14,10 +14,10 @@ class ContentCleaner:
     def __init__(self) -> None:
         """Initialize with regex patterns for the two specific issues."""
         # Base64 pattern: matches long sequences of base64 characters (50+ chars)
-        self.base64_pattern = re.compile(r'[A-Za-z0-9+/]{50,}={0,2}', re.MULTILINE)
+        self.base64_pattern = re.compile(r"[A-Za-z0-9+/]{50,}={0,2}", re.MULTILINE)
 
         # Repetitive &nbsp; pattern: 5 or more consecutive
-        self.nbsp_pattern = re.compile(r'(?:&nbsp;){5,}', re.IGNORECASE)
+        self.nbsp_pattern = re.compile(r"(?:&nbsp;){5,}", re.IGNORECASE)
 
     def clean_content(self, content: str) -> str:
         """
@@ -33,10 +33,10 @@ class ContentCleaner:
             return content
 
         # Remove base64 strings
-        cleaned = self.base64_pattern.sub('', content)
+        cleaned = self.base64_pattern.sub("", content)
 
         # Remove repetitive &nbsp; sequences
-        cleaned = self.nbsp_pattern.sub(' ', cleaned)
+        cleaned = self.nbsp_pattern.sub(" ", cleaned)
 
         return cleaned.strip()
 
@@ -53,7 +53,7 @@ class ContentCleaner:
         return self.clean_content(page_content)
 
 
-def clean_vision_parser_output(result: Dict[str, Any]) -> Dict[str, Any]:
+def clean_vision_parser_output(result: dict[str, Any]) -> dict[str, Any]:
     """
     Clean VisionParser output by removing base64 and repetitive spaces.
 
@@ -63,15 +63,15 @@ def clean_vision_parser_output(result: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict: Cleaned result dictionary
     """
-    if not result or 'file_object' not in result:
+    if not result or "file_object" not in result:
         return result
 
     cleaner = ContentCleaner()
 
     # Clean all pages
-    if 'pages' in result['file_object']:
-        for page in result['file_object']['pages']:
-            if 'page_content' in page:
-                page['page_content'] = cleaner.clean_page_content(page['page_content'])
+    if "pages" in result["file_object"]:
+        for page in result["file_object"]["pages"]:
+            if "page_content" in page:
+                page["page_content"] = cleaner.clean_page_content(page["page_content"])
 
     return result

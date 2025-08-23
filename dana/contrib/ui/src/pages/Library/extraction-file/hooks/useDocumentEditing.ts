@@ -17,6 +17,11 @@ export const useDocumentEditing = (selectedFile: any, currentPage: number) => {
   useEffect(() => {
     const currentDoc = selectedFile?.documents?.[currentPage - 1];
     const newValue = currentDoc?.page_content || currentDoc?.text || '';
+    console.log('[useDocumentEditing] selectedFile:', selectedFile);
+    console.log('[useDocumentEditing] currentPage:', currentPage);
+    console.log('[useDocumentEditing] currentDoc:', currentDoc);
+    console.log('[useDocumentEditing] newValue:', newValue);
+    console.log('[useDocumentEditing] newValue length:', newValue?.length);
     setValue(newValue);
   }, [selectedFile, currentPage]);
 
