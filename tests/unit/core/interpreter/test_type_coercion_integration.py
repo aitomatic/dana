@@ -23,9 +23,9 @@ from unittest.mock import patch
 
 import pytest
 
+from dana.apps.repl.repl import REPL
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.repl.repl import REPL
 
 
 @pytest.mark.deep

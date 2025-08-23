@@ -48,10 +48,10 @@ class TestRationalizedLibraryLoading:
 
         # Check if preloaded functions are stored in the registry module
         import dana  # noqa: F401
-        import dana.core.lang.interpreter.functions.function_registry as registry_module
+        import dana.registry.function_registry as registry_module  # noqa: F401
 
-        assert hasattr(registry_module, "_preloaded_functions")
-
+        # Note: _preloaded_functions is no longer used in the new registry system
+        # The new system uses the global registry for function registration
         # Verify that corelib functions are available when DanaInterpreter is created
         from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
@@ -130,7 +130,7 @@ result
         # (This is tested by the fact that corelib functions are registered first)
 
         # List all available functions to verify registration order
-        all_functions = registry.list()
+        all_functions = registry.list_functions()
 
         # Verify corelib functions are present
         corelib_functions = ["sum_range", "is_odd", "is_even", "factorial"]

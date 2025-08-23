@@ -27,6 +27,7 @@ from dana.common.mixins.tool_callable import OpenAIFunctionCall
 from dana.common.types import BaseResponse
 from dana.common.utils.misc import Misc
 from dana.common.utils.token_management import TokenManagement
+import asyncio
 
 
 class LLMQueryExecutor(Loggable):
@@ -366,9 +367,10 @@ class LLMQueryExecutor(Loggable):
         # Make the API call
         try:
             # Make the actual API call (aisuite is synchronous)
-            response: ChatCompletion = self._client.chat.completions.create(
+            response: ChatCompletion = await asyncio.to_thread(
+                self._client.chat.completions.create,
                 **request_params,
-            )
+            )  # Calling to_thread is a workaround to avoid blocking the event loop
             self.info("LLM query successful")
             self._log_llm_response(response)
 

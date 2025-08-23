@@ -77,7 +77,7 @@ class TestResourceInstance:
 
         assert instance.name == "test_instance"
         assert instance.kind == "test"  # Default value
-        assert instance.state == "CREATED"
+        assert instance.state == "INITIALIZED"  # Resource is automatically initialized during creation
 
     def test_resource_lifecycle(self):
         """Test resource lifecycle management."""

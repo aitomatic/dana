@@ -17,9 +17,9 @@ class TestAgentStructCoexistence(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import get_global_registry
+        from dana.registry import GLOBAL_REGISTRY
 
-        get_global_registry().types.clear()
+        GLOBAL_REGISTRY.types.clear()
 
         # Create a regular struct type
         self.struct_type = StructType(
@@ -88,9 +88,9 @@ class TestMethodDispatchPriority(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import get_global_registry
+        from dana.registry import GLOBAL_REGISTRY
 
-        get_global_registry().types.clear()
+        GLOBAL_REGISTRY.types.clear()
 
         self.agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
         register_agent_type(self.agent_type)
@@ -181,9 +181,9 @@ class TestAgentRegistryIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import get_global_registry
+        from dana.registry import GLOBAL_REGISTRY
 
-        get_global_registry().types.clear()
+        GLOBAL_REGISTRY.types.clear()
 
     def test_agent_type_registration_in_struct_registry(self):
         """Test that agent types are properly registered in struct registry."""

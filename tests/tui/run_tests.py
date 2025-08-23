@@ -70,7 +70,7 @@ def main():
         cmd.append("-v")
 
     if args.coverage:
-        cmd.extend(["--cov=dana.tui", "--cov-report=term-missing", "--cov-report=html"])
+        cmd.extend(["--cov=dana.apps.tui", "--cov-report=term-missing", "--cov-report=html"])
 
     if args.parallel:
         cmd.extend(["-n", str(args.parallel)])

@@ -7,10 +7,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.registry import get_global_registry
-
-# Get the global registry for resource types
-global_resource_type_registry = get_global_registry().types
+from dana.registry import TYPE_REGISTRY
 
 
 def initialize_resource_system() -> None:
@@ -30,7 +27,7 @@ def reset_resource_system() -> None:
     This is primarily useful for testing when you need to reinitialize
     the resource system.
     """
-    global_resource_type_registry.types.clear()
+    TYPE_REGISTRY.clear()
 
 
 __all__ = [

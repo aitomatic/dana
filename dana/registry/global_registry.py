@@ -9,9 +9,11 @@ MIT License
 
 from typing import Any, Optional
 
+from .agent_registry import AgentRegistry
 from .function_registry import FunctionRegistry
-from .instance_registry import InstanceRegistry
+from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
+from .resource_registry import ResourceRegistry
 from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
@@ -46,8 +48,14 @@ class GlobalRegistry:
         # Function registry (simple key-value storage)
         self.functions = FunctionRegistry()
 
-        # Instance registry (optional instance tracking)
-        self.instances = InstanceRegistry()
+        # Agent instance registry
+        self.agents = AgentRegistry()
+
+        # Resource instance registry
+        self.resources = ResourceRegistry()
+
+        # Workflow instance registry
+        self.workflows = StructRegistry()
 
     def clear_all(self) -> None:
         """Clear all registries (for testing)."""
@@ -55,7 +63,9 @@ class GlobalRegistry:
         self.struct_functions.clear()
         self.modules.clear()
         self.functions.clear()
-        self.instances.clear()
+        self.agents.clear()
+        self.resources.clear()
+        self.workflows.clear()
 
     # === Type Registration Convenience Methods ===
 
@@ -101,19 +111,19 @@ class GlobalRegistry:
 
     def track_agent_instance(self, instance: Any, name: str | None = None) -> str:
         """Track an agent instance globally."""
-        return self.instances.track_agent_instance(instance, name)
+        return self.agents.track_instance(instance, name)
 
     def track_resource_instance(self, instance: Any, name: str | None = None) -> str:
         """Track a resource instance globally."""
-        return self.instances.track_resource_instance(instance, name)
+        return self.resources.track_instance(instance, name)
 
     def list_agent_instances(self, agent_type: str | None = None) -> list[Any]:
         """List all tracked agent instances."""
-        return self.instances.list_agent_instances(agent_type)
+        return self.agents.list_instances(agent_type)
 
     def list_resource_instances(self, resource_type: str | None = None) -> list[Any]:
         """List all tracked resource instances."""
-        return self.instances.list_resource_instances(resource_type)
+        return self.resources.list_instances(resource_type)
 
     # === Registry Statistics ===
 
@@ -136,8 +146,8 @@ class GlobalRegistry:
                 "total_functions": len(self.functions.list_all()),
             },
             "instances": {
-                "agent_instances": len(self.instances.list_agent_instances()),
-                "resource_instances": len(self.instances.list_resource_instances()),
+                "agent_instances": len(self.agents.list_instances()),
+                "resource_instances": len(self.resources.list_instances()),
             },
         }
 

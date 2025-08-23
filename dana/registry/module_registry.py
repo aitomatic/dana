@@ -314,10 +314,9 @@ class ModuleRegistry:
     @classmethod
     def clear(cls) -> None:
         """Clear all registry state (backward compatibility for testing)."""
-        from dana.registry import get_global_registry
+        from dana.registry import MODULE_REGISTRY
 
-        registry = get_global_registry()
-        registry.modules.clear_instance()
+        MODULE_REGISTRY.clear_instance()
 
     def count(self) -> int:
         """Get the total number of registered modules."""

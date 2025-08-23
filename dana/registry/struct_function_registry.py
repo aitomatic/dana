@@ -29,6 +29,17 @@ class StructFunctionRegistry:
         # Registration order tracking
         self._registration_order: list[tuple[str, str]] = []
 
+    def register_method_for_types(self, receiver_types: list[str], method_name: str, func: Callable) -> None:
+        """Register a method for a list of receiver types.
+
+        Args:
+            receiver_types: The list of type names of the receivers
+            method_name: The name of the method
+            func: The callable function/method to register
+        """
+        for receiver_type in receiver_types:
+            self.register_method(receiver_type, method_name, func)
+
     def register_method(self, receiver_type: str, method_name: str, func: Callable) -> None:
         """Register a method for a receiver type.
 

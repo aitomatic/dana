@@ -578,7 +578,7 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
             context: The execution context
         """
         from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+        from dana.registry.function_registry import FunctionMetadata, FunctionType
 
         # Find all DanaFunction objects in the module
         dana_functions = {}
