@@ -454,6 +454,7 @@ class ApiService {
   async deepExtract(request: {
     document_id: number;
     prompt?: string;
+    use_deep_extraction?: boolean;
     config?: Record<string, any>;
   }): Promise<{
     file_object: {
@@ -465,7 +466,7 @@ class ApiService {
       pages: Array<{ page_number: number; page_content: string; page_hash: string }>;
     };
   }> {
-    const response = await this.client.post('/extract-documents/deep-extract', request);
+    const response = await this.client.post('/extract-documents/extract', request);
     return response.data;
   }
 

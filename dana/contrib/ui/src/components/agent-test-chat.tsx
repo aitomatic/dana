@@ -4,7 +4,7 @@ import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2, Trash2, ChevronDown, ChevronUp, X, MessageSquare, FileSpreadsheet, Upload, FileText, Settings, BarChart3, Download } from 'lucide-react';
-import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
+import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import LogViewer from '@/components/LogViewer';
 
@@ -734,7 +734,7 @@ const AgentTestChat = ({
 
               {/* Message content */}
               {message.role === 'agent' || message.role === 'system' ? (
-                <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
+                <HybridRenderer content={message.content} backgroundContext="agent" />
               ) : (
                 <div className="whitespace-pre-wrap">{message.content}</div>
               )}

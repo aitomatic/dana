@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
 
 /* Custom styles for OpenDXA documentation */
 
@@ -117,13 +117,13 @@ body {
   font-weight: 500; /* Default weight from guide */
 }
 .md-typeset h1 {
-  font-size: 2.0rem; /* Was 4.375rem (70px) */
+  font-size: 1.5rem; /* Was 4.375rem (70px) */
   line-height: 2.5rem; /* Was 5rem */
   font-weight: 500;
   letter-spacing: -0.02rem; /* Adjusted from -0.04rem */
 }
 .md-typeset h2 {
-  font-size: 1.5rem; /* Was 3.125rem (50px) */
+  font-size: 1.22rem; /* Was 3.125rem (50px) */
   line-height: 2.0rem; /* Was 3.75rem */
   font-weight: 500;
 }

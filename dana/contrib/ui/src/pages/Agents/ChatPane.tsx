@@ -16,7 +16,7 @@ import type {
   BulkEvaluationQuestion,
   BulkEvaluationResult,
 } from '@/lib/api';
-import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { HybridRenderer } from './chat/hybrid-renderer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import LogViewer from '@/components/LogViewer';
@@ -572,6 +572,24 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     };
   }, [isVisible, disconnect]);
 
+  // Make handleSendMessage globally available for HTMLRenderer to call
+  useEffect(() => {
+    (window as any).handleSendMessage = () => {
+      if (inputText.trim() && !isLoading && agent_id && !bulkEvaluationState.isRunning) {
+        handleSendMessage();
+      }
+    };
+    
+    (window as any).setInputText = (value: string) => {
+      setInputText(value);
+    };
+    
+    return () => {
+      delete (window as any).handleSendMessage;
+      delete (window as any).setInputText;
+    };
+  }, [inputText, isLoading, agent_id, bulkEvaluationState.isRunning]);
+
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading || !agent_id || bulkEvaluationState.isRunning) return;
 
@@ -731,7 +749,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                           : 'text-gray-900'
                       }`}
                     >
-                      <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
+                      <HybridRenderer content={message.text ?? 'Empty message'} backgroundContext="agent" />
                       <p className="mt-1 text-xs opacity-70">
                         {message.timestamp.toLocaleTimeString([], {
                           hour: '2-digit',
@@ -1001,7 +1019,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                           </div>
                           {result.status === 'success' ? (
                             <div className="text-sm text-gray-700">
-                              <MarkdownViewerSmall>{result.response}</MarkdownViewerSmall>
+                              <HybridRenderer content={result.response} backgroundContext="agent" />
                             </div>
                           ) : (
                             <div className="text-sm text-red-600">
