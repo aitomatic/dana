@@ -6,7 +6,7 @@ This script demonstrates the specialized functionality of AgentRegistry and Reso
 compared to the base StructRegistry.
 """
 
-from dana.core.builtin_types.struct_system import StructInstance
+from dana.builtin_types.struct_system import StructInstance
 from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
 
 

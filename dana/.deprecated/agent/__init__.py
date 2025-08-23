@@ -25,7 +25,7 @@ from dana.registry import (
 # Create backward compatibility functions and instances
 def create_agent_instance(agent_type_name: str, field_values=None, context=None):
     """Create an agent instance (backward compatibility)."""
-    from dana.core.builtin_types.agent_system import AgentInstance
+    from dana.builtin_types.agent_system import AgentInstance
 
     agent_type = get_agent_type(agent_type_name)
     if agent_type is None:
@@ -33,7 +33,7 @@ def create_agent_instance(agent_type_name: str, field_values=None, context=None)
     return AgentInstance(agent_type, field_values or {})
 
 
-from dana.core.builtin_types.agent_system import (
+from dana.builtin_types.agent_system import (
     AgentInstance,
     AgentType,
 )

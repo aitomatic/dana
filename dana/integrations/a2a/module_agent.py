@@ -8,7 +8,7 @@ import inspect
 from typing import Any
 
 # TODO: Update to use new agent struct system
-# from dana.core.builtin_types.agent_system.abstract_dana_agent import AbstractDanaAgent
+# from dana.builtin_types.agent_system.abstract_dana_agent import AbstractDanaAgent
 from dana.integrations.a2a.server.module_agent_utils import get_module_agent_info
 
 

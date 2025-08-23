@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from dana.registry.instance_registry import StructRegistry
 
 if TYPE_CHECKING:
-    from dana.core.builtin_types.agent_system import AgentInstance
+    from dana.builtin_types.agent_system import AgentInstance
 
 
 class AgentRegistry(StructRegistry["AgentInstance"]):

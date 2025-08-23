@@ -18,9 +18,9 @@ def test_reason_function_direct_call():
     context = SandboxContext()
 
     # Set up context with LLM resource
+    from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()
@@ -42,9 +42,9 @@ def test_reason_function_parameter_order():
     context = SandboxContext()
 
     # Set up context with LLM resource
+    from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()

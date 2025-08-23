@@ -1,6 +1,7 @@
 """
 Dana Interface System
 
+
 This module provides interface validation and compliance checking for Dana's
 interface system, integrating with the existing function resolution system.
 
@@ -241,3 +242,26 @@ def register_interface_from_ast(interface_def) -> InterfaceType:
 
     TYPE_REGISTRY.register(interface_type)
     return interface_type
+
+
+# Define the IWorkflow interface using Dana's interface system
+IWorkflow = InterfaceType(
+    name="IWorkflow",
+    methods={
+        "name": InterfaceMethodSpec(name="name", parameters=[], return_type="str", comment="Get the name of the workflow"),
+        "execute": InterfaceMethodSpec(
+            name="execute",
+            parameters=[InterfaceParameterSpec(name="data", type_name="dict")],
+            return_type="dict",
+            comment="Execute the workflow with given data",
+        ),
+        "validate": InterfaceMethodSpec(
+            name="validate",
+            parameters=[InterfaceParameterSpec(name="data", type_name="dict")],
+            return_type="bool",
+            comment="Validate input data for the workflow",
+        ),
+        "get_status": InterfaceMethodSpec(name="get_status", parameters=[], return_type="str", comment="Get current execution status"),
+    },
+    docstring="Interface for workflow objects that can be used by agents",
+)

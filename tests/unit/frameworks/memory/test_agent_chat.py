@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+from dana.builtin_types.agent_system import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -104,7 +104,7 @@ class TestAgentChat(unittest.TestCase):
                 agent = self.create_test_agent()
 
                 # Test greeting - chat now returns the actual result directly
-                response = agent.chat(self.sandbox_context, "Hello!")
+                response = agent.chat("Hello!", sandbox_context=self.sandbox_context)
                 self.assertIn("Hello", response)
                 self.assertIn("TestAgent", response)
 
@@ -112,11 +112,11 @@ class TestAgentChat(unittest.TestCase):
                 self.assertIsNotNone(agent._conversation_memory)
 
                 # Test name query
-                response = agent.chat(self.sandbox_context, "What's your name?")
+                response = agent.chat("What's your name?", sandbox_context=self.sandbox_context)
                 self.assertIn("TestAgent", response)
 
                 # Test memory query
-                response = agent.chat(self.sandbox_context, "Do you remember what I said?")
+                response = agent.chat("Do you remember what I said?", sandbox_context=self.sandbox_context)
                 self.assertTrue("hello" in response.lower() or "remember" in response.lower())
 
     def test_chat_with_mock_llm(self):
@@ -133,7 +133,7 @@ class TestAgentChat(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat with agent - now returns a Promise that needs to be resolved
-                response = agent.chat(self.sandbox_context, "Tell me about yourself")
+                response = agent.chat("Tell me about yourself", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -163,7 +163,7 @@ class TestAgentChat(unittest.TestCase):
         with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
-                response = agent.chat(self.sandbox_context, "Test message")
+                response = agent.chat("Test message", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -180,7 +180,7 @@ class TestAgentChat(unittest.TestCase):
             with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
 
                 # Should fall back to simple responses
                 self.assertIn("Hello", response)
@@ -194,16 +194,16 @@ class TestAgentChat(unittest.TestCase):
             with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # First agent instance
                 agent1 = self.create_test_agent("Agent1")
-                response1 = agent1.chat(self.sandbox_context, "My name is Alice")
+                response1 = agent1.chat("My name is Alice", sandbox_context=self.sandbox_context)
                 if hasattr(response1, "_wait_for_delivery"):
                     response1._wait_for_delivery()
-                response2 = agent1.chat(self.sandbox_context, "I like programming")
+                response2 = agent1.chat("I like programming", sandbox_context=self.sandbox_context)
                 if hasattr(response2, "_wait_for_delivery"):
                     response2._wait_for_delivery()
 
                 # Second agent instance (should have separate memory)
                 agent2 = self.create_test_agent("Agent2")
-                response3 = agent2.chat(self.sandbox_context, "My name is Bob")
+                response3 = agent2.chat("My name is Bob", sandbox_context=self.sandbox_context)
                 if hasattr(response3, "_wait_for_delivery"):
                     response3._wait_for_delivery()
 
@@ -229,12 +229,12 @@ class TestAgentChat(unittest.TestCase):
                 agent2 = self.create_test_agent("Agent2", {"role": "sales"})
 
                 # Have different conversations
-                agent1.chat(self.sandbox_context, "I have a technical problem")
-                agent2.chat(self.sandbox_context, "I want to buy something")
+                agent1.chat("I have a technical problem", sandbox_context=self.sandbox_context)
+                agent2.chat("I want to buy something", sandbox_context=self.sandbox_context)
 
                 # Check that memories are separate
-                response1 = agent1.chat(self.sandbox_context, "What did we talk about?")
-                response2 = agent2.chat(self.sandbox_context, "What did we talk about?")
+                response1 = agent1.chat("What did we talk about?", sandbox_context=self.sandbox_context)
+                response2 = agent2.chat("What did we talk about?", sandbox_context=self.sandbox_context)
 
                 # Each should only remember their own conversation
                 self.assertNotEqual(response1, response2)
@@ -252,7 +252,7 @@ class TestAgentChat(unittest.TestCase):
                 self.assertEqual(initial_stats["total_messages"], 0)
 
                 # Send a message
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve to ensure conversation memory is updated
                 if hasattr(response, "_wait_for_delivery"):
@@ -271,7 +271,7 @@ class TestAgentChat(unittest.TestCase):
                 agent = self.create_test_agent("TestAgentClear")
 
                 # Send a message to initialize memory
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve to ensure conversation memory is updated
                 if hasattr(response, "_wait_for_delivery"):
@@ -305,7 +305,7 @@ class TestAgentChat(unittest.TestCase):
                 self.assertEqual(agent.expertise, "programming")
 
                 # Test chat functionality
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
                 self.assertIn("Hello", response)
 
     def test_chat_with_context(self):
@@ -318,7 +318,7 @@ class TestAgentChat(unittest.TestCase):
 
                 # Test chat with additional context
                 context = {"user_id": "123", "session_id": "abc"}
-                response = agent.chat(self.sandbox_context, "Hello", context=context)
+                response = agent.chat("Hello", context=context, sandbox_context=self.sandbox_context)
 
                 # Should get a response
                 self.assertIn("Hello", response)
@@ -334,7 +334,7 @@ class TestAgentChat(unittest.TestCase):
 
                 # Send multiple messages to test context limiting
                 for i in range(10):
-                    response = agent.chat(self.sandbox_context, f"Message {i}")
+                    response = agent.chat(f"Message {i}", sandbox_context=self.sandbox_context)
                     # Wait for the Promise to resolve to ensure conversation memory is updated
                     if hasattr(response, "_wait_for_delivery"):
                         response._wait_for_delivery()
@@ -357,7 +357,7 @@ class TestAgentChat(unittest.TestCase):
             # Force agent to use sandbox LLM resource instead of its own
             with patch.object(agent, "_get_llm_resource", return_value=mock_llm_resource):
                 # Chat should return an error message when LLM fails
-                response = agent.chat(self.sandbox_context, "Hello")
+                response = agent.chat("Hello", sandbox_context=self.sandbox_context)
 
                 # Wait for the Promise to resolve
                 if hasattr(response, "_wait_for_delivery"):
@@ -379,7 +379,7 @@ class TestAgentChat(unittest.TestCase):
                 test_messages = ["Hello", "What's your name?", "Can you help me?", "What can you do?", "Tell me a joke"]
 
                 for message in test_messages:
-                    response = agent.chat(self.sandbox_context, message)
+                    response = agent.chat(message, sandbox_context=self.sandbox_context)
 
                     # With universal EagerPromise wrapping, response might be an EagerPromise
                     # Wait for the response to resolve
@@ -402,7 +402,7 @@ class TestAgentChat(unittest.TestCase):
                 self.assertIsNone(agent._conversation_memory)
 
                 # Send a message to trigger memory initialization
-                agent.chat(self.sandbox_context, "Hello")
+                agent.chat("Hello")
 
                 # Memory should now be initialized
                 self.assertIsNotNone(agent._conversation_memory)
@@ -445,7 +445,7 @@ class TestAgentChatIntegration(unittest.TestCase):
                 )
 
                 # Simulate a conversation flow
-                response = support_agent.chat(self.sandbox_context, "I have a technical problem")
+                response = support_agent.chat("I have a technical problem")
                 # With Promise wrapping, we need to wait for the response
                 if hasattr(response, "_wait_for_delivery"):
                     response = response._wait_for_delivery()
@@ -453,7 +453,7 @@ class TestAgentChatIntegration(unittest.TestCase):
                 self.assertIsInstance(response, str)
                 self.assertGreater(len(response), 0)
 
-                response = tech_agent.chat(self.sandbox_context, "Can you help me debug this code?")
+                response = tech_agent.chat("Can you help me debug this code?")
                 # With Promise wrapping, we need to wait for the response
                 if hasattr(response, "_wait_for_delivery"):
                     response = response._wait_for_delivery()
@@ -484,7 +484,7 @@ class TestAgentChatIntegration(unittest.TestCase):
                 self.assertEqual(support_agent.tasks, "help customers, resolve issues")
 
                 # Test chat functionality
-                support_response = support_agent.chat(self.sandbox_context, "I need help with my bill")
+                support_response = support_agent.chat("I need help with my bill")
                 # With Promise wrapping, we need to wait for the response
                 if hasattr(support_response, "_wait_for_delivery"):
                     support_response = support_response._wait_for_delivery()

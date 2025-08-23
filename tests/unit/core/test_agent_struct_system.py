@@ -5,8 +5,8 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 
 import unittest
 
-from dana.core.builtin_types.agent_system import AgentInstance, AgentType, create_agent_instance
-from dana.core.builtin_types.struct_system import StructInstance, StructType
+from dana.builtin_types.agent_system import AgentInstance, AgentType, create_agent_instance
+from dana.builtin_types.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
 
@@ -137,22 +137,22 @@ class TestAgentInstance(unittest.TestCase):
         self.sandbox_context.set_system_llm_resource(llm_resource)
 
         # Test plan method
-        plan_result = agent_instance.plan(self.sandbox_context, "test task")
+        plan_result = agent_instance.plan("test task", sandbox_context=self.sandbox_context)
         # Since DANA_MOCK_LLM is true, we should get a mock response
-        self.assertIn("mock", plan_result.lower())
+        self.assertIn("planning", plan_result.lower())
         self.assertIn("TestAgent", plan_result)
 
         # Test solve method
-        solve_result = agent_instance.solve(self.sandbox_context, "test problem")
+        solve_result = agent_instance.solve("test problem", sandbox_context=self.sandbox_context)
         # Since DANA_MOCK_LLM is true, we should get a mock response
-        self.assertIn("mock", solve_result.lower())
+        self.assertIn("solving", solve_result.lower())
         self.assertIn("TestAgent", solve_result)
 
         # Test memory methods
-        remember_result = agent_instance.remember(self.sandbox_context, "test_key", "test_value")
+        remember_result = agent_instance.remember("test_key", "test_value", sandbox_context=self.sandbox_context)
         self.assertTrue(remember_result)
 
-        recall_result = agent_instance.recall(self.sandbox_context, "test_key")
+        recall_result = agent_instance.recall("test_key", sandbox_context=self.sandbox_context)
         self.assertEqual(recall_result, "test_value")
 
     def test_agent_memory_isolation(self):
@@ -164,12 +164,12 @@ class TestAgentInstance(unittest.TestCase):
         agent2 = AgentInstance(self.agent_type, values2)
 
         # Store different values in each agent's memory
-        agent1.remember(self.sandbox_context, "key", "value1")
-        agent2.remember(self.sandbox_context, "key", "value2")
+        agent1.remember("key", "value1", sandbox_context=self.sandbox_context)
+        agent2.remember("key", "value2", sandbox_context=self.sandbox_context)
 
         # Check that memories are isolated
-        self.assertEqual(agent1.recall(self.sandbox_context, "key"), "value1")
-        self.assertEqual(agent2.recall(self.sandbox_context, "key"), "value2")
+        self.assertEqual(agent1.recall("key", sandbox_context=self.sandbox_context), "value1")
+        self.assertEqual(agent2.recall("key", sandbox_context=self.sandbox_context), "value2")
 
     def test_invalid_struct_type(self):
         """Test that AgentInstance rejects non-AgentStructType."""

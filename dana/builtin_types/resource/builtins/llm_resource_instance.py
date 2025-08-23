@@ -7,9 +7,9 @@ and integrates it with the core resource system by extending ResourceInstance.
 
 from typing import TYPE_CHECKING, Any
 
+from dana.builtin_types.resource.resource_instance import ResourceInstance
+from dana.builtin_types.resource.resource_type import ResourceType
 from dana.common.types import BaseRequest, BaseResponse
-from dana.core.builtin_types.resource.resource_instance import ResourceInstance
-from dana.core.builtin_types.resource.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
