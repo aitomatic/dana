@@ -1,8 +1,8 @@
 from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool import (
+    BaseArgument,
     BaseTool,
     BaseToolInformation,
     InputSchema,
-    BaseArgument,
     ToolResult,
 )
 
@@ -62,20 +62,36 @@ class AskQuestionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    async def _execute(self, question: str, user_message: str = "", context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> ToolResult:
+    async def _execute(
+        self,
+        question: str,
+        user_message: str = "",
+        context: str = "",
+        decision_logic: str = "",
+        options: list[str] = None,
+        workflow_phase: str = "",
+    ) -> ToolResult:
         """
         Execute sophisticated question with context, decision logic, and formatted options.
         """
         content = self._build_sophisticated_response(user_message, question, context, decision_logic, options, workflow_phase)
-        
+
         return ToolResult(name="ask_question", result=content, require_user=True)
 
-    def _build_sophisticated_response(self, user_message: str, question: str, context: str = "", decision_logic: str = "", options: list[str] = None, workflow_phase: str = "") -> str:
+    def _build_sophisticated_response(
+        self,
+        user_message: str,
+        question: str,
+        context: str = "",
+        decision_logic: str = "",
+        options: list[str] = None,
+        workflow_phase: str = "",
+    ) -> str:
         """
         Build a sophisticated, context-rich response with HTML button-style options.
         """
         response_parts = []
-        
+
         # Add user message first (acknowledgment and context)
         if user_message:
             response_parts.append(f"<p>{user_message}</p>")
