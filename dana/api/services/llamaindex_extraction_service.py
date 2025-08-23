@@ -94,20 +94,25 @@ class LlamaIndexExtractionService:
         Returns:
             Dict containing processing results
         """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
+        logger.info("_process_with_llamaindex received file_path: '%s'", file_path)
+        logger.info("_process_with_llamaindex file_path exists: %s", os.path.exists(file_path))
 
         try:
             from llama_index.core.readers.file.base import SimpleDirectoryReader
 
-            # Create a temporary directory reader for single file
-            temp_dir = os.path.dirname(file_path)
+            # file_path should already be absolute from the extract method
             filename = os.path.basename(file_path)
 
-            reader = SimpleDirectoryReader(input_dir=temp_dir, input_files=[filename], recursive=False, encoding="utf-8", errors="ignore")
+            logger.info("Processing file: '%s' with full path: '%s'", filename, file_path)
+
+            # Use the full file path directly
+            logger.info("Creating SimpleDirectoryReader with input_files: %s", [file_path])
+            reader = SimpleDirectoryReader(input_files=[file_path], recursive=False, encoding="utf-8", errors="ignore")
 
             # Load documents
+            logger.info("Loading documents with llamaIndex...")
             documents = reader.load_data()
+            logger.info("Loaded %d documents", len(documents))
 
             if not documents:
                 raise ValueError(f"No content could be extracted from {file_path}")
@@ -128,7 +133,7 @@ class LlamaIndexExtractionService:
                 "cache_key": hashlib.md5(file_path.encode()).hexdigest(),
                 "total_pages": len(extracted_content),
                 "total_words": total_words,
-                "file_full_path": file_path,
+                "file_full_path": file_path,  # Use absolute path like DeepExtractionService
                 "pages": extracted_content,
             }
 
@@ -141,38 +146,54 @@ class LlamaIndexExtractionService:
         Extract data from a document using llamaIndex.
 
         Args:
-            request: Extraction request containing document_id, prompt, and config
-            db: Database session
+            file_path: Path to the file to extract
+            prompt: Custom prompt for processing (not used in basic extraction)
+            config: Configuration dictionary for the processor
 
         Returns:
             ExtractionResponse with extracted data
         """
-        # Validate file exists
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
+        try:
+            # Resolve to absolute path first
+            abs_file_path = os.path.abspath(file_path)
 
-        # Check if file type is supported
-        if not self.is_supported_file_type(file_path):
-            raise ValueError(f"Unsupported file type: {Path(file_path).suffix}")
+            # Validate file exists with absolute path
+            if not os.path.exists(abs_file_path):
+                raise FileNotFoundError(f"File {os.path.basename(file_path)} does not exist.")
 
-        logger.info("Processing file with aicapture: %s", file_path)
+            # Check if file type is supported
+            if not self.is_supported_file_type(abs_file_path):
+                raise ValueError(f"Unsupported file type: {Path(abs_file_path).suffix}")
 
-        # Process the file
-        result = await self._process_with_llamaindex(file_path, prompt, config or {})
+            logger.info("Processing file with llamaIndex: %s", abs_file_path)
 
-        # Create response
-        pages = [
-            PageContent(page_number=page["page_number"], page_content=page["page_content"], page_hash=page["page_hash"])
-            for page in result["pages"]
-        ]
+            # Process the file
+            result = await self._process_with_llamaindex(abs_file_path, prompt, config or {})
 
-        file_object = FileObject(
-            file_name=result["file_name"],
-            cache_key=result["cache_key"],
-            total_pages=result["total_pages"],
-            total_words=result["total_words"],
-            file_full_path=result["file_full_path"],
-            pages=pages,
-        )
+            # Create response
+            pages = [
+                PageContent(page_number=page["page_number"], page_content=page["page_content"], page_hash=page["page_hash"])
+                for page in result["pages"]
+            ]
 
-        return ExtractionResponse(file_object=file_object)
+            file_object = FileObject(
+                file_name=result["file_name"],
+                cache_key=result["cache_key"],
+                total_pages=result["total_pages"],
+                total_words=result["total_words"],
+                file_full_path=result["file_full_path"],
+                pages=pages,
+            )
+
+            logger.info("Successfully processed file: %s", abs_file_path)
+            return ExtractionResponse(file_object=file_object)
+
+        except ImportError as e:
+            logger.error(f"llamaIndex import error: {e}")
+            raise
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error extracting document: {e}")
+            raise

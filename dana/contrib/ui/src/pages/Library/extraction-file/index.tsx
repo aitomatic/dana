@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,6 @@ import FileIcon from '@/components/file-icon';
 import { IconLoader2, IconUpload } from '@tabler/icons-react';
 import { Check } from 'iconoir-react';
 import { ExtractedFile } from './extracted-file';
-import { Pagination } from './components/pagination';
 import { cn } from '@/lib/utils';
 import { useDeepExtraction } from './hooks/useDeepExtraction';
 
@@ -22,7 +21,6 @@ interface ExtractionFilePopupProps {
 
 export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
   const {
     isExtractionPopupOpen,
@@ -59,10 +57,6 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
       Array.from(files).forEach((file) => {
         addFile(file);
       });
-      // Set the first file as selected if no file is currently selected
-      if (extractedFiles.length === 0) {
-        setCurrentFileIndex(0);
-      }
     }
     // Reset the input
     event.target.value = '';
@@ -82,30 +76,11 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     setShowConfirmDiscard(false);
   };
 
-  // Pagination functions
-  const goToPreviousFile = () => {
-    if (currentFileIndex > 0) {
-      const newIndex = currentFileIndex - 1;
-      setCurrentFileIndex(newIndex);
-      setSelectedFile(extractedFiles[newIndex]);
-    }
-  };
-
-  const goToNextFile = () => {
-    if (currentFileIndex < extractedFiles.length - 1) {
-      const newIndex = currentFileIndex + 1;
-      setCurrentFileIndex(newIndex);
-      setSelectedFile(extractedFiles[newIndex]);
-    }
-  };
-
   // Update current file index when selected file changes
   const handleFileSelect = (file: any) => {
     console.log('[ExtractionPopup] File selected:', file);
     console.log('[ExtractionPopup] File documents:', file?.documents);
     console.log('[ExtractionPopup] File documents length:', file?.documents?.length);
-    const fileIndex = extractedFiles.findIndex((f) => f.id === file.id);
-    setCurrentFileIndex(fileIndex >= 0 ? fileIndex : 0);
     setSelectedFile(file);
   };
 
@@ -113,7 +88,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     <>
       <Dialog open={isExtractionPopupOpen} onOpenChange={closeExtractionPopup}>
         <DialogContent
-          className="flex flex-col rounded-none w-[100vw] max-w-[100vw] min-w-[100vw] h-full max-h-[100vh] pb-0"
+          className="flex flex-col gap-0 rounded-none w-[100vw] max-w-[100vw] min-w-[100vw] h-full max-h-[100vh] pb-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -124,7 +99,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-1 gap-2 w-full min-h-0">
+          <div className="flex flex-1 gap-2 py-2 w-full min-h-0">
             {/* Uploaded files */}
             <div className="flex flex-col min-w-[300px] max-w-[300px] border-t border-x border-gray-200 rounded-t-lg">
               <div className="flex flex-col gap-2 p-4">
@@ -200,28 +175,12 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </div>
 
             {/* Extracted file */}
-            <div className="flex flex-col flex-1 gap-2 px-4 py-2 min-h-0 rounded-lg">
+            <div className="flex flex-col flex-1 gap-2 px-4 min-h-0">
               <ExtractedFile selectedFile={selectedFile ?? extractedFiles[0]} />
             </div>
           </div>
 
           <div className="flex flex-col gap-4 p-4 border-t border-gray-200 dark:border-gray-300">
-            {/* Pagination for multiple files - only show when selected file has been extracted */}
-            {extractedFiles.length > 1 &&
-              selectedFile &&
-              (selectedFile.is_deep_extracted ||
-                (selectedFile.documents && selectedFile.documents.length > 0)) && (
-                <div className="flex justify-center">
-                  <Pagination
-                    currentPage={currentFileIndex + 1}
-                    totalPages={extractedFiles.length}
-                    onBack={goToPreviousFile}
-                    onNext={goToNextFile}
-                    isDisabled={isDisabled}
-                  />
-                </div>
-              )}
-
             {/* Action buttons */}
             <div className="flex gap-2 justify-end">
               <Button
