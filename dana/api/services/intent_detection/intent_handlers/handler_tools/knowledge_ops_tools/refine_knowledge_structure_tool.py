@@ -33,7 +33,7 @@ class RefineKnowledgeStructureTool(BaseTool):
                         name="current_structure",
                         type="string",
                         description="The current proposed knowledge structure to be modified",
-                        example="📁 Cryptocurrency\n├── 📄 Bitcoin\n└── 📄 Ethereum",
+                        example="📁 **Cryptocurrency**\n- 📄 Bitcoin\n- 📄 Ethereum",
                     ),
                     BaseArgument(
                         name="modification_request",
@@ -133,7 +133,7 @@ TOPIC DOMAIN: {topic}
 
 MODIFICATION GUIDELINES:
 1. Preserve the hierarchical format with 📁 for categories and 📄 for subtopics
-2. Maintain proper indentation (├── and └──) for tree structure
+2. Maintain proper indentation for tree structure
 3. Keep the overall structure logical and well-organized
 4. If removing sections, ensure remaining structure is complete
 5. If adding sections, place them in logical positions
@@ -147,6 +147,18 @@ COMMON MODIFICATION TYPES:
 - Rename: Update section names while preserving content intent
 - Expand: Add more subtopics to existing sections
 - Merge: Combine related sections
+
+FORMAT REQUIREMENTS:
+- Use 📁 for main categories (folders)
+- Use 📄 for specific subtopics (knowledge generation targets)
+- Use proper indentation for tree structure
+- Each subtopic should be specific enough for focused knowledge generation
+
+EXAMPLE FORMAT:
+📁 **Category Name**
+  - 📄 Specific Subtopic 1
+  - 📄 Specific Subtopic 2
+  - 📄 Specific Subtopic 3
 
 Apply the requested modification and return ONLY the complete modified structure in the exact same format as the input."""
 
@@ -208,56 +220,6 @@ Apply the requested modification and return ONLY the complete modified structure
 
         # If no modification could be applied, return original with note
         return f"{current_structure}\n\n⚠️ Note: Could not automatically apply modification '{modification_request}'. Please provide more specific instructions."
-
-    def _validate_structure_format(self, structure: str) -> bool:
-        """Validate that the structure follows the expected format."""
-        if not structure.strip():
-            return False
-
-        lines = [line for line in structure.split("\n") if line.strip()]
-
-        # Check for basic format elements
-        has_categories = any("📁" in line for line in lines)
-        has_subtopics = any("📄" in line for line in lines)
-        has_tree_chars = any("├──" in line or "└──" in line for line in lines)
-
-        return has_categories and has_subtopics and has_tree_chars
-
-    def _fix_structure_format(self, structure: str, topic: str) -> str:
-        """Attempt to fix structure format issues."""
-
-        # If structure is completely malformed, return a basic structure
-        if not structure.strip() or len(structure.strip()) < 50:
-            logger.warning("Structure too short or empty, returning basic fallback")
-            return f"""📁 {topic.title()} Fundamentals
-  ├── 📄 Core Concepts
-  ├── 📄 Key Principles
-  └── 📄 Basic Applications
-
-📁 Advanced {topic.title()}
-  ├── 📄 Advanced Techniques
-  ├── 📄 Best Practices
-  └── 📄 Future Trends
-
-⚠️ Note: Structure was auto-generated due to formatting issues. Please review and modify as needed."""
-
-        # Try to fix common formatting issues
-        lines = structure.split("\n")
-        fixed_lines = []
-
-        for line in lines:
-            if line.strip():
-                # Ensure proper symbols are used
-                if "category" in line.lower() or "section" in line.lower():
-                    if "📁" not in line:
-                        line = line.replace("-", "📁").replace("*", "📁")
-                elif "topic" in line.lower() or ("├" in line or "└" in line):
-                    if "📄" not in line:
-                        line = line.replace("-", "📄").replace("*", "📄")
-
-                fixed_lines.append(line)
-
-        return "\n".join(fixed_lines)
 
     def get_structure_summary(self, structure: str) -> str:
         """Get a brief summary of the structure for logging/debugging."""
