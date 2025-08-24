@@ -718,7 +718,15 @@ class SandboxContext(Loggable):
         if included is None:
             # Return all resources from context
             resource_names = self.list_resources()
-            return {name: self.get_resource(name) for name in resource_names}
+            available_resources = {}
+            for name in resource_names:
+                try:
+                    available_resources[name] = self.get_resource(name)
+                except Exception:
+                    # Resource not found in context - skip it
+                    pass
+
+            return available_resources
 
         # Handle mixed list of resource objects and string names
         resources = {}

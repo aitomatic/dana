@@ -621,10 +621,27 @@ class FunctionRegistry:
                     params = list(sig.parameters.keys())
                     if params and params[0] in ("context", "ctx", "the_context", "sandbox_context"):
                         # Function expects context
-                        return _resolve_if_promise(func(context, *positional_args, **func_kwargs))
+                        positional_args_with_context = [context] + positional_args
                     else:
-                        # Function doesn't expect context
-                        return _resolve_if_promise(func(*positional_args, **func_kwargs))
+                        positional_args_with_context = positional_args
+                    if "options" in params:
+                        options = func_kwargs.pop("options", {})
+                        from dana.common.utils import Misc
+                        match_args_kwargs_result = Misc.parse_args_kwargs(func, *positional_args_with_context, **func_kwargs)
+
+                        # NOTE : If there are unmatched kwargs, they are added to the options dictionary
+                        if match_args_kwargs_result.unmatched_kwargs:
+                            options.update(match_args_kwargs_result.unmatched_kwargs)
+
+                        matched_args = match_args_kwargs_result.matched_args # This will be matched to the function's arguments
+                        varargs = match_args_kwargs_result.varargs # This will be matched to the function's *args
+                        matched_kwargs = match_args_kwargs_result.matched_kwargs # This will be matched to the function's keyword arguments
+                        matched_kwargs["options"] = options
+                        varkwargs = match_args_kwargs_result.varkwargs # This will be matched to the function's **kwargs
+
+                        return _resolve_if_promise(func(*matched_args, *varargs, **matched_kwargs, **varkwargs))
+                    return _resolve_if_promise(func(*positional_args_with_context, **func_kwargs))
+
                 except (ValueError, TypeError):
                     # If we can't inspect the signature, assume it doesn't expect context
                     return _resolve_if_promise(func(*positional_args, **func_kwargs))
