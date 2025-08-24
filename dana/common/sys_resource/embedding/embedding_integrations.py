@@ -29,14 +29,14 @@ class LlamaIndexEmbeddingResource(Loggable):
         """
         return self._create_embedding(model_name, dimension_override)
 
-    def get_default_embedding_model(self):
+    def get_default_embedding_model(self, dimension_override: int | None = None):
         """Get a LlamaIndex embedding model using auto-selection."""
         config = self._get_config()
         preferred_models = config.get("embedding", {}).get("preferred_models", [])
 
         for model_name in preferred_models:
             if self._is_model_available(model_name):
-                return self._create_embedding(model_name)
+                return self._create_embedding(model_name, dimension_override)
 
         raise EmbeddingError("No available embedding models found. Check API keys.")
 
@@ -220,16 +220,11 @@ class EmbeddingFactory:
             if model_name:
                 # Use specified model
                 embedding_model = embedding_resource.get_embedding_model(model_name, dimensions)
-
-                # Get actual dimensions
-                if dimensions:
-                    actual_dimensions = dimensions
-                else:
-                    actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
             else:
                 # Use default from dana_config.json
-                embedding_model = embedding_resource.get_default_embedding_model()
-                actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
+                embedding_model = embedding_resource.get_default_embedding_model(dimensions)
+                
+            actual_dimensions = dimensions if dimensions else EmbeddingFactory._extract_dimensions(embedding_model)
 
             return embedding_model, actual_dimensions
 

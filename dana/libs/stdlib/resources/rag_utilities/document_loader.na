@@ -1,0 +1,54 @@
+import os.py
+print(os.getenv("DANAPATH"))
+from dana.libs.stdlib.resources.rag_utilities.file_loader.default_loader import DefaultLoader, load_files, list_files
+from dana.libs.stdlib.resources.rag_utilities.file_loader.webpage_loader import WebpageLoader, load_urls
+
+
+SUPPORTED_TYPES = [".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".html", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
+
+
+struct DocumentLoader:
+    local_loader : object = DefaultLoader(required_exts=SUPPORTED_TYPES)
+    web_loader : object = WebpageLoader()
+    file_extractor : dict = {".json" : None}
+    
+
+def (loader: DocumentLoader) load_sources(sources: list[str]) -> list[Document]:
+    web_sources = []
+    customized_sources = {}
+    other_sources = []
+    for source in sources:
+        if source.startswith("http"):
+            web_sources.append(source)
+        else:
+            files = loader.local_loader.list_files(source)
+            for file in files:
+                print(f"file : {file}")
+                file_suffix = file.suffix.lower()
+                if (file_suffix in loader.file_extractor) and (loader.file_extractor.get(file_suffix) is not None):
+                    customized_sources[file_suffix].setdefault(file_suffix, [])
+                    customized_sources[file_suffix][file_suffix].append(file)
+                else:
+                    other_sources.append(file)
+    results = []
+    if len(other_sources) > 0:
+        results.extend(loader.local_loader.load_files(other_sources))
+    if len(web_sources) > 0:
+        results.extend(loader.web_loader.load_urls(web_sources))
+
+    res = {}
+    for doc in results:
+        res.setdefault(doc.metadata["source"], [])
+        res[doc.metadata["source"]].append(doc)
+
+    return res
+
+# doc = DocumentLoader()
+# print(doc.load_sources(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/docs/for-engineers"]))
+# print(doc.load_sources(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/docs/for-engineers"]))
+
+# doc_dict = doc.load_sources(["/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs/[FI] FY21-25 Aitomatic Financials - FY24 CF.pdf"])
+# for key in doc_dict.keys():
+#     print("="*100)
+#     print(doc_dict[key][0].get_content())
+#     print("="*100)

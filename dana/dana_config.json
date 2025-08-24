@@ -53,7 +53,7 @@
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/openai"
+                "base_url": "https://api.moonshot.ai/openai"
             },
             "cohere": {
                 "api_key": "env:COHERE_API_KEY"
@@ -63,7 +63,7 @@
             },
             "anthropic": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/anthropic"
+                "base_url": "https://api.moonshot.ai/anthropic"
             },
             "groq": {
                 "api_key": "env:GROQ_API_KEY"
@@ -103,8 +103,8 @@
     },
     "embedding": {
         "preferred_models": [
-            "openai:text-embedding-3-small",
             "openai:text-embedding-3-large",
+            "openai:text-embedding-3-small",
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
             "cohere:embed-english-v3.0"
