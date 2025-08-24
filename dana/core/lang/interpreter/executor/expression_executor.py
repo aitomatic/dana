@@ -1046,8 +1046,14 @@ class ExpressionExecutor(BaseExecutor):
                     if isinstance(func, SandboxFunction):
                         return func.execute(context, current_value)
 
-                    # Default: direct call for non-registry functions
-                    return func(current_value)
+                    # Default: direct call for non-registry functions with async detection
+                    import asyncio
+                    from dana.common.utils.misc import Misc
+                    
+                    if asyncio.iscoroutinefunction(func):
+                        return Misc.safe_asyncio_run(func, current_value)
+                    else:
+                        return func(current_value)
                 else:
                     # Create an error function that will fail when called, preserving original behavior
                     def error_function(value):
