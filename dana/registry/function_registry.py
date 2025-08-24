@@ -655,7 +655,7 @@ class FunctionRegistry:
                         varargs = match_args_kwargs_result.varargs # This will be matched to the function's *args
                         matched_kwargs = match_args_kwargs_result.matched_kwargs # This will be matched to the function's keyword arguments
                         if options:
-                            if len(matched_args) >= params.index("options"):
+                            if len(matched_args) > params.index("options"):
                                 # If options is already existed in positional args, update it
                                 matched_args[params.index("options")].update(options)
                             else:

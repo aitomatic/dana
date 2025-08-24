@@ -142,7 +142,7 @@ class RAGResource(BaseSysResource):
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str:
-        """Retrieve relevant documents."""
+        """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
 
