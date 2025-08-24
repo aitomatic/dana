@@ -192,26 +192,26 @@ Generate the refined structure:"""
     def _build_structured_response(self, user_message: str, topic: str, structure_content: str) -> str:
         """Build a structured response with user message and knowledge structure."""
         response_parts = []
-        
+
         # Add user message first (acknowledgment and context)
         if user_message:
             response_parts.append(f"{user_message}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add the main structure header
         response_parts.append(f"🏗️ **Proposed Knowledge Structure:** {topic.title()}")
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add the structure content
         response_parts.append(structure_content)
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add next steps and guidelines
         response_parts.append("""💡 **Next Steps:**
 - Review the proposed structure above carefully
 - Identify any areas you'd like to modify, expand, or remove  
 - Once satisfied, we'll add this structure to your knowledge tree
 """)
-        
+
         # Join all parts with proper spacing
         return "\n".join(response_parts)

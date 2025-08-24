@@ -1,12 +1,10 @@
 from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool import (
+    BaseArgument,
     BaseTool,
     BaseToolInformation,
     InputSchema,
-    BaseArgument,
     ToolResult,
 )
-import re
-from typing import Optional
 
 
 class AttemptCompletionTool(BaseTool):
@@ -30,8 +28,4 @@ class AttemptCompletionTool(BaseTool):
         super().__init__(tool_info)
 
     async def _execute(self, summary: str) -> ToolResult:
-        return ToolResult(
-            name="attempt_completion",
-            result=summary,
-            require_user=True
-        )
+        return ToolResult(name="attempt_completion", result=summary, require_user=True)
