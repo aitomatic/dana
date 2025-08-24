@@ -104,6 +104,9 @@ class RAGResource(BaseSysResource):
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
         for src in sources:
+            if src.startswith("http"):
+                new_sources.append(src)
+                continue
             if not os.path.isabs(src):
                 if danapath:
                     new_sources.append(str(Path(danapath) / src))
@@ -142,7 +145,7 @@ class RAGResource(BaseSysResource):
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str:
-        """Retrieve relevant documents."""
+        """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
 

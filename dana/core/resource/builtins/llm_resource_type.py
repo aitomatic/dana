@@ -36,7 +36,7 @@ class LLMResourceType(ResourceType):
             },
             field_order=["name", "model", "state", "provider", "temperature", "max_tokens"],
             field_defaults={
-                "name": "default_llm",
+                "name": "system_llm",
                 "model": "",
                 "state": "READY",
                 "provider": "auto",
@@ -99,7 +99,7 @@ class LLMResourceType(ResourceType):
         from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
         # Extract LLMResource constructor arguments
-        name = values.get("name", "default_llm")
+        name = values.get("name", "system_llm")
         model = values.get("model")
         temperature = values.get("temperature", 0.7)
         max_tokens = values.get("max_tokens", 2048)
