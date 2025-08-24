@@ -592,9 +592,9 @@ class FunctionRegistry:
                         from dana.common.utils.misc import Misc
                         
                         if asyncio.iscoroutinefunction(wrapped_func):
-                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, context, *positional_args, **func_kwargs))
+                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, __context, *positional_args, **func_kwargs))
                         else:
-                            return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
+                            return _resolve_if_promise(wrapped_func(__context, *positional_args, **func_kwargs))
                 else:
                     # No context parameter - add execute-time async detection
                     import asyncio
