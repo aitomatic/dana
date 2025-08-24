@@ -1,8 +1,7 @@
 """Mixed Documents & Webpages Querying."""
 
-from resources import RagResource, query, initialize  # TODO: user not needing to import `query` & `initialize`
 
-aitomatic_and_dana_info_rag = RagResource(sources=["https://www.aitomatic.com", "../../../../README.md"])
-aitomatic_and_dana_info_rag.initialize()  # TODO: user not needing to initialize
+aitomatic_and_dana_info_rag = use('rag', sources=['https://www.aitomatic.com', '../../../../README.md'])
 
-print(aitomatic_and_dana_info_rag.query("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?"))  # TODO: return str input, not raw list of candidate pieces
+reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?",
+       resources=[aitomatic_and_dana_info_rag])
