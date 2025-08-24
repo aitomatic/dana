@@ -104,6 +104,9 @@ class RAGResource(BaseSysResource):
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
         for src in sources:
+            if src.startswith("http"):
+                new_sources.append(src)
+                continue
             if not os.path.isabs(src):
                 if danapath:
                     new_sources.append(str(Path(danapath) / src))
