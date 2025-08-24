@@ -457,9 +457,9 @@ class FunctionRegistry:
 
     def call(
         self,
-        name: str,
-        context: Optional["SandboxContext"] = None,
-        namespace: str | None = None,
+        __name: str,   # NOTE: Need to change from `name` to `__name` to avoid conflict with the possible `name` parameter. Ex : func(name="any") will fail with the previous approach
+        __context: Optional["SandboxContext"] = None,
+        __namespace: str | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
@@ -474,7 +474,7 @@ class FunctionRegistry:
             return value
 
         # Resolve the function
-        func, metadata = self.resolve(name, namespace)
+        func, metadata = self.resolve(__name, __namespace)
 
         # Process special 'args' keyword parameter - this is a common pattern in tests
         # where positional args are passed as a list via kwargs['args']
@@ -495,8 +495,8 @@ class FunctionRegistry:
         # Security check - must happen regardless of how the function is called
         if hasattr(metadata, "is_public") and not metadata.is_public:
             # Non-public functions require a "private" context flag
-            if context is None or not hasattr(context, "private") or not context.private:
-                raise PermissionError(f"Function '{name}' is private and cannot be called from this context")
+            if __context is None or not hasattr(__context, "private") or not __context.private:
+                raise PermissionError(f"Function '{__name}' is private and cannot be called from this context")
 
         # Special handling for PythonFunctions in test cases
         from dana.core.lang.interpreter.functions.python_function import PythonFunction
@@ -512,12 +512,12 @@ class FunctionRegistry:
                 first_param_is_ctx = True
 
             # Ensure we have a context object if needed
-            if first_param_is_ctx and context is None:
-                context = SandboxContext()  # Create a dummy context if none provided
+            if first_param_is_ctx and __context is None:
+                __context = SandboxContext()  # Create a dummy context if none provided
 
             # Special case for functions like "process(result)"
             # In the test_function_call_chaining test, it expects the function to be called with just the input value
-            func_name = name.split(".")[-1]  # Get the bare function name without namespace
+            func_name = __name.split(".")[-1]  # Get the bare function name without namespace
 
             # Special case for the reason function
             if func_name == "reason" and len(positional_args) >= 1:
@@ -556,13 +556,13 @@ class FunctionRegistry:
 
                 # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
-                    return _resolve_if_promise(wrapped_func(context, prompt, options, use_mock))
+                    return _resolve_if_promise(wrapped_func(__context, prompt, options, use_mock))
                 elif options:
-                    return _resolve_if_promise(wrapped_func(context, prompt, options))
+                    return _resolve_if_promise(wrapped_func(__context, prompt, options))
                 elif use_mock is not None:
-                    return _resolve_if_promise(wrapped_func(context, prompt, None, use_mock))
+                    return _resolve_if_promise(wrapped_func(__context, prompt, None, use_mock))
                 else:
-                    return _resolve_if_promise(wrapped_func(context, prompt))
+                    return _resolve_if_promise(wrapped_func(__context, prompt))
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
                 # Security check: only trusted functions can receive context
@@ -571,21 +571,39 @@ class FunctionRegistry:
                     return _resolve_if_promise(wrapped_func(positional_args[0]))
                 else:
                     # Pass the single argument followed by context
-                    return _resolve_if_promise(wrapped_func(positional_args[0], context))
+                    return _resolve_if_promise(wrapped_func(positional_args[0], __context))
 
             # Call with context as first argument if expected, with error handling
             try:
                 if first_param_is_ctx:
                     # Security check: only trusted functions can receive context
                     if not func._is_trusted_for_context():
-                        # Function wants context but is not trusted - call without context
-                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
+                        # Function wants context but is not trusted - call without context with async detection
+                        import asyncio
+                        from dana.common.utils.misc import Misc
+                        
+                        if asyncio.iscoroutinefunction(wrapped_func):
+                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
+                        else:
+                            return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
                     else:
-                        # First parameter is context and function is trusted
-                        return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
+                        # First parameter is context and function is trusted - add execute-time async detection
+                        import asyncio
+                        from dana.common.utils.misc import Misc
+                        
+                        if asyncio.iscoroutinefunction(wrapped_func):
+                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, __context, *positional_args, **func_kwargs))
+                        else:
+                            return _resolve_if_promise(wrapped_func(__context, *positional_args, **func_kwargs))
                 else:
-                    # No context parameter
-                    return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
+                    # No context parameter - add execute-time async detection
+                    import asyncio
+                    from dana.common.utils.misc import Misc
+                    
+                    if asyncio.iscoroutinefunction(wrapped_func):
+                        return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
+                    else:
+                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
             except Exception as e:
                 # Standardize error handling for direct function calls
                 import traceback
@@ -594,23 +612,23 @@ class FunctionRegistry:
 
                 # Convert TypeError to SandboxError with appropriate message
                 if isinstance(e, TypeError) and "missing 1 required positional argument" in str(e):
-                    raise SandboxError(f"Error processing arguments for function '{name}': {str(e)}")
+                    raise SandboxError(f"Error processing arguments for function '{__name}': {str(e)}")
                 else:
-                    raise SandboxError(f"Function '{name}' raised an exception: {str(e)}\n{tb}")
+                    raise SandboxError(f"Function '{__name}' raised an exception: {str(e)}\n{tb}")
         elif isinstance(func, PythonFunction):
             # Direct call to the PythonFunction's execute method
-            if context is None:
-                context = SandboxContext()  # Create a default context if none provided
-            return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
+            if __context is None:
+                __context = SandboxContext()  # Create a default context if none provided
+            return _resolve_if_promise(func.execute(__context, *positional_args, **func_kwargs))
         else:
             # Check if it's a DanaFunction and call via execute method
             from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
             if isinstance(func, DanaFunction):
                 # DanaFunction objects have an execute method that needs context
-                if context is None:
-                    context = SandboxContext()  # Create a default context if none provided
-                return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
+                if __context is None:
+                    __context = SandboxContext()  # Create a default context if none provided
+                return _resolve_if_promise(func.execute(__context, *positional_args, **func_kwargs))
             elif callable(func):
                 # Fallback - call the function directly if it's a regular callable
                 # Check if the function expects context by looking at its signature
@@ -621,16 +639,39 @@ class FunctionRegistry:
                     params = list(sig.parameters.keys())
                     if params and params[0] in ("context", "ctx", "the_context", "sandbox_context"):
                         # Function expects context
-                        return _resolve_if_promise(func(context, *positional_args, **func_kwargs))
+                        positional_args_with_context = [__context] + positional_args
                     else:
-                        # Function doesn't expect context
-                        return _resolve_if_promise(func(*positional_args, **func_kwargs))
+                        positional_args_with_context = positional_args
+                    if "options" in params:
+                        options = func_kwargs.pop("options", {})
+                        from dana.common.utils import Misc
+                        match_args_kwargs_result = Misc.parse_args_kwargs(func, *positional_args_with_context, **func_kwargs)
+
+                        # NOTE : If there are unmatched kwargs, they are added to the options dictionary
+                        if match_args_kwargs_result.unmatched_kwargs:
+                            options.update(match_args_kwargs_result.unmatched_kwargs)
+
+                        matched_args = match_args_kwargs_result.matched_args # This will be matched to the function's arguments
+                        varargs = match_args_kwargs_result.varargs # This will be matched to the function's *args
+                        matched_kwargs = match_args_kwargs_result.matched_kwargs # This will be matched to the function's keyword arguments
+                        if options:
+                            if len(matched_args) > params.index("options"):
+                                # If options is already existed in positional args, update it
+                                matched_args[params.index("options")].update(options)
+                            else:
+                                # If options is not existed in positional args, add it to the matched_kwargs
+                                matched_kwargs["options"] = options
+                        varkwargs = match_args_kwargs_result.varkwargs # This will be matched to the function's **kwargs
+
+                        return _resolve_if_promise(func(*matched_args, *varargs, **matched_kwargs, **varkwargs))
+                    return _resolve_if_promise(func(*positional_args_with_context, **func_kwargs))
+
                 except (ValueError, TypeError):
                     # If we can't inspect the signature, assume it doesn't expect context
                     return _resolve_if_promise(func(*positional_args, **func_kwargs))
             else:
                 # Not a callable
-                raise SandboxError(f"Function '{name}' is not callable")
+                raise SandboxError(f"Function '{__name}' is not callable")
 
     def _register_preloaded_functions(self) -> None:
         """Register preloaded functions from the old registry."""
