@@ -37,7 +37,7 @@
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
                 "base_url": "env:LOCAL_BASE_URL",
-		"model_name": "env:LOCAL_MODEL_NAME"
+		        "model_name": "env:LOCAL_MODEL_NAME"
             },
 	    "huggingface": {
 		"api_key": "env:HF_TOKEN",
@@ -49,7 +49,7 @@
 	    },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
-                "base_url": "env:OPENAI_BASE_URL"
+                "base_url": "https://api.openai.com/v1"
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
