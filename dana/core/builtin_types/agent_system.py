@@ -12,10 +12,26 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.core.builtin_types.struct_system import StructInstance, StructType
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import is_promise
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+
+# For backward compatibility, create aliases
+from dana.registry import (
+    get_agent_type,
+)
+
+
+# Create backward compatibility functions and instances
+def create_agent_instance(agent_type_name: str, field_values=None, context=None):
+    """Create an agent instance (backward compatibility)."""
+    from dana.core.builtin_types.agent_system import AgentInstance
+
+    agent_type = get_agent_type(agent_type_name)
+    if agent_type is None:
+        raise ValueError(f"Agent type '{agent_type_name}' not found")
+    return AgentInstance(agent_type, field_values or {})
 
 
 # Runtime function definitions
@@ -459,7 +475,7 @@ class AgentInstance(StructInstance):
         """Initialize LLM resource from agent's config if not already done."""
         if self._llm_resource_instance is None:
             from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
             # Get LLM parameters from agent's config field
             llm_params = {}

@@ -85,6 +85,10 @@ class GlobalRegistry:
         """Register an interface type."""
         self.types.register_interface_type(interface_type)
 
+    def register_workflow_type(self, workflow_type: Any) -> None:
+        """Register a workflow type."""
+        self.types.register_workflow_type(workflow_type)
+
     def get_agent_type(self, name: str) -> Any:
         """Get an agent type by name."""
         return self.types.get_agent_type(name)
@@ -100,6 +104,10 @@ class GlobalRegistry:
     def get_interface_type(self, name: str) -> Any:
         """Get an interface type by name."""
         return self.types.get_interface_type(name)
+
+    def get_workflow_type(self, name: str) -> Any:
+        """Get a workflow type by name."""
+        return self.types.get_workflow_type(name)
 
     # === Struct Function Registration Convenience Methods ===
 
@@ -125,6 +133,10 @@ class GlobalRegistry:
         """Track a resource instance globally."""
         return self.resources.track_instance(instance, name)
 
+    def track_workflow_instance(self, instance: Any, name: str | None = None) -> str:
+        """Track a workflow instance globally."""
+        return self.workflows.track_instance(instance, name)
+
     def list_agent_instances(self, agent_type: str | None = None) -> list[Any]:
         """List all tracked agent instances."""
         return self.agents.list_instances(agent_type)
@@ -132,6 +144,10 @@ class GlobalRegistry:
     def list_resource_instances(self, resource_type: str | None = None) -> list[Any]:
         """List all tracked resource instances."""
         return self.resources.list_instances(resource_type)
+
+    def list_workflow_instances(self, workflow_type: str | None = None) -> list[Any]:
+        """List all tracked workflow instances."""
+        return self.workflows.list_instances(workflow_type)
 
     # === Registry Statistics ===
 
@@ -142,6 +158,7 @@ class GlobalRegistry:
                 "agent_types": len(self.types.list_agent_types()),
                 "resource_types": len(self.types.list_resource_types()),
                 "struct_types": len(self.types.list_struct_types()),
+                "workflow_types": len(self.types.list_workflow_types()),
             },
             "struct_functions": {
                 "total_methods": len(self.struct_functions.list_all()),
@@ -156,6 +173,7 @@ class GlobalRegistry:
             "instances": {
                 "agent_instances": len(self.agents.list_instances()),
                 "resource_instances": len(self.resources.list_instances()),
+                "workflow_instances": len(self.workflows.list_instances()),
             },
         }
 
@@ -167,10 +185,12 @@ class GlobalRegistry:
             f"agent_types={stats['types']['agent_types']}, "
             f"resource_types={stats['types']['resource_types']}, "
             f"struct_types={stats['types']['struct_types']}, "
+            f"workflow_types={stats['types']['workflow_types']}, "
             f"struct_functions={stats['struct_functions']['total_methods']}, "
             f"modules={stats['modules']['total_modules']}, "
             f"functions={stats['functions']['total_functions']}, "
             f"agent_instances={stats['instances']['agent_instances']}, "
-            f"resource_instances={stats['instances']['resource_instances']}"
+            f"resource_instances={stats['instances']['resource_instances']}, "
+            f"workflow_instances={stats['instances']['workflow_instances']}"
             f")"
         )

@@ -38,6 +38,7 @@ from dana.core.lang.ast import (
     ResourceDefinition,
     SingletonAgentDefinition,
     StructDefinition,
+    WorkflowDefinition,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
@@ -99,6 +100,7 @@ class StatementExecutor(BaseExecutor):
             ResourceDefinition: self.execute_resource_definition,
             StructDefinition: self.execute_struct_definition,
             InterfaceDefinition: self.execute_interface_definition,
+            WorkflowDefinition: self.execute_workflow_definition,
             ExportStatement: self.execute_export_statement,
             DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
@@ -487,8 +489,8 @@ class StatementExecutor(BaseExecutor):
         """
         # Import lazily to avoid circulars
         from dana.common.exceptions import SandboxError
-        from dana.core.resource.resource_ast import create_resource_type_from_ast
-        from dana.core.resource.resource_registry import ResourceTypeRegistry
+        from dana.core.builtin_types.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.builtin_types.resource.resource_registry import ResourceTypeRegistry
 
         try:
             # Build ResourceType from AST
@@ -518,6 +520,53 @@ class StatementExecutor(BaseExecutor):
             return None
         except Exception as e:
             raise SandboxError(f"Failed to register resource {node.name}: {e}")
+
+    def execute_workflow_definition(self, node, context: SandboxContext) -> None:
+        """Execute a workflow definition statement.
+
+        Registers a WorkflowType in the workflow registry and binds a constructor
+        that creates WorkflowInstance at runtime.
+
+        Args:
+            node: The WorkflowDefinition node
+            context: The execution context
+
+        Returns:
+            None (registers type and constructor in scope)
+        """
+        # Import lazily to avoid circulars
+        from dana.common.exceptions import SandboxError
+        from dana.core.builtin_types.workflow_system import create_workflow_type_from_ast
+        from dana.registry import TYPE_REGISTRY
+
+        try:
+            # Build WorkflowType from AST (using specialized workflow type system)
+            workflow_type = create_workflow_type_from_ast(node)
+
+            # Evaluate default values in the current context
+            if workflow_type.field_defaults:
+                evaluated_defaults: dict[str, Any] = {}
+                for field_name, default_expr in workflow_type.field_defaults.items():
+                    try:
+                        # Evaluate default values using the parent executor
+                        default_value = self.parent.execute(default_expr, context)
+                        evaluated_defaults[field_name] = default_value
+                    except Exception as e:
+                        raise SandboxError(f"Failed to evaluate default value for workflow field '{field_name}': {e}")
+                workflow_type.field_defaults = evaluated_defaults
+
+            # Register the workflow type in the type registry
+            TYPE_REGISTRY.register_workflow_type(workflow_type)
+            self.debug(f"Registered workflow type: {workflow_type.name}")
+
+            # Bind constructor that uses type registry
+            def workflow_constructor(**kwargs):
+                return TYPE_REGISTRY.create_instance(workflow_type.name, kwargs)
+
+            context.set(f"local:{node.name}", workflow_constructor)
+            return None
+        except Exception as e:
+            raise SandboxError(f"Failed to register workflow {node.name}: {e}")
 
     def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
         """Execute a singleton agent definition statement using optimized handler."""

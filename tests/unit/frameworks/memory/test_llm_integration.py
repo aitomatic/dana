@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_instance import AgentInstance, AgentType
+from dana.core.builtin_types.agent_system import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -42,8 +42,8 @@ class TestLLMIntegration(unittest.TestCase):
     def tearDown(self):
         """Clean up test cases."""
         self.init_patcher.stop()
-        import shutil
         import os
+        import shutil
 
         # Clean up any temporary files created by ConversationMemory
         if hasattr(self, "memory_dir") and self.memory_dir.exists():
@@ -295,7 +295,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def create_test_agent(self):
         """Create a test agent for integration tests."""
-        from dana.agent.agent_instance import AgentInstance, AgentType
+        from dana.core.builtin_types.agent_system import AgentInstance, AgentType
 
         agent_type = AgentType(
             name="TestAgent",
@@ -307,7 +307,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_sandbox_context_creation(self):
         """Test that SandboxContext is created properly."""
-        from dana.agent.agent_instance import AgentInstance, AgentType
+        from dana.core.builtin_types.agent_system import AgentInstance, AgentType
 
         agent_type = AgentType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
         agent = AgentInstance(agent_type, {"purpose": "testing"})
