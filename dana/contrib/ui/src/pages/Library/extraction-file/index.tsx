@@ -93,7 +93,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Extract Files</DialogTitle>
+            <DialogTitle>Deep Extract</DialogTitle>
             <DialogDescription className="text-sm text-gray-600">
               Process and extract content from your files
             </DialogDescription>
