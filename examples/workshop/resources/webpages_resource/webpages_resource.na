@@ -1,8 +1,6 @@
 """Webpages Querying."""
 
-from resources import RagResource, query, initialize  # TODO: user not needing to import `query` & `initialize`
 
-news_agency_rag = RagResource(sources=["https://asia.nikkei.com"], force_reload=True)
-news_agency_rag.initialize()  # TODO: user not needing to initialize
-
-print(news_agency_rag.query("What's happening today?"))  # TODO: return str input, not raw list of candidate pieces
+def __main__(site='https://asia.nikkei.com'):
+    news_agency_rag = use('rag', sources=[site], force_reload=True)
+    print(reason("What's happening today?", resources=[news_agency_rag]))
