@@ -15,12 +15,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana"
-version = "0.25.9.3"
+version = "0.5.0"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
     { name = "Christopher Nguyen", email = "ctn@aitomatic.com" },
+]
+maintainers = [
+    { name = "Vinh Luong", email = "vinh@aitomatic.com" },
+    { name = "Annie Ha", email = "annie@aitomatic.com" },
+    { name = "Lam Nguyen", email = "lam@aitomatic.com" },
+    { name = "Roy Vu", email = "roy@aitomatic.com" },
+    { name = "Sang Dinh", email = "sang@aitomatic.com" },
 ]
 
 # Core dependencies organized by functionality
@@ -208,7 +215,7 @@ include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
+dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
