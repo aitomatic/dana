@@ -13,7 +13,7 @@ __all__ = [
 
 
 def _roa_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
 as decimal value according to formula:
 
@@ -32,7 +32,7 @@ def calc_roa_ratio(doc: FinDoc) -> float = [get_net_income, get_total_asset_2y] 
 
 
 def _roe_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Return on Equity, a.k.a. RoE`
 as decimal value according to formula:
 

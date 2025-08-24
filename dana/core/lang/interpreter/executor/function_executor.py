@@ -307,6 +307,7 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
+
         # Track location in error context if available
         if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
@@ -356,9 +357,15 @@ class FunctionExecutor(BaseExecutor):
             if not callable(actual_function):
                 raise SandboxError(f"Subscript expression resolved to non-callable object: {actual_function}")
 
-            # Call the resolved function with the provided arguments
+            # Call the resolved function with the provided arguments and async detection
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
-            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            import asyncio
+            from dana.common.utils.misc import Misc
+            
+            if asyncio.iscoroutinefunction(actual_function):
+                result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+            else:
+                result = actual_function(*evaluated_args, **evaluated_kwargs)
             self.debug(f"Subscript call result: {result}")
             return result
         elif isinstance(node.name, str) and "SubscriptExpression" in node.name:
@@ -372,55 +379,21 @@ class FunctionExecutor(BaseExecutor):
         name_info = FunctionNameInfo.from_node(node)
 
         try:
-            # Phase 1: Setup and validation
-            self.__setup_and_validate(node)
-
-            # Phase 2: Process arguments
-            evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
-            self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
-
-            # Phase 2.5: Check for struct instantiation
-            self.debug("Checking for struct instantiation...")
-            # Phase 2.5: Handle method calls (AttributeAccess) before other processing
-            from dana.core.lang.ast import AttributeAccess
-
-            if isinstance(node.name, AttributeAccess):
-                return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
-
-            struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
-            if struct_result is not None:
-                self.debug(f"Found struct instantiation, returning: {struct_result}")
-                return struct_result
-
-            self.debug("Not a struct instantiation, proceeding with function resolution...")
-
-            # Phase 3: Handle special cases before unified dispatcher
-            if isinstance(node.name, str) and "SubscriptExpression" in node.name:
-                self.debug(f"Found string representation of SubscriptExpression: {node.name}")
-                # This means the function name is a string representation of a SubscriptExpression
-                # We need to evaluate it as a subscript expression first
-                return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
-
-            # Phase 4: Parse function name and resolve function using unified dispatcher
-            self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
-            name_info = FunctionNameInfo.from_node(node)
-
             # Use the new unified dispatcher (replaces fragmented resolution)
             resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
 
-            # Phase 5: Execute resolved function using unified dispatcher
+            # Phase 4: Execute resolved function using unified dispatcher
             return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
-
         except Exception as dispatcher_error:
             # If unified dispatcher fails, provide comprehensive error information
-            self.debug(f"Unified dispatcher failed for function '{getattr(node, 'name', 'unknown')}': {dispatcher_error}")
+            self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
 
             # Use error handler for consistent error reporting
             try:
                 raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
             except Exception:
                 # If error handler doesn't handle it, raise original with context
-                raise SandboxError(f"Function '{getattr(node, 'name', 'unknown')}' execution failed: {dispatcher_error}") from dispatcher_error
+                raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
         finally:
             # Pop location from error context stack
             if hasattr(node, "location") and node.location:
@@ -1021,7 +994,14 @@ class FunctionExecutor(BaseExecutor):
             if isinstance(actual_function, DanaFunction):
                 result = actual_function.execute(context, *evaluated_args, **evaluated_kwargs)
             else:
-                result = actual_function(*evaluated_args, **evaluated_kwargs)
+                # Execute-time async detection for regular functions
+                import asyncio
+                from dana.common.utils.misc import Misc
+                
+                if asyncio.iscoroutinefunction(actual_function):
+                    result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
+                else:
+                    result = actual_function(*evaluated_args, **evaluated_kwargs)
 
             self.debug(f"Subscript call result: {result}")
             return result
