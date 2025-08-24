@@ -23,11 +23,11 @@ authors = [
     { name = "Christopher Nguyen", email = "ctn@aitomatic.com" },
 ]
 maintainers = [
-    {name = "Vinh Luong", email = "vinh@aitomatic.com"},
-    {name = "Annie Ha", email = "annie@aitomatic.com"},
-    {name = "Lam Nguyen", email = "lam@aitomatic.com"},
-    {name = "Roy Vu", email = "roy@aitomatic.com"},
-    {name = "Sang Dinh", email = "sang@aitomatic.com"},
+    { name = "Vinh Luong", email = "vinh@aitomatic.com" },
+    { name = "Annie Ha", email = "annie@aitomatic.com" },
+    { name = "Lam Nguyen", email = "lam@aitomatic.com" },
+    { name = "Roy Vu", email = "roy@aitomatic.com" },
+    { name = "Sang Dinh", email = "sang@aitomatic.com" },
 ]
 
 # Core dependencies organized by functionality

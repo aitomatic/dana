@@ -1,0 +1,8 @@
+/Users/annieha/opendxa/docs/primers/agent.md
+/Users/annieha/opendxa/docs/primers/struct_methods.md
+/Users/annieha/opendxa/docs/primers/workflow.md
+/Users/annieha/opendxa/docs/primers/import.md
+/Users/annieha/opendxa/docs/primers/poet.md
+/Users/annieha/opendxa/docs/primers/comprehensions.md
+/Users/annieha/opendxa/docs/primers/lambda.md
+/Users/annieha/opendxa/docs/primers/workflow_and_poet.md
