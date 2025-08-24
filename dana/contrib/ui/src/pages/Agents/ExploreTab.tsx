@@ -106,7 +106,7 @@ export const ExploreTab: React.FC<{
           <div
             key={agent.id}
             onClick={() => handleCardClick(agent)}
-            className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md cursor-pointer"
+            className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-md"
           >
             <div className="flex flex-col gap-4">
               <div className="flex gap-2 justify-between items-center">
@@ -116,7 +116,6 @@ export const ExploreTab: React.FC<{
                     alt={`${agent.name} avatar`}
                     className="object-cover w-full h-full"
                     onError={(e) => {
-                      // Fallback to colored circle if image fails to load
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const parent = target.parentElement;
@@ -247,7 +246,7 @@ export const ExploreTab: React.FC<{
         <DialogContent className="max-w-md">
           <DialogHeader>
             <div className="flex flex-col gap-3 mb-2">
-              <div className="flex overflow-hidden  justify-center items-center w-12 h-12 rounded-full">
+              <div className="flex overflow-hidden justify-center items-center w-12 h-12 rounded-full">
                 {selectedAgent && (
                   <img
                     src={getAgentAvatarSync(selectedAgent.id)}
@@ -272,9 +271,9 @@ export const ExploreTab: React.FC<{
               </div>
             </div>
 
-            <div className="space-y-4 mb-4">
+            <div className="mb-4 space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-800 mb-1">Role</h4>
+                <h4 className="mb-1 text-sm font-medium text-gray-800">Role</h4>
                 <p className="text-sm text-gray-600">
                   {selectedAgent?.description || 'No description available'}
                 </p>
@@ -283,7 +282,7 @@ export const ExploreTab: React.FC<{
               {/* Domain */}
               {selectedAgent?.config?.domain && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-800 mb-1">Domain</h4>
+                  <h4 className="mb-1 text-sm font-medium text-gray-800">Domain</h4>
                   <p className="text-sm text-gray-600">{selectedAgent.config.domain}</p>
                 </div>
               )}
@@ -298,12 +297,12 @@ export const ExploreTab: React.FC<{
                 return (
                   uniqueTopics.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-800 mb-1">Topics</h4>
+                      <h4 className="mb-1 text-sm font-medium text-gray-800">Topics</h4>
                       <div className="flex flex-wrap gap-1">
                         {uniqueTopics.map((topic: string, index: number) => (
                           <span
                             key={index}
-                            className="capitalize px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
+                            className="px-2 py-1 text-xs text-blue-800 capitalize bg-blue-100 rounded-full"
                           >
                             {topic}
                           </span>
@@ -324,12 +323,12 @@ export const ExploreTab: React.FC<{
                 return (
                   uniqueTasks.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-800 mb-1">Tasks</h4>
+                      <h4 className="mb-1 text-sm font-medium text-gray-800">Tasks</h4>
                       <div className="flex flex-wrap gap-1">
                         {uniqueTasks.map((task: string, index: number) => (
                           <span
                             key={index}
-                            className="capitalize px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
+                            className="px-2 py-1 text-xs text-green-800 capitalize bg-green-100 rounded-full"
                           >
                             {task}
                           </span>
@@ -351,7 +350,7 @@ export const ExploreTab: React.FC<{
             <Button
               onClick={handleCustomizeFromAgent}
               variant="outline"
-              className="w-full sm:w-1/2 text-sm font-semibold text-gray-700"
+              className="w-full text-sm font-semibold text-gray-700 sm:w-1/2"
             >
               <Settings style={{ width: '16', height: '16' }} />
               Train from this agent
@@ -359,7 +358,7 @@ export const ExploreTab: React.FC<{
             <Button
               onClick={handleSaveAndUseAgent}
               variant="default"
-              className="w-full sm:w-1/2 text-sm font-semibold"
+              className="w-full text-sm font-semibold sm:w-1/2"
             >
               <Download style={{ width: '16', height: '16' }} />
               Save to My Agent and Use
