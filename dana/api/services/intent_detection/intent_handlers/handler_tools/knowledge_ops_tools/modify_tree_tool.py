@@ -917,14 +917,14 @@ Return as JSON with this exact structure:
     def _build_structured_response(self, user_message: str, operation: str, content: str) -> str:
         """Build a structured response with user message and operation content."""
         response_parts = []
-        
+
         # Add user message first (acknowledgment and context)
         if user_message:
             response_parts.append(f"{user_message}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add the operation content
         response_parts.append(content)
-        
+
         # Join all parts with proper spacing
         return "\n".join(response_parts)
