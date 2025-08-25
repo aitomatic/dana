@@ -206,14 +206,6 @@ export function LibraryFileSelectionModal({
                 className="pl-10"
               />
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-              className="whitespace-nowrap"
-            >
-              {selectedFileIds.length === availableDocuments.length ? 'Deselect All' : 'Select All'}
-            </Button>
 
           </div>
 
