@@ -4,15 +4,13 @@
             "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
             "huggingface:openai/gpt-oss-120b",
             "huggingface:openai/gpt-oss-20b",
-            "openai:gpt-4.1-mini",
             "anthropic:kimi-k2-0711-preview",
             "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
             "moonshot:kimi",
             "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
-            "azure:gpt-4",
-            "azure:gpt-4o",
             "azure:gpt-4o-mini",
+            "azure:gpt-4o",
             "cohere:command",
             "deepseek:deepseek-chat",
             "google:gemini-1.5-pro-latest",
@@ -37,16 +35,16 @@
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
                 "base_url": "env:LOCAL_BASE_URL",
-		        "model_name": "env:LOCAL_MODEL_NAME"
+                "model_name": "env:LOCAL_MODEL_NAME"
             },
-	    "huggingface": {
-		"api_key": "env:HF_TOKEN",
-		"base_url": "https://router.huggingface.co/v1"
-	    },
-	    "openrouter": {
-		"api_key": "env:OPENROUTER_API_KEY",
-		"base_url": "https://openrouter.ai/api/v1"
-	    },
+            "huggingface": {
+                "api_key": "env:HF_TOKEN",
+                "base_url": "https://router.huggingface.co/v1"
+            },
+            "openrouter": {
+                "api_key": "env:OPENROUTER_API_KEY",
+                "base_url": "https://openrouter.ai/api/v1"
+            },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "base_url": "https://api.openai.com/v1"
@@ -131,7 +129,7 @@
             "azure": {
                 "api_key": "env:AZURE_OPENAI_API_KEY",
                 "base_url": "env:AZURE_OPENAI_API_URL",
-                "api_version" : "env:AZURE_OPENAI_API_VERSION",
+                "api_version": "env:AZURE_OPENAI_API_VERSION",
                 "api_type": "azure",
                 "dimension": 1024
             }
