@@ -30,8 +30,8 @@ createRoot(document.getElementById('root')!).render(
           // @ts-ignore
           success: {
             style: {
-              background: '#f0fdf4',
-              color: '#166534',
+              background: '#c8e3d0',
+              color: '#1fad49',
               border: '1px solid #bbf7d0',
             },
             iconTheme: {
