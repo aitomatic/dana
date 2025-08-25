@@ -318,7 +318,9 @@ const WorkflowsTab: React.FC = () => {
           startTime: undefined,
           endTime: undefined,
           executionTime: step.execution_time,
-          errorMessage: step.error
+          errorMessage: step.error,
+          input: step.input,  // Preserve input data from backend
+          result: step.result  // Preserve result data from backend
         })),
       };
 
@@ -1192,7 +1194,7 @@ const WorkflowsTab: React.FC = () => {
                                                              {/* Step Input/Output Data from Dana Runtime */}
                                <div className="space-y-3">
                                  {/* Input Data */}
-                                 {stepResult.input && (
+                                 {stepResult.input ? (
                                    <div>
                                      <span className="text-xs font-medium text-gray-600">📥 Input:</span>
                                      <div className="mt-1 p-2 bg-blue-50 rounded text-xs font-mono text-blue-700 max-h-32 overflow-y-auto border border-blue-200">
@@ -1202,10 +1204,17 @@ const WorkflowsTab: React.FC = () => {
                                        }
                                      </div>
                                    </div>
+                                 ) : (
+                                   <div>
+                                     <span className="text-xs font-medium text-gray-600">📥 Input:</span>
+                                     <div className="mt-1 p-2 bg-gray-50 rounded text-xs font-mono text-gray-500 border border-gray-200">
+                                       No input data available for this step
+                                     </div>
+                                   </div>
                                  )}
                                  
                                  {/* Output Data */}
-                                 {stepResult.result && (
+                                 {stepResult.result ? (
                                    <div>
                                      <span className="text-xs font-medium text-gray-600">📤 Output:</span>
                                      <div className="mt-1 p-2 bg-green-50 rounded text-xs font-mono text-green-700 max-h-32 overflow-y-auto border border-green-200">
@@ -1213,6 +1222,13 @@ const WorkflowsTab: React.FC = () => {
                                          JSON.stringify(stepResult.result, null, 2) : 
                                          String(stepResult.result)
                                        }
+                                     </div>
+                                   </div>
+                                 ) : (
+                                   <div>
+                                     <span className="text-xs font-medium text-gray-600">📤 Output:</span>
+                                     <div className="mt-1 p-2 bg-gray-50 rounded text-xs font-mono text-gray-500 border border-gray-200">
+                                       No output data available for this step
                                      </div>
                                    </div>
                                  )}

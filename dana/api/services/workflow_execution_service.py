@@ -310,7 +310,7 @@ class WorkflowExecutionTracker:
                     "start_time": None,
                     "end_time": None,
                     "execution_time": 0.0,
-                    "input": None,
+                    "input": request.input_data.copy() if i == 0 else None,  # First step gets the initial input
                     "output": None,
                     "error": None
                 })
@@ -510,7 +510,13 @@ class WorkflowExecutionTracker:
                         execution["current_step"] = step_index
                         execution["step_results"][step_index]["status"] = "running"
                         execution["step_results"][step_index]["start_time"] = datetime.now()
-                        execution["step_results"][step_index]["input"] = current_data.copy()
+                        # Set input data for this step
+                        if step_index == 0:
+                            # First step gets the original input data
+                            execution["step_results"][step_index]["input"] = input_data.copy()
+                        else:
+                            # Subsequent steps get the output from the previous step
+                            execution["step_results"][step_index]["input"] = current_data.copy()
                     
                     # Small delay to simulate real processing (remove this in production)
                     time.sleep(0.5)
