@@ -5,8 +5,8 @@ Tests coexistence, method dispatch priority, and registry integration.
 
 import unittest
 
-from dana.agent import AgentInstance, AgentType, create_agent_instance
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.builtin_types.agent_system import AgentInstance, AgentType, create_agent_instance
+from dana.core.builtin_types.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.registry import register_agent_type
 
@@ -101,8 +101,8 @@ class TestMethodDispatchPriority(unittest.TestCase):
 
         # Set up LLM resource in context for agent methods with mock mode enabled
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -143,8 +143,8 @@ class TestMethodDispatchPriority(unittest.TestCase):
 
         # Set up LLM resource in context for agent methods with mock mode enabled
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()

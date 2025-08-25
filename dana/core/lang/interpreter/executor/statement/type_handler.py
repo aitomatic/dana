@@ -1,14 +1,14 @@
 """
 Type handler for Dana statements.
 
-Provides struct definition processing.
+Provides struct and interface definition processing.
 """
 
 from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import StructDefinition
+from dana.core.lang.ast import InterfaceDefinition, StructDefinition
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -23,7 +23,7 @@ class TypeHandler(Loggable):
         Registers a struct type and binds a constructor into the local scope.
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import create_struct_type_from_ast
+        from dana.core.builtin_types.struct_system import create_struct_type_from_ast
         from dana.registry import TYPE_REGISTRY
 
         try:
@@ -53,3 +53,26 @@ class TypeHandler(Loggable):
 
         except Exception as e:
             raise SandboxError(f"Failed to register struct {node.name}: {e}")
+
+    def execute_interface_definition(self, node: InterfaceDefinition, context: SandboxContext) -> None:
+        """Execute an interface definition statement.
+
+        Registers an interface type in the type registry.
+        """
+        # Import here to avoid circular imports
+        from dana.core.builtin_types.interface_system import create_interface_type_from_ast
+        from dana.registry import TYPE_REGISTRY
+
+        try:
+            interface_type = create_interface_type_from_ast(node)
+
+            # Register the interface type
+            TYPE_REGISTRY.register(interface_type)
+            self.debug(f"Registered interface type: {interface_type.name}")
+
+            # Store the interface type in the context for potential use
+            context.set(f"local:{node.name}", interface_type)
+            return None
+
+        except Exception as e:
+            raise SandboxError(f"Failed to register interface {node.name}: {e}")

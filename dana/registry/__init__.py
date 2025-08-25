@@ -14,13 +14,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from typing import Any
+
 from .agent_registry import AgentRegistry
 from .function_registry import FunctionRegistry
 from .global_registry import GlobalRegistry
 from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
 from .resource_registry import ResourceRegistry
-from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
 
 # Global singleton instance
@@ -60,6 +61,26 @@ def register_struct_type(struct_type) -> None:
     TYPE_REGISTRY.register_struct_type(struct_type)
 
 
+def register_interface_type(interface_type) -> None:
+    """Register an interface type in the global registry."""
+    TYPE_REGISTRY.register_interface_type(interface_type)
+
+
+def register_workflow_type(workflow_type) -> None:
+    """Register a workflow type in the global registry."""
+    TYPE_REGISTRY.register_workflow_type(workflow_type)
+
+
+def get_type(name: str) -> Any:
+    """Get any type by name from the global registry."""
+    return TYPE_REGISTRY.get_type(name)
+
+
+def has_type(name: str) -> bool:
+    """Check if any type exists in the global registry."""
+    return TYPE_REGISTRY.has_type(name)
+
+
 def get_agent_type(name: str):
     """Get an agent type from the global registry."""
     return TYPE_REGISTRY.get_agent_type(name)
@@ -73,6 +94,11 @@ def get_resource_type(name: str):
 def get_struct_type(name: str):
     """Get a struct type from the global registry."""
     return TYPE_REGISTRY.get_struct_type(name)
+
+
+def get_workflow_type(name: str):
+    """Get a workflow type from the global registry."""
+    return TYPE_REGISTRY.get_workflow_type(name)
 
 
 def register_struct_function(receiver_type: str, method_name: str, func) -> None:

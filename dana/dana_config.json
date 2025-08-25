@@ -1,6 +1,7 @@
 {
     "llm": {
         "preferred_models": [
+            "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
             "huggingface:openai/gpt-oss-120b",
             "huggingface:openai/gpt-oss-20b",
             "openai:gpt-4.1-mini",
@@ -35,8 +36,8 @@
         "provider_configs": {
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
-                "base_url": "http://localhost:8000/v1",
-                "model_name": "microsoft/Phi-3.5-mini-instruct"
+                "base_url": "env:LOCAL_BASE_URL",
+		        "model_name": "env:LOCAL_MODEL_NAME"
             },
 	    "huggingface": {
 		"api_key": "env:HF_TOKEN",
