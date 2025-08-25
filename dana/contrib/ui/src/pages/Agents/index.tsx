@@ -93,87 +93,199 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="flex flex-col p-8 w-full h-full">
-      {/* Main Title */}
-      <div className="text-center mb-8 pb-8 border-b border-gray-100 bg-gradient-to-b from-gray-50 to-white rounded-lg p-6">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Dana Agent Studio</h1>
-        <p className="text-lg text-gray-600 mb-4">Build, train, and deploy Dana agents</p>
-        <p className="text-sm text-gray-500 max-w-2xl mx-auto">
-          Create domain-expert agents that learn, adapt, and improve themselves in production. 
-          Start with pre-trained agents or build your own from scratch.
-        </p>
-      </div>
-      
-      {/* Top section with Search and Train Agent button */}
-      <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
-          <div className="relative w-full md:w-72">
-            <svg
-              className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+    <div className="flex flex-col w-full h-full overflow-hidden">
+      {/* Hero Section with Animated Background */}
+      <div className="relative min-h-[600px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute top-0 right-0 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        {/* Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+        
+        {/* Main Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-[600px] text-center px-6">
+          
+          {/* Main Title with Enhanced Typography */}
+          <div className="mb-8">
+            <h1 className="text-7xl md:text-8xl font-black text-white mb-4 tracking-tight leading-none">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400 bg-clip-text text-transparent">
+                Dana
+              </span>
+            </h1>
+            <h2 className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight">
+              Agent Studio
+            </h2>
+          </div>
+          
+          {/* Enhanced Subtitle */}
+          <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-4xl leading-relaxed font-light">
+            The complete platform for <span className="text-purple-300 font-semibold">building, training, and deploying</span> Dana Expert Agents
+          </p>
+          
+          {/* Feature Cards with Better Design */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-5xl">
+            {/* Agent Maker - Available Now */}
+            <div className="group bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-white font-bold text-xl mb-3">Agent Maker</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">Create Dana Expert Agents with domain expertise and learning capabilities</p>
+            </div>
+            
+            {/* Experience Learner - Coming Soon */}
+            <div className="group bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 transition-all duration-500 hover:scale-105 relative">
+              <div className="absolute top-4 right-4">
+                <span className="px-3 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 rounded-full">Coming Soon</span>
+              </div>
+              <div className="w-16 h-16 bg-gradient-to-r from-pink-400 to-yellow-400 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg opacity-60">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h3 className="text-white font-bold text-xl mb-3 opacity-60">Experience Learner</h3>
+              <p className="text-gray-400 text-sm leading-relaxed opacity-60">Dana Expert Agents that evolve and improve through continuous learning and feedback</p>
+            </div>
+            
+            {/* App Generators - Coming Soon */}
+            <div className="group bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 transition-all duration-500 hover:scale-105 relative">
+              <div className="absolute top-4 right-4">
+                <span className="px-3 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 rounded-full">Coming Soon</span>
+              </div>
+              <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-purple-400 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg opacity-60">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-white font-bold text-xl mb-3 opacity-60">App Generators</h3>
+              <p className="text-gray-400 text-sm leading-relaxed opacity-60">Deploy Dana Expert Agents to web, iOS, and Android with built-in app generation</p>
+            </div>
+          </div>
+          
+          {/* Enhanced CTA Buttons */}
+          <div className="flex flex-col items-center gap-4">
+            <button 
+              onClick={() => {
+                const element = document.getElementById('pre-trained-agents');
+                element?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex items-center gap-3 text-gray-300 text-lg hover:text-white transition-colors duration-300 cursor-pointer group"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search agents"
-              value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
-              onChange={(e) =>
-                activeTab === 'My Agent'
-                  ? setMyAgentSearch(e.target.value)
-                  : setExploreSearch(e.target.value)
-              }
-              className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:bg-gray-50"
-            />
+              <svg className="w-6 h-6 animate-bounce group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span className="font-medium">Explore agents below</span>
+            </button>
           </div>
         </div>
+        
+        {/* Enhanced Floating Elements */}
+        <div className="absolute top-20 right-20 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
+        <div className="absolute bottom-20 left-20 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 left-40 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
       </div>
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200">
-        <button
-          className={`py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
-          onClick={() => setActiveTab('explore')}
-        >
-          Pre-trained Agents
-        </button>
-        <button
-          className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
-          onClick={() => setActiveTab('my')}
-        >
-          My Agents
-        </button>
+
+      {/* Content Section */}
+      <div className="flex-1 bg-white p-8">
+        {/* Search and Navigation */}
+        <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
+            <div className="relative w-full md:w-72">
+              <svg
+                className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search agents..."
+                value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
+                onChange={(e) =>
+                  activeTab === 'My Agent'
+                    ? setMyAgentSearch(e.target.value)
+                    : setExploreSearch(e.target.value)
+                }
+                className="py-3 pr-4 pl-10 w-full text-base text-gray-900 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Enhanced Tabs */}
+        <div className="flex gap-4 mb-8 border-b border-gray-200">
+          <button
+            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'Explore' 
+                ? 'border-purple-500 text-purple-600 bg-purple-50' 
+                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+            }`}
+            onClick={() => setActiveTab('explore')}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Pre-trained Agents
+            </span>
+          </button>
+          <button
+            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'My Agent' 
+                ? 'border-purple-500 text-purple-600 bg-purple-50' 
+                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+            }`}
+            onClick={() => setActiveTab('my')}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+              My Agents
+            </span>
+          </button>
+        </div>
+        
+        {/* Tab Content */}
+        {activeTab === 'My Agent' && (
+          <MyAgentTab
+            agents={agents.filter(
+              (agent) =>
+                agent.name.toLowerCase().includes(myAgentSearch.toLowerCase()) ||
+                (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
+            )}
+            navigate={navigate}
+            handleCreateAgent={handleCreateAgent}
+            creating={creating}
+          />
+        )}
+        {activeTab === 'Explore' && (
+          <div id="pre-trained-agents">
+            <ExploreTab
+              filteredAgents={filteredAgents}
+              selectedDomain={selectedDomain}
+              setSelectedDomain={setSelectedDomain}
+              navigate={navigate}
+              DOMAINS={DOMAINS}
+              handleCreateAgent={handleCreateAgent}
+              creating={creating}
+            />
+          </div>
+        )}
       </div>
-      {/* Tab Content */}
-      {activeTab === 'My Agent' && (
-        <MyAgentTab
-          agents={agents.filter(
-            (agent) =>
-              agent.name.toLowerCase().includes(myAgentSearch.toLowerCase()) ||
-              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
-          )}
-          navigate={navigate}
-          handleCreateAgent={handleCreateAgent}
-          creating={creating}
-        />
-      )}
-      {activeTab === 'Explore' && (
-        <ExploreTab
-          filteredAgents={filteredAgents}
-          selectedDomain={selectedDomain}
-          setSelectedDomain={setSelectedDomain}
-          navigate={navigate}
-          DOMAINS={DOMAINS}
-          handleCreateAgent={handleCreateAgent}
-          creating={creating}
-        />
-      )}
     </div>
   );
 }
