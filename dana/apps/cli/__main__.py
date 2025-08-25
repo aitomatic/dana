@@ -52,8 +52,7 @@ import os
 from pathlib import Path
 import re
 import sys
-# from dotenv import load_dotenv
-# load_dotenv()
+
 import uvicorn
 
 # Set up compatibility layer for new dana structure
