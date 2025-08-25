@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search } from 'iconoir-react';
+import { ArrowLeft, ArrowRight } from 'iconoir-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
 import type { DocumentRead } from '@/types/document';
@@ -178,7 +179,7 @@ export function LibraryFileSelectionModal({
 
   return (
     <Dialog  open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="!max-w-[880px]  gap-2 overflow-hidden">
+      <DialogContent className="!max-w-[880px]  gap-4 overflow-hidden">
         <DialogHeader className="">
           <DialogTitle className="flex justify-between">
             <span>Add Files from Library</span>
@@ -285,9 +286,9 @@ export function LibraryFileSelectionModal({
                   size="sm"
                   onClick={goToPreviousPage}
                   disabled={currentPage === 1}
-                  className="px-3"
+                  className="w-8 h-8 p-0"
                 >
-                  Previous
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
                 
                 {/* Page numbers */}
@@ -307,10 +308,14 @@ export function LibraryFileSelectionModal({
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
+                        variant={currentPage === pageNum ? "secondary" : "outline"}
                         size="sm"
                         onClick={() => goToPage(pageNum)}
-                        className="w-8 h-8 p-0"
+                        className={`w-8 h-8 p-0 ${
+                          currentPage === pageNum 
+                            ? 'bg-gray-100 hover:bg-gray-100 text-gray-900 border-gray-300' 
+                            : ''
+                        }`}
                       >
                         {pageNum}
                       </Button>
@@ -323,24 +328,18 @@ export function LibraryFileSelectionModal({
                   size="sm"
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages}
-                  className="px-3"
+                  className="w-8 h-8 p-0"
                 >
-                  Next
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-4 border-t flex-shrink-0 mt-auto">
-            <div className="text-sm text-gray-600">
-              {selectedFileIds.length > 0 ? (
-                <span>{selectedFileIds.length} file(s) selected</span>
-              ) : (
-                <span>{availableDocuments.length} of {libraryDocuments.length} files available</span>
-              )}
-            </div>
-            <div className="flex space-x-2">
+          <div className="flex items-center  pt-4 border-t flex-shrink-0 mt-auto">
+  <span></span>
+            <div className="flex w-full justify-end  space-x-2">
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
