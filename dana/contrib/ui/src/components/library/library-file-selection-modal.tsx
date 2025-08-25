@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search } from 'iconoir-react';
+import { ArrowLeft, ArrowRight } from 'iconoir-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
 import type { DocumentRead } from '@/types/document';
@@ -29,6 +30,10 @@ export function LibraryFileSelectionModal({
   const [libraryDocuments, setLibraryDocuments] = useState<DocumentRead[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // Show 20 items per page
 
   // Dedicated function to fetch library documents
   const fetchLibraryDocuments = async () => {
@@ -93,6 +98,46 @@ export function LibraryFileSelectionModal({
     return filtered;
   }, [libraryDocuments, currentAgentId, searchTerm]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(availableDocuments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDocuments = availableDocuments.slice(startIndex, endIndex);
+
+  // Debug logging for pagination
+  console.log('🔢 Pagination debug:', {
+    availableDocumentsLength: availableDocuments.length,
+    itemsPerPage,
+    totalPages,
+    currentPage,
+    startIndex,
+    endIndex,
+    paginatedDocumentsLength: paginatedDocuments.length,
+    shouldShowPagination: totalPages > 1
+  });
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   const handleFileSelection = (fileId: string, checked: boolean) => {
     if (checked) {
       setSelectedFileIds(prev => [...prev, fileId]);
@@ -133,10 +178,10 @@ export function LibraryFileSelectionModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+    <Dialog  open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="!max-w-[880px]  gap-4 overflow-hidden">
+        <DialogHeader className="">
+          <DialogTitle className="flex justify-between">
             <span>Add Files from Library</span>
             {/* <Button
               variant="ghost"
@@ -149,9 +194,9 @@ export function LibraryFileSelectionModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col h-full space-y-4">
+        <div className="flex flex-col space-y-4 overflow-y-auto  max-h-full">
           {/* Search and Controls */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
               <Input
@@ -169,19 +214,20 @@ export function LibraryFileSelectionModal({
             >
               {selectedFileIds.length === availableDocuments.length ? 'Deselect All' : 'Select All'}
             </Button>
+
           </div>
 
-          {/* File List */}
-          <div className="flex-1 overflow-y-auto border rounded-lg">
+  
+          <div className="h-[520px] overflow-y-auto border rounded-lg">
             {isLoadingLibrary ? (
-              <div className="flex items-center justify-center h-32 text-gray-500">
+              <div className="flex justify-center text-gray-500">
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   <span>Loading library documents...</span>
                 </div>
               </div>
             ) : libraryError ? (
-              <div className="flex items-center justify-center h-32 text-red-500">
+              <div className="flex items-center justify-center text-red-500">
                 <div className="text-center">
                   <div className="font-medium">Error loading documents</div>
                   <div className="text-sm text-red-400">{libraryError}</div>
@@ -201,13 +247,13 @@ export function LibraryFileSelectionModal({
               </div>
             ) : (
               <div className="divide-y">
-                {availableDocuments.map((doc) => (
+                {paginatedDocuments.map((doc) => (
                   <div
                     key={doc.id}
                     className="flex items-center space-x-3 p-3 hover:bg-gray-50"
                   >
                     <Checkbox
-                      checked={selectedFileIds.includes(doc.id.toString())}
+        
                       onCheckedChange={(checked) => 
                         handleFileSelection(doc.id.toString(), checked as boolean)
                       }
@@ -218,8 +264,8 @@ export function LibraryFileSelectionModal({
                       </div>
                       <div className="text-xs text-gray-500">
                         {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : 'Unknown size'}
-                        {doc.mime_type && ` • ${doc.mime_type}`}
-                        {doc.agent_id && ` • Already in Agent ${doc.agent_id}`}
+                     
+                      
                       </div>
                     </div>
                   </div>
@@ -228,16 +274,72 @@ export function LibraryFileSelectionModal({
             )}
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm text-gray-600">
-              {selectedFileIds.length > 0 ? (
-                <span>{selectedFileIds.length} file(s) selected</span>
-              ) : (
-                <span>{availableDocuments.length} of {libraryDocuments.length} files available</span>
-              )}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 flex-shrink-0">
+              <div className="text-sm text-gray-500">
+                Showing {startIndex + 1}-{Math.min(endIndex, availableDocuments.length)} of {availableDocuments.length} files
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 p-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className={`w-8 h-8 p-0 ${
+                          currentPage === pageNum 
+                            ? 'bg-gray-100 hover:bg-gray-100 text-gray-900 border-gray-300' 
+                            : ''
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 p-0"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex space-x-2">
+          )}
+
+          {/* Footer Actions */}
+          <div className="flex items-center  pt-4 border-t flex-shrink-0 mt-auto">
+  <span></span>
+            <div className="flex w-full justify-end  space-x-2">
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>

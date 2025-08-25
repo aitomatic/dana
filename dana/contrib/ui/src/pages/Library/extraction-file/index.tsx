@@ -131,15 +131,15 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                       selectedFile?.id === file?.id && 'bg-gray-50',
                     )}
                   >
-                    <div className="flex gap-2 w-full">
-                      <div className="flex justify-center items-center size-6">
+                    <div className="flex gap-2 w-[92%]">
+                      <div className="flex justify-center items-center size-6 flex-1">
                         <FileIcon
                           className="size-6"
                           ext={file?.original_filename?.split('.').pop()}
                         />
                       </div>
-                      <div className="flex flex-col gap-1 w-full">
-                        <span className="text-sm font-medium text-gray-900">
+                      <div className="flex flex-col gap-1 w-[90%] overflow-ellipsis">
+                        <span className="text-sm font-medium text-gray-900 truncate block max-w-[90%]">
                           {file?.original_filename}
                         </span>
                         <span className="text-xs text-gray-500">
