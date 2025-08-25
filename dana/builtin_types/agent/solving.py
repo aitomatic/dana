@@ -12,7 +12,8 @@ import yaml
 from dana.builtin_types.workflow_system import WorkflowInstance, WorkflowType
 from dana.core.lang.sandbox_context import SandboxContext
 
-from .agent_enums import PlanType, parse_plan_type
+from .enums import PlanType, parse_plan_type
+from .prompts import create_analysis_prompt, create_direct_solution_prompt, extract_yaml_content, clean_code_block
 
 # Type aliases for better readability
 PlanDict = dict[str, str]
@@ -36,44 +37,8 @@ class AgentSolvingMixin:
 
         self.debug(f"PLAN: Analyzing problem: '{task}'")
 
-        # Analysis prompt that asks LLM to provide actual solutions
-        analysis_prompt = f"""```yaml
-content: |
-  You are an AI agent specialized in problem analysis and solution planning.
-  Analyze the given problem and determine the best plan.
-
-task:
-  problem: "{task}"
-  context: {context}
-
-requirements:
-  - Choose the best plan from: DIRECT_SOLUTION, PYTHON_CODE, WORKFLOW, DELEGATE, ESCALATE
-  - Provide the actual solution, code, or action
-  - Return response in YAML format
-
-plan_types:
-  DIRECT_SOLUTION: For simple problems (arithmetic, facts, calculations) - provide direct answer
-  PYTHON_CODE: For problems needing code generation - provide complete, executable Python code
-  WORKFLOW: For complex processes requiring multiple steps - provide workflow definition
-  DELEGATE: For problems needing specialized agents - specify which agent should handle this
-  ESCALATE: For problems too complex for current capabilities - explain why human intervention needed
-
-response_format:
-  plan: PLAN_TYPE
-  confidence: 0.95
-  reasoning: Why this plan is best for this problem
-  solution: The actual solution, code, or action
-  details:
-    complexity: SIMPLE|MODERATE|COMPLEX|CRITICAL
-    estimated_duration: immediate|minutes|hours|days
-    required_resources: [list, of, resources]
-    risks: Any potential risks or limitations
-
-configuration:
-  format: yaml
-  temperature: 0.7
-  max_tokens: 1000
-```"""
+        # Use the centralized prompt template
+        analysis_prompt = create_analysis_prompt(task, context)
 
         analysis = self.reason(analysis_prompt, {"problem": task, "context": context}, sandbox_context, is_sync=True)
         self.debug(f"PLAN: Analysis result: {analysis}")
@@ -156,7 +121,7 @@ configuration:
 
         # Extract and parse YAML content
         try:
-            yaml_content = self._extract_yaml_content(str(analysis))
+            yaml_content = extract_yaml_content(str(analysis))
             parsed_analysis = yaml.safe_load(yaml_content)
             plan_str = parsed_analysis.get("plan", "")
             self.debug(f"ANALYSIS: Parsed YAML response: {parsed_analysis}")
@@ -203,7 +168,7 @@ configuration:
             # LLM already provided the code, use it directly
             if solution and solution.strip():
                 # Clean up the solution by removing code block markers
-                cleaned_solution = self._clean_code_block(solution)
+                cleaned_solution = clean_code_block(solution)
                 return {"type": PlanType.PYTHON_CODE.value, "content": cleaned_solution}
 
         elif plan_type == PlanType.WORKFLOW:
@@ -249,21 +214,8 @@ configuration:
             except Exception:
                 context_str = "{}"
 
-        # Create YAML-formatted prompt for direct solving
-        direct_prompt = f"""```yaml
-content: |
-  You are an AI agent solving problems directly.
-  Provide a clear, actionable solution to the given problem.
-
-task:
-  problem: "{problem}"
-  context: {context_str}
-
-configuration:
-  format: yaml
-  temperature: 0.7
-  max_tokens: 800
-```"""
+        # Use the centralized prompt template
+        direct_prompt = create_direct_solution_prompt(problem, context_str)
 
         solution = self.reason(direct_prompt, context, sandbox_context, is_sync=True)
         return f"Direct solution: {solution}"
@@ -368,7 +320,7 @@ configuration:
         plan_type = plan.get("type", "unknown").lower()  # Normalize to lowercase
         content = plan.get("content", "")
 
-        from dana.builtin_types.agent.agent_enums import PlanType
+        from dana.builtin_types.agent.enums import PlanType
 
         if plan_type == PlanType.PYTHON_CODE.value.lower() and content:
             return self._execute_python(plan, problem, context, sandbox_context)
@@ -423,51 +375,3 @@ configuration:
         field_order = ["name", "fsm"]
 
         return WorkflowType(name=name, fields=fields, field_order=field_order, docstring=docstring)
-
-    def _extract_yaml_content(self, text: str) -> str:
-        """Extract YAML content from text, handling code block wrappers.
-
-        Called by: _parse_analysis
-        """
-        if "```yaml" in text:
-            # Split on ```yaml and get everything after it
-            parts = text.split("```yaml", 1)
-            if len(parts) > 1:
-                content = parts[1]
-                # Find the last ``` to get the complete YAML block
-                if "```" in content:
-                    # Split on all ``` and take everything except the last part
-                    yaml_parts = content.split("```")
-                    if len(yaml_parts) > 1:
-                        # Join all parts except the last (empty) one
-                        return "```".join(yaml_parts[:-1]).strip()
-                return content.strip()
-        elif "```" in text:
-            # Split on ``` and get everything after it
-            parts = text.split("```", 1)
-            if len(parts) > 1:
-                content = parts[1]
-                # Find the last ``` to get the complete block
-                if "```" in content:
-                    block_parts = content.split("```")
-                    if len(block_parts) > 1:
-                        # Join all parts except the last (empty) one
-                        return "```".join(block_parts[:-1]).strip()
-                return content.strip()
-        return text.strip()
-
-    def _clean_code_block(self, code: str) -> str:
-        """Remove code block markers from code string.
-
-        Called by: _complete_plan
-        """
-        # Remove ```python, ```py, ```, etc. from the beginning
-        lines = code.strip().split("\n")
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-
-        # Remove trailing ``` if present
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-
-        return "\n".join(lines).strip()
