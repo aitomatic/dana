@@ -1,12 +1,11 @@
 import io
 import os
-import sys
 import unittest
 from contextlib import redirect_stdout
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
-from dana.core.cli.config_manager import ConfigurationManager
+from dana.apps.cli.config_manager import ConfigurationManager
 
 
 def make_models_resp(models_count: int, status: int = 200):
@@ -101,5 +100,3 @@ class TestLocalLLMWizard(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
