@@ -26,19 +26,34 @@ export const getAgentAvatar = async (agentId: number | string): Promise<string> 
  * @returns string - The avatar URL
  */
 export const getAgentAvatarSync = (agentId: number | string): string => {
-  // Handle prebuilt agents (string IDs)
-  // if (typeof agentId === 'string') {
-  //   // For prebuilt agents, use a consistent avatar based on the string
-  //   return `/agent-avatar/prebuilt-${agentId}.svg`;
-  // }
-  
-  // Handle numeric agent IDs
-  const numericId = Number(agentId);
-  if (numericId >= 1 && numericId <= 30) {
-    return `/agent-avatar/agent-avatar-${numericId}.svg`;
+  // Handle prebuilt agents (string IDs) - use consistent avatars based on string hash
+  if (typeof agentId === 'string') {
+    // Generate a consistent number from the string ID for prebuilt agents
+    const hash = agentId
+      .split('')
+      .reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+    
+    // Use the hash to select from available avatars (0-30)
+    const avatarNumber = Math.abs(hash) % 31; // 0-30 inclusive
+    return `/agent-avatar/agent-avatar-${avatarNumber}.svg`;
   }
-  // Fallback to default avatar
-  return '/agent-avatar/agent-avatar-1.svg';
+  
+  // Handle numeric agent IDs - use more variety
+  const numericId = Number(agentId);
+  
+  // Use modulo to cycle through all available avatars (0-30)
+  const avatarNumber = numericId % 31; // 0-30 inclusive
+  
+  // Ensure we have a valid avatar number
+  if (avatarNumber >= 0 && avatarNumber <= 30) {
+    return `/agent-avatar/agent-avatar-${avatarNumber}.svg`;
+  }
+  
+  // Fallback to a default avatar
+  return '/agent-avatar/agent-avatar-0.svg';
 };
 
 /**
