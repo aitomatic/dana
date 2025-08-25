@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_types import AgentType
+from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 

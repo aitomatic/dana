@@ -13,7 +13,7 @@ from dana.builtin_types.agent.agent_events import (
     unregister_log_callback,
 )
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_types import AgentType
+from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
