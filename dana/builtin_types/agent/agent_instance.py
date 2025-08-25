@@ -15,10 +15,10 @@ from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
 
-from .agent_events import AgentEventMixin
-from .agent_implementations import AgentImplementationMixin
-from .agent_solving import AgentSolvingMixin
 from .agent_type import AgentType
+from .events import AgentEventMixin
+from .implementations import AgentImplementationMixin
+from .solving import AgentSolvingMixin
 
 
 class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin, AgentEventMixin):
@@ -233,31 +233,24 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
             _level = level.upper()
 
             # Use both custom logging and standard Python logging
+            import logging
+
+            # Standard Python logging for test compatibility
             if _level == "INFO":
+                logging.info(_message)
                 Loggable.info(self, _message)
-                import logging
-
-                logging.getLogger().info(_message)
             elif _level == "WARNING":
+                logging.warning(_message)
                 Loggable.warning(self, _message)
-                import logging
-
-                logging.getLogger().warning(_message)
             elif _level == "DEBUG":
+                logging.debug(_message)
                 Loggable.debug(self, _message)
-                import logging
-
-                logging.getLogger().debug(_message)
             elif _level == "ERROR":
+                logging.error(_message)
                 Loggable.error(self, _message)
-                import logging
-
-                logging.getLogger().error(_message)
             else:
+                logging.info(_message)
                 Loggable.info(self, _message)
-                import logging
-
-                logging.getLogger().info(_message)
 
             return message
 

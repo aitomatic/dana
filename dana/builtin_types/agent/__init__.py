@@ -5,7 +5,7 @@ This module provides agent capabilities by extending the struct system.
 AgentStructType inherits from StructType, and AgentStructInstance inherits from StructInstance.
 """
 
-from .agent_enums import (
+from .enums import (
     ConfidenceLevel,
     FSMTransitionEvent,
     PlanType,
@@ -34,8 +34,6 @@ __all__ = [
     "lookup_dana_method",
     "register_dana_method",
     "has_dana_method",
-    # Event handling
-    "on_log",
     # Enums
     "PlanType",
     "WorkflowExecutionState",
