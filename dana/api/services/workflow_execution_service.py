@@ -451,27 +451,25 @@ class WorkflowExecutionTracker:
     def _get_agent_workflows_content(self, agent_id: int) -> Optional[str]:
         """Get the content of an agent's workflows.na file by reading the actual file."""
         try:
-            # Read the real agent workflows.na file
-            workflows_path = f"agents/agent_{agent_id}_sofia/workflows.na" if agent_id == 3 else f"agents/agent_{agent_id}_nova/workflows.na"
+            # Try to find the correct agent directory by checking what actually exists
+            possible_paths = [
+                f"agents/agent_{agent_id}_sofia/workflows.na",
+                f"agents/agent_{agent_id}_nova/workflows.na",
+                f"agents/agent_{agent_id}/workflows.na",
+                f"agents/agent_{agent_id}_expert/workflows.na",
+                f"agents/agent_{agent_id}_general/workflows.na"
+            ]
             
-            # Check if file exists
-            if not os.path.exists(workflows_path):
-                logger.warning(f"Workflows file not found at {workflows_path}, trying alternative paths...")
-                # Try alternative paths
-                alt_paths = [
-                    f"agents/agent_{agent_id}/workflows.na",
-                    f"agents/agent_{agent_id}_expert/workflows.na",
-                    f"agents/agent_{agent_id}_general/workflows.na"
-                ]
-                
-                for alt_path in alt_paths:
-                    if os.path.exists(alt_path):
-                        workflows_path = alt_path
-                        logger.info(f"Found workflows file at alternative path: {workflows_path}")
-                        break
-                else:
-                    logger.error(f"No workflows.na file found for agent {agent_id} in any expected location")
-                    return None
+            workflows_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    workflows_path = path
+                    logger.info(f"Found workflows file at: {workflows_path}")
+                    break
+            
+            if not workflows_path:
+                logger.error(f"No workflows.na file found for agent {agent_id} in any expected location")
+                return None
             
             # Read the actual file content
             with open(workflows_path, 'r', encoding='utf-8') as file:
