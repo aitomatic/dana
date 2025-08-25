@@ -34,7 +34,7 @@ class AgentSolvingMixin:
         Called by: default_plan_method (via agent_methods.py)
         """
 
-        self.info(f"PLAN: Analyzing problem: '{task}'")
+        self.debug(f"PLAN: Analyzing problem: '{task}'")
 
         # Analysis prompt that asks LLM to provide actual solutions
         analysis_prompt = f"""```yaml
@@ -76,10 +76,10 @@ configuration:
 ```"""
 
         analysis = self.reason(analysis_prompt, {"problem": task, "context": context}, sandbox_context, is_sync=True)
-        self.info(f"PLAN: Analysis result: {analysis}")
+        self.debug(f"PLAN: Analysis result: {analysis}")
 
         plan = self._parse_analysis(analysis, task, context, sandbox_context)
-        self.info(f"PLAN: Determined plan: {type(plan).__name__}")
+        self.debug(f"PLAN: Determined plan: {type(plan).__name__}")
 
         return plan
 
@@ -89,15 +89,15 @@ configuration:
         Called by: default_solve_method (via agent_methods.py)
         """
 
-        self.info(f"SOLVE: Starting plan routing for: '{problem}'")
+        self.debug(f"SOLVE: Starting plan routing for: '{problem}'")
 
         # Step 1: Plan - determine the best plan
         plan = self.plan(problem, context, sandbox_context, is_sync=True)
-        self.info(f"PLAN: Got plan: {type(plan).__name__}")
+        self.debug(f"PLAN: Got plan: {type(plan).__name__}")
 
         # Step 2: Execute - run the determined plan
         result = self._execute_plan(plan, problem, context, sandbox_context)
-        self.info("SOLVE: Plan execution completed")
+        self.debug("SOLVE: Plan execution completed")
         return result
 
     def _execute_plan(
@@ -114,7 +114,7 @@ configuration:
 
         # Handle None plan
         if plan is None:
-            self.info("EXECUTE_PLAN: No plan returned, using direct solution")
+            self.debug("EXECUTE_PLAN: No plan returned, using direct solution")
             return self._solve_direct(problem, context, sandbox_context)
 
         # Handle string plans
@@ -124,12 +124,12 @@ configuration:
                 return self._route_string(plan, problem, context)
             else:
                 # This is a direct solution from the LLM
-                self.info("EXECUTE_PLAN: Using direct solution from LLM")
+                self.debug("EXECUTE_PLAN: Using direct solution from LLM")
                 return plan
 
         # Handle workflow plans
         if hasattr(plan, "execute") and callable(plan.execute):
-            self.info("EXECUTE_PLAN: Executing workflow")
+            self.debug("EXECUTE_PLAN: Executing workflow")
             return self._execute_workflow(plan, problem, context, sandbox_context)
 
         # Handle dict plans
@@ -137,7 +137,7 @@ configuration:
             return self._route_dict(plan, problem, context, sandbox_context)
 
         # Handle other types as direct plans
-        self.info("EXECUTE_PLAN: Treating as direct solution")
+        self.debug("EXECUTE_PLAN: Treating as direct solution")
         return self._solve_direct(problem, context, sandbox_context)
 
     # ============================================================================
@@ -152,16 +152,16 @@ configuration:
         Called by: _create_plan
         """
 
-        self.info("ANALYSIS: Converting analysis to plan")
+        self.debug("ANALYSIS: Converting analysis to plan")
 
         # Extract and parse YAML content
         try:
             yaml_content = self._extract_yaml_content(str(analysis))
             parsed_analysis = yaml.safe_load(yaml_content)
             plan_str = parsed_analysis.get("plan", "")
-            self.info(f"ANALYSIS: Parsed YAML response: {parsed_analysis}")
+            self.debug(f"ANALYSIS: Parsed YAML response: {parsed_analysis}")
         except Exception as e:
-            self.info(f"ANALYSIS: YAML parsing failed, using fallback: {e}")
+            self.debug(f"ANALYSIS: YAML parsing failed, using fallback: {e}")
             plan_str = str(analysis)
             parsed_analysis = {}
 
@@ -192,7 +192,7 @@ configuration:
         Called by: _parse_analysis
         """
 
-        self.info(f"ANALYSIS: Creating {plan_type.value} plan")
+        self.debug(f"ANALYSIS: Creating {plan_type.value} plan")
 
         if plan_type == PlanType.DIRECT_SOLUTION:
             # LLM already provided the solution, use it directly
@@ -220,7 +220,7 @@ configuration:
             return solution if solution else plan_type.value
 
         # Fail-over to direct solution
-        self.info("ANALYSIS: Default to direct solution")
+        self.debug("ANALYSIS: Default to direct solution")
         if solution and solution.strip():
             return solution  # Use LLM's solution directly
         else:
@@ -235,7 +235,7 @@ configuration:
 
         Called by: _execute_plan, _route_string, _route_dict
         """
-        self.info(f"Using direct reasoning for: '{problem}'")
+        self.debug(f"Using direct reasoning for: '{problem}'")
 
         # Safely serialize context for YAML
         context_str = "{}"
@@ -275,7 +275,7 @@ configuration:
 
         Called by: _execute_plan
         """
-        self.info(f"PYTHON_CODE: Executing Python code for: '{problem}'")
+        self.debug(f"PYTHON_CODE: Executing Python code for: '{problem}'")
 
         python_code = plan.get("content", "")
         if not python_code:
@@ -294,7 +294,7 @@ configuration:
             return result
 
         except Exception as e:
-            self.info(f"PYTHON_CODE: Execution failed: {e}")
+            self.debug(f"PYTHON_CODE: Execution failed: {e}")
             return f"Python code execution failed for '{problem}': {str(e)}\n\nCode was:\n{python_code}"
 
     def _execute_workflow(
@@ -308,7 +308,7 @@ configuration:
 
         Called by: _execute_plan, _route_dict
         """
-        self.info(f"WORKFLOW: Executing workflow for: '{problem}'")
+        self.debug(f"WORKFLOW: Executing workflow for: '{problem}'")
 
         try:
             # Prepare workflow data
@@ -329,7 +329,7 @@ configuration:
 
         Called by: _route_string
         """
-        self.info(f"DELEGATE: Delegating to agent: {agent_id}")
+        self.debug(f"DELEGATE: Delegating to agent: {agent_id}")
 
         # Extract agent name from "agent:name" format
         agent_name = agent_id.replace("agent:", "")
@@ -340,7 +340,7 @@ configuration:
 
         Called by: _route_string
         """
-        self.info(f"ESCALATE: Escalating to human: '{problem}'")
+        self.debug(f"ESCALATE: Escalating to human: '{problem}'")
 
         return f"Problem '{problem}' escalated to human for manual intervention"
 
@@ -394,7 +394,7 @@ configuration:
 
         Called by: _create_plan
         """
-        self.info(f"Creating workflow type for: '{problem}'")
+        self.debug(f"Creating workflow type for: '{problem}'")
 
         problem_lower = problem.lower()
 
@@ -411,12 +411,12 @@ configuration:
         for keywords, (workflow_name, workflow_docstring) in workflow_configs.items():
             if any(keyword in problem_lower for keyword in keywords):
                 name, docstring = workflow_name, workflow_docstring
-                self.info(f"Detected {name} keywords")
+                self.debug(f"Detected {name} keywords")
                 break
         else:
             name = "GenericWorkflow"
             docstring = "Generic workflow for problem solving"
-            self.info("No specific keywords detected, using generic workflow")
+            self.debug("No specific keywords detected, using generic workflow")
 
         # Create workflow type with standard fields
         fields = {"name": "str", "fsm": "str"}

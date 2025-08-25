@@ -5,12 +5,16 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from typing import Any
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer
 
+from dana.builtin_types.agent.agent_instance import AgentInstance
+from dana.common.utils.logging import DANA_LOGGER
 from dana.registry import AGENT_REGISTRY
 
 from .core.runtime import DanaSandbox
@@ -71,7 +75,9 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
         overflow: auto;
-        scrollbar-size: 0 0;
+        scrollbar-size: 1 1;
+        text-wrap: wrap;
+        text-overflow: fold;
     }
     
     
@@ -144,7 +150,9 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
         overflow: auto;
-        scrollbar-size: 0 0;
+        scrollbar-size: 1 1;
+        text-wrap: wrap;
+        text-overflow: fold;
     }
     
     /* Footer - use design system */
@@ -170,7 +178,9 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
         overflow: auto;
-        scrollbar-size: 0 2;
+        scrollbar-size: 1 1;
+        text-wrap: wrap;
+        text-overflow: fold;
     }
     """
 
@@ -230,7 +240,7 @@ class DanaTUI(App):
         # Use call_after_refresh to ensure we run in the correct Textual context
         self.call_after_refresh(self._handle_agent_registered, agent_id, agent_instance)
 
-    def _handle_agent_registered(self, agent_id: str, agent_instance) -> None:
+    def _handle_agent_registered(self, agent_id: str, agent_instance: AgentInstance) -> None:
         """Handle agent registration in the correct Textual context."""
         # Log the event
         if self.repl_panel:
@@ -242,6 +252,16 @@ class DanaTUI(App):
         else:
             # Update the agents list if it exists
             self.agents_list.refresh_agents()
+
+        # Register to receive the agent’s log events
+        agent_instance.on_log(self._handle_agent_log)
+
+    def _handle_agent_log(self, agent_name: str, message: str, context: Any) -> None:
+        """Handle agent log events from AGENT_REGISTRY."""
+        # Log the event
+        # DANA_LOGGER.info(f"Handling agent log: {agent_name} {message} {context}")
+        if self.agent_detail:
+            self.agent_detail.add_system_message(f"{agent_name}: {message}", "blue")
 
     def _on_agent_unregistered(self, agent_id: str, agent_instance) -> None:
         """Handle agent unregistration events from AGENT_REGISTRY."""
@@ -343,7 +363,14 @@ class DanaTUI(App):
             self.agents_list.update_focus(self._focused_agent)
 
         if self.agent_detail:
-            self.agent_detail.set_focused_agent(self._focused_agent)
+            self._show_focused_agent_detail(self._focused_agent)
+
+    def _show_focused_agent_detail(self, focused_agent: str | None) -> None:
+        """Show the detail view for the focused agent."""
+        if focused_agent:
+            view = self.agent_detail
+            if view:
+                view.set_focused_agent(focused_agent)
 
     @on(AgentSelected)
     def handle_agent_selected(self, event: AgentSelected) -> None:
@@ -520,7 +547,6 @@ def main():
     args = parser.parse_args()
 
     # Configure logging based on arguments
-    from dana.common.utils.logging import DANA_LOGGER
 
     if args.no_console_logging:
         DANA_LOGGER.disable_console_logging()

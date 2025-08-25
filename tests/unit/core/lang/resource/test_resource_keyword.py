@@ -137,21 +137,21 @@ class TestResourceInstance:
 
         # Create a delegate object
         class Logger:
-            def log(self, message):
+            def log_message(self, message):
                 return f"logged: {message}"
 
         logger = Logger()
         instance.add_delegate("logger", logger)
 
         # Test delegate methods
-        assert instance.has_method("log")
-        assert instance.call_method("log", "test message") == "logged: test message"
+        assert instance.has_method("log_message")
+        assert instance.call_method("log_message", "test message") == "logged: test message"
 
         # Test delegate management
         assert instance.get_delegate("logger") == logger
         instance.remove_delegate("logger")
         assert instance.get_delegate("logger") is None
-        assert not instance.has_method("log")
+        assert not instance.has_method("log_message")
 
 
 class TestResourceTypeRegistry:

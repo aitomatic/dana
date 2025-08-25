@@ -6,7 +6,6 @@ Tests that the new log() method integrates correctly with the existing agent sys
 
 import unittest
 
-from dana.builtin_types.agent import on_log
 from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -40,9 +39,7 @@ class TestAgentLogIntegration(unittest.TestCase):
     def tearDown(self):
         """Clean up after tests."""
         # Clear any registered callbacks
-        from dana.builtin_types.agent.agent_events import _log_callbacks
-
-        _log_callbacks.clear()
+        self.agent_instance._log_callbacks.clear()
 
     def test_log_method_available_on_agent_instance(self):
         """Test that log() method is available on agent instances."""
@@ -66,11 +63,11 @@ class TestAgentLogIntegration(unittest.TestCase):
             self.callback_calls.append((agent_name, message, context))
 
         # Register callback
-        on_log(test_callback)
+        self.agent_instance.on_log(test_callback)
 
         # Call log method
         message = "Integration test message"
-        result = self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+        result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was called
         self.assertEqual(len(self.callback_calls), 1)
@@ -88,11 +85,11 @@ class TestAgentLogIntegration(unittest.TestCase):
             self.callback_calls.append((agent_name, message, context))
 
         # Register callback
-        on_log(test_callback)
+        self.agent_instance.on_log(test_callback)
 
         # Call log method in async mode
         message = "Async integration test message"
-        promise = self.agent_instance.log(message, self.sandbox_context, is_sync=False)
+        promise = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=False)
 
         # Wait for promise to resolve
         result = promise._wait_for_delivery()
@@ -113,11 +110,11 @@ class TestAgentLogIntegration(unittest.TestCase):
             self.callback_calls.append((agent_name, message, context))
 
         # Register callback
-        on_log(test_callback)
+        self.agent_instance.on_log(test_callback)
 
         # Call log method without context
         message = "No context test message"
-        result = self.agent_instance.log(message, is_sync=True)
+        result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was called
         self.assertEqual(len(self.callback_calls), 1)
@@ -137,12 +134,13 @@ class TestAgentLogIntegration(unittest.TestCase):
         def test_callback(agent_name, message, context):
             self.callback_calls.append((agent_name, message, context))
 
-        # Register callback
-        on_log(test_callback)
+        # Register callback on both agents
+        self.agent_instance.on_log(test_callback)
+        agent2.on_log(test_callback)
 
         # Both agents log messages
-        self.agent_instance.log("Message from agent 1", self.sandbox_context, is_sync=True)
-        agent2.log("Message from agent 2", self.sandbox_context, is_sync=True)
+        self.agent_instance.log("Message from agent 1", "INFO", self.sandbox_context, is_sync=True)
+        agent2.log("Message from agent 2", "INFO", self.sandbox_context, is_sync=True)
 
         # Verify both callbacks were called
         self.assertEqual(len(self.callback_calls), 2)
@@ -155,7 +153,7 @@ class TestAgentLogIntegration(unittest.TestCase):
         """Test that log() method integrates with standard logging."""
         with self.assertLogs(level="INFO") as log_context:
             message = "Standard logging test"
-            self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+            self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
             # Verify message was logged to standard logging
             self.assertIn(f"[test_logger] {message}", log_context.output[0])

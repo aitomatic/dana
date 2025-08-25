@@ -15,7 +15,6 @@ from .agent_enums import (
     parse_confidence,
     parse_plan_type,
 )
-from .agent_events import on_log
 from .agent_instance import AgentInstance
 from .agent_type import AgentType
 from .function_registry import (

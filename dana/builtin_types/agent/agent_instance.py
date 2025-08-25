@@ -9,18 +9,19 @@ from typing import Any
 
 from dana.builtin_types.struct_system import StructInstance
 from dana.common.mixins.loggable import Loggable
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+
+# Removed direct import of LegacyLLMResource - now using resource type system
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
 
-from .agent_events import _notify_log_callbacks
+from .agent_events import AgentEventMixin
 from .agent_implementations import AgentImplementationMixin
 from .agent_solving import AgentSolvingMixin
 from .agent_type import AgentType
 
 
-class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin):
+class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin, AgentEventMixin):
     """Agent struct instance with built-in agent capabilities.
 
     Inherits from StructInstance and adds agent-specific state and methods.
@@ -41,7 +42,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
         self._memory = {}
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
-        self._llm_resource: LegacyLLMResource = None  # Lazy initialization
+        self._llm_resource = None  # Lazy initialization - now handled by resource type system
         self._llm_resource_instance = None  # Lazy initialization
 
         # Initialize TUI metrics
@@ -56,6 +57,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
         from dana.registry import AGENT_REGISTRY
 
         super().__init__(struct_type, values, AGENT_REGISTRY)
+        AgentEventMixin.__init__(self)
 
     def get_metrics(self) -> dict[str, Any]:
         """Get current agent metrics for TUI display.
@@ -148,7 +150,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
         """
         sandbox_context = sandbox_context or SandboxContext()
 
-        self.info(f"IN SOLVE: is_sync={is_sync}")
+        self.debug(f"IN SOLVE: is_sync={is_sync}")
 
         def wrapper():
             try:
@@ -160,7 +162,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
                 self.error(f"Error in solve: {e}")
                 raise e
 
-        is_sync = True  # CTN
+        # is_sync = True  # CTN
         return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
@@ -225,22 +227,41 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
         sandbox_context = sandbox_context or SandboxContext()
 
         def wrapper():
-            _notify_log_callbacks(self.name, f"[{level}] {message}", sandbox_context)
+            self._notify_log_callbacks(message, level, sandbox_context)
 
-            _message = f"[Agent {self.name}] {message}"
+            _message = f"[{self.name}] {message}"
             _level = level.upper()
 
+            # Use both custom logging and standard Python logging
             if _level == "INFO":
                 Loggable.info(self, _message)
+                import logging
+
+                logging.getLogger().info(_message)
             elif _level == "WARNING":
                 Loggable.warning(self, _message)
+                import logging
+
+                logging.getLogger().warning(_message)
             elif _level == "DEBUG":
                 Loggable.debug(self, _message)
+                import logging
+
+                logging.getLogger().debug(_message)
             elif _level == "ERROR":
                 Loggable.error(self, _message)
+                import logging
+
+                logging.getLogger().error(_message)
             else:
                 Loggable.info(self, _message)
+                import logging
 
+                logging.getLogger().info(_message)
+
+            return message
+
+        # is_sync = True
         if is_sync:
             return wrapper()
         else:
@@ -348,7 +369,6 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin)
                     logging.warning(f"Failed to cleanup LLM resource for {self.name}: {e}")
 
                 self._llm_resource_instance = None
-                self._llm_resource = None
 
             # Clear conversation memory
             if self._conversation_memory is not None:

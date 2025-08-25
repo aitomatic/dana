@@ -7,11 +7,6 @@ Tests the agent events functionality including log() method and on_log() callbac
 import unittest
 from unittest.mock import Mock
 
-from dana.builtin_types.agent.agent_events import (
-    on_log,
-    register_log_callback,
-    unregister_log_callback,
-)
 from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -35,9 +30,7 @@ class TestAgentEvents(unittest.TestCase):
     def tearDown(self):
         """Clean up after tests."""
         # Clear any registered callbacks
-        from dana.builtin_types.agent.agent_events import _log_callbacks
-
-        _log_callbacks.clear()
+        self.agent_instance._log_callbacks.clear()
 
     def test_log_method_sync(self):
         """Test log method in synchronous mode."""
@@ -45,7 +38,7 @@ class TestAgentEvents(unittest.TestCase):
 
         # Capture logs from the root logger
         with self.assertLogs(level="INFO") as log_context:
-            result = self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+            result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Check that the message was logged
         self.assertIn(f"[test_agent] {message}", log_context.output[0])
@@ -56,7 +49,7 @@ class TestAgentEvents(unittest.TestCase):
         message = "Test async log message"
 
         with self.assertLogs(level="INFO") as log_context:
-            promise = self.agent_instance.log(message, self.sandbox_context, is_sync=False)
+            promise = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=False)
 
             # Wait for the promise to resolve
             result = promise._wait_for_delivery()
@@ -70,21 +63,21 @@ class TestAgentEvents(unittest.TestCase):
         callback = Mock()
 
         # Register callback
-        register_log_callback(callback)
+        self.agent_instance.register_log_callback(callback)
 
         # Call log method
         message = "Test callback message"
-        self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+        self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was called
-        callback.assert_called_once_with("test_agent", f"[INFO] {message}", self.sandbox_context)
+        callback.assert_called_once_with("test_agent", message, self.sandbox_context)
 
         # Unregister callback
-        unregister_log_callback(callback)
+        self.agent_instance.unregister_log_callback(callback)
 
         # Call log method again
         callback.reset_mock()
-        self.agent_instance.log("Another message", self.sandbox_context, is_sync=True)
+        self.agent_instance.log("Another message", "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was not called
         callback.assert_not_called()
@@ -94,14 +87,14 @@ class TestAgentEvents(unittest.TestCase):
         callback = Mock()
 
         # Register using on_log
-        on_log(callback)
+        self.agent_instance.on_log(callback)
 
         # Call log method
         message = "Test on_log message"
-        self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+        self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was called
-        callback.assert_called_once_with("test_agent", f"[INFO] {message}", self.sandbox_context)
+        callback.assert_called_once_with("test_agent", message, self.sandbox_context)
 
     def test_multiple_callbacks(self):
         """Test that multiple callbacks are called."""
@@ -109,16 +102,16 @@ class TestAgentEvents(unittest.TestCase):
         callback2 = Mock()
 
         # Register multiple callbacks
-        register_log_callback(callback1)
-        register_log_callback(callback2)
+        self.agent_instance.register_log_callback(callback1)
+        self.agent_instance.register_log_callback(callback2)
 
         # Call log method
         message = "Test multiple callbacks"
-        self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+        self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify both callbacks were called
-        callback1.assert_called_once_with("test_agent", f"[INFO] {message}", self.sandbox_context)
-        callback2.assert_called_once_with("test_agent", f"[INFO] {message}", self.sandbox_context)
+        callback1.assert_called_once_with("test_agent", message, self.sandbox_context)
+        callback2.assert_called_once_with("test_agent", message, self.sandbox_context)
 
     def test_callback_error_handling(self):
         """Test that callback errors don't break logging."""
@@ -130,13 +123,13 @@ class TestAgentEvents(unittest.TestCase):
             pass
 
         # Register both callbacks
-        register_log_callback(failing_callback)
-        register_log_callback(working_callback)
+        self.agent_instance.register_log_callback(failing_callback)
+        self.agent_instance.register_log_callback(working_callback)
 
         # Call log method - should not raise exception
         message = "Test error handling"
         with self.assertLogs(level="INFO") as log_context:
-            result = self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+            result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify message was still logged
         self.assertIn(f"[test_agent] {message}", log_context.output[0])
@@ -147,7 +140,7 @@ class TestAgentEvents(unittest.TestCase):
         message = "Test agent instance log"
 
         with self.assertLogs(level="INFO") as log_context:
-            result = self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+            result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify message was logged
         self.assertIn(f"[test_agent] {message}", log_context.output[0])
@@ -158,7 +151,7 @@ class TestAgentEvents(unittest.TestCase):
         message = "Test agent instance async log"
 
         with self.assertLogs(level="INFO") as log_context:
-            promise = self.agent_instance.log(message, self.sandbox_context, is_sync=False)
+            promise = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=False)
             result = promise._wait_for_delivery()
 
         # Verify message was logged
@@ -170,7 +163,7 @@ class TestAgentEvents(unittest.TestCase):
         message = "Test log without context"
 
         with self.assertLogs(level="INFO") as log_context:
-            result = self.agent_instance.log(message, is_sync=True)
+            result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify message was logged
         self.assertIn(f"[test_agent] {message}", log_context.output[0])
@@ -179,13 +172,13 @@ class TestAgentEvents(unittest.TestCase):
     def test_agent_instance_log_method_with_callback(self):
         """Test the log method on AgentInstance with callback."""
         callback = Mock()
-        register_log_callback(callback)
+        self.agent_instance.register_log_callback(callback)
 
         message = "Test agent instance with callback"
-        self.agent_instance.log(message, self.sandbox_context, is_sync=True)
+        self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify callback was called
-        callback.assert_called_once_with("test_agent", f"[INFO] {message}", self.sandbox_context)
+        callback.assert_called_once_with("test_agent", message, self.sandbox_context)
 
     def test_agent_name_fallback(self):
         """Test that agent name fallback works when name attribute is missing."""
@@ -201,7 +194,7 @@ class TestAgentEvents(unittest.TestCase):
         message = "Test no name agent"
 
         with self.assertLogs(level="INFO") as log_context:
-            result = agent_instance.log(message, self.sandbox_context, is_sync=True)
+            result = agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
 
         # Verify message was logged with fallback name
         self.assertIn(f"[unnamed_agent] {message}", log_context.output[0])
@@ -210,13 +203,13 @@ class TestAgentEvents(unittest.TestCase):
     def test_invalid_callback_registration(self):
         """Test that invalid callback registration raises error."""
         with self.assertRaises(ValueError):
-            register_log_callback("not a callable")
+            self.agent_instance.register_log_callback("not a callable")
 
     def test_callback_unregistration_nonexistent(self):
         """Test that unregistering non-existent callback doesn't error."""
         callback = Mock()
         # Should not raise an exception
-        unregister_log_callback(callback)
+        self.agent_instance.unregister_log_callback(callback)
 
 
 if __name__ == "__main__":
