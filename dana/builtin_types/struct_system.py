@@ -22,6 +22,8 @@ Discord: https://discord.gg/6jGD4PYk
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from dana.common.mixins.loggable import Loggable
+
 if TYPE_CHECKING:
     from dana.registry import StructRegistry
 
@@ -366,7 +368,7 @@ class InterfaceParameterSpec:
         return self.name == other.name and self.type_name == other.type_name and self.has_default == other.has_default
 
 
-class StructInstance:
+class StructInstance(Loggable):
     """Runtime representation of a struct instance (Go-style data container)."""
 
     def __init__(self, struct_type: StructType, values: dict[str, Any], registry: Optional["StructRegistry"] = None):
@@ -376,6 +378,8 @@ class StructInstance:
             struct_type: The struct type definition
             values: Field values (must match struct type requirements)
         """
+        Loggable.__init__(self)
+
         # Apply default values for missing fields
         complete_values = {}
         if struct_type.field_defaults:

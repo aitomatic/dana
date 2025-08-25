@@ -183,13 +183,14 @@ class DanaInterpreter(Loggable):
     # LEVEL 2: CORE EXECUTION ENGINE (DEPENDS ON FOUNDATION & UTILITIES)
     # ============================================================================
 
-    def _execute_program(self, ast: Program, context: SandboxContext) -> Any:
+    def _execute_program(self, ast: Program, context: SandboxContext, is_sync: bool = False) -> Any:
         """
         Internal: Execute pre-parsed AST.
 
         Args:
             ast: Parsed Dana AST
             context: Execution context
+            is_sync: Whether to resolve promises synchronously
 
         Returns:
             Raw execution result
@@ -221,7 +222,9 @@ class DanaInterpreter(Loggable):
     # LEVEL 3: PARSING AND EXECUTION (DEPENDS ON CORE ENGINE & UTILITIES)
     # ============================================================================
 
-    def _parse_and_execute(self, source_code: str, context: SandboxContext, filename: str | None = None, do_transform: bool = True) -> Any:
+    def _parse_and_execute(
+        self, source_code: str, context: SandboxContext, filename: str | None = None, do_transform: bool = True, is_sync: bool = False
+    ) -> Any:
         """
         Internal: Parse and execute Dana source code.
 
@@ -232,6 +235,7 @@ class DanaInterpreter(Loggable):
             context: Execution context
             filename: Optional filename for error reporting
             do_transform: Whether to transform the AST
+            is_sync: Whether to resolve promises synchronously
 
         Returns:
             Raw execution result
@@ -269,13 +273,13 @@ class DanaInterpreter(Loggable):
         ast = parser.parse(source_code, filename=filename, do_transform=do_transform)
 
         # Execute through _execute (convergent path)
-        return self._execute_program(ast, context)
+        return self._execute_program(ast, context, is_sync=is_sync)
 
     # ============================================================================
     # LEVEL 4: HIGH-LEVEL SOURCE CODE EVALUATION (DEPENDS ON PARSING)
     # ============================================================================
 
-    def _eval_source_code(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
+    def _eval_source_code(self, source_code: str, context: SandboxContext, filename: str | None = None, is_sync: bool = False) -> Any:
         """
         Internal: Evaluate Dana source code.
 
@@ -285,12 +289,13 @@ class DanaInterpreter(Loggable):
             source_code: Dana code to execute
             filename: Optional filename for error reporting
             context: Execution context
+            is_sync: Whether to resolve promises synchronously
 
         Returns:
             Raw execution result
         """
         # Delegate to _parse_and_execute which handles all parsing logic
-        return self._parse_and_execute(source_code, context, filename, do_transform=True)
+        return self._parse_and_execute(source_code, context, filename, do_transform=True, is_sync=is_sync)
 
     # ============================================================================
     # LEVEL 5: PUBLIC API METHODS (DEPEND ON ALL LOWER LEVELS)
@@ -354,19 +359,20 @@ class DanaInterpreter(Loggable):
         # Route through new _execute method for convergent code path
         return self._execute_program(program, context)
 
-    def execute_program_string(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
+    def execute_program_string(self, source_code: str, context: SandboxContext, filename: str | None = None, is_sync: bool = False) -> Any:
         """Execute a Dana program from source code string.
 
         Args:
             source_code: The Dana source code to execute
             context: The execution context to use
             filename: Optional filename for error reporting
+            is_sync: Whether to resolve promises synchronously
 
         Returns:
             The result of executing the program
         """
         # Route through _eval_source_code which handles parsing and execution
-        return self._eval_source_code(source_code, context, filename)
+        return self._eval_source_code(source_code, context, filename, is_sync=is_sync)
 
     def execute_statement(self, statement: Statement, context: SandboxContext) -> Any:
         """Execute a single statement.

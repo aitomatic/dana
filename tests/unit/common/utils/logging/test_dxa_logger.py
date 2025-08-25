@@ -37,7 +37,7 @@ def test_set_level_all_loggers():
 def test_set_level_module_path():
     """Test setting level for loggers with specific prefix."""
     # Create test loggers
-    logger1 = logging.getLogger("dana.builtin_types.agent_system")
+    logger1 = logging.getLogger("dana.builtin_types.agent")
     logger2 = logging.getLogger("dana.base")
     logger3 = logging.getLogger("other.module")
 
@@ -59,8 +59,8 @@ def test_set_level_module_path():
 def test_set_level_submodule():
     """Test setting level for specific submodule."""
     # Create test loggers
-    logger1 = logging.getLogger("dana.builtin_types.agent_system.core")
-    logger2 = logging.getLogger("dana.builtin_types.agent_system.utils")
+    logger1 = logging.getLogger("dana.builtin_types.agent")
+    logger2 = logging.getLogger("dana.builtin_types.agent")
     logger3 = logging.getLogger("dana.base")
 
     # Set different initial levels
@@ -70,7 +70,7 @@ def test_set_level_submodule():
 
     # Set level for agent module only
     dana_logger = DanaLogger("test")
-    dana_logger.setLevel(logging.DEBUG, "dana.builtin_types.agent_system")
+    dana_logger.setLevel(logging.DEBUG, "dana.builtin_types.agent")
 
     # Verify only agent loggers changed
     assert logger1.level == logging.DEBUG

@@ -510,7 +510,7 @@ class TypeRegistry:
         cls.validate_json_data(data, struct_name)
 
         # Create the instance
-        from dana.builtin_types.agent_system import AgentInstance
+        from dana.builtin_types.agent.agent_instance import AgentInstance
         from dana.builtin_types.struct_system import StructInstance
 
         # Check if this is an agent type and create appropriate instance

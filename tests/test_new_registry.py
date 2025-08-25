@@ -9,7 +9,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Any
 
-from dana.builtin_types.agent_system import AgentInstance
+from dana.builtin_types.agent import AgentInstance
 from dana.builtin_types.struct_system import StructInstance, StructType
 
 
@@ -164,7 +164,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
         AGENT_REGISTRY.on_event("registered", on_general_handler)
 
         # Create test instances
-        from dana.builtin_types.agent_system import AgentType
+        from dana.builtin_types.agent import AgentType
 
         agent_struct_type = AgentType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
         agent_instance = AgentInstance(agent_struct_type, {"name": "TestAgent"})
