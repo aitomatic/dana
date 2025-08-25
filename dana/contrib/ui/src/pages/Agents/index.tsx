@@ -95,7 +95,7 @@ export default function AgentsPage() {
   return (
     <div className="flex flex-col w-full h-full overflow-hidden">
       {/* Hero Section with Animated Background */}
-      <div className="relative min-h-[600px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+      <div className="relative min-h-[600px] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden py-16">
         {/* Animated Background Elements */}
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -107,11 +107,11 @@ export default function AgentsPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
         
         {/* Main Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-[600px] text-center px-6 py-12">
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-[600px] text-center px-6">
           
           {/* Main Title with Enhanced Typography */}
-          <div className="mb-12">
-            <h1 className="text-7xl md:text-8xl font-black text-white mb-6 tracking-tight leading-none">
+          <div className="mb-8">
+            <h1 className="text-7xl md:text-8xl font-black text-white mb-2 tracking-tight leading-none">
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400 bg-clip-text text-transparent">
                 Dana
               </span>
@@ -122,12 +122,12 @@ export default function AgentsPage() {
           </div>
           
           {/* Enhanced Subtitle */}
-          <p className="text-xl md:text-2xl text-gray-200 mb-16 max-w-4xl leading-relaxed font-light">
+          <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-4xl leading-relaxed font-light">
             The complete platform for <span className="text-purple-300 font-semibold">building, training, and deploying</span> Dana Expert Agents
           </p>
           
           {/* Feature Cards with Better Design */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-5xl">
             {/* Agent Maker - Available Now */}
             <div className="group bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/20 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg">
