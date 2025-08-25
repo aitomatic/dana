@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import the core agent system
-from dana.builtin_types.agent_system import AgentInstance, AgentType
+from dana.builtin_types.agent.agent_instance import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 

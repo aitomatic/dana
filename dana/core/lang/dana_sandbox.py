@@ -547,7 +547,7 @@ class DanaSandbox(Loggable):
                 final_context=self._context.copy(),
             )
 
-    def execute_string(self, source_code: str, filename: str | None = None) -> ExecutionResult:
+    def execute_string(self, source_code: str, filename: str | None = None, is_sync: bool = False) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
@@ -562,7 +562,7 @@ class DanaSandbox(Loggable):
 
         try:
             # Execute through _eval (convergent path)
-            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=filename)
+            result = self._interpreter._eval_source_code(source_code, context=self._context, filename=filename, is_sync=is_sync)
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()

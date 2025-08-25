@@ -80,8 +80,8 @@
             "azure": {
                 "api_key": "env:AZURE_OPENAI_API_KEY",
                 "base_url": "env:AZURE_OPENAI_API_URL",
-                "api_version": "2025-04-01-preview",
-                "api_type": "azure"
+                "api_version": "env:AZURE_OPENAI_API_VERSION",
+                "api_type": "env:AZURE_OPENAI_API_TYPE"
             },
             "ibm_watsonx": {
                 "api_key": "env:WATSONX_API_KEY",

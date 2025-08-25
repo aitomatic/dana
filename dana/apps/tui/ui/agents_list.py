@@ -15,7 +15,7 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import Label, ListItem, ListView, Static
 
-from dana.builtin_types.agent_system import AgentInstance
+from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.registry import AGENT_REGISTRY
 
 

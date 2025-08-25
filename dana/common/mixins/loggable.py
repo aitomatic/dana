@@ -84,6 +84,7 @@ class Loggable:
 
     def info(self, message: str, *args, **context) -> None:
         """Log an info message."""
+        # print(f"CTN INFO: {message}")
         self.logger.info(message, *args, **context)
 
     def warning(self, message: str, *args, **context) -> None:
@@ -93,6 +94,10 @@ class Loggable:
     def error(self, message: str, *args, **context) -> None:
         """Log an error message."""
         self.logger.error(message, *args, **context)
+
+    def log(self, level: Any, message: str, *args, **context) -> None:
+        """Log a message."""
+        self.logger.log(level, message, *args, **context)
 
     @classmethod
     def log_debug(cls, message: str, *args, **context) -> None:
