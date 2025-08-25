@@ -10,7 +10,7 @@ import logging
 
 from dana.builtin_types.agent import on_log
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_types import AgentType
+from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 # Set up logging to see the output

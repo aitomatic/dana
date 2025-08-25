@@ -10,7 +10,7 @@ import asyncio
 import logging
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_types import AgentType
+from dana.builtin_types.agent.agent_type import AgentType
 
 # Set up logging to see the output
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
