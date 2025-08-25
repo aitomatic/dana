@@ -19,7 +19,7 @@ from llama_index.core import VectorStoreIndex, load_index_from_storage
 from llama_index.core.data_structs import IndexDict
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
-
+from dana.common.sys_resource.embedding import get_default_embedding_model
 from dana.common.sys_resource.rag.pipeline.base_stage import BaseStage
 
 
@@ -37,7 +37,7 @@ class IndexCombiner(BaseStage):
         super().__init__(**kwargs)
 
     async def combine_indices(
-        self, individual_indices: dict[str, VectorStoreIndex], docs_by_source: dict[str, list[Document]]
+        self, individual_indices: dict[str, VectorStoreIndex], docs_by_source: dict[str, list[Document]], embed_model: str | None = None
     ) -> VectorStoreIndex:
         """Create a combined index from individual indices without recomputing embeddings.
 
@@ -56,7 +56,7 @@ class IndexCombiner(BaseStage):
             Falls back to document-based creation if node extraction fails,
             ensuring robustness while maintaining performance when possible.
         """
-        combined_index = await self._create_combined_vector_store_index(individual_indices)
+        combined_index = await self._create_combined_vector_store_index(individual_indices, embed_model=embed_model)
 
         if not combined_index:
             self.debug("Warning: No nodes collected, falling back to document-based approach")
@@ -65,11 +65,11 @@ class IndexCombiner(BaseStage):
             for _source_key, documents in docs_by_source.items():
                 all_documents.extend(documents)
             # Run the fallback index creation in a thread
-            combined_index = await asyncio.to_thread(VectorStoreIndex.from_documents, all_documents)
+            combined_index = await asyncio.to_thread(VectorStoreIndex.from_documents, all_documents, embed_model=embed_model)
 
         return combined_index
 
-    async def _create_combined_vector_store_index(self, individual_indices: dict[str, VectorStoreIndex]) -> VectorStoreIndex | None:
+    async def _create_combined_vector_store_index(self, individual_indices: dict[str, VectorStoreIndex], embed_model: str | None = None) -> VectorStoreIndex | None:
         """Create combined vector store by merging existing vector stores."""
 
         def _recursive_update_inplace(dict1: dict, dict2: dict):
@@ -124,4 +124,4 @@ class IndexCombiner(BaseStage):
         if index_struct_cls is None:
             index_struct_cls = IndexDict
 
-        return cast(VectorStoreIndex, load_index_from_storage(storage_context_cls.from_dict(combined_storage_context_dict)))
+        return cast(VectorStoreIndex, load_index_from_storage(storage_context_cls.from_dict(combined_storage_context_dict), embed_model=embed_model))
