@@ -402,7 +402,11 @@ class TestAgentChat(unittest.TestCase):
                 self.assertIsNone(agent._conversation_memory)
 
                 # Send a message to trigger memory initialization
-                agent.chat("Hello")
+                response = agent.chat("Hello")
+
+                # Wait for the Promise to resolve to ensure conversation memory is updated
+                if hasattr(response, "_wait_for_delivery"):
+                    response._wait_for_delivery()
 
                 # Memory should now be initialized
                 self.assertIsNotNone(agent._conversation_memory)

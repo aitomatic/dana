@@ -70,7 +70,8 @@ def old_reason_function(
         # raise SandboxError("No LLM resource available in context")
         from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
-        llm_resource = LLMResourceType.create_instance_from_values({"model": "openai:gpt-4o"})
+        # Create fallback LLM resource with auto model selection instead of hardcoded OpenAI
+        llm_resource = LLMResourceType.create_instance_from_values({"model": "auto"})
         context.set_system_llm_resource(llm_resource)
 
     logger.info(f"LLMResource: {llm_resource.name} (model: {llm_resource.model})")

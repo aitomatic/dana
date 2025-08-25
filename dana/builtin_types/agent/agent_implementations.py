@@ -37,7 +37,6 @@ class AgentImplementationMixin:
         """Initialize LLM resource from agent's config if not already done."""
         if self._llm_resource_instance is None:
             from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
-            from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
             # Get LLM parameters from agent's config field
             llm_params = {}
@@ -56,25 +55,17 @@ class AgentImplementationMixin:
                         if key.startswith("llm_") and key not in ["llm_model", "llm_temperature", "llm_max_tokens", "llm_provider"]:
                             llm_params[key[4:]] = value  # Remove "llm_" prefix
 
-            # Create the underlying LLM resource
-            self._llm_resource = LegacyLLMResource(
-                name=f"{self.agent_type.name}_llm",
-                model=llm_params.get("model", "auto"),
-                temperature=llm_params.get("temperature", 0.7),
-                max_tokens=llm_params.get("max_tokens", 2048),
-                **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens"]},
-            )
-
-            # Create the LLM resource instance
-            self._llm_resource_instance = LLMResourceType.create_instance(
-                self._llm_resource,
-                values={
+            # Create the LLM resource instance using the resource type system
+            # This avoids direct dependency on LegacyLLMResource
+            self._llm_resource_instance = LLMResourceType.create_instance_from_values(
+                {
                     "name": f"{self.agent_type.name}_llm",
                     "model": llm_params.get("model", "auto"),
                     "provider": llm_params.get("provider", "auto"),
                     "temperature": llm_params.get("temperature", 0.7),
                     "max_tokens": llm_params.get("max_tokens", 2048),
-                },
+                    **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens", "provider"]},
+                }
             )
 
             # Initialize the resource
@@ -111,21 +102,38 @@ class AgentImplementationMixin:
             return None
 
     def _build_agent_description(self) -> str:
-        """Build a description of the agent for LLM prompts in YAML format."""
-        characteristics = ""
-        if hasattr(self, "_values") and self._values:
-            characteristics = "\ncharacteristics:\n"
-            for field_name, field_value in self._values.items():
-                characteristics += f"  {field_name}: {field_value}\n"
+        """Build a natural language description of the agent for LLM prompts."""
+        # Start with the agent's name and role
+        description = f"You are {self.agent_type.name}."
 
-        description = f"""```yaml
-content: |
-  You are {self.agent_type.name}.{characteristics}
-configuration:
-  format: yaml
-  temperature: 0.7
-  max_tokens: 1000
-```"""
+        # Add characteristics in natural language if available
+        if hasattr(self, "_values") and self._values:
+            characteristics = []
+            for field_name, field_value in self._values.items():
+                # Skip internal fields that shouldn't be part of the description
+                if field_name in ["config", "_conversation_memory", "_llm_resource_instance", "_memory"]:
+                    continue
+
+                # Convert field names to more natural language
+                if field_name == "personality":
+                    characteristics.append(f"Your personality is {field_value}")
+                elif field_name == "expertise":
+                    characteristics.append(f"Your expertise includes {field_value}")
+                elif field_name == "background":
+                    characteristics.append(f"Your background is {field_value}")
+                elif field_name == "goals":
+                    characteristics.append(f"Your goals are {field_value}")
+                elif field_name == "style":
+                    characteristics.append(f"Your communication style is {field_value}")
+                else:
+                    # For other fields, use a more natural format
+                    characteristics.append(f"Your {field_name} is {field_value}")
+
+            if characteristics:
+                description += " " + " ".join(characteristics) + "."
+
+        # Add general instructions for natural conversation
+        description += " You should respond naturally and conversationally, as if you're having a friendly chat. Be helpful, engaging, and authentic in your responses."
 
         return description
 
@@ -203,6 +211,9 @@ context: {fallback_response["context"]}
         self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 5
     ) -> str:
         """Implementation of chat functionality that returns a string response."""
+        # Initialize conversation memory if not already done
+        self._initialize_conversation_memory()
+
         try:
             # Try to use LLM if available
             llm_resource = self._get_llm_resource(sandbox_context)
@@ -218,14 +229,7 @@ context: {fallback_response["context"]}
                         conversation_context.append({"role": "user", "content": turn["user_input"]})
                         conversation_context.append({"role": "assistant", "content": turn["agent_response"]})
 
-                # Add current message in YAML format
-                user_message = f"""```yaml
-content: |
-  query: "{message}"
-  context: {context}
-  format: yaml
-```"""
-                conversation_context.append({"role": "user", "content": user_message})
+                conversation_context.append({"role": "user", "content": message})
 
                 # Call LLM
                 response = llm_resource.chat_completion(conversation_context, system_prompt=system_prompt, context=context)
@@ -239,73 +243,34 @@ content: |
 
     def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None, is_sync: bool = False) -> dict:
         """Implementation of reasoning functionality using py_reason() for LLM-powered analysis."""
-        self.info(f"REASON: Analyzing premise: '{premise}'")
-        self.info(f"Context: {context}")
+        self.debug(f"REASON: Analyzing premise: '{premise}'")
+        self.debug(f"Context: {context}")
 
         try:
             # Use py_reason() for LLM-powered reasoning
             from dana.libs.corelib.py_wrappers.py_reason import py_reason
 
-            # Set up context for type-aware reasoning
-            if context is None:
-                context = {}
+            self.debug("Calling py_reason() for LLM-powered analysis...")
+            self.debug(f"Premise length: {len(premise)}")
+            self.debug(f"Sandbox context: {type(sandbox_context)}")
 
-            # Add agent context to help with reasoning
-            _ = {
-                "agent_name": self.__struct_type__.name,
-                "agent_type": "AI Agent",
-                "reasoning_task": "premise_analysis",
-                **context,
-            }
+            py_reason_result = py_reason(
+                sandbox_context,
+                premise,
+                options={
+                    "temperature": 0.3,  # Lower temperature for more focused reasoning
+                    "max_tokens": 800,
+                    # "format": "yaml",  # Use YAML format for structured responses
+                },
+            )
+            self.debug("py_reason() call successful")
+            self.debug(f"Response type: {type(py_reason_result)}")
+            self.debug(f"py_reason result: {py_reason_result}")
 
-            self.info("Calling py_reason() for LLM-powered analysis...")
-            self.info(f"Premise length: {len(premise)}")
-            self.info(f"Sandbox context: {type(sandbox_context)}")
-
-            # Call py_reason() with YAML format
-            try:
-                py_reason_result = py_reason(
-                    sandbox_context,
-                    premise,
-                    options={
-                        "temperature": 0.3,  # Lower temperature for more focused reasoning
-                        "max_tokens": 800,
-                        "format": "yaml",  # Use YAML format for structured responses
-                    },
-                )
-                self.info("py_reason() call successful")
-                self.info(f"Response type: {type(py_reason_result)}")
-            except TypeError as type_error:
-                # Handle specific TypeError for SandboxContext not being a mapping
-                if "'SandboxContext' object is not a mapping" in str(type_error):
-                    self.info("SandboxContext mapping error detected, using fallback reasoning")
-                    # Use the old reason function as fallback
-                    from dana.libs.corelib.py_wrappers.py_reason import old_reason_function
-
-                    py_reason_result = old_reason_function(
-                        sandbox_context,
-                        premise,
-                        options={
-                            "temperature": 0.3,
-                            "max_tokens": 800,
-                            "format": "yaml",
-                        },
-                    )
-                    self.info("Used old_reason_function as fallback")
-                else:
-                    self.info(f"py_reason() TypeError: {type_error}")
-                    raise type_error
-            except Exception as py_reason_error:
-                self.info(f"py_reason() call failed: {py_reason_error}")
-                self.info(f"py_reason error type: {type(py_reason_error)}")
-                self.info(f"py_reason error details: {str(py_reason_error)}")
-                raise py_reason_error
-
-            self.info(f"py_reason result: {py_reason_result}")
             return py_reason_result
 
         except Exception as e:
-            self.info(f"LLM reasoning failed: {e}")
+            self.error(f"LLM reasoning failed: {e}")
             # Fallback to basic reasoning
             return {
                 "analysis": f"Fallback analysis of: {premise}",
@@ -323,7 +288,7 @@ content: |
 
     def _remember_impl(self, sandbox_context: SandboxContext, key: str, value: Any) -> str:
         """Implementation of memory storage functionality."""
-        self.info(f"REMEMBER: Storing key '{key}' with value: {value}")
+        self.debug(f"REMEMBER: Storing key '{key}' with value: {value}")
 
         # Store in agent's memory
         self._memory[key] = value
@@ -336,16 +301,16 @@ content: |
 
     def _recall_impl(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Implementation of memory retrieval functionality."""
-        self.info(f"RECALL: Retrieving key '{key}'")
+        self.debug(f"RECALL: Retrieving key '{key}'")
 
         # Try agent's memory first
         if key in self._memory:
-            self.info(f"Found in agent memory: {self._memory[key]}")
+            self.debug(f"Found in agent memory: {self._memory[key]}")
             return self._memory[key]
 
         # Note: ConversationMemory doesn't have get_memory method
         # Memory is stored in agent's internal _memory dict
         # Conversation memory is used for conversation turns, not key-value storage
 
-        self.info(f"Key '{key}' not found in memory")
+        self.debug(f"Key '{key}' not found in memory")
         return None

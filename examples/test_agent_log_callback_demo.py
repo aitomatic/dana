@@ -8,7 +8,6 @@ for agent logging events.
 
 import logging
 
-from dana.builtin_types.agent import on_log
 from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.builtin_types.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -31,11 +30,6 @@ def custom_log_callback(agent_name: str, message: str, context):
 def main():
     print("=== Agent Log Callback Demo ===\n")
 
-    # Register callbacks
-    print("Registering log callbacks...")
-    on_log(log_callback)
-    on_log(custom_log_callback)
-
     # Create a test agent
     agent_type = AgentType(
         name="DemoAgent",
@@ -46,12 +40,17 @@ def main():
     agent_instance = AgentInstance(agent_type, {"name": "demo_agent"})
     sandbox_context = SandboxContext()
 
+    # Register callbacks on the agent instance
+    print("Registering log callbacks...")
+    agent_instance.on_log(log_callback)
+    agent_instance.on_log(custom_log_callback)
+
     print("\nTesting agent logging...")
 
     # Test the log method - callbacks should be triggered
-    agent_instance.log("Hello from the agent!", sandbox_context, is_sync=True)
-    agent_instance.log("This is a test message", sandbox_context, is_sync=True)
-    agent_instance.log("Agent is working correctly", sandbox_context, is_sync=True)
+    agent_instance.log("Hello from the agent!", "INFO", sandbox_context, is_sync=True)
+    agent_instance.log("This is a test message", "INFO", sandbox_context, is_sync=True)
+    agent_instance.log("Agent is working correctly", "INFO", sandbox_context, is_sync=True)
 
     print("\n=== Demo Complete ===")
 
