@@ -94,6 +94,16 @@ export default function AgentsPage() {
 
   return (
     <div className="flex flex-col p-8 w-full h-full">
+      {/* Main Title */}
+      <div className="text-center mb-8 pb-8 border-b border-gray-100 bg-gradient-to-b from-gray-50 to-white rounded-lg p-6">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Dana Agent Studio</h1>
+        <p className="text-lg text-gray-600 mb-4">Build, train, and deploy Dana agents</p>
+        <p className="text-sm text-gray-500 max-w-2xl mx-auto">
+          Create domain-expert agents that learn, adapt, and improve themselves in production. 
+          Start with pre-trained agents or build your own from scratch.
+        </p>
+      </div>
+      
       {/* Top section with Search and Train Agent button */}
       <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
