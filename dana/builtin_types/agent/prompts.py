@@ -9,77 +9,34 @@ consistency and structured communication with LLMs.
 from typing import Any
 
 # ============================================================================
-# AGENT DESCRIPTION PROMPTS
+# AGENT.SOLVE() - PROBLEM ANALYSIS PROMPTS (MOST SIGNIFICANT)
 # ============================================================================
 
+"""
+PROBLEM ANALYSIS PROMPTS:
+=========================
 
-def build_agent_description(
-    name: str,
-    personality: str | None = None,
-    expertise: str | None = None,
-    background: str | None = None,
-    goals: str | None = None,
-    style: str | None = None,
-    **kwargs: Any,
-) -> str:
-    """
-    Build a natural language description of the agent for LLM prompts.
+Function: agent.solve() → _create_plan() → create_analysis_prompt()
+Control Flow: User problem → YAML analysis prompt → LLM reasoning → plan type selection
+Prompts Used: create_analysis_prompt() → LLM → _parse_analysis()
 
-    Args:
-        name: The agent's name
-        personality: Agent's personality traits
-        expertise: Agent's areas of expertise
-        background: Agent's background information
-        goals: Agent's goals and objectives
-        style: Agent's communication style
-        **kwargs: Additional characteristics as field_name=field_value
-
-    Returns:
-        A natural language description string for the agent
-    """
-    description = f"You are {name}."
-
-    characteristics = []
-    if personality:
-        characteristics.append(f"Your personality is {personality}")
-    if expertise:
-        characteristics.append(f"Your expertise includes {expertise}")
-    if background:
-        characteristics.append(f"Your background is {background}")
-    if goals:
-        characteristics.append(f"Your goals are {goals}")
-    if style:
-        characteristics.append(f"Your communication style is {style}")
-
-    # Add any additional characteristics
-    for field_name, field_value in kwargs.items():
-        if field_value and field_name not in ["config", "_conversation_memory", "_llm_resource_instance", "_memory"]:
-            characteristics.append(f"Your {field_name} is {field_value}")
-
-    if characteristics:
-        description += " " + " ".join(characteristics) + "."
-
-    # Add general instructions for natural conversation
-    description += " You should respond naturally and conversationally, as if you're having a friendly chat. Be helpful, engaging, and authentic in your responses."
-
-    return description
-
-
-# ============================================================================
-# PROBLEM ANALYSIS PROMPTS
-# ============================================================================
+Plan Types & Routing:
+- DIRECT_SOLUTION → _solve_direct() (simple problems)
+- PYTHON_CODE → _execute_python() (code generation)
+- WORKFLOW → _execute_workflow() (multi-step processes)
+- DELEGATE → _delegate_to_agent() (specialized expertise)
+- ESCALATE → _escalate_to_human() (human intervention)
+"""
 
 
 def create_analysis_prompt(task: str, context: Any = None) -> str:
     """
-    Create a prompt for analyzing a problem and determining the best plan.
+    Create YAML prompt for problem analysis and plan type determination.
 
-    Args:
-        task: The problem or task to analyze
-        context: Additional context for the problem
+    USED BY: agent.solve() → _create_plan()
+    WHEN: Initial problem analysis to determine solution approach
 
-    Returns:
-        A YAML-formatted prompt string for problem analysis
+    Returns YAML prompt that guides LLM to choose optimal plan type and provide structured solution.
     """
     return f"""```yaml
 content: |
@@ -121,20 +78,32 @@ configuration:
 
 
 # ============================================================================
-# DIRECT SOLUTION PROMPTS
+# AGENT.SOLVE() - DIRECT SOLUTION PROMPTS (fallback)
 # ============================================================================
+
+"""
+DIRECT SOLUTION PROMPTS:
+========================
+
+Function: agent.solve() → _solve_direct() → create_direct_solution_prompt()
+Control Flow: Problem routing → direct solution → LLM reasoning → formatted answer
+Prompts Used: create_direct_solution_prompt() → LLM → "Direct solution: {answer}"
+
+Fallback Scenarios:
+- Plan parsing fails → _execute_plan() → _solve_direct()
+- Unknown dict plan type → _route_dict() → _solve_direct()
+- String plan not escalation/delegation → _route_string() → _solve_direct()
+"""
 
 
 def create_direct_solution_prompt(problem: str, context: str | None = None) -> str:
     """
-    Create a prompt for direct problem solving.
+    Create YAML prompt for direct problem solving.
 
-    Args:
-        problem: The problem to solve directly
-        context: Additional context for the problem
+    USED BY: agent.solve() → _solve_direct()
+    WHEN: Fallback when plan parsing fails or for simple problems
 
-    Returns:
-        A YAML-formatted prompt string for direct solving
+    Returns YAML prompt for straightforward problem solving.
     """
     context_str = context if context else "{}"
 
@@ -155,12 +124,103 @@ configuration:
 
 
 # ============================================================================
-# FALLBACK RESPONSE TEMPLATES
+# AGENT.CHAT() - AGENT DESCRIPTION PROMPTS
 # ============================================================================
+
+"""
+AGENT DESCRIPTION PROMPTS:
+==========================
+
+Function: agent.chat() → _build_agent_description() → build_agent_description()
+Control Flow: Agent instance fields → natural language description → LLM system prompt
+Prompts Used: build_agent_description() → LLM system prompt in _chat_impl()
+
+Data Flow:
+1. Agent instance has _values dict with field data
+2. implementations.py extracts personality, expertise, etc.
+3. This function converts structured data to natural language
+4. Result used as system prompt in _chat_impl() method
+5. LLM uses description to maintain agent persona
+"""
+
+
+def build_agent_description(
+    name: str,
+    personality: str | None = None,
+    expertise: str | None = None,
+    background: str | None = None,
+    goals: str | None = None,
+    style: str | None = None,
+    **kwargs: Any,
+) -> str:
+    """
+    Build natural language description of agent for LLM system prompts.
+
+    USED BY: agent.chat() → _build_agent_description()
+    WHEN: Creating system prompt for conversational interactions
+
+    Returns natural language description that serves as LLM system prompt.
+    """
+    description = f"You are {name}."
+
+    characteristics = []
+    if personality:
+        characteristics.append(f"Your personality is {personality}")
+    if expertise:
+        characteristics.append(f"Your expertise includes {expertise}")
+    if background:
+        characteristics.append(f"Your background is {background}")
+    if goals:
+        characteristics.append(f"Your goals are {goals}")
+    if style:
+        characteristics.append(f"Your communication style is {style}")
+
+    # Add any additional characteristics
+    for field_name, field_value in kwargs.items():
+        if field_value and field_name not in ["config", "_conversation_memory", "_llm_resource_instance", "_memory"]:
+            characteristics.append(f"Your {field_name} is {field_value}")
+
+    if characteristics:
+        description += " " + " ".join(characteristics) + "."
+
+    # Add general instructions for natural conversation
+    description += " You should respond naturally and conversationally, as if you're having a friendly chat. Be helpful, engaging, and authentic in your responses."
+
+    return description
+
+
+# ============================================================================
+# AGENT.CHAT() - FALLBACK RESPONSE TEMPLATES (when LLM unavailable)
+# ============================================================================
+
+"""
+FALLBACK RESPONSE TEMPLATES:
+============================
+
+Function: agent.chat() → _generate_fallback_response() → FallbackResponses methods
+Control Flow: Message analysis → response type detection → template selection → formatted response
+Prompts Used: FallbackResponses.get_*() methods → YAML formatted response
+
+Response Type Mapping:
+- Greetings ("hello", "hi") → get_greeting()
+- Identity queries ("who are you") → get_name_inquiry()
+- Help requests ("help", "what can you do") → get_help()
+- Memory queries ("remember", "recall") → Memory-based response logic
+- Default/unknown → get_default() or get_error()
+
+Purpose: Ensures agents remain functional when LLM resources are unavailable.
+"""
 
 
 class FallbackResponses:
-    """Collection of fallback response templates for when LLM is unavailable."""
+    """
+    Fallback response templates for when LLM is unavailable.
+
+    USED BY: agent.chat() → _generate_fallback_response()
+    WHEN: LLM is unavailable or fails to respond
+
+    Provides graceful degradation when LLM resources are unavailable.
+    """
 
     GREETING_RESPONSES = [
         "Hello! I'm {name}, ready to assist you.",
@@ -223,12 +283,33 @@ class FallbackResponses:
 
 
 # ============================================================================
-# PROMPT CONFIGURATION
+# UTILITY - PROMPT CONFIGURATION (LEAST SIGNIFICANT)
 # ============================================================================
+
+"""
+PROMPT CONFIGURATION:
+====================
+
+Function: Various prompt functions → PromptConfig settings
+Control Flow: Prompt generation → configuration application → LLM parameters
+Prompts Used: Configuration settings applied to all prompt functions
+
+Provides configuration templates for different prompt types:
+- DEFAULT_YAML_CONFIG: Base settings for all prompts
+- ANALYSIS_CONFIG: Problem analysis prompts
+- DIRECT_SOLUTION_CONFIG: Direct solution prompts
+- CODE_GENERATION_CONFIG: Code generation tasks
+- WORKFLOW_CONFIG: Workflow creation tasks
+"""
 
 
 class PromptConfig:
-    """Configuration settings for prompts."""
+    """
+    Configuration settings for prompts.
+
+    USED BY: Various prompt functions
+    WHEN: Setting LLM parameters for different prompt types
+    """
 
     # Default YAML configuration
     DEFAULT_YAML_CONFIG = {"format": "yaml", "temperature": 0.7, "max_tokens": 1000}
@@ -251,21 +332,29 @@ class PromptConfig:
 
 
 # ============================================================================
-# UTILITY FUNCTIONS
+# UTILITY - UTILITY FUNCTIONS (LEAST SIGNIFICANT - helper functions)
 # ============================================================================
+
+"""
+UTILITY FUNCTIONS:
+==================
+
+Function: Various agent methods → utility functions
+Control Flow: Raw LLM response → processing → structured data
+Prompts Used: Helper functions for prompt processing and YAML handling
+
+- extract_yaml_content(): agent.solve() → _parse_analysis()
+- clean_code_block(): agent.solve() → _complete_plan()
+- format_yaml_prompt(): General prompt formatting utility
+"""
 
 
 def format_yaml_prompt(content: str, task: dict, configuration: dict) -> str:
     """
-    Format a complete YAML prompt with content, task, and configuration.
+    Format complete YAML prompt with content, task, and configuration.
 
-    Args:
-        content: The main instruction content
-        task: Task details as a dictionary
-        configuration: Configuration settings as a dictionary
-
-    Returns:
-        A properly formatted YAML prompt string
+    USED BY: General utility for prompt formatting
+    WHEN: Creating structured YAML prompts with consistent formatting
     """
     import yaml
 
@@ -280,11 +369,10 @@ def extract_yaml_content(text: str) -> str:
     """
     Extract YAML content from text, handling code block wrappers.
 
-    Args:
-        text: Text potentially containing YAML in code blocks
+    USED BY: agent.solve() → _parse_analysis()
+    WHEN: Processing LLM responses to extract structured YAML data
 
-    Returns:
-        Extracted YAML content as a string
+    Handles ```yaml...``` blocks (preferred) and generic ```...``` blocks (fallback).
     """
     if "```yaml" in text:
         # Split on ```yaml and get everything after it
@@ -315,11 +403,10 @@ def clean_code_block(code: str) -> str:
     """
     Remove code block markers from code string.
 
-    Args:
-        code: Code string potentially wrapped in markdown code blocks
+    USED BY: agent.solve() → _complete_plan()
+    WHEN: Preparing code for execution by removing markdown formatting
 
-    Returns:
-        Clean code without markdown markers
+    Removes ```python, ```py, and ``` markers while preserving code structure.
     """
     # Remove ```python, ```py, ```, etc. from the beginning
     lines = code.strip().split("\n")

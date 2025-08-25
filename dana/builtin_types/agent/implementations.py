@@ -8,7 +8,8 @@ memory, reasoning, chat, and LLM resource management.
 from typing import Any
 
 from dana.core.lang.sandbox_context import SandboxContext
-from .prompts import build_agent_description, FallbackResponses
+
+from .prompts import FallbackResponses, build_agent_description
 
 
 class AgentImplementationMixin:
@@ -120,7 +121,7 @@ class AgentImplementationMixin:
             background=kwargs.get("background"),
             goals=kwargs.get("goals"),
             style=kwargs.get("style"),
-            **{k: v for k, v in kwargs.items() if k not in ["personality", "expertise", "background", "goals", "style"]},
+            **{k: v for k, v in kwargs.items() if k not in ["name", "personality", "expertise", "background", "goals", "style"]},
         )
 
     def _generate_fallback_response(self, message: str, context: str) -> str:
