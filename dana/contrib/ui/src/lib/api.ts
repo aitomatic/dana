@@ -856,6 +856,27 @@ class ApiService {
     }
   }
 
+  async disassociateDocumentFromAgent(
+    agentId: string | number,
+    documentId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to disassociate document:', { agentId, documentId });
+    
+    try {
+      const response = await this.client.delete(`/agents/${agentId}/documents/${documentId}/disassociate`);
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      throw error;
+    }
+  }
+
   async smartChat(agentId: string | number, message: string, conversationId?: string | number) {
     const response = await this.client.post(`/agents/${agentId}/smart-chat`, {
       message,

@@ -1079,6 +1079,48 @@ async def associate_documents_with_agent(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/{agent_id}/documents/{document_id}/disassociate")
+async def disassociate_document_from_agent(
+    agent_id: int,
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    """Disassociate a document from an agent without deleting the document."""
+    try:
+        # Get the agent to verify it exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        # Get the document to verify it exists and is associated with this agent
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        if document.agent_id != agent_id:
+            raise HTTPException(status_code=400, detail="Document is not associated with this agent")
+
+        # Remove the association by setting agent_id to None
+        document.agent_id = None
+        db.commit()
+
+        # Clear cache to force RAG rebuild without the disassociated document
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if folder_path:
+            clear_agent_cache(folder_path)
+
+        return {
+            "success": True,
+            "message": f"Successfully disassociated document {document_id} from agent {agent_id}",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disassociating document {document_id} from agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/{agent_id}/files")
 async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
     """List all files in the agent's folder structure."""
