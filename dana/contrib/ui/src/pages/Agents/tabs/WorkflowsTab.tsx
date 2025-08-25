@@ -459,12 +459,6 @@ const WorkflowsTab: React.FC = () => {
 
   return (
     <div className="px-6 pb-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Workflow Execution Dashboard</h2>
-        <p className="text-gray-600">Monitor and control Dana workflow execution in real-time</p>
-      </div>
-      
       {/* Workflow Execution Dashboard */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">🔄 Workflow Execution Dashboard</h2>
@@ -995,7 +989,57 @@ const WorkflowsTab: React.FC = () => {
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="text-sm text-gray-800">
                       {(() => {
-                        // Generate the same test data that was used for execution
+                        // Get the actual execution data if available
+                        const execution = Array.from(executingWorkflows.values()).find(exec => 
+                          exec.workflowId === selectedWorkflow.name
+                        );
+                        
+                        if (execution && execution.stepResults.length > 0) {
+                          // Show actual input data from the first step
+                          const firstStep = execution.stepResults[0];
+                          if (firstStep && firstStep.input) {
+                            return (
+                              <>
+                                <div className="mb-2">
+                                  <span className="font-medium">Query:</span> "{firstStep.input.query || 'N/A'}"
+                                </div>
+                                <div className="mb-2">
+                                  <span className="font-medium">Context:</span> {firstStep.input.context || 'N/A'}
+                                </div>
+                                {firstStep.input.agent_type && (
+                                  <div className="mb-2">
+                                    <span className="font-medium">Agent Type:</span> {firstStep.input.agent_type}
+                                  </div>
+                                )}
+                                {firstStep.input.capabilities && (
+                                  <div className="mb-2">
+                                    <span className="font-medium">Capabilities:</span>
+                                    <div className="ml-4 text-gray-600">
+                                      {firstStep.input.capabilities.map((cap: string, idx: number) => (
+                                        <div key={idx}>• {cap}</div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {firstStep.input.customer_tier && (
+                                  <div className="mb-2">
+                                    <span className="font-medium">Customer Tier:</span> {firstStep.input.customer_tier}
+                                  </div>
+                                )}
+                                {firstStep.input.domain && (
+                                  <div className="mb-2">
+                                    <span className="font-medium">Domain:</span> {firstStep.input.domain}
+                                  </div>
+                                )}
+                                <div className="mb-2">
+                                  <span className="font-medium">Timestamp:</span> {firstStep.input.timestamp ? new Date(firstStep.input.timestamp).toLocaleString() : new Date().toLocaleString()}
+                                </div>
+                              </>
+                            );
+                          }
+                        }
+                        
+                        // Fallback: Show the test data that would be used
                         const testData = generateAgentSpecificTestData(parseInt(agentId || '0'), selectedWorkflow.name, customTestQuery);
                         
                         return (
