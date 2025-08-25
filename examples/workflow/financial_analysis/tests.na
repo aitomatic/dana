@@ -165,18 +165,17 @@ WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
 # ==============================
 def test_all_workflows():
     """Test all workflows for all analysis areas."""
-    with use('rag', sources=[TEST_path]) as test_docs:
-        for area in WORKFLOWS_BY_ANALYSIS_AREA:
-            workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
-            print(f'=== Testing {area} ===')
-            for workflow in workflows:
-                func_name = str(workflow)
-                print(f'-- {func_name} --')
-                try:
-                    result = workflow(TEST_ARGS)
-                    print(f'PASS: {func_name} => {result}')
-                except Exception as e:
-                    print(f'FAIL: {func_name} => {e}')
+    for area in WORKFLOWS_BY_ANALYSIS_AREA:
+        workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
+        print(f'=== Testing {area} ===')
+        for workflow in workflows:
+            func_name = str(workflow)
+            print(f'-- {func_name} --')
+            try:
+                result = workflow(TEST_ARGS)
+                print(f'PASS: {func_name} => {result}')
+            except Exception as e:
+                print(f'FAIL: {func_name} => {e}')
 
 def __main__():
     # Run a few tests
