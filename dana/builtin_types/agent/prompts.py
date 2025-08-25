@@ -8,7 +8,6 @@ consistency and structured communication with LLMs.
 
 from typing import Any
 
-
 # ============================================================================
 # AGENT DESCRIPTION PROMPTS
 # ============================================================================
@@ -177,7 +176,7 @@ class FallbackResponses:
     )
 
     CAPABILITY_RESPONSE = (
-        "I can assist with problem analysis, solution planning, code generation, " "workflow design, and more. How can I help you today?"
+        "I can assist with problem analysis, solution planning, code generation, workflow design, and more. How can I help you today?"
     )
 
     THANKS_RESPONSE = "You're welcome! Let me know if there's anything else I can help with."
