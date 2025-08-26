@@ -26,7 +26,7 @@ from .prompts import (
 )
 
 # Type aliases for better readability
-PlanDict = dict[str, PlanType | str]
+PlanDict = dict[str, PlanType | str]  # TODO: Fix this
 ProblemContext = dict[str, Any] | None
 
 
@@ -59,7 +59,7 @@ class PlannerStrategy(BaseStrategy):
 
         # Determine plan type from content
         if isinstance(plan_data, dict):
-            plan_type = PlanType(plan_data.get("type", PlanType.MANUAL.value))
+            plan_type = PlanType(plan_data.get("type", PlanType.MANUAL))
         elif isinstance(plan_data, str):
             plan_type = PlanType(plan_data)
         else:
@@ -294,7 +294,7 @@ class PlannerStrategy(BaseStrategy):
                 return {"type": PlanType.CODE, "content": cleaned_solution}
 
         elif plan_type == PlanType.INPUT:
-            return {"type": PlanType.INPUT.value, "content": solution}
+            return {"type": PlanType.INPUT, "content": solution}
 
         elif plan_type == PlanType.WORKFLOW:
             if solution:
@@ -308,23 +308,23 @@ class PlannerStrategy(BaseStrategy):
                 except Exception as e:
                     agent_instance.debug(f"Failed to parse workflow from LLM output: {e}")
                     # Fallback to simple workflow dict
-                    return {"type": PlanType.WORKFLOW.value, "content": solution}
+                    return {"type": PlanType.WORKFLOW, "content": solution}
             else:
                 workflow_type = self._create_workflow_type(agent_instance, problem)
                 return WorkflowInstance(workflow_type, {})
 
         elif plan_type == PlanType.DELEGATE:
-            return {"type": PlanType.DELEGATE.value, "content": solution}
+            return {"type": PlanType.DELEGATE, "content": solution}
 
         elif plan_type == PlanType.ESCALATE:
-            return {"type": PlanType.ESCALATE.value, "content": solution}
+            return {"type": PlanType.ESCALATE, "content": solution}
 
         # Fail-over to manual solution
         agent_instance.debug("ANALYSIS: Default to 'manual' solution")
         if solution:
             return solution  # Use LLM's solution directly, whatever it is
         else:
-            return {"type": PlanType.MANUAL.value, "content": "Manual handling"}
+            return {"type": PlanType.MANUAL, "content": "Manual handling"}
 
     # ============================================================================
     # PLAN EXECUTION - SPECIFIC HANDLERS
@@ -483,7 +483,7 @@ class PlannerStrategy(BaseStrategy):
 
         Called by: _execute_plan
         """
-        plan_type = plan.get("type", "unknown").lower()  # Normalize to lowercase
+        plan_type = plan.get("type", PlanType.MANUAL)
         content = plan.get("content", "")
 
         agent_instance.debug(f"ROUTE_DICT: Plan type: '{plan_type}' (expected: '{PlanType.CODE.value.lower()}')")
@@ -491,13 +491,13 @@ class PlannerStrategy(BaseStrategy):
         agent_instance.debug(f"ROUTE_DICT: Content preview: {content[:100]}...")
         agent_instance.debug(f"ROUTE_DICT: Plan keys: {list(plan.keys())}")
 
-        if plan_type == PlanType.CODE.value.lower() and content:
+        if plan_type == PlanType.CODE and content:
             agent_instance.debug("ROUTE_DICT: Routing to _execute_python")
             return self._execute_python(agent_instance, plan, problem, context, sandbox_context)
-        elif plan_type == PlanType.INPUT.value.lower() and content:
+        elif plan_type == PlanType.INPUT and content:
             agent_instance.debug("ROUTE_DICT: Routing to _input_from_user")
             return self._input_from_user(agent_instance, plan, problem, context, sandbox_context)
-        elif plan_type == PlanType.WORKFLOW.value.lower():
+        elif plan_type == PlanType.WORKFLOW:
             agent_instance.debug("ROUTE_DICT: Routing to workflow")
             if content:
                 return f"Workflow solution for '{problem}': {content}"
