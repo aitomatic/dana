@@ -242,6 +242,161 @@ class ContextDetector(Loggable):
         """Get the current cache size."""
         return len(self._context_cache)
 
+    def detect_metadata_comment_context(self, ast_node: Any) -> TypeContext | None:
+        """Detect context from metadata comments (## comments).
+
+        Args:
+            ast_node: AST node that may have metadata comments
+
+        Returns:
+            TypeContext if metadata comment with context is detected, None otherwise
+        """
+        if not hasattr(ast_node, "metadata") or not ast_node.metadata:
+            return None
+
+        # Ensure metadata is a dictionary
+        if not isinstance(ast_node.metadata, dict):
+            return None
+
+        comment = ast_node.metadata.get("comment")
+        if not comment:
+            return None
+
+        # Extract context information from the comment
+        context_info = self._extract_context_from_comment(comment)
+        if context_info:
+            self.debug(f"Detected context from metadata comment: {context_info}")
+            return TypeContext(
+                expected_type=context_info.get("type", "str"),  # Default to str if no type specified
+                context_type=ContextType.EXPRESSION,
+                confidence=0.8,  # High confidence for explicit metadata comments
+                source_node=ast_node,
+                metadata={"source": "metadata_comment", "comment": comment, **context_info},
+            )
+
+        return None
+
+    def _extract_context_from_comment(self, comment: str) -> dict | None:
+        """Extract context information from a comment string.
+
+        Args:
+            comment: The comment text to analyze
+
+        Returns:
+            Dictionary with context information if found, None otherwise
+        """
+        import re
+
+        context_info = {}
+
+        # Extract type information
+        type_patterns = [
+            r"returns?\s+(?:a\s+)?(\w+)",  # "returns string", "return a dict"
+            r"should\s+return\s+(?:a\s+)?(\w+)",  # "should return string"
+            r"type:\s*(\w+)",  # "type: str"
+            r"(\w+)\s+type",  # "string type"
+            r"(\w+)\s+value",  # "string value"
+            r"(\w+)\s+data",  # "string data"
+            r"(\w+)\s+in\s+\w+",  # "age in years", "count in items"
+        ]
+
+        for pattern in type_patterns:
+            match = re.search(pattern, comment.lower())
+            if match:
+                type_name = match.group(1)
+                # Map common variations to standard types
+                type_mapping = {
+                    "string": "str",
+                    "text": "str",
+                    "integer": "int",
+                    "number": "int",
+                    "age": "int",  # Age is typically an integer
+                    "years": "int",  # Years are typically integers
+                    "float": "float",
+                    "decimal": "float",
+                    "boolean": "bool",
+                    "dictionary": "dict",
+                    "list": "list",
+                    "array": "list",
+                    "tuple": "tuple",
+                    "set": "set",
+                }
+                context_info["type"] = type_mapping.get(type_name, type_name)
+                break
+
+        # Extract value instructions
+        value_patterns = [
+            r"use\s+([\d.]+)\s+for\s+(\w+)",  # "use 2.55 for pi"
+            r"(\w+)\s*=\s*([\d.]+)",  # "pi = 2.55"
+            r"value\s+is\s+([\d.]+)",  # "value is 2.55"
+            r"should\s+be\s+([\d.]+)",  # "should be 2.55"
+            r"return\s+([\d.]+)",  # "return 33", "alwas return 33"
+            r"always\s+return\s+([\d.]+)",  # "always return 33"
+        ]
+
+        for pattern in value_patterns:
+            match = re.search(pattern, comment.lower())
+            if match:
+                if len(match.groups()) == 2:
+                    value, variable = match.groups()
+                    context_info["value_instruction"] = f"{variable} = {value}"
+                    context_info["target_variable"] = variable
+                    context_info["expected_value"] = value
+                else:
+                    value = match.group(1)
+                    context_info["value_instruction"] = value
+                    context_info["expected_value"] = value
+                break
+
+        # Extract domain/context information
+        domain_patterns = [
+            r"domain:\s*(\w+)",  # "domain: finance"
+            r"context:\s*(\w+)",  # "context: medical"
+            r"for\s+(\w+)",  # "for finance", "for medical"
+        ]
+
+        for pattern in domain_patterns:
+            match = re.search(pattern, comment.lower())
+            if match:
+                context_info["domain"] = match.group(1)
+                break
+
+        # Extract format requirements
+        format_patterns = [
+            r"format:\s*(\w+)",  # "format: json"
+            r"output:\s*(\w+)",  # "output: table"
+        ]
+
+        for pattern in format_patterns:
+            match = re.search(pattern, comment.lower())
+            if match:
+                context_info["format"] = match.group(1)
+                break
+
+        # Extract constraints
+        constraint_patterns = [
+            r"max_length:\s*(\d+)",  # "max_length: 100"
+            r"precision:\s*(\d+)",  # "precision: 2"
+            r"min:\s*([\d.]+)",  # "min: 0"
+            r"max:\s*([\d.]+)",  # "max: 100"
+        ]
+
+        for pattern in constraint_patterns:
+            match = re.search(pattern, comment.lower())
+            if match:
+                constraint_name = pattern.split(":")[0].split("_")[0]  # Extract constraint name
+                context_info[f"{constraint_name}_constraint"] = match.group(1)
+                break
+
+        # Always return the comment, even if no specific patterns matched
+        if not context_info:
+            context_info = {}
+
+        # Always include the original comment
+        context_info["comment"] = comment
+
+        return context_info
+
     def detect_current_context(self, context: Any) -> TypeContext | None:
         """Detect type context from current execution environment.
 
@@ -267,6 +422,24 @@ class ContextDetector(Loggable):
                         metadata = {"source": "assignment_handler", "dana_struct_type": type_name}
 
                     self.debug(f"Found assignment type in context: {type_name}")
+
+                    # Check for metadata comments to combine with assignment type
+                    if hasattr(context, "get_current_node"):
+                        current_node = context.get_current_node()
+                        if current_node:
+                            self.debug(f"Checking current node for metadata: {type(current_node)}")
+                            if hasattr(current_node, "metadata"):
+                                self.debug(f"Current node metadata: {current_node.metadata}")
+                            metadata_context = self.detect_metadata_comment_context(current_node)
+                            if metadata_context and metadata_context.metadata:
+                                # Merge metadata comments with assignment type
+                                metadata.update(metadata_context.metadata)
+                                self.debug(f"Merged metadata comments: {metadata_context.metadata}")
+                            else:
+                                self.debug("No metadata context found")
+                        else:
+                            self.debug("No current node found")
+
                     return TypeContext(
                         expected_type=type_name,
                         context_type=ContextType.ASSIGNMENT,
@@ -282,6 +455,11 @@ class ContextDetector(Loggable):
                     return self.detect_assignment_context(current_node)
                 elif isinstance(current_node, FunctionCall):
                     return self.detect_function_call_context(current_node)
+
+                # Check for metadata comments on the current node
+                metadata_context = self.detect_metadata_comment_context(current_node)
+                if metadata_context:
+                    return metadata_context
 
             # Try to infer from execution context
             return self._infer_from_execution_context(context)
@@ -310,6 +488,11 @@ class ContextDetector(Loggable):
                             return self.detect_assignment_context(frame.node)
                         elif isinstance(frame.node, FunctionCall):
                             return self.detect_function_call_context(frame.node)
+
+                        # Check for metadata comments on each frame node
+                        metadata_context = self.detect_metadata_comment_context(frame.node)
+                        if metadata_context:
+                            return metadata_context
 
             # Check for assignment context in the sandbox state
             if hasattr(context, "_state") and hasattr(context._state, "current_assignment"):

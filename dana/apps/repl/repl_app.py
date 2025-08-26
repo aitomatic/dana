@@ -388,8 +388,6 @@ class DanaREPLApp(Loggable):
         3. If result is regular value: display immediately (execution was blocking)
         """
         try:
-            self.debug(f"Starting smart execution for: {program}")
-
             # Execute directly on main thread first
             result = self.repl.execute(program)
 
