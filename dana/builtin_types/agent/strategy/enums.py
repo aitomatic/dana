@@ -69,6 +69,8 @@ def parse_plan_type(value: str) -> PlanType:
         return PlanType.ESCALATE
     elif "TYPE_INPUT" in value_upper or "INPUT" in value_upper or "USER" in value_upper:
         return PlanType.INPUT
+    elif "TYPE_MANUAL" in value_upper or "MANUAL" in value_upper or "USER" in value_upper:
+        return PlanType.MANUAL
 
     # Default fallback
     return PlanType.DIRECT
