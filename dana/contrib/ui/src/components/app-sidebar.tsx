@@ -30,7 +30,7 @@ const data = {
     {
       name: 'Aitomatic',
       logo: () => <img src={logo} alt="Aitomatic" className="rounded-md size-8" />,
-      plan: 'Dana Expert Agents',
+      plan: 'Dana Agent Studio',
     },
   ],
   navMain: [
