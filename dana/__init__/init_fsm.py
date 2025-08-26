@@ -4,7 +4,7 @@ FSM (Finite State Machine) System Initialization
 This module initializes the FSM struct type and makes it available to Dana code.
 """
 
-from dana.builtin_types.workflow_system import register_fsm_struct_type
+from dana.builtin_types.workflow.workflow_system import register_fsm_struct_type
 
 
 def initialize_fsm_system():

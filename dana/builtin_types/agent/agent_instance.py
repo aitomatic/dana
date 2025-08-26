@@ -5,7 +5,7 @@ This module defines the AgentInstance class which extends StructInstance to prov
 agent-specific state and methods. This is the main implementation file for agent instances.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dana.builtin_types.struct_system import StructInstance
 from dana.common.mixins.loggable import Loggable
@@ -18,10 +18,12 @@ from dana.core.lang.sandbox_context import SandboxContext
 from .agent_type import AgentType
 from .events import AgentEventMixin
 from .implementations import AgentImplementationMixin
-from .solving import AgentSolvingMixin
+
+if TYPE_CHECKING:
+    from .strategy.plan import StrategyPlan
 
 
-class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin, AgentEventMixin):
+class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     """Agent struct instance with built-in agent capabilities.
 
     Inherits from StructInstance and adds agent-specific state and methods.
@@ -107,6 +109,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
             "warning": AgentInstance.warning,
             "debug": AgentInstance.debug,
             "error": AgentInstance.error,
+            "input": AgentInstance.input,
         }
 
     @staticmethod
@@ -129,24 +132,35 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
         """Get the agent type."""
         return self.__struct_type__  # type: ignore
 
-    def plan(self, task: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent planning method - analyzes problem and determines approach."""
+    def input(self, request: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
+        """Execute agent input method."""
+        sandbox_context = sandbox_context or SandboxContext()
+
+        # Prompt the user for input from the console
+        response = input(request)
+
+        # Return the response
+        return response
+
+    def plan(
+        self, task: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False
+    ) -> "StrategyPlan":
+        """Execute agent planning method - analyzes problem and determines approach using strategy system."""
 
         sandbox_context = sandbox_context or SandboxContext()
 
         def wrapper():
-            return self._create_plan(task, context, sandbox_context)
+            from .strategy import select_best_strategy
+
+            strategy = select_best_strategy(task, context)
+            return strategy.create_plan(self, task, context, sandbox_context)
 
         return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
 
     def solve(self, problem: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent problem-solving method with enhanced approach routing.
+        """Execute agent problem-solving method with strategy system.
 
-        Implements the pseudocode pattern:
-        agent.solve(problem) {
-            approach = agent.plan(problem)
-            return execute_approach(approach, problem)
-        }
+        Fixed/hardcoded function: plan() + execute().
         """
         sandbox_context = sandbox_context or SandboxContext()
 
@@ -154,7 +168,13 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
 
         def wrapper():
             try:
-                return self._solve_problem(sandbox_context, problem, context)
+                # Step 1: Create plan using strategy system
+                plan = self.plan(problem, context, sandbox_context, is_sync=True)
+
+                # Step 2: Execute the plan
+                result = plan.execute(self, problem, context, sandbox_context)
+
+                return result
             except Exception as e:
                 import traceback
 
@@ -162,7 +182,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
                 self.error(f"Error in solve: {e}")
                 raise e
 
-        # is_sync = True  # CTN
+        is_sync = True  # CTN
         return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
@@ -186,11 +206,16 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
         return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
 
     def reason(
-        self, premise: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False
+        self,
+        premise: str,
+        context: dict | None = None,
+        sandbox_context: SandboxContext | None = None,
+        system_message: str | None = None,
+        is_sync: bool = False,
     ) -> Any:
         """Execute agent reasoning method."""
         sandbox_context = sandbox_context or SandboxContext()
-        return self._reason_impl(sandbox_context, premise, context, is_sync=True)
+        return self._reason_impl(sandbox_context, premise, context, system_message, is_sync=True)
 
     def chat(
         self,
@@ -254,7 +279,7 @@ class AgentInstance(StructInstance, AgentSolvingMixin, AgentImplementationMixin,
 
             return message
 
-        # is_sync = True
+        is_sync = True  # minimize threat of race condition
         if is_sync:
             return wrapper()
         else:

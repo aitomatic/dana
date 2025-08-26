@@ -38,25 +38,25 @@ def test_corrected_planning_logic():
         {
             "name": "Direct Solution (Arithmetic)",
             "problem": "What is 15 * 23?",
-            "expected_approach": "DIRECT_SOLUTION",
+            "expected_approach": "TYPE_DIRECT",
             "expected_behavior": "LLM should provide the answer directly",
         },
         {
             "name": "Python Code Generation",
             "problem": "Calculate the factorial of 8",
-            "expected_approach": "PYTHON_CODE",
+            "expected_approach": "TYPE_CODE",
             "expected_behavior": "LLM should provide executable Python code",
         },
         {
             "name": "Workflow Creation",
             "problem": "Check the health status of equipment sensors",
-            "expected_approach": "WORKFLOW",
+            "expected_approach": "TYPE_WORKFLOW",
             "expected_behavior": "LLM should provide workflow steps",
         },
         {
             "name": "Agent Delegation",
             "problem": "Analyze complex financial data patterns",
-            "expected_approach": "DELEGATE",
+            "expected_approach": "TYPE_DELEGATE",
             "expected_behavior": "LLM should specify which agent to delegate to",
         },
     ]
@@ -81,14 +81,14 @@ def test_corrected_planning_logic():
     print("\nKey Changes Made:")
     print("1. LLM prompt now asks for actual solutions/code, not just approach types")
     print("2. YAML structure includes confidence, reasoning, and detailed metadata")
-    print("3. DIRECT_SOLUTION: LLM provides the answer directly")
-    print("4. PYTHON_CODE: LLM provides executable Python code")
+    print("3. TYPE_DIRECT: LLM provides the answer directly")
+    print("4. TYPE_CODE: LLM provides executable Python code")
     print("5. Execution flow updated to use LLM's solutions directly")
     print("6. Fallback to agent reasoning only when LLM doesn't provide solution")
 
     print("\nImproved YAML Structure:")
     print("```yaml")
-    print('approach: "DIRECT_SOLUTION"')
+    print('approach: "TYPE_DIRECT"')
     print("confidence: 0.95")
     print('reasoning: "Why this approach is best for this problem"')
     print('solution: "The actual solution, code, or action"')

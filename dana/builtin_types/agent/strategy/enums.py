@@ -1,55 +1,22 @@
 """
-Enums for Agent system to replace string constants with type-safe enums.
+Strategy System Enums
 
-This module defines enums for approach types, workflow states, and other
-agent-related constants to improve type safety and code maintainability.
+This module defines enums and helper functions for the agent strategy system.
 """
 
 from enum import Enum
 
 
 class PlanType(Enum):
-    """Enum for different approach types in agent problem solving."""
+    """Enum for different plan types."""
 
-    DIRECT_SOLUTION = "DIRECT_SOLUTION"
-    PYTHON_CODE = "PYTHON_CODE"
-    WORKFLOW = "WORKFLOW"
-    DELEGATE = "DELEGATE"
-    ESCALATE = "ESCALATE"
-
-    def __str__(self) -> str:
-        """Return string representation for easy comparison and logging."""
-        return self.value
-
-
-class WorkflowExecutionState(Enum):
-    """Enum for workflow execution states."""
-
-    CREATED = "CREATED"
-    ANALYZING = "ANALYZING"
-    PLANNING = "PLANNING"
-    EXECUTING = "EXECUTING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    ESCALATED = "ESCALATED"
-
-    def __str__(self) -> str:
-        return self.value
-
-
-class FSMTransitionEvent(Enum):
-    """Enum for FSM transition events."""
-
-    START = "START"
-    NEXT = "NEXT"
-    SUCCESS = "SUCCESS"
-    ERROR = "ERROR"
-    COMPLETE = "COMPLETE"
-    RETRY = "RETRY"
-    ESCALATE = "ESCALATE"
-
-    def __str__(self) -> str:
-        return self.value
+    DIRECT = "direct"
+    CODE = "code"
+    WORKFLOW = "workflow"
+    DELEGATE = "delegate"
+    ESCALATE = "escalate"
+    MANUAL = "manual"
+    INPUT = "input"
 
 
 class ProblemComplexity(Enum):
@@ -86,23 +53,25 @@ def parse_plan_type(value: str) -> PlanType:
 
     # Try direct match first
     for plan_type in PlanType:
-        if plan_type.value == value_upper:
+        if plan_type.value.upper() == value_upper:
             return plan_type
 
-    # Try partial matches for flexibility
-    if "DIRECT" in value_upper or "SOLUTION" in value_upper:
-        return PlanType.DIRECT_SOLUTION
-    elif "PYTHON" in value_upper or "CODE" in value_upper:
-        return PlanType.PYTHON_CODE
-    elif "WORKFLOW" in value_upper or "PROCESS" in value_upper:
+    # Try legacy format matches for backward compatibility
+    if "TYPE_DIRECT" in value_upper or "DIRECT" in value_upper or "SOLUTION" in value_upper:
+        return PlanType.DIRECT
+    elif "TYPE_CODE" in value_upper or "CODE" in value_upper or "PYTHON" in value_upper:
+        return PlanType.CODE
+    elif "TYPE_WORKFLOW" in value_upper or "WORKFLOW" in value_upper or "PROCESS" in value_upper:
         return PlanType.WORKFLOW
-    elif "DELEGATE" in value_upper or "AGENT" in value_upper:
+    elif "TYPE_DELEGATE" in value_upper or "DELEGATE" in value_upper or "AGENT" in value_upper:
         return PlanType.DELEGATE
-    elif "ESCALATE" in value_upper or "HUMAN" in value_upper:
+    elif "TYPE_ESCALATE" in value_upper or "ESCALATE" in value_upper or "HUMAN" in value_upper:
         return PlanType.ESCALATE
+    elif "TYPE_INPUT" in value_upper or "INPUT" in value_upper or "USER" in value_upper:
+        return PlanType.INPUT
 
     # Default fallback
-    return PlanType.DIRECT_SOLUTION
+    return PlanType.DIRECT
 
 
 def parse_complexity(value: str) -> ProblemComplexity:

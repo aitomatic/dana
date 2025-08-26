@@ -4,6 +4,35 @@ Agent System Prompt Templates.
 This module contains all prompt templates used by the agent system,
 organized by category and purpose. All prompts use YAML format for
 consistency and structured communication with LLMs.
+
+RECURSIVE HIERARCHICAL PLANNING:
+===============================
+
+The agent system implements automatic, dynamic hierarchical planning through
+a recursive relationship between agent.solve() and workflow.execute():
+
+1. agent.solve() → workflow.execute():
+   - agent.solve() analyzes problems and can generate WORKFLOW plans
+   - When a WORKFLOW plan is selected, agent.solve() calls workflow.execute()
+   - workflow.execute() orchestrates multi-step processes using the workflow definition
+
+2. workflow.execute() → agent.solve():
+   - workflow.execute() encounters complex sub-problems during execution
+   - For each sub-problem, workflow.execute() calls agent.solve() recursively
+   - agent.solve() analyzes the sub-problem and may generate its own sub-workflows
+
+3. Automatic Hierarchical Planning:
+   - This creates a tree of nested problem-solving and workflow execution
+   - High-level workflows break down into lower-level agent solutions
+   - Lower-level solutions can spawn their own workflows for complex sub-tasks
+   - The system automatically determines the appropriate level of abstraction
+   - No manual hierarchy definition required - emerges dynamically from problem complexity
+
+4. Benefits:
+   - Scalable problem decomposition without human intervention
+   - Automatic handling of varying complexity levels
+   - Dynamic resource allocation based on problem requirements
+   - Seamless integration of planning and execution phases
 """
 
 from typing import Any
@@ -21,11 +50,12 @@ Control Flow: User problem → YAML analysis prompt → LLM reasoning → plan t
 Prompts Used: create_analysis_prompt() → LLM → _parse_analysis()
 
 Plan Types & Routing:
-- DIRECT_SOLUTION → _solve_direct() (simple problems)
-- PYTHON_CODE → _execute_python() (code generation)
-- WORKFLOW → _execute_workflow() (multi-step processes)
-- DELEGATE → _delegate_to_agent() (specialized expertise)
-- ESCALATE → _escalate_to_human() (human intervention)
+- TYPE_DIRECT → return solution directly (simple problems)
+- TYPE_CODE → _execute_python() (code generation)
+- TYPE_WORKFLOW → _execute_workflow() (multi-step processes)
+- TYPE_DELEGATE → _delegate_to_agent() (specialized expertise)
+- TYPE_INPUT → _input_from_user() (user input)
+- TYPE_ESCALATE → _escalate_to_human() (human intervention)
 """
 
 
@@ -48,59 +78,81 @@ task:
   context: {context}
 
 requirements:
-  - Choose the best plan from: DIRECT_SOLUTION, PYTHON_CODE, WORKFLOW, DELEGATE, ESCALATE
+  - Choose the best plan from: TYPE_DIRECT, TYPE_CODE, TYPE_WORKFLOW, TYPE_DELEGATE, TYPE_ESCALATE
   - Provide the actual solution, code, or action
+  - Do not use tool-calling
   - Return response in YAML format
 
 plan_types:
-  DIRECT_SOLUTION: For simple problems (arithmetic, facts, calculations) - provide direct answer
-  PYTHON_CODE: For problems needing code generation - provide complete, executable Python code
-  WORKFLOW: For complex processes requiring multiple steps - provide workflow definition
-  DELEGATE: For problems needing specialized agents - specify which agent should handle this
-  ESCALATE: For problems too complex for current capabilities - explain why human intervention needed
+  TYPE_DIRECT: Simple problems (arithmetic, facts) - provide direct answer
+  TYPE_CODE: Code generation problems - provide executable Python code
+  TYPE_WORKFLOW: Complex multi-step processes - provide workflow definition
+  TYPE_DELEGATE: Specialized agent problems - specify which agent to handle
+  TYPE_INPUT: User input required - ask user for input
+  TYPE_ESCALATE: Too complex for current capabilities - explain why human needed
 
-response_format:
-  plan: PLAN_TYPE
-  confidence: 0.95
-  reasoning: Why this plan is best for this problem
-  solution: The actual solution, code, or action
-  details:
-    complexity: SIMPLE|MODERATE|COMPLEX|CRITICAL
-    estimated_duration: immediate|minutes|hours|days
-    required_resources: [list, of, resources]
-    risks: Any potential risks or limitations
+response_formats:
+  - plan: TYPE_DIRECT
+    solution: "Provide direct answer, calculation result, or factual information"
+  - plan: TYPE_CODE
+    solution: |
+      ```python
+      # Complete, executable Python code with imports and comments
+      ```
+  - plan: TYPE_WORKFLOW
+    solution: |
+      workflow:
+        name: "Workflow Name"
+        steps:
+        - step: 1
+            action: "action_name"
+            objective: "What is the objective of this step?"
+  - plan: TYPE_INPUT
+    solution: |
+      input:
+        question: "What is the input required?"
+        type: "string|number|boolean|list|dict"
+  - plan: TYPE_DELEGATE
+    solution: |
+      delegation:
+        target_agent: "Agent Name/Type"
+        problem_description: "What to delegate"
+  - plan: TYPE_ESCALATE
+    solution: |
+      escalation:
+        reason: "Why human intervention is needed"
+        urgency: "HIGH|MEDIUM|LOW"
 
 configuration:
   format: yaml
-  temperature: 0.7
-  max_tokens: 1000
+  max_tokens: 1500
 ```"""
 
 
 # ============================================================================
-# AGENT.SOLVE() - DIRECT SOLUTION PROMPTS (fallback)
+# AGENT.SOLVE() - MANUAL SOLUTION PROMPTS (fallback)
 # ============================================================================
 
 """
-DIRECT SOLUTION PROMPTS:
+MANUAL SOLUTION PROMPTS:
 ========================
 
-Function: agent.solve() → _solve_direct() → create_direct_solution_prompt()
-Control Flow: Problem routing → direct solution → LLM reasoning → formatted answer
-Prompts Used: create_direct_solution_prompt() → LLM → "Direct solution: {answer}"
+Function: agent.solve() → return solution manually → create_manual_solution_prompt()
+Control Flow: Problem routing → manual solution → LLM reasoning → formatted answer
+Prompts Used: create_manual_solution_prompt() → LLM → "Manual solution: {answer}"
 
 Fallback Scenarios:
-- Plan parsing fails → _execute_plan() → _solve_direct()
-- Unknown dict plan type → _route_dict() → _solve_direct()
-- String plan not escalation/delegation → _route_string() → _solve_direct()
+- Plan parsing fails → _execute_plan() → _solve_manually()
+- Unknown dict plan type → _route_dict() → _solve_manually()
+- String plan not escalation/delegation → _route_string() → _solve_manually()
 """
 
 
-def create_direct_solution_prompt(problem: str, context: str | None = None) -> str:
+def create_manual_solution_prompt(problem: str, context: str | None = None) -> str:
     """
-    Create YAML prompt for direct problem solving.
+    Create YAML prompt for manual problem solving.
 
-    USED BY: agent.solve() → _solve_direct()
+    USED BY: agent.solve() → _solve_manually()
     WHEN: Fallback when plan parsing fails or for simple problems
 
     Returns YAML prompt for straightforward problem solving.
@@ -109,7 +161,7 @@ def create_direct_solution_prompt(problem: str, context: str | None = None) -> s
 
     return f"""```yaml
 content: |
-  You are an AI agent solving problems directly.
+  You are an AI agent solving problems manually.
   Provide a clear, actionable solution to the given problem.
 
 task:
@@ -280,55 +332,6 @@ class FallbackResponses:
     def get_error(cls, agent_name: str, topic: str) -> str:
         """Get error fallback response."""
         return cls.ERROR_RESPONSE.format(name=agent_name, topic=topic)
-
-
-# ============================================================================
-# UTILITY - PROMPT CONFIGURATION (LEAST SIGNIFICANT)
-# ============================================================================
-
-"""
-PROMPT CONFIGURATION:
-====================
-
-Function: Various prompt functions → PromptConfig settings
-Control Flow: Prompt generation → configuration application → LLM parameters
-Prompts Used: Configuration settings applied to all prompt functions
-
-Provides configuration templates for different prompt types:
-- DEFAULT_YAML_CONFIG: Base settings for all prompts
-- ANALYSIS_CONFIG: Problem analysis prompts
-- DIRECT_SOLUTION_CONFIG: Direct solution prompts
-- CODE_GENERATION_CONFIG: Code generation tasks
-- WORKFLOW_CONFIG: Workflow creation tasks
-"""
-
-
-class PromptConfig:
-    """
-    Configuration settings for prompts.
-
-    USED BY: Various prompt functions
-    WHEN: Setting LLM parameters for different prompt types
-    """
-
-    # Default YAML configuration
-    DEFAULT_YAML_CONFIG = {"format": "yaml", "temperature": 0.7, "max_tokens": 1000}
-
-    # Analysis prompt configuration
-    ANALYSIS_CONFIG = {"format": "yaml", "temperature": 0.7, "max_tokens": 1000}
-
-    # Direct solution configuration
-    DIRECT_SOLUTION_CONFIG = {"format": "yaml", "temperature": 0.7, "max_tokens": 800}
-
-    # Code generation configuration
-    CODE_GENERATION_CONFIG = {
-        "format": "yaml",
-        "temperature": 0.5,  # Lower temperature for more deterministic code
-        "max_tokens": 1500,
-    }
-
-    # Workflow configuration
-    WORKFLOW_CONFIG = {"format": "yaml", "temperature": 0.6, "max_tokens": 1200}
 
 
 # ============================================================================

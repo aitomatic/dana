@@ -1,7 +1,7 @@
 """
 Workflows module for Dana standard library.
 
-This module provides workflow utilities and FSM integration.
+This module provides workflow utilities and enhanced FSM integration.
 
 Note: FSM struct is now defined in Python for better integration
 with the workflow execution engine. Workflows automatically get
@@ -13,12 +13,24 @@ Usage:
         # You can override it with a custom FSM if needed
         fsm: FSM = custom_fsm_instance
 
-FSM Structure:
+Enhanced FSM Structure:
     struct FSM:
         states: list[str]                           # All possible states
         initial_state: str                          # Starting state
         current_state: str                          # Current execution state
         transitions: dict[str, str]                 # 'from_state:event' -> to_state
+        state_metadata: dict                        # Metadata for each state
+        results: dict                               # Results from each state execution
+        workflow_metadata: dict                     # Workflow context information
+
+    State Metadata Structure:
+        state_metadata[state_name] = {
+            "action": str,                          # Action to execute
+            "objective": str,                       # Objective of the action
+            "parameters": dict,                     # Action parameters
+            "conditions": dict,                     # Prerequisites/conditions
+            "status": str                           # Current status (pending/executing/completed)
+        }
 
     Example transitions:
         "START:next" -> "PROCESSING"
