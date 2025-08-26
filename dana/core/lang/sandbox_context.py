@@ -25,6 +25,7 @@ from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.concurrency.promise_limiter import get_global_promise_limiter
+from dana.core.lang.interpreter.error_context import ExecutionLocation
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
@@ -676,6 +677,24 @@ class SandboxContext(Loggable):
         if execution_metadata and isinstance(execution_metadata, dict):
             return execution_metadata.get("target_type")
 
+        return None
+
+    def get_execution_stack(self) -> list["ExecutionLocation"]:
+        """Get the current execution stack with AST nodes.
+
+        Returns:
+            List of execution locations, most recent first
+        """
+        return self._error_context.execution_stack
+
+    def get_current_node(self) -> Any | None:
+        """Get the AST node currently being executed.
+
+        Returns:
+            Current AST node or None if not available
+        """
+        if self._error_context.execution_stack:
+            return self._error_context.execution_stack[-1].ast_node
         return None
 
     def set_resource(self, name: str, resource: "ResourceInstance") -> None:

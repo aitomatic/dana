@@ -306,8 +306,6 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
-        self.debug(f"Executing function call: {node.name}")
-
         # Track location in error context if available
         if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
@@ -320,10 +318,9 @@ class FunctionExecutor(BaseExecutor):
                 source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
                 if context.error_context.current_file and node.location.line
                 else None,
+                ast_node=node,  # Include the AST node for context detection
             )
             context.error_context.push_location(location)
-            self.debug(f"Pushed location to error context: {location}")
-            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
         # Phase 1: Setup and validation
         self.__setup_and_validate(node)
@@ -346,8 +343,6 @@ class FunctionExecutor(BaseExecutor):
         # Phase 3: Handle special cases before unified dispatcher
         from dana.core.lang.ast import SubscriptExpression
 
-        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
-
         if isinstance(node.name, SubscriptExpression):
             self.debug(f"Found SubscriptExpression as function name: {node.name}")
             # Evaluate the subscript expression to get the actual function
@@ -369,7 +364,6 @@ class FunctionExecutor(BaseExecutor):
             return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
 
         # Phase 3: Parse function name and resolve function using unified dispatcher
-        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
         name_info = FunctionNameInfo.from_node(node)
 
         try:
@@ -675,11 +669,6 @@ class FunctionExecutor(BaseExecutor):
             base_name = func_name.split(":")[1]
         else:
             base_name = func_name
-
-        # Debug logging
-        self.debug(f"Checking struct instantiation for func_name='{func_name}', base_name='{base_name}'")
-        self.debug(f"Registered structs: {TYPE_REGISTRY.list_types()}")
-        self.debug(f"Struct exists: {TYPE_REGISTRY.exists(base_name)}")
 
         # Check if this is a registered struct type
         if TYPE_REGISTRY.exists(base_name):

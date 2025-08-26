@@ -21,8 +21,8 @@ from .prompts import (
     clean_code_block,
     create_analysis_prompt,
     create_manual_solution_prompt,
-    extract_yaml_content,
     default_system_message,
+    extract_yaml_content,
 )
 
 # Type aliases for better readability
@@ -59,9 +59,11 @@ class PlannerStrategy(BaseStrategy):
 
         # Determine plan type from content
         if isinstance(plan_data, dict):
-            plan_type = PlanType(plan_data.get("type", PlanType.MANUAL))
+            plan_type = plan_data.get("type", PlanType.MANUAL)
+            if isinstance(plan_type, str):
+                plan_type = PlanType(plan_type)
         elif isinstance(plan_data, str):
-            plan_type = PlanType(plan_data)
+            plan_type = parse_plan_type(plan_data)
         else:
             plan_type = PlanType.MANUAL
 
