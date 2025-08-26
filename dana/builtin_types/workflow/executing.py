@@ -1,0 +1,2 @@
+class WorkflowExecutingMixin:
+    pass

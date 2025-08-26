@@ -32,11 +32,11 @@ def show_yaml_examples():
                 },
             },
         },
-        "PYTHON_CODE": {
+        "TYPE_CODE": {
             "description": "Problems requiring code generation or data processing",
             "problem": "Calculate the factorial of 10",
             "yaml": {
-                "approach": "PYTHON_CODE",
+                "approach": "TYPE_CODE",
                 "confidence": 0.95,
                 "reasoning": "This requires mathematical computation that is best handled with Python code using the math module.",
                 "solution": "import math\nresult = math.factorial(10)\nprint(f'Factorial of 10 is: {result}')\nreturn result",
@@ -48,11 +48,11 @@ def show_yaml_examples():
                 },
             },
         },
-        "WORKFLOW": {
+        "TYPE_WORKFLOW": {
             "description": "Complex processes requiring multiple steps",
             "problem": "Check the health status of equipment sensors",
             "yaml": {
-                "approach": "WORKFLOW",
+                "approach": "TYPE_WORKFLOW",
                 "confidence": 0.87,
                 "reasoning": "This requires multiple steps: data collection, analysis, comparison with thresholds, and reporting.",
                 "solution": "1. Collect sensor readings from all equipment\n2. Compare readings against normal ranges\n3. Identify sensors outside acceptable limits\n4. Generate health report with recommendations\n5. Alert maintenance team if critical issues found",
@@ -64,11 +64,11 @@ def show_yaml_examples():
                 },
             },
         },
-        "DELEGATE": {
+        "TYPE_DELEGATE": {
             "description": "Problems needing specialized agents",
             "problem": "Analyze complex financial data patterns for investment decisions",
             "yaml": {
-                "approach": "DELEGATE",
+                "approach": "TYPE_DELEGATE",
                 "confidence": 0.92,
                 "reasoning": "This requires specialized financial analysis expertise and access to financial data sources that a dedicated financial analyst agent would have.",
                 "solution": "agent:financial_analyst",
@@ -80,11 +80,11 @@ def show_yaml_examples():
                 },
             },
         },
-        "ESCALATE": {
+        "TYPE_ESCALATE": {
             "description": "Problems too complex for current capabilities",
             "problem": "Coordinate emergency response across multiple departments during a critical system failure",
             "yaml": {
-                "approach": "ESCALATE",
+                "approach": "TYPE_ESCALATE",
                 "confidence": 0.89,
                 "reasoning": "This requires real-time coordination across multiple departments, emergency protocols, and human decision-making that cannot be automated safely.",
                 "solution": "This requires immediate human intervention due to the critical nature of the system failure and the need for cross-departmental coordination that involves safety protocols and emergency procedures.",

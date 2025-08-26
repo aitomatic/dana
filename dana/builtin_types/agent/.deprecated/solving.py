@@ -9,11 +9,11 @@ from typing import Any, Union
 
 import yaml
 
-from dana.builtin_types.workflow_system import WorkflowInstance, WorkflowType
+from dana.builtin_types.workflow.workflow_system import WorkflowInstance, WorkflowType
 from dana.core.lang.sandbox_context import SandboxContext
 
 from .enums import PlanType, parse_plan_type
-from .prompts import create_analysis_prompt, create_direct_solution_prompt, extract_yaml_content, clean_code_block
+from .prompts import clean_code_block, create_analysis_prompt, create_manual_solution_prompt, extract_yaml_content
 
 # Type aliases for better readability
 PlanDict = dict[str, str]
@@ -80,12 +80,12 @@ class AgentSolvingMixin:
         # Handle None plan
         if plan is None:
             self.debug("EXECUTE_PLAN: No plan returned, using direct solution")
-            return self._solve_direct(problem, context, sandbox_context)
+            return self._solve_manually(problem, context, sandbox_context)
 
         # Handle string plans
         if isinstance(plan, str):
             # Check if it's a delegation or escalation string
-            if plan.startswith("agent:") or plan == PlanType.ESCALATE.value:
+            if plan.startswith("agent:") or plan == PlanType.TYPE_ESCALATE.value:
                 return self._route_string(plan, problem, context)
             else:
                 # This is a direct solution from the LLM
@@ -101,9 +101,9 @@ class AgentSolvingMixin:
         if isinstance(plan, dict):
             return self._route_dict(plan, problem, context, sandbox_context)
 
-        # Handle other types as direct plans
-        self.debug("EXECUTE_PLAN: Treating as direct solution")
-        return self._solve_direct(problem, context, sandbox_context)
+        # Handle other types "manually"
+        self.debug("EXECUTE_PLAN: Treating as manual solution")
+        return self._solve_manually(problem, context, sandbox_context)
 
     # ============================================================================
     # ANALYSIS & PLAN CREATION
@@ -159,43 +159,56 @@ class AgentSolvingMixin:
 
         self.debug(f"ANALYSIS: Creating {plan_type.value} plan")
 
-        if plan_type == PlanType.DIRECT_SOLUTION:
+        if isinstance(solution, str):
+            solution = solution.strip()
+
+        if plan_type == PlanType.TYPE_DIRECT:
             # LLM already provided the solution, use it directly
-            if solution and solution.strip():
+            if solution:
                 return solution  # Return the solution directly
 
-        elif plan_type == PlanType.PYTHON_CODE:
+        elif plan_type == PlanType.TYPE_CODE:
             # LLM already provided the code, use it directly
-            if solution and solution.strip():
+            if solution:
                 # Clean up the solution by removing code block markers
                 cleaned_solution = clean_code_block(solution)
-                return {"type": PlanType.PYTHON_CODE.value, "content": cleaned_solution}
+                return {"type": PlanType.TYPE_CODE.value, "content": cleaned_solution}
 
-        elif plan_type == PlanType.WORKFLOW:
+        elif plan_type == PlanType.TYPE_WORKFLOW:
             if solution:
-                return {"type": PlanType.WORKFLOW.value, "content": solution}
+                # Try to parse workflow from LLM output
+                try:
+                    from dana.builtin_types.workflow.factory import WorkflowFactory
+
+                    factory = WorkflowFactory()
+                    workflow_instance = factory.create_from_yaml(solution)
+                    return workflow_instance
+                except Exception as e:
+                    self.debug(f"Failed to parse workflow from LLM output: {e}")
+                    # Fallback to simple workflow dict
+                    return {"type": PlanType.TYPE_WORKFLOW.value, "content": solution}
             else:
                 workflow_type = self._create_workflow_type(problem)
                 return WorkflowInstance(workflow_type, {})
 
-        elif plan_type == PlanType.DELEGATE:
+        elif plan_type == PlanType.TYPE_DELEGATE:
             return solution if solution else "agent:specialist"
 
-        elif plan_type == PlanType.ESCALATE:
+        elif plan_type == PlanType.TYPE_ESCALATE:
             return solution if solution else plan_type.value
 
         # Fail-over to direct solution
-        self.debug("ANALYSIS: Default to direct solution")
-        if solution and solution.strip():
-            return solution  # Use LLM's solution directly
+        self.debug("ANALYSIS: Default to 'manual' solution")
+        if solution:
+            return solution  # Use LLM's solution directly, whatever it is
         else:
-            return {"type": PlanType.DIRECT_SOLUTION.value, "content": "Default handling"}
+            return {"type": PlanType.TYPE_DIRECT.value, "content": "Default handling"}
 
     # ============================================================================
     # PLAN EXECUTION - SPECIFIC HANDLERS
     # ============================================================================
 
-    def _solve_direct(self, problem: str, context: ProblemContext = None, sandbox_context: SandboxContext | None = None) -> str:
+    def _solve_manually(self, problem: str, context: ProblemContext = None, sandbox_context: SandboxContext | None = None) -> str:
         """Fallback handler for direct problem solving using agent reasoning.
 
         Called by: _execute_plan, _route_string, _route_dict
@@ -215,10 +228,10 @@ class AgentSolvingMixin:
                 context_str = "{}"
 
         # Use the centralized prompt template
-        direct_prompt = create_direct_solution_prompt(problem, context_str)
+        manual_prompt = create_manual_solution_prompt(problem, context_str)
 
-        solution = self.reason(direct_prompt, context, sandbox_context, is_sync=True)
-        return f"Direct solution: {solution}"
+        solution = self.reason(manual_prompt, context, sandbox_context, is_sync=True)
+        return f"Manual solution: {solution}"
 
     def _execute_python(
         self, plan: PlanDict, problem: str, context: ProblemContext = None, sandbox_context: SandboxContext | None = None
@@ -227,7 +240,7 @@ class AgentSolvingMixin:
 
         Called by: _execute_plan
         """
-        self.debug(f"PYTHON_CODE: Executing Python code for: '{problem}'")
+        self.debug(f"TYPE_CODE: Executing Python code for: '{problem}'")
 
         python_code = plan.get("content", "")
         if not python_code:
@@ -246,7 +259,7 @@ class AgentSolvingMixin:
             return result
 
         except Exception as e:
-            self.debug(f"PYTHON_CODE: Execution failed: {e}")
+            self.debug(f"TYPE_CODE: Execution failed: {e}")
             return f"Python code execution failed for '{problem}': {str(e)}\n\nCode was:\n{python_code}"
 
     def _execute_workflow(
@@ -305,12 +318,12 @@ class AgentSolvingMixin:
 
         Called by: _execute_plan
         """
-        if plan == PlanType.ESCALATE.value:
+        if plan == PlanType.TYPE_ESCALATE.value:
             return self._escalate_to_human(problem, context)
         elif plan.startswith("agent:"):
             return self._delegate_to_agent(plan, problem, context)
         else:
-            return self._solve_direct(problem, context, None)
+            return self._solve_manually(problem, context, None)
 
     def _route_dict(self, plan: PlanDict, problem: str, context: ProblemContext, sandbox_context: SandboxContext | None = None) -> str:
         """Route dictionary-based plans.
@@ -322,20 +335,20 @@ class AgentSolvingMixin:
 
         from dana.builtin_types.agent.enums import PlanType
 
-        if plan_type == PlanType.PYTHON_CODE.value.lower() and content:
+        if plan_type == PlanType.TYPE_CODE.value.lower() and content:
             return self._execute_python(plan, problem, context, sandbox_context)
-        elif plan_type == PlanType.WORKFLOW.value.lower():
+        elif plan_type == PlanType.TYPE_WORKFLOW.value.lower():
             if content:
                 return f"Workflow solution for '{problem}': {content}"
             else:
                 return self._execute_workflow(plan, problem, context, sandbox_context)
-        elif plan_type in ["direct_solution", "solution"]:
-            if content and content not in ["Handle directly", "Default handling"]:
+        elif plan_type in ["TYPE_DIRECT", "solution"]:
+            if content and content not in ["Handle manually", "Manual handling"]:
                 return content
             else:
-                return self._solve_direct(problem, context, sandbox_context)
+                return self._solve_manually(problem, context, sandbox_context)
         else:
-            return self._solve_direct(problem, context, sandbox_context)
+            return self._solve_manually(problem, context, sandbox_context)
 
     # ============================================================================
     # UTILITIES

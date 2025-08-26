@@ -9,7 +9,120 @@ from typing import Any
 
 from dana.core.lang.sandbox_context import SandboxContext
 
-from .prompts import FallbackResponses, build_agent_description
+
+def build_agent_description(
+    name: str,
+    personality: str | None = None,
+    expertise: str | None = None,
+    background: str | None = None,
+    goals: str | None = None,
+    style: str | None = None,
+    **kwargs: Any,
+) -> str:
+    """
+    Build natural language description of agent for LLM system prompts.
+
+    USED BY: agent.chat() → _build_agent_description()
+    WHEN: Creating system prompt for conversational interactions
+
+    Returns natural language description that serves as LLM system prompt.
+    """
+    description = f"You are {name}."
+
+    characteristics = []
+    if personality:
+        characteristics.append(f"Your personality is {personality}")
+    if expertise:
+        characteristics.append(f"Your expertise includes {expertise}")
+    if background:
+        characteristics.append(f"Your background is {background}")
+    if goals:
+        characteristics.append(f"Your goals are {goals}")
+    if style:
+        characteristics.append(f"Your communication style is {style}")
+
+    # Add any additional characteristics
+    for field_name, field_value in kwargs.items():
+        if field_value and field_name not in ["config", "_conversation_memory", "_llm_resource_instance", "_memory"]:
+            characteristics.append(f"Your {field_name} is {field_value}")
+
+    if characteristics:
+        description += " " + " ".join(characteristics) + "."
+
+    # Add general instructions for natural conversation
+    description += " You should respond naturally and conversationally, as if you're having a friendly chat. Be helpful, engaging, and authentic in your responses."
+
+    return description
+
+
+class FallbackResponses:
+    """
+    Fallback response templates for when LLM is unavailable.
+
+    USED BY: agent.chat() → _generate_fallback_response()
+    WHEN: LLM is unavailable or fails to respond
+
+    Provides graceful degradation when LLM resources are unavailable.
+    """
+
+    GREETING_RESPONSES = [
+        "Hello! I'm {name}, ready to assist you.",
+        "Hi there! {name} here, how can I help?",
+        "Greetings! I'm {name}, at your service.",
+    ]
+
+    NAME_INQUIRY_RESPONSE = "I'm {name}, an AI agent here to help you with your tasks."
+
+    HELP_RESPONSE = (
+        "I'm {name}, and I can help you with various tasks including problem solving, "
+        "code generation, and workflow creation. What would you like to work on?"
+    )
+
+    CAPABILITY_RESPONSE = (
+        "I can assist with problem analysis, solution planning, code generation, workflow design, and more. How can I help you today?"
+    )
+
+    THANKS_RESPONSE = "You're welcome! Let me know if there's anything else I can help with."
+
+    GOODBYE_RESPONSE = "Goodbye! Feel free to return if you need any assistance."
+
+    DEFAULT_RESPONSE = (
+        "I understand you're asking about '{topic}'. While I'm currently in fallback mode, "
+        "I'm designed to help with problem solving, analysis, and planning. "
+        "Please ensure I'm properly connected to an LLM for the best experience."
+    )
+
+    ERROR_RESPONSE = (
+        "I apologize, but I'm currently unable to provide a full response as I'm not connected "
+        "to an LLM service. I'm {name}, and once properly configured, I'll be able to help you "
+        "with your request about '{topic}'."
+    )
+
+    @classmethod
+    def get_greeting(cls, agent_name: str, index: int = 0) -> str:
+        """Get a greeting response with agent name."""
+        responses = cls.GREETING_RESPONSES
+        return responses[index % len(responses)].format(name=agent_name)
+
+    @classmethod
+    def get_name_inquiry(cls, agent_name: str) -> str:
+        """Get response for name inquiry."""
+        return cls.NAME_INQUIRY_RESPONSE.format(name=agent_name)
+
+    @classmethod
+    def get_help(cls, agent_name: str) -> str:
+        """Get help response."""
+        return cls.HELP_RESPONSE.format(name=agent_name)
+
+    @classmethod
+    def get_default(cls, agent_name: str, topic: str) -> str:
+        """Get default fallback response."""
+        return cls.DEFAULT_RESPONSE.format(name=agent_name, topic=topic)
+
+    @classmethod
+    def get_error(cls, agent_name: str, topic: str) -> str:
+        """Get error fallback response."""
+        return cls.ERROR_RESPONSE.format(name=agent_name, topic=topic)
 
 
 class AgentImplementationMixin:
@@ -230,7 +343,14 @@ context: {fallback_response["context"]}
             # Fallback to error response
             return f"I encountered an error while processing your message: {str(e)}"
 
-    def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None, is_sync: bool = False) -> dict:
+    def _reason_impl(
+        self,
+        sandbox_context: SandboxContext,
+        premise: str,
+        context: dict | None = None,
+        system_message: str | None = None,
+        is_sync: bool = False,
+    ) -> dict:
         """Implementation of reasoning functionality using py_reason() for LLM-powered analysis."""
         self.debug(f"REASON: Analyzing premise: '{premise}'")
         self.debug(f"Context: {context}")
@@ -243,14 +363,17 @@ context: {fallback_response["context"]}
             self.debug(f"Premise length: {len(premise)}")
             self.debug(f"Sandbox context: {type(sandbox_context)}")
 
+            options = {
+                "temperature": 0.3,  # Lower temperature for more focused reasoning
+                "max_tokens": 800,
+            }
+            if system_message:
+                options["system_message"] = system_message
+
             py_reason_result = py_reason(
                 sandbox_context,
                 premise,
-                options={
-                    "temperature": 0.3,  # Lower temperature for more focused reasoning
-                    "max_tokens": 800,
-                    # "format": "yaml",  # Use YAML format for structured responses
-                },
+                options=options,
             )
             self.debug("py_reason() call successful")
             self.debug(f"Response type: {type(py_reason_result)}")
