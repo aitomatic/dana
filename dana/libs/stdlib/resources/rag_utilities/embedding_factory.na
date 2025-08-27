@@ -1,0 +1,8 @@
+from dana.common.sys_resource.embedding.embedding_integrations.py import EmbeddingFactory
+
+
+def get_embedding_model(model_name: str | None = None, dimension_override: int | None = 1800) -> Any:
+    return EmbeddingFactory.create_from_config(model_name, dimension_override)
+
+
+print(get_embedding_model())

@@ -38,5 +38,5 @@
   "reportInvalidTypeForm": "none",
   "reportMissingImports": "warning",
   "reportMissingTypeStubs": false,
-  "reportPossiblyUnboundVariable": "none",
+  "reportPossiblyUnboundVariable": "none"
 }

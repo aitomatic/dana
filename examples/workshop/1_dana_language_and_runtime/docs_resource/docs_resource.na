@@ -1,4 +1,0 @@
-"""Documents Querying."""
-
-with use("rag", sources=["../../../../docs/for-engineers", "../../../../docs/for-contributors"]) as dana_docs:
-    print(reason("Teach me Dana syntax for multi-agent collaboration"))

@@ -452,6 +452,7 @@ class TestBuiltinFunctionPrecedence:
         """Test that built-in functions take precedence over user-defined functions."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
+        context.interpreter = interpreter  # Set interpreter for background thread execution
 
         # Define a custom len function
         code = """def len(obj):
@@ -467,6 +468,7 @@ class TestBuiltinFunctionPrecedence:
         """Test the complete function lookup order."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
+        context.interpreter = interpreter  # Set interpreter for background thread execution
 
         # Initially, built-in len should work
         result = interpreter._eval_source_code("len([1, 2, 3, 4])", context=context)
@@ -621,13 +623,7 @@ class TestFStringFunctionArguments:
         # Create an interpreter
         interpreter = DanaInterpreter()
 
-        # Use the real reason function with built-in mocking (use_mock=True)
-        # We'll set an environment variable to force mocking
-        import os
-
-        original_mock_env = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "true"
-
+        # No longer overriding DANA_MOCK_LLM - let environment control it
         try:
             # Execute reason with f-string - this should work without any patching
             result = interpreter._eval_source_code('reason(f"{local:query}")', context=context)
@@ -641,11 +637,8 @@ class TestFStringFunctionArguments:
             assert isinstance(result, str | dict), f"Result should be a string or dict, got {type(result)}"
 
         finally:
-            # Restore original environment
-            if original_mock_env is None:
-                os.environ.pop("DANA_MOCK_LLM", None)
-            else:
-                os.environ["DANA_MOCK_LLM"] = original_mock_env
+            # No longer overriding DANA_MOCK_LLM - let environment control it
+            pass
 
     def test_consistency_between_print_and_reason(self, capsys):
         """Test that print() and reason() behave consistently with f-string arguments."""
@@ -656,12 +649,7 @@ class TestFStringFunctionArguments:
         # Create an interpreter
         interpreter = DanaInterpreter()
 
-        # Use environment variable to enable mocking for reason function
-        import os
-
-        original_mock_env = os.environ.get("DANA_MOCK_LLM")
-        os.environ["DANA_MOCK_LLM"] = "true"
-
+        # No longer overriding DANA_MOCK_LLM - let environment control it
         try:
             # Execute both functions with the same f-string
             interpreter._eval_source_code('print(f"The answer is {local:value}")', context=context)
@@ -683,11 +671,8 @@ class TestFStringFunctionArguments:
             # If f-string evaluation is inconsistent, one would fail
 
         finally:
-            # Restore original environment
-            if original_mock_env is None:
-                os.environ.pop("DANA_MOCK_LLM", None)
-            else:
-                os.environ["DANA_MOCK_LLM"] = original_mock_env
+            # No longer overriding DANA_MOCK_LLM - let environment control it
+            pass
 
     def test_fstring_with_builtin_functions(self):
         """Test f-strings work correctly with built-in functions."""

@@ -1,0 +1,19 @@
+"""Credit Approval Agent"""
+
+import knowledge
+import docs
+import resources
+import tools
+import workflows
+
+struct CreditApprovalSystem:
+    name: str
+    description: str
+
+def solve(credit_system: CreditApprovalSystem, app: dict) -> dict:
+    
+    # Log the application processing
+    log(f"Processing credit application - applicant: {app.get('applicant_id', 'unknown')}")
+    
+    # Use the workflow to process the application
+    return process_application(app)

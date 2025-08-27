@@ -6,7 +6,7 @@ print("=== Current Resource Inheritance Approach ===")
 resource BaseResource:
     state: str = "CREATED"
 
-resource DatabaseResource(BaseResource):
+resource DatabaseResource:
     connection_string: str
     max_connections: int = 10
 

@@ -15,6 +15,8 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 if TYPE_CHECKING:
     from dana.core.lang.context_manager import ContextManager
+    from dana.core.builtin_types.agent_system import AgentInstance
+    from dana.core.builtin_types.resource import ResourceInstance
 
 
 class SandboxContextWithNotifier(SandboxContext):
@@ -29,7 +31,7 @@ class SandboxContextWithNotifier(SandboxContext):
         self,
         parent: Optional["SandboxContext"] = None,
         manager: Optional["ContextManager"] = None,
-        notifier: Optional[Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]]] = None,
+        notifier: Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]] | None = None,
     ):
         """
         Initialize the sandbox context with notifier.
@@ -230,23 +232,13 @@ class SandboxContextWithNotifier(SandboxContext):
         Returns:
             A new SandboxContextWithNotifier with the same state and notifier
         """
+        # Create a completely independent copy (no parent relationship)
         new_context = SandboxContextWithNotifier(parent=self._parent, manager=self._manager, notifier=self._notifier)
         new_context.set_state(self.get_state())
         new_context.set_notifier(self._notifier)
-
+        
+        # Copy all attributes
         self._copy_attributes(new_context, skip_state=False, skip_resources=False)
-
-        # Also copy resource and agent registrations (same as parent)
-        import copy
-
-        new_context._SandboxContext__resources = copy.copy(self._SandboxContext__resources)
-        new_context._SandboxContext__agents = copy.copy(self._SandboxContext__agents)
-
-        # Copy the nested dictionaries for each scope
-        for scope in new_context._SandboxContext__resources:
-            new_context._SandboxContext__resources[scope] = copy.copy(self._SandboxContext__resources[scope])
-        for scope in new_context._SandboxContext__agents:
-            new_context._SandboxContext__agents[scope] = copy.copy(self._SandboxContext__agents[scope])
 
         return new_context
 
@@ -346,7 +338,7 @@ class SandboxContextWithNotifier(SandboxContext):
         cls,
         data: dict[str, Any],
         base_context: Optional["SandboxContext"] = None,
-        notifier: Optional[Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]]] = None,
+        notifier: Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]] | None = None,
     ) -> "SandboxContextWithNotifier":
         """
         Create a new SandboxContextWithNotifier from a dictionary and base context.
@@ -387,3 +379,108 @@ class SandboxContextWithNotifier(SandboxContext):
                 context.set(key, value)
 
         return context
+
+    # Override resource and agent methods to add notification support
+    def set_resource(self, name: str, resource: "ResourceInstance") -> None:
+        """
+        Set a resource in the context and notify about the change.
+
+        Args:
+            name: The name of the resource
+            resource: The resource to set
+        """
+        
+        # Get old value for notification
+        try:
+            old_resource = self.get_resource(name)
+        except KeyError:
+            old_resource = None
+
+        # Call parent implementation
+        super().set_resource(name, resource)
+
+        # Extract scope and name for notification
+        from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+
+        # Notify about the change
+        self._notify_change(scope, var_name, old_resource, resource)
+
+    def set_agent(self, name: str, agent: "AgentInstance") -> None:
+        """
+        Set an agent in the context and notify about the change.
+
+        Args:
+            name: The name of the agent
+            agent: The agent to set
+        """
+        
+        # Get old value for notification
+        try:
+            old_agent = self.get_agent(name)
+        except KeyError:
+            old_agent = None
+
+        # Call parent implementation
+        super().set_agent(name, agent)
+
+        # Extract scope and name for notification
+        from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+
+        # Notify about the change
+        self._notify_change(scope, var_name, old_agent, agent)
+
+    def soft_delete_resource(self, name: str) -> None:
+        """
+        Soft delete a resource and notify about the change.
+
+        Args:
+            name: The name of the resource to soft delete
+        """
+        # Get old value for notification
+        try:
+            old_resource = self.get_resource(name)
+        except KeyError:
+            old_resource = None
+
+        # Call parent implementation
+        super().soft_delete_resource(name)
+
+        # Extract scope and name for notification
+        from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+
+        # Notify about the deletion
+        self._notify_change(scope, var_name, old_resource, None)
+
+    def soft_delete_agent(self, name: str) -> None:
+        """
+        Soft delete an agent and notify about the change.
+
+        Args:
+            name: The name of the agent to soft delete
+        """
+        # Get old value for notification
+        try:
+            old_agent = self.get_agent(name)
+        except KeyError:
+            old_agent = None
+
+        # Call parent implementation
+        super().soft_delete_agent(name)
+
+        # Extract scope and name for notification
+        from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+
+        # Notify about the deletion
+        self._notify_change(scope, var_name, old_agent, None)

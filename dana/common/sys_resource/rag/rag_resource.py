@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from llama_index.core import Settings
-from pathlib import Path
 
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
@@ -11,6 +10,7 @@ from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrat
 from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
+from llama_index.core.schema import MetadataMode
 
 
 class RAGResource(BaseSysResource):
@@ -54,7 +54,6 @@ class RAGResource(BaseSysResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        
         danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
@@ -104,6 +103,9 @@ class RAGResource(BaseSysResource):
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
         for src in sources:
+            if src.startswith("http"):
+                new_sources.append(src)
+                continue
             if not os.path.isabs(src):
                 if danapath:
                     new_sources.append(str(Path(danapath) / src))
@@ -117,7 +119,7 @@ class RAGResource(BaseSysResource):
         # If cache_dir is absolute, use it as is
         if cache_dir and os.path.isabs(cache_dir):
             return cache_dir
-        
+
         # If cache_dir is relative, try to combine it with DANAPATH
         if danapath:
             if cache_dir:
@@ -142,7 +144,7 @@ class RAGResource(BaseSysResource):
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str:
-        """Retrieve relevant documents."""
+        """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
 
@@ -164,7 +166,7 @@ class RAGResource(BaseSysResource):
             # Truncate to requested number if no reranking
             results = results[:num_results]
 
-        return "\n\n".join([result.node.get_content() for result in results])
+        return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
 
     async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.

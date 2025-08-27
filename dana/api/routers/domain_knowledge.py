@@ -462,7 +462,8 @@ async def get_specific_domain_knowledge_version(
 
         # Load the version
         import json
-        with open(version_file, encoding='utf-8') as f:
+
+        with open(version_file, encoding="utf-8") as f:
             data = json.load(f)
 
         return DomainKnowledgeTree(**data)
@@ -477,7 +478,7 @@ async def get_specific_domain_knowledge_version(
 def _load_flatten_knowledge_content(topic_path: str, folder_path: str) -> dict:
     """
     Load knowledge content from flattened file structure.
-    
+
     The topic_path like 'Fundamental Analysis - Income Statement Analysis - Revenue Recognition'
     maps to a single JSON file in the knows/ folder with various naming conventions.
     """
@@ -492,12 +493,12 @@ def _load_flatten_knowledge_content(topic_path: str, folder_path: str) -> dict:
         .replace("'", "_")
         .replace('"', "_")
     )
-        
+
     # Look for the knowledge file
     knows_folder = os.path.join(folder_path, "knows")
     if not os.path.exists(knows_folder):
         raise HTTPException(status_code=404, detail="Knowledge folder not found")
-        
+
     # Try different filename formats
     possible_filenames = [
         f"{safe_topic}.json",
@@ -509,85 +510,86 @@ def _load_flatten_knowledge_content(topic_path: str, folder_path: str) -> dict:
         f"{safe_topic.lower()}.json",
         f"{safe_topic.upper()}.json",
     ]
-    
+
     knowledge_file_path = None
     for filename in possible_filenames:
         file_path = os.path.join(knows_folder, filename)
         if os.path.exists(file_path):
             knowledge_file_path = file_path
             break
-    
+
     # If no exact match, try to find by partial matching
     if not knowledge_file_path:
         for filename in os.listdir(knows_folder):
-            if filename.endswith('.json') and filename != 'knowledge_status.json':
+            if filename.endswith(".json") and filename != "knowledge_status.json":
                 # Check if the topic components are in the filename
-                topic_parts = topic_path.split(' - ')
+                topic_parts = topic_path.split(" - ")
                 filename_without_ext = filename[:-5]  # Remove .json
-                
+
                 # Check if all topic parts are present in filename
                 parts_found = 0
                 for part in topic_parts:
                     part_variations = [
-                        part.replace(' ', '_'),
-                        part.replace(' ', '_').lower(),
-                        part.replace(' ', '_').upper(),
-                        part.replace(' ', ''),
+                        part.replace(" ", "_"),
+                        part.replace(" ", "_").lower(),
+                        part.replace(" ", "_").upper(),
+                        part.replace(" ", ""),
                         part.lower(),
-                        part.upper()
+                        part.upper(),
                     ]
-                    
+
                     if any(var in filename_without_ext for var in part_variations):
                         parts_found += 1
-                
+
                 # If most parts are found, consider it a match
                 if parts_found >= len(topic_parts) * 0.8:  # 80% of parts found
                     knowledge_file_path = os.path.join(knows_folder, filename)
                     break
-    
+
     if not knowledge_file_path:
         # List available files for debugging
-        available_files = [f for f in os.listdir(knows_folder) if f.endswith('.json') and f != 'knowledge_status.json']
-        
+        available_files = [f for f in os.listdir(knows_folder) if f.endswith(".json") and f != "knowledge_status.json"]
+
         return {
             "success": False,
             "message": "Knowledge content not found in flattened structure",
             "topic_path": topic_path,
-            "available_files": available_files[:10]  # Limit to first 10 files
+            "available_files": available_files[:10],  # Limit to first 10 files
         }
-    
+
     # Read the knowledge file
     try:
-        with open(knowledge_file_path, encoding='utf-8') as f:
+        with open(knowledge_file_path, encoding="utf-8") as f:
             knowledge_data = json.load(f)
-            
+
         return {
             "success": True,
             "topic_path": topic_path,
             "content": knowledge_data,
             "file_path": knowledge_file_path,
-            "structure_type": "flattened"
+            "structure_type": "flattened",
         }
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in knowledge file {knowledge_file_path}: {e}")
         raise HTTPException(status_code=500, detail="Knowledge file is corrupted")
     except Exception as e:
         logger.error(f"Error reading knowledge file {knowledge_file_path}: {e}")
         raise HTTPException(status_code=500, detail=f"Error reading knowledge file: {str(e)}")
-    
+
+
 def _load_hierarchical_knowledge_content(topic_path: str, folder_path: str) -> dict:
     """
     Load knowledge content from hierarchical folder structure.
-    
+
     The topic_path like 'Fundamental Analysis - Income Statement Analysis - Revenue Recognition'
     maps to folder structure: knows/Fundamental_Analysis/Income_Statement_Analysis/Revenue_Recognition.json
-    
+
     Note: The root topic (e.g., 'Fundamental Analysis') is the top-level folder under 'knows/'
     """
     # Split the topic path into components
-    topic_parts = topic_path.split(' - ')
-    
+    topic_parts = topic_path.split(" - ")
+
     # Convert each part to folder-safe format
     knows_folder = os.path.join(folder_path, "knows")
 
@@ -595,23 +597,17 @@ def _load_hierarchical_knowledge_content(topic_path: str, folder_path: str) -> d
 
     if len(root_know_dir) == 0:
         raise ValueError(f"No knowledge folder found in {knows_folder}")
-    
+
     final_path = os.path.join(knows_folder, root_know_dir[0], *topic_parts, "knowledge.json")
 
     if not os.path.exists(final_path):
         raise FileNotFoundError(f"Knowledge file not found at {final_path}")
 
-    with open(final_path, encoding='utf-8') as f:
-        knowledge_data = json.load(f)   
+    with open(final_path, encoding="utf-8") as f:
+        knowledge_data = json.load(f)
 
-    return {
-        "success": True,
-        "topic_path": topic_path,
-        "content": knowledge_data,
-        "file_path": final_path,
-        "structure_type": "hierarchical"
-    }
-    
+    return {"success": True, "topic_path": topic_path, "content": knowledge_data, "file_path": final_path, "structure_type": "hierarchical"}
+
 
 @router.get("/{agent_id}/knowledge-content/{topic_path:path}")
 async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Session = Depends(get_db)):
@@ -640,18 +636,18 @@ async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Sessio
         folder_path = agent.config.get("folder_path") if agent.config else None
         if not folder_path:
             folder_path = f"agents/agent_{agent_id}"
-        
+
         logger.debug(f"Using folder path: {folder_path} for agent {agent_id}")
-        
+
         # Log the topic path details for debugging
-        topic_parts = topic_path.split(' - ')
+        topic_parts = topic_path.split(" - ")
         logger.debug(f"Topic path parts: {topic_parts} (total: {len(topic_parts)})")
 
         # Try hierarchical structure first (preferred)
         hierarchical_result = None
         flattened_result = None
         errors = []
-        
+
         try:
             hierarchical_result = _load_hierarchical_knowledge_content(topic_path, folder_path)
             if hierarchical_result.get("success"):
@@ -660,7 +656,7 @@ async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Sessio
         except Exception as e:
             errors.append(f"Hierarchical structure error: {str(e)}")
             logger.debug(f"Hierarchical structure failed for agent {agent_id}, topic {topic_path}: {e}")
-        
+
         # Fall back to flattened structure
         try:
             flattened_result = _load_flatten_knowledge_content(topic_path, folder_path)
@@ -670,7 +666,7 @@ async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Sessio
         except Exception as e:
             errors.append(f"Flattened structure error: {str(e)}")
             logger.debug(f"Flattened structure failed for agent {agent_id}, topic {topic_path}: {e}")
-        
+
         # If both failed but we have results, return the one with more info
         if hierarchical_result and not hierarchical_result.get("success"):
             if flattened_result and not flattened_result.get("success"):
@@ -683,13 +679,13 @@ async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Sessio
                 return hierarchical_result
         elif flattened_result and not flattened_result.get("success"):
             return flattened_result
-        
+
         # If we get here, both structures failed with exceptions
         raise HTTPException(
-            status_code=404, 
-            detail=f"Knowledge content not found for topic '{topic_path}'. Tried both hierarchical and flattened structures. Errors: {'; '.join(errors)}"
+            status_code=404,
+            detail=f"Knowledge content not found for topic '{topic_path}'. Tried both hierarchical and flattened structures. Errors: {'; '.join(errors)}",
         )
-            
+
     except HTTPException:
         raise
     except Exception as e:
