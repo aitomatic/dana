@@ -103,6 +103,8 @@ class DanaModuleWrapper:
 
                 # Execute through sandbox interface using the new execute_function method
                 result = self._sandbox_interface.execute_function(func_name, args, kwargs)
+                # The result may be an EagerPromise object - this is expected behavior
+                # Promise transparency will handle resolution when the result is accessed
                 return result
 
             except Exception as e:

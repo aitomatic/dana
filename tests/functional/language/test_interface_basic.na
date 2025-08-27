@@ -1,0 +1,181 @@
+# Test: Basic Interface System
+# Purpose: Test basic interface definition, registration, and validation
+# Category: Language - Interface System
+
+log("🔄 === BASIC INTERFACE SYSTEM TESTS ===")
+
+# Test 1: Basic Interface Definition
+log("🔍 Test 1: Basic Interface Definition")
+interface IBasic:
+    get_name() -> str
+    set_name(name: str) -> None
+    process(data: str) -> str
+
+log("✅ Basic interface definition parsed successfully")
+
+# Test 2: Interface with Property Accessors
+log("🔍 Test 2: Interface with Property Accessors")
+interface IPropertyAccessor:
+    get_value() -> int
+    set_value(value: int) -> None
+    get_is_active() -> bool
+    set_is_active(active: bool) -> None
+
+log("✅ Interface with property accessors parsed successfully")
+
+# Test 3: Interface with Embedded Interfaces
+log("🔍 Test 3: Interface with Embedded Interfaces")
+interface IReadable:
+    read(buffer: bytes) -> int
+    get_is_open() -> bool
+
+interface IWritable:
+    write(data: bytes) -> int
+    get_is_writable() -> bool
+
+interface IReadWriter:
+    IReadable    # Embedded interface
+    IWritable    # Embedded interface
+    close() -> bool
+
+log("✅ Interface with embedded interfaces parsed successfully")
+
+# Test 4: Interface with Comments
+log("🔍 Test 4: Interface with Comments")
+interface ICommented:
+    # Core method for data processing
+    process_data(input: str) -> str
+    
+    # Configuration methods
+    get_config() -> dict
+    set_config(config: dict) -> None
+    
+    # Status methods
+    get_status() -> str
+
+log("✅ Interface with comments parsed successfully")
+
+# Test 5: Interface with Complex Types
+log("🔍 Test 5: Interface with Complex Types")
+interface IComplexTypes:
+    process_list(items: list[str]) -> list[int]
+    process_dict(data: dict[str, any]) -> dict[str, str]
+    get_metadata() -> dict[str, any]
+    set_metadata(metadata: dict[str, any]) -> None
+
+log("✅ Interface with complex types parsed successfully")
+
+# Test 6: Interface Registration and Lookup
+log("🔍 Test 6: Interface Registration and Lookup")
+
+# Define a simple struct that will implement the interface
+struct SimpleStruct:
+    name: str = "default"
+    value: int = 0
+    active: bool = true
+
+# Define receiver functions to satisfy the interface
+def (obj: SimpleStruct) get_name() -> str:
+    return obj.name
+
+def (obj: SimpleStruct) set_name(name: str) -> None:
+    obj.name = name
+
+def (obj: SimpleStruct) process(data: str) -> str:
+    return f"Processed by {obj.name}: {data}"
+
+def (obj: SimpleStruct) get_value() -> int:
+    return obj.value
+
+def (obj: SimpleStruct) set_value(value: int) -> None:
+    obj.value = value
+
+def (obj: SimpleStruct) get_is_active() -> bool:
+    return obj.active
+
+def (obj: SimpleStruct) set_is_active(active: bool) -> None:
+    obj.active = active
+
+# Create an instance
+instance = SimpleStruct(name="test", value=42, active=true)
+
+# Test interface compliance (this would be done by the interface validator)
+# For now, we'll just test that the methods exist and work
+name = instance.get_name()
+assert name == "test", f"Expected 'test', got '{name}'"
+
+instance.set_name("updated")
+name = instance.get_name()
+assert name == "updated", f"Expected 'updated', got '{name}'"
+
+result = instance.process("test data")
+assert "Processed by updated: test data" in result, f"Expected processed result, got '{result}'"
+
+value = instance.get_value()
+assert value == 42, f"Expected 42, got {value}"
+
+instance.set_value(100)
+value = instance.get_value()
+assert value == 100, f"Expected 100, got {value}"
+
+active = instance.get_is_active()
+assert active == true, f"Expected true, got {active}"
+
+instance.set_is_active(false)
+active = instance.get_is_active()
+assert active == false, f"Expected false, got {active}"
+
+log("✅ Interface compliance validation successful")
+
+# Test 7: Interface with Default Parameters
+log("🔍 Test 7: Interface with Default Parameters")
+interface IDefaultParams:
+    configure(host: str = "localhost", port: int = 8080) -> bool
+    connect(timeout: float = 30.0) -> bool
+    send_message(message: str, priority: str = "normal") -> bool
+
+log("✅ Interface with default parameters parsed successfully")
+
+# Test 8: Interface with Union Types
+log("🔍 Test 8: Interface with Union Types")
+interface IUnionTypes:
+    process_data(data: str | bytes) -> str | int
+    get_result() -> str | None
+    set_config(config: dict | None) -> None
+
+log("✅ Interface with union types parsed successfully")
+
+# Test 9: Interface with Generic-like Patterns
+log("🔍 Test 9: Interface with Generic-like Patterns")
+interface IGenericPattern:
+    store(key: str, value: any) -> bool
+    retrieve(key: str) -> any
+    remove(key: str) -> bool
+    list_keys() -> list[str]
+
+log("✅ Interface with generic-like patterns parsed successfully")
+
+# Test 10: Interface Documentation
+log("🔍 Test 10: Interface Documentation")
+interface IDocumented:
+    """
+    A well-documented interface for demonstration purposes.
+    
+    This interface defines the contract for data processing components.
+    """
+    
+    # Initialize the component with configuration
+    initialize(config: dict) -> bool
+    
+    # Process input data and return results
+    process(input_data: str) -> str
+    
+    # Get current status information
+    get_status() -> dict
+    
+    # Clean up resources
+    cleanup() -> None
+
+log("✅ Interface with documentation parsed successfully")
+
+log("🎉 All basic interface tests passed successfully!")

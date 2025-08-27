@@ -157,20 +157,20 @@ Generate the preview content now:"""
     def _build_preview_response(self, user_message: str, topic: str, preview_content: str) -> str:
         """Build a structured preview response with user message and preview content."""
         response_parts = []
-        
+
         # Add user message first (acknowledgment and context)
         if user_message:
             response_parts.append(f"{user_message}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add the main preview header
         response_parts.append(f"🔍 **Knowledge Preview:** {topic.title()}")
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add the preview content
         response_parts.append(preview_content)
         response_parts.append("")  # Empty line for spacing
-        
+
         # Add explanation and next steps
         response_parts.append(f"""💡 **This is a preview of what would be generated for {topic}.**
 
@@ -183,7 +183,7 @@ During structure planning, this helps you understand what content your agent wou
 • Continue with structure planning
 
 **Ready for your decision on this topic preview!**""")
-        
+
         # Join all parts with proper spacing
         return "\n".join(response_parts)
 

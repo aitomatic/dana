@@ -92,7 +92,7 @@ class SubprocessSandboxInterface:
             kwargs: Keyword arguments to pass to the function
 
         Returns:
-            The result of the Dana function execution
+            The result of the Dana function execution (may be an EagerPromise object)
         """
         # TODO: Replace with IPC communication
         # Example future implementation:
@@ -100,6 +100,8 @@ class SubprocessSandboxInterface:
         # response = self._send_ipc_request(request)
         # return response["result"]
 
+        # The result may be an EagerPromise object - this is expected behavior
+        # Promise transparency will handle resolution when the result is accessed
         return self._delegate.execute_function(func_name, args, kwargs)
 
     def exec_module(self, file_path: str) -> Any:

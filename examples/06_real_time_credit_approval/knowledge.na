@@ -1,0 +1,11 @@
+"""Credit Approval Knowledge - Minimal & Efficient"""
+
+fsa_regs = {"max_dti": 10, "min_docs": ["income", "identity", "employment"], "limits": {"unsecured": 3000000, "business": 50000000}}
+
+basel_iii = {"min_capital": "8%", "risk_weights": {"retail": 75, "corporate": 100, "sovereign": 0}}
+
+scoring = {"fico_range": [300, 850], "factors": ["payment_history", "credit_utilization", "credit_history_length"]}
+
+risk_levels = {"low": [700, 850], "medium": [600, 699], "high": [500, 599], "very_high": [300, 499]}
+
+fraud_patterns = ["multiple_applications", "income_discrepancy", "document_forgery", "synthetic_identity"]

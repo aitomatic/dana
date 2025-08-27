@@ -4,9 +4,7 @@ Test the reason function works with consistent parameter ordering.
 This test verifies that the reason function can be called correctly in a Dana program.
 """
 
-import os
 import unittest
-from unittest.mock import patch
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
@@ -14,7 +12,6 @@ from dana.core.lang.sandbox_context import SandboxContext
 from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 
 
-@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_direct_call():
     """Test reason function with direct call to verify basic functionality."""
     # Create context
@@ -22,8 +19,8 @@ def test_reason_function_direct_call():
 
     # Set up context with LLM resource
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()
@@ -39,7 +36,6 @@ def test_reason_function_direct_call():
     assert result is not None
 
 
-@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_parameter_order():
     """Test reason function with different parameter orders to verify robustness."""
     # Create context
@@ -47,8 +43,8 @@ def test_reason_function_parameter_order():
 
     # Set up context with LLM resource
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()

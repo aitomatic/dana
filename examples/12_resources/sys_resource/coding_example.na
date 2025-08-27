@@ -1,0 +1,58 @@
+# Coding Resource Example
+# Demonstrates code generation and execution using sys_resource CodingResource
+
+print("=== Sys Resource Example ===")
+print("Using actual CodingResource via use() function")
+print()
+
+# Create a coding resource using the use() function
+print("1. Creating coding resource...")
+coding = use("coding")
+print(f"   Created coding resource: {coding.name}")
+print()
+
+# Initialize the resource
+print("2. Initializing coding resource...")
+coding.initialize()
+print("   Coding resource initialized successfully")
+print()
+
+# Example 1: Simple mathematical calculation
+print("3. Example 1: Mathematical calculation")
+math_request = "Calculate the factorial of 5 and add it to the sum of first 10 natural numbers"
+print(f"   Request: {math_request}")
+
+math_result = coding.execute_code(math_request)
+print(f"   Result: {math_result}")
+print()
+
+# Example 2: Data processing
+print("4. Example 2: Data processing")
+data_request = "Create a list of numbers from 1 to 10, filter out even numbers, and calculate the sum of remaining odd numbers"
+print(f"   Request: {data_request}")
+
+data_result = coding.execute_code(data_request)
+print(f"   Result: {data_result}")
+print()
+
+# Example 3: String manipulation
+print("5. Example 3: String manipulation")
+string_request = "Take the string 'hello world' and reverse it, then convert it to uppercase"
+print(f"   Request: {string_request}")
+
+string_result = coding.execute_code(string_request)
+print(f"   Result: {string_result}")
+print()
+
+# Example 4: List operations
+print("6. Example 4: List operations")
+list_request = "Create a list of 5 random numbers between 1 and 100, sort them in descending order, and find the average"
+print(f"   Request: {list_request}")
+
+list_result = coding.execute_code(list_request)
+print(f"   Result: {list_result}")
+print()
+
+print("Sys resource example completed!")
+print("This example used the actual CodingResource via use('coding')")
+print("The resource is a Python-based implementation with sophisticated functionality.")
