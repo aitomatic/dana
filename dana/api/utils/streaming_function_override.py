@@ -53,10 +53,13 @@ def streaming_print_override(
 
     finally:
         # Restore original print function
-        if original_print:
-            registry.register(
-                name="print", func=original_print.func, func_type=original_print.func_type, overwrite=True, trusted_for_context=True
-            )
+        try:
+            if original_print:
+                registry.register(
+                    name="print", func=original_print, overwrite=True, trusted_for_context=True
+                )
+        except Exception:
+            print("H")
 
         # Clear the log streamer
         StreamingPrintManager.clear_streamer()
