@@ -16,6 +16,8 @@ from ..base import BaseStrategy
 from ..enums import PlanType
 from ..plan import StrategyPlan
 
+ProblemContext = dict[str, Any]
+
 
 @dataclass
 class StrategyOutcome:
@@ -68,16 +70,16 @@ class LearnerStrategy(BaseStrategy):
         self,
         agent_instance: AgentInstance,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> StrategyPlan:
         """Create a learning-based plan."""
-        problem_type = self._classify_problem(problem, context)
-        selected_strategy = self._select_strategy(problem_type, context)
+        problem_type = self._classify_problem(problem, problem_context)
+        selected_strategy = self._select_strategy(problem_type, problem_context)
 
         return StrategyPlan(
             strategy_name=self.name,
-            confidence=self.can_handle(problem, context),
+            confidence=self.can_handle(problem, problem_context),
             plan_type=PlanType.WORKFLOW,  # Learning is like a workflow
             content={"selected_strategy": selected_strategy, "problem_type": problem_type},
             reasoning=f"Selected {selected_strategy} based on learning for {problem_type} problems",
@@ -91,8 +93,8 @@ class LearnerStrategy(BaseStrategy):
         agent_instance: AgentInstance,
         plan: StrategyPlan,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> Any:
         """Execute the learning-based plan."""
         content = plan.content
@@ -103,7 +105,7 @@ class LearnerStrategy(BaseStrategy):
             # Execute strategy and record outcome
             start_time = time.time()
             try:
-                result = self._execute_strategy(selected_strategy, problem, context, sandbox_context)
+                result = self._execute_strategy(selected_strategy, problem, sandbox_context, problem_context)
                 success = True
                 quality_score = self._evaluate_quality(result, problem)
             except Exception as e:
@@ -121,7 +123,7 @@ class LearnerStrategy(BaseStrategy):
                 quality_score=quality_score,
                 execution_time=execution_time,
                 timestamp=time.time(),
-                context=context or {},
+                context=problem_context or {},
             )
 
             self._record_outcome(outcome)
@@ -130,7 +132,7 @@ class LearnerStrategy(BaseStrategy):
             return result
         return "Invalid learning plan content"
 
-    def _classify_problem(self, problem: str, context: dict[str, Any] | None = None) -> str:
+    def _classify_problem(self, problem: str, problem_context: ProblemContext | None = None) -> str:
         """Classify the problem type for learning."""
         # TODO: Implement problem classification logic
         # This would categorize problems for better learning
@@ -147,7 +149,7 @@ class LearnerStrategy(BaseStrategy):
         else:
             return "general"
 
-    def _select_strategy(self, problem_type: str, context: dict[str, Any] | None = None) -> str:
+    def _select_strategy(self, problem_type: str, problem_context: ProblemContext | None = None) -> str:
         """Select strategy based on learned performance."""
         # TODO: Implement strategy selection logic
         # This would use learned performance data to select the best strategy
@@ -167,7 +169,7 @@ class LearnerStrategy(BaseStrategy):
         return "planner"
 
     def _execute_strategy(
-        self, strategy_name: str, problem: str, context: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None
+        self, strategy_name: str, problem: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None
     ) -> str:
         """Execute the selected strategy."""
         # TODO: Implement strategy execution logic

@@ -142,7 +142,7 @@ class LLMResourceInstance(ResourceInstance):
         """Stop the resource."""
         return self.shutdown()
 
-    async def query(self, request: BaseRequest) -> BaseResponse:
+    async def query(self, request: BaseRequest) -> BaseResponse:  # type: ignore
         """Query the LLM resource."""
         return await self._llm_resource.query(request)
 

@@ -57,7 +57,7 @@ description: "A test workflow"
     def test_create_simple_workflow(self):
         """Test creating simple workflow from step names."""
         steps = ["Step 1", "Step 2", "Step 3"]
-        workflow = self.factory.create_simple_workflow("SimpleWorkflow", steps, "Test description")
+        workflow = self.factory.create_simple_workflow("SimpleWorkflow", steps, "Test description", "Test objective")
 
         assert workflow is not None
         assert workflow.name == "SimpleWorkflow"

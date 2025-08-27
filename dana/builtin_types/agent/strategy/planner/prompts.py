@@ -82,10 +82,11 @@ response_formats:
     solution: |
       workflow:
         name: "Workflow Name"
+        objective: "What is the objective of the workflow?"  # important
         steps:
         - step: 1
             action: "action_name"
-            objective: "What is the objective of this step?"
+            objective: "What is the objective of this step?"  # important
   - plan: TYPE_DELEGATE
     solution: |
       delegation:
@@ -104,8 +105,120 @@ response_formats:
 
 configuration:
   format: yaml
-  max_tokens: 1500
+  max_tokens: 1000
 ```"""
+
+
+# ============================================================================
+# WORKFLOW STEP SOLVING PROMPTS
+# ============================================================================
+
+"""
+WORKFLOW STEP SOLVING PROMPTS:
+==============================
+
+Function: Agent.solve() → create_workflow_step_solve_prompt() → LLM reasoning → step solution
+Control Flow: Workflow execution → current step analysis → agent.solve() → step completion
+Prompts Used: create_workflow_step_solve_prompt() → LLM → step result
+
+Workflow Integration:
+- Extracts current step information from workflow_instance.fsm
+- Provides context about workflow objective and previous steps
+- Guides agent to solve the specific step objective
+- Returns solution that can be integrated into workflow execution
+"""
+
+
+def create_workflow_step_solve_prompt(
+    workflow_instance: Any,
+    action: str,
+    objective: str,
+    parameters: dict,
+    problem_context: dict[str, Any] | None = None,
+) -> str:
+    """
+    Create a problem statement for solving the current step in a workflow.
+
+    USED BY: WorkflowExecutionEngine._execute_state_action() → agent_instance.solve() → plan()
+    WHEN: Workflow execution engine needs agent to solve current step
+
+    Args:
+        workflow_instance: WorkflowInstance with FSM containing current step info
+        action: Action to execute (from FSM state metadata)
+        objective: Objective of the action (from FSM state metadata)
+        parameters: Action parameters (from FSM state metadata)
+        problem_context: Additional context data for the step
+
+    Returns a natural problem statement that will be processed by agent.solve() and plan().
+    """
+    # Extract current step information from FSM
+    fsm = workflow_instance.fsm
+    current_state = fsm.current_state
+    _state_metadata = fsm.state_metadata.get(current_state, {})
+
+    # Get workflow context
+    workflow_metadata = fsm.workflow_metadata
+    workflow_name = workflow_metadata.get("name", "Unknown Workflow")
+    workflow_objective = workflow_metadata.get("objective", "Execute workflow")
+    total_steps = workflow_metadata.get("total_steps", 0)
+
+    # Get previous step results for context
+    previous_results = {}
+    for state, result in fsm.results.items():
+        if state != current_state and result:
+            previous_results[state] = result
+
+    # Determine step number from current state
+    step_number = 1
+    if current_state.startswith("STEP_"):
+        try:
+            step_number = int(current_state.split("_")[1])
+        except (ValueError, IndexError):
+            pass
+
+    # Build a natural problem statement
+    problem_parts = []
+
+    # Main objective
+    problem_parts.append(f"Execute step {step_number} of workflow '{workflow_name}': {objective}")
+
+    # Action context
+    if action and action != "execute_step":
+        problem_parts.append(f"Action to perform: {action}")
+
+    # Parameters context
+    if parameters:
+        param_str = ", ".join([f"{k}: {v}" for k, v in parameters.items()])
+        problem_parts.append(f"Parameters: {param_str}")
+
+    # Workflow context
+    problem_parts.append(f"Overall workflow objective: {workflow_objective}")
+    problem_parts.append(f"Total workflow steps: {total_steps}")
+
+    # Previous results context
+    if previous_results:
+        result_summary = []
+        for state, result in previous_results.items():
+            if isinstance(result, dict):
+                status = result.get("status", "completed")
+                result_summary.append(f"{state}: {status}")
+            else:
+                result_summary.append(f"{state}: completed")
+        problem_parts.append(f"Previous steps completed: {', '.join(result_summary)}")
+
+    # Additional context
+    if problem_context and isinstance(problem_context, dict):
+        context_items = []
+        for k, v in problem_context.items():
+            if k not in ["workflow_instance", "fsm_parameters"]:  # Skip internal workflow data
+                context_items.append(f"{k}: {v}")
+        if context_items:
+            problem_parts.append(f"Additional context: {', '.join(context_items)}")
+
+    # Final instruction
+    problem_parts.append("Please execute this workflow step and provide the result.")
+
+    return " ".join(problem_parts)
 
 
 # ============================================================================
