@@ -129,7 +129,8 @@ def demonstrate_workflow_factory():
         simple_workflow = factory.create_simple_workflow(
             "SimpleProcessingWorkflow",
             simple_steps,
-            "A simple three-step processing workflow"
+            "A simple three-step processing workflow",
+            "Process data in a simple way",
         )
         log(f"✅ Created simple workflow: {simple_workflow.name}")
         log(f"   Steps: {len(simple_steps)}")

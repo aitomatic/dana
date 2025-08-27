@@ -15,6 +15,8 @@ from ..base import BaseStrategy
 from ..enums import PlanType
 from ..plan import StrategyPlan
 
+ProblemContext = dict[str, Any]
+
 
 @dataclass
 class SubProblem:
@@ -63,15 +65,15 @@ class DecomposerStrategy(BaseStrategy):
         self,
         agent_instance: AgentInstance,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> StrategyPlan:
         """Create a hierarchical decomposition plan."""
-        problem_tree = self._decompose_problem(problem, context)
+        problem_tree = self._decompose_problem(problem, problem_context)
 
         return StrategyPlan(
             strategy_name=self.name,
-            confidence=self.can_handle(problem, context),
+            confidence=self.can_handle(problem, problem_context),
             plan_type=PlanType.WORKFLOW,  # Decomposition is like a workflow
             content={"problem_tree": problem_tree},
             reasoning=f"Decomposed into {len(problem_tree.sub_problems)} sub-problems",
@@ -85,15 +87,15 @@ class DecomposerStrategy(BaseStrategy):
         agent_instance: AgentInstance,
         plan: StrategyPlan,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> Any:
         """Execute the decomposition plan."""
         content = plan.content
         if isinstance(content, dict) and "problem_tree" in content:
             problem_tree = content["problem_tree"]
             if isinstance(problem_tree, ProblemTree):
-                solved_problems = self._solve_sub_problems(problem_tree, context, sandbox_context)
+                solved_problems = self._solve_sub_problems(problem_tree, sandbox_context, problem_context)
                 return self._compose_solution(problem_tree, solved_problems)
         return "Invalid decomposition plan content"
 
@@ -114,7 +116,7 @@ class DecomposerStrategy(BaseStrategy):
         return ProblemTree(root_problem=problem, sub_problems=sub_problems, dependencies=dependencies, max_depth=self.max_depth)
 
     def _solve_sub_problems(
-        self, problem_tree: ProblemTree, context: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None
+        self, problem_tree: ProblemTree, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None
     ) -> dict[str, str]:
         """Solve sub-problems in dependency order."""
         solved_problems = {}

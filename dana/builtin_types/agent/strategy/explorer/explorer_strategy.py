@@ -15,6 +15,8 @@ from ..base import BaseStrategy
 from ..enums import PlanType
 from ..plan import StrategyPlan
 
+ProblemContext = dict[str, Any]
+
 
 @dataclass
 class SolutionCandidate:
@@ -54,15 +56,15 @@ class ExplorerStrategy(BaseStrategy):
         self,
         agent_instance: AgentInstance,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> StrategyPlan:
         """Create an exploration plan with multiple candidates."""
-        candidates = self._generate_candidates(problem, context)
+        candidates = self._generate_candidates(problem, problem_context)
 
         return StrategyPlan(
             strategy_name=self.name,
-            confidence=self.can_handle(problem, context),
+            confidence=self.can_handle(problem, problem_context),
             plan_type=PlanType.WORKFLOW,  # Exploration is like a workflow
             content={"candidates": candidates},
             reasoning=f"Exploring {len(candidates)} solution approaches in parallel",
@@ -76,18 +78,18 @@ class ExplorerStrategy(BaseStrategy):
         agent_instance: AgentInstance,
         plan: StrategyPlan,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> Any:
         """Execute exploration plan."""
         content = plan.content
         if isinstance(content, dict) and "candidates" in content:
             candidates = content["candidates"]
             if isinstance(candidates, list):
-                return self._execute_parallel(candidates, problem, context, sandbox_context)
+                return self._execute_parallel(candidates, problem, sandbox_context, problem_context)
         return "Invalid exploration plan content"
 
-    def _generate_candidates(self, problem: str, context: dict[str, Any] | None = None) -> list[SolutionCandidate]:
+    def _generate_candidates(self, problem: str, problem_context: ProblemContext | None = None) -> list[SolutionCandidate]:
         """Generate multiple solution candidates."""
         candidates = []
 
@@ -109,8 +111,8 @@ class ExplorerStrategy(BaseStrategy):
         self,
         candidates: list[SolutionCandidate],
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> list[tuple[SolutionCandidate, str]]:
         """Execute candidates in parallel with early termination."""
         # TODO: Implement parallel execution logic

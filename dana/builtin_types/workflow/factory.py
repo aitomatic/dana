@@ -36,6 +36,7 @@ class WorkflowDefinition:
 
     name: str
     description: str = ""
+    objective: str = ""
     steps: list[WorkflowStep] = field(default_factory=list)
     fsm_config: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -47,6 +48,12 @@ class WorkflowDefinition:
         field_order = []
         field_defaults = {}
         field_comments = {}
+
+        # Add objective field
+        fields["objective"] = "str"
+        field_order.append("objective")
+        field_defaults["objective"] = self.objective
+        field_comments["objective"] = "The objective of the workflow"
 
         # Add original_yaml field to preserve the source YAML
         fields["original_yaml"] = "str"
@@ -73,6 +80,9 @@ class WorkflowDefinition:
             "fsm": None,  # Will be set by WorkflowInstance constructor
         }
 
+        # Add objective field
+        values["objective"] = self.objective
+
         # Add original_yaml field
         values["original_yaml"] = self.original_yaml
 
@@ -92,6 +102,7 @@ class WorkflowDefinition:
         workflow_metadata = {
             "name": self.name,
             "description": self.description,
+            "objective": self.objective,
             "total_steps": len(self.steps),
             "fsm_config": self.fsm_config,
         }
@@ -209,6 +220,7 @@ class YAMLWorkflowParser:
 
         # Extract basic info
         name = workflow_data["name"]
+        objective = workflow_data.get("objective", "")
         description = workflow_data.get("description", "")
 
         # Parse steps
@@ -223,7 +235,13 @@ class YAMLWorkflowParser:
         metadata = workflow_data.get("metadata", {})
 
         return WorkflowDefinition(
-            name=name, description=description, steps=steps, fsm_config=fsm_config, metadata=metadata, original_yaml=original_text
+            name=name,
+            description=description,
+            objective=objective,
+            steps=steps,
+            fsm_config=fsm_config,
+            metadata=metadata,
+            original_yaml=original_text,
         )
 
     def _parse_steps(self, steps_data: list[dict[str, Any]]) -> list[WorkflowStep]:
@@ -272,7 +290,7 @@ class WorkflowFactory:
         # Convert to WorkflowInstance
         return workflow_def.to_workflow_instance()
 
-    def create_simple_workflow(self, name: str, steps: list[str], description: str = "") -> WorkflowInstance:
+    def create_simple_workflow(self, name: str, steps: list[str], description: str = "", objective: str = "") -> WorkflowInstance:
         """Create a simple linear workflow from step names."""
         # Convert step names to WorkflowStep objects
         workflow_steps = []
@@ -286,15 +304,22 @@ class WorkflowFactory:
         workflow_def = WorkflowDefinition(
             name=name,
             description=description,
+            objective=objective,
             steps=workflow_steps,
-            original_yaml=self._generate_simple_workflow_yaml(name, description, steps),
+            original_yaml=self._generate_simple_workflow_yaml(name, description, objective, steps),
         )
 
         return workflow_def.to_workflow_instance()
 
-    def _generate_simple_workflow_yaml(self, name: str, description: str, steps: list[str]) -> str:
+    def _generate_simple_workflow_yaml(self, name: str, description: str, objective: str, steps: list[str]) -> str:
         """Generate YAML representation of a simple workflow."""
-        yaml_lines = ["workflow:", f'  name: "{name}"', f'  description: "{description}"', "  steps:"]
+        yaml_lines = [
+            "workflow:",
+            f'  name: "{name}"',
+            f'  description: "{description}"',
+            f'  objective: "{objective}"',
+            "  steps:",
+        ]
 
         for i, step_name in enumerate(steps, 1):
             yaml_lines.extend(

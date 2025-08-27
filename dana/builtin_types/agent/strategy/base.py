@@ -26,8 +26,8 @@ class BaseStrategy(ABC):
         self,
         agent_instance: AgentInstance,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: dict[str, Any] | None = None,
     ) -> StrategyPlan:
         """Create a plan for this strategy."""
         pass
@@ -38,8 +38,8 @@ class BaseStrategy(ABC):
         agent_instance: AgentInstance,
         plan: StrategyPlan,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: dict[str, Any] | None = None,
     ) -> Any:
         """Execute a plan created by this strategy."""
         pass

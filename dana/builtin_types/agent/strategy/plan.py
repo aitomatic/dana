@@ -34,7 +34,7 @@ class StrategyPlan:
         if self.metadata is None:
             self.metadata = {}
 
-    def execute(self, agent_instance: AgentInstance, problem: str, context: dict | None = None, sandbox_context: Any = None) -> Any:
+    def execute(self, agent_instance: AgentInstance, problem: str, sandbox_context: Any = None, context: dict | None = None) -> Any:
         """Execute this plan using the provided agent instance."""
         # Avoid circular import by using the global function
         from . import get_strategy_by_name
@@ -42,7 +42,7 @@ class StrategyPlan:
         strategy = get_strategy_by_name(self.strategy_name)
         if strategy is None:
             raise ValueError(f"Strategy '{self.strategy_name}' not found")
-        return strategy.execute_plan(agent_instance, self, problem, context, sandbox_context)
+        return strategy.execute_plan(agent_instance, self, problem, sandbox_context, context)
 
     def get_plan_summary(self) -> dict[str, Any]:
         """Get a summary of the plan for inspection."""

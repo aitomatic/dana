@@ -16,6 +16,8 @@ from ..base import BaseStrategy
 from ..enums import PlanType
 from ..plan import StrategyPlan
 
+ProblemContext = dict[str, Any]
+
 
 class Capability(Enum):
     """Available capabilities for composition."""
@@ -73,17 +75,17 @@ class ComposerStrategy(BaseStrategy):
         self,
         agent_instance: AgentInstance,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> StrategyPlan:
         """Create a capability composition plan."""
-        required_capabilities = self._analyze_requirements(problem, context)
-        strategy_chain = self._select_strategies(required_capabilities, problem, context)
+        required_capabilities = self._analyze_requirements(problem, problem_context)
+        strategy_chain = self._select_strategies(required_capabilities, problem, problem_context)
         execution_plan = self._compose_execution_plan(strategy_chain)
 
         return StrategyPlan(
             strategy_name=self.name,
-            confidence=self.can_handle(problem, context),
+            confidence=self.can_handle(problem, problem_context),
             plan_type=PlanType.WORKFLOW,  # Composition is like a workflow
             content={"execution_plan": execution_plan, "capabilities": required_capabilities},
             reasoning=f"Composing {len(required_capabilities)} capabilities into execution chain",
@@ -97,18 +99,18 @@ class ComposerStrategy(BaseStrategy):
         agent_instance: AgentInstance,
         plan: StrategyPlan,
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> Any:
         """Execute the composed plan."""
         content = plan.content
         if isinstance(content, dict) and "execution_plan" in content:
             execution_plan = content["execution_plan"]
             if isinstance(execution_plan, list):
-                return self._execute_composed_plan(execution_plan, problem, context, sandbox_context)
+                return self._execute_composed_plan(execution_plan, problem, sandbox_context, problem_context)
         return "Invalid composition plan content"
 
-    def _analyze_requirements(self, problem: str, context: dict[str, Any] | None = None) -> list[Capability]:
+    def _analyze_requirements(self, problem: str, problem_context: ProblemContext | None = None) -> list[Capability]:
         """Analyze problem to determine required capabilities."""
         # TODO: Implement requirement analysis logic
         # This would use LLM reasoning to determine required capabilities
@@ -141,7 +143,9 @@ class ComposerStrategy(BaseStrategy):
 
         return required_capabilities
 
-    def _select_strategies(self, capabilities: list[Capability], problem: str, context: dict[str, Any] | None = None) -> list[StrategyStep]:
+    def _select_strategies(
+        self, capabilities: list[Capability], problem: str, problem_context: ProblemContext | None = None
+    ) -> list[StrategyStep]:
         """Select appropriate strategies for each capability."""
         # TODO: Implement strategy selection logic
         # This would select the best strategy for each capability
@@ -183,8 +187,8 @@ class ComposerStrategy(BaseStrategy):
         self,
         execution_plan: list[dict[str, Any]],
         problem: str,
-        context: dict[str, Any] | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
     ) -> str:
         """Execute the composed plan."""
         # TODO: Implement composed plan execution

@@ -22,6 +22,8 @@ from .implementations import AgentImplementationMixin
 if TYPE_CHECKING:
     from .strategy.plan import StrategyPlan
 
+ProblemContext = dict[str, Any]
+
 
 class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     """Agent struct instance with built-in agent capabilities.
@@ -132,7 +134,13 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         """Get the agent type."""
         return self.__struct_type__  # type: ignore
 
-    def input(self, request: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
+    def input(
+        self,
+        request: str,
+        sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
+        is_sync: bool = False,
+    ) -> Any:
         """Execute agent input method."""
         sandbox_context = sandbox_context or SandboxContext()
 
@@ -143,25 +151,36 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         return response
 
     def plan(
-        self, task: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False
+        self, task: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None, is_sync: bool = False
     ) -> "StrategyPlan":
         """Execute agent planning method - analyzes problem and determines approach using strategy system."""
+        import pdb
 
+        pdb.set_trace()
         sandbox_context = sandbox_context or SandboxContext()
 
         def wrapper():
             from .strategy import select_best_strategy
 
-            strategy = select_best_strategy(task, context)
-            return strategy.create_plan(self, task, context, sandbox_context)
+            strategy = select_best_strategy(task, problem_context)
+            return strategy.create_plan(self, task, sandbox_context, problem_context)
 
         return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
 
-    def solve(self, problem: str, context: dict | None = None, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
+    def solve(
+        self,
+        problem: str,
+        sandbox_context: SandboxContext | None = None,
+        problem_context: ProblemContext | None = None,
+        is_sync: bool = False,
+    ) -> Any:
         """Execute agent problem-solving method with strategy system.
 
         Fixed/hardcoded function: plan() + execute().
         """
+        import pdb
+
+        pdb.set_trace()
         sandbox_context = sandbox_context or SandboxContext()
 
         self.debug(f"IN SOLVE: is_sync={is_sync}")
@@ -169,10 +188,10 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         def wrapper():
             try:
                 # Step 1: Create plan using strategy system
-                plan = self.plan(problem, context, sandbox_context, is_sync=True)
+                plan = self.plan(problem, sandbox_context, problem_context, is_sync=True)
 
                 # Step 2: Execute the plan
-                result = plan.execute(self, problem, context, sandbox_context)
+                result = plan.execute(self, problem, sandbox_context, problem_context)
 
                 return result
             except Exception as e:
@@ -208,14 +227,14 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def reason(
         self,
         premise: str,
-        context: dict | None = None,
         sandbox_context: SandboxContext | None = None,
+        problem_context: dict | None = None,
         system_message: str | None = None,
         is_sync: bool = False,
     ) -> Any:
         """Execute agent reasoning method."""
         sandbox_context = sandbox_context or SandboxContext()
-        return self._reason_impl(sandbox_context, premise, context, system_message, is_sync=True)
+        return self._reason_impl(sandbox_context, premise, problem_context, system_message, is_sync=True)
 
     def chat(
         self,

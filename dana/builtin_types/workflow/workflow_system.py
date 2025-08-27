@@ -11,9 +11,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.fsm_system import create_fsm_struct_type, create_simple_workflow_fsm
+from dana.builtin_types.fsm_system import FSM_Instance, create_fsm_struct_type, create_simple_workflow_fsm
 from dana.builtin_types.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
+
+ProblemContext = dict[str, Any]
 
 
 @dataclass
@@ -130,18 +132,6 @@ class WorkflowInstance(StructInstance):
         """Get the execution history of the workflow."""
         return self._execution_history.copy()
 
-    def execute(self, agent_instance: AgentInstance, data: dict[str, Any], sandbox_context: SandboxContext | None = None) -> dict[str, Any]:
-        """
-        Execute workflow with data.
-
-        Args:
-            data: Execution data including parameters and resources
-
-        Returns:
-            Dict[str, Any]: Execution result
-        """
-        return self._execute_workflow(agent_instance, data, sandbox_context)
-
     def validate(self, data: dict[str, Any]) -> bool:
         """
         Validate input data for workflow execution.
@@ -183,8 +173,8 @@ class WorkflowInstance(StructInstance):
         return self._execution_history.copy()
 
     # Private implementation methods
-    def _execute_workflow(
-        self, agent_instance: AgentInstance, data: dict[str, Any], sandbox_context: SandboxContext | None = None
+    def execute(
+        self, agent_instance: AgentInstance, sandbox_context: SandboxContext | None = None, data: ProblemContext | None = None
     ) -> dict[str, Any]:
         """
         Private workflow execution implementation.
@@ -197,15 +187,21 @@ class WorkflowInstance(StructInstance):
             self._execution_history.append({"step": "start", "timestamp": self._get_timestamp(), "data": data})
 
             # Validate input data
-            if not self.validate(data):
+            if not self.validate(data or {}):
                 raise ValueError("Invalid input data for workflow execution")
 
             # Execute using Dana's FSM system
             if hasattr(self, "fsm") and self.fsm:
-                result = self._execution_engine.execute_fsm(agent_instance, self.fsm, data, sandbox_context)
+                result = self._execution_engine.execute_fsm(
+                    agent_instance,
+                    self,
+                    self.fsm,
+                    sandbox_context,
+                    data,
+                )
             else:
                 # Fallback to simple execution
-                result = self._execute_simple_workflow(agent_instance, data, sandbox_context)
+                result = self._execute_simple_workflow(agent_instance, sandbox_context, data or {})
 
             # Update execution state
             self._execution_state = "completed"
@@ -251,13 +247,14 @@ class WorkflowInstance(StructInstance):
             return False
 
     def _execute_simple_workflow(
-        self, agent_instance: AgentInstance, data: dict[str, Any], sandbox_context: SandboxContext | None = None
+        self, agent_instance: AgentInstance, sandbox_context: SandboxContext | None = None, data: ProblemContext | None = None
     ) -> dict[str, Any]:
         """
         Execute simple workflow without FSM.
 
         Provides basic execution for workflows that don't have FSM defined.
         """
+        data = data or {}
         problem = data.get("problem", "")
         params = data.get("parameters", {})
         resources = data.get("resources", [])
@@ -394,33 +391,19 @@ class WorkflowExecutionEngine:
         pass
 
     def execute_fsm(
-        self, agent_instance: AgentInstance, fsm: Any, data: dict[str, Any], sandbox_context: SandboxContext | None = None
-    ) -> dict[str, Any]:
-        """
-        Execute workflow using Dana's enhanced FSM system.
-
-        Args:
-            fsm: Dana FSM instance with enhanced structure
-            data: Execution data
-
-        Returns:
-            Dict[str, Any]: Execution result
-        """
-        try:
-            # Use enhanced FSM execution
-            return self._execute_enhanced_fsm(agent_instance, fsm, data, sandbox_context)
-
-        except Exception as e:
-            return {"error": str(e), "status": "failed"}
-
-    def _execute_enhanced_fsm(
-        self, agent_instance: AgentInstance, fsm: Any, data: dict[str, Any], sandbox_context: SandboxContext | None = None
+        self,
+        agent_instance: AgentInstance,
+        workflow_instance: WorkflowInstance,
+        fsm_instance: FSM_Instance,
+        sandbox_context: SandboxContext | None = None,
+        data: ProblemContext | None = None,
     ) -> dict[str, Any]:
         """
         Execute enhanced FSM with state metadata and results.
 
         Args:
-            fsm: Dana FSM instance with enhanced structure
+            workflow_instance: The workflow instance being executed
+            fsm_instance: Dana FSM instance with enhanced structure
             data: Execution data
 
         Returns:
@@ -438,42 +421,50 @@ class WorkflowExecutionEngine:
             )
 
             # Initialize execution
-            current_state = fsm.current_state
+            current_state = fsm_instance.current_state
             execution_results = {}
 
             # Execute workflow through FSM states
             while current_state and current_state not in ["COMPLETE", "ERROR"]:
                 # Get current state metadata
-                state_metadata = get_current_state_metadata(fsm)
+                state_metadata = get_current_state_metadata(fsm_instance)
                 if not state_metadata:
                     # Skip states without metadata (like START, COMPLETE)
-                    if transition_fsm(fsm, "next"):
-                        current_state = fsm.current_state
+                    if transition_fsm(fsm_instance, "next"):
+                        current_state = fsm_instance.current_state
                         continue
                     else:
                         break
 
                 # Update state status to executing
-                update_state_status(fsm, current_state, "executing")
+                update_state_status(fsm_instance, current_state, "executing")
 
                 # Execute the action for current state
-                action = get_current_state_action(fsm) or "execute_step"
-                objective = get_current_state_objective(fsm) or "Execute workflow step"
-                parameters = get_current_state_parameters(fsm)
+                action = get_current_state_action(fsm_instance) or "execute_step"
+                objective = get_current_state_objective(fsm_instance) or "Execute workflow step"
+                parameters = get_current_state_parameters(fsm_instance)
 
                 # Execute action (this would integrate with agent system)
-                step_result = self._execute_state_action(agent_instance, action, objective, parameters, data, sandbox_context)
+                step_result = self._execute_state_action(
+                    agent_instance,
+                    workflow_instance,
+                    action,
+                    objective,
+                    parameters,
+                    sandbox_context,
+                    data,
+                )
 
                 # Store result
-                set_state_result(fsm, current_state, step_result)
+                set_state_result(fsm_instance, current_state, step_result)
                 execution_results[current_state] = step_result
 
                 # Update state status to completed
-                update_state_status(fsm, current_state, "completed")
+                update_state_status(fsm_instance, current_state, "completed")
 
                 # Transition to next state
-                if transition_fsm(fsm, "next"):
-                    current_state = fsm.current_state
+                if transition_fsm(fsm_instance, "next"):
+                    current_state = fsm_instance.current_state
                 else:
                     break
 
@@ -482,7 +473,7 @@ class WorkflowExecutionEngine:
                 "status": "completed" if current_state == "COMPLETE" else "failed",
                 "final_state": current_state,
                 "results": execution_results,
-                "fsm_results": fsm.results,
+                "fsm_results": fsm_instance.results,
             }
 
         except Exception as e:
@@ -491,19 +482,23 @@ class WorkflowExecutionEngine:
     def _execute_state_action(
         self,
         agent_instance: AgentInstance,
+        workflow_instance: WorkflowInstance,
         action: str,
         objective: str,
         parameters: dict,
-        data: dict,
         sandbox_context: SandboxContext | None = None,
+        data: ProblemContext | None = None,
     ) -> dict:
         """
-        Execute a state action (placeholder for agent integration).
+        Execute a state action using agent.solve() with workflow-aware prompt.
 
         Args:
+            agent_instance: The agent instance to execute the action
+            workflow_instance: The workflow instance being executed
             action: Action to execute
             objective: Objective of the action
             parameters: Action parameters
+            sandbox_context: Sandbox context for execution
             data: Execution data
 
         Returns:
@@ -513,22 +508,25 @@ class WorkflowExecutionEngine:
         agent_instance.debug(f"EXECUTE_STATE_ACTION: Parameters: {parameters}")
         agent_instance.debug(f"EXECUTE_STATE_ACTION: Data: {data}")
 
-        if isinstance(parameters, dict) and isinstance(data, dict):
-            data["fsm_parameters"] = parameters
+        # Create workflow-aware prompt for agent.solve()
+        from dana.builtin_types.agent.strategy.planner.prompts import create_workflow_step_solve_prompt
 
-        result = agent_instance.solve(f"Execute action: {action} with objective: {objective}", data, sandbox_context=sandbox_context)
+        prompt = create_workflow_step_solve_prompt(
+            workflow_instance=workflow_instance,
+            action=action,
+            objective=objective,
+            parameters=parameters,
+            problem_context=data,
+        )
+
+        result = agent_instance.solve(
+            prompt,
+            sandbox_context=sandbox_context,
+            problem_context=data,
+        )
         agent_instance.debug(f"EXECUTE_STATE_ACTION: Action result: {result}")
 
         return result
-        """
-        return {
-            "action": action,
-            "objective": objective,
-            "parameters": parameters,
-            "status": "executed",
-            "result": f"Executed {action} with objective: {objective}",
-        }
-        """
 
 
 def create_workflow_type_from_ast(workflow_def) -> WorkflowType:
