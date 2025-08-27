@@ -126,10 +126,16 @@ def default_reason_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
 ) -> Any:
     """Default reason method for agent structs - delegates to instance method."""
-
+    
+    # Check if we have a type context that needs to be preserved
+    current_assignment_type = sandbox_context.get("system:__current_assignment_type")
+    
     # Simply delegate to the built-in implementation
     # The main reason() method will handle Promise wrapping
     def wrapper():
+        # Ensure the type context is preserved in the sandbox context
+        if current_assignment_type:
+            sandbox_context.set("system:__current_assignment_type", current_assignment_type)
         return agent_instance._reason_impl(sandbox_context, premise, context)
 
     return PromiseFactory.create_promise(computation=wrapper)
@@ -767,7 +773,7 @@ Return your reasoning process and conclusions.
             # Use py_reason for sophisticated reasoning with POET enhancements
             result = py_reason(sandbox_context, reasoning_prompt, options)
 
-            return str(result)
+            return result
 
         except Exception as e:
             # Fallback to simple response if py_reason fails
