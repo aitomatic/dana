@@ -12,7 +12,7 @@ import inspect
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dana.common.exceptions import FunctionRegistryError, SandboxError
 from dana.common.runtime_scopes import RuntimeScopes
@@ -92,8 +92,13 @@ class FunctionRegistry:
     Supports both simple key-value storage and advanced namespaced storage.
     """
 
-    def __init__(self):
-        """Initialize the function registry with both simple and namespaced storage."""
+    def __init__(self, struct_function_registry=None):
+        """Initialize the function registry with both simple and namespaced storage.
+
+        Args:
+            struct_function_registry: Optional StructFunctionRegistry instance for delegation.
+                                    If provided, all struct method operations will be delegated to this registry.
+        """
         # Simple storage: name -> (func, metadata) - for backward compatibility
         self._simple_functions: dict[str, tuple[Callable, FunctionMetadata]] = {}
 
@@ -111,6 +116,14 @@ class FunctionRegistry:
 
         # Load preloaded functions
         self._register_preloaded_functions()
+
+        # Struct method delegation
+        self._struct_function_registry = struct_function_registry
+
+        # Struct method storage: (receiver_type, method_name) -> (func, metadata)
+        # This provides O(1) lookup for struct methods while maintaining the same
+        # metadata tracking as regular functions. Only used if no delegation registry provided.
+        self._struct_functions: dict[tuple[str, str], tuple[Callable, FunctionMetadata]] = {}
 
     # === Simple API (Backward Compatible) ===
 
@@ -732,6 +745,193 @@ class FunctionRegistry:
 
         return functions
 
+    # === Struct Method API (Unified Registry) ===
+
+    def register_struct_function(self, receiver_type: str, method_name: str, func: Callable) -> None:
+        """Register a method for a struct receiver type.
+
+        Args:
+            receiver_type: The type name of the receiver (e.g., "FileLoader", "Calculator")
+            method_name: The name of the method
+            func: The callable function/method to register
+        """
+        if not callable(func):
+            raise ValueError("Method must be callable")
+
+        # Delegate to StructFunctionRegistry if available
+        if self._struct_function_registry is not None:
+            self._struct_function_registry.register_method(receiver_type, method_name, func)
+            return
+
+        # Fallback to internal storage if no delegation registry
+        key = (receiver_type, method_name)
+        metadata = FunctionMetadata(registered_at=self._get_timestamp())
+
+        # Try to determine source file
+        try:
+            source_file = inspect.getsourcefile(func)
+            if source_file:
+                metadata.source_file = source_file
+        except (TypeError, ValueError):
+            pass
+
+        # Allow overwriting for now (useful during development)
+        if key in self._struct_functions:
+            metadata.overwrites = self._struct_functions[key][1].overwrites + 1
+
+        self._struct_functions[key] = (func, metadata)
+
+    def lookup_struct_function(self, receiver_type: str, method_name: str) -> Callable | None:
+        """Fast O(1) lookup by receiver type and method name.
+
+        Args:
+            receiver_type: The type name of the receiver
+            method_name: The name of the method
+
+        Returns:
+            The registered method or None if not found
+        """
+        # Delegate to StructFunctionRegistry if available
+        if self._struct_function_registry is not None:
+            return self._struct_function_registry.lookup_method(receiver_type, method_name)
+
+        # Fallback to internal storage if no delegation registry
+        result = self._struct_functions.get((receiver_type, method_name))
+        return result[0] if result else None
+
+    def has_struct_function(self, receiver_type: str, method_name: str) -> bool:
+        """Check if a method exists for a receiver type.
+
+        Args:
+            receiver_type: The type name of the receiver
+            method_name: The name of the method
+
+        Returns:
+            True if the method exists
+        """
+        # Delegate to StructFunctionRegistry if available
+        if self._struct_function_registry is not None:
+            return self._struct_function_registry.has_method(receiver_type, method_name)
+
+        # Fallback to internal storage if no delegation registry
+        return (receiver_type, method_name) in self._struct_functions
+
+    def lookup_struct_function_for_instance(self, instance: Any, method_name: str) -> Callable | None:
+        """Lookup method for a specific instance (extracts type automatically).
+
+        Args:
+            instance: The instance to lookup the method for
+            method_name: The name of the method
+
+        Returns:
+            The registered method or None if not found
+        """
+        receiver_type = self._get_instance_type_name(instance)
+        if receiver_type:
+            return self.lookup_struct_function(receiver_type, method_name)
+        return None
+
+    def list_struct_functions_for_type(self, receiver_type: str) -> builtins.list[str]:
+        """List all method names registered for a receiver type.
+
+        Args:
+            receiver_type: The type name of the receiver
+
+        Returns:
+            List of method names
+        """
+        # Delegate to StructFunctionRegistry if available
+        if self._struct_function_registry is not None:
+            return self._struct_function_registry.list_methods_for_type(receiver_type)
+
+        # Fallback to internal storage if no delegation registry
+        return [method_name for (type_name, method_name) in self._struct_functions.keys() if type_name == receiver_type]
+
+    def list_struct_receiver_types(self) -> builtins.list[str]:
+        """List all receiver types that have registered methods.
+
+        Returns:
+            List of receiver type names
+        """
+        return list(set(type_name for (type_name, _) in self._struct_functions.keys()))
+
+    def get_struct_function_metadata(self, receiver_type: str, method_name: str) -> dict[str, Any] | None:
+        """Get metadata for a struct method.
+
+        Args:
+            receiver_type: The type name of the receiver
+            method_name: The name of the method
+
+        Returns:
+            Method metadata as dict or None if not found
+        """
+        result = self._struct_functions.get((receiver_type, method_name))
+        if result:
+            metadata = result[1]
+            return {
+                "source_file": metadata.source_file,
+                "context_aware": metadata.context_aware,
+                "is_public": metadata.is_public,
+                "doc": metadata.doc,
+                "registered_at": metadata.registered_at,
+                "overwrites": metadata.overwrites,
+            }
+        return None
+
+    def register_method_for_types(self, receiver_types: Union[builtins.list[str], str], method_name: str, func: Callable) -> None:
+        """Register a method for multiple receiver types.
+
+        Args:
+            receiver_types: The type names (list) or single type name (string) for the receivers
+            method_name: The name of the method
+            func: The callable function to register
+        """
+        # Handle both list and string types (for compatibility)
+        if isinstance(receiver_types, str):
+            # Handle union types like "Point | Circle | Rectangle"
+            types = [t.strip() for t in receiver_types.split("|") if t.strip()]
+        else:
+            types = receiver_types
+
+        for receiver_type in types:
+            self.register_struct_function(receiver_type, method_name, func)
+
+    def _get_instance_type_name(self, instance: Any) -> str | None:
+        """Get the type name from an instance.
+
+        Handles StructType, AgentType, ResourceType, and other Dana types.
+
+        Args:
+            instance: The instance to extract type from
+
+        Returns:
+            The type name or None if unable to determine
+        """
+        # Try to get from struct_type attribute first (for Dana struct instances)
+        if hasattr(instance, "__struct_type__"):
+            struct_type = instance.__struct_type__
+            if hasattr(struct_type, "name"):
+                return struct_type.name
+
+        # Try to get from agent_type attribute
+        if hasattr(instance, "agent_type"):
+            agent_type = instance.agent_type
+            if hasattr(agent_type, "name"):
+                return agent_type.name
+
+        # Try to get from resource_type attribute
+        if hasattr(instance, "resource_type"):
+            resource_type = instance.resource_type
+            if hasattr(resource_type, "name"):
+                return resource_type.name
+
+        # Try to get the type name from the instance class (fallback)
+        if hasattr(instance, "__class__"):
+            class_name = instance.__class__.__name__
+            return class_name
+
+        return None
+
     def clear(self) -> None:
         """Clear all registered functions (for testing)."""
         self._simple_functions.clear()
@@ -739,16 +939,18 @@ class FunctionRegistry:
         self._functions_old_style.clear()
         self._registration_order.clear()
         self._preloaded_functions.clear()
+        self._struct_functions.clear()
 
     def count(self) -> int:
         """Get the total number of registered functions."""
         simple_count = len(self._simple_functions)
         namespaced_count = sum(len(functions) for functions in self._namespaced_functions.values())
-        return simple_count + namespaced_count
+        struct_function_count = len(self._struct_functions)
+        return simple_count + namespaced_count + struct_function_count
 
     def is_empty(self) -> bool:
         """Check if the registry is empty."""
-        return len(self._simple_functions) == 0 and len(self._namespaced_functions) == 0
+        return len(self._simple_functions) == 0 and len(self._namespaced_functions) == 0 and len(self._struct_functions) == 0
 
     def _get_timestamp(self) -> float:
         """Get current timestamp for registration tracking."""
@@ -760,7 +962,9 @@ class FunctionRegistry:
         """String representation of the function registry."""
         simple_count = len(self._simple_functions)
         namespaced_count = sum(len(functions) for functions in self._namespaced_functions.values())
-        return f"FunctionRegistry(simple={simple_count}, namespaced={namespaced_count})"
+        struct_function_count = len(self._struct_functions)
+        receiver_types = len(self.list_struct_receiver_types()) if struct_function_count > 0 else 0
+        return f"FunctionRegistry(simple={simple_count}, namespaced={namespaced_count}, struct_functions={struct_function_count}, receiver_types={receiver_types})"
 
     def __getattr__(self, name: str):
         """Provide backward compatibility for old-style storage access."""

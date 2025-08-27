@@ -16,9 +16,9 @@ import pytest
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.agent import AgentInstance, AgentType
 from dana.apps.tui.core.events import Done, Status, Token
 from dana.apps.tui.core.runtime import DanaSandbox
+from dana.core.builtin_types.agent_system import AgentInstance, AgentType
 
 
 class MockTestAgent(AgentInstance):

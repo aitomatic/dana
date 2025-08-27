@@ -12,7 +12,9 @@ import threading
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
-from textual.widgets import Button, RichLog, Static
+from textual.widgets import Button, Static
+
+from .copyable_richlog import CopyableRichLog
 
 
 class LogMessage(Message):
@@ -72,7 +74,7 @@ class LogPanel(Vertical):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._log_widget: RichLog | None = None
+        self._log_widget: CopyableRichLog | None = None
         self._handler: TextualLogHandler | None = None
         self._visible = False
 
@@ -84,8 +86,8 @@ class LogPanel(Vertical):
             yield Button("🗑️ Clear", id="log-clear-btn", variant="primary")
             yield Button("👁️ Show", id="log-toggle-btn", variant="default")
 
-        # Log display
-        self._log_widget = RichLog(highlight=True, markup=True, wrap=False, id="log-output", auto_scroll=True)
+        # Log display - with copy functionality
+        self._log_widget = CopyableRichLog(highlight=True, markup=True, wrap=False, id="log-output", auto_scroll=True)
         yield self._log_widget
 
     def on_mount(self) -> None:

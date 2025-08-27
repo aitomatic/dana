@@ -1,0 +1,6 @@
+"""Documents Querying."""
+
+
+dana_primers_rag = use('rag', sources=['../../../../docs/primers'])
+
+reason("Dana's 6 core concepts", resources=[dana_primers_rag])

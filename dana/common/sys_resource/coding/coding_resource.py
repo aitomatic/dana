@@ -2,12 +2,10 @@ import os
 import subprocess
 import sys
 import tempfile
-import pkg_resources
-from typing import Any, List
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
-from dana.common.types import BaseRequest, BaseResponse
+from dana.common.types import BaseRequest
 
 
 class CodingResource(BaseSysResource):
@@ -27,7 +25,7 @@ class CodingResource(BaseSysResource):
         self._is_ready = False
         self._available_packages = None
 
-    def _get_available_packages(self) -> List[str]:
+    def _get_available_packages(self) -> list[str]:
         """Get list of available packages in the current environment."""
 
         # Fallback to common packages

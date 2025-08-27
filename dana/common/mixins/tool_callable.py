@@ -45,7 +45,16 @@ import inspect
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from mcp import Tool as McpTool
+try:
+    from mcp import Tool as McpTool
+except ImportError:
+    # MCP is optional - create a placeholder class
+    class McpTool:
+        """Placeholder for MCP Tool when mcp module is not available."""
+
+        pass
+
+
 from pydantic import BaseModel, ValidationError, create_model
 
 from dana.common.mixins.loggable import Loggable

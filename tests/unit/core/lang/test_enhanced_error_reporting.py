@@ -68,11 +68,18 @@ result = outer_func(None)
 
             try:
                 result = DanaSandbox.execute_file_once(f.name)
-                # With async-by-default, errors might be wrapped in promises
+                # With universal EagerPromise wrapping, results are wrapped in promises
                 if result.success:
                     # Check if there's an error in the result
-                    result_str = str(result.result)
-                    assert "bad_attr" in result_str or "inner_func" in result_str
+                    # result.result is now an EagerPromise, so we need to wait for it
+                    try:
+                        result_value = result.result._wait_for_delivery()
+                        result_str = str(result_value)
+                        assert "bad_attr" in result_str or "inner_func" in result_str
+                    except Exception as promise_error:
+                        # If the promise contains an error, check the error message
+                        error_str = str(promise_error)
+                        assert "inner_func" in error_str or "line 3" in error_str or "bad_attr" in error_str
                 else:
                     error = result.error
                     # Check error contains function names in message

@@ -182,10 +182,10 @@ def run_comprehensive_assessment():
     log("\n2. Testing struct methods...")
     try:
         severity = defect.calculate_severity()
-        results["struct_methods"] = severity
+        results["struct_functions"] = severity
         log(f"✅ Struct methods work: {severity}")
     except Exception as e:
-        results["struct_methods"] = f"❌ Failed: {e}"
+        results["struct_functions"] = f"❌ Failed: {e}"
         log(f"❌ Struct methods failed: {e}")
     
     # Test agent creation
