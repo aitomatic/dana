@@ -91,43 +91,6 @@ def default_solve_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
     resources: dict[str, Any] | None = None
 ) -> Any:
-<<<<<<< HEAD:dana/agent/agent_instance.py
-    """Default solve method for agent structs.
-
-    Args:
-        agent_instance: The agent instance
-        sandbox_context: The sandbox context
-        problem: The problem to solve
-        context: Optional context dictionary
-        resources: Dictionary mapping string keys to resource values. Must be a dict with string keys.
-
-    Returns:
-        The solution to the problem
-
-    Raises:
-        TypeError: If resources is not None and not a dict with string keys
-    """
-    from dana.agent.general_solver_with_expert_workflows import solve
-
-    expertise_modules: list = getattr(agent_instance, 'expertise', [])
-
-    # Validate resources parameter
-    if resources is not None:
-        if not isinstance(resources, dict):
-            raise TypeError(f"resources must be a dict, got {type(resources).__name__}")
-
-        # Check that all keys are strings
-        for key in resources.keys():
-            if not isinstance(key, str):
-                raise TypeError(f"resources keys must be strings, got {type(key).__name__} for key {key}")
-
-    # Use empty dict if resources is None
-    if resources is None:
-        resources = {}
-
-    # Use the general solver
-    return solve(problem=problem, expertise_modules=expertise_modules, resources=resources)
-=======
     """Default solve method for agent structs - delegates to instance method."""
 
     # Simply delegate to the built-in implementation
@@ -136,7 +99,6 @@ def default_solve_method(
         return agent_instance._solve_impl(sandbox_context, problem, user_context)
 
     return PromiseFactory.create_promise(computation=wrapper)
->>>>>>> 55707d649d665bd3ce7c025bf678aaa3d8b5d090:dana/core/builtin_types/agent_system.py
 
 
 def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> Any:
@@ -165,10 +127,10 @@ def default_reason_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
 ) -> Any:
     """Default reason method for agent structs - delegates to instance method."""
-    
+
     # Check if we have a type context that needs to be preserved
     current_assignment_type = sandbox_context.get("system:__current_assignment_type")
-    
+
     # Simply delegate to the built-in implementation
     # The main reason() method will handle Promise wrapping
     def wrapper():
@@ -425,16 +387,11 @@ class AgentInstance(StructInstance):
 
         method = lookup_dana_method(self.__struct_type__.name, "solve")
         if method:
-<<<<<<< HEAD:dana/agent/agent_instance.py
-            return method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
-        return default_solve_method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
-=======
             # User-defined Dana solve() method
-            return method(self, sandbox_context, problem, context)
+            return method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
         else:
             # Fallback to built-in solve implementation
-            return default_solve_method(self, sandbox_context, problem, context)
->>>>>>> 55707d649d665bd3ce7c025bf678aaa3d8b5d090:dana/core/builtin_types/agent_system.py
+            return default_solve_method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:
         """Execute agent memory storage method."""
