@@ -88,7 +88,8 @@ def default_plan_method(
 
 
 def default_solve_method(
-    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
+    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
+    resources: dict[str, Any] | None = None
 ) -> Any:
     """Default solve method for agent structs - delegates to instance method."""
 
@@ -126,10 +127,10 @@ def default_reason_method(
     agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
 ) -> Any:
     """Default reason method for agent structs - delegates to instance method."""
-    
+
     # Check if we have a type context that needs to be preserved
     current_assignment_type = sandbox_context.get("system:__current_assignment_type")
-    
+
     # Simply delegate to the built-in implementation
     # The main reason() method will handle Promise wrapping
     def wrapper():
@@ -381,16 +382,16 @@ class AgentInstance(StructInstance):
             # Fallback to built-in plan implementation
             return default_plan_method(self, sandbox_context, task, context)
 
-    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
+    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None, resources: dict[str, Any] | None = None) -> Any:
         """Execute agent problem-solving method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "solve")
         if method:
             # User-defined Dana solve() method
-            return method(self, sandbox_context, problem, context)
+            return method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
         else:
             # Fallback to built-in solve implementation
-            return default_solve_method(self, sandbox_context, problem, context)
+            return default_solve_method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:
         """Execute agent memory storage method."""

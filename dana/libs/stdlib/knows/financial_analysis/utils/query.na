@@ -66,7 +66,6 @@ of {doc.company.upper()}
 {time_period_str}?')
 
     if doc.path:
-        with use('rag', sources=[doc.path]) as docs_resource:
-            return reason(query)
+        return reason(query, resources=[use('rag', sources=[doc.path])])
 
     return llm(query)
