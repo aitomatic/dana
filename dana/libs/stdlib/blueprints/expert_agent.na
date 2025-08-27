@@ -6,12 +6,12 @@ from .utils.prompts import CLOSEST_MATCHED_EXPERT_WORKFLOW_LOOKUP_PROMPT_TEMPLAT
 
 
 # expert agent blueprint with list of expertise
-agent_blueprint DanaExpertAgent:
+agent_blueprint ExpertAgent:
     expertise: list = []
 
 
-def (dxa: DanaExpertAgent) solve(problem, resources=None) -> str:
-    """Struct function `solve` dedicated to `DanaExpertAgent` struct."""
+def (dxa: ExpertAgent) solve(problem, resources=None) -> str:
+    """Struct function `solve` dedicated to `ExpertAgent` struct."""
 
     if dxa.expertise:
         # Build combined list of all importable workflows from all expertise modules
