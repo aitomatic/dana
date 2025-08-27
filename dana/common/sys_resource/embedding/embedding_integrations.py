@@ -89,6 +89,8 @@ class LlamaIndexEmbeddingResource(Loggable):
 
         if provider == "openai":
             return self._create_openai_embedding(model_id, provider_config, dimension_override)
+        if provider == "azure":
+            return self._create_azure_embedding(model_id, provider_config, dimension_override)
         elif provider == "cohere":
             return self._create_cohere_embedding(model_id, provider_config, dimension_override)
         elif provider == "huggingface":
@@ -113,10 +115,10 @@ class LlamaIndexEmbeddingResource(Loggable):
         return required_key is None or bool(os.getenv(required_key))
 
     @staticmethod
-    def _resolve_env_var(value: str) -> str:
+    def _resolve_env_var(value: str, default: str = "") -> str:
         """Resolve environment variable if needed."""
         if isinstance(value, str) and value.startswith("env:"):
-            return os.getenv(value[4:], "")
+            return os.getenv(value[4:], default)
         return value
 
     def _create_openai_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
@@ -142,6 +144,30 @@ class LlamaIndexEmbeddingResource(Loggable):
         return OpenAIEmbedding(
             api_key=api_key,
             model=model_name,
+            embed_batch_size=provider_config.get("batch_size", 100),
+            dimensions=dimensions,
+        )
+
+    def _create_azure_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        try:
+            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # type: ignore
+        except ImportError:
+            raise EmbeddingError("Install: pip install llama-index-embeddings-azure")
+
+        api_key = self._resolve_env_var(provider_config.get("api_key", ""))
+        azure_endpoint = self._resolve_env_var(provider_config.get("base_url", ""))
+        api_version = self._resolve_env_var(provider_config.get("api_version", ""), "2025-01-01-preview")
+        if not api_key or not azure_endpoint:
+            raise EmbeddingError("Azure embedding failed to initialize. Please provide both AZURE_OPENAI_API_KEY and AZURE_OPENAI_API_URL")
+        
+        # Use dimension_override if provided, else fall back to provider_config
+        dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
+
+        return AzureOpenAIEmbedding(
+            model=model_name,
+            api_key=api_key,
+            api_version=api_version,
+            azure_endpoint=azure_endpoint,
             embed_batch_size=provider_config.get("batch_size", 100),
             dimensions=dimensions,
         )
