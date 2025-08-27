@@ -8,7 +8,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Optional, Union, Callable, Awaitable
+from typing import Any, Union
+from collections.abc import Callable, Awaitable
 import asyncio
 
 from dana.common.utils.logging import DANA_LOGGER
@@ -17,19 +18,19 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 class StreamingPrintManager:
     """Manager for streaming print function overrides."""
-    
-    _current_streamer: Optional[Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]]] = None
-    
+
+    _current_streamer: Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]] | None = None
+
     @classmethod
     def set_streamer(cls, streamer: Union[Callable[[str, str], None], Callable[[str, str], Awaitable[None]]]) -> None:
         """Set the current log streamer."""
         cls._current_streamer = streamer
-    
+
     @classmethod
     def clear_streamer(cls) -> None:
         """Clear the current log streamer."""
         cls._current_streamer = None
-    
+
     @classmethod
     def stream_message(cls, level: str, message: str) -> None:
         """Stream a message if streamer is available."""
@@ -52,15 +53,15 @@ def streaming_print_function(
 ) -> None:
     """
     Enhanced print function that streams output in real-time.
-    
+
     This function replaces the standard Dana print function to enable
     real-time log streaming while maintaining all original functionality.
-    
+
     Args:
         context: The sandbox context
         *args: Values to print
         options: Optional parameters for the function
-        
+
     Returns:
         None
     """
@@ -98,13 +99,13 @@ def streaming_print_function(
 
     # Join the processed arguments with a space separator
     message = " ".join(processed_args)
-    
+
     # STREAM IMMEDIATELY (this is the key addition)
     StreamingPrintManager.stream_message("info", message)
-    
+
     # Continue with original print function behavior
     print(message)  # Regular stdout
-    
+
     # Try to write to the executor's output buffer if available
     interpreter = getattr(context, "_interpreter", None)
     if interpreter is not None and hasattr(interpreter, "_executor"):

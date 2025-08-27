@@ -10,12 +10,11 @@
 
 ## Executive Summary
 
-Dana implements a sophisticated Promise system that enables concurrent-by-default execution through transparent Promise[T] types. The system provides two function completion mechanisms - `deliver` for simple synchronous returns and `return` for concurrent Promise-based execution - while maintaining complete type transparency.
+Dana implements a sophisticated Promise system that enables concurrent-by-default execution through transparent Promise[T] types. The system provides automatic Promise-based execution for function returns while maintaining complete type transparency.
 
 **Key Features:**
 - **Transparent Typing**: Promise[T] appears and behaves as type T
-- **Dual Completion**: `deliver` (sync) and `return` (concurrent) keywords
-- **Automatic Concurrency**: `return` statements create EagerPromise for background execution
+- **Automatic Concurrency**: Return statements create EagerPromise for background execution
 - **Zero Syntax Overhead**: No async/await keywords needed
 
 ## 1. Core Concepts
@@ -36,20 +35,9 @@ if result > 10:          // Comparison works, blocks if needed
     print(result)        // Automatic resolution when value needed
 ```
 
-### Dual Completion Mechanisms
+### Return Statement Behavior
 
-#### **`deliver` - Simple Synchronous Return**
-Returns a value immediately and synchronously, like traditional return statements in other languages.
-
-```dana
-def get_cached_value(key: String) -> String:
-    if cache.has(key):
-        deliver cache.get(key)  // Immediate synchronous return
-    deliver "default"           // No Promise creation, direct value
-```
-
-#### **`return` - Concurrent Promise Creation**
-Creates an EagerPromise that executes in the background, enabling concurrent execution.
+Return statements create EagerPromise objects that execute in the background, enabling concurrent execution.
 
 ```dana
 def fetch_data(url: String) -> Data:
@@ -84,7 +72,6 @@ All other operations remain synchronous:
 - Arithmetic and comparisons
 - Collection operations
 - Control flow statements
-- `deliver` statements
 
 ## 3. Implementation Details
 
@@ -143,7 +130,7 @@ def fetch_user_data(user_id: Int) -> UserData:
     friends = fetch_friends(user_id)      // return creates Promise
     
     // Promises resolve when accessed
-    deliver UserData(
+    return UserData(
         profile=profile,    // Blocks here if not ready
         posts=posts,        // Blocks here if not ready
         friends=friends     // Blocks here if not ready
@@ -154,7 +141,7 @@ def fetch_user_data(user_id: Int) -> UserData:
 ```dana
 def process_data(data: Data) -> Result:
     if data.is_cached():
-        deliver data.cached_result  // Synchronous, no Promise
+        return data.cached_result  // Synchronous, no Promise
     
     // Only create Promise for expensive operation
     return expensive_computation(data)  // Concurrent execution
@@ -162,10 +149,9 @@ def process_data(data: Data) -> Result:
 
 ### Best Practices
 
-1. **Use `deliver` for simple returns**: When returning cached values, constants, or simple computations
-2. **Use `return` for I/O or expensive operations**: Enables concurrent execution automatically
-3. **Don't worry about Promise types**: The transparent proxy handles all operations
-4. **Let collections auto-resolve**: Don't manually resolve Promises in collections
+1. **Use return for all function completions**: Return statements automatically handle Promise creation when needed
+2. **Don't worry about Promise types**: The transparent proxy handles all operations
+3. **Let collections auto-resolve**: Don't manually resolve Promises in collections
 
 ## 5. Performance Characteristics
 
@@ -219,7 +205,6 @@ except DivisionByZero:
 - ✅ BasePromise with full transparent proxy
 - ✅ EagerPromise with ThreadPoolExecutor
 - ✅ Return statement Promise creation
-- ✅ Deliver statement synchronous returns
 - ✅ Collection auto-resolution
 - ✅ Consolidated Promise utilities
 - ✅ REPL Promise display modes
@@ -235,15 +220,12 @@ except DivisionByZero:
 
 ## Quick Reference
 
-### When to use `deliver` vs `return`
+### When to use return
 
-| Use `deliver` when... | Use `return` when... |
-|----------------------|---------------------|
-| Returning cached values | Making API/network calls |
-| Returning constants | Performing I/O operations |
-| Simple computations | CPU-intensive calculations |
-| Already have the value | Need concurrent execution |
-| Want immediate return | Want background processing |
+Return statements automatically handle Promise creation when needed:
+- **Simple values**: Return immediately with no Promise overhead
+- **Expensive operations**: Automatically create Promise for concurrent execution
+- **I/O operations**: Create Promise for background processing
 
 ### Promise Utilities
 
@@ -264,12 +246,12 @@ def fetch_all_data(id: Int) -> Data:
     b = api_call_2(id)  // return → Promise, runs in parallel
     c = api_call_3(id)  // return → Promise, runs in parallel
     
-    deliver Data(a, b, c)  // Waits for all to complete
+    return Data(a, b, c)  // Waits for all to complete
 
 // Pattern 2: Conditional concurrency
 def smart_fetch(key: String) -> Value:
     if cache.has(key):
-        deliver cache.get(key)  // Sync return, no Promise
+        return cache.get(key)  // Sync return, no Promise
     return database.query(key)  // Concurrent database call
 
 // Pattern 3: Promise chaining
@@ -277,9 +259,9 @@ def process_chain(input: String) -> Result:
     parsed = parse_data(input)      // return → Promise
     validated = validate(parsed)     // Works on Promise transparently
     transformed = transform(validated)  // Chain continues
-    deliver transformed              // Final sync return
+    return transformed              // Final return
 ```
 
 ## Summary
 
-Dana's Promise system provides powerful concurrent-by-default execution while maintaining the simplicity of synchronous code. Through transparent typing and dual completion mechanisms, developers can write naturally concurrent code without cognitive overhead. The system is production-ready and forms a core part of Dana's agent-oriented programming model.
+Dana's Promise system provides powerful concurrent-by-default execution while maintaining the simplicity of synchronous code. Through transparent typing and automatic Promise creation, developers can write naturally concurrent code without cognitive overhead. The system is production-ready and forms a core part of Dana's agent-oriented programming model.

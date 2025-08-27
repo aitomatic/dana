@@ -11,10 +11,13 @@ import time
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.reactive import reactive
-from textual.widgets import RichLog, Static
+from textual.widgets import Static
+
+from dana.registry import AGENT_REGISTRY
 
 from ..core.events import AgentEvent, Done, Error, FinalResult, Progress, Status, Token, ToolEnd, ToolStart
 from ..core.runtime import DanaSandbox
+from .copyable_richlog import CopyableRichLog
 
 
 class ThinkingEntry:
@@ -44,7 +47,7 @@ class AgentDetail(Vertical):
     def __init__(self, sandbox: DanaSandbox, **kwargs):
         super().__init__(**kwargs)
         self.sandbox = sandbox
-        self._text_log: RichLog | None = None
+        self._text_log: CopyableRichLog | None = None
         self._thinking_entries: list[ThinkingEntry] = []
         self._max_entries = 200  # Keep last 200 entries
         self._last_update = 0.0
@@ -53,7 +56,7 @@ class AgentDetail(Vertical):
     def compose(self) -> ComposeResult:
         """Create the agent detail UI."""
         yield Static("🔍 Agent Detail", classes="panel-title", id="detail-title")
-        self._text_log = RichLog(highlight=True, markup=True, wrap=False, id="detail-log", auto_scroll=True)
+        self._text_log = CopyableRichLog(highlight=True, markup=True, wrap=False, id="detail-log", auto_scroll=True)
         yield self._text_log
 
     def on_mount(self) -> None:
@@ -88,7 +91,13 @@ class AgentDetail(Vertical):
 
         focused_name = self.focused_agent
         if focused_name:
-            agent = self.sandbox.get(focused_name)
+            # Get agent from registry
+            agent = None
+            for instance in AGENT_REGISTRY.list_instances():
+                if hasattr(instance, "name") and instance.name == focused_name:
+                    agent = instance
+                    break
+
             if agent:
                 metrics = agent.get_metrics()
                 step = metrics.get("current_step", "idle")
@@ -268,7 +277,13 @@ class AgentDetail(Vertical):
         if not focused_name:
             return "No agent focused"
 
-        agent = self.sandbox.get(focused_name)
+        # Get agent from registry
+        agent = None
+        for instance in AGENT_REGISTRY.list_instances():
+            if hasattr(instance, "name") and instance.name == focused_name:
+                agent = instance
+                break
+
         if not agent:
             return f"Agent {focused_name} not found"
 

@@ -1,0 +1,13 @@
+"""Credit Approval Tools - Minimal & Efficient"""
+
+def http_call(url: str, data: dict = None) -> dict:
+    return reason(f"Make HTTP request to {url}", context={"url": url, "data": data})
+
+def db_connect(db: str) -> dict:
+    return reason(f"Connect to database {db}", context={"database": db})
+
+def get_env(key: str) -> str:
+    return reason(f"Get environment variable {key}", context={"key": key})
+
+def log(msg: str) -> bool:
+    return reason(f"Log message: {msg}", context={"message": msg})

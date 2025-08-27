@@ -20,10 +20,13 @@ class TestConversationMemory(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary files."""
+        # Clean up all possible temporary files created by ConversationMemory
         if os.path.exists(self.temp_file):
             os.remove(self.temp_file)
         if os.path.exists(self.temp_file + ".bak"):
             os.remove(self.temp_file + ".bak")
+        if os.path.exists(self.temp_file + ".tmp"):
+            os.remove(self.temp_file + ".tmp")
         os.rmdir(self.temp_dir)
 
     def test_initialization(self):

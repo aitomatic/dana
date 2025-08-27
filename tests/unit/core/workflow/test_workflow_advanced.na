@@ -1,0 +1,394 @@
+# Test advanced workflow functionality
+# This file tests complex workflow scenarios including composition, inheritance chains, and error handling
+
+sync def test_workflow_composition():
+    """Test workflow composition patterns."""
+    # Define base workflows
+    workflow DataSource:
+        endpoint: str = "http://api.example.com"
+        timeout: int = 30
+    
+    workflow DataProcessor:
+        algorithm: str = "default"
+        batch_size: int = 100
+    
+    workflow DataSink:
+        output_format: str = "json"
+        compression: bool = false
+    
+    # Define composite workflow
+    workflow DataPipeline:
+        source: DataSource = DataSource()
+        processor: DataProcessor = DataProcessor()
+        sink: DataSink = DataSink()
+        pipeline_id: str = "default"
+    
+    # Create composite workflow
+    pipeline = DataPipeline(
+        pipeline_id="test_pipeline",
+        source=DataSource(endpoint="http://custom.api.com", timeout=60),
+        processor=DataProcessor(algorithm="ml_enhanced", batch_size=200),
+        sink=DataSink(output_format="csv", compression=true)
+    )
+    
+    # Test composite structure
+    assert pipeline.pipeline_id == "test_pipeline", f"Expected 'test_pipeline', got '{pipeline.pipeline_id}'"
+    assert pipeline.source.endpoint == "http://custom.api.com", f"Expected 'http://custom.api.com', got '{pipeline.source.endpoint}'"
+    assert pipeline.source.timeout == 60, f"Expected 60, got '{pipeline.source.timeout}'"
+    assert pipeline.processor.algorithm == "ml_enhanced", f"Expected 'ml_enhanced', got '{pipeline.processor.algorithm}'"
+    assert pipeline.processor.batch_size == 200, f"Expected 200, got '{pipeline.processor.batch_size}'"
+    assert pipeline.sink.output_format == "csv", f"Expected 'csv', got '{pipeline.sink.output_format}'"
+    assert pipeline.sink.compression == true, f"Expected true, got '{pipeline.sink.compression}'"
+    
+    # Test default fields are present
+    assert pipeline.name == "A Workflow", f"Expected 'A Workflow', got '{pipeline.name}'"
+    assert pipeline.fsm == None, f"Expected None, got '{pipeline.fsm}'"
+    
+    log("✅ Workflow composition test passed")
+
+sync def test_workflow_inheritance_chain():
+    """Test multi-level workflow inheritance chains."""
+    # Define base workflow
+    workflow BaseWorkflow:
+        version: str = "1.0"
+        description: str = "Base workflow"
+    
+    # Define intermediate workflow
+    workflow IntermediateWorkflow(BaseWorkflow):
+        category: str = "general"
+        priority: int = 1
+    
+    # Define specific workflow
+    workflow SpecificWorkflow(IntermediateWorkflow):
+        domain: str = "data_processing"
+        config: dict = {"enabled": true}
+    
+    # Create specific workflow instance
+    specific = SpecificWorkflow(
+        version="2.0",
+        category="advanced",
+        domain="ml_processing",
+        config={"enabled": true, "model": "gpt-4"}
+    )
+    
+    # Test inheritance chain
+    assert specific.version == "2.0", f"Expected '2.0', got '{specific.version}'"
+    assert specific.description == "Base workflow", f"Expected 'Base workflow', got '{specific.description}'"
+    assert specific.category == "advanced", f"Expected 'advanced', got '{specific.category}'"
+    assert specific.priority == 1, f"Expected 1, got '{specific.priority}'"
+    assert specific.domain == "ml_processing", f"Expected 'ml_processing', got '{specific.domain}'"
+    assert specific.config.get("enabled") == true, f"Expected true, got '{specific.config.get('enabled')}'"
+    assert specific.config.get("model") == "gpt-4", f"Expected 'gpt-4', got '{specific.config.get('model')}'"
+    
+    # Test default fields are present
+    assert specific.name == "A Workflow", f"Expected 'A Workflow', got '{specific.name}'"
+    assert specific.fsm == None, f"Expected None, got '{specific.fsm}'"
+    
+    log("✅ Workflow inheritance chain test passed")
+
+sync def test_workflow_error_handling():
+    """Test workflow error handling and exception management."""
+    # Define workflow with error handling
+    workflow ErrorTestWorkflow:
+        error_count: int = 0
+        last_error: str = ""
+        retry_limit: int = 3
+    
+    # Define workflow methods with error handling
+    def (self: ErrorTestWorkflow) safe_operation(operation: str) -> str:
+        if operation == "fail":
+            self.error_count = self.error_count + 1
+            self.last_error = "Operation failed"
+            raise "Operation failed"
+        elif operation == "retry":
+            if self.error_count < self.retry_limit:
+                self.error_count = self.error_count + 1
+                return f"Retry attempt {self.error_count}"
+            else:
+                self.last_error = "Max retries exceeded"
+                raise "Max retries exceeded"
+        else:
+            return f"Operation {operation} completed successfully"
+    
+    def (self: ErrorTestWorkflow) reset_errors() -> bool:
+        self.error_count = 0
+        self.last_error = ""
+        return true
+    
+    def (self: ErrorTestWorkflow) get_error_status() -> str:
+        return f"Errors: {self.error_count}/{self.retry_limit}, Last: {self.last_error}"
+    
+    # Create workflow instance
+    error_workflow = ErrorTestWorkflow()
+    
+    # Test successful operation
+    result1 = error_workflow.safe_operation("test")
+    assert "completed successfully" in result1, f"Expected success message, got '{result1}'"
+    assert error_workflow.error_count == 0, f"Expected 0, got '{error_workflow.error_count}'"
+    
+    # Test retry operation
+    result2 = error_workflow.safe_operation("retry")
+    assert "Retry attempt 1" in result2, f"Expected retry message, got '{result2}'"
+    assert error_workflow.error_count == 1, f"Expected 1, got '{error_workflow.error_count}'"
+    
+    # Test error status
+    status = error_workflow.get_error_status()
+    assert "Errors: 1/3" in status, f"Expected error status, got '{status}'"
+    
+    # Test reset
+    reset_result = error_workflow.reset_errors()
+    assert reset_result == true, f"Expected true, got '{reset_result}'"
+    assert error_workflow.error_count == 0, f"Expected 0, got '{error_workflow.error_count}'"
+    assert error_workflow.last_error == "", f"Expected empty string, got '{error_workflow.last_error}'"
+    
+    log("✅ Workflow error handling test passed")
+
+sync def test_workflow_state_management():
+    """Test workflow state management and transitions."""
+    # Define workflow with complex state
+    workflow StateManagementWorkflow:
+        current_state: str = "idle"
+        state_history: list = []
+        state_data: dict = {}
+    
+    # Define state management methods
+    def (self: StateManagementWorkflow) transition_to(new_state: str, data: dict = {}) -> str:
+        # Record transition
+        self.state_history.append({
+            "from": self.current_state,
+            "to": new_state,
+            "data": data.copy()
+        })
+        
+        # Update state
+        self.current_state = new_state
+        self.state_data = data.copy()
+        
+        return f"Transitioned from {self.state_history[-1]['from']} to {new_state}"
+    
+    def (self: StateManagementWorkflow) get_current_state() -> dict:
+        return {
+            "state": self.current_state,
+            "data": self.state_data,
+            "history_length": len(self.state_history)
+        }
+    
+    def (self: StateManagementWorkflow) rollback() -> str:
+        if len(self.state_history) > 0:
+            previous = self.state_history[-1]
+            self.current_state = previous["from"]
+            self.state_data = previous["data"]
+            self.state_history.pop()
+            return f"Rolled back to {self.current_state}"
+        else:
+            return "No history to rollback"
+    
+    # Create workflow instance
+    state_workflow = StateManagementWorkflow()
+    
+    # Test initial state
+    initial_state = state_workflow.get_current_state()
+    assert initial_state["state"] == "idle", f"Expected 'idle', got '{initial_state['state']}'"
+    assert initial_state["history_length"] == 0, f"Expected 0, got '{initial_state['history_length']}'"
+    
+    # Test state transitions
+    transition1 = state_workflow.transition_to("running", {"task": "data_processing"})
+    assert "Transitioned from idle to running" in transition1, f"Expected transition message, got '{transition1}'"
+    
+    state1 = state_workflow.get_current_state()
+    assert state1["state"] == "running", f"Expected 'running', got '{state1['state']}'"
+    assert state1["data"].get("task") == "data_processing", f"Expected 'data_processing', got '{state1['data'].get('task')}'"
+    assert state1["history_length"] == 1, f"Expected 1, got '{state1['history_length']}'"
+    
+    # Test another transition
+    transition2 = state_workflow.transition_to("completed", {"result": "success"})
+    assert "Transitioned from running to completed" in transition2, f"Expected transition message, got '{transition2}'"
+    
+    state2 = state_workflow.get_current_state()
+    assert state2["state"] == "completed", f"Expected 'completed', got '{state2['state']}'"
+    assert state2["data"].get("result") == "success", f"Expected 'success', got '{state2['data'].get('result')}'"
+    assert state2["history_length"] == 2, f"Expected 2, got '{state2['history_length']}'"
+    
+    # Test rollback
+    rollback_result = state_workflow.rollback()
+    assert "Rolled back to running" in rollback_result, f"Expected rollback message, got '{rollback_result}'"
+    
+    state3 = state_workflow.get_current_state()
+    assert state3["state"] == "running", f"Expected 'running', got '{state3['state']}'"
+    assert state3["data"].get("task") == "data_processing", f"Expected 'data_processing', got '{state3['data'].get('task')}'"
+    assert state3["history_length"] == 1, f"Expected 1, got '{state3['history_length']}'"
+    
+    log("✅ Workflow state management test passed")
+
+sync def test_workflow_complex_defaults():
+    """Test workflows with complex default values."""
+    # Define workflow with complex defaults
+    workflow ComplexDefaultsWorkflow:
+        config: dict = {
+            "timeout": 30,
+            "retries": 3,
+            "features": ["feature1", "feature2"],
+            "settings": {
+                "debug": false,
+                "log_level": "info"
+            }
+        }
+        metadata: dict = {
+            "version": "1.0.0",
+            "author": "test",
+            "tags": ["workflow", "test"]
+        }
+        steps: list = [
+            {"name": "step1", "action": "validate"},
+            {"name": "step2", "action": "process"},
+            {"name": "step3", "action": "output"}
+        ]
+    
+    # Create workflow instance
+    complex_workflow = ComplexDefaultsWorkflow()
+    
+    # Test complex default values
+    assert complex_workflow.config.get("timeout") == 30, f"Expected 30, got '{complex_workflow.config.get('timeout')}'"
+    assert complex_workflow.config.get("retries") == 3, f"Expected 3, got '{complex_workflow.config.get('retries')}'"
+    assert complex_workflow.config.get("features") == ["feature1", "feature2"], f"Expected ['feature1', 'feature2'], got '{complex_workflow.config.get('features')}'"
+    assert complex_workflow.config.get("settings").get("debug") == false, f"Expected false, got '{complex_workflow.config.get('settings').get('debug')}'"
+    assert complex_workflow.config.get("settings").get("log_level") == "info", f"Expected 'info', got '{complex_workflow.config.get('settings').get('log_level')}'"
+    
+    assert complex_workflow.metadata.get("version") == "1.0.0", f"Expected '1.0.0', got '{complex_workflow.metadata.get('version')}'"
+    assert complex_workflow.metadata.get("author") == "test", f"Expected 'test', got '{complex_workflow.metadata.get('author')}'"
+    assert complex_workflow.metadata.get("tags") == ["workflow", "test"], f"Expected ['workflow', 'test'], got '{complex_workflow.metadata.get('tags')}'"
+    
+    assert len(complex_workflow.steps) == 3, f"Expected 3, got '{len(complex_workflow.steps)}'"
+    assert complex_workflow.steps[0].get("name") == "step1", f"Expected 'step1', got '{complex_workflow.steps[0].get('name')}'"
+    assert complex_workflow.steps[0].get("action") == "validate", f"Expected 'validate', got '{complex_workflow.steps[0].get('action')}'"
+    
+    # Test default fields are present
+    assert complex_workflow.name == "A Workflow", f"Expected 'A Workflow', got '{complex_workflow.name}'"
+    assert complex_workflow.fsm == None, f"Expected None, got '{complex_workflow.fsm}'"
+    
+    log("✅ Workflow complex defaults test passed")
+
+sync def test_workflow_method_overloading():
+    """Test workflow method overloading patterns."""
+    # Define workflow with method overloading
+    workflow OverloadTestWorkflow:
+        data: list = []
+        config: dict = {}
+    
+    # Define overloaded methods
+    def (self: OverloadTestWorkflow) process_data() -> str:
+        return f"Processed {len(self.data)} items with default config"
+    
+    def (self: OverloadTestWorkflow) process_data(items: list) -> str:
+        self.data = items
+        return f"Processed {len(self.data)} items with default config"
+    
+    def (self: OverloadTestWorkflow) process_data(items: list, config: dict) -> str:
+        self.data = items
+        self.config = config
+        return f"Processed {len(self.data)} items with custom config"
+    
+    def (self: OverloadTestWorkflow) process_data(items: list, algorithm: str) -> str:
+        self.data = items
+        self.config = {"algorithm": algorithm}
+        return f"Processed {len(self.data)} items with {algorithm} algorithm"
+    
+    # Create workflow instance
+    overload_workflow = OverloadTestWorkflow()
+    
+    # Test different method overloads
+    result1 = overload_workflow.process_data()
+    assert "Processed 0 items" in result1, f"Expected 'Processed 0 items', got '{result1}'"
+    
+    result2 = overload_workflow.process_data([1, 2, 3])
+    assert "Processed 3 items" in result2, f"Expected 'Processed 3 items', got '{result2}'"
+    assert overload_workflow.data == [1, 2, 3], f"Expected [1, 2, 3], got '{overload_workflow.data}'"
+    
+    result3 = overload_workflow.process_data([4, 5], {"batch_size": 10})
+    assert "Processed 2 items" in result3, f"Expected 'Processed 2 items', got '{result3}'"
+    assert overload_workflow.data == [4, 5], f"Expected [4, 5], got '{overload_workflow.data}'"
+    assert overload_workflow.config.get("batch_size") == 10, f"Expected 10, got '{overload_workflow.config.get('batch_size')}'"
+    
+    result4 = overload_workflow.process_data([6, 7, 8], "ml_enhanced")
+    assert "Processed 3 items" in result4, f"Expected 'Processed 3 items', got '{result4}'"
+    assert "ml_enhanced algorithm" in result4, f"Expected 'ml_enhanced algorithm', got '{result4}'"
+    assert overload_workflow.data == [6, 7, 8], f"Expected [6, 7, 8], got '{overload_workflow.data}'"
+    assert overload_workflow.config.get("algorithm") == "ml_enhanced", f"Expected 'ml_enhanced', got '{overload_workflow.config.get('algorithm')}'"
+    
+    log("✅ Workflow method overloading test passed")
+
+sync def test_workflow_fsm_integration():
+    """Test workflow integration with FSM."""
+    # Define workflow with FSM integration
+    workflow FSMTestWorkflow:
+        current_step: str = "start"
+        step_data: dict = {}
+    
+    # Define FSM-like methods
+    def (self: FSMTestWorkflow) execute_step(step: str, data: dict = {}) -> str:
+        self.current_step = step
+        self.step_data = data.copy()
+        
+        if step == "validate":
+            return "Data validation completed"
+        elif step == "process":
+            return "Data processing completed"
+        elif step == "output":
+            return "Data output completed"
+        else:
+            return f"Unknown step: {step}"
+    
+    def (self: FSMTestWorkflow) get_current_step() -> dict:
+        return {
+            "step": self.current_step,
+            "data": self.step_data
+        }
+    
+    def (self: FSMTestWorkflow) run_workflow(input_data: dict) -> str:
+        # Simulate workflow execution
+        result1 = self.execute_step("validate", {"input": input_data})
+        result2 = self.execute_step("process", {"validated": true})
+        result3 = self.execute_step("output", {"processed": true})
+        
+        return f"Workflow completed: {result1}, {result2}, {result3}"
+    
+    # Create workflow instance
+    fsm_workflow = FSMTestWorkflow()
+    
+    # Test individual step execution
+    step1_result = fsm_workflow.execute_step("validate", {"test": "data"})
+    assert "Data validation completed" in step1_result, f"Expected validation message, got '{step1_result}'"
+    
+    step1_info = fsm_workflow.get_current_step()
+    assert step1_info["step"] == "validate", f"Expected 'validate', got '{step1_info['step']}'"
+    assert step1_info["data"].get("test") == "data", f"Expected 'data', got '{step1_info['data'].get('test')}'"
+    
+    # Test workflow execution
+    workflow_result = fsm_workflow.run_workflow({"input": "test_data"})
+    assert "Workflow completed" in workflow_result, f"Expected workflow completion, got '{workflow_result}'"
+    assert "Data validation completed" in workflow_result, f"Expected validation step, got '{workflow_result}'"
+    assert "Data processing completed" in workflow_result, f"Expected processing step, got '{workflow_result}'"
+    assert "Data output completed" in workflow_result, f"Expected output step, got '{workflow_result}'"
+    
+    # Test final step state
+    final_step = fsm_workflow.get_current_step()
+    assert final_step["step"] == "output", f"Expected 'output', got '{final_step['step']}'"
+    assert final_step["data"].get("processed") == true, f"Expected true, got '{final_step['data'].get('processed')}'"
+    
+    log("✅ Workflow FSM integration test passed")
+
+# Run all advanced tests
+log("🚀 Running Workflow Advanced Tests")
+log("=" * 50)
+
+test_workflow_composition()
+test_workflow_inheritance_chain()
+test_workflow_error_handling()
+test_workflow_state_management()
+test_workflow_complex_defaults()
+test_workflow_method_overloading()
+test_workflow_fsm_integration()
+
+log("")
+log("✅ All advanced workflow tests passed!")
+log("📊 Summary: 7 tests passed, 0 tests failed")

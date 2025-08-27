@@ -29,7 +29,7 @@ class SandboxContextWithNotifier(SandboxContext):
         self,
         parent: Optional["SandboxContext"] = None,
         manager: Optional["ContextManager"] = None,
-        notifier: Optional[Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]]] = None,
+        notifier: Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]] | None = None,
     ):
         """
         Initialize the sandbox context with notifier.
@@ -346,7 +346,7 @@ class SandboxContextWithNotifier(SandboxContext):
         cls,
         data: dict[str, Any],
         base_context: Optional["SandboxContext"] = None,
-        notifier: Optional[Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]]] = None,
+        notifier: Union[Callable[[str, str, Any, Any], None], Callable[[str, str, Any, Any], Awaitable[None]]] | None = None,
     ) -> "SandboxContextWithNotifier":
         """
         Create a new SandboxContextWithNotifier from a dictionary and base context.

@@ -633,7 +633,7 @@ If moving existing topics, use:
 
         # Apply each change
         for i, change in enumerate(changes):
-            print(f"🔄 Processing change {i+1}: {change}")
+            print(f"🔄 Processing change {i + 1}: {change}")
 
             if change.get("action") == "add_node":
                 parent_path = change.get("parent_path", ["Untitled"])

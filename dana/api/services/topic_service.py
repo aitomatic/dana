@@ -212,6 +212,7 @@ class TopicService:
 
                 # Import DocumentService to use its delete method which handles extraction files
                 from dana.api.services.document_service import DocumentService
+
                 document_service = DocumentService()
 
                 for document in documents:

@@ -4,7 +4,7 @@
 
 Make Dana functions concurrent by default through transparent Promise[T] wrapping, eliminating explicit concurrent/await syntax while providing automatic parallelism and optimized performance for agent workloads. The design uses surgical changes to function execution with Promise[T] boundaries, keeping most executors simple and synchronous.
 
-**Key Innovation: Dual Delivery Mechanisms** - Dana provides both `deliver` (eager) and `return` (lazy) end-of-function keywords with completely transparent typing. The natural choice of `deliver` encourages concurrent execution by default while `return` provides lazy evaluation when specifically needed.
+**Key Innovation: Automatic Promise Creation** - Dana provides automatic Promise[T] wrapping for function returns with completely transparent typing. Return statements automatically create Promise objects when needed for concurrent execution.
 
 **Architecture: Sync Executors + Promise[T] Boundaries** - Only Dana function calls enter the async world through Promise[T] wrapping. All other operations (collections, arithmetic, control flow) remain fast and synchronous, with Promise[T] handling transparent resolution when needed.
 
@@ -22,14 +22,13 @@ Dana currently operates with a synchronous execution model where all operations 
 ### Why Concurrent-by-Default?
 - **Agent workloads are naturally concurrent** (I/O, API calls, inter-agent communication)
 - **Performance**: 60-80% faster for I/O-heavy operations
-- **Natural Psychology**: `deliver` feels immediate and active, encouraging concurrent patterns
-- **Intuitive Laziness**: `return` naturally suggests "when needed" semantics
+- **Intuitive Behavior**: Return statements automatically handle Promise creation when needed
 - **KISS**: Single execution model, minimal complexity
-- **User Behavior**: Developers naturally choose `deliver` → concurrent by default achieved
+- **User Behavior**: Developers write natural code and get concurrent execution automatically
 
 ## 2. Design
 
-### Core Principle: Promise[T] Boundaries with Dual Delivery Mechanisms
+### Core Principle: Promise[T] Boundaries with Automatic Promise Creation
 
 Dana achieves concurrent-by-default through **surgical Promise[T] wrapping of Dana function calls only**. All other operations remain synchronous for maximum performance and simplicity.
 
@@ -38,13 +37,10 @@ Dana achieves concurrent-by-default through **surgical Promise[T] wrapping of Da
 - **Collections, Arithmetic, Control Flow**: Fast synchronous execution
 - **Promise[T]**: Transparent async boundary management with magic method resolution
 
-Dana provides two ways to complete functions, giving developers intuitive control over execution timing while maintaining completely transparent types:
+Dana provides automatic Promise creation for function returns, giving developers transparent concurrent execution while maintaining completely transparent types:
 
-#### **`deliver x` - Eager Execution**
-Immediately evaluates `x`, waits for completion, and delivers the concrete value. Function execution blocks until `x` is fully computed. This is the natural choice for most operations.
-
-#### **`return x` - Lazy Execution**  
-Creates a lazy Promise[T] around `x` and returns immediately without executing `x`. The Promise[T] will execute `x` only when the value is accessed. Function returns instantly with a Promise[T] wrapper that appears as type T.
+#### **`return x` - Automatic Promise Creation**
+Automatically creates a Promise[T] around `x` when needed for concurrent execution. The Promise[T] will execute `x` in the background and resolve when accessed. Function returns with a Promise[T] wrapper that appears as type T.
 
 ### Execution Model
 
@@ -54,14 +50,14 @@ Creates a lazy Promise[T] around `x` and returns immediately without executing `
 // Dana functions are the ONLY entry points to async world
 def fetch_user(id: Int) -> User:          // Return type is just User, not Promise[User]
     if cache.has(id):
-        deliver cache.get(id)             // Eager: immediate User value
+        return cache.get(id)              // Immediate User value
     else:
-        return api.fetch(id)              // Lazy: Promise[T] wrapper that appears as User
+        return api.fetch(id)              // Promise[T] wrapper that appears as User
 
 def load_model(size: String) -> MLModel:
     match size:
-        "small":  deliver small_model     // Immediate delivery
-        "large":  return load_large()     // Lazy - only loads if accessed
+        "small":  return small_model      // Immediate return
+        "large":  return load_large()     // Promise[T] - only loads if accessed
 
 // Everything else stays fast and synchronous:
 numbers = [1, 2, 3, 4, 5]                // Fast sync list creation
@@ -105,7 +101,7 @@ def process_data():
     first = data[0]                        // Already resolved, immediate access
     processed = data.map(transform)        // Already resolved, immediate access
     
-    deliver processed
+    return processed
 ```
 
 #### **Smart Runtime Optimizations**
@@ -130,7 +126,7 @@ def parallel_example():
     
     // Runtime analysis: all three accessed together
     // Could start all three in parallel before first resolution
-    deliver combine(a.result, b.result, c.result)
+    return combine(a.result, b.result, c.result)
 ```
 
 #### **Conditional Computation**
@@ -143,9 +139,9 @@ def analyze_data(data: Data) -> Report:
     
     if basic_stats.needs_deep_analysis:
         deep_analysis = return run_ml_analysis(data)  // Only computed if accessed
-        deliver create_full_report(basic_stats, deep_analysis)
+        return create_full_report(basic_stats, deep_analysis)
     else:
-        deliver create_simple_report(basic_stats)       // deep_analysis never computed
+        return create_simple_report(basic_stats)       // deep_analysis never computed
 ```
 
 #### **Automatic Parallelism (Current Implementation)**
@@ -177,14 +173,14 @@ def (orchestrator: OrchestratorAgent) coordinate(task: dict) -> dict:
     // Conditional agent execution based on task complexity
     if task.is_simple:
         research_result = research_agent.quick_research(task.topic)  // Eager
-        deliver create_simple_report(research_result)
+        return create_simple_report(research_result)
     else:
         // Lazy execution - start work only if results are needed
         research_result = return research_agent.deep_research(task.topic)  
         analysis_result = return analysis_agent.complex_analysis(task.data)
         
         // Both agents could start work in parallel when accessed
-        deliver combine(research_result, analysis_result)
+        return combine(research_result, analysis_result)
 ```
 
 #### **Agent Instance Management**
@@ -212,7 +208,7 @@ def process_database_records() -> List[Record]:
     if heavy_processing_needed():
         return process_heavy(records)      // Promise[T] - deferred until accessed
     else:
-        deliver process_light(records)     // Eager - immediate processing
+        return process_light(records)     // Eager - immediate processing
 
 // Usage with transparent Promise[T] resolution:
 results = process_database_records()      // May be Promise[List[Record]]
@@ -248,9 +244,9 @@ def load_user_dashboard(user_id: int) -> dict:
         detailed_data = get_detailed_data(user_id)  // Returns Promise[dict]
         api_data = get_api_data(user_id)            // Returns Promise[dict]
         
-        deliver merge(user_data, detailed_data, api_data)  // Parallel execution when accessed
+        return merge(user_data, detailed_data, api_data)  // Parallel execution when accessed
     else:
-        deliver user_data  // detailed_data and api_data never computed
+        return user_data  // detailed_data and api_data never computed
 ```
 
 #### **Resource Lifecycle**
@@ -277,10 +273,10 @@ def risky_operation() -> dict:
     try:
         // Error from risky_data surfaces here when accessed
         combined = merge(safe_data, risky_data)
-        deliver combined
+        return combined
     except NetworkError as e:
         // Handle error from Promise[T] resolution
-        deliver fallback_data(safe_data)
+        return fallback_data(safe_data)
 ```
 
 #### **Error Context**
@@ -299,7 +295,7 @@ def process_pipeline(data: dict) -> dict:
     cleaned = clean_data(data)      // Must complete first (sync or Promise[T])
     validated = validate(cleaned)   // Depends on cleaned (sync or Promise[T])
     processed = process(validated)  // Depends on validated (sync or Promise[T])
-    deliver processed
+    return processed
 ```
 
 #### **Explicit Sequential Control**
@@ -311,7 +307,7 @@ def critical_operation() -> dict:
         a = operation1()  // Must complete first (Dana function → Promise[T])
         b = operation2()  // Must complete second (Dana function → Promise[T])
         c = operation3()  // Must complete third (Dana function → Promise[T])
-    deliver combine(a, b, c)
+    return combine(a, b, c)
 ```
 
 #### **Mixed Eager/Lazy Execution**
@@ -323,8 +319,8 @@ def adaptive_processing(complexity: String) -> Result:
     validation = validate_input()
     
     match complexity:
-        "low":    deliver simple_process(validation)           // Eager
-        "medium": deliver moderate_process(validation)         // Eager  
+        "low":    return simple_process(validation)           // Eager
+        "medium": return moderate_process(validation)         // Eager  
         "high":   return complex_process(validation)         // Lazy
         "concurrent":  return background_process(validation)      // Lazy
 ```
@@ -338,7 +334,7 @@ Individual Dana methods can have timeout constraints that work with both deliver
 @timeout(5000)  // 5 seconds
 def (agent: MyAgent) long_operation() -> dict:
     if can_do_quick():
-        deliver quick_result()                    // Eager, completes within timeout
+        return quick_result()                    // Eager, completes within timeout
     else:
         return slow_operation_with_timeout()    // Lazy, timeout applies when accessed
 
@@ -355,7 +351,7 @@ def (agent: MyAgent) cancellable_operation() -> dict:
     result = return cancel_on_interrupt { perform_task() }
     
     // If cancelled before accessing result, perform_task() never executes
-    deliver result  // Transparent resolution triggers actual execution
+    return result  // Transparent resolution triggers actual execution
 ```
 
 ### Observability
@@ -371,9 +367,9 @@ def complex_workflow() -> dict:
     
     if should_analyze():
         result = analysis.results           // [task:analyze_data_002] (return resolved)
-        deliver result
+        return result
     else:
-        deliver data                         // [task:analyze_data_002] (return never resolved)
+        return data                         // [task:analyze_data_002] (return never resolved)
 
 // Debug output shows eager vs lazy execution
 // [task:fetch_data_001] started (eager)
@@ -397,12 +393,12 @@ def unsafe_operation() -> dict:
     update_data(shared_data)  // Potential conflict
     modify_data(shared_data)  // Potential conflict
     // Runtime forces sequential execution when conflicts detected
-    deliver shared_data
+    return shared_data
 
 def safe_operation() -> dict:
     data1 = get_data1()  // Independent
     data2 = get_data2()  // Independent  
-    deliver combine(data1, data2)  // No conflicts = parallel
+    return combine(data1, data2)  // No conflicts = parallel
 ```
 
 #### Explicit Sequential Control
@@ -415,7 +411,7 @@ def critical_section() -> dict:
         step1 = initialize_system()
         step2 = configure_system(step1)
         step3 = activate_system(step2)
-    deliver step3
+    return step3
 ```
 
 ### Error Handling in Parallel Operations
@@ -432,12 +428,12 @@ def parallel_operations() -> dict:
         result3 = operation3()  // Might fail
         
         // All must succeed for this to work
-        deliver combine(result1, result2, result3)
+        return combine(result1, result2, result3)
     except PartialFailure as e:
         // Handle partial results
         successful_results = e.successful_results
         failed_operations = e.failed_operations
-        deliver handle_partial_success(successful_results, failed_operations)
+        return handle_partial_success(successful_results, failed_operations)
 ```
 
 #### Error Propagation Semantics
@@ -459,7 +455,7 @@ def resource_operations() -> dict:
     write2 = db.write("table2", data2)  // Parallel if no conflicts
     read1 = db.read("table1")           // Sequential if conflicts with write1
     
-    deliver combine(write1, write2, read1)
+    return combine(write1, write2, read1)
 ```
 
 #### Resource Locking
@@ -475,7 +471,7 @@ Individual methods can be cancelled:
 
 ```dana
 def (agent: MyAgent) long_running_task() -> dict:
-    deliver cancel_on_interrupt { 
+    return cancel_on_interrupt { 
         perform_very_long_task() 
     }
 ```
@@ -499,7 +495,7 @@ def deterministic_workflow() -> dict:
         step1 = validate_input()
         step2 = process_data(step1)
         step3 = generate_output(step2)
-    deliver step3
+    return step3
 ```
 
 #### Best-Effort Execution
@@ -513,7 +509,7 @@ def best_effort_workflow() -> dict:
     result3 = fetch_data3()  // Parallel
     
     // Wait for all to complete
-    deliver combine(result1, result2, result3)
+    return combine(result1, result2, result3)
 ```
 
 ### Agent Lifecycle Management

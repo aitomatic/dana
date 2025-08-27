@@ -68,7 +68,7 @@ def test_resource_inheritance():
         version: str = "1.0.0"
     
     # Now define a resource that inherits from BaseResource
-    resource TestRAG(BaseResource):
+    resource TestRAG:
         sources: list = []
         chunk_size: int = 1024
         domain: str = "documents"

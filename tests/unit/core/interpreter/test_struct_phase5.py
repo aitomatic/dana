@@ -8,10 +8,10 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.core.lang.interpreter.struct_system import (
+from dana.core.builtin_types.struct_system import (
     StructInstance,
 )
+from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.registry import TYPE_REGISTRY
 
 

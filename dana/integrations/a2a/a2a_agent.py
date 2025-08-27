@@ -1,5 +1,5 @@
 # TODO: Update to use new agent struct system
-# from dana.agent.abstract_dana_agent import AbstractDanaAgent
+# from dana.core.builtin_types.agent_system.abstract_dana_agent import AbstractDanaAgent
 from dana.common.mixins import ToolCallable
 from dana.common.utils import Misc
 from dana.integrations.a2a.client.a2a_client import BaseA2AClient

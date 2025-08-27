@@ -107,7 +107,7 @@ def engine_start(engine_instance):
 
 # Register the method for Engine structs
 # (This would typically be done by the Dana runtime)
-# universal_method_registry.register_struct_method("Engine", "start", engine_start)
+# universal_method_registry.register_struct_function("Engine", "start", engine_start)
 
 print("✅ Struct methods are added via method registry (not inline)")
 

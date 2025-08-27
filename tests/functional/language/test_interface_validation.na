@@ -1,0 +1,309 @@
+# Test: Interface Validation and Compliance
+# Purpose: Test interface validation, compliance checking, and error handling
+# Category: Language - Interface System
+
+log("🔄 === INTERFACE VALIDATION TESTS ===")
+
+# Test 1: Basic Interface Compliance
+log("🔍 Test 1: Basic Interface Compliance")
+
+interface IBasicCompliance:
+    get_name() -> str
+    set_name(name: str) -> None
+    process(data: str) -> str
+
+# Define a struct that implements the interface correctly
+struct CompliantStruct:
+    name: str = "default"
+    data: str = ""
+
+# Implement all required methods
+def (obj: CompliantStruct) get_name() -> str:
+    return obj.name
+
+def (obj: CompliantStruct) set_name(name: str) -> None:
+    obj.name = name
+
+def (obj: CompliantStruct) process(data: str) -> str:
+    obj.data = data
+    return f"Processed: {data}"
+
+# Create instance and test compliance
+instance = CompliantStruct()
+name = instance.get_name()
+assert name == "default", f"Expected 'default', got '{name}'"
+
+instance.set_name("test")
+name = instance.get_name()
+assert name == "test", f"Expected 'test', got '{name}'"
+
+result = instance.process("test data")
+assert "Processed: test data" in result, f"Expected processed result, got '{result}'"
+
+log("✅ Basic interface compliance successful")
+
+# Test 2: Interface with Property Accessors
+log("🔍 Test 2: Interface with Property Accessors")
+
+interface IPropertyInterface:
+    get_value() -> int
+    set_value(value: int) -> None
+    get_is_enabled() -> bool
+    set_is_enabled(enabled: bool) -> None
+
+struct PropertyStruct:
+    value: int = 0
+    enabled: bool = true
+
+# Implement property accessors
+def (obj: PropertyStruct) get_value() -> int:
+    return obj.value
+
+def (obj: PropertyStruct) set_value(value: int) -> None:
+    obj.value = value
+
+def (obj: PropertyStruct) get_is_enabled() -> bool:
+    return obj.enabled
+
+def (obj: PropertyStruct) set_is_enabled(enabled: bool) -> None:
+    obj.enabled = enabled
+
+# Test property accessors
+prop_instance = PropertyStruct()
+value = prop_instance.get_value()
+assert value == 0, f"Expected 0, got {value}"
+
+prop_instance.set_value(42)
+value = prop_instance.get_value()
+assert value == 42, f"Expected 42, got {value}"
+
+enabled = prop_instance.get_is_enabled()
+assert enabled == true, f"Expected true, got {enabled}"
+
+prop_instance.set_is_enabled(false)
+enabled = prop_instance.get_is_enabled()
+assert enabled == false, f"Expected false, got {enabled}"
+
+log("✅ Property accessor interface compliance successful")
+
+# Test 3: Interface with Embedded Interfaces
+log("🔍 Test 3: Interface with Embedded Interfaces")
+
+interface IReadable:
+    read() -> str
+    get_is_open() -> bool
+
+interface IWritable:
+    write(data: str) -> bool
+    get_is_writable() -> bool
+
+interface IReadWriter:
+    IReadable    # Embedded interface
+    IWritable    # Embedded interface
+    close() -> bool
+
+struct ReadWriterStruct:
+    data: str = ""
+    is_open: bool = true
+    is_writable: bool = true
+
+# Implement all methods from both embedded interfaces plus the additional method
+def (obj: ReadWriterStruct) read() -> str:
+    return obj.data
+
+def (obj: ReadWriterStruct) get_is_open() -> bool:
+    return obj.is_open
+
+def (obj: ReadWriterStruct) write(data: str) -> bool:
+    if obj.is_writable:
+        obj.data = data
+        return true
+    return false
+
+def (obj: ReadWriterStruct) get_is_writable() -> bool:
+    return obj.is_writable
+
+def (obj: ReadWriterStruct) close() -> bool:
+    obj.is_open = false
+    return true
+
+# Test embedded interface compliance
+rw_instance = ReadWriterStruct()
+is_open = rw_instance.get_is_open()
+assert is_open == true, f"Expected true, got {is_open}"
+
+is_writable = rw_instance.get_is_writable()
+assert is_writable == true, f"Expected true, got {is_writable}"
+
+write_result = rw_instance.write("test data")
+assert write_result == true, f"Expected true, got {write_result}"
+
+read_result = rw_instance.read()
+assert read_result == "test data", f"Expected 'test data', got '{read_result}'"
+
+close_result = rw_instance.close()
+assert close_result == true, f"Expected true, got {close_result}"
+
+is_open = rw_instance.get_is_open()
+assert is_open == false, f"Expected false, got {is_open}"
+
+log("✅ Embedded interface compliance successful")
+
+# Test 4: Interface with Complex Types
+log("🔍 Test 4: Interface with Complex Types")
+
+interface IComplexInterface:
+    process_list(items: list[str]) -> list[int]
+    process_dict(data: dict[str, any]) -> dict[str, str]
+    get_metadata() -> dict[str, any]
+    set_metadata(metadata: dict[str, any]) -> None
+
+struct ComplexStruct:
+    metadata: dict = {}
+    processed_items: list = []
+
+def (obj: ComplexStruct) process_list(items: list[str]) -> list[int]:
+    result = []
+    for item in items:
+        result.append(len(item))
+    obj.processed_items = result
+    return result
+
+def (obj: ComplexStruct) process_dict(data: dict[str, any]) -> dict[str, str]:
+    result = {}
+    for key, value in data.items():
+        result[key] = str(value)
+    return result
+
+def (obj: ComplexStruct) get_metadata() -> dict[str, any]:
+    return obj.metadata
+
+def (obj: ComplexStruct) set_metadata(metadata: dict[str, any]) -> None:
+    obj.metadata = metadata
+
+# Test complex type interface compliance
+complex_instance = ComplexStruct()
+
+# Test list processing
+input_list = ["a", "bb", "ccc"]
+result_list = complex_instance.process_list(input_list)
+assert result_list == [1, 2, 3], f"Expected [1, 2, 3], got {result_list}"
+
+# Test dict processing
+input_dict = {"key1": 42, "key2": "value"}
+result_dict = complex_instance.process_dict(input_dict)
+assert result_dict["key1"] == "42", f"Expected '42', got '{result_dict['key1']}'"
+assert result_dict["key2"] == "value", f"Expected 'value', got '{result_dict['key2']}'"
+
+# Test metadata handling
+metadata = {"version": "1.0", "author": "test"}
+complex_instance.set_metadata(metadata)
+retrieved_metadata = complex_instance.get_metadata()
+assert retrieved_metadata["version"] == "1.0", f"Expected '1.0', got '{retrieved_metadata['version']}'"
+assert retrieved_metadata["author"] == "test", f"Expected 'test', got '{retrieved_metadata['author']}'"
+
+log("✅ Complex type interface compliance successful")
+
+# Test 5: Interface with Union Types
+log("🔍 Test 5: Interface with Union Types")
+
+interface IUnionInterface:
+    process_data(data: str | bytes) -> str | int
+    get_result() -> str | None
+    set_config(config: dict | None) -> None
+
+struct UnionStruct:
+    config: dict | None = None
+    last_result: str | None = None
+
+def (obj: UnionStruct) process_data(data: str | bytes) -> str | int:
+    if isinstance(data, str):
+        obj.last_result = f"String: {data}"
+        return len(data)
+    else:
+        obj.last_result = f"Bytes: {len(data)} bytes"
+        return len(data)
+
+def (obj: UnionStruct) get_result() -> str | None:
+    return obj.last_result
+
+def (obj: UnionStruct) set_config(config: dict | None) -> None:
+    obj.config = config
+
+# Test union type interface compliance
+union_instance = UnionStruct()
+
+# Test string processing
+str_result = union_instance.process_data("test")
+assert str_result == 4, f"Expected 4, got {str_result}"
+
+# Test bytes processing (simulated)
+# Note: bytes type might not be fully supported in Dana yet
+# This test demonstrates the interface structure
+
+# Test config handling
+config = {"setting": "value"}
+union_instance.set_config(config)
+retrieved_config = union_instance.config
+assert retrieved_config["setting"] == "value", f"Expected 'value', got '{retrieved_config['setting']}'"
+
+# Test None config
+union_instance.set_config(None)
+assert union_instance.config == None, f"Expected None, got {union_instance.config}"
+
+log("✅ Union type interface compliance successful")
+
+# Test 6: Interface with Default Parameters
+log("🔍 Test 6: Interface with Default Parameters")
+
+interface IDefaultInterface:
+    configure(host: str = "localhost", port: int = 8080) -> bool
+    connect(timeout: float = 30.0) -> bool
+    send_message(message: str, priority: str = "normal") -> bool
+
+struct DefaultStruct:
+    host: str = "localhost"
+    port: int = 8080
+    connected: bool = false
+
+def (obj: DefaultStruct) configure(host: str = "localhost", port: int = 8080) -> bool:
+    obj.host = host
+    obj.port = port
+    return true
+
+def (obj: DefaultStruct) connect(timeout: float = 30.0) -> bool:
+    obj.connected = true
+    return true
+
+def (obj: DefaultStruct) send_message(message: str, priority: str = "normal") -> bool:
+    if obj.connected:
+        return true
+    return false
+
+# Test default parameter interface compliance
+default_instance = DefaultStruct()
+
+# Test with default parameters
+configure_result = default_instance.configure()
+assert configure_result == true, f"Expected true, got {configure_result}"
+assert default_instance.host == "localhost", f"Expected 'localhost', got '{default_instance.host}'"
+assert default_instance.port == 8080, f"Expected 8080, got {default_instance.port}"
+
+# Test with custom parameters
+configure_result = default_instance.configure("example.com", 9000)
+assert configure_result == true, f"Expected true, got {configure_result}"
+assert default_instance.host == "example.com", f"Expected 'example.com', got '{default_instance.host}'"
+assert default_instance.port == 9000, f"Expected 9000, got {default_instance.port}"
+
+# Test connection
+connect_result = default_instance.connect()
+assert connect_result == true, f"Expected true, got {connect_result}"
+assert default_instance.connected == true, f"Expected true, got {default_instance.connected}"
+
+# Test message sending
+send_result = default_instance.send_message("test message")
+assert send_result == true, f"Expected true, got {send_result}"
+
+log("✅ Default parameter interface compliance successful")
+
+log("🎉 All interface validation tests passed successfully!")

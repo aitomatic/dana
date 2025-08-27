@@ -1,20 +1,10 @@
 """Turnover Ratios."""
 
 
-# TODO: relative importing with dot notation & parenthesized importing in Dana
-# from .fin_statements import (
-#     get_total_asset_2y,
-#     get_fixed_asset_2y,
-#     get_inventory_2y,
-#
-#     get_rev,
-#     get_cogs,
-# )
-from fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
-from fin_statements import get_rev, get_cogs
+from .fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
+from .fin_statements import get_rev, get_cogs
 
-# TODO: relative importing with dot notation in Dana
-from fin_statements.util import over_avg_denom, CompanyAndPeriodAndCurrency
+from .utils import FinDoc
 
 
 __all__ = [
@@ -24,67 +14,59 @@ __all__ = [
 ]
 
 
-"""
-Calculate `(Total) Asset Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+
+def _total_asset_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `(Total) Asset Turnover Ratio`
 as decimal value according to formula:
 
 `(Total) Asset Turnover Ratio` = (
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
     `average Total Assets, typically between two consecutive fiscal year-ends`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_total_asset_turnover_ratio_fn(rev, total_asset_nums):
-    return over_avg_denom(rev, total_asset_nums)
-# calc_total_asset_turnover_ratio = (
-#     [get_rev, get_total_asset_2y] |
-#     (lambda rev, total_asset_nums: over_avg_denom(rev, total_asset_nums))
-# )
-calc_total_asset_turnover_ratio = (
-    [get_rev, get_total_asset_2y] | _calc_total_asset_turnover_ratio_fn
-)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def calc_total_asset_turnover_ratio(doc: FinDoc) -> float = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
 
 
-"""
-Calculate `Fixed Asset Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+def _fixed_asset_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `(Fixed) Asset Turnover Ratio`
 as decimal value according to formula:
 
-`Fixed Asset Turnover Ratio` = (
+`(Fixed) Asset Turnover Ratio` = (
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
-    `average (Net) Fixed Assets, a.k.a. (Net) Property, Plant & Equipment (PP&E),
-     typically between two consecutive fiscal year-ends`
-)
-"""
-# TODO: lambdas in Dana
-def _calc_fixed_asset_turnover_ratio_fn(rev, fixed_asset_nums):
-    return over_avg_denom(rev, fixed_asset_nums)
-# calc_fixed_asset_turnover_ratio = (
-#     [get_rev, get_fixed_asset_2y] |
-#     (lambda rev, fixed_asset_nums: over_avg_denom(rev, fixed_asset_nums))
-# )
-calc_fixed_asset_turnover_ratio = (
-    [get_rev, get_fixed_asset_2y] | _calc_fixed_asset_turnover_ratio_fn
+    `average Fixed Assets, typically between two consecutive fiscal year-ends`
 )
 
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def calc_fixed_asset_turnover_ratio(doc: FinDoc) -> float = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
 
-"""
-Calculate `Inventory Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+
+def _inventory_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `Inventory Turnover Ratio`
 as decimal value according to formula:
 
-`Inventory Turnover Ratio, a.k.a. Inventory Conversion Ratio` = (
-    `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales,
-     or (Total) Cost of Revenue` /
-    `average (Total) (Net) Inventory(ies),
-     typically between two consecutive fiscal year-ends`
+`Inventory Turnover Ratio` = (
+    `Cost of Goods Sold, a.k.a. COGS` /
+    `average Inventory, typically between two consecutive fiscal year-ends`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_inventory_turnover_ratio_fn(cogs, inventory_nums):
-    return over_avg_denom(cogs, inventory_nums)
-# calc_inventory_turnover_ratio = (
-#     [get_cogs, get_inventory_2y] |
-#     (lambda cogs, inventory_nums: over_avg_denom(cogs, inventory_nums))
-# )
-calc_inventory_turnover_ratio = (
-    [get_cogs, get_inventory_2y] | _calc_inventory_turnover_ratio_fn
-)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def calc_inventory_turnover_ratio(doc: FinDoc) -> float = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio

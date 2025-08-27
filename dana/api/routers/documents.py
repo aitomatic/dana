@@ -195,7 +195,7 @@ async def save_extraction_data(
             original_filename=request.original_filename,
             extraction_results=request.extraction_results,
             source_document_id=request.source_document_id,
-            db_session=db
+            db_session=db,
         )
 
         logger.info(f"Successfully saved extraction JSON file with ID: {document.id}")
@@ -227,18 +227,20 @@ async def get_document_extractions(
 
         result = []
         for doc in extraction_files:
-            result.append(DocumentRead(
-                id=doc.id,
-                filename=doc.filename,
-                original_filename=doc.original_filename,
-                file_size=doc.file_size,
-                mime_type=doc.mime_type,
-                source_document_id=doc.source_document_id,
-                topic_id=doc.topic_id,
-                agent_id=doc.agent_id,
-                created_at=doc.created_at,
-                updated_at=doc.updated_at
-            ))
+            result.append(
+                DocumentRead(
+                    id=doc.id,
+                    filename=doc.filename,
+                    original_filename=doc.original_filename,
+                    file_size=doc.file_size,
+                    mime_type=doc.mime_type,
+                    source_document_id=doc.source_document_id,
+                    topic_id=doc.topic_id,
+                    agent_id=doc.agent_id,
+                    created_at=doc.created_at,
+                    updated_at=doc.updated_at,
+                )
+            )
 
         return result
 
@@ -261,10 +263,7 @@ async def cleanup_orphaned_files(
         result = await deletion_service.cleanup_orphaned_files(db)
 
         logger.info(f"Cleanup completed: {result}")
-        return {
-            "message": "Cleanup completed successfully",
-            "cleanup_stats": result
-        }
+        return {"message": "Cleanup completed successfully", "cleanup_stats": result}
 
     except Exception as e:
         logger.error(f"Error in cleanup orphaned files endpoint: {e}")

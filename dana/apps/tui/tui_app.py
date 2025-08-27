@@ -170,7 +170,7 @@ class DanaTUI(App):
         background: $surface;
         color: $text;
         overflow: auto;
-        scrollbar-size: 0 0;
+        scrollbar-size: 0 2;
     }
     """
 
@@ -214,6 +214,9 @@ class DanaTUI(App):
         # TUI-managed focused agent state
         self._focused_agent: str | None = None
 
+        # Queue for pending agent updates (in case events fire before UI is ready)
+        self._pending_agent_updates = []
+
         # Register for AGENT_REGISTRY events
         self._setup_registry_events()
 
@@ -224,22 +227,38 @@ class DanaTUI(App):
 
     def _on_agent_registered(self, agent_id: str, agent_instance) -> None:
         """Handle agent registration events from AGENT_REGISTRY."""
+        # Use call_after_refresh to ensure we run in the correct Textual context
+        self.call_after_refresh(self._handle_agent_registered, agent_id, agent_instance)
+
+    def _handle_agent_registered(self, agent_id: str, agent_instance) -> None:
+        """Handle agent registration in the correct Textual context."""
         # Log the event
         if self.repl_panel:
             self.repl_panel.add_system_message(f"Agent registered in global registry: {agent_id}", "green")
 
-        # Update the agents list if it exists
-        if self.agents_list:
+        # Queue the update if UI isn't ready yet
+        if not self.agents_list:
+            self._pending_agent_updates.append(("registered", agent_id))
+        else:
+            # Update the agents list if it exists
             self.agents_list.refresh_agents()
 
     def _on_agent_unregistered(self, agent_id: str, agent_instance) -> None:
         """Handle agent unregistration events from AGENT_REGISTRY."""
+        # Use call_after_refresh to ensure we run in the correct Textual context
+        self.call_after_refresh(self._handle_agent_unregistered, agent_id, agent_instance)
+
+    def _handle_agent_unregistered(self, agent_id: str, agent_instance) -> None:
+        """Handle agent unregistration in the correct Textual context."""
         # Log the event
         if self.repl_panel:
             self.repl_panel.add_system_message(f"Agent unregistered from global registry: {agent_id}", "yellow")
 
-        # Update the agents list if it exists
-        if self.agents_list:
+        # Queue the update if UI isn't ready yet
+        if not self.agents_list:
+            self._pending_agent_updates.append(("unregistered", agent_id))
+        else:
+            # Update the agents list if it exists
             self.agents_list.refresh_agents()
 
     def sync_with_global_registry(self) -> None:
@@ -291,6 +310,29 @@ class DanaTUI(App):
 
         # Update all panels with initial state
         self._update_all_panels()
+
+        # Process any pending agent updates that occurred before UI was ready
+        self._process_pending_agent_updates()
+
+    def _process_pending_agent_updates(self) -> None:
+        """Process any pending agent updates that occurred before UI was ready."""
+        if not self._pending_agent_updates:
+            return
+
+        # Process all pending updates
+        for event_type, agent_id in self._pending_agent_updates:
+            if self.repl_panel:
+                if event_type == "registered":
+                    self.repl_panel.add_system_message(f"Agent registered in global registry: {agent_id}", "green")
+                else:
+                    self.repl_panel.add_system_message(f"Agent unregistered from global registry: {agent_id}", "yellow")
+
+        # Refresh the agents list to show all current agents
+        if self.agents_list:
+            self.agents_list.refresh_agents()
+
+        # Clear the pending updates
+        self._pending_agent_updates.clear()
 
     def _update_all_panels(self) -> None:
         """Update all panels with current state."""
@@ -409,6 +451,16 @@ Key Bindings:
 - Ctrl+Shift+H: Clear history
 - Ctrl+S: Save logs
 - Ctrl+R: Sync with global registry
+
+Copy/Paste:
+Input Area:
+- Ctrl+Shift+C: Copy selected text
+- Ctrl+Shift+V: Paste text
+- Ctrl+Shift+X: Cut selected text
+
+Output Areas (Terminal, Logs, Agent Detail):
+- Ctrl+Shift+C: Copy all content
+- Ctrl+Shift+A: Select all and copy
 
 Registry Integration:
 - The TUI automatically monitors AGENT_REGISTRY events

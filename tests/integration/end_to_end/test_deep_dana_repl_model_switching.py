@@ -22,15 +22,13 @@ class TestDeepDanaREPLModelSwitching(unittest.TestCase):
         # Clean environment and set required API keys
         self.original_env = os.environ.copy()
 
-        # Set API keys for all providers to enable testing
+        # Set API keys for all providers to enable testing (no longer overriding DANA_MOCK_LLM)
         os.environ.update(
             {
                 "OPENAI_API_KEY": "test-openai-key",
                 "ANTHROPIC_API_KEY": "test-anthropic-key",
                 "GROQ_API_KEY": "test-groq-key",
                 "DEEPSEEK_API_KEY": "test-deepseek-key",
-                # Enable mock mode for testing
-                "DANA_MOCK_LLM": "true",
             }
         )
 

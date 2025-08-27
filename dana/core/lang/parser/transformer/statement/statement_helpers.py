@@ -18,7 +18,6 @@ from dana.core.lang.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,
-    DeliverStatement,
     Expression,
     ForLoop,
     Identifier,
@@ -28,7 +27,6 @@ from dana.core.lang.ast import (
     RaiseStatement,
     ReturnStatement,
     TypeHint,
-    UseStatement,
     WhileLoop,
     WithStatement,
 )
@@ -83,8 +81,6 @@ class AssignmentHelper:
 
         # Type imports to match the original
         from dana.core.lang.ast import (
-            AgentPoolStatement,
-            AgentStatement,
             BinaryExpression,
             DictLiteral,
             FStringExpression,
@@ -110,10 +106,7 @@ class AssignmentHelper:
             | SetLiteral
             | SubscriptExpression
             | AttributeAccess
-            | FStringExpression
-            | UseStatement
-            | AgentStatement
-            | AgentPoolStatement,
+            | FStringExpression,
             value,
         )
 
@@ -264,14 +257,6 @@ class SimpleStatementHelper:
         return ReturnStatement(value=value)
 
     @staticmethod
-    def create_deliver_statement(items, expression_transformer):
-        """Create a DeliverStatement node."""
-        value = expression_transformer.expression(items) if items else None
-        if isinstance(value, tuple):
-            raise TypeError(f"Deliver value cannot be a tuple: {value}")
-        return DeliverStatement(value=value)
-
-    @staticmethod
     def create_break_statement():
         """Create a BreakStatement node."""
         return BreakStatement()
@@ -386,10 +371,11 @@ class ImportHelper:
 class ContextHelper:
     """Helper class for context management statement transformations."""
 
-    @staticmethod
-    def create_use_statement(args, kwargs):
-        """Create a UseStatement node."""
-        return UseStatement(args=args, kwargs=kwargs)
+    # Note: UseStatement functionality has been removed as part of grammar unification
+    # @staticmethod
+    # def create_use_statement(args, kwargs):
+    #     """Create a UseStatement node."""
+    #     return UseStatement(args=args, kwargs=kwargs)
 
     @staticmethod
     def create_with_statement(context_manager, as_var, body_tree, statement_transformer):

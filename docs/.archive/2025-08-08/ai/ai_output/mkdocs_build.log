@@ -1,0 +1,16 @@
+📖 Building documentation with strict validation...
+Bytecode compiled 14585 files in 1.27s
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /Users/annieha/opendxa/site
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - dana-syntax.md
+  - quickstart.md
+  - primers/comprehensions.md
+  - primers/import.md
+  - primers/poet.md
+  - primers/workflow_and_poet.md
+WARNING -  A reference to 'quick-start.md' is included in the 'nav' configuration, which is not found in the documentation files.
+WARNING -  A reference to 'language-reference.md' is included in the 'nav' configuration, which is not found in the documentation files.
+
+Aborted with 2 warnings in strict mode!
+make: *** [docs-build] Error 1

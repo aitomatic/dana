@@ -13,8 +13,8 @@ class TestSimpleModelSwitching(unittest.TestCase):
         """Set up test environment."""
         self.original_env = os.environ.copy()
 
-        # Set API keys and enable mock mode
-        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key", "DANA_MOCK_LLM": "true"})
+        # Set API keys (no longer overriding DANA_MOCK_LLM)
+        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key"})
 
         self.sandbox = DanaSandbox()
 

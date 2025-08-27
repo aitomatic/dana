@@ -61,8 +61,8 @@ result = boolean_function()
 """)
 
         assert result.success
-        assert result.result is True  # Equality (not identity) - noqa: E712
-        assert result.result is not False  # Inequality - noqa: E712
+        assert result.result == True  # Equality comparison
+        assert result.result != False  # Inequality comparison
         assert bool(result.result)  # Boolean conversion
         # Note: result.result is True would fail (identity check)
 
@@ -355,7 +355,7 @@ result = edge_case_function()
         assert result.success
         # Identity doesn't work with EagerPromise (expected limitation)
         # assert result.result is None  # This fails - EagerPromise[None] is not None
-        assert result.result is None  # None should work with equality - noqa: E711
+        assert result.result == None  # None should work with equality - noqa: E711
 
     def test_empty_collections(self):
         """Test transparency with empty collections."""

@@ -37,6 +37,7 @@ def py_print(
     # Add to output buffer if available
     if hasattr(context, "_interpreter") and hasattr(context._interpreter, "_executor"):
         context._interpreter._executor._output_buffer.append(output + end.rstrip("\n"))  # type: ignore
+        print(output, end=end, flush=True)
     else:
         # Print to stdout instead
         print(output, end=end, flush=True)

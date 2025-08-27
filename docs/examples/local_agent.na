@@ -1,0 +1,4 @@
+# Local agent example - works without API keys
+agent LocalAgent:
+    model = "local"
+    # To be completed

@@ -2,7 +2,7 @@
 Agent and context transformer for Dana language parsing.
 
 This module handles all agent and context statement transformations, including:
-- Agent statements (agent(), agent_pool())
+- Agent statements (agent())
 - Use statements (use())
 - With statements and context managers
 - Mixed arguments and keyword arguments
@@ -16,11 +16,8 @@ from typing import cast
 from lark import Token, Tree
 
 from dana.core.lang.ast import (
-    AgentPoolStatement,
-    AgentStatement,
     Expression,
     Identifier,
-    UseStatement,
     WithStatement,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -38,162 +35,7 @@ class AgentContextTransformer(BaseTransformer):
         self.main_transformer = main_transformer
         self.expression_transformer = main_transformer.expression_transformer
 
-    # === Use Statements ===
-
-    def use_stmt(self, items):
-        """Transform a use_stmt rule into a UseStatement node.
-
-        Grammar: use_stmt: USE "(" [mixed_arguments] ")"
-
-        The grammar passes:
-        - items[0] = USE token (ignored)
-        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
-        """
-        from lark import Tree
-
-        # Initialize collections for arguments
-        args = []  # List[Expression] for positional arguments
-        kwargs = {}  # Dict[str, Expression] for keyword arguments
-
-        # Handle the case where mixed_arguments is present
-        # items[0] is the USE token, items[1] is the mixed_arguments result
-        if len(items) > 1 and items[1] is not None:
-            mixed_args_result = items[1]
-
-            # Process mixed_arguments following with_stmt pattern
-            seen_keyword_arg = False  # Track if we've seen any keyword arguments
-
-            if isinstance(mixed_args_result, list):
-                # Process each argument
-                for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
-                        # Keyword argument: NAME "=" expr
-                        seen_keyword_arg = True
-                        name = arg_item.children[0].value
-                        value = arg_item.children[1]  # Value is already processed
-                        kwargs[name] = value
-                    else:
-                        # Positional argument: expr
-                        if seen_keyword_arg:
-                            # Error: positional argument after keyword argument
-                            raise SyntaxError("Positional argument follows keyword argument in use statement")
-                        args.append(cast(Expression, arg_item))
-            else:
-                # Single argument
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
-                    # Keyword argument: NAME "=" expr
-                    name = mixed_args_result.children[0].value
-                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
-                    kwargs[name] = value
-                else:
-                    # Positional argument: expr
-                    args.append(cast(Expression, mixed_args_result))
-
-        return UseStatement(args=args, kwargs=kwargs)
-
     # === Agent Statements ===
-
-    def agent_stmt(self, items):
-        """Transform an agent_stmt rule into an AgentStatement node.
-
-        Grammar: agent_stmt: AGENT "(" [mixed_arguments] ")"
-
-        The grammar passes:
-        - items[0] = AGENT token (ignored)
-        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
-        """
-        from lark import Tree
-
-        # Initialize collections for arguments
-        args = []  # List[Expression] for positional arguments
-        kwargs = {}  # Dict[str, Expression] for keyword arguments
-
-        # Handle the case where mixed_arguments is present
-        # items[0] is the AGENT token, items[1] is the mixed_arguments result
-        if len(items) > 1 and items[1] is not None:
-            mixed_args_result = items[1]
-
-            # Process mixed_arguments following use_stmt pattern
-            seen_keyword_arg = False  # Track if we've seen any keyword arguments
-
-            if isinstance(mixed_args_result, list):
-                # Process each argument
-                for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
-                        # Keyword argument: NAME "=" expr
-                        seen_keyword_arg = True
-                        name = arg_item.children[0].value
-                        value = arg_item.children[1]  # Value is already processed
-                        kwargs[name] = value
-                    else:
-                        # Positional argument: expr
-                        if seen_keyword_arg:
-                            # Error: positional argument after keyword argument
-                            raise SyntaxError("Positional argument follows keyword argument in agent statement")
-                        args.append(cast(Expression, arg_item))
-            else:
-                # Single argument
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
-                    # Keyword argument: NAME "=" expr
-                    name = mixed_args_result.children[0].value
-                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
-                    kwargs[name] = value
-                else:
-                    # Positional argument: expr
-                    args.append(cast(Expression, mixed_args_result))
-
-        return AgentStatement(args=args, kwargs=kwargs)
-
-    def agent_pool_stmt(self, items):
-        """Transform an agent_pool_stmt rule into an AgentPoolStatement node.
-
-        Grammar: agent_pool_stmt: AGENT_POOL "(" [mixed_arguments] ")"
-
-        The grammar passes:
-        - items[0] = AGENT_POOL token (ignored)
-        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
-        """
-        from lark import Tree
-
-        # Initialize collections for arguments
-        args = []  # List[Expression] for positional arguments
-        kwargs = {}  # Dict[str, Expression] for keyword arguments
-
-        # Handle the case where mixed_arguments is present
-        # items[0] is the AGENT_POOL token, items[1] is the mixed_arguments result
-        if len(items) > 1 and items[1] is not None:
-            mixed_args_result = items[1]
-
-            # Process mixed_arguments following use_stmt pattern
-            seen_keyword_arg = False  # Track if we've seen any keyword arguments
-
-            if isinstance(mixed_args_result, list):
-                # Process each argument
-                for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
-                        # Keyword argument: NAME "=" expr
-                        seen_keyword_arg = True
-                        name = arg_item.children[0].value
-                        value = arg_item.children[1]  # Value is already processed
-                        kwargs[name] = value
-                    else:
-                        # Positional argument: expr
-                        if seen_keyword_arg:
-                            # Error: positional argument after keyword argument
-                            raise SyntaxError("Positional argument follows keyword argument in agent_pool statement")
-                        args.append(cast(Expression, arg_item))
-            else:
-                # Single argument
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
-                    # Keyword argument: NAME "=" expr
-                    name = mixed_args_result.children[0].value
-                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
-                    kwargs[name] = value
-                else:
-                    # Positional argument: expr
-                    args.append(cast(Expression, mixed_args_result))
-
-        return AgentPoolStatement(args=args, kwargs=kwargs)
 
     # === Context Management (With Statements) ===
 
@@ -213,7 +55,6 @@ class AgentContextTransformer(BaseTransformer):
 
     def with_stmt(self, items):
         """Transform a with statement rule into a WithStatement node."""
-        from dana.core.lang.ast import Expression
 
         # Filter out None items
         filtered_items = [item for item in items if item is not None]

@@ -12,8 +12,7 @@ pytestmark = pytest.mark.skip(reason="TUI agent list tests need updating for AGE
 @pytest.mark.asyncio
 async def test_agents_list_shows_existing_agents(monkeypatch):
     """Test that the agents list shows existing agents from the registry."""
-    # Ensure mock LLM to avoid external dependencies
-    monkeypatch.setenv("DANA_MOCK_LLM", "true")
+    # No longer overriding DANA_MOCK_LLM - let environment control it
 
     # Start the TUI app in test mode
     async with DanaTUI().run_test() as pilot:
@@ -58,8 +57,7 @@ async def test_agents_list_shows_existing_agents(monkeypatch):
 @pytest.mark.asyncio
 async def test_type_mismatch_issue(monkeypatch):
     """Test that demonstrates the type mismatch between registry and TUI agents."""
-    # Ensure mock LLM to avoid external dependencies
-    monkeypatch.setenv("DANA_MOCK_LLM", "true")
+    # No longer overriding DANA_MOCK_LLM - let environment control it
 
     # Start the TUI app in test mode
     async with DanaTUI().run_test() as pilot:
@@ -94,8 +92,7 @@ async def test_type_mismatch_issue(monkeypatch):
 @pytest.mark.asyncio
 async def test_agents_list_updates_on_command(monkeypatch):
     """Test that running a command can create agents."""
-    # Ensure mock LLM to avoid external dependencies
-    monkeypatch.setenv("DANA_MOCK_LLM", "true")
+    # No longer overriding DANA_MOCK_LLM - let environment control it
 
     # Start the TUI app in test mode
     async with DanaTUI().run_test() as pilot:

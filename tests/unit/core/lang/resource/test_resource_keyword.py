@@ -10,15 +10,15 @@ This module tests the resource keyword functionality including:
 
 import pytest
 
+from dana.core.builtin_types.resource import (
+    ResourceInstance,
+    ResourceType,
+    ResourceTypeRegistry,
+)
 from dana.core.lang.ast import (
     ResourceDefinition,
     ResourceField,
     TypeHint,
-)
-from dana.core.resource import (
-    ResourceInstance,
-    ResourceType,
-    ResourceTypeRegistry,
 )
 
 
@@ -220,10 +220,9 @@ class TestAST:
     def test_resource_definition(self):
         """Test ResourceDefinition AST node."""
         # Without parent (composition-based)
-        definition = ResourceDefinition(name="MyResource", parent_name=None, fields=[], methods=[])
+        definition = ResourceDefinition(name="MyResource", fields=[], methods=[])
 
         assert definition.name == "MyResource"
-        assert definition.parent_name is None
 
     def test_resource_field(self):
         """Test ResourceField AST node."""

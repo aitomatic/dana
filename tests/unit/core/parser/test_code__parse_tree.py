@@ -55,10 +55,8 @@ def test_assignment(dana_parser):
     tree = dana_parser.parse("x = 42\n", do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    # New structure: assignment -> simple_assignment -> target
-    simple_assignment = assignment.children[0]
-    assert simple_assignment.data == "simple_assignment"
-    target = simple_assignment.children[0]
+    # Updated structure: assignment -> target (simple_assignment rule removed)
+    target = assignment.children[0]
     assert target.data == "target"
     atom = target.children[0]
     assert atom.data == "atom"
@@ -70,10 +68,8 @@ def test_assignment_indexing(dana_parser):
     tree = dana_parser.parse("arr[0] = 5\n", do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    # New structure: assignment -> simple_assignment -> target
-    simple_assignment = assignment.children[0]
-    assert simple_assignment.data == "simple_assignment"
-    target = simple_assignment.children[0]
+    # Updated structure: assignment -> target (simple_assignment rule removed)
+    target = assignment.children[0]
     assert target.data == "target"
     atom = target.children[0]
     assert atom.data == "atom"
@@ -87,10 +83,8 @@ def test_assignment_targets(dana_parser):
     tree = dana_parser.parse("x = 1\n", do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    # New structure: assignment -> simple_assignment -> target
-    simple_assignment = assignment.children[0]
-    assert simple_assignment.data == "simple_assignment"
-    target = simple_assignment.children[0]
+    # Updated structure: assignment -> target (simple_assignment rule removed)
+    target = assignment.children[0]
     assert target.data == "target"
     atom = target.children[0]
     assert atom.data == "atom"
@@ -100,9 +94,7 @@ def test_assignment_targets(dana_parser):
     tree2 = dana_parser.parse("private:x = 2\n", do_transform=False)
     assignment2 = find_first(tree2, "assignment")
     assert assignment2 is not None
-    simple_assignment2 = assignment2.children[0]
-    assert simple_assignment2.data == "simple_assignment"
-    target2 = simple_assignment2.children[0]
+    target2 = assignment2.children[0]
     assert target2.data == "target"
     atom2 = target2.children[0]
     assert atom2.data == "atom"
@@ -122,9 +114,7 @@ def test_assignment_targets(dana_parser):
     tree3 = dana_parser.parse("foo.bar.baz = 3\n", do_transform=False)
     assignment3 = find_first(tree3, "assignment")
     assert assignment3 is not None
-    simple_assignment3 = assignment3.children[0]
-    assert simple_assignment3.data == "simple_assignment"
-    target3 = simple_assignment3.children[0]
+    target3 = assignment3.children[0]
     assert target3.data == "target"
     atom3 = target3.children[0]
     assert atom3.data == "atom"
@@ -136,9 +126,7 @@ def test_assignment_targets(dana_parser):
     tree4 = dana_parser.parse("arr[0] = 4\n", do_transform=False)
     assignment4 = find_first(tree4, "assignment")
     assert assignment4 is not None
-    simple_assignment4 = assignment4.children[0]
-    assert simple_assignment4.data == "simple_assignment"
-    target4 = simple_assignment4.children[0]
+    target4 = assignment4.children[0]
     assert target4.data == "target"
     atom4 = target4.children[0]
     assert atom4.data == "atom"
@@ -154,10 +142,8 @@ def test_string_and_literals(dana_parser):
     tree = dana_parser.parse('s = "hello"\n', do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    # New structure: assignment -> simple_assignment -> [target, expr]
-    simple_assignment = assignment.children[0]
-    assert simple_assignment.data == "simple_assignment"
-    expr = simple_assignment.children[1]
+    # Updated structure: assignment -> [target, None, expr, None] (simple_assignment rule removed)
+    expr = assignment.children[2]
     atom = find_first(expr, "atom")
     assert atom is not None
     string_node = find_first(atom, "string_literal")
@@ -167,9 +153,7 @@ def test_string_and_literals(dana_parser):
     tree2 = dana_parser.parse('s = r"rawstring"\n', do_transform=False)
     assignment2 = find_first(tree2, "assignment")
     assert assignment2 is not None
-    simple_assignment2 = assignment2.children[0]
-    assert simple_assignment2.data == "simple_assignment"
-    expr2 = simple_assignment2.children[1]
+    expr2 = assignment2.children[2]
     atom2 = find_first(expr2, "atom")
     assert atom2 is not None
     string_node2 = find_first(atom2, "string_literal")
@@ -185,9 +169,7 @@ def test_string_and_literals(dana_parser):
     tree3 = dana_parser.parse('s = """multi\nline\nstring"""\n', do_transform=False)
     assignment3 = find_first(tree3, "assignment")
     assert assignment3 is not None
-    simple_assignment3 = assignment3.children[0]
-    assert simple_assignment3.data == "simple_assignment"
-    expr3 = simple_assignment3.children[1]
+    expr3 = assignment3.children[2]
     atom3 = find_first(expr3, "atom")
     assert atom3 is not None
     string_node3 = find_first(atom3, "string_literal")
@@ -205,9 +187,7 @@ def test_string_and_literals(dana_parser):
     assert len(assignments) == 3
     expected_types = ["TRUE", "FALSE", "NONE"]
     for i in range(3):
-        simple_assignment = assignments[i].children[0]
-        assert simple_assignment.data == "simple_assignment"
-        expr = simple_assignment.children[1]
+        expr = assignments[i].children[2]
         atom = find_first(expr, "atom")
         assert atom is not None
         assert len(atom.children) == 1
@@ -216,9 +196,7 @@ def test_string_and_literals(dana_parser):
     tree5 = dana_parser.parse('s = f"Hello, {name}!"\n', do_transform=False)
     assignment5 = find_first(tree5, "assignment")
     assert assignment5 is not None
-    simple_assignment5 = assignment5.children[0]
-    assert simple_assignment5.data == "simple_assignment"
-    expr5 = simple_assignment5.children[1]
+    expr5 = assignment5.children[2]
     atom5 = find_first(expr5, "atom")
     assert atom5 is not None
     string_node5 = find_first(atom5, "string_literal")
@@ -236,10 +214,8 @@ def test_fstring_assignment(dana_parser):
     tree = dana_parser.parse('s = f"Hello, {name}!"\n', do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    # New structure: assignment -> simple_assignment -> [target, expr]
-    simple_assignment = assignment.children[0]
-    assert simple_assignment.data == "simple_assignment"
-    expr = simple_assignment.children[1]
+    # Updated structure: assignment -> [target, None, expr, None] (simple_assignment rule removed)
+    expr = assignment.children[2]
     atom = find_first(expr, "atom")
     assert atom is not None
     string_node = find_first(atom, "string_literal")
@@ -269,10 +245,8 @@ def test_bool_and_none_variants(dana_parser):
         tree = dana_parser.parse(f"a = {variant}\n", do_transform=False)
         assignment = find_first(tree, "assignment")
         assert assignment is not None
-        # New structure: assignment -> simple_assignment -> [target, expr]
-        simple_assignment = assignment.children[0]
-        assert simple_assignment.data == "simple_assignment"
-        expr = simple_assignment.children[1]
+        # Updated structure: assignment -> [target, None, expr, None] (simple_assignment rule removed)
+        expr = assignment.children[2]
         atom = find_first(expr, "atom")
         assert atom is not None
         assert len(atom.children) == 1
@@ -282,10 +256,8 @@ def test_bool_and_none_variants(dana_parser):
         tree = dana_parser.parse(f"a = {variant}\n", do_transform=False)
         assignment = find_first(tree, "assignment")
         assert assignment is not None
-        # New structure: assignment -> simple_assignment -> [target, expr]
-        simple_assignment = assignment.children[0]
-        assert simple_assignment.data == "simple_assignment"
-        expr = simple_assignment.children[1]
+        # Updated structure: assignment -> [target, None, expr, None] (simple_assignment rule removed)
+        expr = assignment.children[2]
         atom = find_first(expr, "atom")
         assert atom is not None
         assert len(atom.children) == 1
@@ -295,10 +267,8 @@ def test_bool_and_none_variants(dana_parser):
         tree = dana_parser.parse(f"a = {variant}\n", do_transform=False)
         assignment = find_first(tree, "assignment")
         assert assignment is not None
-        # New structure: assignment -> simple_assignment -> [target, expr]
-        simple_assignment = assignment.children[0]
-        assert simple_assignment.data == "simple_assignment"
-        expr = simple_assignment.children[1]
+        # Updated structure: assignment -> [target, None, expr, None] (simple_assignment rule removed)
+        expr = assignment.children[2]
         atom = find_first(expr, "atom")
         assert atom is not None
         assert len(atom.children) == 1

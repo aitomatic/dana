@@ -23,59 +23,70 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_aisuite_handles_anthropic_automatically(self):
         """Test that AISuite automatically handles Anthropic system message transformation."""
-        llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
+        # Temporarily disable mock mode for this test
+        original_mock = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "false"
 
-        request = BaseRequest(
-            arguments={
-                "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is pi?"}],
-                "temperature": 0.7,
-            }
-        )
+        try:
+            llm = LegacyLLMResource(model="anthropic:claude-3-5-sonnet-20240620")
 
-        with patch("aisuite.Client") as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
+            request = BaseRequest(
+                arguments={
+                    "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is pi?"}],
+                    "temperature": 0.7,
+                }
+            )
 
-            # Track what parameters are sent to AISuite
-            captured_params = {}
+            with patch("aisuite.Client") as mock_client_class:
+                mock_client = MagicMock()
+                mock_client_class.return_value = mock_client
 
-            def capture_params(*args, **kwargs):
-                # Update captured_params with the actual parameters
-                for key, value in kwargs.items():
-                    captured_params[key] = value
+                # Track what parameters are sent to AISuite
+                captured_params = {}
 
-                mock_response = MagicMock()
-                mock_response.choices = [MagicMock()]
-                mock_response.choices[0].message = MagicMock()
-                mock_response.choices[0].message.role = "assistant"
-                mock_response.choices[0].message.content = "Test response"
-                mock_response.choices[0].message.tool_calls = None
-                mock_response.usage = MagicMock()
-                mock_response.usage.prompt_tokens = 20
-                mock_response.usage.completion_tokens = 10
-                mock_response.model = "claude-3-5-sonnet-20240620"
-                mock_response.model_dump.return_value = {"choices": [{"message": {"role": "assistant", "content": "Test response"}}]}
-                return mock_response
+                def capture_params(*args, **kwargs):
+                    # Update captured_params with the actual parameters
+                    for key, value in kwargs.items():
+                        captured_params[key] = value
 
-            mock_client.chat.completions.create.side_effect = capture_params
+                    mock_response = MagicMock()
+                    mock_response.choices = [MagicMock()]
+                    mock_response.choices[0].message = MagicMock()
+                    mock_response.choices[0].message.role = "assistant"
+                    mock_response.choices[0].message.content = "Test response"
+                    mock_response.choices[0].message.tool_calls = None
+                    mock_response.usage = MagicMock()
+                    mock_response.usage.prompt_tokens = 20
+                    mock_response.usage.completion_tokens = 10
+                    mock_response.model = "claude-3-5-sonnet-20240620"
+                    mock_response.model_dump.return_value = {"choices": [{"message": {"role": "assistant", "content": "Test response"}}]}
+                    return mock_response
 
-            # Execute the query
-            result = llm.query_sync(request)
+                mock_client.chat.completions.create.side_effect = capture_params
 
-            # Verify that system messages are left in the messages array for AISuite to handle
-            messages = captured_params.get("messages", [])
-            system_messages = [msg for msg in messages if msg.get("role") == "system"]
+                # Execute the query
+                result = llm.query_sync(request)
 
-            # Should have at least our system message (plus potentially default ones from LLMQueryExecutor)
-            self.assertGreaterEqual(len(system_messages), 1, "System messages should remain in messages array for AISuite")
+                # Verify that system messages are left in the messages array for AISuite to handle
+                messages = captured_params.get("messages", [])
+                system_messages = [msg for msg in messages if msg.get("role") == "system"]
 
-            # Our system message should be present
-            user_system_msg = next((msg for msg in system_messages if "helpful assistant" in msg.get("content", "")), None)
-            self.assertIsNotNone(user_system_msg, "User's system message should be present")
+                # Should have at least our system message (plus potentially default ones from LLMQueryExecutor)
+                self.assertGreaterEqual(len(system_messages), 1, "System messages should remain in messages array for AISuite")
 
-            # No manual system parameter should be added to avoid conflicts
-            self.assertNotIn("system", captured_params, "No manual system parameter should be added to avoid conflicts")
-            self.assertTrue(result.success)
+                # Our system message should be present
+                user_system_msg = next((msg for msg in system_messages if "helpful assistant" in msg.get("content", "")), None)
+                self.assertIsNotNone(user_system_msg, "User's system message should be present")
+
+                # No manual system parameter should be added to avoid conflicts
+                self.assertNotIn("system", captured_params, "No manual system parameter should be added to avoid conflicts")
+                self.assertTrue(result.success)
+        finally:
+            # Restore original mock setting
+            if original_mock is None:
+                os.environ.pop("DANA_MOCK_LLM", None)
+            else:
+                os.environ["DANA_MOCK_LLM"] = original_mock
 
     def test_no_manual_transformation_for_anthropic(self):
         """Test that we don't manually transform Anthropic system messages."""
@@ -95,55 +106,66 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
     def test_openai_system_messages_unchanged(self):
         """Test that OpenAI system messages remain unchanged (no transformation needed)."""
-        llm = LegacyLLMResource(model="openai:gpt-4")
+        # Temporarily disable mock mode for this test
+        original_mock = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "false"
 
-        request = BaseRequest(
-            arguments={
-                "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is pi?"}],
-                "temperature": 0.7,
-            }
-        )
+        try:
+            llm = LegacyLLMResource(model="openai:gpt-4")
 
-        with patch("aisuite.Client") as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
+            request = BaseRequest(
+                arguments={
+                    "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is pi?"}],
+                    "temperature": 0.7,
+                }
+            )
 
-            captured_params = {}
+            with patch("aisuite.Client") as mock_client_class:
+                mock_client = MagicMock()
+                mock_client_class.return_value = mock_client
 
-            def capture_params(*args, **kwargs):
-                # Update captured_params with the actual parameters
-                for key, value in kwargs.items():
-                    captured_params[key] = value
+                captured_params = {}
 
-                mock_response = MagicMock()
-                mock_response.choices = [MagicMock()]
-                mock_response.choices[0].message = MagicMock()
-                mock_response.choices[0].message.role = "assistant"
-                mock_response.choices[0].message.content = "Test response"
-                mock_response.choices[0].message.tool_calls = None
-                mock_response.usage = MagicMock()
-                mock_response.usage.prompt_tokens = 20
-                mock_response.usage.completion_tokens = 10
-                mock_response.model = "gpt-4"
-                mock_response.model_dump.return_value = {"choices": [{"message": {"role": "assistant", "content": "Test response"}}]}
-                return mock_response
+                def capture_params(*args, **kwargs):
+                    # Update captured_params with the actual parameters
+                    for key, value in kwargs.items():
+                        captured_params[key] = value
 
-            mock_client.chat.completions.create.side_effect = capture_params
+                    mock_response = MagicMock()
+                    mock_response.choices = [MagicMock()]
+                    mock_response.choices[0].message = MagicMock()
+                    mock_response.choices[0].message.role = "assistant"
+                    mock_response.choices[0].message.content = "Test response"
+                    mock_response.choices[0].message.tool_calls = None
+                    mock_response.usage = MagicMock()
+                    mock_response.usage.prompt_tokens = 20
+                    mock_response.usage.completion_tokens = 10
+                    mock_response.model = "gpt-4"
+                    mock_response.model_dump.return_value = {"choices": [{"message": {"role": "assistant", "content": "Test response"}}]}
+                    return mock_response
 
-            _result = llm.query_sync(request)
+                mock_client.chat.completions.create.side_effect = capture_params
 
-            # Verify OpenAI messages remain unchanged
-            messages = captured_params.get("messages", [])
-            system_messages = [msg for msg in messages if msg.get("role") == "system"]
+                _result = llm.query_sync(request)
 
-            # Should have at least our system message (plus potentially default ones from LLMQueryExecutor)
-            self.assertGreaterEqual(len(system_messages), 1, "OpenAI should keep system messages in array")
+                # Verify OpenAI messages remain unchanged
+                messages = captured_params.get("messages", [])
+                system_messages = [msg for msg in messages if msg.get("role") == "system"]
 
-            # Our system message should be present
-            user_system_msg = next((msg for msg in system_messages if "helpful assistant" in msg.get("content", "")), None)
-            self.assertIsNotNone(user_system_msg, "User's system message should be present")
+                # Should have at least our system message (plus potentially default ones from LLMQueryExecutor)
+                self.assertGreaterEqual(len(system_messages), 1, "OpenAI should keep system messages in array")
 
-            self.assertNotIn("system", captured_params, "OpenAI should not have top-level system parameter")
+                # Our system message should be present
+                user_system_msg = next((msg for msg in system_messages if "helpful assistant" in msg.get("content", "")), None)
+                self.assertIsNotNone(user_system_msg, "User's system message should be present")
+
+                self.assertNotIn("system", captured_params, "OpenAI should not have top-level system parameter")
+        finally:
+            # Restore original mock setting
+            if original_mock is None:
+                os.environ.pop("DANA_MOCK_LLM", None)
+            else:
+                os.environ["DANA_MOCK_LLM"] = original_mock
 
     def test_multiple_system_messages_handling(self):
         """Test handling of multiple system messages."""

@@ -10,7 +10,7 @@ from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
-from typing import Callable
+from collections.abc import Callable
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,12 +36,12 @@ class GenerateKnowledgeTool(BaseTool):
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
         self.notifier = notifier
-        
+
         # Initialize KnowledgeStatusManager
         self.status_manager = None
         if knowledge_status_path:
             self.status_manager = KnowledgeStatusManager(knowledge_status_path, agent_id)
-        
+
         tool_info = BaseToolInformation(
             name="generate_knowledge",
             description="Generate knowledge for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'.",
@@ -78,8 +78,12 @@ class GenerateKnowledgeTool(BaseTool):
             return await self._generate_for_all_leaves(user_message, counts, context)
         except Exception as e:
             logger.error(f"Failed to generate knowledge: {e}")
-            return ToolResult(name="generate_knowledge", result=self._build_structured_response(user_message, f"❌ Error generating knowledge: {str(e)}"), require_user=False)
-        
+            return ToolResult(
+                name="generate_knowledge",
+                result=self._build_structured_response(user_message, f"❌ Error generating knowledge: {str(e)}"),
+                require_user=False,
+            )
+
     async def _extract_leaf_paths(self, node: DomainNode, current_path: list[str] = None) -> list[list[str]]:
         """Recursively extract all paths from root to leaf nodes."""
         if current_path is None:
@@ -100,12 +104,13 @@ class GenerateKnowledgeTool(BaseTool):
         """Initialize a path in the status manager if it doesn't exist."""
         if not self.status_manager:
             return
-            
+
         path_str = self._path_parts_to_string(path_parts)
-        
+
         # Only add if topic doesn't already exist
         if not self.status_manager.get_topic_entry(path_str):
             from datetime import datetime, UTC
+
             current_time = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
             file_path = self._build_file_path_from_path_parts(path_parts)
             self.status_manager.add_or_update_topic(path_str, file_path, current_time, "pending")
@@ -114,7 +119,9 @@ class GenerateKnowledgeTool(BaseTool):
         """Generate knowledge for all leaf nodes in the tree structure."""
         if not self.tree_structure or not self.tree_structure.root:
             return ToolResult(
-                name="generate_knowledge", result=self._build_structured_response(user_message, "❌ Error: No tree structure available for all_leaves mode"), require_user=False
+                name="generate_knowledge",
+                result=self._build_structured_response(user_message, "❌ Error: No tree structure available for all_leaves mode"),
+                require_user=False,
             )
 
         all_leaf_paths = await self._extract_leaf_paths(self.tree_structure.root)
@@ -407,7 +414,7 @@ Return as JSON:
         """Build file path from a list of path parts (excluding root) by converting ' - ' to '/' and adding '/knowledge.json'."""
         # For file paths, we need to include the root node
         # The path_parts excludes the root, so add it back
-        
+
         # Convert to file path format with "/" separators
         file_path = "/".join(path_parts)
         # Add "/knowledge.json" suffix
@@ -454,14 +461,14 @@ Return as JSON:
     def _build_structured_response(self, user_message: str, content: str) -> str:
         """Build a structured response with user message and generation content."""
         response_parts = []
-        
+
         # Add user message first (acknowledgment and context)
         if user_message:
             response_parts.append(f"{user_message}")
             response_parts.append("")  # Empty line for spacing
-        
+
         # Add the generation content
         response_parts.append(content)
-        
+
         # Join all parts with proper spacing
         return "\n".join(response_parts)

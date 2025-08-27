@@ -14,6 +14,8 @@ It handles loading all Dana resources, corelib modules, and stdlib resources.
 #
 from dana.libs.corelib import *
 
+# FSM struct type is now automatically registered during initialization
+
 #
 # Resource types that will be available:
 # - SimpleCacheResource (from simple_cache_resource.na)

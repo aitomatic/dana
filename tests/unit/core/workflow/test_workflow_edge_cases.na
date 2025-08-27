@@ -1,0 +1,540 @@
+# Test workflow edge cases and error scenarios
+# This file tests boundary conditions, error handling, and unusual scenarios
+
+sync def test_empty_workflow_definition():
+    """Test workflow with minimal definition (only default fields)."""
+    # Define minimal workflow (no custom fields)
+    workflow EmptyWorkflow:
+        pass
+    
+    # Create instance
+    empty_workflow = EmptyWorkflow()
+    
+    # Test that default fields are present
+    assert empty_workflow.name == "A Workflow", f"Expected 'A Workflow', got '{empty_workflow.name}'"
+    assert empty_workflow.fsm == None, f"Expected None, got '{empty_workflow.fsm}'"
+    
+    # Test that we can still access and modify default fields
+    empty_workflow.name = "Custom Empty Workflow"
+    assert empty_workflow.name == "Custom Empty Workflow", f"Expected 'Custom Empty Workflow', got '{empty_workflow.name}'"
+    
+    log("✅ Empty workflow definition test passed")
+
+sync def test_workflow_duplicate_field_handling():
+    """Test workflow behavior with duplicate field names."""
+    # Define workflow with field that conflicts with default field
+    workflow DuplicateFieldWorkflow:
+        name: str = "Custom Name"  # This conflicts with default 'name' field
+        custom_field: str = "custom"
+    
+    # Create instance
+    duplicate_workflow = DuplicateFieldWorkflow()
+    
+    # Test that custom field takes precedence over default
+    assert duplicate_workflow.name == "Custom Name", f"Expected 'Custom Name', got '{duplicate_workflow.name}'"
+    assert duplicate_workflow.custom_field == "custom", f"Expected 'custom', got '{duplicate_workflow.custom_field}'"
+    
+    # Test that fsm default field is still present
+    assert duplicate_workflow.fsm == None, f"Expected None, got '{duplicate_workflow.fsm}'"
+    
+    # Test that we can override the custom field
+    override_workflow = DuplicateFieldWorkflow(name="Override Name")
+    assert override_workflow.name == "Override Name", f"Expected 'Override Name', got '{override_workflow.name}'"
+    
+    log("✅ Workflow duplicate field handling test passed")
+
+sync def test_workflow_circular_reference_management():
+    """Test workflow circular reference handling."""
+    # Define workflows that reference each other
+    workflow WorkflowA:
+        reference_b: str = "WorkflowB"
+        data: str = "data_a"
+    
+    workflow WorkflowB:
+        reference_a: str = "WorkflowA"
+        data: str = "data_b"
+    
+    # Define composite workflow
+    workflow CompositeWorkflow:
+        workflow_a: WorkflowA = WorkflowA()
+        workflow_b: WorkflowB = WorkflowB()
+        composite_data: str = "composite"
+    
+    # Create instances
+    workflow_a = WorkflowA()
+    workflow_b = WorkflowB()
+    composite = CompositeWorkflow()
+    
+    # Test that circular references don't cause issues
+    assert workflow_a.reference_b == "WorkflowB", f"Expected 'WorkflowB', got '{workflow_a.reference_b}'"
+    assert workflow_b.reference_a == "WorkflowA", f"Expected 'WorkflowA', got '{workflow_b.reference_a}'"
+    
+    # Test composite workflow
+    assert composite.workflow_a.data == "data_a", f"Expected 'data_a', got '{composite.workflow_a.data}'"
+    assert composite.workflow_b.data == "data_b", f"Expected 'data_b', got '{composite.workflow_b.data}'"
+    assert composite.composite_data == "composite", f"Expected 'composite', got '{composite.composite_data}'"
+    
+    # Test default fields are present in all instances
+    assert workflow_a.name == "A Workflow", f"Expected 'A Workflow', got '{workflow_a.name}'"
+    assert workflow_b.name == "A Workflow", f"Expected 'A Workflow', got '{workflow_b.name}'"
+    assert composite.name == "A Workflow", f"Expected 'A Workflow', got '{composite.name}'"
+    
+    log("✅ Workflow circular reference management test passed")
+
+sync def test_workflow_memory_management():
+    """Test workflow memory management and cleanup."""
+    # Define workflow with large data structures
+    workflow MemoryTestWorkflow:
+        large_data: list = []
+        metadata: dict = {}
+    
+    # Define methods that manipulate large data
+    def (self: MemoryTestWorkflow) add_large_data(size: int) -> str:
+        for i in range(size):
+            self.large_data.append(f"data_item_{i}")
+        return f"Added {size} items"
+    
+    def (self: MemoryTestWorkflow) clear_data() -> str:
+        count = len(self.large_data)
+        self.large_data.clear()
+        return f"Cleared {count} items"
+    
+    def (self: MemoryTestWorkflow) get_data_size() -> int:
+        return len(self.large_data)
+    
+    # Create workflow instance
+    memory_workflow = MemoryTestWorkflow()
+    
+    # Test initial state
+    assert memory_workflow.get_data_size() == 0, f"Expected 0, got '{memory_workflow.get_data_size()}'"
+    
+    # Add large data
+    add_result = memory_workflow.add_large_data(1000)
+    assert "Added 1000 items" in add_result, f"Expected add result, got '{add_result}'"
+    assert memory_workflow.get_data_size() == 1000, f"Expected 1000, got '{memory_workflow.get_data_size()}'"
+    
+    # Clear data
+    clear_result = memory_workflow.clear_data()
+    assert "Cleared 1000 items" in clear_result, f"Expected clear result, got '{clear_result}'"
+    assert memory_workflow.get_data_size() == 0, f"Expected 0, got '{memory_workflow.get_data_size()}'"
+    
+    # Test that default fields are still accessible
+    assert memory_workflow.name == "A Workflow", f"Expected 'A Workflow', got '{memory_workflow.name}'"
+    assert memory_workflow.fsm == None, f"Expected None, got '{memory_workflow.fsm}'"
+    
+    log("✅ Workflow memory management test passed")
+
+sync def test_workflow_concurrent_access_patterns():
+    """Test workflow concurrent access patterns."""
+    # Define workflow with shared state
+    workflow ConcurrentAccessWorkflow:
+        shared_counter: int = 0
+        access_log: list = []
+    
+    # Define methods that simulate concurrent access
+    def (self: ConcurrentAccessWorkflow) increment_counter(thread_id: str) -> str:
+        self.shared_counter = self.shared_counter + 1
+        self.access_log.append(f"Thread {thread_id}: increment to {self.shared_counter}")
+        return f"Thread {thread_id} incremented to {self.shared_counter}"
+    
+    def (self: ConcurrentAccessWorkflow) get_counter() -> int:
+        return self.shared_counter
+    
+    def (self: ConcurrentAccessWorkflow) get_access_log() -> list:
+        return self.access_log.copy()
+    
+    def (self: ConcurrentAccessWorkflow) reset() -> str:
+        self.shared_counter = 0
+        self.access_log.clear()
+        return "Reset completed"
+    
+    # Create workflow instance
+    concurrent_workflow = ConcurrentAccessWorkflow()
+    
+    # Simulate concurrent access (sequential simulation)
+    result1 = concurrent_workflow.increment_counter("A")
+    result2 = concurrent_workflow.increment_counter("B")
+    result3 = concurrent_workflow.increment_counter("C")
+    
+    # Test results
+    assert "Thread A incremented to 1" in result1, f"Expected thread A result, got '{result1}'"
+    assert "Thread B incremented to 2" in result2, f"Expected thread B result, got '{result2}'"
+    assert "Thread C incremented to 3" in result3, f"Expected thread C result, got '{result3}'"
+    
+    # Test final state
+    assert concurrent_workflow.get_counter() == 3, f"Expected 3, got '{concurrent_workflow.get_counter()}'"
+    
+    # Test access log
+    log_entries = concurrent_workflow.get_access_log()
+    assert len(log_entries) == 3, f"Expected 3 log entries, got '{len(log_entries)}'"
+    assert "Thread A: increment to 1" in log_entries, f"Expected thread A log entry"
+    assert "Thread B: increment to 2" in log_entries, f"Expected thread B log entry"
+    assert "Thread C: increment to 3" in log_entries, f"Expected thread C log entry"
+    
+    # Test reset
+    reset_result = concurrent_workflow.reset()
+    assert "Reset completed" in reset_result, f"Expected reset result, got '{reset_result}'"
+    assert concurrent_workflow.get_counter() == 0, f"Expected 0, got '{concurrent_workflow.get_counter()}'"
+    assert len(concurrent_workflow.get_access_log()) == 0, f"Expected 0 log entries, got '{len(concurrent_workflow.get_access_log())}'"
+    
+    log("✅ Workflow concurrent access patterns test passed")
+
+sync def test_workflow_error_recovery():
+    """Test workflow error recovery and resilience."""
+    # Define workflow with error recovery
+    workflow ErrorRecoveryWorkflow:
+        error_count: int = 0
+        recovery_attempts: int = 0
+        last_error: str = ""
+        is_healthy: bool = true
+    
+    # Define error-prone methods
+    def (self: ErrorRecoveryWorkflow) risky_operation(should_fail: bool) -> str:
+        if should_fail:
+            self.error_count = self.error_count + 1
+            self.is_healthy = false
+            self.last_error = f"Operation failed (attempt {self.error_count})"
+            raise f"Operation failed (attempt {self.error_count})"
+        else:
+            self.is_healthy = true
+            return "Operation succeeded"
+    
+    def (self: ErrorRecoveryWorkflow) attempt_recovery() -> str:
+        self.recovery_attempts = self.recovery_attempts + 1
+        if self.recovery_attempts >= 3:
+            self.is_healthy = true
+            self.error_count = 0
+            return "Recovery successful"
+        else:
+            return f"Recovery attempt {self.recovery_attempts} (need 3)"
+    
+    def (self: ErrorRecoveryWorkflow) get_health_status() -> dict:
+        return {
+            "is_healthy": self.is_healthy,
+            "error_count": self.error_count,
+            "recovery_attempts": self.recovery_attempts,
+            "last_error": self.last_error
+        }
+    
+    def (self: ErrorRecoveryWorkflow) reset_state() -> str:
+        self.error_count = 0
+        self.recovery_attempts = 0
+        self.last_error = ""
+        self.is_healthy = true
+        return "State reset"
+    
+    # Create workflow instance
+    recovery_workflow = ErrorRecoveryWorkflow()
+    
+    # Test initial healthy state
+    initial_status = recovery_workflow.get_health_status()
+    assert initial_status["is_healthy"] == true, f"Expected true, got '{initial_status['is_healthy']}'"
+    assert initial_status["error_count"] == 0, f"Expected 0, got '{initial_status['error_count']}'"
+    
+    # Test successful operation
+    success_result = recovery_workflow.risky_operation(false)
+    assert "Operation succeeded" in success_result, f"Expected success, got '{success_result}'"
+    
+    # Test failed operation (simulated)
+    # Note: In Dana, we can't actually catch exceptions in this context,
+    # so we'll test the error state simulation
+    recovery_workflow.error_count = 1
+    recovery_workflow.is_healthy = false
+    recovery_workflow.last_error = "Operation failed (attempt 1)"
+    
+    failed_status = recovery_workflow.get_health_status()
+    assert failed_status["is_healthy"] == false, f"Expected false, got '{failed_status['is_healthy']}'"
+    assert failed_status["error_count"] == 1, f"Expected 1, got '{failed_status['error_count']}'"
+    assert "Operation failed" in failed_status["last_error"], f"Expected error message, got '{failed_status['last_error']}'"
+    
+    # Test recovery attempts
+    recovery1 = recovery_workflow.attempt_recovery()
+    assert "Recovery attempt 1" in recovery1, f"Expected recovery attempt, got '{recovery1}'"
+    
+    recovery2 = recovery_workflow.attempt_recovery()
+    assert "Recovery attempt 2" in recovery2, f"Expected recovery attempt, got '{recovery2}'"
+    
+    recovery3 = recovery_workflow.attempt_recovery()
+    assert "Recovery successful" in recovery3, f"Expected successful recovery, got '{recovery3}'"
+    
+    # Test recovered state
+    recovered_status = recovery_workflow.get_health_status()
+    assert recovered_status["is_healthy"] == true, f"Expected true, got '{recovered_status['is_healthy']}'"
+    assert recovered_status["error_count"] == 0, f"Expected 0, got '{recovered_status['error_count']}'"
+    
+    # Test reset
+    reset_result = recovery_workflow.reset_state()
+    assert "State reset" in reset_result, f"Expected reset result, got '{reset_result}'"
+    
+    final_status = recovery_workflow.get_health_status()
+    assert final_status["is_healthy"] == true, f"Expected true, got '{final_status['is_healthy']}'"
+    assert final_status["error_count"] == 0, f"Expected 0, got '{final_status['error_count']}'"
+    assert final_status["recovery_attempts"] == 0, f"Expected 0, got '{final_status['recovery_attempts']}'"
+    assert final_status["last_error"] == "", f"Expected empty error, got '{final_status['last_error']}'"
+    
+    log("✅ Workflow error recovery test passed")
+
+sync def test_workflow_boundary_conditions():
+    """Test workflow boundary conditions and limits."""
+    # Define workflow with boundary testing
+    workflow BoundaryTestWorkflow:
+        max_items: int = 1000
+        items: list = []
+        overflow_count: int = 0
+    
+    # Define boundary testing methods
+    def (self: BoundaryTestWorkflow) add_item(item: str) -> str:
+        if len(self.items) < self.max_items:
+            self.items.append(item)
+            return f"Added item {len(self.items)}"
+        else:
+            self.overflow_count = self.overflow_count + 1
+            return f"Overflow: cannot add item (limit: {self.max_items})"
+    
+    def (self: BoundaryTestWorkflow) remove_item() -> str:
+        if len(self.items) > 0:
+            removed = self.items.pop()
+            return f"Removed: {removed}"
+        else:
+            return "No items to remove"
+    
+    def (self: BoundaryTestWorkflow) get_boundary_status() -> dict:
+        return {
+            "current_count": len(self.items),
+            "max_items": self.max_items,
+            "available_slots": self.max_items - len(self.items),
+            "overflow_count": self.overflow_count,
+            "is_full": len(self.items) >= self.max_items,
+            "is_empty": len(self.items) == 0
+        }
+    
+    def (self: BoundaryTestWorkflow) clear_all() -> str:
+        count = len(self.items)
+        self.items.clear()
+        self.overflow_count = 0
+        return f"Cleared {count} items"
+    
+    # Create workflow instance
+    boundary_workflow = BoundaryTestWorkflow(max_items=5)
+    
+    # Test initial state
+    initial_status = boundary_workflow.get_boundary_status()
+    assert initial_status["current_count"] == 0, f"Expected 0, got '{initial_status['current_count']}'"
+    assert initial_status["is_empty"] == true, f"Expected true, got '{initial_status['is_empty']}'"
+    assert initial_status["is_full"] == false, f"Expected false, got '{initial_status['is_full']}'"
+    assert initial_status["available_slots"] == 5, f"Expected 5, got '{initial_status['available_slots']}'"
+    
+    # Test adding items up to boundary
+    for i in range(5):
+        result = boundary_workflow.add_item(f"item_{i}")
+        assert f"Added item {i+1}" in result, f"Expected add result, got '{result}'"
+    
+    # Test boundary reached
+    boundary_status = boundary_workflow.get_boundary_status()
+    assert boundary_status["current_count"] == 5, f"Expected 5, got '{boundary_status['current_count']}'"
+    assert boundary_status["is_full"] == true, f"Expected true, got '{boundary_status['is_full']}'"
+    assert boundary_status["available_slots"] == 0, f"Expected 0, got '{boundary_status['available_slots']}'"
+    
+    # Test overflow
+    overflow_result = boundary_workflow.add_item("overflow_item")
+    assert "Overflow: cannot add item" in overflow_result, f"Expected overflow message, got '{overflow_result}'"
+    
+    overflow_status = boundary_workflow.get_boundary_status()
+    assert overflow_status["overflow_count"] == 1, f"Expected 1, got '{overflow_status['overflow_count']}'"
+    
+    # Test removing items
+    remove_result = boundary_workflow.remove_item()
+    assert "Removed: item_4" in remove_result, f"Expected remove result, got '{remove_result}'"
+    
+    # Test removing from empty
+    boundary_workflow.clear_all()
+    empty_remove = boundary_workflow.remove_item()
+    assert "No items to remove" in empty_remove, f"Expected empty message, got '{empty_remove}'"
+    
+    log("✅ Workflow boundary conditions test passed")
+
+sync def test_workflow_type_safety():
+    """Test workflow type safety validation."""
+    # Define workflow with type constraints
+    workflow TypeSafetyWorkflow:
+        string_field: str = "default"
+        number_field: int = 0
+        boolean_field: bool = false
+        list_field: list = []
+        dict_field: dict = {}
+    
+    # Define type validation methods
+    def (self: TypeSafetyWorkflow) validate_string(value: str) -> bool:
+        return type(value) == str
+    
+    def (self: TypeSafetyWorkflow) validate_number(value: int) -> bool:
+        return type(value) == int
+    
+    def (self: TypeSafetyWorkflow) validate_boolean(value: bool) -> bool:
+        return type(value) == bool
+    
+    def (self: TypeSafetyWorkflow) validate_list(value: list) -> bool:
+        return type(value) == list
+    
+    def (self: TypeSafetyWorkflow) validate_dict(value: dict) -> bool:
+        return type(value) == dict
+    
+    def (self: TypeSafetyWorkflow) set_field_safely(field_name: str, value) -> str:
+        if field_name == "string_field" and self.validate_string(value):
+            self.string_field = value
+            return f"Set {field_name} to {value}"
+        elif field_name == "number_field" and self.validate_number(value):
+            self.number_field = value
+            return f"Set {field_name} to {value}"
+        elif field_name == "boolean_field" and self.validate_boolean(value):
+            self.boolean_field = value
+            return f"Set {field_name} to {value}"
+        elif field_name == "list_field" and self.validate_list(value):
+            self.list_field = value
+            return f"Set {field_name} to {value}"
+        elif field_name == "dict_field" and self.validate_dict(value):
+            self.dict_field = value
+            return f"Set {field_name} to {value}"
+        else:
+            return f"Type validation failed for {field_name}"
+    
+    # Create workflow instance
+    type_workflow = TypeSafetyWorkflow()
+    
+    # Test type validation
+    assert type_workflow.validate_string("test") == true, f"Expected true, got '{type_workflow.validate_string('test')}'"
+    assert type_workflow.validate_number(42) == true, f"Expected true, got '{type_workflow.validate_number(42)}'"
+    assert type_workflow.validate_boolean(true) == true, f"Expected true, got '{type_workflow.validate_boolean(true)}'"
+    assert type_workflow.validate_list([1, 2, 3]) == true, f"Expected true, got '{type_workflow.validate_list([1, 2, 3])}'"
+    assert type_workflow.validate_dict({"key": "value"}) == true, f"Expected true, got '{type_workflow.validate_dict({'key': 'value'})}'"
+    
+    # Test safe field setting
+    result1 = type_workflow.set_field_safely("string_field", "new_value")
+    assert "Set string_field to new_value" in result1, f"Expected set result, got '{result1}'"
+    
+    result2 = type_workflow.set_field_safely("number_field", 100)
+    assert "Set number_field to 100" in result2, f"Expected set result, got '{result2}'"
+    
+    result3 = type_workflow.set_field_safely("boolean_field", true)
+    assert "Set boolean_field to true" in result3, f"Expected set result, got '{result3}'"
+    
+    result4 = type_workflow.set_field_safely("list_field", ["a", "b", "c"])
+    assert "Set list_field to" in result4, f"Expected set result, got '{result4}'"
+    
+    result5 = type_workflow.set_field_safely("dict_field", {"x": 1, "y": 2})
+    assert "Set dict_field to" in result5, f"Expected set result, got '{result5}'"
+    
+    # Test field values
+    assert type_workflow.string_field == "new_value", f"Expected 'new_value', got '{type_workflow.string_field}'"
+    assert type_workflow.number_field == 100, f"Expected 100, got '{type_workflow.number_field}'"
+    assert type_workflow.boolean_field == true, f"Expected true, got '{type_workflow.boolean_field}'"
+    assert type_workflow.list_field == ["a", "b", "c"], f"Expected ['a', 'b', 'c'], got '{type_workflow.list_field}'"
+    assert type_workflow.dict_field == {"x": 1, "y": 2}, f"Expected {{'x': 1, 'y': 2}}, got '{type_workflow.dict_field}'"
+    
+    log("✅ Workflow type safety test passed")
+
+sync def test_workflow_performance_limits():
+    """Test workflow performance limits and constraints."""
+    # Define workflow with performance testing
+    workflow PerformanceTestWorkflow:
+        operation_count: int = 0
+        max_operations: int = 10000
+        performance_log: list = []
+    
+    # Define performance testing methods
+    def (self: PerformanceTestWorkflow) perform_operation(operation_id: str) -> str:
+        if self.operation_count < self.max_operations:
+            self.operation_count = self.operation_count + 1
+            self.performance_log.append(f"Operation {operation_id}: {self.operation_count}")
+            return f"Operation {operation_id} completed ({self.operation_count}/{self.max_operations})"
+        else:
+            return f"Operation {operation_id} rejected (limit reached)"
+    
+    def (self: PerformanceTestWorkflow) batch_operations(count: int) -> str:
+        successful = 0
+        rejected = 0
+        
+        for i in range(count):
+            if self.operation_count < self.max_operations:
+                self.operation_count = self.operation_count + 1
+                successful = successful + 1
+            else:
+                rejected = rejected + 1
+        
+        return f"Batch completed: {successful} successful, {rejected} rejected"
+    
+    def (self: PerformanceTestWorkflow) get_performance_stats() -> dict:
+        return {
+            "operation_count": self.operation_count,
+            "max_operations": self.max_operations,
+            "remaining_operations": self.max_operations - self.operation_count,
+            "utilization_percent": (self.operation_count / self.max_operations) * 100,
+            "log_entries": len(self.performance_log)
+        }
+    
+    def (self: PerformanceTestWorkflow) reset_performance() -> str:
+        count = self.operation_count
+        self.operation_count = 0
+        self.performance_log.clear()
+        return f"Reset performance counters (was {count})"
+    
+    # Create workflow instance
+    performance_workflow = PerformanceTestWorkflow(max_operations=100)
+    
+    # Test initial state
+    initial_stats = performance_workflow.get_performance_stats()
+    assert initial_stats["operation_count"] == 0, f"Expected 0, got '{initial_stats['operation_count']}'"
+    assert initial_stats["remaining_operations"] == 100, f"Expected 100, got '{initial_stats['remaining_operations']}'"
+    assert initial_stats["utilization_percent"] == 0.0, f"Expected 0.0, got '{initial_stats['utilization_percent']}'"
+    
+    # Test individual operations
+    for i in range(5):
+        result = performance_workflow.perform_operation(f"op_{i}")
+        assert f"Operation op_{i} completed" in result, f"Expected operation result, got '{result}'"
+    
+    # Test batch operations
+    batch_result = performance_workflow.batch_operations(10)
+    assert "Batch completed: 10 successful, 0 rejected" in batch_result, f"Expected batch result, got '{batch_result}'"
+    
+    # Test performance stats
+    mid_stats = performance_workflow.get_performance_stats()
+    assert mid_stats["operation_count"] == 15, f"Expected 15, got '{mid_stats['operation_count']}'"
+    assert mid_stats["remaining_operations"] == 85, f"Expected 85, got '{mid_stats['remaining_operations']}'"
+    assert abs(mid_stats["utilization_percent"] - 15.0) < 0.01, f"Expected ~15.0, got '{mid_stats['utilization_percent']}'"
+    
+    # Test limit reached
+    limit_result = performance_workflow.batch_operations(100)
+    assert "rejected" in limit_result, f"Expected rejection message, got '{limit_result}'"
+    
+    final_stats = performance_workflow.get_performance_stats()
+    assert final_stats["operation_count"] == 100, f"Expected 100, got '{final_stats['operation_count']}'"
+    assert final_stats["remaining_operations"] == 0, f"Expected 0, got '{final_stats['remaining_operations']}'"
+    assert abs(final_stats["utilization_percent"] - 100.0) < 0.01, f"Expected ~100.0, got '{final_stats['utilization_percent']}'"
+    
+    # Test reset
+    reset_result = performance_workflow.reset_performance()
+    assert "Reset performance counters" in reset_result, f"Expected reset result, got '{reset_result}'"
+    
+    reset_stats = performance_workflow.get_performance_stats()
+    assert reset_stats["operation_count"] == 0, f"Expected 0, got '{reset_stats['operation_count']}'"
+    assert reset_stats["remaining_operations"] == 100, f"Expected 100, got '{reset_stats['remaining_operations']}'"
+    
+    log("✅ Workflow performance limits test passed")
+
+# Run all edge case tests
+log("🚀 Running Workflow Edge Case Tests")
+log("=" * 50)
+
+test_empty_workflow_definition()
+test_workflow_duplicate_field_handling()
+test_workflow_circular_reference_management()
+test_workflow_memory_management()
+test_workflow_concurrent_access_patterns()
+test_workflow_error_recovery()
+test_workflow_boundary_conditions()
+test_workflow_type_safety()
+test_workflow_performance_limits()
+
+log("")
+log("✅ All workflow edge case tests passed!")
+log("📊 Summary: 9 tests passed, 0 tests failed")

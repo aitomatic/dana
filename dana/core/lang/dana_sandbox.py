@@ -9,7 +9,6 @@ MIT License
 """
 
 import atexit
-import os
 import weakref
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,11 +18,11 @@ from dana.api.client import APIClient
 from dana.api.server import APIServiceManager
 from dana.common.mixins.loggable import Loggable
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
@@ -92,9 +91,17 @@ class DanaSandbox(Loggable):
         if module_search_paths:
             self._context.set("system:module_search_paths", module_search_paths)
 
-        # In test mode, ensure corelib functions are available by loading them manually
-        if os.getenv("DANA_TEST_MODE") and "system" not in self._interpreter.function_registry._functions:
-            try:
+        # Always ensure core built-in functions are available in the sandbox's function registry
+        # This is especially important in test environments where the global registry might be cleared
+        try:
+            # Check if basic functions are missing and register them if needed
+            if not self._interpreter.function_registry.has("len", None):
+                # Register built-in functions
+                from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+
+                do_register_py_builtins(self._interpreter.function_registry)
+
+                # Register wrapper functions
                 from pathlib import Path
 
                 from dana.libs.corelib.py_wrappers.register_py_wrappers import _register_python_functions
@@ -102,8 +109,13 @@ class DanaSandbox(Loggable):
                 py_dir = Path(__file__).parent.parent.parent / "libs" / "corelib" / "py_wrappers"
                 _register_python_functions(py_dir, self._interpreter.function_registry)
 
-            except Exception as e:
-                self.warning(f"Failed to load corelib functions in test mode: {e}")
+                # Debug: Check if functions are now available
+                if self.debug_mode:
+                    self.debug(f"Function registry has len: {self._interpreter.function_registry.has('len', None)}")
+                    self.debug(f"Function registry has print: {self._interpreter.function_registry.has('print', None)}")
+
+        except Exception as e:
+            self.warning(f"Failed to load corelib functions: {e}")
 
         # Automatic lifecycle management
         self._initialized = False

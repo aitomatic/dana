@@ -342,10 +342,10 @@ class DanaInterpreter(Loggable):
         return self.function_registry.call(function_name, context, args=args, kwargs=kwargs)
 
     def execute_program(self, program: Program, context: SandboxContext) -> Any:
-        """Execute a Dana program.
+        """Execute a Dana program from AST.
 
         Args:
-            program: The program to execute
+            program: The parsed AST program to execute
             context: The execution context to use
 
         Returns:
@@ -353,6 +353,20 @@ class DanaInterpreter(Loggable):
         """
         # Route through new _execute method for convergent code path
         return self._execute_program(program, context)
+
+    def execute_program_string(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
+        """Execute a Dana program from source code string.
+
+        Args:
+            source_code: The Dana source code to execute
+            context: The execution context to use
+            filename: Optional filename for error reporting
+
+        Returns:
+            The result of executing the program
+        """
+        # Route through _eval_source_code which handles parsing and execution
+        return self._eval_source_code(source_code, context, filename)
 
     def execute_statement(self, statement: Statement, context: SandboxContext) -> Any:
         """Execute a single statement.

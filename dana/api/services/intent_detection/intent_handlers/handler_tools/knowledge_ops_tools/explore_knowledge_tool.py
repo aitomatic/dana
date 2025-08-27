@@ -374,5 +374,5 @@ Ready to proceed with knowledge operations despite exploration error."""
         """Build intelligent footer with context-aware recommendations."""
         # Use parameters to avoid unused variable warnings
         _ = query, target_node, generation_status
-        
+
         return ""

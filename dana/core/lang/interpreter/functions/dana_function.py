@@ -9,7 +9,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.executor.control_flow.exceptions import DeliverException, ReturnException
+from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -25,6 +25,7 @@ class DanaFunction(SandboxFunction, Loggable):
         return_type: str | None = None,
         defaults: dict[str, Any] | None = None,
         name: str | None = None,
+        is_sync: bool = False,
     ):
         """Initialize a Dana function.
 
@@ -35,6 +36,7 @@ class DanaFunction(SandboxFunction, Loggable):
             return_type: The function's return type annotation
             defaults: Default values for parameters
             name: The function name
+            is_sync: Whether this function should execute synchronously (no Promise wrapping)
         """
         super().__init__(context)
         self.body = body
@@ -42,8 +44,9 @@ class DanaFunction(SandboxFunction, Loggable):
         self.return_type = return_type
         self.defaults = defaults or {}
         self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
+        self.is_sync = is_sync  # NEW FIELD: indicates if function should execute synchronously
         self.debug(
-            f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
+            f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}, is_sync={self.is_sync}"
         )
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
@@ -88,6 +91,14 @@ class DanaFunction(SandboxFunction, Loggable):
         for kwarg_name, kwarg_value in kwargs.items():
             if kwarg_name in self.parameters:
                 prepared_context.set_in_scope(kwarg_name, kwarg_value, scope="local")
+
+        # Set the context variable to point to the prepared_context itself
+        # This allows function code to access the execution context
+        prepared_context.set_in_scope("context", prepared_context, scope="local")
+
+        # Copy the interpreter from the original context to the prepared context
+        if isinstance(context, SandboxContext) and hasattr(context, "_interpreter"):
+            prepared_context._interpreter = context._interpreter
 
         return prepared_context
 
@@ -158,9 +169,6 @@ class DanaFunction(SandboxFunction, Loggable):
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
-                    return e.value
-                except DeliverException as e:
-                    # Deliver statement was encountered - return its value (eager execution)
                     return e.value
                 except Exception as e:
                     # Wrap in SandboxError with location information

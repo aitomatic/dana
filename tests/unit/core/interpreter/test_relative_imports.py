@@ -189,8 +189,7 @@ def deep_function():
         import shutil
 
         test_modules_path = Path(__file__).parent / "test_modules_relative"
-        if test_modules_path.exists():
-            shutil.rmtree(test_modules_path)
+        shutil.rmtree(test_modules_path, ignore_errors=True)
 
         # Clean up DANAPATH
         if self.test_modules_path in os.environ.get("DANAPATH", ""):

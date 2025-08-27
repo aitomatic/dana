@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dana.agent import AgentType
 from dana.common.utils.misc import Misc
+from dana.core.builtin_types.agent_system import AgentType
 from dana.integrations.a2a.client.a2a_client import BaseA2AClient
 from dana.registry import register_agent_type
 

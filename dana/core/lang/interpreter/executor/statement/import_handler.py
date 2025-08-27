@@ -370,7 +370,14 @@ class ImportHandler(Loggable):
                 try:
                     base_module, _ = self._get_module(kind="dana", module_name=module_name, context=context)
 
-                    if hasattr(base_module, name):
+                    # Use try/except instead of hasattr() to work within Dana sandbox
+                    try:
+                        getattr(base_module, name)
+                        has_attribute = True
+                    except AttributeError:
+                        has_attribute = False
+
+                    if has_attribute:
                         # Check privacy before importing
                         if name.startswith("_"):
                             raise SandboxError(
@@ -378,6 +385,18 @@ class ImportHandler(Loggable):
                             )
                         # Found the name in the base module - import it
                         imported_obj = getattr(base_module, name)
+
+                        # Check if this is a lazy loader function and resolve it
+                        if callable(imported_obj):
+                            # Check if it's our lazy loader by trying to call it and seeing if it returns a module
+                            try:
+                                potential_module = imported_obj()
+                                # If it returns a Module object, this was a lazy loader
+                                if hasattr(potential_module, "__name__") and hasattr(potential_module, "__file__"):
+                                    imported_obj = potential_module
+                            except Exception:
+                                # If calling fails, it's not a lazy loader, leave as-is
+                                pass
                         context.set_in_scope(context_name, imported_obj, scope="local")
                         imported_successfully = True
                 except SandboxError as e:
@@ -400,7 +419,63 @@ class ImportHandler(Loggable):
                         pass
 
                 if not imported_successfully:
-                    raise SandboxError(f"Cannot import name '{name}' from Dana module '{base_absolute_module}': name not found")
+                    # Check if this might be a circular import timing issue
+                    error_message = f"Cannot import name '{name}' from Dana module '{base_absolute_module}'"
+
+                    # Try to determine if it's a circular import issue
+                    is_circular_import = False
+                    try:
+                        # Check if we can load the base module
+                        base_module, _ = self._get_module(kind="dana", module_name=module_name, context=context)
+
+                        # Check if any modules in the chain are currently loading
+                        from dana.__init__.init_modules import get_module_loader, get_module_registry
+
+                        try:
+                            _loader = get_module_loader()
+                            registry = get_module_registry()
+                            module_parts = base_absolute_module.split(".")
+                            for i in range(len(module_parts)):
+                                partial_module_name = ".".join(module_parts[: i + 1])
+                                if registry and hasattr(registry, "is_module_loading") and registry.is_module_loading(partial_module_name):
+                                    error_message += (
+                                        f" (module '{partial_module_name}' is currently being loaded - circular import detected)"
+                                    )
+                                    is_circular_import = True
+                                    break
+                        except Exception:
+                            # If we can't check module loading status, continue with other error detection
+                            pass
+
+                        if not is_circular_import and hasattr(base_module, "__file__") and base_module.__file__:
+                            # Module exists but doesn't have the attribute - check if it's timing related
+                            module_attrs = [attr for attr in dir(base_module) if not attr.startswith("_")]
+                            if module_attrs:
+                                error_message += (
+                                    f" (available attributes: {', '.join(module_attrs[:5])}{'...' if len(module_attrs) > 5 else ''})"
+                                )
+                                # If module has other attributes but not this one, likely a timing issue
+                                is_circular_import = True
+                            else:
+                                error_message += " (module appears to be partially initialized)"
+                                is_circular_import = True
+                        elif not is_circular_import:
+                            error_message += ": name not found"
+                    except Exception as e:
+                        # If we can't even load the base module, it might be circular
+                        if "circular" in str(e).lower() or "loading" in str(e).lower():
+                            error_message += f" (circular import issue: {e})"
+                            is_circular_import = True
+                        else:
+                            error_message += ": name not found"
+
+                    # Add helpful hint for circular imports (avoid duplicates)
+                    if (
+                        is_circular_import or "circular import" in error_message or "partially initialized" in error_message
+                    ) and "Hint:" not in error_message:
+                        error_message += "\n\nHint: This error often occurs when modules import from each other and attributes are accessed before they're defined. Try defining variables before importing submodules that might need them."
+
+                    raise SandboxError(error_message)
 
     def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry with optimized handling.
@@ -736,7 +811,14 @@ class ImportHandler(Loggable):
                 raise SandboxError(
                     f"Cannot import name '{name}' from Dana module '{module_name_for_errors}': names starting with '_' are private"
                 )
-            if enforce_exports and hasattr(module, "__exports__") and name not in module.__exports__:
+            # Check for exports using try/except instead of hasattr()
+            try:
+                module_exports = getattr(module, "__exports__", None)
+                has_exports = module_exports is not None
+            except AttributeError:
+                has_exports = False
+
+            if enforce_exports and has_exports and name not in module_exports:
                 raise SandboxError(f"Cannot import name '{name}' from Dana module '{module_name_for_errors}': not in module exports")
             obj = getattr(module, name)
             context_name = alias if alias else name
@@ -771,12 +853,25 @@ class ImportHandler(Loggable):
         For Python modules: imports all names except those starting with underscore.
         """
         # Determine which names to import
-        if enforce_exports and hasattr(module, "__exports__"):
+        # Use try/except instead of hasattr() to work within Dana sandbox
+        try:
+            module_exports = getattr(module, "__exports__", None)
+            has_exports = module_exports is not None
+        except AttributeError:
+            has_exports = False
+
+        try:
+            module_all = getattr(module, "__all__", None)
+            has_all = module_all is not None
+        except AttributeError:
+            has_all = False
+
+        if enforce_exports and has_exports:
             # Dana module with explicit exports
-            names_to_import = module.__exports__
-        elif hasattr(module, "__all__"):
+            names_to_import = module_exports
+        elif has_all:
             # Python module with __all__ defined
-            names_to_import = module.__all__
+            names_to_import = module_all
         else:
             # Default: import all attributes that don't start with underscore
             names_to_import = []
@@ -790,7 +885,14 @@ class ImportHandler(Loggable):
 
         # Import each name
         for name in names_to_import:
-            if not hasattr(module, name):
+            # Use try/except instead of hasattr() to work within Dana sandbox
+            try:
+                getattr(module, name)
+                has_name = True
+            except AttributeError:
+                has_name = False
+
+            if not has_name:
                 # Skip names that don't exist (e.g., from __all__ but not actually defined)
                 self.warning(f"Name '{name}' listed in exports but not found in module '{module_name_for_errors}'")
                 continue

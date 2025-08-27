@@ -1,0 +1,102 @@
+# Test FSM integration with workflows
+# This file tests that FSM struct instances work correctly with workflows
+
+sync def test_fsm_struct_availability():
+    """Test that FSM struct is available and can be instantiated."""
+    # FSM should be available as a struct type
+    fsm = FSM(
+        states=["START", "PROCESSING", "COMPLETE"],
+        initial_state="START",
+        current_state="START",
+        transitions={"START:next": "PROCESSING", "PROCESSING:next": "COMPLETE"}
+    )
+    
+    # Test basic FSM functionality
+    assert fsm.states == ["START", "PROCESSING", "COMPLETE"], f"Expected states, got {fsm.states}"
+    assert fsm.initial_state == "START", f"Expected START, got {fsm.initial_state}"
+    assert fsm.current_state == "START", f"Expected START, got {fsm.current_state}"
+    assert fsm.transitions.get("START:next") == "PROCESSING", f"Expected PROCESSING, got {fsm.transitions.get('START:next')}"
+    
+    log("✅ FSM struct instantiation test passed")
+
+sync def test_workflow_fsm_default():
+    """Test that workflows automatically get an FSM field."""
+    # Define a simple workflow
+    workflow TestWorkflow:
+        description: str = "Test workflow"
+    
+    # Create workflow instance
+    workflow_instance = TestWorkflow()
+    
+    # Check that FSM field exists and has default value
+    assert workflow_instance.fsm is not None, "FSM field should not be None"
+    assert workflow_instance.fsm.states is not None, "FSM should have states field"
+    assert workflow_instance.fsm.current_state is not None, "FSM should have current_state field"
+    assert workflow_instance.fsm.transitions is not None, "FSM should have transitions field"
+    
+    # Check default FSM structure
+    assert "START" in workflow_instance.fsm.states, "Default FSM should have START state"
+    assert "COMPLETE" in workflow_instance.fsm.states, "Default FSM should have COMPLETE state"
+    
+    log("✅ Workflow FSM default test passed")
+
+sync def test_workflow_custom_fsm():
+    """Test that workflows can use custom FSM instances."""
+    # Create custom FSM
+    custom_fsm = FSM(
+        states=["INIT", "RUNNING", "DONE"],
+        initial_state="INIT",
+        current_state="INIT",
+        transitions={"INIT:start": "RUNNING", "RUNNING:finish": "DONE"}
+    )
+    
+    # Define workflow with custom FSM
+    workflow CustomWorkflow:
+        fsm: FSM = custom_fsm
+        name: str = "Custom Workflow"
+    
+    # Create workflow instance
+    workflow_instance = CustomWorkflow()
+    
+    # Check that custom FSM is used
+    assert workflow_instance.fsm is custom_fsm, "Workflow should use custom FSM"
+    assert workflow_instance.fsm.states == ["INIT", "RUNNING", "DONE"], f"Expected custom states, got {workflow_instance.fsm.states}"
+    assert workflow_instance.fsm.initial_state == "INIT", f"Expected INIT, got {workflow_instance.fsm.initial_state}"
+    
+    log("✅ Workflow custom FSM test passed")
+
+sync def test_fsm_state_transitions():
+    """Test FSM state transition functionality."""
+    # Create FSM with transitions
+    fsm = FSM(
+        states=["A", "B", "C"],
+        initial_state="A",
+        current_state="A",
+        transitions={"A:next": "B", "B:next": "C"}
+    )
+    
+    # Test initial state
+    assert fsm.current_state == "A", f"Expected A, got {fsm.current_state}"
+    
+    # Test transition to B
+    fsm.current_state = fsm.transitions.get("A:next")
+    assert fsm.current_state == "B", f"Expected B, got {fsm.current_state}"
+    
+    # Test transition to C
+    fsm.current_state = fsm.transitions.get("B:next")
+    assert fsm.current_state == "C", f"Expected C, got {fsm.current_state}"
+    
+    log("✅ FSM state transitions test passed")
+
+# Run all FSM integration tests
+log("🚀 Running FSM Integration Tests")
+log("=" * 50)
+
+test_fsm_struct_availability()
+test_workflow_fsm_default()
+test_workflow_custom_fsm()
+test_fsm_state_transitions()
+
+log("")
+log("✅ All FSM integration tests passed!")
+log("📊 Summary: 4 tests passed, 0 tests failed")

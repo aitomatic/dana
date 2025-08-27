@@ -1,0 +1,63 @@
+from dana.common.sys_resource.rag.loader.local_loader.py import LocalFileMetadataFunc
+from llama_index.core.readers.py import SimpleDirectoryReader
+from multiprocessing.py import cpu_count
+from typing.py import Callable, Union
+import os.py
+from pathlib.py import Path
+
+metadata_func = LocalFileMetadataFunc() # Cannot subclass in Dana so i have to subclass in Python then import it
+SUPPORTED_TYPES = [".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".html", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
+encoding = "utf-8"
+
+
+struct DefaultLoader:
+    exclude : list[str] = [".DS_Store"]
+    exclude_hidden : bool = False
+    errors : str = "strict"
+    encoding : str = "utf-8"
+    recursive : bool = True
+    filename_as_id : bool = True
+    required_exts : list[str] = SUPPORTED_TYPES
+    file_extractor : None  = None
+    num_files_limit : None = None
+    file_metadata : Callable = metadata_func
+    raise_on_error : bool = False
+
+def (loader: DefaultLoader) load_files(file_paths: list[str]) -> list[Document]:
+    res = SimpleDirectoryReader(
+                    input_dir=None,
+                    input_files=file_paths,
+                    exclude=loader.exclude,
+                    exclude_hidden=loader.exclude_hidden,
+                    errors=loader.errors,
+                    recursive=loader.recursive,
+                    encoding=loader.encoding,
+                    filename_as_id=loader.filename_as_id,
+                    required_exts=loader.required_exts,
+                    file_extractor=loader.file_extractor,
+                    num_files_limit=loader.num_files_limit,
+                    file_metadata=loader.file_metadata,
+                    raise_on_error=loader.raise_on_error,
+                ).aload_data(num_workers=max(len(file_paths), cpu_count() // 4)) # Unable to call async method
+    return res
+
+def (loader: DefaultLoader) list_files(folder_path: str) -> list[str]:
+    if os.path.isdir(folder_path):
+        reader = SimpleDirectoryReader(
+            input_dir=folder_path,
+            input_files=None,
+            exclude=loader.exclude,
+            exclude_hidden=loader.exclude_hidden,
+            errors=loader.errors,
+            recursive=loader.recursive,
+            encoding=loader.encoding,
+            filename_as_id=loader.filename_as_id,
+            required_exts=loader.required_exts,
+            file_extractor=loader.file_extractor,
+            num_files_limit=loader.num_files_limit,
+            file_metadata=loader.file_metadata,
+            raise_on_error=loader.raise_on_error,
+        )
+        return reader._add_files(folder_path)
+    else:
+        return [Path(folder_path)]

@@ -156,7 +156,7 @@ class InProcessSandboxInterface:
             kwargs: Keyword arguments to pass to the function
 
         Returns:
-            The result of the Dana function execution
+            The result of the Dana function execution (may be an EagerPromise object)
 
         Raises:
             DanaCallError: If the Dana function call fails
@@ -188,6 +188,8 @@ class InProcessSandboxInterface:
             if not result.success:
                 raise DanaCallError(f"Dana function call failed: {result.error}", original_error=result.error)
 
+            # The result may be an EagerPromise object - this is expected behavior
+            # Promise transparency will handle resolution when the result is accessed
             return result.result
 
         except Exception as e:

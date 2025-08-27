@@ -43,7 +43,6 @@ class Phase8TestRunner:
                 "test_agent_methods.na",
                 "test_agent_memory.na",
                 "test_agent_communication.na",
-                "test_agent_pools.na",
             ],
         }
 

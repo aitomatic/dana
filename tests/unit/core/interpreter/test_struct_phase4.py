@@ -4,10 +4,10 @@ Tests for Phase 4: Struct method syntax transformation.
 This module tests the transformation of method calls (obj.method()) to function calls (method(obj)).
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.core.lang.interpreter.struct_system import (
+from dana.core.builtin_types.struct_system import (
     StructInstance,
 )
+from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.registry import TYPE_REGISTRY
 
 
@@ -156,7 +156,7 @@ class TestStructMethodIntegration:
         TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
-    def test_struct_methods_in_loops(self):
+    def test_struct_functions_in_loops(self):
         """Test using struct methods in loop constructs."""
         code = """
 struct Number:
@@ -183,7 +183,7 @@ for doubled_num in doubled:
         final_values = result.final_context.get("local:final_values")
         assert final_values == [2, 4, 6]
 
-    def test_struct_methods_in_conditionals(self):
+    def test_struct_functions_in_conditionals(self):
         """Test using struct methods in conditional statements."""
         code = """
 struct Counter:
@@ -241,7 +241,7 @@ local:final = step2.finalize()
         final_result = result.final_context.get("local:final")
         assert final_result == "Hello World!"
 
-    def test_struct_methods_with_nested_structs(self):
+    def test_struct_functions_with_nested_structs(self):
         """Test methods on structs that contain other structs."""
         code = """
 struct Point:
@@ -352,7 +352,7 @@ class TestAdvancedStructFeatures:
         TYPE_REGISTRY.clear()
         self.sandbox = DanaSandbox()
 
-    def test_struct_methods_with_multiple_signatures(self):
+    def test_struct_functions_with_multiple_signatures(self):
         """Test struct methods that can handle multiple argument patterns."""
         code = """
 struct Vector:
@@ -399,7 +399,7 @@ local:normalized2 = vector.normalize(2.0)   # Custom length
         assert abs(mag1_squared - 1.0) < 0.01
         assert abs(mag2_squared - 4.0) < 0.01  # 2.0² = 4.0
 
-    def test_struct_method_returning_different_types(self):
+    def test_struct_function_returning_different_types(self):
         """Test struct methods that return different types based on context."""
         code = """
 struct Data:

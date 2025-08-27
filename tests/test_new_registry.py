@@ -9,8 +9,8 @@ import unittest
 from dataclasses import dataclass
 from typing import Any
 
-from dana.agent.agent_instance import AgentInstance
-from dana.core.lang.interpreter.struct_system import StructInstance, StructType
+from dana.core.builtin_types.agent_system import AgentInstance
+from dana.core.builtin_types.struct_system import StructInstance, StructType
 
 
 # Mock classes for testing
@@ -164,7 +164,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
         AGENT_REGISTRY.on_event("registered", on_general_handler)
 
         # Create test instances
-        from dana.agent import AgentType
+        from dana.core.builtin_types.agent_system import AgentType
 
         agent_struct_type = AgentType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
         agent_instance = AgentInstance(agent_struct_type, {"name": "TestAgent"})

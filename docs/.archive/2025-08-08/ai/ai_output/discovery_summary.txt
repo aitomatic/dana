@@ -1,0 +1,27 @@
+=== AI DOCUMENTATION DISCOVERY SUMMARY ===
+Date: Tue Aug  5 12:29:01 PDT 2025
+Project: opendxa
+
+STATISTICS:
+- Recent changes:     2164
+- New functions:        0
+- New examples:        0
+- Documentation files:      190
+- Dana examples:     1020
+- Documentation gaps:        0
+
+BUILD STATUS:
+- MkDocs build: FAILED
+
+FILES ANALYZED:
+- Recent changes: /Users/annieha/opendxa/docs/.ai-only/ai_output/recent_changes.txt
+- New functions: /Users/annieha/opendxa/docs/.ai-only/ai_output/new_functions.txt
+- New examples: /Users/annieha/opendxa/docs/.ai-only/ai_output/new_examples.txt
+- Documentation gaps: /Users/annieha/opendxa/docs/.ai-only/ai_output/doc_gaps.txt
+- Build log: /Users/annieha/opendxa/docs/.ai-only/ai_output/mkdocs_build.log
+
+RECOMMENDATIONS:
+
+
+
+- Fix MkDocs build issues

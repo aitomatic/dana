@@ -1,0 +1,4889 @@
+=== Content Update PHASE STARTED Tue Aug  5 12:29:01 PDT 2025 ===
+=== AI DOCUMENTATION CONTENT UPDATE STARTED Tue Aug  5 12:29:01 PDT 2025 ===
+Updating function documentation...
+Processing new functions...
+Functions to document:     7046
+Fixing broken Dana code examples...
+Testing docs//.archive/docs_orphaned/docs/dana/poet/CURRENT_ARCHITECTURE.md...
+
+================================================================================
+                DANA Execution: temp_CURRENT_ARCHITECTURE.md.na
+================================================================================
+
+Program executed successfully
+
+--- Final Context State ---
+{'local': {'feedback': <function DanaSandbox._create_default_context.<locals>.feedback_placeholder at 0x1156e7920>, 'assess_credit_risk': <function poet.<locals>.dana_decorator.<locals>.poet_enhanced_function at 0x1156b2c00>}, 'private': {}, 'public': {}, 'system': {'execution_status': <ExecutionStatus.COMPLETED: 'completed'>, 'history': [], '__last_value': <function poet.<locals>.dana_decorator.<locals>.poet_enhanced_function at 0x1156b2c00>}}
+---------------------------
+
+Result: <function poet.<locals>.dana_decorator.<locals>.poet_enhanced_function at 0x1156b2c00>
+
+✓ Program execution completed successfully
+✅ docs//.archive/docs_orphaned/docs/dana/poet/CURRENT_ARCHITECTURE.md examples work
+Testing docs//.archive/docs_orphaned/docs/dana/poet/correct-architecture.md...
+
+================================================================================
+                DANA Execution: temp_correct-architecture.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_correct-architecture.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* FROM
+  	* SINGLE_QUOTED_STRING
+  	* EXCEPT
+  	* NONE
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* NAME
+  	* EXPORT
+  	* LOCAL
+  	* WITH
+  	* LPAR
+  	* CONTINUE
+  	* LBRACE
+  	* FOR
+  	* FINALLY
+  	* IMPORT
+  	* TRUE
+  	* AGENT
+  	* AT
+  	* WHILE
+  	* PRIVATE
+  	* DOLLAR_DOLLAR
+  	* RAISE
+  	* SUB
+  	* ADD
+  	* _NL
+  	* USE
+  	* FALSE
+  	* NUMBER
+  	* RETURN
+  	* SYSTEM
+  	* DEF
+  	* ELSE
+  	* BREAK
+  	* PASS
+  	* COMMENT
+  	* TRY
+  	* LSQB
+  	* DELIVER
+  	* LAMBDA
+  	* STRUCT
+  	* AGENT_POOL
+  	* MULTILINE_STRING
+  	* ELIF
+  	* REGULAR_STRING
+  	* RAW_STRING
+  	* ASSERT
+  	* IF
+  	* PUBLIC
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/correct-architecture.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/dana/poet/getting-started.md...
+
+================================================================================
+                   DANA Execution: temp_getting-started.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_getting-started.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* AGENT
+  	* USE
+  	* LOCAL
+  	* LBRACE
+  	* MULTILINE_STRING
+  	* WHILE
+  	* PUBLIC
+  	* RETURN
+  	* CONTINUE
+  	* DEF
+  	* FALSE
+  	* COMMENT
+  	* ASSERT
+  	* SYSTEM
+  	* LSQB
+  	* TRUE
+  	* LAMBDA
+  	* PRIVATE
+  	* DELIVER
+  	* IMPORT
+  	* EXCEPT
+  	* F_STRING_TOKEN
+  	* LPAR
+  	* SINGLE_QUOTED_STRING
+  	* WITH
+  	* IF
+  	* FROM
+  	* ELIF
+  	* EXPORT
+  	* SUB
+  	* AGENT_POOL
+  	* FINALLY
+  	* FOR
+  	* DOLLAR_DOLLAR
+  	* NONE
+  	* NOT_OP
+  	* STRUCT
+  	* PASS
+  	* AT
+  	* NAME
+  	* RAW_STRING
+  	* NUMBER
+  	* BREAK
+  	* REGULAR_STRING
+  	* _NL
+  	* ADD
+  	* ELSE
+  	* TRY
+  	* RAISE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/getting-started.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/dana/poet/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 17 col 1
+  ```
+  ^
+  Expected one of: 
+  	* EXPORT
+  	* LOCAL
+  	* NUMBER
+  	* LBRACE
+  	* PRIVATE
+  	* RETURN
+  	* BREAK
+  	* IMPORT
+  	* DEF
+  	* DOLLAR_DOLLAR
+  	* AGENT
+  	* LAMBDA
+  	* TRY
+  	* FOR
+  	* AGENT_POOL
+  	* RAISE
+  	* COMMENT
+  	* WITH
+  	* IF
+  	* F_STRING_TOKEN
+  	* NONE
+  	* TRUE
+  	* NOT_OP
+  	* RAW_STRING
+  	* NAME
+  	* ASSERT
+  	* SYSTEM
+  	* SINGLE_QUOTED_STRING
+  	* FROM
+  	* PASS
+  	* LPAR
+  	* AT
+  	* PUBLIC
+  	* USE
+  	* ADD
+  	* WHILE
+  	* REGULAR_STRING
+  	* LSQB
+  	* SUB
+  	* _NL
+  	* CONTINUE
+  	* STRUCT
+  	* FALSE
+  	* MULTILINE_STRING
+  	* DELIVER
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/README.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/dana/poet/configuration.md...
+
+================================================================================
+                    DANA Execution: temp_configuration.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_configuration.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 5 col 1
+  ```
+  ^
+  Expected one of: 
+  	* RETURN
+  	* PASS
+  	* AGENT
+  	* ADD
+  	* FROM
+  	* ELSE
+  	* REGULAR_STRING
+  	* IF
+  	* LBRACE
+  	* EXPORT
+  	* RAISE
+  	* LPAR
+  	* F_STRING_TOKEN
+  	* PUBLIC
+  	* NUMBER
+  	* AT
+  	* NAME
+  	* _NL
+  	* LOCAL
+  	* LSQB
+  	* STRUCT
+  	* DOLLAR_DOLLAR
+  	* NOT_OP
+  	* SINGLE_QUOTED_STRING
+  	* FINALLY
+  	* PRIVATE
+  	* DEF
+  	* SUB
+  	* USE
+  	* BREAK
+  	* FOR
+  	* AGENT_POOL
+  	* NONE
+  	* WHILE
+  	* ELIF
+  	* TRUE
+  	* DELIVER
+  	* MULTILINE_STRING
+  	* RAW_STRING
+  	* EXCEPT
+  	* FALSE
+  	* IMPORT
+  	* WITH
+  	* COMMENT
+  	* LAMBDA
+  	* ASSERT
+  	* CONTINUE
+  	* TRY
+  	* SYSTEM
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/configuration.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/dana/poet/poet-architecture.md...
+
+================================================================================
+                  DANA Execution: temp_poet-architecture.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet-architecture.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 16 col 1
+  ```
+  ^
+  Expected one of: 
+  	* USE
+  	* F_STRING_TOKEN
+  	* LAMBDA
+  	* LSQB
+  	* SYSTEM
+  	* AGENT
+  	* IMPORT
+  	* LOCAL
+  	* IF
+  	* ADD
+  	* BREAK
+  	* NONE
+  	* WITH
+  	* RETURN
+  	* TRY
+  	* DOLLAR_DOLLAR
+  	* SUB
+  	* WHILE
+  	* FOR
+  	* DEF
+  	* CONTINUE
+  	* NOT_OP
+  	* PRIVATE
+  	* PASS
+  	* DELIVER
+  	* LPAR
+  	* NUMBER
+  	* AGENT_POOL
+  	* NAME
+  	* FROM
+  	* STRUCT
+  	* TRUE
+  	* FALSE
+  	* PUBLIC
+  	* MULTILINE_STRING
+  	* SINGLE_QUOTED_STRING
+  	* _NL
+  	* ASSERT
+  	* RAW_STRING
+  	* AT
+  	* COMMENT
+  	* RAISE
+  	* LBRACE
+  	* EXPORT
+  	* REGULAR_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/poet-architecture.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/dana/poet/api-reference.md...
+
+================================================================================
+                    DANA Execution: temp_api-reference.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_api-reference.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 18 col 1
+  ```
+  ^
+  Expected one of: 
+  	* LBRACE
+  	* REGULAR_STRING
+  	* WITH
+  	* FOR
+  	* FALSE
+  	* ELSE
+  	* CONTINUE
+  	* F_STRING_TOKEN
+  	* LAMBDA
+  	* AGENT_POOL
+  	* ADD
+  	* BREAK
+  	* TRY
+  	* MULTILINE_STRING
+  	* NONE
+  	* IMPORT
+  	* PRIVATE
+  	* RAISE
+  	* COMMENT
+  	* EXPORT
+  	* AT
+  	* LPAR
+  	* NUMBER
+  	* LSQB
+  	* SINGLE_QUOTED_STRING
+  	* ASSERT
+  	* EXCEPT
+  	* WHILE
+  	* NOT_OP
+  	* SUB
+  	* DELIVER
+  	* RAW_STRING
+  	* FINALLY
+  	* USE
+  	* NAME
+  	* SYSTEM
+  	* LOCAL
+  	* TRUE
+  	* FROM
+  	* PASS
+  	* RETURN
+  	* PUBLIC
+  	* STRUCT
+  	* DOLLAR_DOLLAR
+  	* _NL
+  	* IF
+  	* AGENT
+  	* DEF
+  	* ELIF
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/dana/poet/api-reference.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/cheatsheet.md...
+
+================================================================================
+                     DANA Execution: temp_cheatsheet.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 6, column 7):
+  The word 'agent' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      agent = dana.Agent(name)
+  Use a different variable name like 'my_agent' or 'the_agent'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/docs_orphaned/docs/for-engineers/cheatsheet.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/recipes/multi-agent-collaboration/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedToken - Unexpected token Token('_INDENT', '  ') at line 1, column 46.
+  Expected one of: 
+  	* TRY
+  	* FOR
+  	* $END
+  	* FALSE
+  	* NONE
+  	* PRIVATE
+  	* AT
+  	* EXPORT
+  	* SYSTEM
+  	* LSQB
+  	* STRUCT
+  	* NAME
+  	* RAISE
+  	* RAW_STRING
+  	* AGENT_POOL
+  	* _NL
+  	* SINGLE_QUOTED_STRING
+  	* NOT_OP
+  	* WITH
+  	* LPAR
+  	* FROM
+  	* DEF
+  	* MULTILINE_STRING
+  	* BREAK
+  	* CONTINUE
+  	* NUMBER
+  	* COMMENT
+  	* PASS
+  	* WHILE
+  	* TRUE
+  	* ASSERT
+  	* IF
+  	* PUBLIC
+  	* ADD
+  	* F_STRING_TOKEN
+  	* REGULAR_STRING
+  	* LOCAL
+  	* LAMBDA
+  	* RETURN
+  	* SUB
+  	* LBRACE
+  	* USE
+  	* DELIVER
+  	* AGENT
+  	* IMPORT
+  	* DOLLAR_DOLLAR
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/for-engineers/recipes/multi-agent-collaboration/README.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/recipes/multi-agent-collaboration/hands-on-guide.md...
+
+================================================================================
+                   DANA Execution: temp_hands-on-guide.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_hands-on-guide.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 15 col 1
+  ```
+  ^
+  Expected one of: 
+  	* IF
+  	* AGENT_POOL
+  	* IMPORT
+  	* LPAR
+  	* DEF
+  	* NAME
+  	* REGULAR_STRING
+  	* FALSE
+  	* COMMENT
+  	* DOLLAR_DOLLAR
+  	* RETURN
+  	* CONTINUE
+  	* LAMBDA
+  	* RAW_STRING
+  	* LSQB
+  	* WHILE
+  	* ASSERT
+  	* STRUCT
+  	* LBRACE
+  	* BREAK
+  	* TRUE
+  	* EXPORT
+  	* USE
+  	* TRY
+  	* DELIVER
+  	* PUBLIC
+  	* NUMBER
+  	* FROM
+  	* RAISE
+  	* PASS
+  	* NONE
+  	* FOR
+  	* SUB
+  	* AGENT
+  	* LOCAL
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* MULTILINE_STRING
+  	* SINGLE_QUOTED_STRING
+  	* _NL
+  	* SYSTEM
+  	* ADD
+  	* AT
+  	* WITH
+  	* PRIVATE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/for-engineers/recipes/multi-agent-collaboration/hands-on-guide.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/recipes/structs-cookbook.md...
+
+================================================================================
+                  DANA Execution: temp_structs-cookbook.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_structs-cookbook.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 126 col 1
+  ```
+  ^
+  Expected one of: 
+  	* MULTILINE_STRING
+  	* TRUE
+  	* LAMBDA
+  	* PUBLIC
+  	* ELIF
+  	* LBRACE
+  	* FINALLY
+  	* PRIVATE
+  	* LPAR
+  	* RAW_STRING
+  	* STRUCT
+  	* LOCAL
+  	* NUMBER
+  	* IF
+  	* RAISE
+  	* AGENT
+  	* BREAK
+  	* NONE
+  	* FROM
+  	* ELSE
+  	* USE
+  	* FALSE
+  	* NOT_OP
+  	* RETURN
+  	* SINGLE_QUOTED_STRING
+  	* SYSTEM
+  	* EXCEPT
+  	* DOLLAR_DOLLAR
+  	* SUB
+  	* AT
+  	* COMMENT
+  	* FOR
+  	* AGENT_POOL
+  	* IMPORT
+  	* CONTINUE
+  	* TRY
+  	* DELIVER
+  	* ASSERT
+  	* PASS
+  	* _NL
+  	* ADD
+  	* LSQB
+  	* WHILE
+  	* DEF
+  	* NAME
+  	* F_STRING_TOKEN
+  	* REGULAR_STRING
+  	* EXPORT
+  	* WITH
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/for-engineers/recipes/structs-cookbook.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/reference/structs-and-methods.md...
+
+================================================================================
+                 DANA Execution: temp_structs-and-methods.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_structs-and-methods.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 13 col 1
+  ```
+  ^
+  Expected one of: 
+  	* RETURN
+  	* DELIVER
+  	* BREAK
+  	* DEF
+  	* ASSERT
+  	* _NL
+  	* TRUE
+  	* F_STRING_TOKEN
+  	* WITH
+  	* FALSE
+  	* FROM
+  	* NUMBER
+  	* MULTILINE_STRING
+  	* NAME
+  	* FOR
+  	* SUB
+  	* USE
+  	* PASS
+  	* RAISE
+  	* SYSTEM
+  	* DOLLAR_DOLLAR
+  	* NOT_OP
+  	* EXPORT
+  	* LAMBDA
+  	* LBRACE
+  	* AGENT
+  	* IF
+  	* COMMENT
+  	* TRY
+  	* LSQB
+  	* NONE
+  	* IMPORT
+  	* LOCAL
+  	* AGENT_POOL
+  	* LPAR
+  	* CONTINUE
+  	* WHILE
+  	* RAW_STRING
+  	* PUBLIC
+  	* ADD
+  	* PRIVATE
+  	* REGULAR_STRING
+  	* AT
+  	* STRUCT
+  	* SINGLE_QUOTED_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/for-engineers/reference/structs-and-methods.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/for-engineers/reference/api/poet-decorators.md...
+
+================================================================================
+                   DANA Execution: temp_poet-decorators.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet-decorators.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 11 col 1
+  ```
+  ^
+  Expected one of: 
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* DEF
+  	* BREAK
+  	* ADD
+  	* RAISE
+  	* LSQB
+  	* DOLLAR_DOLLAR
+  	* SUB
+  	* IMPORT
+  	* FINALLY
+  	* ELSE
+  	* RETURN
+  	* WITH
+  	* LBRACE
+  	* USE
+  	* AT
+  	* PRIVATE
+  	* COMMENT
+  	* NAME
+  	* MULTILINE_STRING
+  	* TRY
+  	* ASSERT
+  	* EXPORT
+  	* PUBLIC
+  	* LOCAL
+  	* RAW_STRING
+  	* NONE
+  	* SINGLE_QUOTED_STRING
+  	* FROM
+  	* CONTINUE
+  	* LAMBDA
+  	* EXCEPT
+  	* STRUCT
+  	* IF
+  	* REGULAR_STRING
+  	* LPAR
+  	* DELIVER
+  	* FALSE
+  	* PASS
+  	* AGENT
+  	* SYSTEM
+  	* TRUE
+  	* WHILE
+  	* AGENT_POOL
+  	* ELIF
+  	* _NL
+  	* NUMBER
+  	* FOR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/for-engineers/reference/api/poet-decorators.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/reference/04_agent_and_orchestration/a2a_dana_design.md...
+
+================================================================================
+                   DANA Execution: temp_a2a_dana_design.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_a2a_dana_design.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 8 col 1
+  ```
+  ^
+  Expected one of: 
+  	* _NL
+  	* IF
+  	* LOCAL
+  	* CONTINUE
+  	* WITH
+  	* NUMBER
+  	* DEF
+  	* NAME
+  	* LSQB
+  	* MULTILINE_STRING
+  	* PASS
+  	* RAISE
+  	* TRUE
+  	* LAMBDA
+  	* FOR
+  	* FROM
+  	* LPAR
+  	* DOLLAR_DOLLAR
+  	* IMPORT
+  	* ADD
+  	* DELIVER
+  	* REGULAR_STRING
+  	* AGENT
+  	* STRUCT
+  	* USE
+  	* BREAK
+  	* COMMENT
+  	* NONE
+  	* SINGLE_QUOTED_STRING
+  	* F_STRING_TOKEN
+  	* AGENT_POOL
+  	* EXPORT
+  	* PUBLIC
+  	* FALSE
+  	* LBRACE
+  	* SUB
+  	* WHILE
+  	* TRY
+  	* RETURN
+  	* ASSERT
+  	* PRIVATE
+  	* RAW_STRING
+  	* SYSTEM
+  	* AT
+  	* NOT_OP
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/reference/04_agent_and_orchestration/a2a_dana_design.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/reference/04_agent_and_orchestration/dana_agent_design.md...
+
+================================================================================
+                  DANA Execution: temp_dana_agent_design.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_dana_agent_design.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 13 col 1
+  ```
+  ^
+  Expected one of: 
+  	* COMMENT
+  	* SUB
+  	* DELIVER
+  	* STRUCT
+  	* F_STRING_TOKEN
+  	* NUMBER
+  	* RAW_STRING
+  	* TRUE
+  	* AT
+  	* _NL
+  	* RAISE
+  	* LAMBDA
+  	* ASSERT
+  	* DEF
+  	* EXPORT
+  	* USE
+  	* AGENT_POOL
+  	* LPAR
+  	* TRY
+  	* LOCAL
+  	* NOT_OP
+  	* LBRACE
+  	* SINGLE_QUOTED_STRING
+  	* DOLLAR_DOLLAR
+  	* FALSE
+  	* SYSTEM
+  	* LSQB
+  	* ADD
+  	* IF
+  	* AGENT
+  	* WITH
+  	* IMPORT
+  	* NAME
+  	* NONE
+  	* REGULAR_STRING
+  	* BREAK
+  	* PRIVATE
+  	* CONTINUE
+  	* RETURN
+  	* WHILE
+  	* PASS
+  	* FOR
+  	* FROM
+  	* MULTILINE_STRING
+  	* PUBLIC
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/reference/04_agent_and_orchestration/dana_agent_design.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/reference/01_dana_language_specification/struct_implementation.md...
+
+================================================================================
+                DANA Execution: temp_struct_implementation.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_struct_implementation.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 25 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PASS
+  	* IMPORT
+  	* AGENT_POOL
+  	* F_STRING_TOKEN
+  	* PRIVATE
+  	* ASSERT
+  	* IF
+  	* TRUE
+  	* LPAR
+  	* _NL
+  	* RAW_STRING
+  	* RETURN
+  	* LAMBDA
+  	* EXPORT
+  	* NUMBER
+  	* AT
+  	* MULTILINE_STRING
+  	* PUBLIC
+  	* BREAK
+  	* DEF
+  	* LOCAL
+  	* FROM
+  	* NOT_OP
+  	* COMMENT
+  	* REGULAR_STRING
+  	* NAME
+  	* SYSTEM
+  	* SUB
+  	* CONTINUE
+  	* FOR
+  	* WHILE
+  	* USE
+  	* SINGLE_QUOTED_STRING
+  	* FALSE
+  	* LSQB
+  	* LBRACE
+  	* AGENT
+  	* WITH
+  	* RAISE
+  	* ADD
+  	* DELIVER
+  	* TRY
+  	* STRUCT
+  	* DOLLAR_DOLLAR
+  	* NONE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/reference/01_dana_language_specification/struct_implementation.md has broken examples
+Testing docs//.archive/docs_orphaned/docs/reference/02_dana_runtime_and_execution/poet_architecture_decisions.md...
+
+================================================================================
+             DANA Execution: temp_poet_architecture_decisions.md.na
+================================================================================
+
+Program executed successfully
+
+--- Final Context State ---
+{'local': {'feedback': <function DanaSandbox._create_default_context.<locals>.feedback_placeholder at 0x107eef920>, 'assess_credit_risk': <function poet.<locals>.dana_decorator.<locals>.poet_enhanced_function at 0x107ebac00>}, 'private': {}, 'public': {}, 'system': {'execution_status': <ExecutionStatus.COMPLETED: 'completed'>, 'history': [], '__last_value': Token('COMMENT', '# E: Validates output meets financial compliance requirements')}}
+---------------------------
+
+Result: # E: Validates output meets financial compliance requirements
+
+✓ Program execution completed successfully
+✅ docs//.archive/docs_orphaned/docs/reference/02_dana_runtime_and_execution/poet_architecture_decisions.md examples work
+Testing docs//.archive/docs_orphaned/docs/reference/02_dana_runtime_and_execution/poet_execution_model.md...
+
+================================================================================
+                DANA Execution: temp_poet_execution_model.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet_execution_model.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 15 col 1
+  ```
+  ^
+  Expected one of: 
+  	* RETURN
+  	* DELIVER
+  	* AGENT
+  	* NOT_OP
+  	* RAW_STRING
+  	* PASS
+  	* AT
+  	* DEF
+  	* MULTILINE_STRING
+  	* FINALLY
+  	* LPAR
+  	* REGULAR_STRING
+  	* STRUCT
+  	* FOR
+  	* IF
+  	* SYSTEM
+  	* LSQB
+  	* AGENT_POOL
+  	* NAME
+  	* BREAK
+  	* NONE
+  	* WITH
+  	* ASSERT
+  	* USE
+  	* LBRACE
+  	* _NL
+  	* DOLLAR_DOLLAR
+  	* FALSE
+  	* CONTINUE
+  	* PRIVATE
+  	* ELIF
+  	* LAMBDA
+  	* ADD
+  	* PUBLIC
+  	* EXPORT
+  	* WHILE
+  	* SINGLE_QUOTED_STRING
+  	* RAISE
+  	* LOCAL
+  	* SUB
+  	* IMPORT
+  	* TRUE
+  	* F_STRING_TOKEN
+  	* ELSE
+  	* TRY
+  	* FROM
+  	* COMMENT
+  	* EXCEPT
+  	* NUMBER
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/docs_orphaned/docs/reference/02_dana_runtime_and_execution/poet_execution_model.md has broken examples
+Testing docs//.archive/dana/poet/primer.md...
+
+================================================================================
+                       DANA Execution: temp_primer.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_primer.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 11 col 1
+  ```
+  ^
+  Expected one of: 
+  	* LAMBDA
+  	* _NL
+  	* RAW_STRING
+  	* WHILE
+  	* LPAR
+  	* AGENT_POOL
+  	* PRIVATE
+  	* AGENT
+  	* ADD
+  	* DOLLAR_DOLLAR
+  	* NUMBER
+  	* TRUE
+  	* BREAK
+  	* FROM
+  	* RAISE
+  	* PUBLIC
+  	* TRY
+  	* F_STRING_TOKEN
+  	* LOCAL
+  	* SUB
+  	* USE
+  	* SYSTEM
+  	* RETURN
+  	* NOT_OP
+  	* DEF
+  	* NAME
+  	* PASS
+  	* WITH
+  	* STRUCT
+  	* ASSERT
+  	* DELIVER
+  	* EXPORT
+  	* REGULAR_STRING
+  	* SINGLE_QUOTED_STRING
+  	* COMMENT
+  	* LBRACE
+  	* AT
+  	* IMPORT
+  	* FALSE
+  	* FOR
+  	* CONTINUE
+  	* MULTILINE_STRING
+  	* NONE
+  	* IF
+  	* LSQB
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/dana/poet/primer.md has broken examples
+Testing docs//.archive/dana/workflow/primer.md...
+
+================================================================================
+                       DANA Execution: temp_primer.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 2, column 18):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def step1(data): return process(data)
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/dana/workflow/primer.md has broken examples
+Testing docs//.archive/.design/magic_functions.md...
+
+================================================================================
+                   DANA Execution: temp_magic_functions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_magic_functions.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'api_client') at line 1, column 8.
+  Expected one of: 
+  	* ADD
+  	* COLON
+  	* IN_OP
+  	* _NL
+  	* IS_OP
+  	* MINUS_EQUALS
+  	* EQUAL
+  	* MULT_EQUALS
+  	* DIV_EQUALS
+  	* GT_OP
+  	* MUL
+  	* SUB
+  	* AND
+  	* OR
+  	* COMMENT
+  	* GE_OP
+  	* POW
+  	* DOT
+  	* IF
+  	* DIV
+  	* MOD
+  	* PLUS_EQUALS
+  	* LT_OP
+  	* NE_OP
+  	* IS_NOT_OP
+  	* NOT_IN_OP
+  	* PIPE
+  	* EQ_OP
+  	* LPAR
+  	* LSQB
+  	* FDIV
+  	* LE_OP
+  Previous tokens: [Token('NAME', 'module')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/magic_functions.md has broken examples
+Testing docs//.archive/.design/modules_and_imports.md...
+
+================================================================================
+                 DANA Execution: temp_modules_and_imports.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_modules_and_imports.md.na
+  Error: UnexpectedToken - Unexpected token Token('COMMA', ',') at line 2, column 21.
+  Expected one of: 
+  	* _NL
+  	* COMMENT
+  Previous tokens: [Token('NAME', 'StringMetrics')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/modules_and_imports.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/supporting_docs/grammar_extension_proposal.md...
+
+================================================================================
+             DANA Execution: temp_grammar_extension_proposal.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_grammar_extension_proposal.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PUBLIC
+  	* F_STRING_TOKEN
+  	* PASS
+  	* DOLLAR_DOLLAR
+  	* PRIVATE
+  	* SUB
+  	* DEF
+  	* EXPORT
+  	* LSQB
+  	* NUMBER
+  	* ADD
+  	* SYSTEM
+  	* LPAR
+  	* RETURN
+  	* AGENT_POOL
+  	* NONE
+  	* BREAK
+  	* DELIVER
+  	* RAW_STRING
+  	* STRUCT
+  	* CONTINUE
+  	* FOR
+  	* LBRACE
+  	* COMMENT
+  	* TRY
+  	* _NL
+  	* WITH
+  	* IMPORT
+  	* REGULAR_STRING
+  	* FROM
+  	* MULTILINE_STRING
+  	* FALSE
+  	* IF
+  	* AGENT
+  	* NAME
+  	* TRUE
+  	* LOCAL
+  	* ASSERT
+  	* USE
+  	* AT
+  	* SINGLE_QUOTED_STRING
+  	* WHILE
+  	* LAMBDA
+  	* RAISE
+  	* NOT_OP
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/supporting_docs/grammar_extension_proposal.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/04_implementation_analysis.md...
+
+================================================================================
+             DANA Execution: temp_04_implementation_analysis.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_04_implementation_analysis.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 7 col 1
+  ```
+  ^
+  Expected one of: 
+  	* WHILE
+  	* DEF
+  	* TRY
+  	* NONE
+  	* NOT_OP
+  	* IMPORT
+  	* WITH
+  	* IF
+  	* NUMBER
+  	* EXPORT
+  	* RAW_STRING
+  	* ASSERT
+  	* REGULAR_STRING
+  	* _NL
+  	* MULTILINE_STRING
+  	* NAME
+  	* FOR
+  	* FROM
+  	* AT
+  	* SINGLE_QUOTED_STRING
+  	* SUB
+  	* LSQB
+  	* ADD
+  	* AGENT
+  	* DOLLAR_DOLLAR
+  	* RETURN
+  	* FALSE
+  	* COMMENT
+  	* USE
+  	* F_STRING_TOKEN
+  	* LOCAL
+  	* LBRACE
+  	* PRIVATE
+  	* AGENT_POOL
+  	* SYSTEM
+  	* LAMBDA
+  	* PUBLIC
+  	* STRUCT
+  	* PASS
+  	* DELIVER
+  	* TRUE
+  	* LPAR
+  	* CONTINUE
+  	* RAISE
+  	* BREAK
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/04_implementation_analysis.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/implementation_tracker.md...
+
+================================================================================
+               DANA Execution: temp_implementation_tracker.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_implementation_tracker.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 3 col 1
+  ```
+  ^
+  Expected one of: 
+  	* TRUE
+  	* PUBLIC
+  	* RETURN
+  	* ADD
+  	* NAME
+  	* AGENT_POOL
+  	* RAW_STRING
+  	* CONTINUE
+  	* NONE
+  	* EXPORT
+  	* MULTILINE_STRING
+  	* STRUCT
+  	* NUMBER
+  	* REGULAR_STRING
+  	* SYSTEM
+  	* PASS
+  	* _NL
+  	* TRY
+  	* COMMENT
+  	* FROM
+  	* BREAK
+  	* FALSE
+  	* DOLLAR_DOLLAR
+  	* RAISE
+  	* WITH
+  	* WHILE
+  	* IMPORT
+  	* DEF
+  	* AT
+  	* LBRACE
+  	* LPAR
+  	* SUB
+  	* PRIVATE
+  	* AGENT
+  	* SINGLE_QUOTED_STRING
+  	* NOT_OP
+  	* LOCAL
+  	* LAMBDA
+  	* USE
+  	* IF
+  	* LSQB
+  	* DELIVER
+  	* FOR
+  	* F_STRING_TOKEN
+  	* ASSERT
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/implementation_tracker.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/02_semantic_function_dispatch_design.md...
+
+================================================================================
+        DANA Execution: temp_02_semantic_function_dispatch_design.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_02_semantic_function_dispatch_design.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 4 col 1
+  ```
+  ^
+  Expected one of: 
+  	* ASSERT
+  	* ADD
+  	* WITH
+  	* LSQB
+  	* _NL
+  	* NOT_OP
+  	* FOR
+  	* PASS
+  	* LPAR
+  	* RETURN
+  	* USE
+  	* RAISE
+  	* SYSTEM
+  	* CONTINUE
+  	* STRUCT
+  	* NONE
+  	* MULTILINE_STRING
+  	* NAME
+  	* REGULAR_STRING
+  	* LAMBDA
+  	* LBRACE
+  	* AT
+  	* FALSE
+  	* AGENT_POOL
+  	* LOCAL
+  	* TRY
+  	* BREAK
+  	* NUMBER
+  	* EXPORT
+  	* DEF
+  	* DELIVER
+  	* COMMENT
+  	* PRIVATE
+  	* SUB
+  	* AGENT
+  	* RAW_STRING
+  	* PUBLIC
+  	* FROM
+  	* TRUE
+  	* IF
+  	* SINGLE_QUOTED_STRING
+  	* F_STRING_TOKEN
+  	* IMPORT
+  	* DOLLAR_DOLLAR
+  	* WHILE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/02_semantic_function_dispatch_design.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+Program executed successfully
+
+--- Final Context State ---
+{'local': {'feedback': <function DanaSandbox._create_default_context.<locals>.feedback_placeholder at 0x1143e7920>, 'pi': 3, 'Person': <function AgentHandler.execute_struct_definition.<locals>.struct_constructor at 0x114329260>, 'person': Person(name='Alice', age=28, email='alice@example.com')}, 'private': {}, 'public': {}, 'system': {'execution_status': <ExecutionStatus.COMPLETED: 'completed'>, 'history': [], '__last_value': Token('COMMENT', '# → Person(name="Alice Smith", age=28, email="alice@techcorp.com")'), '__current_assignment_type': None}}
+---------------------------
+
+Result: # → Person(name="Alice Smith", age=28, email="alice@techcorp.com")
+
+✓ Program execution completed successfully
+✅ docs//.archive/.design/semantic_function_dispatch/README.md examples work
+Testing docs//.archive/.design/semantic_function_dispatch/03_struct_type_coercion_enhancement.md...
+
+================================================================================
+         DANA Execution: temp_03_struct_type_coercion_enhancement.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_03_struct_type_coercion_enhancement.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 25 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PRIVATE
+  	* WITH
+  	* RETURN
+  	* NOT_OP
+  	* USE
+  	* AT
+  	* EXPORT
+  	* RAISE
+  	* AGENT
+  	* SYSTEM
+  	* WHILE
+  	* MULTILINE_STRING
+  	* FROM
+  	* RAW_STRING
+  	* NUMBER
+  	* STRUCT
+  	* _NL
+  	* AGENT_POOL
+  	* TRUE
+  	* ASSERT
+  	* IMPORT
+  	* LAMBDA
+  	* ADD
+  	* SUB
+  	* COMMENT
+  	* PUBLIC
+  	* CONTINUE
+  	* REGULAR_STRING
+  	* F_STRING_TOKEN
+  	* TRY
+  	* LSQB
+  	* PASS
+  	* SINGLE_QUOTED_STRING
+  	* LBRACE
+  	* DOLLAR_DOLLAR
+  	* BREAK
+  	* NONE
+  	* DEF
+  	* NAME
+  	* LPAR
+  	* IF
+  	* FOR
+  	* LOCAL
+  	* DELIVER
+  	* FALSE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/03_struct_type_coercion_enhancement.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/01_problem_analysis.md...
+
+================================================================================
+                 DANA Execution: temp_01_problem_analysis.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_01_problem_analysis.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* AGENT_POOL
+  	* PRIVATE
+  	* WITH
+  	* COMMENT
+  	* DEF
+  	* ASSERT
+  	* WHILE
+  	* NAME
+  	* _NL
+  	* F_STRING_TOKEN
+  	* ADD
+  	* RAW_STRING
+  	* SINGLE_QUOTED_STRING
+  	* NOT_OP
+  	* IF
+  	* IMPORT
+  	* SYSTEM
+  	* RETURN
+  	* PASS
+  	* LAMBDA
+  	* DELIVER
+  	* EXPORT
+  	* BREAK
+  	* LOCAL
+  	* CONTINUE
+  	* NONE
+  	* LPAR
+  	* STRUCT
+  	* LBRACE
+  	* SUB
+  	* NUMBER
+  	* AT
+  	* LSQB
+  	* FOR
+  	* FALSE
+  	* DOLLAR_DOLLAR
+  	* MULTILINE_STRING
+  	* AGENT
+  	* USE
+  	* REGULAR_STRING
+  	* TRUE
+  	* PUBLIC
+  	* FROM
+  	* RAISE
+  	* TRY
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/01_problem_analysis.md has broken examples
+Testing docs//.archive/.design/semantic_function_dispatch/implementation_plan.md...
+
+================================================================================
+                 DANA Execution: temp_implementation_plan.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_implementation_plan.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 35 col 1
+  ```
+  ^
+  Expected one of: 
+  	* MULTILINE_STRING
+  	* NOT_OP
+  	* WHILE
+  	* SUB
+  	* SINGLE_QUOTED_STRING
+  	* ADD
+  	* LOCAL
+  	* SYSTEM
+  	* BREAK
+  	* TRUE
+  	* FOR
+  	* LPAR
+  	* PRIVATE
+  	* STRUCT
+  	* RETURN
+  	* COMMENT
+  	* DELIVER
+  	* PASS
+  	* RAISE
+  	* RAW_STRING
+  	* AGENT_POOL
+  	* PUBLIC
+  	* TRY
+  	* LBRACE
+  	* FALSE
+  	* WITH
+  	* ASSERT
+  	* DOLLAR_DOLLAR
+  	* F_STRING_TOKEN
+  	* FROM
+  	* AGENT
+  	* _NL
+  	* EXPORT
+  	* NONE
+  	* REGULAR_STRING
+  	* IF
+  	* NAME
+  	* DEF
+  	* NUMBER
+  	* LAMBDA
+  	* USE
+  	* CONTINUE
+  	* AT
+  	* IMPORT
+  	* LSQB
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/semantic_function_dispatch/implementation_plan.md has broken examples
+Testing docs//.archive/.design/use_statement.md...
+
+================================================================================
+                    DANA Execution: temp_use_statement.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_use_statement.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 16 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PUBLIC
+  	* EXCEPT
+  	* ELSE
+  	* WITH
+  	* LSQB
+  	* USE
+  	* DOLLAR_DOLLAR
+  	* NAME
+  	* PRIVATE
+  	* CONTINUE
+  	* DELIVER
+  	* AGENT_POOL
+  	* RAISE
+  	* NONE
+  	* EXPORT
+  	* REGULAR_STRING
+  	* STRUCT
+  	* SINGLE_QUOTED_STRING
+  	* FOR
+  	* SUB
+  	* DEF
+  	* FALSE
+  	* FROM
+  	* LPAR
+  	* LOCAL
+  	* RETURN
+  	* TRY
+  	* BREAK
+  	* NOT_OP
+  	* RAW_STRING
+  	* ELIF
+  	* IF
+  	* COMMENT
+  	* TRUE
+  	* MULTILINE_STRING
+  	* IMPORT
+  	* NUMBER
+  	* ADD
+  	* AT
+  	* FINALLY
+  	* AGENT
+  	* SYSTEM
+  	* LAMBDA
+  	* LBRACE
+  	* WHILE
+  	* F_STRING_TOKEN
+  	* ASSERT
+  	* PASS
+  	* _NL
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/use_statement.md has broken examples
+Testing docs//.archive/.design/poet/meta_prompting_architecture.md...
+
+================================================================================
+             DANA Execution: temp_meta_prompting_architecture.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_meta_prompting_architecture.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 7 col 1
+  ```
+  ^
+  Expected one of: 
+  	* BREAK
+  	* TRUE
+  	* NUMBER
+  	* CONTINUE
+  	* DEF
+  	* _NL
+  	* TRY
+  	* SINGLE_QUOTED_STRING
+  	* AGENT_POOL
+  	* FALSE
+  	* RETURN
+  	* COMMENT
+  	* PASS
+  	* NAME
+  	* REGULAR_STRING
+  	* LSQB
+  	* MULTILINE_STRING
+  	* DELIVER
+  	* DOLLAR_DOLLAR
+  	* RAW_STRING
+  	* FOR
+  	* PUBLIC
+  	* LOCAL
+  	* LAMBDA
+  	* RAISE
+  	* WHILE
+  	* STRUCT
+  	* ASSERT
+  	* NOT_OP
+  	* IF
+  	* NONE
+  	* IMPORT
+  	* F_STRING_TOKEN
+  	* AT
+  	* SUB
+  	* AGENT
+  	* FROM
+  	* WITH
+  	* EXPORT
+  	* SYSTEM
+  	* ADD
+  	* LPAR
+  	* LBRACE
+  	* USE
+  	* PRIVATE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/poet/meta_prompting_architecture.md has broken examples
+Testing docs//.archive/.design/poet/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* _NL
+  	* FOR
+  	* PRIVATE
+  	* ASSERT
+  	* TRY
+  	* SUB
+  	* FALSE
+  	* F_STRING_TOKEN
+  	* LOCAL
+  	* NUMBER
+  	* RETURN
+  	* REGULAR_STRING
+  	* DEF
+  	* EXPORT
+  	* LPAR
+  	* LSQB
+  	* AT
+  	* SYSTEM
+  	* DELIVER
+  	* DOLLAR_DOLLAR
+  	* IMPORT
+  	* PUBLIC
+  	* STRUCT
+  	* SINGLE_QUOTED_STRING
+  	* NONE
+  	* WITH
+  	* LAMBDA
+  	* NOT_OP
+  	* LBRACE
+  	* BREAK
+  	* TRUE
+  	* USE
+  	* RAISE
+  	* PASS
+  	* RAW_STRING
+  	* AGENT_POOL
+  	* WHILE
+  	* CONTINUE
+  	* COMMENT
+  	* IF
+  	* NAME
+  	* FROM
+  	* ADD
+  	* MULTILINE_STRING
+  	* AGENT
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/.design/poet/README.md has broken examples
+Testing docs//.archive/for-engineers/reference/module-local-imports.md...
+
+================================================================================
+                DANA Execution: temp_module-local-imports.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_module-local-imports.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 8 col 1
+  ```
+  ^
+  Expected one of: 
+  	* LSQB
+  	* CONTINUE
+  	* RETURN
+  	* LAMBDA
+  	* RAISE
+  	* COMMENT
+  	* USE
+  	* AGENT
+  	* IMPORT
+  	* PUBLIC
+  	* DELIVER
+  	* DOLLAR_DOLLAR
+  	* MULTILINE_STRING
+  	* NONE
+  	* LBRACE
+  	* _NL
+  	* BREAK
+  	* NAME
+  	* SINGLE_QUOTED_STRING
+  	* F_STRING_TOKEN
+  	* RAW_STRING
+  	* SYSTEM
+  	* DEF
+  	* FOR
+  	* TRUE
+  	* FROM
+  	* ASSERT
+  	* WITH
+  	* IF
+  	* NOT_OP
+  	* WHILE
+  	* PASS
+  	* EXPORT
+  	* FALSE
+  	* LPAR
+  	* TRY
+  	* AT
+  	* REGULAR_STRING
+  	* ADD
+  	* LOCAL
+  	* SUB
+  	* PRIVATE
+  	* NUMBER
+  	* STRUCT
+  	* AGENT_POOL
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/module-local-imports.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/type-system.md...
+
+================================================================================
+                     DANA Execution: temp_type-system.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_type-system.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 12 col 1
+  ```
+  ^
+  Expected one of: 
+  	* REGULAR_STRING
+  	* FOR
+  	* SYSTEM
+  	* NUMBER
+  	* SINGLE_QUOTED_STRING
+  	* BREAK
+  	* AT
+  	* LAMBDA
+  	* CONTINUE
+  	* _NL
+  	* FROM
+  	* LOCAL
+  	* COMMENT
+  	* AGENT
+  	* PASS
+  	* SUB
+  	* ADD
+  	* USE
+  	* EXPORT
+  	* LPAR
+  	* TRUE
+  	* NONE
+  	* FALSE
+  	* F_STRING_TOKEN
+  	* PRIVATE
+  	* DEF
+  	* LSQB
+  	* WHILE
+  	* IMPORT
+  	* ASSERT
+  	* RAISE
+  	* LBRACE
+  	* AGENT_POOL
+  	* DOLLAR_DOLLAR
+  	* DELIVER
+  	* NAME
+  	* NOT_OP
+  	* RAW_STRING
+  	* STRUCT
+  	* RETURN
+  	* MULTILINE_STRING
+  	* WITH
+  	* TRY
+  	* IF
+  	* PUBLIC
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/type-system.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/function-calling.md...
+
+================================================================================
+                  DANA Execution: temp_function-calling.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_function-calling.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 4 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PASS
+  	* CONTINUE
+  	* FALSE
+  	* TRUE
+  	* IMPORT
+  	* NUMBER
+  	* F_STRING_TOKEN
+  	* FROM
+  	* PRIVATE
+  	* IF
+  	* LBRACE
+  	* DEF
+  	* RETURN
+  	* PUBLIC
+  	* WHILE
+  	* ADD
+  	* SYSTEM
+  	* NAME
+  	* MULTILINE_STRING
+  	* _NL
+  	* REGULAR_STRING
+  	* SINGLE_QUOTED_STRING
+  	* DELIVER
+  	* FINALLY
+  	* LAMBDA
+  	* AT
+  	* TRY
+  	* ASSERT
+  	* LPAR
+  	* ELSE
+  	* EXCEPT
+  	* EXPORT
+  	* COMMENT
+  	* STRUCT
+  	* LOCAL
+  	* FOR
+  	* ELIF
+  	* LSQB
+  	* AGENT_POOL
+  	* SUB
+  	* RAISE
+  	* RAW_STRING
+  	* AGENT
+  	* WITH
+  	* BREAK
+  	* DOLLAR_DOLLAR
+  	* USE
+  	* NONE
+  	* NOT_OP
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/function-calling.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/core-functions.md...
+
+================================================================================
+                   DANA Execution: temp_core-functions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_core-functions.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 21 col 1
+  ```
+  ^
+  Expected one of: 
+  	* REGULAR_STRING
+  	* WHILE
+  	* PRIVATE
+  	* SYSTEM
+  	* F_STRING_TOKEN
+  	* MULTILINE_STRING
+  	* FALSE
+  	* TRY
+  	* FOR
+  	* TRUE
+  	* AT
+  	* _NL
+  	* BREAK
+  	* DELIVER
+  	* PUBLIC
+  	* PASS
+  	* IF
+  	* RAISE
+  	* NOT_OP
+  	* RETURN
+  	* NAME
+  	* NUMBER
+  	* SUB
+  	* WITH
+  	* DEF
+  	* AGENT_POOL
+  	* SINGLE_QUOTED_STRING
+  	* LOCAL
+  	* LAMBDA
+  	* IMPORT
+  	* FROM
+  	* EXPORT
+  	* COMMENT
+  	* AGENT
+  	* LSQB
+  	* STRUCT
+  	* LBRACE
+  	* CONTINUE
+  	* RAW_STRING
+  	* ADD
+  	* USE
+  	* DOLLAR_DOLLAR
+  	* ASSERT
+  	* NONE
+  	* LPAR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/core-functions.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/built-in-functions.md...
+
+================================================================================
+                 DANA Execution: temp_built-in-functions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_built-in-functions.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 20 col 1
+  ```
+  ^
+  Expected one of: 
+  	* BREAK
+  	* EXPORT
+  	* DELIVER
+  	* AGENT_POOL
+  	* FALSE
+  	* STRUCT
+  	* SYSTEM
+  	* NONE
+  	* AT
+  	* NAME
+  	* COMMENT
+  	* IF
+  	* FROM
+  	* LOCAL
+  	* _NL
+  	* REGULAR_STRING
+  	* RETURN
+  	* NOT_OP
+  	* NUMBER
+  	* F_STRING_TOKEN
+  	* TRY
+  	* IMPORT
+  	* USE
+  	* SINGLE_QUOTED_STRING
+  	* LPAR
+  	* DEF
+  	* MULTILINE_STRING
+  	* LBRACE
+  	* LAMBDA
+  	* RAISE
+  	* PUBLIC
+  	* FOR
+  	* ADD
+  	* PRIVATE
+  	* SUB
+  	* DOLLAR_DOLLAR
+  	* WITH
+  	* AGENT
+  	* TRUE
+  	* RAW_STRING
+  	* ASSERT
+  	* LSQB
+  	* WHILE
+  	* CONTINUE
+  	* PASS
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/built-in-functions.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 7 col 1
+  ```
+  ^
+  Expected one of: 
+  	* USE
+  	* FROM
+  	* SYSTEM
+  	* LPAR
+  	* LSQB
+  	* AGENT_POOL
+  	* PASS
+  	* TRUE
+  	* RAISE
+  	* NAME
+  	* PRIVATE
+  	* IF
+  	* FALSE
+  	* BREAK
+  	* F_STRING_TOKEN
+  	* LAMBDA
+  	* DELIVER
+  	* CONTINUE
+  	* LOCAL
+  	* WHILE
+  	* LBRACE
+  	* FOR
+  	* NOT_OP
+  	* NONE
+  	* REGULAR_STRING
+  	* WITH
+  	* MULTILINE_STRING
+  	* ASSERT
+  	* EXPORT
+  	* SUB
+  	* RAW_STRING
+  	* AT
+  	* ADD
+  	* IMPORT
+  	* AGENT
+  	* COMMENT
+  	* RETURN
+  	* TRY
+  	* DOLLAR_DOLLAR
+  	* STRUCT
+  	* _NL
+  	* SINGLE_QUOTED_STRING
+  	* DEF
+  	* PUBLIC
+  	* NUMBER
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/README.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/sandbox-security.md...
+
+================================================================================
+                  DANA Execution: temp_sandbox-security.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_sandbox-security.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 14 col 1
+  ```
+  ^
+  Expected one of: 
+  	* AGENT_POOL
+  	* PUBLIC
+  	* PRIVATE
+  	* IMPORT
+  	* FALSE
+  	* IF
+  	* LSQB
+  	* TRUE
+  	* LAMBDA
+  	* LPAR
+  	* LOCAL
+  	* BREAK
+  	* WHILE
+  	* SUB
+  	* COMMENT
+  	* FOR
+  	* REGULAR_STRING
+  	* TRY
+  	* RETURN
+  	* EXPORT
+  	* AT
+  	* SYSTEM
+  	* LBRACE
+  	* USE
+  	* DEF
+  	* NUMBER
+  	* ADD
+  	* PASS
+  	* MULTILINE_STRING
+  	* RAW_STRING
+  	* CONTINUE
+  	* WITH
+  	* DOLLAR_DOLLAR
+  	* DELIVER
+  	* STRUCT
+  	* NONE
+  	* FROM
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* NAME
+  	* RAISE
+  	* _NL
+  	* AGENT
+  	* SINGLE_QUOTED_STRING
+  	* ASSERT
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/sandbox-security.md has broken examples
+Testing docs//.archive/for-engineers/reference/api/scoping.md...
+
+================================================================================
+                       DANA Execution: temp_scoping.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_scoping.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 9 col 1
+  ```
+  ^
+  Expected one of: 
+  	* DOLLAR_DOLLAR
+  	* FOR
+  	* NOT_OP
+  	* AGENT
+  	* REGULAR_STRING
+  	* ELSE
+  	* ASSERT
+  	* DEF
+  	* F_STRING_TOKEN
+  	* STRUCT
+  	* AT
+  	* RAW_STRING
+  	* SUB
+  	* FALSE
+  	* LOCAL
+  	* NONE
+  	* SYSTEM
+  	* SINGLE_QUOTED_STRING
+  	* FROM
+  	* RAISE
+  	* NAME
+  	* BREAK
+  	* LSQB
+  	* LPAR
+  	* ADD
+  	* IMPORT
+  	* TRY
+  	* IF
+  	* RETURN
+  	* LAMBDA
+  	* EXPORT
+  	* WHILE
+  	* CONTINUE
+  	* AGENT_POOL
+  	* COMMENT
+  	* ELIF
+  	* TRUE
+  	* MULTILINE_STRING
+  	* WITH
+  	* EXCEPT
+  	* PASS
+  	* _NL
+  	* PUBLIC
+  	* USE
+  	* NUMBER
+  	* PRIVATE
+  	* FINALLY
+  	* LBRACE
+  	* DELIVER
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/api/scoping.md has broken examples
+Testing docs//.archive/for-engineers/reference/poet-usage-guide.md...
+
+================================================================================
+                  DANA Execution: temp_poet-usage-guide.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet-usage-guide.md.na
+  Error: UnexpectedToken - Unexpected token Token('GT_OP', '>') at line 2, column 57.
+  Expected one of: 
+  	* F_STRING_TOKEN
+  	* TRUE
+  	* LSQB
+  	* NAME
+  	* FALSE
+  	* MULTILINE_STRING
+  	* SYSTEM
+  	* LPAR
+  	* REGULAR_STRING
+  	* NONE
+  	* RAW_STRING
+  	* PUBLIC
+  	* DOLLAR_DOLLAR
+  	* NUMBER
+  	* SINGLE_QUOTED_STRING
+  	* PRIVATE
+  	* LAMBDA
+  	* LOCAL
+  	* ADD
+  	* LBRACE
+  	* SUB
+  Previous tokens: [Token('SUB', '-')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-engineers/reference/poet-usage-guide.md has broken examples
+Testing docs//.archive/0804/primers/agent.md...
+
+================================================================================
+                        DANA Execution: temp_agent.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_agent.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 22 col 1
+  ```
+  ^
+  Expected one of: 
+  	* WHILE
+  	* AGENT
+  	* AGENT_POOL
+  	* PUBLIC
+  	* DELIVER
+  	* PASS
+  	* DEF
+  	* LBRACE
+  	* AT
+  	* DOLLAR_DOLLAR
+  	* REGULAR_STRING
+  	* EXPORT
+  	* SYSTEM
+  	* BREAK
+  	* PRIVATE
+  	* NONE
+  	* WITH
+  	* IMPORT
+  	* LOCAL
+  	* MULTILINE_STRING
+  	* STRUCT
+  	* _NL
+  	* TRUE
+  	* ASSERT
+  	* IF
+  	* NOT_OP
+  	* FALSE
+  	* NAME
+  	* NUMBER
+  	* FROM
+  	* USE
+  	* F_STRING_TOKEN
+  	* SINGLE_QUOTED_STRING
+  	* TRY
+  	* RAISE
+  	* RETURN
+  	* LPAR
+  	* FOR
+  	* CONTINUE
+  	* ADD
+  	* LAMBDA
+  	* COMMENT
+  	* LSQB
+  	* RAW_STRING
+  	* SUB
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/primers/agent.md has broken examples
+Testing docs//.archive/0804/primers/struct_methods.md...
+
+================================================================================
+                   DANA Execution: temp_struct_methods.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_struct_methods.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'x') at line 2, column 15.
+  Expected one of: 
+  	* _NL
+  	* COMMENT
+  Previous tokens: [Token('COLON', ':')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/primers/struct_methods.md has broken examples
+Testing docs//.archive/0804/primers/workflow.md...
+
+================================================================================
+                      DANA Execution: temp_workflow.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_workflow.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 30 col 1
+  ```
+  ^
+  Expected one of: 
+  	* NUMBER
+  	* PASS
+  	* RAW_STRING
+  	* RETURN
+  	* FROM
+  	* EXPORT
+  	* TRY
+  	* DOLLAR_DOLLAR
+  	* BREAK
+  	* PUBLIC
+  	* REGULAR_STRING
+  	* LAMBDA
+  	* NAME
+  	* DEF
+  	* NONE
+  	* WITH
+  	* FOR
+  	* DELIVER
+  	* AGENT_POOL
+  	* CONTINUE
+  	* IMPORT
+  	* FALSE
+  	* ADD
+  	* _NL
+  	* AT
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* COMMENT
+  	* IF
+  	* AGENT
+  	* USE
+  	* LSQB
+  	* TRUE
+  	* SYSTEM
+  	* RAISE
+  	* LBRACE
+  	* ASSERT
+  	* MULTILINE_STRING
+  	* PRIVATE
+  	* LOCAL
+  	* LPAR
+  	* WHILE
+  	* SINGLE_QUOTED_STRING
+  	* STRUCT
+  	* SUB
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/primers/workflow.md has broken examples
+Testing docs//.archive/0804/primers/import.md...
+
+================================================================================
+                       DANA Execution: temp_import.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 2, column 33):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def add(a: int, b: int) -> int: return a + b
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/0804/primers/import.md has broken examples
+Testing docs//.archive/0804/primers/poet.md...
+
+================================================================================
+                        DANA Execution: temp_poet.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 23 col 1
+  ```
+  ^
+  Expected one of: 
+  	* IMPORT
+  	* CONTINUE
+  	* WITH
+  	* SINGLE_QUOTED_STRING
+  	* FINALLY
+  	* SUB
+  	* PASS
+  	* F_STRING_TOKEN
+  	* DELIVER
+  	* NUMBER
+  	* SYSTEM
+  	* EXPORT
+  	* LSQB
+  	* REGULAR_STRING
+  	* PRIVATE
+  	* AGENT_POOL
+  	* COMMENT
+  	* RETURN
+  	* LPAR
+  	* WHILE
+  	* LBRACE
+  	* BREAK
+  	* DOLLAR_DOLLAR
+  	* DEF
+  	* IF
+  	* PUBLIC
+  	* RAW_STRING
+  	* _NL
+  	* TRUE
+  	* ELSE
+  	* ASSERT
+  	* TRY
+  	* EXCEPT
+  	* ELIF
+  	* RAISE
+  	* LOCAL
+  	* LAMBDA
+  	* STRUCT
+  	* NOT_OP
+  	* FROM
+  	* NAME
+  	* AT
+  	* FOR
+  	* AGENT
+  	* USE
+  	* ADD
+  	* NONE
+  	* FALSE
+  	* MULTILINE_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/primers/poet.md has broken examples
+Testing docs//.archive/0804/primers/comprehensions.md...
+
+================================================================================
+                   DANA Execution: temp_comprehensions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_comprehensions.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* LPAR
+  	* PASS
+  	* RAW_STRING
+  	* NUMBER
+  	* SINGLE_QUOTED_STRING
+  	* MULTILINE_STRING
+  	* _NL
+  	* EXPORT
+  	* SYSTEM
+  	* IF
+  	* FROM
+  	* FALSE
+  	* LBRACE
+  	* TRUE
+  	* AGENT_POOL
+  	* STRUCT
+  	* DEF
+  	* REGULAR_STRING
+  	* NONE
+  	* LAMBDA
+  	* LOCAL
+  	* DELIVER
+  	* BREAK
+  	* RAISE
+  	* RETURN
+  	* FOR
+  	* PUBLIC
+  	* ADD
+  	* DOLLAR_DOLLAR
+  	* AT
+  	* NOT_OP
+  	* WHILE
+  	* COMMENT
+  	* F_STRING_TOKEN
+  	* CONTINUE
+  	* IMPORT
+  	* NAME
+  	* WITH
+  	* TRY
+  	* LSQB
+  	* SUB
+  	* AGENT
+  	* PRIVATE
+  	* ASSERT
+  	* USE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/primers/comprehensions.md has broken examples
+Testing docs//.archive/0804/primers/lambda.md...
+
+================================================================================
+                       DANA Execution: temp_lambda.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 20, column 5):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      return 0.0 if shape._type.name == "Point"
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/0804/primers/lambda.md has broken examples
+Testing docs//.archive/0804/primers/workflow_and_poet.md...
+
+================================================================================
+                  DANA Execution: temp_workflow_and_poet.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 11, column 37):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def load_data(source: str) -> dict: return load(source)
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/0804/primers/workflow_and_poet.md has broken examples
+Testing docs//.archive/0804/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 12 col 1
+  ```
+  ^
+  Expected one of: 
+  	* EXPORT
+  	* DOLLAR_DOLLAR
+  	* REGULAR_STRING
+  	* RETURN
+  	* FALSE
+  	* _NL
+  	* CONTINUE
+  	* ADD
+  	* USE
+  	* DELIVER
+  	* IMPORT
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* PASS
+  	* NUMBER
+  	* LAMBDA
+  	* MULTILINE_STRING
+  	* TRY
+  	* WITH
+  	* LSQB
+  	* SUB
+  	* PRIVATE
+  	* FROM
+  	* WHILE
+  	* LBRACE
+  	* AGENT
+  	* NAME
+  	* RAISE
+  	* STRUCT
+  	* BREAK
+  	* RAW_STRING
+  	* SINGLE_QUOTED_STRING
+  	* FOR
+  	* PUBLIC
+  	* LPAR
+  	* ASSERT
+  	* COMMENT
+  	* AT
+  	* IF
+  	* AGENT_POOL
+  	* NONE
+  	* SYSTEM
+  	* DEF
+  	* LOCAL
+  	* TRUE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/setup/migration-guide.md...
+
+================================================================================
+                   DANA Execution: temp_migration-guide.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_migration-guide.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 11 col 1
+  ```
+  ^
+  Expected one of: 
+  	* SUB
+  	* AT
+  	* F_STRING_TOKEN
+  	* PASS
+  	* MULTILINE_STRING
+  	* COMMENT
+  	* LPAR
+  	* NOT_OP
+  	* RETURN
+  	* RAISE
+  	* LBRACE
+  	* EXPORT
+  	* LOCAL
+  	* LAMBDA
+  	* PUBLIC
+  	* FROM
+  	* DEF
+  	* IMPORT
+  	* DOLLAR_DOLLAR
+  	* LSQB
+  	* SINGLE_QUOTED_STRING
+  	* NONE
+  	* RAW_STRING
+  	* BREAK
+  	* WITH
+  	* FALSE
+  	* NUMBER
+  	* DELIVER
+  	* AGENT
+  	* REGULAR_STRING
+  	* USE
+  	* CONTINUE
+  	* ASSERT
+  	* TRUE
+  	* STRUCT
+  	* IF
+  	* NAME
+  	* PRIVATE
+  	* SYSTEM
+  	* AGENT_POOL
+  	* TRY
+  	* FOR
+  	* WHILE
+  	* _NL
+  	* ADD
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/setup/migration-guide.md has broken examples
+Testing docs//.archive/0804/for-engineers/cheatsheet.md...
+
+================================================================================
+                     DANA Execution: temp_cheatsheet.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_cheatsheet.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 13 col 1
+  ```
+  ^
+  Expected one of: 
+  	* FROM
+  	* DOLLAR_DOLLAR
+  	* RETURN
+  	* LBRACE
+  	* AT
+  	* ASSERT
+  	* EXPORT
+  	* ADD
+  	* RAISE
+  	* CONTINUE
+  	* REGULAR_STRING
+  	* LOCAL
+  	* _NL
+  	* AGENT
+  	* USE
+  	* LSQB
+  	* DEF
+  	* NOT_OP
+  	* PUBLIC
+  	* FALSE
+  	* SUB
+  	* PRIVATE
+  	* MULTILINE_STRING
+  	* TRY
+  	* LAMBDA
+  	* FOR
+  	* TRUE
+  	* SINGLE_QUOTED_STRING
+  	* AGENT_POOL
+  	* PASS
+  	* WITH
+  	* BREAK
+  	* LPAR
+  	* NONE
+  	* STRUCT
+  	* DELIVER
+  	* F_STRING_TOKEN
+  	* COMMENT
+  	* RAW_STRING
+  	* IMPORT
+  	* SYSTEM
+  	* NUMBER
+  	* WHILE
+  	* IF
+  	* NAME
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/cheatsheet.md has broken examples
+Testing docs//.archive/0804/for-engineers/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'DataProcessor') at line 2, column 7.
+  Expected one of: 
+  	* COMMENT
+  	* MULT_EQUALS
+  	* _NL
+  	* GE_OP
+  	* ADD
+  	* MUL
+  	* DIV_EQUALS
+  	* MOD
+  	* IS_OP
+  	* IN_OP
+  	* GT_OP
+  	* OR
+  	* AND
+  	* LPAR
+  	* COLON
+  	* MINUS_EQUALS
+  	* FDIV
+  	* SUB
+  	* EQUAL
+  	* NE_OP
+  	* LE_OP
+  	* PLUS_EQUALS
+  	* DOT
+  	* DIV
+  	* NOT_IN_OP
+  	* LSQB
+  	* EQ_OP
+  	* POW
+  	* IS_NOT_OP
+  	* PIPE
+  	* IF
+  	* LT_OP
+  Previous tokens: [Token('NAME', 'class')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/recipes/document-processor/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 39 col 1
+  ```
+  ^
+  Expected one of: 
+  	* EXPORT
+  	* NONE
+  	* COMMENT
+  	* REGULAR_STRING
+  	* RETURN
+  	* SYSTEM
+  	* PUBLIC
+  	* LPAR
+  	* USE
+  	* DELIVER
+  	* LOCAL
+  	* DEF
+  	* AGENT
+  	* FALSE
+  	* TRUE
+  	* LSQB
+  	* ASSERT
+  	* FOR
+  	* DOLLAR_DOLLAR
+  	* NUMBER
+  	* AGENT_POOL
+  	* BREAK
+  	* RAISE
+  	* IMPORT
+  	* TRY
+  	* CONTINUE
+  	* F_STRING_TOKEN
+  	* NOT_OP
+  	* MULTILINE_STRING
+  	* PASS
+  	* PRIVATE
+  	* SUB
+  	* NAME
+  	* LAMBDA
+  	* RAW_STRING
+  	* LBRACE
+  	* WHILE
+  	* SINGLE_QUOTED_STRING
+  	* AT
+  	* STRUCT
+  	* ADD
+  	* _NL
+  	* WITH
+  	* FROM
+  	* IF
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/recipes/document-processor/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/recipes/chatbot/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'history') at line 12, column 2.
+  Expected one of: 
+  	* _INDENT
+  Previous tokens: [Token('_NL', '\n ')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/recipes/chatbot/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/recipes/api-integration/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 34 col 1
+  ```
+  ^
+  Expected one of: 
+  	* EXPORT
+  	* NOT_OP
+  	* LPAR
+  	* F_STRING_TOKEN
+  	* NAME
+  	* PUBLIC
+  	* DELIVER
+  	* ADD
+  	* LSQB
+  	* SINGLE_QUOTED_STRING
+  	* RAW_STRING
+  	* NONE
+  	* FOR
+  	* LOCAL
+  	* MULTILINE_STRING
+  	* RETURN
+  	* BREAK
+  	* TRUE
+  	* ASSERT
+  	* FROM
+  	* PRIVATE
+  	* DEF
+  	* CONTINUE
+  	* AGENT
+  	* TRY
+  	* SUB
+  	* WHILE
+  	* IMPORT
+  	* WITH
+  	* AGENT_POOL
+  	* DOLLAR_DOLLAR
+  	* LBRACE
+  	* SYSTEM
+  	* REGULAR_STRING
+  	* COMMENT
+  	* RAISE
+  	* FALSE
+  	* LAMBDA
+  	* IF
+  	* _NL
+  	* NUMBER
+  	* STRUCT
+  	* PASS
+  	* AT
+  	* USE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/recipes/api-integration/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/recipes/workflow-agent/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 23, column 2):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      return {
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/0804/for-engineers/recipes/workflow-agent/README.md has broken examples
+Testing docs//.archive/0804/for-engineers/recipes/README.md...
+
+================================================================================
+                       DANA Execution: temp_README.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_README.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'CustomerAnalyzer') at line 2, column 7.
+  Expected one of: 
+  	* MOD
+  	* MULT_EQUALS
+  	* AND
+  	* IS_NOT_OP
+  	* EQUAL
+  	* LPAR
+  	* LT_OP
+  	* IS_OP
+  	* DIV
+  	* ADD
+  	* OR
+  	* LSQB
+  	* IN_OP
+  	* GT_OP
+  	* LE_OP
+  	* MUL
+  	* FDIV
+  	* NE_OP
+  	* EQ_OP
+  	* POW
+  	* COLON
+  	* SUB
+  	* GE_OP
+  	* COMMENT
+  	* MINUS_EQUALS
+  	* PIPE
+  	* _NL
+  	* NOT_IN_OP
+  	* DOT
+  	* PLUS_EQUALS
+  	* IF
+  	* DIV_EQUALS
+  Previous tokens: [Token('NAME', 'class')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-engineers/recipes/README.md has broken examples
+Testing docs//.archive/0804/for-contributors/extending/extension-development.md...
+
+================================================================================
+                DANA Execution: temp_extension-development.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_extension-development.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 18 col 1
+  ```
+  ^
+  Expected one of: 
+  	* FINALLY
+  	* SINGLE_QUOTED_STRING
+  	* NOT_OP
+  	* TRY
+  	* F_STRING_TOKEN
+  	* ELIF
+  	* AGENT_POOL
+  	* LBRACE
+  	* NAME
+  	* EXPORT
+  	* ELSE
+  	* NUMBER
+  	* WHILE
+  	* IF
+  	* TRUE
+  	* EXCEPT
+  	* LAMBDA
+  	* CONTINUE
+  	* STRUCT
+  	* ADD
+  	* SUB
+  	* PASS
+  	* DEF
+  	* REGULAR_STRING
+  	* DELIVER
+  	* MULTILINE_STRING
+  	* PUBLIC
+  	* AGENT
+  	* COMMENT
+  	* SYSTEM
+  	* NONE
+  	* IMPORT
+  	* DOLLAR_DOLLAR
+  	* PRIVATE
+  	* AT
+  	* RAW_STRING
+  	* RETURN
+  	* WITH
+  	* FALSE
+  	* ASSERT
+  	* _NL
+  	* BREAK
+  	* FROM
+  	* LSQB
+  	* RAISE
+  	* LPAR
+  	* USE
+  	* FOR
+  	* LOCAL
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/0804/for-contributors/extending/extension-development.md has broken examples
+Testing docs//.archive/for-evaluators/proof-of-concept/evaluation-guide.md...
+
+================================================================================
+                  DANA Execution: temp_evaluation-guide.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_evaluation-guide.md.na
+  Error: UnexpectedToken - Unexpected token Token('_INDENT', ' ') at line 1, column 24.
+  Expected one of: 
+  	* FALSE
+  	* EXPORT
+  	* SUB
+  	* TRY
+  	* LSQB
+  	* PRIVATE
+  	* LAMBDA
+  	* BREAK
+  	* F_STRING_TOKEN
+  	* AT
+  	* LBRACE
+  	* PUBLIC
+  	* FOR
+  	* USE
+  	* CONTINUE
+  	* MULTILINE_STRING
+  	* RAISE
+  	* REGULAR_STRING
+  	* NAME
+  	* LOCAL
+  	* TRUE
+  	* DEF
+  	* NUMBER
+  	* DELIVER
+  	* FROM
+  	* NOT_OP
+  	* DOLLAR_DOLLAR
+  	* RETURN
+  	* LPAR
+  	* IMPORT
+  	* COMMENT
+  	* PASS
+  	* SYSTEM
+  	* AGENT_POOL
+  	* WITH
+  	* WHILE
+  	* IF
+  	* ASSERT
+  	* STRUCT
+  	* AGENT
+  	* $END
+  	* RAW_STRING
+  	* _NL
+  	* SINGLE_QUOTED_STRING
+  	* NONE
+  	* ADD
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-evaluators/proof-of-concept/evaluation-guide.md has broken examples
+Testing docs//.archive/for-evaluators/comparison/framework-pain-points.md...
+
+================================================================================
+                DANA Execution: temp_framework-pain-points.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_framework-pain-points.md.na
+  Error: UnexpectedToken - Unexpected token Token('COLON', ':') at line 10, column 23.
+  Expected one of: 
+  	* AS
+  Previous tokens: [Token('RPAR', ')')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/for-evaluators/comparison/framework-pain-points.md has broken examples
+Testing docs//.archive/reference/05_tooling_and_dev_experience/documentation_generation.md...
+
+================================================================================
+              DANA Execution: temp_documentation_generation.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_documentation_generation.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'sum_and_log') at line 16, column 6.
+  Expected one of: 
+  	* PIPE
+  	* _NL
+  	* ADD
+  	* GT_OP
+  	* LT_OP
+  	* AND
+  	* GE_OP
+  	* IS_OP
+  	* EQUAL
+  	* COMMENT
+  	* FDIV
+  	* LSQB
+  	* MINUS_EQUALS
+  	* IF
+  	* DOT
+  	* OR
+  	* LPAR
+  	* MUL
+  	* POW
+  	* PLUS_EQUALS
+  	* NOT_IN_OP
+  	* EQ_OP
+  	* DIV_EQUALS
+  	* NE_OP
+  	* SUB
+  	* IN_OP
+  	* MULT_EQUALS
+  	* MOD
+  	* COLON
+  	* IS_NOT_OP
+  	* DIV
+  	* LE_OP
+  Previous tokens: [Token('NAME', 'func')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/05_tooling_and_dev_experience/documentation_generation.md has broken examples
+Testing docs//.archive/reference/05_tooling_and_dev_experience/testing_framework.md...
+
+================================================================================
+                  DANA Execution: temp_testing_framework.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_testing_framework.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'setup_module') at line 6, column 6.
+  Expected one of: 
+  	* PIPE
+  	* DIV
+  	* SUB
+  	* MULT_EQUALS
+  	* NOT_IN_OP
+  	* _NL
+  	* AND
+  	* DOT
+  	* MINUS_EQUALS
+  	* IF
+  	* PLUS_EQUALS
+  	* ADD
+  	* IN_OP
+  	* NE_OP
+  	* IS_NOT_OP
+  	* EQ_OP
+  	* LT_OP
+  	* COMMENT
+  	* IS_OP
+  	* FDIV
+  	* LPAR
+  	* MUL
+  	* LE_OP
+  	* POW
+  	* GT_OP
+  	* EQUAL
+  	* MOD
+  	* COLON
+  	* LSQB
+  	* GE_OP
+  	* DIV_EQUALS
+  	* OR
+  Previous tokens: [Token('NAME', 'func')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/05_tooling_and_dev_experience/testing_framework.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/syntax.md...
+
+================================================================================
+                       DANA Execution: temp_syntax.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_syntax.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 2 col 1
+  ```
+  ^
+  Expected one of: 
+  	* DOLLAR_DOLLAR
+  	* BREAK
+  	* FALSE
+  	* LAMBDA
+  	* NAME
+  	* LBRACE
+  	* REGULAR_STRING
+  	* NUMBER
+  	* FOR
+  	* NONE
+  	* COMMENT
+  	* MULTILINE_STRING
+  	* RAISE
+  	* WITH
+  	* FROM
+  	* RETURN
+  	* LSQB
+  	* F_STRING_TOKEN
+  	* WHILE
+  	* SYSTEM
+  	* SINGLE_QUOTED_STRING
+  	* PRIVATE
+  	* USE
+  	* LOCAL
+  	* LPAR
+  	* DEF
+  	* AGENT_POOL
+  	* DELIVER
+  	* EXPORT
+  	* PASS
+  	* AT
+  	* STRUCT
+  	* CONTINUE
+  	* TRUE
+  	* IF
+  	* TRY
+  	* ADD
+  	* _NL
+  	* IMPORT
+  	* SUB
+  	* AGENT
+  	* ASSERT
+  	* PUBLIC
+  	* RAW_STRING
+  	* NOT_OP
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/syntax.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/error_handling.md...
+
+================================================================================
+                   DANA Execution: temp_error_handling.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_error_handling.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'catch') at line 5, column 1.
+  Expected one of: 
+  	* EXCEPT
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/error_handling.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/state_and_scopes.md...
+
+================================================================================
+                  DANA Execution: temp_state_and_scopes.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_state_and_scopes.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 13 col 1
+  ```
+  ^
+  Expected one of: 
+  	* SYSTEM
+  	* USE
+  	* EXPORT
+  	* IF
+  	* DEF
+  	* RETURN
+  	* PUBLIC
+  	* PASS
+  	* SINGLE_QUOTED_STRING
+  	* LPAR
+  	* MULTILINE_STRING
+  	* FOR
+  	* BREAK
+  	* TRY
+  	* STRUCT
+  	* PRIVATE
+  	* LAMBDA
+  	* WITH
+  	* RAW_STRING
+  	* ASSERT
+  	* LOCAL
+  	* AGENT
+  	* DELIVER
+  	* SUB
+  	* DOLLAR_DOLLAR
+  	* AGENT_POOL
+  	* TRUE
+  	* COMMENT
+  	* RAISE
+  	* FALSE
+  	* IMPORT
+  	* F_STRING_TOKEN
+  	* AT
+  	* NAME
+  	* LBRACE
+  	* WHILE
+  	* LSQB
+  	* CONTINUE
+  	* ADD
+  	* NONE
+  	* NOT_OP
+  	* FROM
+  	* NUMBER
+  	* _NL
+  	* REGULAR_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/state_and_scopes.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/functions_and_polymorphism.md...
+
+================================================================================
+             DANA Execution: temp_functions_and_polymorphism.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 1, column 5):
+  The word 'def' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def <function_name>(<param1>: <type1>, <param2>: <type2>, ...) -> <ReturnType>:
+  Use a different variable name like 'my_def' or 'the_def'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//.archive/reference/01_dana_language_specification/functions_and_polymorphism.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/struct_field_comments_summary.md...
+
+================================================================================
+            DANA Execution: temp_struct_field_comments_summary.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_struct_field_comments_summary.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* LAMBDA
+  	* COMMENT
+  	* LSQB
+  	* SYSTEM
+  	* CONTINUE
+  	* BREAK
+  	* RETURN
+  	* NUMBER
+  	* STRUCT
+  	* AT
+  	* LOCAL
+  	* TRUE
+  	* SINGLE_QUOTED_STRING
+  	* NONE
+  	* PASS
+  	* DOLLAR_DOLLAR
+  	* RAISE
+  	* ADD
+  	* PRIVATE
+  	* LBRACE
+  	* REGULAR_STRING
+  	* AGENT
+  	* EXPORT
+  	* LPAR
+  	* RAW_STRING
+  	* NOT_OP
+  	* F_STRING_TOKEN
+  	* WITH
+  	* NAME
+  	* ASSERT
+  	* WHILE
+  	* SUB
+  	* PUBLIC
+  	* IMPORT
+  	* TRY
+  	* FROM
+  	* IF
+  	* DELIVER
+  	* MULTILINE_STRING
+  	* _NL
+  	* AGENT_POOL
+  	* FALSE
+  	* USE
+  	* DEF
+  	* FOR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/struct_field_comments_summary.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/struct_field_comments.md...
+
+================================================================================
+                DANA Execution: temp_struct_field_comments.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_struct_field_comments.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PRIVATE
+  	* AGENT
+  	* FOR
+  	* SINGLE_QUOTED_STRING
+  	* PUBLIC
+  	* IF
+  	* FALSE
+  	* USE
+  	* RAW_STRING
+  	* DEF
+  	* WITH
+  	* PASS
+  	* TRY
+  	* DOLLAR_DOLLAR
+  	* NOT_OP
+  	* LSQB
+  	* LBRACE
+  	* F_STRING_TOKEN
+  	* RAISE
+  	* LPAR
+  	* DELIVER
+  	* LOCAL
+  	* FROM
+  	* BREAK
+  	* TRUE
+  	* SYSTEM
+  	* MULTILINE_STRING
+  	* LAMBDA
+  	* AGENT_POOL
+  	* ADD
+  	* NUMBER
+  	* IMPORT
+  	* NONE
+  	* STRUCT
+  	* SUB
+  	* COMMENT
+  	* WHILE
+  	* RETURN
+  	* EXPORT
+  	* NAME
+  	* AT
+  	* _NL
+  	* CONTINUE
+  	* ASSERT
+  	* REGULAR_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/struct_field_comments.md has broken examples
+Testing docs//.archive/reference/01_dana_language_specification/data_types_and_structs.md...
+
+================================================================================
+               DANA Execution: temp_data_types_and_structs.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_data_types_and_structs.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* ADD
+  	* COMMENT
+  	* SUB
+  	* IF
+  	* SYSTEM
+  	* FROM
+  	* NUMBER
+  	* LSQB
+  	* MULTILINE_STRING
+  	* WHILE
+  	* FOR
+  	* TRY
+  	* PRIVATE
+  	* ASSERT
+  	* STRUCT
+  	* NONE
+  	* _NL
+  	* DELIVER
+  	* LPAR
+  	* SINGLE_QUOTED_STRING
+  	* REGULAR_STRING
+  	* DOLLAR_DOLLAR
+  	* FALSE
+  	* RETURN
+  	* LBRACE
+  	* NAME
+  	* CONTINUE
+  	* AGENT_POOL
+  	* RAISE
+  	* BREAK
+  	* LAMBDA
+  	* AGENT
+  	* USE
+  	* TRUE
+  	* DEF
+  	* F_STRING_TOKEN
+  	* PASS
+  	* LOCAL
+  	* EXPORT
+  	* RAW_STRING
+  	* IMPORT
+  	* PUBLIC
+  	* WITH
+  	* NOT_OP
+  	* AT
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/01_dana_language_specification/data_types_and_structs.md has broken examples
+Testing docs//.archive/reference/02_dana_runtime_and_execution/python_integration.md...
+
+================================================================================
+                 DANA Execution: temp_python_integration.md.na
+================================================================================
+
+Program executed successfully
+
+--- Final Context State ---
+{'local': {'feedback': <function DanaSandbox._create_default_context.<locals>.feedback_placeholder at 0x1133e7920>, 'pd': <module 'pandas' from '/opt/homebrew/lib/python3.13/site-packages/pandas/__init__.py'>, 'df':    A  B
+0  1  x
+1  2  y
+2  3  z, 'filtered':    A  B
+1  2  y
+2  3  z}, 'private': {}, 'public': {}, 'system': {'execution_status': <ExecutionStatus.COMPLETED: 'completed'>, 'history': [], '__last_value':    A  B
+1  2  y
+2  3  z, '__current_assignment_type': None}}
+---------------------------
+
+Result:    A  B
+1  2  y
+2  3  z
+
+✓ Program execution completed successfully
+✅ docs//.archive/reference/02_dana_runtime_and_execution/python_integration.md examples work
+Testing docs//.archive/reference/02_dana_runtime_and_execution/code_context_analyzer.md...
+
+================================================================================
+                DANA Execution: temp_code_context_analyzer.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_code_context_analyzer.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 9 col 1
+  ```
+  ^
+  Expected one of: 
+  	* DELIVER
+  	* COMMENT
+  	* ASSERT
+  	* ADD
+  	* BREAK
+  	* PUBLIC
+  	* STRUCT
+  	* RAISE
+  	* NONE
+  	* AGENT
+  	* REGULAR_STRING
+  	* WHILE
+  	* WITH
+  	* AGENT_POOL
+  	* DOLLAR_DOLLAR
+  	* LBRACE
+  	* NOT_OP
+  	* LAMBDA
+  	* FALSE
+  	* TRUE
+  	* NUMBER
+  	* PRIVATE
+  	* MULTILINE_STRING
+  	* TRY
+  	* USE
+  	* FOR
+  	* DEF
+  	* IMPORT
+  	* LSQB
+  	* NAME
+  	* LOCAL
+  	* SUB
+  	* RAW_STRING
+  	* PASS
+  	* AT
+  	* F_STRING_TOKEN
+  	* RETURN
+  	* SYSTEM
+  	* EXPORT
+  	* _NL
+  	* IF
+  	* CONTINUE
+  	* SINGLE_QUOTED_STRING
+  	* FROM
+  	* LPAR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/02_dana_runtime_and_execution/code_context_analyzer.md has broken examples
+Testing docs//.archive/reference/02_dana_runtime_and_execution/repl.md...
+
+================================================================================
+                        DANA Execution: temp_repl.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_repl.md.na
+  Error: UnexpectedToken - Unexpected token Token('EQUAL', '=') at line 1, column 22.
+  Expected one of: 
+  	* COMMENT
+  	* _NL
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.archive/reference/02_dana_runtime_and_execution/repl.md has broken examples
+Testing docs//.ai-only/documentation-maintenance-guide.md...
+
+================================================================================
+           DANA Execution: temp_documentation-maintenance-guide.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_documentation-maintenance-guide.md.na
+  Error: UnexpectedToken - Unexpected token Token('SINGLE_QUOTED_STRING', "'/```dana/,/```/p'") at line 1, column 12.
+  Expected one of: 
+  	* NOT_IN_OP
+  	* POW
+  	* IF
+  	* IS_OP
+  	* MOD
+  	* FDIV
+  	* OR
+  	* LPAR
+  	* PIPE
+  	* DOT
+  	* LSQB
+  	* NE_OP
+  	* AND
+  	* EQ_OP
+  	* _NL
+  	* IN_OP
+  	* SUB
+  	* LT_OP
+  	* ADD
+  	* GE_OP
+  	* LE_OP
+  	* DIV
+  	* MUL
+  	* IS_NOT_OP
+  	* GT_OP
+  	* COMMENT
+  Previous tokens: [Token('NAME', 'n')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/documentation-maintenance-guide.md has broken examples
+Testing docs//.ai-only/dana-lang.md...
+
+================================================================================
+                      DANA Execution: temp_dana-lang.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_dana-lang.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 3 col 1
+  ```
+  ^
+  Expected one of: 
+  	* ASSERT
+  	* IMPORT
+  	* TRY
+  	* EXPORT
+  	* FALSE
+  	* DEF
+  	* IF
+  	* LPAR
+  	* ADD
+  	* COMMENT
+  	* AT
+  	* SINGLE_QUOTED_STRING
+  	* SUB
+  	* LOCAL
+  	* NAME
+  	* DELIVER
+  	* _NL
+  	* NOT_OP
+  	* TRUE
+  	* PASS
+  	* NONE
+  	* RETURN
+  	* STRUCT
+  	* USE
+  	* CONTINUE
+  	* MULTILINE_STRING
+  	* LAMBDA
+  	* BREAK
+  	* PRIVATE
+  	* LBRACE
+  	* DOLLAR_DOLLAR
+  	* PUBLIC
+  	* FOR
+  	* RAW_STRING
+  	* AGENT
+  	* WHILE
+  	* AGENT_POOL
+  	* F_STRING_TOKEN
+  	* REGULAR_STRING
+  	* RAISE
+  	* WITH
+  	* SYSTEM
+  	* NUMBER
+  	* LSQB
+  	* FROM
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/dana-lang.md has broken examples
+Testing docs//.ai-only/dana-testing.md...
+
+================================================================================
+                    DANA Execution: temp_dana-testing.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_dana-testing.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 4 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PRIVATE
+  	* STRUCT
+  	* FROM
+  	* CONTINUE
+  	* USE
+  	* SUB
+  	* SYSTEM
+  	* TRUE
+  	* DOLLAR_DOLLAR
+  	* EXPORT
+  	* WHILE
+  	* FALSE
+  	* RETURN
+  	* NUMBER
+  	* COMMENT
+  	* ADD
+  	* LOCAL
+  	* FOR
+  	* RAW_STRING
+  	* LAMBDA
+  	* WITH
+  	* LBRACE
+  	* AGENT_POOL
+  	* LPAR
+  	* PUBLIC
+  	* IF
+  	* NOT_OP
+  	* BREAK
+  	* TRY
+  	* IMPORT
+  	* REGULAR_STRING
+  	* PASS
+  	* DELIVER
+  	* NONE
+  	* AT
+  	* MULTILINE_STRING
+  	* LSQB
+  	* DEF
+  	* SINGLE_QUOTED_STRING
+  	* AGENT
+  	* _NL
+  	* F_STRING_TOKEN
+  	* RAISE
+  	* ASSERT
+  	* NAME
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/dana-testing.md has broken examples
+Testing docs//.ai-only/roadmap.md...
+
+================================================================================
+                       DANA Execution: temp_roadmap.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_roadmap.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* USE
+  	* IF
+  	* FALSE
+  	* BREAK
+  	* ASSERT
+  	* WHILE
+  	* REGULAR_STRING
+  	* RAISE
+  	* COMMENT
+  	* DOLLAR_DOLLAR
+  	* CONTINUE
+  	* DELIVER
+  	* _NL
+  	* IMPORT
+  	* STRUCT
+  	* NONE
+  	* PASS
+  	* WITH
+  	* AT
+  	* LBRACE
+  	* MULTILINE_STRING
+  	* LOCAL
+  	* LAMBDA
+  	* NAME
+  	* LSQB
+  	* TRUE
+  	* AGENT_POOL
+  	* AGENT
+  	* EXPORT
+  	* F_STRING_TOKEN
+  	* PUBLIC
+  	* NOT_OP
+  	* FOR
+  	* RETURN
+  	* FROM
+  	* ADD
+  	* RAW_STRING
+  	* TRY
+  	* SINGLE_QUOTED_STRING
+  	* SUB
+  	* LPAR
+  	* PRIVATE
+  	* SYSTEM
+  	* NUMBER
+  	* DEF
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/roadmap.md has broken examples
+Testing docs//.ai-only/dana.md...
+
+================================================================================
+                        DANA Execution: temp_dana.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_dana.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 14 col 1
+  ```
+  ^
+  Expected one of: 
+  	* RAISE
+  	* BREAK
+  	* LBRACE
+  	* FALSE
+  	* RETURN
+  	* SYSTEM
+  	* DEF
+  	* NOT_OP
+  	* FOR
+  	* TRUE
+  	* FROM
+  	* WITH
+  	* NONE
+  	* DELIVER
+  	* IMPORT
+  	* SINGLE_QUOTED_STRING
+  	* ADD
+  	* TRY
+  	* AGENT_POOL
+  	* AT
+  	* COMMENT
+  	* F_STRING_TOKEN
+  	* PRIVATE
+  	* MULTILINE_STRING
+  	* ASSERT
+  	* NUMBER
+  	* LPAR
+  	* _NL
+  	* USE
+  	* WHILE
+  	* SUB
+  	* LOCAL
+  	* PASS
+  	* EXPORT
+  	* STRUCT
+  	* REGULAR_STRING
+  	* RAW_STRING
+  	* NAME
+  	* LAMBDA
+  	* IF
+  	* LSQB
+  	* AGENT
+  	* PUBLIC
+  	* CONTINUE
+  	* DOLLAR_DOLLAR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/dana.md has broken examples
+Testing docs//.ai-only/functions.md...
+
+================================================================================
+                      DANA Execution: temp_functions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_functions.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'greet') at line 2, column 6.
+  Expected one of: 
+  	* LT_OP
+  	* OR
+  	* PLUS_EQUALS
+  	* SUB
+  	* DIV
+  	* IF
+  	* AND
+  	* IN_OP
+  	* _NL
+  	* LE_OP
+  	* GE_OP
+  	* POW
+  	* IS_NOT_OP
+  	* DOT
+  	* MULT_EQUALS
+  	* EQ_OP
+  	* ADD
+  	* IS_OP
+  	* MINUS_EQUALS
+  	* COLON
+  	* MOD
+  	* EQUAL
+  	* MUL
+  	* GT_OP
+  	* DIV_EQUALS
+  	* LPAR
+  	* PIPE
+  	* COMMENT
+  	* NOT_IN_OP
+  	* LSQB
+  	* FDIV
+  	* NE_OP
+  Previous tokens: [Token('NAME', 'func')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/functions.md has broken examples
+Testing docs//.ai-only/templates/migration.md...
+
+================================================================================
+                      DANA Execution: temp_migration.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_migration.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 3 col 1
+  ```
+  ^
+  Expected one of: 
+  	* IF
+  	* LOCAL
+  	* WITH
+  	* IMPORT
+  	* SUB
+  	* REGULAR_STRING
+  	* COMMENT
+  	* LSQB
+  	* LBRACE
+  	* AT
+  	* TRY
+  	* PUBLIC
+  	* TRUE
+  	* NOT_OP
+  	* F_STRING_TOKEN
+  	* AGENT_POOL
+  	* DOLLAR_DOLLAR
+  	* SYSTEM
+  	* ADD
+  	* LAMBDA
+  	* SINGLE_QUOTED_STRING
+  	* FROM
+  	* FOR
+  	* PRIVATE
+  	* NUMBER
+  	* NAME
+  	* ASSERT
+  	* EXPORT
+  	* WHILE
+  	* _NL
+  	* PASS
+  	* BREAK
+  	* RAW_STRING
+  	* RAISE
+  	* DEF
+  	* DELIVER
+  	* CONTINUE
+  	* STRUCT
+  	* AGENT
+  	* MULTILINE_STRING
+  	* USE
+  	* RETURN
+  	* NONE
+  	* LPAR
+  	* FALSE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/templates/migration.md has broken examples
+Testing docs//.ai-only/templates/feature-docs.md...
+
+================================================================================
+                    DANA Execution: temp_feature-docs.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_feature-docs.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 3 col 1
+  ```
+  ^
+  Expected one of: 
+  	* BREAK
+  	* FROM
+  	* SUB
+  	* LPAR
+  	* AGENT
+  	* NOT_OP
+  	* NONE
+  	* WHILE
+  	* DEF
+  	* STRUCT
+  	* RETURN
+  	* LSQB
+  	* RAW_STRING
+  	* AGENT_POOL
+  	* SINGLE_QUOTED_STRING
+  	* RAISE
+  	* PASS
+  	* F_STRING_TOKEN
+  	* DELIVER
+  	* PRIVATE
+  	* IMPORT
+  	* MULTILINE_STRING
+  	* COMMENT
+  	* LAMBDA
+  	* ADD
+  	* AT
+  	* IF
+  	* PUBLIC
+  	* _NL
+  	* WITH
+  	* NUMBER
+  	* LOCAL
+  	* CONTINUE
+  	* NAME
+  	* TRUE
+  	* SYSTEM
+  	* DOLLAR_DOLLAR
+  	* EXPORT
+  	* LBRACE
+  	* ASSERT
+  	* FALSE
+  	* TRY
+  	* REGULAR_STRING
+  	* USE
+  	* FOR
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/templates/feature-docs.md has broken examples
+Testing docs//.ai-only/templates/function-docs.md...
+
+================================================================================
+                    DANA Execution: temp_function-docs.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_function-docs.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 4 col 1
+  ```
+  ^
+  Expected one of: 
+  	* ASSERT
+  	* CONTINUE
+  	* EXPORT
+  	* _NL
+  	* LSQB
+  	* FALSE
+  	* LBRACE
+  	* WITH
+  	* WHILE
+  	* AGENT_POOL
+  	* DEF
+  	* AT
+  	* PRIVATE
+  	* LPAR
+  	* FOR
+  	* BREAK
+  	* SINGLE_QUOTED_STRING
+  	* USE
+  	* LAMBDA
+  	* NONE
+  	* NOT_OP
+  	* STRUCT
+  	* RAW_STRING
+  	* PASS
+  	* IF
+  	* PUBLIC
+  	* DOLLAR_DOLLAR
+  	* F_STRING_TOKEN
+  	* AGENT
+  	* NAME
+  	* MULTILINE_STRING
+  	* COMMENT
+  	* TRUE
+  	* TRY
+  	* SUB
+  	* SYSTEM
+  	* FROM
+  	* DELIVER
+  	* ADD
+  	* IMPORT
+  	* LOCAL
+  	* REGULAR_STRING
+  	* RETURN
+  	* NUMBER
+  	* RAISE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/templates/function-docs.md has broken examples
+Testing docs//.ai-only/user-testing.md...
+
+================================================================================
+                    DANA Execution: temp_user-testing.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_user-testing.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 5 col 1
+  ```
+  ^
+  Expected one of: 
+  	* TRY
+  	* PUBLIC
+  	* RETURN
+  	* RAW_STRING
+  	* ASSERT
+  	* USE
+  	* SUB
+  	* NAME
+  	* SYSTEM
+  	* RAISE
+  	* ADD
+  	* MULTILINE_STRING
+  	* DOLLAR_DOLLAR
+  	* WITH
+  	* AT
+  	* IMPORT
+  	* AGENT_POOL
+  	* LBRACE
+  	* TRUE
+  	* F_STRING_TOKEN
+  	* DEF
+  	* SINGLE_QUOTED_STRING
+  	* BREAK
+  	* LOCAL
+  	* FROM
+  	* _NL
+  	* DELIVER
+  	* NONE
+  	* FOR
+  	* LPAR
+  	* LSQB
+  	* CONTINUE
+  	* STRUCT
+  	* PRIVATE
+  	* COMMENT
+  	* IF
+  	* NUMBER
+  	* LAMBDA
+  	* NOT_OP
+  	* EXPORT
+  	* AGENT
+  	* PASS
+  	* WHILE
+  	* FALSE
+  	* REGULAR_STRING
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/user-testing.md has broken examples
+Testing docs//.ai-only/types.md...
+
+================================================================================
+                        DANA Execution: temp_types.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_types.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* PRIVATE
+  	* IF
+  	* NAME
+  	* ASSERT
+  	* MULTILINE_STRING
+  	* ELSE
+  	* AGENT
+  	* RETURN
+  	* LOCAL
+  	* LSQB
+  	* DELIVER
+  	* PUBLIC
+  	* FALSE
+  	* SINGLE_QUOTED_STRING
+  	* LBRACE
+  	* AGENT_POOL
+  	* WHILE
+  	* RAISE
+  	* FINALLY
+  	* DEF
+  	* FOR
+  	* USE
+  	* _NL
+  	* NONE
+  	* LAMBDA
+  	* SUB
+  	* F_STRING_TOKEN
+  	* WITH
+  	* REGULAR_STRING
+  	* CONTINUE
+  	* STRUCT
+  	* IMPORT
+  	* TRUE
+  	* COMMENT
+  	* BREAK
+  	* ADD
+  	* NOT_OP
+  	* EXCEPT
+  	* PASS
+  	* LPAR
+  	* NUMBER
+  	* SYSTEM
+  	* RAW_STRING
+  	* ELIF
+  	* DOLLAR_DOLLAR
+  	* AT
+  	* EXPORT
+  	* FROM
+  	* TRY
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/types.md has broken examples
+Testing docs//.ai-only/security.md...
+
+================================================================================
+                      DANA Execution: temp_security.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_security.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 6 col 1
+  ```
+  ^
+  Expected one of: 
+  	* CONTINUE
+  	* RETURN
+  	* MULTILINE_STRING
+  	* BREAK
+  	* WHILE
+  	* LSQB
+  	* SINGLE_QUOTED_STRING
+  	* AT
+  	* F_STRING_TOKEN
+  	* REGULAR_STRING
+  	* _NL
+  	* PUBLIC
+  	* AGENT
+  	* USE
+  	* IF
+  	* ADD
+  	* EXPORT
+  	* SUB
+  	* DOLLAR_DOLLAR
+  	* COMMENT
+  	* LAMBDA
+  	* TRY
+  	* NUMBER
+  	* RAW_STRING
+  	* FOR
+  	* LPAR
+  	* FROM
+  	* RAISE
+  	* NAME
+  	* LBRACE
+  	* LOCAL
+  	* PRIVATE
+  	* FALSE
+  	* NONE
+  	* WITH
+  	* SYSTEM
+  	* NOT_OP
+  	* TRUE
+  	* DEF
+  	* AGENT_POOL
+  	* STRUCT
+  	* ASSERT
+  	* DELIVER
+  	* IMPORT
+  	* PASS
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//.ai-only/security.md has broken examples
+Testing docs//.ai-only/dana-system.md...
+
+================================================================================
+                     DANA Execution: temp_dana-system.md.na
+================================================================================
+
+No jacket needed
+Program executed successfully
+
+Output:
+No jacket needed
+
+--- Final Context State ---
+{'local': {'feedback': <function DanaSandbox._create_default_context.<locals>.feedback_placeholder at 0x1134e7920>, 'user_name': 'Alice', 'analysis': 'Only if there’s a clear need—temperature, weather, or dress-code. Otherwise, skip it to avoid sounding pushy.'}, 'private': {}, 'public': {'weather_temperature': 72}, 'system': {'execution_status': <ExecutionStatus.COMPLETED: 'completed'>, 'history': [], '__last_value': Token('COMMENT', '# Take action based on reasoning'), '__current_assignment_type': None}}
+---------------------------
+
+✓ Program execution completed successfully
+✅ docs//.ai-only/dana-system.md examples work
+Testing docs//primers/agent.md...
+
+================================================================================
+                        DANA Execution: temp_agent.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_agent.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 22 col 1
+  ```
+  ^
+  Expected one of: 
+  	* REGULAR_STRING
+  	* _NL
+  	* SINGLE_QUOTED_STRING
+  	* CONTINUE
+  	* NAME
+  	* AGENT
+  	* BREAK
+  	* PASS
+  	* RAISE
+  	* TRY
+  	* USE
+  	* TRUE
+  	* NUMBER
+  	* LSQB
+  	* WHILE
+  	* LPAR
+  	* FROM
+  	* ADD
+  	* PRIVATE
+  	* LOCAL
+  	* ASSERT
+  	* NONE
+  	* STRUCT
+  	* LBRACE
+  	* NOT_OP
+  	* PUBLIC
+  	* FOR
+  	* EXPORT
+  	* AGENT_POOL
+  	* FALSE
+  	* DEF
+  	* IMPORT
+  	* MULTILINE_STRING
+  	* LAMBDA
+  	* IF
+  	* WITH
+  	* SUB
+  	* RETURN
+  	* COMMENT
+  	* AT
+  	* RAW_STRING
+  	* DELIVER
+  	* SYSTEM
+  	* DOLLAR_DOLLAR
+  	* F_STRING_TOKEN
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//primers/agent.md has broken examples
+Testing docs//primers/struct_methods.md...
+
+================================================================================
+                   DANA Execution: temp_struct_methods.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_struct_methods.md.na
+  Error: UnexpectedToken - Unexpected token Token('NAME', 'x') at line 2, column 15.
+  Expected one of: 
+  	* COMMENT
+  	* _NL
+  Previous tokens: [Token('COLON', ':')]
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//primers/struct_methods.md has broken examples
+Testing docs//primers/workflow.md...
+
+================================================================================
+                      DANA Execution: temp_workflow.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_workflow.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 30 col 1
+  ```
+  ^
+  Expected one of: 
+  	* ASSERT
+  	* F_STRING_TOKEN
+  	* CONTINUE
+  	* RAW_STRING
+  	* BREAK
+  	* ADD
+  	* PRIVATE
+  	* SYSTEM
+  	* REGULAR_STRING
+  	* USE
+  	* NAME
+  	* IMPORT
+  	* MULTILINE_STRING
+  	* _NL
+  	* LBRACE
+  	* IF
+  	* FOR
+  	* RETURN
+  	* TRY
+  	* SUB
+  	* RAISE
+  	* NOT_OP
+  	* LOCAL
+  	* TRUE
+  	* NONE
+  	* FALSE
+  	* WITH
+  	* STRUCT
+  	* AT
+  	* DEF
+  	* AGENT_POOL
+  	* LAMBDA
+  	* WHILE
+  	* PASS
+  	* COMMENT
+  	* PUBLIC
+  	* DOLLAR_DOLLAR
+  	* EXPORT
+  	* LPAR
+  	* NUMBER
+  	* LSQB
+  	* SINGLE_QUOTED_STRING
+  	* AGENT
+  	* DELIVER
+  	* FROM
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//primers/workflow.md has broken examples
+Testing docs//primers/import.md...
+
+================================================================================
+                       DANA Execution: temp_import.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 2, column 33):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def add(a: int, b: int) -> int: return a + b
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//primers/import.md has broken examples
+Testing docs//primers/poet.md...
+
+================================================================================
+                        DANA Execution: temp_poet.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_poet.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 23 col 1
+  ```
+  ^
+  Expected one of: 
+  	* FROM
+  	* DEF
+  	* MULTILINE_STRING
+  	* DOLLAR_DOLLAR
+  	* SUB
+  	* _NL
+  	* SINGLE_QUOTED_STRING
+  	* PASS
+  	* LPAR
+  	* EXPORT
+  	* ASSERT
+  	* STRUCT
+  	* LOCAL
+  	* EXCEPT
+  	* PUBLIC
+  	* LSQB
+  	* DELIVER
+  	* BREAK
+  	* NOT_OP
+  	* RAISE
+  	* LBRACE
+  	* TRUE
+  	* FOR
+  	* PRIVATE
+  	* WHILE
+  	* SYSTEM
+  	* NONE
+  	* RAW_STRING
+  	* CONTINUE
+  	* NAME
+  	* IF
+  	* REGULAR_STRING
+  	* USE
+  	* AGENT_POOL
+  	* IMPORT
+  	* FALSE
+  	* F_STRING_TOKEN
+  	* ELIF
+  	* TRY
+  	* NUMBER
+  	* AT
+  	* COMMENT
+  	* ELSE
+  	* LAMBDA
+  	* RETURN
+  	* FINALLY
+  	* WITH
+  	* ADD
+  	* AGENT
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//primers/poet.md has broken examples
+Testing docs//primers/comprehensions.md...
+
+================================================================================
+                   DANA Execution: temp_comprehensions.md.na
+================================================================================
+
+
+Error:
+  === Dana Runtime Error ===
+  File: temp_comprehensions.md.na
+  Error: UnexpectedCharacters - No terminal matches '`' in the current parser context, at line 10 col 1
+  ```
+  ^
+  Expected one of: 
+  	* WHILE
+  	* ASSERT
+  	* FOR
+  	* TRUE
+  	* EXPORT
+  	* LSQB
+  	* DELIVER
+  	* DOLLAR_DOLLAR
+  	* PRIVATE
+  	* USE
+  	* NUMBER
+  	* FALSE
+  	* RAW_STRING
+  	* PUBLIC
+  	* PASS
+  	* REGULAR_STRING
+  	* WITH
+  	* AT
+  	* IMPORT
+  	* BREAK
+  	* MULTILINE_STRING
+  	* _NL
+  	* TRY
+  	* LAMBDA
+  	* DEF
+  	* IF
+  	* CONTINUE
+  	* SINGLE_QUOTED_STRING
+  	* F_STRING_TOKEN
+  	* STRUCT
+  	* ADD
+  	* COMMENT
+  	* AGENT_POOL
+  	* AGENT
+  	* LPAR
+  	* RETURN
+  	* NAME
+  	* SUB
+  	* LOCAL
+  	* LBRACE
+  	* FROM
+  	* SYSTEM
+  	* NOT_OP
+  	* RAISE
+  	* NONE
+  Previous tokens: Token('_NL', '\n')
+  Problem: See error message above
+  Debug tip: Check the execution trace above for the source of the error
+❌ docs//primers/comprehensions.md has broken examples
+Testing docs//primers/lambda.md...
+
+================================================================================
+                       DANA Execution: temp_lambda.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 20, column 5):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      return 0.0 if shape._type.name == "Point"
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//primers/lambda.md has broken examples
+Testing docs//primers/workflow_and_poet.md...
+
+================================================================================
+                  DANA Execution: temp_workflow_and_poet.md.na
+================================================================================
+
+
+Error:
+  Reserved keyword error (line 11, column 37):
+  The word 'return' is a reserved keyword in Dana and cannot be used as a variable name.
+  Instead of:
+      def load_data(source: str) -> dict: return load(source)
+  Use a different variable name like 'my_return' or 'the_return'.
+  Reserved keywords in Dana include: False, None, True, agent, agent_pool, and, as, assert, break, continue, def, elif, else, except, export, finally, for, from, if, import, in, is, local, not, or, pass, private, public, raise, return, struct, system, try, use, while, with
+❌ docs//primers/workflow_and_poet.md has broken examples
+Broken examples found: 90
+Updating AI assistant references...
+Updating functions.md with new function information...
+Creating GitHub issues for gaps...
+Issues needed for broken examples:     2015
+Generating content update summary...
+=== AI DOCUMENTATION CONTENT UPDATE COMPLETE Tue Aug  5 12:32:10 PDT 2025 ===

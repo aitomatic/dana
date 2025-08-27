@@ -14,6 +14,7 @@ def run_dana_code(code: str):
     program = parser.parse(code, do_type_check=True, do_transform=True)
     context = SandboxContext()
     interpreter = DanaInterpreter()
+    context.interpreter = interpreter  # Set interpreter for background thread execution
     interpreter.execute_program(program, context)
     return context
 

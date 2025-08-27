@@ -17,6 +17,9 @@ Features:
 import logging
 import os
 import sys
+from urllib.parse import urlparse
+
+import requests
 
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import ConfigurationError
@@ -47,6 +50,21 @@ class ConfigurationManager:
         self.providers = self.config.get("llm", {}).get("provider_configs", {})
 
         # Map providers to their required environment variables and descriptions
+        # Display order for providers in the wizard
+        self.provider_display_order: list[str] = [
+            "openai",
+            "anthropic",
+            "azure",
+            "groq",
+            "mistral",
+            "google",
+            "deepseek",
+            "cohere",
+            "xai",
+            "ibm_watsonx",
+            "local",
+        ]
+
         self.provider_info = {
             "openai": {
                 "name": "OpenAI",
@@ -105,8 +123,9 @@ class ConfigurationManager:
             },
             "local": {
                 "name": "Local LLM",
-                "description": "Local LLM server (e.g., VLLM, Ollama)",
-                "env_vars": ["LOCAL_API_KEY"],
+                "description": "Local LLM server (e.g., Ollama, vLLM)",
+                # Handled by a custom flow; keep for parity
+                "env_vars": ["LOCAL_API_KEY", "LOCAL_BASE_URL"],
                 "signup_url": None,
             },
         }
@@ -117,11 +136,23 @@ class ConfigurationManager:
         Returns:
             True if configuration was successful, False otherwise
         """
-        print(f"{self.colors.header('DANA Configuration Wizard')}")
-        print()
-        print("This wizard will help you configure DANA providers and create a .env file.")
-        print("You need at least one provider configured to use DANA's reason() function.")
-        print()
+        print(f"{self.colors.header('Dana Configuration Wizard')}")
+        print("-------------------------")
+        print("Select at least ONE provider so your agents can use reason() and other LLM steps.")
+        print("Your selections will be saved to .env.\n")
+
+        # Static, model-agnostic list for clarity
+        print(" 1. OpenAI       - GPT-4, GPT-4o, etc.")
+        print(" 2. Anthropic    - Claude 3.5, etc.")
+        print(" 3. Azure OpenAI - Azure-hosted GPT models")
+        print(" 4. Groq         - Fast Llama, etc.")
+        print(" 5. Mistral AI   - Mistral large, etc.")
+        print(" 6. Google AI    - Gemini models")
+        print(" 7. DeepSeek     - DeepSeek chat")
+        print(" 8. Cohere       - Cohere command")
+        print(" 9. xAI          - Grok models")
+        print("10. IBM Watson X - Watson X platform")
+        print("11. Local LLM    - Your own server (e.g., Ollama, vLLM)\n")
 
         while True:
             # Show available providers
@@ -163,25 +194,24 @@ class ConfigurationManager:
         Returns:
             List of selected provider names
         """
-        print(f"{self.colors.bold('Available Providers:')}")
+        # Build selection list from configured providers in preferred order
+        available_providers: list[str] = []
+        for key in self.provider_display_order:
+            if key in self.providers:
+                available_providers.append(key)
+
+        # Show enumerated list matching the selection indices
         print()
-
-        # Display providers with numbers
-        available_providers = []
         current_index = 1
-
-        # Show all providers in order
-        for provider_key, provider_info in self.provider_info.items():
-            if provider_key in self.providers:
-                available_providers.append(provider_key)
-                print(f"{self.colors.accent(f'{current_index:2d}.')} {provider_info['name']} - {provider_info['description']}")
-                current_index += 1
-
+        for provider_key in available_providers:
+            info = self.provider_info[provider_key]
+            print(f"{self.colors.accent(f'{current_index:2d}.')} {info['name']} - {info['description']}")
+            current_index += 1
         print()
 
         while True:
             try:
-                selection = input("Select providers (comma-separated numbers, e.g., 1,3,5): ").strip()
+                selection = input("Select providers (e.g., 1,3,5): ").strip()
                 if not selection:
                     continue
 
@@ -216,6 +246,10 @@ class ConfigurationManager:
         Returns:
             Dictionary of environment variables, or None if user skipped
         """
+        # Special flow for Local LLM
+        if provider_key == "local":
+            return self._configure_local_provider()
+
         provider_info = self.provider_info[provider_key]
 
         print(f"\n{self.colors.bold('Configuring ' + provider_info['name'])}")
@@ -225,26 +259,25 @@ class ConfigurationManager:
             print(f"Get API key from: {self.colors.accent(provider_info['signup_url'])}")
         print()
 
-        env_vars = {}
+        env_vars: dict[str, str] = {}
 
         for env_var in provider_info["env_vars"]:
             while True:
-                # Check if environment variable already exists
                 existing_value = os.getenv(env_var)
-                if existing_value:
-                    prompt = f"{env_var} (current: {'*' * min(8, len(existing_value))}...): "
-                else:
-                    prompt = f"{env_var}: "
+                prompt = (
+                    f"{env_var} (current: {'*' * min(8, len(existing_value))}...): "
+                    if existing_value
+                    else f"{env_var}: "
+                )
 
                 try:
                     value = input(prompt).strip()
 
                     if not value and existing_value:
-                        # User pressed enter, keep existing value
                         env_vars[env_var] = existing_value
                         break
                     elif not value:
-                        print(f"{self.colors.error(env_var + ' is required for ' + provider_info['name'])}")
+                        print(self.colors.error(f"{env_var} is required for {provider_info['name']}"))
                         skip = input("Skip this provider? (y/n): ").lower().strip()
                         if skip == "y":
                             return None
@@ -258,6 +291,152 @@ class ConfigurationManager:
                     return None
 
         return env_vars
+
+    # ===== Local LLM custom flow =====
+    def _configure_local_provider(self) -> dict[str, str] | None:
+        print("\nLocal LLM (Ollama / vLLM)")
+        print("-------------------------")
+        print("Use a model server running on THIS machine. No cloud API key is required.\n")
+        print("If using Ollama:")
+        print("  - Start the server:  ollama serve")
+        print("  - Pull a model:      ollama pull <model-name>")
+        print("  - Endpoint URL:      http://127.0.0.1:11434/v1\n")
+        print("If using vLLM:")
+        print("  - Endpoint URL (example): http://127.0.0.1:8000/v1\n")
+
+        detected = self._detect_local_openai_endpoints()
+        default_url = detected[0] if detected else "http://127.0.0.1:11434/v1"
+
+        last_url: str | None = os.getenv("LOCAL_BASE_URL") or None
+        if last_url:
+            default_url = last_url
+
+        # Offer to use detected endpoint if any
+        if detected:
+            choice = input(f"Found a local server at {detected[0]}. Use this? [Y/n]: ").strip().lower()
+            if choice in ("", "y", "yes"):  # accept
+                default_url = detected[0]
+
+        # Ask for BASE_URL first
+        print("Enter your Local LLM endpoint URL (include /v1):")
+        try:
+            base_url = input(f"[default: {default_url}]: ").strip() or default_url
+        except KeyboardInterrupt:
+            print("\nSkipping provider configuration.")
+            return None
+
+        # Preflight connectivity message
+        print("\nChecking Local LLM at: {0}".format(base_url))
+        print("If this hangs or fails, ensure your server is running and at least one model is available.")
+        print(f"Quick check:  curl -s {base_url}/models\n")
+
+        # Proxy warning
+        if os.environ.get("HTTP_PROXY") or os.environ.get("HTTPS_PROXY"):
+            print(self.colors.accent("Warning: HTTP(S)_PROXY is set and may interfere with localhost connections."))
+            print(self.colors.accent("Suggestion: unset HTTP_PROXY and HTTPS_PROXY for local testing."))
+
+        ok, info = self._probe_openai_models(base_url)
+        if not ok:
+            # Connectivity-centric failure message
+            print(self.colors.error(f"✗ Could not reach your Local LLM at: {base_url}"))
+            if info:
+                print(f"Details: {info}")
+            print("\nWhat to try:")
+            print("  • If using Ollama:")
+            print("      - Start server:  ollama serve")
+            print("      - Pull a model:  ollama pull <model-name>")
+            print("      - Use URL:       http://127.0.0.1:11434/v1")
+            print("  • If using vLLM:")
+            print("      - Ensure your server exposes an OpenAI-compatible /v1 route\n")
+            print("Tips:")
+            print("  • Prefer 127.0.0.1 over localhost")
+            print("  • Include the /v1 path in the URL")
+            print("  • Unset proxies for localhost:  unset HTTP_PROXY HTTPS_PROXY\n")
+
+            retry = input("Would you like to try again? (y/n): ").strip().lower()
+            if retry == "y":
+                # Persist last answer as default
+                os.environ["LOCAL_BASE_URL"] = base_url
+                return self._configure_local_provider()
+            # Offer fallback if endpoint is at least reachable with OpenAI semantics
+            if info and info.startswith("HTTP 200"):
+                use_fallback = input(
+                    "We detected an OpenAI-compatible endpoint. Configure OpenAI provider pointing to this BASE_URL instead? (y/N): "
+                ).strip().lower()
+                if use_fallback == "y":
+                    return {"OPENAI_BASE_URL": base_url, "OPENAI_API_KEY": "not-needed"}
+            return None
+
+        # Successful probe; ensure at least one model
+        # info contains model count description
+
+        # Decide API key behavior: default to not-needed for localhost/127.0.0.1
+        host = urlparse(base_url).hostname or ""
+        api_key_value = "not-needed"
+        if host not in ("127.0.0.1", "localhost"):
+            # Non-local host: offer advanced toggle
+            adv = input("Advanced: enter a custom API key? (y/N): ").strip().lower()
+            if adv == "y":
+                try:
+                    entered = input('LOCAL_API_KEY (press Enter to use "not-needed"): ').strip()
+                    api_key_value = entered or "not-needed"
+                except KeyboardInterrupt:
+                    print("\nSkipping provider configuration.")
+                    return None
+        else:
+            # Local host: do not prompt; keep not-needed
+            pass
+
+        print(self.colors.accent("✓ Local LLM configured"))
+        print("Saved to .env:")
+        print(f"  LOCAL_BASE_URL={base_url}")
+        print(f"  LOCAL_API_KEY={api_key_value}")
+        print("Validation succeeded. You can now run Dana agents locally.\n")
+
+        return {"LOCAL_BASE_URL": base_url, "LOCAL_API_KEY": api_key_value}
+
+    def _detect_local_openai_endpoints(self) -> list[str]:
+        """Probe common local endpoints and return those that look OpenAI-compatible.
+
+        Returns a list ordered by preference.
+        """
+        candidates = [
+            "http://127.0.0.1:11434/v1",  # Ollama default
+            "http://127.0.0.1:8000/v1",   # vLLM common
+        ]
+        detected: list[str] = []
+        for base_url in candidates:
+            # Require at least one model to count as a valid detection
+            ok, info = self._probe_openai_models(base_url, quick=False)
+            if ok:
+                detected.append(base_url)
+        return detected
+
+    def _probe_openai_models(self, base_url: str, quick: bool = False) -> tuple[bool, str]:
+        """Try GET {base_url}/models and verify an OpenAI-style response.
+
+        Returns (ok, info). info contains details like HTTP status or exception.
+        """
+        url = base_url.rstrip("/") + "/models"
+        try:
+            resp = requests.get(url, timeout=3 if quick else 8)
+            status = resp.status_code
+            if status == 401 or status == 403:
+                # Auth issue; only mention key if 401/403
+                return False, f"HTTP {status} Unauthorized. If your server requires an API key, provide one."
+            if status != 200:
+                return False, f"HTTP {status} from {url}"
+            data = resp.json()
+            if not isinstance(data, dict) or "data" not in data or not isinstance(data["data"], list):
+                return False, "HTTP 200 but response is not OpenAI /models format"
+            # If quick probe, we don't care about model count
+            if quick:
+                return True, f"HTTP 200 with {len(data['data'])} models"
+            if len(data["data"]) == 0:
+                return False, "HTTP 200 but no models available (data: [])"
+            return True, f"HTTP 200 with {len(data['data'])} models"
+        except Exception as e:
+            return False, str(e)
 
     def _write_env_file(self, env_vars: dict[str, str]):
         """Write environment variables to .env file.

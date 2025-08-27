@@ -7,7 +7,6 @@ and manages the generation process to prevent duplicates and handle "Generate al
 
 import asyncio
 import logging
-from typing import Optional
 from datetime import datetime, UTC
 import os
 
@@ -59,7 +58,7 @@ class AutoKnowledgeGenerator:
         )
 
         # Track running generation tasks
-        self._running_generation_task: Optional[asyncio.Task] = None
+        self._running_generation_task: asyncio.Task | None = None
         self._generation_lock = asyncio.Lock()
 
         logger.info(f"AutoKnowledgeGenerator initialized for agent {agent_id}")

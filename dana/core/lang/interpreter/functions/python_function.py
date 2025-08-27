@@ -187,12 +187,17 @@ class PythonFunction(SandboxFunction):
         Returns:
             The result of calling the Python function
         """
+        import asyncio
+        from dana.common.utils.misc import Misc
 
         # Security check: only trusted functions can receive context
         if self.wants_context and self.context_param_name:
             if not self._is_trusted_for_context():
                 # Function wants context but is not trusted - call without context
-                return self.func(*args, **kwargs)
+                if asyncio.iscoroutinefunction(self.func):
+                    return Misc.safe_asyncio_run(self.func, *args, **kwargs)
+                else:
+                    return self.func(*args, **kwargs)
 
             # Function is trusted - proceed with context injection
             try:
@@ -202,15 +207,27 @@ class PythonFunction(SandboxFunction):
                     # Context is first parameter - pass as positional argument
                     # Remove context from kwargs if it was injected there
                     kwargs.pop(self.context_param_name, None)
-                    return self.func(context, *args, **kwargs)
+                    if asyncio.iscoroutinefunction(self.func):
+                        return Misc.safe_asyncio_run(self.func, context, *args, **kwargs)
+                    else:
+                        return self.func(context, *args, **kwargs)
                 else:
                     # Context is not first parameter - inject it into kwargs
                     kwargs = self.inject_context(context, kwargs)
-                    return self.func(*args, **kwargs)
+                    if asyncio.iscoroutinefunction(self.func):
+                        return Misc.safe_asyncio_run(self.func, *args, **kwargs)
+                    else:
+                        return self.func(*args, **kwargs)
             except (AttributeError, OSError):
                 # Fallback to using kwargs with context injection
                 kwargs = self.inject_context(context, kwargs)
-                return self.func(*args, **kwargs)
+                if asyncio.iscoroutinefunction(self.func):
+                    return Misc.safe_asyncio_run(self.func, *args, **kwargs)
+                else:
+                    return self.func(*args, **kwargs)
         else:
-            # Function doesn't want context - call normally
-            return self.func(*args, **kwargs)
+            # Function doesn't want context - call normally with async detection
+            if asyncio.iscoroutinefunction(self.func):
+                return Misc.safe_asyncio_run(self.func, *args, **kwargs)
+            else:
+                return self.func(*args, **kwargs)

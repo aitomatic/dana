@@ -53,7 +53,6 @@ from dana.core.lang.ast import (
     TupleLiteral,
     TypeHint,
     UnaryExpression,
-    UseStatement,
     WhileLoop,
 )
 
@@ -488,8 +487,9 @@ class TypeChecker:
             return self.check_tuple_literal(expression)
         elif isinstance(expression, ListLiteral):
             return self.check_list_literal(expression)
-        elif isinstance(expression, UseStatement):
-            return self.check_use_statement(expression)
+        # Note: UseStatement functionality has been removed as part of grammar unification
+        # elif isinstance(expression, UseStatement):
+        #     return self.check_use_statement(expression)
         elif hasattr(expression, "__class__") and expression.__class__.__name__ == "FStringExpression":
             # Handle FStringExpression without importing it directly
             return DanaType("string")
@@ -703,15 +703,16 @@ class TypeChecker:
             # For now, any return type is allowed
             self.check_expression(node.value)
 
-    def check_use_statement(self, node: UseStatement) -> DanaType:
-        """Check a use statement for type errors."""
-        # Check arguments
-        for arg in node.args:
-            self.check_expression(arg)
-        for kwarg_value in node.kwargs.values():
-            self.check_expression(kwarg_value)
-        # Use statements return dynamic objects, so return 'any' type
-        return DanaType("any")
+    # Note: UseStatement functionality has been removed as part of grammar unification
+    # def check_use_statement(self, node: UseStatement) -> DanaType:
+    #     """Check a use statement for type errors."""
+    #     # Check arguments
+    #     for arg in node.args:
+    #         self.check_expression(arg)
+    #     for kwarg_value in node.kwargs.values():
+    #         self.check_expression(kwarg_value)
+    #     # Use statements return dynamic objects, so return 'any' type
+    #     return DanaType("any")
 
     def check_lambda_expression(self, node: Any) -> DanaType:
         """Check a lambda expression for type errors."""

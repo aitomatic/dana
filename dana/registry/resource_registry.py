@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from dana.registry.instance_registry import StructRegistry
 
 if TYPE_CHECKING:
-    from dana.core.resource.resource_instance import ResourceInstance
+    from dana.core.builtin_types.resource.resource_instance import ResourceInstance
 
 
 class ResourceRegistry(StructRegistry["ResourceInstance"]):

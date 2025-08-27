@@ -1,0 +1,60 @@
+from llama_index.core.py import StorageContext, VectorStoreIndex, Settings
+Settings.chunk_size = 1024
+Settings.chunk_overlap = 256
+from dana.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
+from dana.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
+from dana.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
+from llama_index.core.ingestion.py import run_transformations
+from llama_index.core.vector_stores.py import MetadataFilter, MetadataFilters, FilterOperator
+from llama_index.core.vector_stores.types.py import BasePydanticVectorStore
+
+
+struct RAGOrchestrator:
+    document_loader: None = None # DocumentLoader
+    vector_store: None = None # BasePydanticVectorStore
+    index: None = None # VectorStoreIndex
+    embedding_model: None = None # EmbedType
+
+def (rag: RAGOrchestrator) build_index(sources: list[str], dimension_override: int | None = 1800, force_rebuild: bool = True) -> None:
+    if rag.document_loader is None:
+        rag.document_loader = DocumentLoader()
+    if rag.embedding_model is None:
+        embedding_tuple = get_embedding_model(dimension_override=dimension_override)
+        rag.embedding_model = embedding_tuple[0]
+        dimension = embedding_tuple[1]
+    else:
+        dimension = EmbeddingFactory._extract_dimensions(rag.embedding_model)
+    if rag.vector_store is None:
+        rag.vector_store = get_duckdb_store(database_name="test", persist_dir="test", table_name=f"test_{dimension}", embed_dim=dimension_override)
+    
+    storage_context = StorageContext.from_defaults(vector_store=rag.vector_store)
+    rag.index = VectorStoreIndex.from_vector_store(rag.vector_store, embed_model=rag.embedding_model)
+
+    docs_dict = rag.document_loader.load_sources(sources)
+
+    filters =MetadataFilters(filters=[MetadataFilter(key="source", operator=FilterOperator.IN, value=list(docs_dict.keys()))])
+    
+    matched_nodes = rag.index.vector_store.get_nodes(filters=filters)
+    existing_sources = set()
+    for node in matched_nodes:
+        existing_sources.add(node.metadata["source"])
+
+    left_over_sources = set(docs_dict.keys()).difference(existing_sources)
+    for source in left_over_sources:
+        nodes = run_transformations(docs_dict[source], rag.index._transformations, show_progress=True, embed_model=rag.embedding_model)
+        rag.index.insert_nodes(nodes)
+
+def (rag: RAGOrchestrator) query(query: str, top_k: int = 10, filters: MetadataFilters | None = None) -> list[str]:
+    retriever = rag.index.as_retriever(similarity_top_k=top_k, embed_model=rag.embedding_model, filters=filters)
+    return retriever.retrieve(query)
+
+orchestrator = RAGOrchestrator()
+# orchestrator.build_index(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/docs/for-engineers", "/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs"])
+orchestrator.build_index(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs"])
+res = orchestrator.query("What is the ARR of Aitomatic?", top_k=4)
+
+for r in res:
+    print("="*100)
+    print(r.get_content())
+    print("="*100)
+print(f"Total of chunk retrieved : {len(res)}")
