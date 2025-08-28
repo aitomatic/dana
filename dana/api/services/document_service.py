@@ -4,6 +4,7 @@ Document Service Module
 This module provides business logic for document management and processing.
 """
 
+import json
 import logging
 import os
 import asyncio
@@ -14,8 +15,11 @@ from typing import BinaryIO
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
 from dana.common.sys_resource.rag.rag_resource import RAGResource
+from sqlalchemy.orm.attributes import flag_modified
 
 logger = logging.getLogger(__name__)
+
+
 
 
 class DocumentService:
@@ -298,8 +302,13 @@ class DocumentService:
 
             if topic_id is not None:
                 query = query.filter(Document.topic_id == topic_id)
+
             if agent_id is not None:
-                query = query.filter(Document.agent_id == agent_id)
+                # NOTE : THE ASSOCIATION IS STORED IN THE AGENT CONFIG FOR NOW. IN THE OLD APPROACH, WE CAN ONLY LINK DOCUMENT TO AN SINGLE AGENT (doc.agent_id = agent_id)
+                agent = db_session.query(Agent).filter(Agent.id == agent_id).first()
+                if agent:
+                    associated_documents = agent.config.get("associated_documents", [])
+                    query = query.filter(Document.id.in_(associated_documents))
 
             documents = query.offset(offset).limit(limit).all()
 
@@ -441,6 +450,47 @@ class DocumentService:
 
         except Exception as e:
             logger.error(f"Error building index for agent {agent_id}: {e}", exc_info=True)
+
+    def get_agent_associated_fp(self, agent_folder_path: str, document_original_filename: str):
+        """Get the associated file path for a document."""
+        original_filename = os.path.splitext(document_original_filename)[0]
+        destination_fp = os.path.join(agent_folder_path, "docs", f"{original_filename}.md")
+        os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
+        return destination_fp
+
+    async def associate_documents_with_agent(self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session) -> list[str]:
+        """
+        Associate documents with an agent.
+        """
+        try:
+            documents = db_session.query(Document).filter(Document.id.in_(document_ids)).all()
+            new_destination_fps = []
+            for document in documents:
+                document.agent_id = agent_id
+                extraction_files = document.extraction_files
+                final_md = ""
+                for extraction_file in extraction_files:
+                    extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
+                    with open(extract_fp, "r") as f:
+                        extract_data = json.load(f)
+                    for extraction_doc in extract_data["documents"]:
+                        final_md += extraction_doc["text"]
+                        final_md += "\n\n"
+                final_md = final_md.strip()
+                if final_md:
+                    destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                    with open(destination_fp, "w") as f:
+                        f.write(final_md)
+                    new_destination_fps.append(destination_fp)
+                    
+            if len(new_destination_fps) > 0:
+                db_session.commit()
+
+            return new_destination_fps
+
+        except Exception as e:
+            logger.error(f"Error associating documents with agent {agent_id}: {e}", exc_info=True)
+            raise
 
 
 # Global service instance

@@ -86,6 +86,62 @@ export interface ChatResponse {
   error?: string;
 }
 
+// Workflow Execution Types
+export interface WorkflowExecutionRequest {
+  agent_id: number;
+  workflow_name: string;
+  input_data?: Record<string, any>;
+  execution_mode?: string;
+}
+
+export interface WorkflowExecutionResponse {
+  success: boolean;
+  execution_id: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  result?: any;
+  error?: string;
+  step_results: WorkflowStepResult[];
+}
+
+export interface WorkflowStepResult {
+  step_index: number;
+  step_name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  start_time?: string;
+  end_time?: string;
+  execution_time: number;
+  result?: any;
+  error?: string;
+}
+
+export interface WorkflowExecutionStatus {
+  execution_id: string;
+  workflow_name: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  step_results: WorkflowStepResult[];
+  error?: string;
+  last_update: string;
+}
+
+export interface WorkflowExecutionControl {
+  execution_id: string;
+  action: 'start' | 'stop' | 'pause' | 'resume' | 'cancel';
+}
+
+export interface WorkflowExecutionControlResponse {
+  success: boolean;
+  execution_id: string;
+  new_status: string;
+  message: string;
+  error?: string;
+}
+
 // Agent Generation Types
 export interface MessageData {
   role: string;
@@ -676,6 +732,42 @@ class ApiService {
     return response.data;
   }
 
+  // Workflow Execution API Methods
+  async startWorkflowExecution(request: WorkflowExecutionRequest): Promise<WorkflowExecutionResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionResponse>('/workflow-execution/start', request);
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: startWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowExecutionStatus(executionId: string): Promise<WorkflowExecutionStatus> {
+    try {
+      const response = await this.client.get<WorkflowExecutionStatus>(`/workflow-execution/status/${executionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: getWorkflowExecutionStatus error:', error);
+      throw error;
+    }
+  }
+
+  async controlWorkflowExecution(control: WorkflowExecutionControl): Promise<WorkflowExecutionControlResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionControlResponse>('/workflow-execution/control', control);
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: controlWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async streamWorkflowExecutionUpdates(executionId: string): Promise<EventSource> {
+    const url = `${this.client.defaults.baseURL}/workflow-execution/stream/${executionId}`;
+    return new EventSource(url);
+  }
+
   async createConversation(conversation: ConversationCreate): Promise<ConversationRead> {
     const response = await this.client.post<ConversationRead>('/conversations/', conversation);
     return response.data;
@@ -751,6 +843,27 @@ class ApiService {
       const response = await this.client.post(`/agents/${agentId}/documents/associate`, {
         document_ids: documentIds,
       });
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      throw error;
+    }
+  }
+
+  async disassociateDocumentFromAgent(
+    agentId: string | number,
+    documentId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to disassociate document:', { agentId, documentId });
+    
+    try {
+      const response = await this.client.delete(`/agents/${agentId}/documents/${documentId}/disassociate`);
       console.log('✅ API response:', response.data);
       return response.data;
     } catch (error: any) {

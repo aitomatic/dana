@@ -9,14 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload, MultiplePagesPlus } from 'iconoir-react';
 import { apiService } from '@/lib/api';
-import { useDocumentOperations } from '@/hooks/use-api';
 import { useDocumentStore } from '@/stores/document-store';
 import { toast } from 'sonner';
 import { PdfViewer } from '@/components/library/pdf-viewer';
 
+/**
+ * DocumentsTab Component
+ * 
+ * This component manages documents associated with a specific agent.
+ * It distinguishes between two types of documents:
+ * 1. Documents added from the library (have topic_id) - can only be disassociated, not deleted
+ * 2. Documents uploaded directly to the agent (no topic_id) - can be completely deleted
+ * 
+ * When deleting documents:
+ * - Library documents: Removes association with agent, keeps document in library
+ * - Direct uploads: Completely deletes document from system
+ */
+
 // Convert DocumentRead to LibraryItem format
 const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
   const extension = doc.original_filename.split('.').pop() || '';
+  
   return {
     id: doc.id.toString(),
     name: doc.original_filename,
@@ -44,8 +57,18 @@ const DocumentsTab: React.FC = () => {
   // Use document store for state management
   const { documents, isLoading, fetchDocuments } = useDocumentStore();
 
-  // API hooks for operations not in store
-  const { deleteDocument, isDeleting } = useDocumentOperations();
+  // Cleanup function to reset deletion state
+  const resetDeletionState = () => {
+    setShowDeleteConfirm(false);
+    setSelectedItem(null);
+  };
+
+  // Load agent-specific documents using store
+  useEffect(() => {
+    if (agent_id) {
+      fetchDocuments({ agent_id: parseInt(agent_id) });
+    }
+  }, [agent_id, fetchDocuments]);
 
   const handleDragDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -69,13 +92,6 @@ const DocumentsTab: React.FC = () => {
       setUploadingFiles([]);
     }
   };
-
-  // Load agent-specific documents using store
-  useEffect(() => {
-    if (agent_id) {
-      fetchDocuments({ agent_id: parseInt(agent_id) });
-    }
-  }, [agent_id, fetchDocuments]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -164,27 +180,39 @@ const DocumentsTab: React.FC = () => {
   };
 
   const handleDeleteItem = async (item: LibraryItem) => {
+    // Simple deletion - always disassociate from agent
+    console.log('🗑️ Delete item requested:', {
+      itemId: item.id,
+      itemName: item.name
+    });
+    
     setSelectedItem(item);
     setShowDeleteConfirm(true);
   };
 
+  /**
+   * Handle document removal from agent
+   * 
+   * SIMPLIFIED: Always disassociate documents from agents instead of deleting them.
+   * This ensures documents remain in the library and can be re-added to other agents.
+   */
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
 
     try {
       const documentId = parseInt(selectedItem.id);
-      console.log('🗑️ Deleting document:', { documentId, documentName: selectedItem.name });
       
-      await deleteDocument(documentId);
-      toast.success('Document deleted successfully');
+
+      await apiService.disassociateDocumentFromAgent(agent_id!, documentId);
+      toast.success(`"${selectedItem.name}" removed successfully.`);
       
-      console.log('🔄 Refreshing documents after deletion...');
+      console.log('🔄 Refreshing documents after disassociation...');
       await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
       
-      console.log('✅ Document deletion and refresh completed');
+      console.log('✅ Document disassociation and refresh completed');
     } catch (error) {
-      console.error('❌ Failed to delete document:', error);
-      toast.error('Failed to delete document');
+      console.error('❌ Failed to remove document from agent:', error);
+      toast.error('Failed to remove document from agent');
     } finally {
       setShowDeleteConfirm(false);
       setSelectedItem(null);
@@ -285,6 +313,11 @@ const DocumentsTab: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="text-lg font-semibold text-gray-700">Documents</div>
+          {data.length > 0 && (
+            <div className="text-sm text-gray-500">
+              {data.length} document{data.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           {/* <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0}>
@@ -356,16 +389,13 @@ const DocumentsTab: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setSelectedItem(null);
-        }}
+        onClose={resetDeletionState}
         onConfirm={handleConfirmDelete}
-        title="Delete Document"
-        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
-        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+        title="Remove from Agent"
+        description={`Are you sure you want to remove "${selectedItem?.name}" from this agent? The document will remain in the library and can be added to other agents.`}
+        confirmText="Remove from Agent"
         cancelText="Cancel"
-        variant="destructive"
+        variant="default"
       />
 
       {/* PDF Viewer */}

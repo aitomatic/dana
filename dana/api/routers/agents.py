@@ -14,7 +14,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import List
-
+import json
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -1004,6 +1004,9 @@ async def upload_agent_document(
     except Exception as e:
         logger.error(f"Error uploading document to agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
 
 
 @router.post("/{agent_id}/documents/associate")
@@ -1017,20 +1020,13 @@ async def associate_documents_with_agent(
     try:
         # Extract document_ids from request body
         document_ids = request_body.document_ids
-        if not document_ids:
-            raise HTTPException(status_code=400, detail="document_ids is required and must not be empty")
-        
-        # Validate document_ids is a list of integers
-        if not isinstance(document_ids, list):
-            raise HTTPException(status_code=400, detail="document_ids must be a list")
-        
-        # Get the agent to verify it exists
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
-            raise HTTPException(status_code=404, detail="Agent not found")
-
+            raise HTTPException(status_code=404, detail=f"Agent with id {agent_id} not found")
+        
         # Get folder_path from agent config
         folder_path = agent.config.get("folder_path") if agent.config else None
+
         if not folder_path:
             # Generate folder path and save it to config
             folder_path = os.path.join("agents", f"agent_{agent_id}")
@@ -1047,35 +1043,91 @@ async def associate_documents_with_agent(
             db.commit()
             db.refresh(agent)
 
-        # Update documents to associate them with the agent
+        # NOTE : Associate documents by placing them inside agent config for now
+        current_associated_documents = set(agent.config.get("associated_documents", []))
         updated_count = 0
-        for doc_id in document_ids:
-            document = db.query(Document).filter(Document.id == doc_id).first()
-            if document:
-                # Check if document is already associated with this agent
-                if document.agent_id == agent_id:
-                    continue
-                
-                # Update the document's agent_id
-                document.agent_id = agent_id
-                updated_count += 1
+        if set(document_ids).difference(current_associated_documents):
+            # If there are new documents to associate, add them to the agent config
+            agent.config["associated_documents"] = list(current_associated_documents.union(set(document_ids)))
 
-        if updated_count > 0:
-            db.commit()
-            
+            # Force update by marking as dirty
+            flag_modified(agent, "config")
+
+            # Associate documents with the agent
+            new_file_paths = await document_service.associate_documents_with_agent(agent_id, folder_path, document_ids, db)
+
             # Clear cache to force RAG rebuild with new documents
-            clear_agent_cache(folder_path)
+            if len(new_file_paths) > 0:
+                db.commit()
+                clear_agent_cache(folder_path)
 
-        return {
-            "success": True,
-            "message": f"Successfully associated {updated_count} document(s) with agent {agent_id}",
-            "updated_count": updated_count,
-        }
+            updated_count = len(new_file_paths)
+
+            return {
+                "success": True,
+                "message": f"Successfully associated {updated_count} document(s) with agent {agent_id}",
+                "updated_count": updated_count,
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Documents {document_ids} are already associated with agent {agent_id}",
+                "updated_count": 0,
+            }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error associating documents with agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{agent_id}/documents/{document_id}/disassociate")
+async def disassociate_document_from_agent(
+    agent_id: int,
+    document_id: int,
+    db: Session = Depends(get_db),
+    document_service: DocumentService = Depends(get_document_service),
+):
+    """Disassociate a document from an agent without deleting the document."""
+    try:
+        # Get the agent to verify it exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with id {agent_id} not found")
+
+        # Get the document to verify it exists and is associated with this agent
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Associate documents by placing them inside agent config for now
+        current_associated_documents = agent.config.get("associated_documents", [])
+        agent.config["associated_documents"] = list(set(current_associated_documents) - {document_id})
+
+        # Force update by marking as dirty
+        flag_modified(agent, "config")
+
+        # Remove the association by setting agent_id to None
+        agent_folder_path = agent.config.get("folder_path") if agent.config else None
+        if agent_folder_path:
+            document_fp = document_service.get_agent_associated_fp(agent_folder_path, document.original_filename)
+            if os.path.exists(document_fp):
+                os.remove(document_fp)
+            # Clear cache to force RAG rebuild without the disassociated document
+            clear_agent_cache(agent_folder_path)
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"Successfully disassociated document {document_id} from agent {agent_id}",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disassociating document {document_id} from agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
