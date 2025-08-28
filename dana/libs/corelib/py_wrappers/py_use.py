@@ -60,6 +60,14 @@ def py_use(
     if _name is None:
         _name = Misc.generate_base64_uuid(length=6)
 
+    # Check if resource already exists in context
+    try:
+        existing_resource = context.get_resource(_name)
+        if existing_resource is not None:
+            return existing_resource
+    except:  # noqa: E722
+        pass  # Resource doesn't exist, continue with creation
+
     if function_name.lower() == "mcp":
         from dana.integrations.mcp import MCPResource
 
@@ -112,6 +120,7 @@ def py_use(
             name=_name,
             **tabular_index_params,
         )
+        Misc.safe_asyncio_run(resource.initialize)
         context.set_resource(_name, resource)
         return resource
     else:
