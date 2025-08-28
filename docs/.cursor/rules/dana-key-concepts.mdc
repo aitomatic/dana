@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+
+# Dana Key Concepts
+
+Agent
+
+Definition: The core actor in Dana with built-in primitives — reasoning, problem solving, planning, memory, and concurrency.
+
+Role: On its own, an agent can already think and act.
+👉 Agent = intelligent actor
+
+Resource
+
+Definition: An explicitly declared gateway to external systems or capabilities (e.g., APIs, databases, RAG documents, Excel, sensors).
+
+Role: Extends what an agent can do by connecting it to the outside world.
+👉 Resources = tools that give agents real-world access
+
+Workflow
+
+Definition: A reusable execution plan that encodes structured knowledge. Not just a one-off run, but a codified sequence of steps an agent can repeatedly execute.
+
+Role: Transforms agents from ad-hoc actors into reliable, repeatable, and scalable executors of knowledge.
+👉 Workflows = knowledge as action
