@@ -18,7 +18,7 @@ class TestSetModelFunction(unittest.TestCase):
         self.context = SandboxContext()
         # Clear any existing environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY"]:
+        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "DANA_MOCK_LLM"]:
             self.original_env[key] = os.environ.get(key)
 
     def tearDown(self):
@@ -114,17 +114,24 @@ class TestSetModelFunction(unittest.TestCase):
 
         self.assertEqual(result, "openai:gpt-4o")
 
-    @patch("dana.core.builtin_types.resource.builtins.llm_resource_type.LLMResourceType.create_default_instance")
-    def test_set_model_llm_resource_creation_error(self, mock_create_default_instance):
+    @patch("dana.core.lang.sandbox_context.SandboxContext.get_system_llm_resource")
+    def test_set_model_llm_resource_creation_error(self, mock_get_system_llm_resource):
         """Test error handling when LLMResourceType creation fails."""
-        # Mock create_default_instance to raise an exception
-        mock_create_default_instance.side_effect = Exception("Resource creation failed")
+        # Mock get_system_llm_resource to return None, which will trigger the creation path
+        mock_get_system_llm_resource.return_value = None
 
-        with self.assertRaises(SandboxError) as context:
-            set_model_function(self.context, "openai:gpt-4o")
+        # Mock the create_default_instance call that will be made
+        with patch(
+            "dana.core.builtin_types.resource.builtins.llm_resource_type.LLMResourceType.create_default_instance"
+        ) as mock_create_default_instance:
+            # Mock create_default_instance to raise an exception
+            mock_create_default_instance.side_effect = Exception("Resource creation failed")
 
-        self.assertIn("Unexpected error setting model", str(context.exception))
-        self.assertIn("Resource creation failed", str(context.exception))
+            with self.assertRaises(SandboxError) as context:
+                set_model_function(self.context, "openai:gpt-4o")
+
+            self.assertIn("Unexpected error setting model", str(context.exception))
+            self.assertIn("Resource creation failed", str(context.exception))
 
     def test_set_model_preserves_existing_llm_name(self):
         """Test that updating model preserves the existing LLM resource name."""
@@ -293,8 +300,15 @@ class TestSetModelFunction(unittest.TestCase):
         result = _find_closest_model_match("nonexistent", available_models)
         self.assertIsNone(result)
 
-    def test_set_model_no_parameters_no_current_model(self):
+    @patch("dana.common.sys_resource.llm.llm_configuration_manager.LLMConfigurationManager.get_available_models")
+    @patch("dana.core.lang.sandbox_context.SandboxContext.get_system_llm_resource")
+    def test_set_model_no_parameters_no_current_model(self, mock_get_system_llm_resource, mock_get_available_models):
         """Test set_model() with no parameters when no current model is set."""
+        # Mock get_system_llm_resource to return None (no current model)
+        mock_get_system_llm_resource.return_value = None
+        # Mock get_available_models to return empty list
+        mock_get_available_models.return_value = []
+
         # Redirect stdout to capture print statements
         import io
         import sys
@@ -311,8 +325,8 @@ class TestSetModelFunction(unittest.TestCase):
             # Should display current model and available options in concise format
             output = captured_output.getvalue()
             self.assertIn("Current model: None", output)
-            # Could show either available models or no models message depending on API keys
-            self.assertTrue("Available models:" in output or "No models available" in output)
+            # Should show no models available message
+            self.assertIn("No models available", output)
 
         finally:
             sys.stdout = sys.__stdout__
@@ -345,8 +359,15 @@ class TestSetModelFunction(unittest.TestCase):
         finally:
             sys.stdout = sys.__stdout__
 
-    def test_set_model_no_parameters_displays_models(self):
+    @patch("dana.common.sys_resource.llm.llm_configuration_manager.LLMConfigurationManager.get_available_models")
+    @patch("dana.core.lang.sandbox_context.SandboxContext.get_system_llm_resource")
+    def test_set_model_no_parameters_displays_models(self, mock_get_system_llm_resource, mock_get_available_models):
         """Test that set_model() displays available models in a simple list."""
+        # Mock get_system_llm_resource to return None (no current model)
+        mock_get_system_llm_resource.return_value = None
+        # Mock get_available_models to return empty list
+        mock_get_available_models.return_value = []
+
         # Redirect stdout to capture print statements
         import io
         import sys
@@ -360,9 +381,9 @@ class TestSetModelFunction(unittest.TestCase):
             # Should return current model status
             self.assertEqual(result, "None")
 
-            # Should display available models or no models message
+            # Should display no models available message
             output = captured_output.getvalue()
-            self.assertTrue("Available models:" in output or "No models available" in output)
+            self.assertIn("No models available", output)
 
         finally:
             sys.stdout = sys.__stdout__
