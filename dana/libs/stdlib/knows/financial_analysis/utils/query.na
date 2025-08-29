@@ -12,6 +12,8 @@ def query_fin_data(with_resources: list,
                    as_at_period_end: bool = False,
                    n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]
     """Query financial statement item value(s)."""
+    print('*** THIS FUNCTION STRANGELY EXECUTES UPON BEING IMPORTED!!! ***')
+
     print(f'resources: {with_resources}')
 
     company = reason('Get the name of the main company these resources concern. Return just that name and no other text.',
@@ -21,7 +23,7 @@ def query_fin_data(with_resources: list,
     currency = reason('Get the main currency these resources use. Return a concise label for that currency, e.g. "USD", "JPY", etc.',
                       resources=with_resources)
     print(f'currency: {currency}')
-    
+
     period = reason('Get the main/latest fiscal period these resources concern. Return a concise label for that fiscal period, e.g. "FY2025", "1Q2025", etc.',
                     resources=with_resources)
     print(f'period: {period}')
