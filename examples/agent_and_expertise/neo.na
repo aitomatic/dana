@@ -101,4 +101,4 @@ from knows import financial_analysis
 Neo = ExpertAgent(expertise=[financial_analysis])
 Neo.solve(PROBLEM,
           resources=financial_analysis.FinDoc(company='AMD', period='2024',
-                                              path='resources/docs/AMD_2022_10K.pdf'))
+                                              path='../resources/docs/AMD_2022_10K.pdf'))
