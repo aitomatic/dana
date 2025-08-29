@@ -20,15 +20,33 @@ def validate_agent_module(na_file_path: str, na_module):
         tuple: (agent_name, agent_description, solve_function) if valid, raises exception if invalid
     """
     try:
-        # Find all agent classes in the module
+        # Find all agent instances in the module
         agents = []
         for attr in dir(na_module):
             attr_value = getattr(na_module, attr)
-            if callable(attr_value):
+
+            # Skip built-in agents and system attributes
+            if attr.startswith("_") or attr in ["BasicAgent", "DanaAgent"]:
+                continue
+
+            # Check if it's an agent instance (has name, description, and solve method)
+            if (
+                hasattr(attr_value, "name")
+                and hasattr(attr_value, "description")
+                and hasattr(attr_value, "solve")
+                and callable(getattr(attr_value, "solve", None))
+            ):
+                agents.append(attr_value)
+            # Also check if it's a callable that returns an agent (for backward compatibility)
+            elif callable(attr_value):
                 try:
                     agent = attr_value()
-                    # Check if it has the required agent attributes
-                    if hasattr(agent, "name") and hasattr(agent, "description") and hasattr(agent, "solve"):
+                    if (
+                        hasattr(agent, "name")
+                        and hasattr(agent, "description")
+                        and hasattr(agent, "solve")
+                        and callable(getattr(agent, "solve", None))
+                    ):
                         agents.append(agent)
                 except Exception:
                     continue
@@ -142,6 +160,7 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
     try:
         # Add the directory containing the .na file to search paths
         file_dir = str(Path(na_file_path).parent)
+        print(f"Adding {file_dir} to search paths")
         py2na.enable_module_imports(search_paths=[file_dir])
 
         # Import the Dana module (without .na extension)
