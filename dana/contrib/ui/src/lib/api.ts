@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import type { AxiosInstance, AxiosResponse } from 'axios';
 import type { TopicRead, TopicCreate, TopicFilters } from '@/types/topic';
@@ -83,6 +84,63 @@ export interface ChatResponse {
   message_id: number;
   agent_response: string;
   context?: Record<string, any>;
+  error?: string;
+}
+
+// Workflow Execution Types
+export interface WorkflowExecutionRequest {
+  agent_id: number;
+  workflow_name: string;
+  input_data?: Record<string, any>;
+  execution_mode?: string;
+}
+
+export interface WorkflowExecutionResponse {
+  success: boolean;
+  execution_id: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  result?: any;
+  error?: string;
+  step_results: WorkflowStepResult[];
+}
+
+export interface WorkflowStepResult {
+  step_index: number;
+  step_name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  start_time?: string;
+  end_time?: string;
+  execution_time: number;
+  result?: any;
+  error?: string;
+  input?: any;
+}
+
+export interface WorkflowExecutionStatus {
+  execution_id: string;
+  workflow_name: string;
+  status: string;
+  current_step: number;
+  total_steps: number;
+  execution_time: number;
+  step_results: WorkflowStepResult[];
+  error?: string;
+  last_update: string;
+}
+
+export interface WorkflowExecutionControl {
+  execution_id: string;
+  action: 'start' | 'stop' | 'pause' | 'resume' | 'cancel';
+}
+
+export interface WorkflowExecutionControlResponse {
+  success: boolean;
+  execution_id: string;
+  new_status: string;
+  message: string;
   error?: string;
 }
 
@@ -404,7 +462,7 @@ class ApiService {
   // Document API Methods
   async getDocuments(filters?: DocumentFilters): Promise<DocumentRead[]> {
     console.log('🌐 API: getDocuments called with filters:', filters);
-    
+
     const params = new URLSearchParams();
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
@@ -413,13 +471,17 @@ class ApiService {
 
     const url = `/documents/?${params.toString()}`;
     console.log('🌐 API: Requesting URL:', url);
-    
+
     try {
       const response = await this.client.get<DocumentRead[]>(url);
       console.log('📥 API: getDocuments response:', {
         status: response.status,
         count: response.data?.length || 0,
-        data: response.data?.map(d => ({ id: d.id, name: d.original_filename, agent_id: d.agent_id }))
+        data: response.data?.map((d) => ({
+          id: d.id,
+          name: d.original_filename,
+          agent_id: d.agent_id,
+        })),
       });
       return response.data;
     } catch (error) {
@@ -676,6 +738,54 @@ class ApiService {
     return response.data;
   }
 
+  // Workflow Execution API Methods
+  async startWorkflowExecution(
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecutionResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionResponse>(
+        '/workflow-execution/start',
+        request,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: startWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowExecutionStatus(executionId: string): Promise<WorkflowExecutionStatus> {
+    try {
+      const response = await this.client.get<WorkflowExecutionStatus>(
+        `/workflow-execution/status/${executionId}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: getWorkflowExecutionStatus error:', error);
+      throw error;
+    }
+  }
+
+  async controlWorkflowExecution(
+    control: WorkflowExecutionControl,
+  ): Promise<WorkflowExecutionControlResponse> {
+    try {
+      const response = await this.client.post<WorkflowExecutionControlResponse>(
+        '/workflow-execution/control',
+        control,
+      );
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: controlWorkflowExecution error:', error);
+      throw error;
+    }
+  }
+
+  async streamWorkflowExecutionUpdates(executionId: string): Promise<EventSource> {
+    const url = `${this.client.defaults.baseURL}/workflow-execution/stream/${executionId}`;
+    return new EventSource(url);
+  }
+
   async createConversation(conversation: ConversationCreate): Promise<ConversationRead> {
     const response = await this.client.post<ConversationRead>('/conversations/', conversation);
     return response.data;
@@ -746,7 +856,7 @@ class ApiService {
     documentIds: number[],
   ): Promise<{ success: boolean; message: string }> {
     console.log('🌐 API call to associate documents:', { agentId, documentIds });
-    
+
     try {
       const response = await this.client.post(`/agents/${agentId}/documents/associate`, {
         document_ids: documentIds,
@@ -758,7 +868,30 @@ class ApiService {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
+      });
+      throw error;
+    }
+  }
+
+  async disassociateDocumentFromAgent(
+    agentId: string | number,
+    documentId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    console.log('🌐 API call to disassociate document:', { agentId, documentId });
+
+    try {
+      const response = await this.client.delete(
+        `/agents/${agentId}/documents/${documentId}/disassociate`,
+      );
+      console.log('✅ API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config,
       });
       throw error;
     }
