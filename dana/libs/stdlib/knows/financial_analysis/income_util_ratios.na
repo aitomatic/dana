@@ -83,4 +83,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_retention_ratio(resources) = calc_div_payout_ratio | _retention_ratio
+def calc_retention_ratio(resources: list) -> float = calc_div_payout_ratio | _retention_ratio
