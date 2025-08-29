@@ -1,44 +1,26 @@
 """Calculate & Assess Financial Health Metrics using Dana Workflows."""
 
 
-from financial_analysis.cap_intens import assess_cap_intens
-from financial_analysis.liquidity import calc_quick_ratio, calc_ccc
-
-from financial_analysis.utils import FinDoc
+from knows.financial_analysis import assess_cap_intens, calc_quick_ratio
 
 
-# several financial cases to study
-DOCS_DIR = 'financial_analysis/docs'
+FinDoc = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
+print(FinDoc)
 
-MMM = FinDoc(company='3M', period='2022', path=f'{DOCS_DIR}/3M_2022_10K.pdf')
-AMD = FinDoc(company='AMD', period='2022', path=f'{DOCS_DIR}/AMD_2022_10K.pdf')
-GEN_MILLS = FinDoc(company='General Mills', period='2019', path=f'{DOCS_DIR}/GENERALMILLS_2019_10K.pdf')
-VERIZON = FinDoc(company='Verizon', period='2022', path=f'{DOCS_DIR}/VERIZON_2022_10K.pdf')
+
+print(reason('find the main company mentioned in this report', resources=[FinDoc]))
 
 
 # Capital-Intensity assessment
-print(f"
-3M's CAPITAL INTENSITY
-======================
-{assess_cap_intens(MMM)}
-")
-
-print(f"
-VERIZON's CAPITAL INTENSITY
-===========================
-{assess_cap_intens(VERIZON)}
-")
+print(f'
+CAPITAL INTENSITY
+=================
+{assess_cap_intens(resources=[FinDoc])}
+')
 
 # Liquidity assessment by Quick Ratio
-print(f"
-AMD's QUICK RATIO
-=================
-{calc_quick_ratio(AMD)}
-")
-
-# Liquidity assessment by Cash Conversion Cycle (CCC)
-print(f"
-GENERAL MILLS's CASH CONVERSION CYCLE (CCC)
-===========================================
-{calc_ccc(GEN_MILLS)}
-")
+print(f'
+QUICK RATIO
+===========
+{calc_quick_ratio(resources=[FinDoc])}
+')
