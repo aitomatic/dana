@@ -11,28 +11,20 @@ alwaysApply: true
 **Before starting ANY documentation work, consult these rules:**
 
 - [ ] **Read `@docgen-sources.mdc`** - Understand key sources for Dana knowledge
-- [ ] **Read `@technical-writing-standard.mdc`** - Follow required writing standards
+- [ ] **Read `@technical-writing-standards.mdc`** - Follow required writing standards
 - [ ] **Read `@dana-key-concepts.mdc`** - Ensure you understand core Dana concepts
 - [ ] **Read `@dana-docs-maintenance.mdc`** - Follow documentation maintenance rules
 
-### 2. VALIDATE PUBLIC AVAILABILITY
-**Before writing, verify the feature is publicly available:**
 
-- [ ] Feature exists in public repo AND PyPI
-- [ ] Feature works with current PyPI version
-- [ ] Feature is not experimental/internal-only
-- [ ] Feature is not archived/deprecated
 
-**STOP if any fail - DO NOT document non-public features.**
-
-### 3. RESEARCH USING DOCGEN SOURCES
+### 2. RESEARCH USING DOCGEN SOURCES
 **Follow the information gathering process from `@docgen-sources.mdc`:**
 
 - [ ] Consult primary sources (specs, primers, public repo, PyPI)
 - [ ] Review secondary sources (cookbook, community, related primers)
 - [ ] Validate against PyPI version
 
-### 4. DETERMINE DOCUMENTATION TYPE
+### 3. DETERMINE DOCUMENTATION TYPE
 **Based on audience and purpose:**
 
 - [ ] **Quickstart**: Essential for 5-minute success?
@@ -41,8 +33,8 @@ alwaysApply: true
 - [ ] **Reference**: Syntax/API documentation?
 - [ ] **Example**: Working code sample?
 
-### 5. APPLY TECHNICAL WRITING STANDARDS
-**Follow `@technical-writing-standard.mdc` for:**
+### 4. APPLY TECHNICAL WRITING STANDARDS
+**Follow `@technical-writing-standards.mdc` for:**
 
 - [ ] Language and style requirements
 - [ ] Content organization standards
@@ -50,7 +42,7 @@ alwaysApply: true
 - [ ] Code component formatting
 - [ ] Structural components usage
 
-### 6. CREATE CONTENT
+### 5. CREATE CONTENT
 **While writing, ensure:**
 
 - [ ] Use appropriate template from `.ai/templates/`
@@ -58,7 +50,7 @@ alwaysApply: true
 - [ ] Test all code examples against PyPI version
 - [ ] Follow maintenance guidelines from `@dana-docs-maintenance.mdc`
 
-### 7. QUALITY ASSURANCE
+### 6. QUALITY ASSURANCE
 **Before finalizing:**
 
 - [ ] Examples work with PyPI version
@@ -93,129 +85,7 @@ alwaysApply: true
 4. **Test against PyPI** version
 5. **Update version badges** and compatibility info
 
-## EMERGENCY STOP CONDITIONS
 
-**STOP immediately if:**
-- ❌ Feature not in public repo/PyPI
-- ❌ Feature is experimental/internal-only
-- ❌ Examples don't work with PyPI version
-- ❌ Content references archived patterns
-- ❌ Content breaks 5-minute success goal
-
-## SUCCESS CRITERIA
-
-Documentation is successful when:
-- [ ] All referenced rules have been followed
-- [ ] Feature confirmed publicly available
-- [ ] User achieves success in <5 minutes
-- [ ] Examples tested and working
-- [ ] No archived content referenced
-- [ ] Content positioned for right audience
-
-**Remember: This is the META process. Always refer to the specific rules for details.**
-
-
-**Remember: Documentation IS the product experience. Every word accelerates or blocks adoption.**
-
-
-# Documentation Process Checklist
-
-## META PROCESS: How to Do Documentation Right
-
-### 1. REFRESH YOUR UNDERSTANDING
-**Before starting ANY documentation work, consult these rules:**
-
-- [ ] **Read `@docgen-sources.mdc`** - Understand key sources for Dana knowledge
-- [ ] **Read `@technical-writing-standard.mdc`** - Follow required writing standards
-- [ ] **Read `@dana-key-concepts.mdc`** - Ensure you understand core Dana concepts
-- [ ] **Read `@dana-docs-maintenance.mdc`** - Follow documentation maintenance rules
-
-### 2. VALIDATE PUBLIC AVAILABILITY
-**Before writing, verify the feature is publicly available:**
-
-- [ ] Feature exists in public repo AND PyPI
-- [ ] Feature works with current PyPI version
-- [ ] Feature is not experimental/internal-only
-- [ ] Feature is not archived/deprecated
-
-**STOP if any fail - DO NOT document non-public features.**
-
-### 3. RESEARCH USING DOCGEN SOURCES
-**Follow the information gathering process from `@docgen-sources.mdc`:**
-
-- [ ] Consult primary sources (specs, primers, public repo, PyPI)
-- [ ] Review secondary sources (cookbook, community, related primers)
-- [ ] Validate against PyPI version
-
-### 4. DETERMINE DOCUMENTATION TYPE
-**Based on audience and purpose:**
-
-- [ ] **Quickstart**: Essential for 5-minute success?
-- [ ] **Cookbook**: Solves specific problem?
-- [ ] **Primer**: Deep conceptual understanding?
-- [ ] **Reference**: Syntax/API documentation?
-- [ ] **Example**: Working code sample?
-
-### 5. APPLY TECHNICAL WRITING STANDARDS
-**Follow `@technical-writing-standard.mdc` for:**
-
-- [ ] Language and style requirements
-- [ ] Content organization standards
-- [ ] User-centered approach
-- [ ] Code component formatting
-- [ ] Structural components usage
-
-### 6. CREATE CONTENT
-**While writing, ensure:**
-
-- [ ] Use appropriate template from `.ai/templates/`
-- [ ] Include Dana key concepts from `@dana-key-concepts.mdc`
-- [ ] Test all code examples against PyPI version
-- [ ] Follow maintenance guidelines from `@dana-docs-maintenance.mdc`
-
-### 7. QUALITY ASSURANCE
-**Before finalizing:**
-
-- [ ] Examples work with PyPI version
-- [ ] User achieves success in <5 minutes
-- [ ] Code is copy-paste runnable
-- [ ] No archived content referenced
-- [ ] Dana advantage vs Python is clear
-
-## WHAT TO DO: Updating Documentation
-
-### WHEN TO UPDATE
-**Follow triggers from `@dana-docs-maintenance.mdc`:**
-
-**Priority 1 (Update immediately):**
-- [ ] New syntax introduced
-- [ ] Breaking changes
-- [ ] New built-in agents/models
-- [ ] Installation process changes
-- [ ] New PyPI release
-
-**Priority 2 (Update within 24 hours):**
-- [ ] New methods/functions added
-- [ ] Performance improvements
-- [ ] New patterns discovered
-- [ ] Bug fixes affecting examples
-
-### HOW TO UPDATE
-**Follow process from `@dana-docs-maintenance.mdc`:**
-1. **Archive old content** to `.archive/[YYYY-MM-DD]/`
-2. **Create migration guide** for breaking changes
-3. **Update examples** to work with current version
-4. **Test against PyPI** version
-5. **Update version badges** and compatibility info
-
-## EMERGENCY STOP CONDITIONS
-
-**STOP immediately if:**
-- ❌ Feature not in public repo/PyPI
-- ❌ Feature is experimental/internal-only
-- ❌ Examples don't work with PyPI version
-- ❌ Content references archived patterns
-- ❌ Content breaks 5-minute success goal
 
 ## SUCCESS CRITERIA
 
