@@ -1,0 +1,91 @@
+# agent created with 1 LoC,
+# already packed with capabilities illustrated below
+agent Neo
+
+
+# Built-in Conversational Memory
+# ==============================
+
+print(Neo.chat('Hi! My name is Christopher.'))
+print(Neo.chat('I specialize in neurosymbolic AI.'))
+
+print(Neo.chat('What is my name and what do I know?'))
+
+
+# Reasoning with Contextual Awareness
+# ===================================
+
+REASONING_PREMISE = 'I am in Sapporo. Is it too hot to go outside today? I prefer temperature from 20 to 25 C.'
+
+print('
+
+BASE REASONING WITHOUT RESOURCES
+--------------------------------
+')
+print(Neo.reason(REASONING_PREMISE))
+
+
+print('
+
+CONTEXT-AWARE ENHANCED REASONING WITH RESOURCES
+-----------------------------------------------
+')
+
+# TODO:
+# resource WeatherInfo:
+#     type = 'mcp'
+#     url = 'http://127.0.0.1:8000/mcp'
+WeatherInfo = use('mcp', url='http://127.0.0.1:8000/mcp')
+
+# enhanced reasoning: with context from `WeatherInfo`,
+# agent returns more informed & definitive reasoned conclusion
+print(Neo.reason(REASONING_PREMISE, resources=[WeatherInfo]))
+
+
+# Problem-Solving with Expertise
+# ==============================
+
+PROBLEM = "Is AMD's liquidity healthy?"
+
+print('
+
+BASE PROBLEM-SOLVING WITHOUT RESOURCES & WORKFLOW
+-------------------------------------------------
+')
+print(Neo.solve(PROBLEM))
+
+
+print('
+
+CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
+-----------------------------------------------------
+')
+
+# TODO:
+# resource AMDAnnualReport:
+#     type = 'rag'
+#     path = 'resources/docs/AMD_2022_10K.pdf'
+AMDAnnualReport = use('rag', sources=['resources/docs/AMD_2022_10K.pdf'])
+
+# enhanced problem-solving: with context from `AMDAnnualReport`,
+# agent returns more informed solution
+
+print(Neo.solve(PROBLEM, resources=[AMDAnnualReport]))
+
+
+print('
+
+EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
+-------------------------------------------------------------
+')
+# expert-level problem-solving: with expert workflow,
+# agent returns precise, sophisticated solution
+from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab
+
+# TODO:
+# workflow CalcQuickRatio:
+#     pipeline = [([get_cash_and_equiv, get_st_inv, get_recvable] | sum), get_curr_liab] | (lambda x, y: x / y)
+#     description = "Calculate Quick Ratio by summing Cash & Cash Equivalents, Short-Term Investments and Accounts Receivable, then dividing the sum by Current Liabilities"
+
+# Neo.solve(PROBLEM, resources=[AMDAnnualReport], workflow=CalcQuickRatio)
+Neo.solve(PROBLEM)
