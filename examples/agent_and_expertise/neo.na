@@ -66,8 +66,8 @@ CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
 # TODO:
 # resource AMDAnnualReport:
 #     type = 'rag'
-#     path = 'resources/docs/AMD_2022_10K.pdf'
-AMDAnnualReport = use('rag', sources=['resources/docs/AMD_2022_10K.pdf'])
+#     path = '../resources/docs/AMD_2022_10K.pdf'
+AMDAnnualReport = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
 
 print(Neo.solve(PROBLEM, resources=[AMDAnnualReport]))
 
@@ -99,4 +99,6 @@ from blueprints.expert_agent import ExpertAgent
 from knows import financial_analysis
 
 Neo = ExpertAgent(expertise=[financial_analysis])
-Neo.solve(PROBLEM, resources=[AMDAnnualReport])
+Neo.solve(PROBLEM,
+          resources=financial_analysis.FinDoc(company='AMD', period='2024',
+                                              path='../resources/docs/AMD_2022_10K.pdf'))
