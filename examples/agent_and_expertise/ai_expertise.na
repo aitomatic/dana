@@ -1,0 +1,28 @@
+"""Domain Expertise in AI."""
+
+
+from pathlib.py import Path
+
+
+__all__ = ['answer_any_question_regarding_ai']
+
+
+def summarize_doc(doc_path: str) -> str:
+    return llm(f"Summarize 3 most important points from below document:
+
+DOCUMENT TO SUMMARIZE:
+```
+{Path(doc_path).read_text(encoding='utf-8')}
+```")
+
+
+def highlight_opinions_on_ai(info: str) -> str:
+    return llm(f'Highlight key opinions on AI in following information:
+
+INFORMATION:
+```
+{info}
+```')
+
+
+def answer_any_question_regarding_ai(doc_path: str) -> str = summarize_doc | highlight_opinions_on_ai
