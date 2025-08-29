@@ -17,3 +17,10 @@ and use to build effective agentic-AI systems based on Dana.
 
 The directory `dana/specs/` and its nested directories & files contain
 the design specifications and technical architectures for various components of Dana.
+
+## Curated Examples
+
+The directory `docs/.ai-only/curated_examples/` contains carefully selected and tested
+examples that demonstrate best practices and common patterns for building agentic-AI
+systems with Dana. These examples serve as reference implementations and should be
+consulted when creating documentation that includes code samples.
