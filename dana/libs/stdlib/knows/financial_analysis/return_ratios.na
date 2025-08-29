@@ -28,7 +28,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_roa_ratio(resources) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
+def calc_roa_ratio(resources: list) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
 
 
 def _roe_ratio(intermed_results):
@@ -47,4 +47,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_roe_ratio(resources) -> float = [get_net_income, get_equity_2y] | _roe_ratio
+def calc_roe_ratio(resources: list) -> float = [get_net_income, get_equity_2y] | _roe_ratio

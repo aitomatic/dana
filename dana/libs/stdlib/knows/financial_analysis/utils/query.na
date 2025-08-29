@@ -12,15 +12,19 @@ def query_fin_data(resources,
                    as_at_period_end: bool = False,
                    n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]
     """Query financial statement item value(s)."""
+    print(f'resources: {resources}')
 
     company = reason('Get the name of the main company these resources concern. Return just that name and no other text.',
                      resources=resources)
+    print(f'company: {company}')
 
     currency = reason('Get the main currency these resources use. Return a concise label for that currency, e.g. "USD", "JPY", etc.',
                       resources=resources)
+    print(f'currency: {currency}')
     
     period = reason('Get the main/latest fiscal period these resources concern. Return a concise label for that fiscal period, e.g. "FY2025", "1Q2025", etc.',
                     resources=resources)
+    print(f'period: {period}')
 
     if n_years == 1:
         time_period_str: str = (f'as at {period.upper()} fiscal period end'

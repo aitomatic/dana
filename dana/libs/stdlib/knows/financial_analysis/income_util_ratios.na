@@ -31,7 +31,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_int_cov_ratio(resources) -> float = [get_ebit, get_int_exp] | _int_cov_ratio
+def calc_int_cov_ratio(resources: list) -> float = [get_ebit, get_int_exp] | _int_cov_ratio
 
 
 def _eff_tax_rate(intermed_results):
@@ -49,7 +49,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_eff_tax_rate(resources) -> float = [get_tax_exp, get_ebt] | _eff_tax_rate
+def calc_eff_tax_rate(resources: list) -> float = [get_tax_exp, get_ebt] | _eff_tax_rate
 
 
 def _div_payout_ratio(intermed_results):
@@ -67,7 +67,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_div_payout_ratio(resources) -> float = [get_div, get_net_income] | _div_payout_ratio
+def calc_div_payout_ratio(resources: list) -> float = [get_div, get_net_income] | _div_payout_ratio
 
 
 def _retention_ratio(intermed_results):
