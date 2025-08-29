@@ -8,6 +8,7 @@ Key improvements:
 - Proper error handling with clear messages
 """
 
+import threading
 from collections.abc import Callable
 from typing import Any
 
@@ -20,14 +21,18 @@ from dana.common.sys_resource.vector_store import VectorStoreFactory
 
 
 class TabularIndexResource(BaseSysResource):
-    """Clean tabular index resource using dependency injection.
+    """Singleton tabular index resource using dependency injection."""
 
-    This class acts as an orchestrator that:
-    1. Validates and creates configuration objects
-    2. Uses factories to create components
-    3. Injects dependencies into TabularIndex
-    4. Provides a clean public API
-    """
+    _instance = None
+    _lock = threading.Lock()
+    _initialized = False  # Add this flag
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._initialized = False  # Initialize flag
+            return cls._instance
 
     def __init__(
         self,
@@ -47,53 +52,43 @@ class TabularIndexResource(BaseSysResource):
         name: str = "tabular_index",
         description: str | None = None,
     ):
-        """Initialize TabularIndexResource with clean configuration.
+        """Initialize TabularIndexResource with clean configuration."""
+        # Prevent re-initialization in singleton
+        if getattr(self, "_initialized", False):
+            return
 
-        Args:
-            source: Path to data source (CSV or Parquet)
-            embedding_field_constructor: Function to create embedding text from row
-            table_name: Name for the index table (also used as DuckDB filename: {table_name}.db)
-            metadata_constructor: Optional function to create metadata from row
-            excluded_embed_metadata_keys: Keys to exclude from embedding metadata
-            cache_dir: Directory for DuckDB storage (default: .cache/tabular_index)
-            force_reload: Whether to force reload from source
-            embedding_config: Optional embedding override in format:
-                            {"model_name": "openai:text-embedding-3-large", "dimensions": 3072}
-            vector_store_config: Optional vector store configuration
-            name: Resource name
-            description: Resource description
+        # Add double-check pattern for thread safety
+        with self._lock:
+            if getattr(self, "_initialized", False):
+                return
 
-        Note:
-            Each TabularIndexResource creates its own DuckDB file at:
-            {cache_dir}/{sanitized_table_name}.db with table name {table_name}
-            This ensures proper resource isolation and prevents naming conflicts.
-        """
-        super().__init__(name, description)
+            super().__init__(name, description)
 
-        # Create clean configuration objects
-        self._tabular_config = self._create_tabular_config(
-            source=source,
-            embedding_field_constructor=embedding_field_constructor,
-            table_name=table_name,
-            metadata_constructor=metadata_constructor,
-            excluded_embed_metadata_keys=excluded_embed_metadata_keys or [],
-            cache_dir=cache_dir,
-            force_reload=force_reload,
-        )
+            # Create clean configuration objects
+            self._tabular_config = self._create_tabular_config(
+                source=source,
+                embedding_field_constructor=embedding_field_constructor,
+                table_name=table_name,
+                metadata_constructor=metadata_constructor,
+                excluded_embed_metadata_keys=excluded_embed_metadata_keys or [],
+                cache_dir=cache_dir,
+                force_reload=force_reload,
+            )
 
-        self._embedding_config = self._create_embedding_config(embedding_config)
-        self._vector_store_config = self._create_vector_store_config(vector_store_config)
+            self._embedding_config = self._create_embedding_config(embedding_config)
+            self._vector_store_config = self._create_vector_store_config(vector_store_config)
 
-        # Create components using factories (dependency injection)
-        self._embedding_model, self._embed_dim = self._create_embedding_component()
-        self._vector_store_provider = self._create_vector_store_component()
+            # Create components using factories (dependency injection)
+            self._embedding_model, self._embed_dim = self._create_embedding_component()
+            self._vector_store_provider = self._create_vector_store_component()
 
-        # Create TabularIndex with injected dependencies - clean and simple!
-        self._tabular_index = TabularIndex(
-            config=self._tabular_config, embedding_model=self._embedding_model, provider=self._vector_store_provider
-        )
+            # Create TabularIndex with injected dependencies - clean and simple!
+            self._tabular_index = TabularIndex(
+                config=self._tabular_config, embedding_model=self._embedding_model, provider=self._vector_store_provider
+            )
 
-        self._is_ready = False
+            self._is_ready = False
+            self._initialized = True  # Mark as initialized
 
     def _create_tabular_config(
         self,

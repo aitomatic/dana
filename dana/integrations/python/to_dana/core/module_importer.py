@@ -343,6 +343,13 @@ class DanaModuleLoader(MetaPathFinder, Loader):
 
     def _is_standard_library_module(self, fullname: str) -> bool:
         """Check if this is a standard library module that should be skipped."""
+        # First check: modules already loaded in sys.modules should be skipped
+        # This handles all third-party packages automatically
+        base_module = fullname.split(".")[0]
+        if base_module in sys.modules:
+            return True
+
+        # Second check: known standard library and common third-party modules
         stdlib_modules = {
             "os",
             "sys",
@@ -379,9 +386,12 @@ class DanaModuleLoader(MetaPathFinder, Loader):
             "random",
             "hashlib",
             "dana",
+            "llama_index",
+            "openai",
+            "anthropic",
+            "aisuite",
         }
 
-        base_module = fullname.split(".")[0]
         return base_module in stdlib_modules or base_module.startswith("_")
 
 
@@ -412,7 +422,7 @@ def uninstall_import_hook() -> None:
     """Uninstall the Dana module import hook."""
     global _module_loader
 
-    if _module_loader and _module_loader in sys.meta_path:
+    if _module_loader and sys.meta_path and _module_loader in sys.meta_path:
         sys.meta_path.remove(_module_loader)
         _module_loader = None
         print("Dana module import hook uninstalled!")
