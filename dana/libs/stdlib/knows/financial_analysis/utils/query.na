@@ -7,23 +7,23 @@ from .types import FinDoc
 __all__ = ['query_fin_data']
 
 
-def query_fin_data(resources,
+def query_fin_data(with_resources: list,
                    line_item: str, statement: str,
                    as_at_period_end: bool = False,
                    n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]
     """Query financial statement item value(s)."""
-    print(f'resources: {resources}')
+    print(f'resources: {with_resources}')
 
     company = reason('Get the name of the main company these resources concern. Return just that name and no other text.',
-                     resources=resources)
+                     resources=with_resources)
     print(f'company: {company}')
 
     currency = reason('Get the main currency these resources use. Return a concise label for that currency, e.g. "USD", "JPY", etc.',
-                      resources=resources)
+                      resources=with_resources)
     print(f'currency: {currency}')
     
     period = reason('Get the main/latest fiscal period these resources concern. Return a concise label for that fiscal period, e.g. "FY2025", "1Q2025", etc.',
-                    resources=resources)
+                    resources=with_resources)
     print(f'period: {period}')
 
     if n_years == 1:
@@ -78,4 +78,4 @@ of {company.upper()}
 
 {time_period_str}?')
 
-    return reason(query, resources=resources)
+    return reason(query, resources=with_resources)

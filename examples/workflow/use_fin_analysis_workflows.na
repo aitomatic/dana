@@ -8,19 +8,16 @@ FinDoc = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
 print(FinDoc)
 
 
-print(reason('find the main company mentioned in this report', resources=[FinDoc]))
-
-
 # Capital-Intensity assessment
 print(f'
 CAPITAL INTENSITY
 =================
-{assess_cap_intens(resources=[FinDoc])}
+{assess_cap_intens([FinDoc])}
 ')
 
 # Liquidity assessment by Quick Ratio
 print(f'
 QUICK RATIO
 ===========
-{calc_quick_ratio(resources=[FinDoc])}
+{calc_quick_ratio([FinDoc])}
 ')
