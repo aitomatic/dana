@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import type { AxiosInstance, AxiosResponse } from 'axios';
 import type { TopicRead, TopicCreate, TopicFilters } from '@/types/topic';
@@ -115,6 +116,7 @@ export interface WorkflowStepResult {
   execution_time: number;
   result?: any;
   error?: string;
+  input?: any;
 }
 
 export interface WorkflowExecutionStatus {
@@ -460,7 +462,7 @@ class ApiService {
   // Document API Methods
   async getDocuments(filters?: DocumentFilters): Promise<DocumentRead[]> {
     console.log('🌐 API: getDocuments called with filters:', filters);
-    
+
     const params = new URLSearchParams();
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
@@ -469,13 +471,17 @@ class ApiService {
 
     const url = `/documents/?${params.toString()}`;
     console.log('🌐 API: Requesting URL:', url);
-    
+
     try {
       const response = await this.client.get<DocumentRead[]>(url);
       console.log('📥 API: getDocuments response:', {
         status: response.status,
         count: response.data?.length || 0,
-        data: response.data?.map(d => ({ id: d.id, name: d.original_filename, agent_id: d.agent_id }))
+        data: response.data?.map((d) => ({
+          id: d.id,
+          name: d.original_filename,
+          agent_id: d.agent_id,
+        })),
       });
       return response.data;
     } catch (error) {
@@ -733,9 +739,14 @@ class ApiService {
   }
 
   // Workflow Execution API Methods
-  async startWorkflowExecution(request: WorkflowExecutionRequest): Promise<WorkflowExecutionResponse> {
+  async startWorkflowExecution(
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecutionResponse> {
     try {
-      const response = await this.client.post<WorkflowExecutionResponse>('/workflow-execution/start', request);
+      const response = await this.client.post<WorkflowExecutionResponse>(
+        '/workflow-execution/start',
+        request,
+      );
       return response.data;
     } catch (error) {
       console.error('❌ API: startWorkflowExecution error:', error);
@@ -745,7 +756,9 @@ class ApiService {
 
   async getWorkflowExecutionStatus(executionId: string): Promise<WorkflowExecutionStatus> {
     try {
-      const response = await this.client.get<WorkflowExecutionStatus>(`/workflow-execution/status/${executionId}`);
+      const response = await this.client.get<WorkflowExecutionStatus>(
+        `/workflow-execution/status/${executionId}`,
+      );
       return response.data;
     } catch (error) {
       console.error('❌ API: getWorkflowExecutionStatus error:', error);
@@ -753,9 +766,14 @@ class ApiService {
     }
   }
 
-  async controlWorkflowExecution(control: WorkflowExecutionControl): Promise<WorkflowExecutionControlResponse> {
+  async controlWorkflowExecution(
+    control: WorkflowExecutionControl,
+  ): Promise<WorkflowExecutionControlResponse> {
     try {
-      const response = await this.client.post<WorkflowExecutionControlResponse>('/workflow-execution/control', control);
+      const response = await this.client.post<WorkflowExecutionControlResponse>(
+        '/workflow-execution/control',
+        control,
+      );
       return response.data;
     } catch (error) {
       console.error('❌ API: controlWorkflowExecution error:', error);
@@ -838,7 +856,7 @@ class ApiService {
     documentIds: number[],
   ): Promise<{ success: boolean; message: string }> {
     console.log('🌐 API call to associate documents:', { agentId, documentIds });
-    
+
     try {
       const response = await this.client.post(`/agents/${agentId}/documents/associate`, {
         document_ids: documentIds,
@@ -850,7 +868,7 @@ class ApiService {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
       });
       throw error;
     }
@@ -861,9 +879,11 @@ class ApiService {
     documentId: number,
   ): Promise<{ success: boolean; message: string }> {
     console.log('🌐 API call to disassociate document:', { agentId, documentId });
-    
+
     try {
-      const response = await this.client.delete(`/agents/${agentId}/documents/${documentId}/disassociate`);
+      const response = await this.client.delete(
+        `/agents/${agentId}/documents/${documentId}/disassociate`,
+      );
       console.log('✅ API response:', response.data);
       return response.data;
     } catch (error: any) {
@@ -871,7 +891,7 @@ class ApiService {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        config: error.config,
       });
       throw error;
     }
