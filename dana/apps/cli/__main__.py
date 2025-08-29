@@ -31,7 +31,7 @@ Usage:
   dana                         Start the Dana Terminal User Interface
   dana [file.na]               Execute a DANA file
   dana deploy [file.na]        Deploy a .na file as an agent endpoint
-      [--protocol mcp|a2a]     Protocol to use (default: a2a)
+      [--protocol mcp|a2a|restful]  Protocol to use (default: restful)
       [--host HOST]            Host to bind the server (default: 0.0.0.0)
       [--port PORT]            Port to bind the server (default: 8000)
   dana -h, --help              Show help message
@@ -42,16 +42,17 @@ Usage:
 Examples:
   dana deploy agent1.na
   dana deploy agent1.na --protocol mcp
-  dana deploy agent1.na --protocol a2a --host 0.0.0.0 --port 9000
+  dana deploy agent1.na --protocol restful --host 0.0.0.0 --port 9000
+
 """
 
 import argparse
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 import uvicorn
 
@@ -142,7 +143,11 @@ def execute_file(file_path, debug=False, script_args=None):
 
     # Run the source code with custom search paths
     result = DanaSandbox.execute_string_once(
+<<<<<<< HEAD
         source_code=source_code_with_main, filename=str(file_path_obj), debug_mode=debug, module_search_paths=[str(file_path_obj.parent.resolve())]
+=======
+        source_code=source_code, filename=str(file_path), debug_mode=debug, module_search_paths=[str(file_path.parent.resolve())]
+>>>>>>> 35136cbd (Add RESTful API support for Dana agent deployment)
     )
 
     if result.success:
@@ -284,9 +289,9 @@ def main():
         parser_deploy.add_argument("file", help="Single .na file to deploy")
         parser_deploy.add_argument(
             "--protocol",
-            choices=["mcp", "a2a"],
-            default="a2a",
-            help="Protocol to use (default: a2a)",
+            choices=["mcp", "a2a", "restful"],
+            default="restful",
+            help="Protocol to use (default: restful)",
         )
         parser_deploy.add_argument(
             "--host",
@@ -424,8 +429,10 @@ def handle_deploy_command(args):
 
         if args.protocol == "mcp":
             return deploy_thru_mcp(file_path, args)
-        else:
+        elif args.protocol == "a2a":
             return deploy_thru_a2a(file_path, args)
+        else:  # restful
+            return deploy_thru_restful(file_path, args)
 
     except Exception as e:
         print(f"\n{colors.error(f'Deploy command error: {str(e)}')}")
@@ -464,6 +471,23 @@ def deploy_thru_a2a(file_path, args):
         return 0
     except Exception as e:
         print(f"\n{colors.error('A2A Server Error:')}")
+        print(f"  {str(e)}")
+        return 1
+
+
+def deploy_thru_restful(file_path, args):
+    """Deploy file using RESTful API protocol."""
+    try:
+        from dana.apps.cli.deploy.restapi import deploy_dana_agent_rest_api
+
+        deploy_dana_agent_rest_api(file_path, args.host, args.port)
+        return 0
+    except ImportError as e:
+        print(f"\n{colors.error('Error: Required packages missing')}")
+        print(f"{colors.bold(f'Please install required packages: {e}')}")
+        return 1
+    except Exception as e:
+        print(f"\n{colors.error('RESTful API Server Error:')}")
         print(f"  {str(e)}")
         return 1
 
