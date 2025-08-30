@@ -10,7 +10,7 @@ agent_blueprint ExpertAgent:
     expertise: list = []
 
 
-def (dxa: ExpertAgent) solve(problem, resources=None) -> str:
+def (dxa: ExpertAgent) solve(problem, with_resources: list['Module'] = None) -> str:
     """Struct function `solve` dedicated to `ExpertAgent` struct."""
 
     if dxa.expertise:
@@ -46,7 +46,7 @@ def (dxa: ExpertAgent) solve(problem, resources=None) -> str:
             print(f'{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}` on `{resources}`...')
 
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
-            expert_workflow_result = closest_matched_expert_workflow(resources)
+            expert_workflow_result = closest_matched_expert_workflow(with_resources)
 
             expert_workflow_solution_prompt: str = f"""
                 Given the following problem:
