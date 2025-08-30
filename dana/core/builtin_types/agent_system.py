@@ -91,7 +91,7 @@ def default_plan_method(
 
 def default_solve_method(
         agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-        resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
+        with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
     """Default solve method for agent structs - delegates to instance method."""
 
     # Simply delegate to the built-in implementation
@@ -100,7 +100,7 @@ def default_solve_method(
         return agent_instance._solve_impl(sandbox_context=sandbox_context,
                                           problem=problem,
                                           context=context,
-                                          resources=resources,
+                                          with_resources=with_resources,
                                           by_workflow=by_workflow)
 
     return PromiseFactory.create_promise(computation=wrapper)
@@ -388,7 +388,7 @@ class AgentInstance(StructInstance):
             return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-              resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
+              with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
         """Execute agent problem-solving method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "solve")
@@ -398,7 +398,7 @@ class AgentInstance(StructInstance):
                           sandbox_context=sandbox_context,
                           problem=problem,
                           context=context,
-                          resources=resources,
+                          with_resources=with_resources,
                           by_workflow=by_workflow)
         else:
             # Fallback to built-in solve implementation
@@ -406,7 +406,7 @@ class AgentInstance(StructInstance):
                                         sandbox_context=sandbox_context,
                                         problem=problem,
                                         context=context,
-                                        resources=resources,
+                                        with_resources=with_resources,
                                         by_workflow=by_workflow)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:

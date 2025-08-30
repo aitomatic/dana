@@ -87,7 +87,7 @@ EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
 #     pipeline = [([get_cash_and_equiv, get_st_inv, get_recvable] | sum), get_curr_liab] | (lambda x, y: x / y)
 #     description = "Calculate Quick Ratio by summing Cash & Cash Equivalents, Short-Term Investments and Accounts Receivable, then dividing the sum by Current Liabilities"
 
-print(Neo.solve(PROBLEM, resources=[AMDAnnualReport], by_workflow=calc_quick_ratio))
+print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=calc_quick_ratio))
 
 
 # Instant Expert Agent
@@ -99,4 +99,4 @@ from blueprints.expert_agent import ExpertAgent
 from knows import financial_analysis
 
 Neo = ExpertAgent(expertise=[financial_analysis])
-print(Neo.solve(PROBLEM, resources=[AMDAnnualReport]))
+print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport]))
