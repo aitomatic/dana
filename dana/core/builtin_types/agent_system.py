@@ -721,8 +721,31 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             # Build agent description for context
             agent_description = self._build_agent_description()
 
-            # Create problem-solving prompt
-            solving_prompt = f"""
+            if by_workflow:
+                expert_workflow_result = by_workflow(with_resources)
+
+                solving_prompt = f"""
+You are {agent_description}
+
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following result(s) from an expert workflow:
+
+EXPERT WORKFLOW RESULT:
+```
+{expert_workflow_result}
+```
+
+Return your best conclusion about / solution to the posed problem.
+"""
+
+            else:
+                solving_prompt = f"""
 You are {agent_description}
 
 Please provide a solution to this problem: {problem}
