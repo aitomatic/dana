@@ -1,4 +1,4 @@
-# Data Access and Utilities Module
+# Common Utility Functions
 # Handles result standardization, deduplication, and data formatting
 
 def standardize_vector_results(items: list) -> list:
