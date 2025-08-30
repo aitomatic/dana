@@ -713,7 +713,7 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             return f"Agent {self.agent_type.name} planning: {task} (fields: {agent_fields}) - Error: {str(e)}"
 
     def _solve_impl(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-                    resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> str:
+                    with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> str:
         """Implementation of problem-solving functionality using py_reason with POET enhancements."""
         try:
             from dana.libs.corelib.py_wrappers.py_reason import py_reason
