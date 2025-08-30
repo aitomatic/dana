@@ -79,7 +79,7 @@ print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport]))
 
 # expert-level problem-solving: with expert workflow,
 # agent returns precise, sophisticated solution
-from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, calc_quick_ratio
+from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, CalcQuickRatio
 
 # TODO:
 # workflow CalcQuickRatio:
@@ -91,7 +91,7 @@ print('
 EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
 =============================================================
 ')
-print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=calc_quick_ratio))
+print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=CalcQuickRatio))
 
 
 # Instant Expert Agent

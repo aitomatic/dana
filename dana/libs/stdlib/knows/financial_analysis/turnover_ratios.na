@@ -6,9 +6,9 @@ from .fin_statements import get_rev, get_cogs
 
 
 __all__ = [
-    'calc_total_asset_turnover_ratio',
-    'calc_fixed_asset_turnover_ratio',
-    'calc_inventory_turnover_ratio',
+    'CalcTotalAssetTurnoverRatio',
+    'CalcFixedAssetTurnoverRatio',
+    'CalcInventoryTurnoverRatio',
 ]
 
 
@@ -29,7 +29,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_total_asset_turnover_ratio(with_resources: list) -> float = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
+def CalcTotalAssetTurnoverRatio(with_resources: list) -> float = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
 
 
 def _fixed_asset_turnover_ratio(intermed_results):
@@ -48,7 +48,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_fixed_asset_turnover_ratio(with_resources: list) -> float = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
+def CalcFixedAssetTurnoverRatio(with_resources: list) -> float = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
 
 
 def _inventory_turnover_ratio(intermed_results):
@@ -67,4 +67,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_inventory_turnover_ratio(with_resources: list) -> float = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio
+def CalcInventoryTurnoverRatio(with_resources: list) -> float = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio

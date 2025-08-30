@@ -13,19 +13,19 @@ from .fin_statements import get_rev, get_cogs, get_net_income
 
 
 __all__ = [
-    'calc_quick_ratio',
+    'CalcQuickRatio',
 
-    'calc_net_work_cap',
-    'calc_work_cap_ratio',
+    'CalcNetWorkCap',
+    'CalcWorkCapRatio',
 
-    'calc_op_cf_ratio',
-    'calc_fcf',
-    'calc_fcf_conv_ratio',
+    'CalcOpCfRatio',
+    'CalcFcf',
+    'CalcFcfConvRatio',
 
-    'calc_dio',
-    'calc_dso',
-    'calc_dpo',
-    'calc_ccc',
+    'CalcDio',
+    'CalcDso',
+    'CalcDpo',
+    'CalcCcc',
 ]
 
 
@@ -45,7 +45,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_quick_asset(with_resources: list) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
+def CalcQuickAsset(with_resources: list) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
 def _quick_asset_2y(intermed_results):
@@ -64,7 +64,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_quick_asset_2y(with_resources: list) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
+def CalcQuickAsset2y(with_resources: list) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
 
 
 def _quick_asset_3y(intermed_results):
@@ -83,7 +83,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_quick_asset_3y(with_resources: list) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
+def CalcQuickAsset3y(with_resources: list) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
 
 
 def _quick_ratio(intermed_results):
@@ -103,7 +103,7 @@ From there, assess liquidity health:
 
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_quick_ratio(with_resources: list) -> float = [calc_quick_asset, get_curr_liab] | _quick_ratio
+def CalcQuickRatio(with_resources: list) -> float = [CalcQuickAsset, get_curr_liab] | _quick_ratio
 
 
 def _net_work_cap(intermed_results):
@@ -118,7 +118,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_net_work_cap(with_resources: list) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
+def CalcNetWorkCap(with_resources: list) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
 
 
 def _work_cap_ratio(intermed_results):
@@ -133,7 +133,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_work_cap_ratio(with_resources: list) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
+def CalcWorkCapRatio(with_resources: list) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
 
 
 def _op_cf_ratio(intermed_results):
@@ -151,7 +151,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_op_cf_ratio(with_resources: list) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
+def CalcOpCfRatio(with_resources: list) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
 
 
 def _fcf(intermed_results):
@@ -170,7 +170,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_fcf(with_resources: list) -> float = [get_op_cf, get_capex] | _fcf
+def CalcFcf(with_resources: list) -> float = [get_op_cf, get_capex] | _fcf
 
 
 def _fcf_conv_ratio(intermed_results):
@@ -188,7 +188,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_fcf_conv_ratio(with_resources: list) -> float = [calc_fcf, get_net_income] | _fcf_conv_ratio
+def CalcFcfConvRatio(with_resources: list) -> float = [CalcFcf, get_net_income] | _fcf_conv_ratio
 
 
 def _dio(intermed_results):
@@ -206,7 +206,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_dio(with_resources: list) -> float = [get_inventory_2y, get_cogs] | _dio
+def CalcDio(with_resources: list) -> float = [get_inventory_2y, get_cogs] | _dio
 
 
 def _dso(intermed_results):
@@ -224,7 +224,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_dso(with_resources: list) -> float = [get_recvable_2y, get_rev] | _dso
+def CalcDso(with_resources: list) -> float = [get_recvable_2y, get_rev] | _dso
 
 
 def _dpo(intermed_results):
@@ -243,7 +243,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_dpo(with_resources: list) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
+def CalcDpo(with_resources: list) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
 
 
 def _ccc(intermed_results):
@@ -262,4 +262,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def calc_ccc(with_resources: list) -> float = [calc_dio, calc_dso, calc_dpo] | _ccc
+def CalcCcc(with_resources: list) -> float = [CalcDio, CalcDso, CalcDpo] | _ccc
