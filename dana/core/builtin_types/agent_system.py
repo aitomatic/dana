@@ -130,7 +130,7 @@ def default_recall_method(agent_instance: "AgentInstance", sandbox_context: Sand
 
 def default_reason_method(
         agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None,
-        resources: list[ResourceInstance] | None = None) -> Any:
+        with_resources: list[ResourceInstance] | None = None) -> Any:
     """Default reason method for agent structs - delegates to instance method."""
 
     # Check if we have a type context that needs to be preserved
@@ -432,7 +432,7 @@ class AgentInstance(StructInstance):
             return default_recall_method(self, sandbox_context, key)
 
     def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None,
-               resources: list[ResourceInstance] | None = None) -> Any:
+               with_resources: list[ResourceInstance] | None = None) -> Any:
         """Execute agent reasoning method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "reason")
@@ -442,14 +442,14 @@ class AgentInstance(StructInstance):
                           sandbox_context=sandbox_context,
                           premise=premise,
                           context=context,
-                          resources=resources)
+                          with_resources=with_resources)
         else:
             # Fallback to built-in reason implementation
             return default_reason_method(self,
                                          sandbox_context=sandbox_context,
                                          premise=premise,
                                          context=context,
-                                         resources=resources)
+                                         with_resources=with_resources)
 
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
@@ -793,7 +793,7 @@ Use the agent's capabilities and context to formulate an effective response. Ret
             return None
 
     def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None,
-                     resources: list[ResourceInstance] | None = None) -> str:
+                     with_resources: list[ResourceInstance] | None = None) -> str:
         """Implementation of reasoning functionality using py_reason with POET enhancements."""
         try:
             from dana.libs.corelib.py_wrappers.py_reason import py_reason

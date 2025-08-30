@@ -65,7 +65,7 @@ print('
 CONTEXT-AWARE ENHANCED REASONING WITH RESOURCES
 ===============================================
 ')
-print(Neo.reason(REASONING_PREMISE, resources=[WeatherInfo]))
+print(Neo.reason(REASONING_PREMISE, with_resources=[WeatherInfo]))
 
 
 # Problem-Solving with Expertise
