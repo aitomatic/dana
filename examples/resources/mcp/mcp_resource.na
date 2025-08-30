@@ -1,0 +1,7 @@
+"""MCP Querying."""
+
+
+weather_mcp = use('mcp', url='http://127.0.0.1:8000/mcp')
+
+def __main__(city='Tokyo'):
+    print(reason(f'What is the weather in {city} like today?', resources=[weather_mcp]))

@@ -28,42 +28,40 @@ from .fin_statements import get_tax_exp, get_tax_exp_2y, get_tax_exp_3y
 from .fin_statements import get_net_income, get_net_income_2y, get_net_income_3y
 from .fin_statements import get_div, get_div_2y, get_div_3y
 
-from .adj_income import calc_ebitda, calc_ebitda_2y, calc_ebitda_3y
+from .adj_income import CalcEbitda, CalcEbitda2y, CalcEbitda3y
 
-from .turnover_ratios import calc_total_asset_turnover_ratio
-from .turnover_ratios import calc_fixed_asset_turnover_ratio
-from .turnover_ratios import calc_inventory_turnover_ratio
+from .turnover_ratios import CalcTotalAssetTurnoverRatio
+from .turnover_ratios import CalcFixedAssetTurnoverRatio
+from .turnover_ratios import CalcInventoryTurnoverRatio
 
-from .margin_ratios import calc_cogs_margin, calc_cogs_margin_3y_avg
-from .margin_ratios import calc_gross_margin, calc_gross_margin_3y_avg
-from .margin_ratios import calc_ebitda_margin, calc_ebitda_margin_3y_avg
-from .margin_ratios import calc_da_margin
-from .margin_ratios import calc_op_margin, calc_op_margin_3y_avg
-from .margin_ratios import calc_ebit_margin, calc_ebit_margin_3y_avg
-from .margin_ratios import calc_net_margin, calc_net_margin_3y_avg
+from .margin_ratios import CalcCogsMargin, CalcCogsMargin3yAvg
+from .margin_ratios import CalcGrossMargin, CalcGrossMargin3yAvg
+from .margin_ratios import CalcEbitdaMargin, CalcEbitdaMargin3yAvg
+from .margin_ratios import CalcDaMargin
+from .margin_ratios import CalcOpMargin, CalcOpMargin3yAvg
+from .margin_ratios import CalcEbitMargin, CalcEbitMargin3yAvg
+from .margin_ratios import CalcNetMargin, CalcNetMargin3yAvg
 
-from .return_ratios import calc_roa_ratio, calc_roe_ratio
+from .return_ratios import CalcRoaRatio, CalcRoeRatio
 
-from .liquidity import calc_quick_ratio
-from .liquidity import calc_net_work_cap, calc_work_cap_ratio
-from .liquidity import calc_op_cf_ratio
-from .liquidity import calc_fcf, calc_fcf_conv_ratio
-from .liquidity import calc_dio, calc_dso, calc_dpo, calc_ccc
+from .liquidity import CalcQuickRatio
+from .liquidity import CalcNetWorkCap, CalcWorkCapRatio
+from .liquidity import CalcOpCfRatio
+from .liquidity import CalcFcf, CalcFcfConvRatio
+from .liquidity import CalcDio, CalcDso, CalcDpo, CalcCcc
 
-from .cap_intens import calc_fixed_asset_over_total_asset
-from .cap_intens import calc_total_asset_over_rev
-from .cap_intens import calc_capex_over_rev, calc_capex_over_rev_3y_avg
-from .cap_intens import assess_cap_intens
+from .cap_intens import CalcFixedAssetOverTotalAsset
+from .cap_intens import CalcTotalAssetOverRev
+from .cap_intens import CalcCapexOverRev, CalcCapexOverRev3yAvg
+from .cap_intens import AssessCapIntens
 
-from .leverage import calc_total_debt, calc_total_debt_2y, calc_total_debt_3y
-from .leverage import calc_de_ratio
+from .leverage import CalcTotalDebt, CalcTotalDebt2y, CalcTotalDebt3y
+from .leverage import CalcDeRatio
 
-from .income_util_ratios import calc_int_cov_ratio
-from .income_util_ratios import calc_eff_tax_rate
-from .income_util_ratios import calc_div_payout_ratio
-from .income_util_ratios import calc_retention_ratio
-
-from .utils import FinDoc
+from .income_util_ratios import CalcIntCovRatio
+from .income_util_ratios import CalcEffTaxRate
+from .income_util_ratios import CalcDivPayoutRatio
+from .income_util_ratios import CalcRetentionRatio
 
 
 __all__ = [
@@ -83,7 +81,7 @@ __all__ = [
 
     'get_lt_debt', 'get_lt_debt_2y', 'get_lt_debt_3y',
     'get_st_debt', 'get_st_debt_2y', 'get_st_debt_3y',
-    'calc_total_debt', 'calc_total_debt_2y', 'calc_total_debt_3y',
+    'CalcTotalDebt', 'CalcTotalDebt2y', 'CalcTotalDebt3y',
 
     'get_equity', 'get_equity_2y', 'get_equity_3y',
 
@@ -99,7 +97,7 @@ __all__ = [
 
     'get_ga_exp', 'get_ga_exp_2y', 'get_ga_exp_3y',
 
-    'calc_ebitda', 'calc_ebitda_2y', 'calc_ebitda_3y',
+    'CalcEbitda', 'CalcEbitda2y', 'CalcEbitda3y',
 
     'get_deprec_and_amort', 'get_deprec_and_amort_2y', 'get_deprec_and_amort_3y',
 
@@ -117,59 +115,57 @@ __all__ = [
 
     'get_div', 'get_div_2y', 'get_div_3y',
 
-    'calc_total_asset_turnover_ratio',
-    'calc_fixed_asset_turnover_ratio',
-    'calc_inventory_turnover_ratio',
+    'CalcTotalAssetTurnoverRatio',
+    'CalcFixedAssetTurnoverRatio',
+    'CalcInventoryTurnoverRatio',
 
-    'calc_cogs_margin', 'calc_cogs_margin_3y_avg',
+    'CalcCogsMargin', 'CalcCogsMargin3yAvg',
 
-    'calc_gross_margin', 'calc_gross_margin_3y_avg',
+    'CalcGrossMargin', 'CalcGrossMargin3yAvg',
 
-    'calc_ebitda_margin', 'calc_ebitda_margin_3y_avg',
+    'CalcEbitdaMargin', 'CalcEbitdaMargin3yAvg',
 
-    'calc_da_margin',
+    'CalcDaMargin',
 
-    'calc_op_margin', 'calc_op_margin_3y_avg',
+    'CalcOpMargin', 'CalcOpMargin3yAvg',
 
-    'calc_ebit_margin', 'calc_ebit_margin_3y_avg',
+    'CalcEbitMargin', 'CalcEbitMargin3yAvg',
 
-    'calc_net_margin', 'calc_net_margin_3y_avg',
+    'CalcNetMargin', 'CalcNetMargin3yAvg',
 
-    'calc_roa_ratio', 'calc_roe_ratio',
+    'CalcRoaRatio', 'CalcRoeRatio',
 
-    'calc_quick_ratio',
+    'CalcQuickRatio',
 
-    'calc_net_work_cap',
-    'calc_work_cap_ratio',
+    'CalcNetWorkCap',
+    'CalcWorkCapRatio',
 
-    'calc_op_cf_ratio',
+    'CalcOpCfRatio',
 
-    'calc_fcf',
-    'calc_fcf_conv_ratio',
+    'CalcFcf',
+    'CalcFcfConvRatio',
 
-    'calc_dio',
-    'calc_dso',
-    'calc_dpo',
-    'calc_ccc',
+    'CalcDio',
+    'CalcDso',
+    'CalcDpo',
+    'CalcCcc',
 
-    'calc_fixed_asset_over_total_asset',
+    'CalcFixedAssetOverTotalAsset',
 
-    'calc_total_asset_over_rev',
+    'CalcTotalAssetOverRev',
 
-    'calc_capex_over_rev', 'calc_capex_over_rev_3y_avg',
+    'CalcCapexOverRev', 'CalcCapexOverRev3yAvg',
 
-    'assess_cap_intens',
+    'AssessCapIntens',
 
-    'calc_total_debt', 'calc_total_debt_2y', 'calc_total_debt_3y',
+    'CalcTotalDebt', 'CalcTotalDebt2y', 'CalcTotalDebt3y',
 
-    'calc_de_ratio',
+    'CalcDeRatio',
 
-    'calc_int_cov_ratio',
+    'CalcIntCovRatio',
 
-    'calc_eff_tax_rate',
+    'CalcEffTaxRate',
 
-    'calc_div_payout_ratio',
-    'calc_retention_ratio',
-
-    'FinDoc',
+    'CalcDivPayoutRatio',
+    'CalcRetentionRatio',
 ]

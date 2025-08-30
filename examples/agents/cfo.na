@@ -1,0 +1,17 @@
+"""CFO Dana Expert Agent."""
+
+
+# import expert agent blueprint from `blueprints` stdlib
+from blueprints.expert_agent import ExpertAgent
+
+# import relevant expertise module(s) from `knows` stdlib
+from knows import financial_analysis
+
+
+# instantiate expert agent with relevant expertise module(s)
+JeanHu = ExpertAgent(expertise=[financial_analysis])
+
+
+# use expert agent to solve problems
+JeanHu.solve('Is AMD capital-intensive?',
+             with_resources=[use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])])

@@ -11,6 +11,7 @@
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4o-mini",
             "azure:gpt-4o",
+            "azure:gpt-4o-mini",
             "cohere:command",
             "deepseek:deepseek-chat",
             "google:gemini-1.5-pro-latest",
@@ -18,11 +19,11 @@
             "ibm_watsonx:ibm/granite-20b-multilingual",
             "local",
             "mistral:mistral-large-latest",
+            "openai:gpt-4.1",
             "openai:gpt-4.1-mini",
             "openai:gpt-4.1-nano",
-            "openai:gpt-4.1",
-            "openai:gpt-4o-mini",
             "openai:gpt-4o",
+            "openai:gpt-4o-mini",
             "xai:grok-2-vision-1212",
             "xai:grok-3-fast",
             "xai:grok-3-mini-fast",
@@ -115,7 +116,7 @@
                 "api_type": "openai",
                 "base_url": "https://api.openai.com/v1",
                 "dimension": 1024,
-                "batch_size": 512
+                "batch_size": 100
             },
             "huggingface": {
                 "api_type": "huggingface"

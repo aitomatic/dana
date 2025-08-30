@@ -13,6 +13,8 @@ from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.core.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtin_types.resource.resource_instance import ResourceInstance
+from dana.core.builtin_types.workflow_system import WorkflowInstance
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import is_promise
 from dana.core.lang.sandbox_context import SandboxContext
@@ -88,15 +90,18 @@ def default_plan_method(
 
 
 def default_solve_method(
-    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-    resources: dict[str, Any] | None = None
-) -> Any:
+        agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
+        with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
     """Default solve method for agent structs - delegates to instance method."""
 
     # Simply delegate to the built-in implementation
     # The main solve() method will handle Promise wrapping
     def wrapper():
-        return agent_instance._solve_impl(sandbox_context, problem, user_context)
+        return agent_instance._solve_impl(sandbox_context=sandbox_context,
+                                          problem=problem,
+                                          context=context,
+                                          with_resources=with_resources,
+                                          by_workflow=by_workflow)
 
     return PromiseFactory.create_promise(computation=wrapper)
 
@@ -124,8 +129,8 @@ def default_recall_method(agent_instance: "AgentInstance", sandbox_context: Sand
 
 
 def default_reason_method(
-    agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None
-) -> Any:
+        agent_instance: "AgentInstance", sandbox_context: SandboxContext, premise: str, context: dict | None = None,
+        with_resources: list[ResourceInstance] | None = None) -> Any:
     """Default reason method for agent structs - delegates to instance method."""
 
     # Check if we have a type context that needs to be preserved
@@ -382,16 +387,27 @@ class AgentInstance(StructInstance):
             # Fallback to built-in plan implementation
             return default_plan_method(self, sandbox_context, task, context)
 
-    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None, resources: dict[str, Any] | None = None) -> Any:
+    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
+              with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
         """Execute agent problem-solving method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "solve")
         if method:
             # User-defined Dana solve() method
-            return method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
+            return method(self,
+                          sandbox_context=sandbox_context,
+                          problem=problem,
+                          context=context,
+                          with_resources=with_resources,
+                          by_workflow=by_workflow)
         else:
             # Fallback to built-in solve implementation
-            return default_solve_method(self, sandbox_context=sandbox_context, problem=problem, context=context, resources=resources)
+            return default_solve_method(self,
+                                        sandbox_context=sandbox_context,
+                                        problem=problem,
+                                        context=context,
+                                        with_resources=with_resources,
+                                        by_workflow=by_workflow)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:
         """Execute agent memory storage method."""
@@ -415,16 +431,25 @@ class AgentInstance(StructInstance):
             # Fallback to built-in recall implementation
             return default_recall_method(self, sandbox_context, key)
 
-    def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> Any:
+    def reason(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None,
+               with_resources: list[ResourceInstance] | None = None) -> Any:
         """Execute agent reasoning method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "reason")
         if method:
             # User-defined Dana reason() method
-            return method(self, sandbox_context, premise, context)
+            return method(self,
+                          sandbox_context=sandbox_context,
+                          premise=premise,
+                          context=context,
+                          with_resources=with_resources)
         else:
             # Fallback to built-in reason implementation
-            return default_reason_method(self, sandbox_context, premise, context)
+            return default_reason_method(self,
+                                         sandbox_context=sandbox_context,
+                                         premise=premise,
+                                         context=context,
+                                         with_resources=with_resources)
 
     def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
         """Execute agent chat method."""
@@ -687,7 +712,8 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             agent_fields = ", ".join(f"{k}: {v}" for k, v in self.__dict__.items() if not k.startswith("_"))
             return f"Agent {self.agent_type.name} planning: {task} (fields: {agent_fields}) - Error: {str(e)}"
 
-    def _solve_impl(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> str:
+    def _solve_impl(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
+                    with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> str:
         """Implementation of problem-solving functionality using py_reason with POET enhancements."""
         try:
             from dana.libs.corelib.py_wrappers.py_reason import py_reason
@@ -695,8 +721,31 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             # Build agent description for context
             agent_description = self._build_agent_description()
 
-            # Create problem-solving prompt
-            solving_prompt = f"""
+            if by_workflow:
+                expert_workflow_result = by_workflow(with_resources)
+
+                solving_prompt = f"""
+You are {agent_description}
+
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following result(s) from an expert workflow:
+
+EXPERT WORKFLOW RESULT:
+```
+{expert_workflow_result}
+```
+
+Return your best conclusion about / solution to the posed problem.
+"""
+
+            else:
+                solving_prompt = f"""
 You are {agent_description}
 
 Please provide a solution to this problem: {problem}
@@ -743,7 +792,8 @@ Use the agent's capabilities and context to formulate an effective response. Ret
             # Memory not initialized yet
             return None
 
-    def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None) -> str:
+    def _reason_impl(self, sandbox_context: SandboxContext, premise: str, context: dict | None = None,
+                     with_resources: list[ResourceInstance] | None = None) -> str:
         """Implementation of reasoning functionality using py_reason with POET enhancements."""
         try:
             from dana.libs.corelib.py_wrappers.py_reason import py_reason
