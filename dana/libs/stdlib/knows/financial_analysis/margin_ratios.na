@@ -11,8 +11,6 @@ from .fin_statements import get_net_income, get_net_income_3y
 
 from .adj_income import calc_ebitda, calc_ebitda_3y
 
-from .utils import FinDoc
-
 
 __all__ = [
     'calc_cogs_margin', 'calc_cogs_margin_3y_avg',

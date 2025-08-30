@@ -5,8 +5,6 @@ from .fin_statements import get_ebit, get_int_exp
 from .fin_statements import get_ebt, get_tax_exp
 from .fin_statements import get_net_income, get_div
 
-from .utils import FinDoc
-
 
 __all__ = [
     'calc_int_cov_ratio',

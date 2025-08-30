@@ -7,8 +7,6 @@ from .fin_statements import get_rev, get_rev_3y
 
 from .return_ratios import calc_roa_ratio
 
-from .utils import FinDoc
-
 
 __all__ = [
     'calc_fixed_asset_over_total_asset',

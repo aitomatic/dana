@@ -4,20 +4,20 @@
 from knows.financial_analysis import assess_cap_intens, calc_quick_ratio
 
 
-FinDoc = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
-print(FinDoc)
+AMDAnnualReport = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
 
 
-# Capital-Intensity assessment
+cap_intens = assess_cap_intens([AMDAnnualReport])
+quick_ratio = calc_quick_ratio([AMDAnnualReport])
+
 print(f'
 CAPITAL INTENSITY
 =================
-{assess_cap_intens([FinDoc])}
+{cap_intens}
 ')
 
-# Liquidity assessment by Quick Ratio
 print(f'
 QUICK RATIO
 ===========
-{calc_quick_ratio([FinDoc])}
+{quick_ratio}
 ')

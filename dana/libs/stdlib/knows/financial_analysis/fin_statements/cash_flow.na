@@ -1,7 +1,7 @@
 """Cash Flow Statement Items."""
 
 
-from ..utils import query_fin_data, FinDoc, CurrAndPrevNums
+from ..utils import query_fin_data, CurrAndPrevNums
 
 
 __all__ = [

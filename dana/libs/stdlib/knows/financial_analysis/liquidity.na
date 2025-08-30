@@ -11,8 +11,6 @@ from .fin_statements import get_payable_2y
 from .fin_statements import get_op_cf, get_capex
 from .fin_statements import get_rev, get_cogs, get_net_income
 
-from .utils import FinDoc
-
 
 __all__ = [
     'calc_quick_ratio',

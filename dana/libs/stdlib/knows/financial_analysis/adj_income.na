@@ -4,8 +4,6 @@
 from .fin_statements import get_op_income, get_op_income_2y, get_op_income_3y
 from .fin_statements import get_deprec_and_amort, get_deprec_and_amort_2y, get_deprec_and_amort_3y
 
-from .utils import FinDoc
-
 
 __all__ = [
     'calc_ebitda', 'calc_ebitda_2y', 'calc_ebitda_3y',

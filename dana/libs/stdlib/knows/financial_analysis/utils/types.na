@@ -5,19 +5,8 @@ from typing.py import Optional
 
 
 __all__ = [
-    'FinDoc',
     'CurrAndPrevNums',
 ]
-
-
-# TODO: have path outside of this struct, in outer context
-struct FinDoc:
-    """Financial Document."""
-
-    company: str
-    period: str
-    currency: str = 'dollars'
-    path: Optional[str] = None
 
 
 struct CurrAndPrevNums:
