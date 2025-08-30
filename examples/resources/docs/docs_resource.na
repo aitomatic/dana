@@ -1,0 +1,6 @@
+"""Documents Querying."""
+
+
+AMDAnnualReport = use('rag', sources=['AMD_2022_10K.pdf'])
+
+reason("AMD's 2022 revenue", resources=[AMDAnnualReport])
