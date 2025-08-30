@@ -1,6 +1,6 @@
 """Documents Querying."""
 
 
-dana_primers_rag = use('rag', sources=['../../../../docs/primers'])
+AMDAnnualReport = use('rag', sources=['AMD_2022_10K.pdf'])
 
-reason("Dana's 6 core concepts", resources=[dana_primers_rag])
+reason("AMD's 2022 revenue", resources=[AMDAnnualReport])
