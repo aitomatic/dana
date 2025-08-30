@@ -1,1 +1,1 @@
-# Dana Technical Workshop: Supporting Utilities
+# Weather MCP Utilities
