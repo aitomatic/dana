@@ -58,6 +58,7 @@ class SandboxContext(Loggable):
         self._parent = parent
         self._manager = manager
         self._interpreter: DanaInterpreter | None = None
+        self._parser = None  # Store parser instance
 
         # Import and initialize error context
         from dana.core.lang.interpreter.error_context import ErrorContext
@@ -106,6 +107,7 @@ class SandboxContext(Loggable):
         """Get the interpreter instance."""
         if self._interpreter is None:
             raise RuntimeError("Interpreter not set")
+
         return self._interpreter
 
     @interpreter.setter
@@ -116,6 +118,23 @@ class SandboxContext(Loggable):
             interpreter: The interpreter instance
         """
         self._interpreter = interpreter
+
+    @property
+    def parser(self):
+        """Get the Dana parser instance."""
+        if self._parser is None:
+            raise RuntimeError("Parser not set")
+
+        return self._parser
+
+    @parser.setter
+    def parser(self, parser):
+        """Set the Dana parser instance.
+
+        Args:
+            parser: The parser instance
+        """
+        self._parser = parser
 
     @property
     def error_context(self):

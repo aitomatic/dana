@@ -183,7 +183,7 @@ class DanaInterpreter(Loggable):
     # LEVEL 2: CORE EXECUTION ENGINE (DEPENDS ON FOUNDATION & UTILITIES)
     # ============================================================================
 
-    def _execute_program(self, ast: Program, context: SandboxContext, is_sync: bool = False) -> Any:
+    def execute_ast(self, ast: Program, context: SandboxContext, is_sync: bool = False) -> Any:
         """
         Internal: Execute pre-parsed AST.
 
@@ -225,6 +225,14 @@ class DanaInterpreter(Loggable):
     def _parse_and_execute(
         self, source_code: str, context: SandboxContext, filename: str | None = None, do_transform: bool = True, is_sync: bool = False
     ) -> Any:
+        """Internal: Parse and execute Dana source code."""
+        ast = self.parse_to_ast(source_code, context, filename, do_transform, is_sync)
+        result = self.execute_ast(ast, context, is_sync=is_sync)
+        return result
+
+    def parse_to_ast(
+        self, source_code: str, context: SandboxContext, filename: str | None = None, do_transform: bool = True, is_sync: bool = False
+    ) -> Program:
         """
         Internal: Parse and execute Dana source code.
 
@@ -271,9 +279,7 @@ class DanaInterpreter(Loggable):
 
         parser = ParserCache.get_parser("dana")
         ast = parser.parse(source_code, filename=filename, do_transform=do_transform)
-
-        # Execute through _execute (convergent path)
-        return self._execute_program(ast, context, is_sync=is_sync)
+        return ast
 
     # ============================================================================
     # LEVEL 4: HIGH-LEVEL SOURCE CODE EVALUATION (DEPENDS ON PARSING)
@@ -314,7 +320,7 @@ class DanaInterpreter(Loggable):
             The result of evaluating the expression
         """
         # Route through _execute for convergent code path
-        return self._execute_program(expression, context)
+        return self.execute_ast(expression, context)
 
     def call_function(
         self,
@@ -357,7 +363,7 @@ class DanaInterpreter(Loggable):
             The result of executing the program
         """
         # Route through new _execute method for convergent code path
-        return self._execute_program(program, context)
+        return self.execute_ast(program, context)
 
     def execute_program_string(self, source_code: str, context: SandboxContext, filename: str | None = None, is_sync: bool = False) -> Any:
         """Execute a Dana program from source code string.
@@ -389,4 +395,4 @@ class DanaInterpreter(Loggable):
             return self._eval_source_code(statement, context)
 
         # Route through _execute for convergent code path
-        return self._execute_program(statement, context)
+        return self.execute_ast(statement, context)

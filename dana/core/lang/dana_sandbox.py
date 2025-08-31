@@ -20,6 +20,7 @@ from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResour
 from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 from dana.common.mixins.loggable import Loggable
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.core.lang.ast import Program
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
@@ -84,7 +85,8 @@ class DanaSandbox(Loggable):
         self._parser = ParserCache.get_parser("dana")
         self._module_search_paths = module_search_paths
 
-        # Set interpreter in context
+        # Set parser & interpreter in context
+        self._context.parser = self._parser
         self._context.interpreter = self._interpreter
 
         # Store module search paths in context for import handler access
@@ -170,6 +172,7 @@ class DanaSandbox(Loggable):
             # self._context.set("system:api_client", self._api_client)
 
             # Set LLM resource in context so reason() function can access it
+            assert self._llm_resource is not None
             self._context.set_system_llm_resource(self._llm_resource)
 
             # Enable mock mode for tests (check environment variable)
@@ -544,6 +547,67 @@ class DanaSandbox(Loggable):
             return ExecutionResult(
                 success=False,
                 error=enhanced_error,
+                final_context=self._context.copy(),
+            )
+
+    def parse_to_ast(self, source_code: str, filename: str | None = None, is_sync: bool = False) -> ExecutionResult:
+        """
+        Parse Dana source code.
+
+        Args:
+            source_code: Dana code to parse
+            filename: Optional filename for error reporting
+
+        Returns:
+            Program AST node
+        """
+        self._ensure_initialized()  # Auto-initialize on first useo
+
+        try:
+            result = self._interpreter.parse_to_ast(source_code, self._context, filename, is_sync=is_sync)
+            return ExecutionResult(
+                success=True,
+                result=result,
+                final_context=self._context.copy(),
+            )
+
+        except Exception as e:
+            return ExecutionResult(
+                success=False,
+                error=e,
+                final_context=self._context.copy(),
+            )
+
+    def execute_ast(self, ast: Program, is_sync: bool = False) -> ExecutionResult:
+        """
+        Execute a Dana AST.
+
+        Args:
+            ast: AST to execute
+            is_sync: Whether to execute synchronously
+
+        Returns:
+            ExecutionResult with success status and results
+        """
+        self._ensure_initialized()  # Auto-initialize on first use
+
+        try:
+            result = self._interpreter.execute_ast(ast, self._context, is_sync=is_sync)
+
+            # Capture print output from interpreter buffer
+            output = self._interpreter.get_and_clear_output()
+
+            return ExecutionResult(
+                success=True,
+                result=result,
+                final_context=self._context.copy(),
+                output=output,
+            )
+
+        except Exception as e:
+            return ExecutionResult(
+                success=False,
+                error=e,
                 final_context=self._context.copy(),
             )
 

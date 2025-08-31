@@ -1,19 +1,20 @@
 """
 Workflow System for Dana
 
-This module provides workflow capabilities including workflow types,
-execution engines, and FSM integration.
+This module provides simplified workflow capabilities that compile to ComposedFunction
+for seamless integration with Dana's function composition system.
 """
 
-from .enums import FSMTransitionEvent, WorkflowExecutionState
-from .factory import WorkflowFactory
-from .workflow_system import WorkflowExecutionEngine, WorkflowInstance, WorkflowType
+from .workflow_system import (
+    WorkflowInstance,
+    WorkflowType,
+    create_workflow_from_composed_function,
+    create_workflow_from_dana_code,
+)
 
 __all__ = [
     "WorkflowType",
     "WorkflowInstance",
-    "WorkflowExecutionEngine",
-    "WorkflowFactory",
-    "WorkflowExecutionState",
-    "FSMTransitionEvent",
+    "create_workflow_from_composed_function",
+    "create_workflow_from_dana_code",
 ]

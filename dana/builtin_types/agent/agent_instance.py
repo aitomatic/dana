@@ -134,6 +134,10 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         """Get the agent type."""
         return self.__struct_type__  # type: ignore
 
+    def answer(self, answer: str, sandbox_context: SandboxContext | None = None):
+        """Execute agent answer method."""
+        print(answer)
+
     def input(
         self,
         request: str,
@@ -154,9 +158,6 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         self, task: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None, is_sync: bool = False
     ) -> "StrategyPlan":
         """Execute agent planning method - analyzes problem and determines approach using strategy system."""
-        import pdb
-
-        pdb.set_trace()
         sandbox_context = sandbox_context or SandboxContext()
 
         def wrapper():
@@ -178,9 +179,6 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
 
         Fixed/hardcoded function: plan() + execute().
         """
-        import pdb
-
-        pdb.set_trace()
         sandbox_context = sandbox_context or SandboxContext()
 
         self.debug(f"IN SOLVE: is_sync={is_sync}")
@@ -298,7 +296,6 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
 
             return message
 
-        is_sync = True  # minimize threat of race condition
         if is_sync:
             return wrapper()
         else:

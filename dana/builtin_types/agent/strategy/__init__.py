@@ -12,8 +12,6 @@ from typing import Any
 from .base import BaseStrategy
 
 # Import strategy implementations
-from .composer import ComposerStrategy
-from .decomposer import DecomposerStrategy
 from .enums import (
     ConfidenceLevel,
     PlanType,
@@ -22,18 +20,14 @@ from .enums import (
     parse_confidence,
     parse_plan_type,
 )
-from .explorer import ExplorerStrategy
-from .learner import LearnerStrategy
+from .iterative import IterativeStrategy
 from .plan import StrategyPlan
-from .planner import PlannerStrategy
+from .recursive import RecursiveStrategy
 
 # Registry of all available strategies
 AVAILABLE_STRATEGIES = [
-    PlannerStrategy(),
-    ExplorerStrategy(),
-    ComposerStrategy(),
-    DecomposerStrategy(),
-    LearnerStrategy(),
+    RecursiveStrategy(),
+    IterativeStrategy(),
 ]
 
 
@@ -56,8 +50,8 @@ def select_best_strategy(problem: str, context: dict[str, Any] | None = None) ->
             best_score = score
             best_strategy = strategy
 
-    # Fallback to planner if no strategy is confident
-    return best_strategy or PlannerStrategy()
+    # Fallback to recursive if no strategy is confident
+    return best_strategy or RecursiveStrategy()
 
 
 __all__ = [
@@ -69,11 +63,8 @@ __all__ = [
     "parse_plan_type",
     "parse_complexity",
     "parse_confidence",
-    "PlannerStrategy",
-    "ExplorerStrategy",
-    "ComposerStrategy",
-    "DecomposerStrategy",
-    "LearnerStrategy",
+    "RecursiveStrategy",
+    "IterativeStrategy",
     "get_strategy_by_name",
     "select_best_strategy",
 ]

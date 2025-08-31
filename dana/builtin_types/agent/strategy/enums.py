@@ -11,12 +11,8 @@ class PlanType(Enum):
     """Enum for different plan types."""
 
     DIRECT = "direct"
-    CODE = "code"
-    WORKFLOW = "workflow"
-    DELEGATE = "delegate"
-    ESCALATE = "escalate"
-    MANUAL = "manual"
-    INPUT = "input"
+    RECURSIVE = "recursive"
+    ITERATIVE = "iterative"
 
 
 class ProblemComplexity(Enum):
@@ -25,7 +21,6 @@ class ProblemComplexity(Enum):
     SIMPLE = "simple"
     MODERATE = "moderate"
     COMPLEX = "complex"
-    CRITICAL = "critical"
 
     def __str__(self) -> str:
         return self.value
@@ -37,7 +32,6 @@ class ConfidenceLevel(Enum):
     LOW = 0.3
     MEDIUM = 0.6
     HIGH = 0.8
-    VERY_HIGH = 0.95
 
     def __float__(self) -> float:
         return self.value
@@ -59,18 +53,10 @@ def parse_plan_type(value: str) -> PlanType:
     # Try legacy format matches for backward compatibility
     if "TYPE_DIRECT" in value_upper or "DIRECT" in value_upper or "SOLUTION" in value_upper:
         return PlanType.DIRECT
-    elif "TYPE_CODE" in value_upper or "CODE" in value_upper or "PYTHON" in value_upper:
-        return PlanType.CODE
-    elif "TYPE_WORKFLOW" in value_upper or "WORKFLOW" in value_upper or "PROCESS" in value_upper:
-        return PlanType.WORKFLOW
-    elif "TYPE_DELEGATE" in value_upper or "DELEGATE" in value_upper or "AGENT" in value_upper:
-        return PlanType.DELEGATE
-    elif "TYPE_ESCALATE" in value_upper or "ESCALATE" in value_upper or "HUMAN" in value_upper:
-        return PlanType.ESCALATE
-    elif "TYPE_INPUT" in value_upper or "INPUT" in value_upper or "USER" in value_upper:
-        return PlanType.INPUT
-    elif "TYPE_MANUAL" in value_upper or "MANUAL" in value_upper or "USER" in value_upper:
-        return PlanType.MANUAL
+    elif "TYPE_RECURSIVE" in value_upper or "RECURSIVE" in value_upper or "RECURSION" in value_upper:
+        return PlanType.RECURSIVE
+    elif "TYPE_ITERATIVE" in value_upper or "ITERATIVE" in value_upper or "ITERATION" in value_upper:
+        return PlanType.ITERATIVE
 
     # Default fallback
     return PlanType.DIRECT
@@ -99,9 +85,7 @@ def parse_confidence(value: str | float) -> ConfidenceLevel:
         float_val = value
 
     # Map float ranges to confidence levels
-    if float_val >= 0.9:
-        return ConfidenceLevel.VERY_HIGH
-    elif float_val >= 0.75:
+    if float_val >= 0.75:
         return ConfidenceLevel.HIGH
     elif float_val >= 0.45:
         return ConfidenceLevel.MEDIUM
