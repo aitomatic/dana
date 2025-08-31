@@ -1,14 +1,14 @@
 """Calculate & Assess Financial Health Metrics using Dana Workflows."""
 
 
-from knows.financial_analysis import AssessCapIntens, CalcQuickRatio
+from knows.financial_analysis import workflow_assess_cap_intens, workflow_calc_quick_ratio
 
 
 AMDAnnualReport = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
 
 
-cap_intens = AssessCapIntens([AMDAnnualReport])
-quick_ratio = CalcQuickRatio([AMDAnnualReport])
+cap_intens = workflow_assess_cap_intens([AMDAnnualReport])
+quick_ratio = workflow_calc_quick_ratio([AMDAnnualReport])
 
 print(f'
 CAPITAL INTENSITY

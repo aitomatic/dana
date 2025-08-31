@@ -7,8 +7,8 @@ from .utils import over_avg_denom
 
 
 __all__ = [
-    'CalcRoaRatio',
-    'CalcRoeRatio',
+    'workflow_calc_roa_ratio',
+    'workflow_calc_roe_ratio',
 ]
 
 
@@ -28,7 +28,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcRoaRatio(with_resources: list) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
+def workflow_calc_roa_ratio(with_resources: list) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
 
 
 def _roe_ratio(intermed_results):
@@ -47,4 +47,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcRoeRatio(with_resources: list) -> float = [get_net_income, get_equity_2y] | _roe_ratio
+def workflow_calc_roe_ratio(with_resources: list) -> float = [get_net_income, get_equity_2y] | _roe_ratio

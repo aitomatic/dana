@@ -5,14 +5,14 @@ from .fin_statements import get_total_asset, get_fixed_asset
 from .fin_statements import get_capex, get_capex_3y
 from .fin_statements import get_rev, get_rev_3y
 
-from .return_ratios import CalcRoaRatio
+from .return_ratios import workflow_calc_roa_ratio
 
 
 __all__ = [
-    'CalcFixedAssetOverTotalAsset',
-    'CalcTotalAssetOverRev',
-    'CalcCapexOverRev', 'CalcCapexOverRev3yAvg',
-    'AssessCapIntens',
+    'workflow_calc_fixed_asset_over_total_asset',
+    'workflow_calc_total_asset_over_rev',
+    'workflow_calc_capex_over_rev', 'workflow_calc_capex_over_rev_3y_avg',
+    'workflow_assess_cap_intens',
 ]
 
 
@@ -25,7 +25,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def CalcFixedAssetOverTotalAsset(with_resources: list) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
+def workflow_calc_fixed_asset_over_total_asset(with_resources: list) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
 def _total_asset_over_rev(intermed_results):
@@ -37,7 +37,7 @@ as decimal value, using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def CalcTotalAssetOverRev(with_resources: list) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
+def workflow_calc_total_asset_over_rev(with_resources: list) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
 def _capex_over_rev(intermed_results):
@@ -51,7 +51,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def CalcCapexOverRev(with_resources: list) -> float = [get_capex, get_rev] | _capex_over_rev
+def workflow_calc_capex_over_rev(with_resources: list) -> float = [get_capex, get_rev] | _capex_over_rev
 
 
 def _capex_over_rev_3y_avg(intermed_results):
@@ -66,7 +66,7 @@ using the sum-divided-by-sum method, and the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def CalcCapexOverRev3yAvg(with_resources: list) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
+def workflow_calc_capex_over_rev_3y_avg(with_resources: list) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
 
 
 def _cap_intens_assessment(intermed_results):
@@ -96,7 +96,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def AssessCapIntens(with_resources: list) -> str = [CalcFixedAssetOverTotalAsset,
-                                                    CalcTotalAssetOverRev,
-                                                    CalcCapexOverRev,
-                                                    CalcRoaRatio] | _cap_intens_assessment
+def workflow_assess_cap_intens(with_resources: list) -> str = [workflow_calc_fixed_asset_over_total_asset,
+                                                      workflow_calc_total_asset_over_rev,
+                                                      workflow_calc_capex_over_rev,
+                                                      workflow_calc_roa_ratio] | _cap_intens_assessment
