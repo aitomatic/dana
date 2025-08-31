@@ -1,8 +1,8 @@
-"""Multiple Documents & Webpages Querying."""
+"""Multiple Documents & Webpages Resource Querying."""
 
 
-AitomaticWebsite = use('rag', sources=['https://www.aitomatic.com'])
-DanaReadme = use('rag', sources=['../../../README.md'])
+resource_aitomatic_website = get_resource('rag', sources=['https://www.aitomatic.com'])
+resource_dana_readme = get_resource('rag', sources=['../../../README.md'])
 
 reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?",
-       resources=[AitomaticWebsite, DanaReadme])
+       resources=[resource_aitomatic_website, resource_dana_readme])

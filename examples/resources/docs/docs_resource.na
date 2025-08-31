@@ -1,6 +1,6 @@
-"""Documents Querying."""
+"""Documents Resource Querying."""
 
 
-AMDAnnualReport = use('rag', sources=['AMD_2022_10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['AMD_2022_10K.pdf'])
 
-reason("AMD's 2022 revenue", resources=[AMDAnnualReport])
+reason("AMD's 2022 revenue", resources=[resource_amd_ar])
