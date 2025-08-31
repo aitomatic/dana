@@ -14,4 +14,4 @@ JeanHu = ExpertAgent(expertise=[financial_analysis])
 
 # use expert agent to solve problems
 JeanHu.solve('Is AMD capital-intensive?',
-             with_resources=[get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])])
+             resources=[get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])])
