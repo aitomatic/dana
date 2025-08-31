@@ -73,6 +73,47 @@ print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))
 # agent returns precise, sophisticated solution
 from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, workflow_calc_quick_ratio
 
+
+def sum_quick_asset(intermed_results):
+    return llm(
+f'Calculate `Quick Assets` according to formula:
+
+`Quick Assets` = (
+    `Cash & Cash Equivalents` +
+    `Short-Term Investments or (Current) Marketable Securities` +
+    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_quick_asset(resources) = [get_cash_and_equiv,
+                                            get_st_inv,
+                                            get_recvable] | sum_quick_asset
+
+
+def assess_quick_ratio(intermed_results):
+    return llm(
+f'Calculate `Quick Ratio` according to formula:
+
+`Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+
+If `Quick Ratio` >= 1, then liquidity is healthy; otherwise, liquidity is not very healthy
+
+State your result together with the supporting calculation(s).')
+
+def workflow_assess_liquidity(resources) = [workflow_calc_quick_asset,
+                                            get_curr_liab] | assess_quick_ratio
+
+
 print('
 
 EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
@@ -80,7 +121,7 @@ EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
 ')
 print(Neo.solve(PROBLEM,
                 resources=[resource_amd_annual_report],
-                workflows=[workflow_calc_quick_ratio]))
+                workflows=[workflow_assess_liquidity]))
 
 
 # Instant Expert Agent
