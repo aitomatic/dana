@@ -58,17 +58,12 @@ class StrategyPlan:
 
     def is_executable(self) -> bool:
         """Check if this plan can be executed."""
-        return self.content is not None and self.plan_type != PlanType.ESCALATE
+        return self.content is not None
 
     def get_execution_method(self) -> str:
         """Get the method that will be used for execution."""
         if isinstance(self.content, str):
-            if self.content.startswith("agent:"):
-                return "delegate"
-            elif self.plan_type == PlanType.ESCALATE:
-                return "escalate"
-            else:
-                return "direct"
+            return "direct"
         elif isinstance(self.content, dict):
             return self.content.get("type", "unknown").lower()
         elif hasattr(self.content, "execute"):
