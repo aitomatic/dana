@@ -4,7 +4,7 @@ Use function for Dana standard library.
 This module provides the use function for creating and managing resources.
 """
 
-__all__ = ["py_use"]
+__all__ = ["py_get_resource"]
 
 import asyncio
 from collections.abc import Callable
@@ -36,7 +36,7 @@ def create_function_with_better_doc_string(func: Callable, doc_string: str) -> C
         return wrapper
 
 
-def py_use(
+def py_get_resource(
     context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs
 ) -> Union[BaseSysResource, ResourceInstance]:
     """Use a function to create and manage resources.
