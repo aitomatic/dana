@@ -40,7 +40,7 @@ print('
 CONTEXT-AWARE ENHANCED REASONING WITH RESOURCES
 ===============================================
 ')
-print(Neo.reason(REASONING_PREMISE, with_resources=[resource_weather_info]))
+print(Neo.reason(REASONING_PREMISE, resources=[resource_weather_info]))
 
 
 # Problem-Solving with Expertise
@@ -66,7 +66,7 @@ print('
 CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
 =====================================================
 ')
-print(Neo.solve(PROBLEM, with_resources=[resource_amd_annual_report]))
+print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))
 
 
 # expert-level problem-solving: with expert workflow,
@@ -79,8 +79,8 @@ EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
 =============================================================
 ')
 print(Neo.solve(PROBLEM,
-                with_resources=[resource_amd_annual_report],
-                with_workflows=[workflow_calc_quick_ratio]))
+                resources=[resource_amd_annual_report],
+                workflows=[workflow_calc_quick_ratio]))
 
 
 # Instant Expert Agent
@@ -99,4 +99,4 @@ leveraging Dana's standard library's
 ===================================================
 """)
 Neo = ExpertAgent(expertise=[financial_analysis])
-print(Neo.solve(PROBLEM, with_resources=[resource_amd_annual_report]))
+print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))
