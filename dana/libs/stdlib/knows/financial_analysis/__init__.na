@@ -28,40 +28,40 @@ from .fin_statements import get_tax_exp, get_tax_exp_2y, get_tax_exp_3y
 from .fin_statements import get_net_income, get_net_income_2y, get_net_income_3y
 from .fin_statements import get_div, get_div_2y, get_div_3y
 
-from .adj_income import CalcEbitda, CalcEbitda2y, CalcEbitda3y
+from .adj_income import workflow_calc_ebitda, workflow_calc_ebitda_2y, workflow_calc_ebitda_3y
 
-from .turnover_ratios import CalcTotalAssetTurnoverRatio
-from .turnover_ratios import CalcFixedAssetTurnoverRatio
-from .turnover_ratios import CalcInventoryTurnoverRatio
+from .turnover_ratios import workflow_calc_total_asset_turnover_ratio
+from .turnover_ratios import workflow_calc_fixed_asset_turnover_ratio
+from .turnover_ratios import workflow_calc_inventory_turnover_ratio
 
-from .margin_ratios import CalcCogsMargin, CalcCogsMargin3yAvg
-from .margin_ratios import CalcGrossMargin, CalcGrossMargin3yAvg
-from .margin_ratios import CalcEbitdaMargin, CalcEbitdaMargin3yAvg
-from .margin_ratios import CalcDaMargin
-from .margin_ratios import CalcOpMargin, CalcOpMargin3yAvg
-from .margin_ratios import CalcEbitMargin, CalcEbitMargin3yAvg
-from .margin_ratios import CalcNetMargin, CalcNetMargin3yAvg
+from .margin_ratios import workflow_calc_cogs_margin, workflow_calc_cogs_margin_3y_avg
+from .margin_ratios import workflow_calc_gross_margin, workflow_calc_gross_margin_3y_avg
+from .margin_ratios import workflow_calc_ebitda_margin, workflow_calc_ebitda_margin_3y_avg
+from .margin_ratios import workflow_calc_da_margin
+from .margin_ratios import workflow_calc_op_margin, workflow_calc_op_margin_3y_avg
+from .margin_ratios import workflow_calc_ebit_margin, workflow_calc_ebit_margin_3y_avg
+from .margin_ratios import workflow_calc_net_margin, workflow_calc_net_margin_3y_avg
 
-from .return_ratios import CalcRoaRatio, CalcRoeRatio
+from .return_ratios import workflow_calc_roa_ratio, workflow_calc_roe_ratio
 
-from .liquidity import CalcQuickRatio
-from .liquidity import CalcNetWorkCap, CalcWorkCapRatio
-from .liquidity import CalcOpCfRatio
-from .liquidity import CalcFcf, CalcFcfConvRatio
-from .liquidity import CalcDio, CalcDso, CalcDpo, CalcCcc
+from .liquidity import workflow_calc_quick_ratio
+from .liquidity import workflow_calc_net_work_cap, workflow_calc_work_cap_ratio
+from .liquidity import workflow_calc_op_cf_ratio
+from .liquidity import workflow_calc_fcf, workflow_calc_fcf_conv_ratio
+from .liquidity import workflow_calc_dio, workflow_calc_dso, workflow_calc_dpo, workflow_calc_ccc
 
-from .cap_intens import CalcFixedAssetOverTotalAsset
-from .cap_intens import CalcTotalAssetOverRev
-from .cap_intens import CalcCapexOverRev, CalcCapexOverRev3yAvg
-from .cap_intens import AssessCapIntens
+from .cap_intens import workflow_calc_fixed_asset_over_total_asset
+from .cap_intens import workflow_calc_total_asset_over_rev
+from .cap_intens import workflow_calc_capex_over_rev, workflow_calc_capex_over_rev_3y_avg
+from .cap_intens import workflow_assess_cap_intens
 
-from .leverage import CalcTotalDebt, CalcTotalDebt2y, CalcTotalDebt3y
-from .leverage import CalcDeRatio
+from .leverage import workflow_calc_total_debt, workflow_calc_total_debt_2y, workflow_calc_total_debt_3y
+from .leverage import workflow_calc_de_ratio
 
-from .income_util_ratios import CalcIntCovRatio
-from .income_util_ratios import CalcEffTaxRate
-from .income_util_ratios import CalcDivPayoutRatio
-from .income_util_ratios import CalcRetentionRatio
+from .income_util_ratios import workflow_calc_int_cov_ratio
+from .income_util_ratios import workflow_calc_eff_tax_rate
+from .income_util_ratios import workflow_calc_div_payout_ratio
+from .income_util_ratios import workflow_calc_retention_ratio
 
 
 __all__ = [
@@ -81,7 +81,7 @@ __all__ = [
 
     'get_lt_debt', 'get_lt_debt_2y', 'get_lt_debt_3y',
     'get_st_debt', 'get_st_debt_2y', 'get_st_debt_3y',
-    'CalcTotalDebt', 'CalcTotalDebt2y', 'CalcTotalDebt3y',
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
 
     'get_equity', 'get_equity_2y', 'get_equity_3y',
 
@@ -97,7 +97,7 @@ __all__ = [
 
     'get_ga_exp', 'get_ga_exp_2y', 'get_ga_exp_3y',
 
-    'CalcEbitda', 'CalcEbitda2y', 'CalcEbitda3y',
+    'workflow_calc_ebitda', 'workflow_calc_ebitda_2y', 'workflow_calc_ebitda_3y',
 
     'get_deprec_and_amort', 'get_deprec_and_amort_2y', 'get_deprec_and_amort_3y',
 
@@ -115,57 +115,57 @@ __all__ = [
 
     'get_div', 'get_div_2y', 'get_div_3y',
 
-    'CalcTotalAssetTurnoverRatio',
-    'CalcFixedAssetTurnoverRatio',
-    'CalcInventoryTurnoverRatio',
+    'workflow_calc_total_asset_turnover_ratio',
+    'workflow_calc_fixed_asset_turnover_ratio',
+    'workflow_calc_inventory_turnover_ratio',
 
-    'CalcCogsMargin', 'CalcCogsMargin3yAvg',
+    'workflow_calc_cogs_margin', 'workflow_calc_cogs_margin_3y_avg',
 
-    'CalcGrossMargin', 'CalcGrossMargin3yAvg',
+    'workflow_calc_gross_margin', 'workflow_calc_gross_margin_3y_avg',
 
-    'CalcEbitdaMargin', 'CalcEbitdaMargin3yAvg',
+    'workflow_calc_ebitda_margin', 'workflow_calc_ebitda_margin_3y_avg',
 
-    'CalcDaMargin',
+    'workflow_calc_da_margin',
 
-    'CalcOpMargin', 'CalcOpMargin3yAvg',
+    'workflow_calc_op_margin', 'workflow_calc_op_margin_3y_avg',
 
-    'CalcEbitMargin', 'CalcEbitMargin3yAvg',
+    'workflow_calc_ebit_margin', 'workflow_calc_ebit_margin_3y_avg',
 
-    'CalcNetMargin', 'CalcNetMargin3yAvg',
+    'workflow_calc_net_margin', 'workflow_calc_net_margin_3y_avg',
 
-    'CalcRoaRatio', 'CalcRoeRatio',
+    'workflow_calc_roa_ratio', 'workflow_calc_roe_ratio',
 
-    'CalcQuickRatio',
+    'workflow_calc_quick_ratio',
 
-    'CalcNetWorkCap',
-    'CalcWorkCapRatio',
+    'workflow_calc_net_work_cap',
+    'workflow_calc_work_cap_ratio',
 
-    'CalcOpCfRatio',
+    'workflow_calc_op_cf_ratio',
 
-    'CalcFcf',
-    'CalcFcfConvRatio',
+    'workflow_calc_fcf',
+    'workflow_calc_fcf_conv_ratio',
 
-    'CalcDio',
-    'CalcDso',
-    'CalcDpo',
-    'CalcCcc',
+    'workflow_calc_dio',
+    'workflow_calc_dso',
+    'workflow_calc_dpo',
+    'workflow_calc_ccc',
 
-    'CalcFixedAssetOverTotalAsset',
+    'workflow_calc_fixed_asset_over_total_asset',
 
-    'CalcTotalAssetOverRev',
+    'workflow_calc_total_asset_over_rev',
 
-    'CalcCapexOverRev', 'CalcCapexOverRev3yAvg',
+    'workflow_calc_capex_over_rev', 'workflow_calc_capex_over_rev_3y_avg',
 
-    'AssessCapIntens',
+    'workflow_assess_cap_intens',
 
-    'CalcTotalDebt', 'CalcTotalDebt2y', 'CalcTotalDebt3y',
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
 
-    'CalcDeRatio',
+    'workflow_calc_de_ratio',
 
-    'CalcIntCovRatio',
+    'workflow_calc_int_cov_ratio',
 
-    'CalcEffTaxRate',
+    'workflow_calc_eff_tax_rate',
 
-    'CalcDivPayoutRatio',
-    'CalcRetentionRatio',
+    'workflow_calc_div_payout_ratio',
+    'workflow_calc_retention_ratio',
 ]

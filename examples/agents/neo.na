@@ -79,10 +79,10 @@ print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport]))
 
 # expert-level problem-solving: with expert workflow,
 # agent returns precise, sophisticated solution
-from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, CalcQuickRatio
+from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, workflow_calc_quick_ratio
 
 # TODO:
-# workflow CalcQuickRatio:
+# workflow workflow_calc_quick_ratio:
 #     pipeline = [([get_cash_and_equiv, get_st_inv, get_recvable] | sum), get_curr_liab] | (lambda x, y: x / y)
 #     description = "Calculate Quick Ratio by summing Cash & Cash Equivalents, Short-Term Investments and Accounts Receivable, then dividing the sum by Current Liabilities"
 
@@ -91,7 +91,7 @@ print('
 EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
 =============================================================
 ')
-print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=CalcQuickRatio))
+print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=workflow_calc_quick_ratio))
 
 
 # Instant Expert Agent
