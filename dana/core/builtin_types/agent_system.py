@@ -91,7 +91,7 @@ def default_plan_method(
 
 def default_solve_method(
         agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-        with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
+        with_resources: list[ResourceInstance] | None = None, with_workflows: list[WorkflowInstance] | None = None) -> Any:
     """Default solve method for agent structs - delegates to instance method."""
 
     # Simply delegate to the built-in implementation
@@ -101,7 +101,7 @@ def default_solve_method(
                                           problem=problem,
                                           context=context,
                                           with_resources=with_resources,
-                                          by_workflow=by_workflow)
+                                          with_workflows=with_workflows)
 
     return PromiseFactory.create_promise(computation=wrapper)
 
@@ -388,7 +388,7 @@ class AgentInstance(StructInstance):
             return default_plan_method(self, sandbox_context, task, context)
 
     def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-              with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> Any:
+              with_resources: list[ResourceInstance] | None = None, with_workflows: list[WorkflowInstance] | None = None) -> Any:
         """Execute agent problem-solving method."""
 
         method = lookup_dana_method(self.__struct_type__.name, "solve")
@@ -399,7 +399,7 @@ class AgentInstance(StructInstance):
                           problem=problem,
                           context=context,
                           with_resources=with_resources,
-                          by_workflow=by_workflow)
+                          with_workflows=with_workflows)
         else:
             # Fallback to built-in solve implementation
             return default_solve_method(self,
@@ -407,7 +407,7 @@ class AgentInstance(StructInstance):
                                         problem=problem,
                                         context=context,
                                         with_resources=with_resources,
-                                        by_workflow=by_workflow)
+                                        with_workflows=with_workflows)
 
     def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> Any:
         """Execute agent memory storage method."""
@@ -713,7 +713,7 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             return f"Agent {self.agent_type.name} planning: {task} (fields: {agent_fields}) - Error: {str(e)}"
 
     def _solve_impl(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None,
-                    with_resources: list[ResourceInstance] | None = None, by_workflow: WorkflowInstance | None = None) -> str:
+                    with_resources: list[ResourceInstance] | None = None, with_workflows: list[WorkflowInstance] | None = None) -> str:
         """Implementation of problem-solving functionality using py_reason with POET enhancements."""
         try:
             from dana.libs.corelib.py_wrappers.py_reason import py_reason
@@ -721,8 +721,20 @@ Consider the agent's capabilities and context. Return a structured plan with cle
             # Build agent description for context
             agent_description = self._build_agent_description()
 
-            if by_workflow:
-                expert_workflow_result = by_workflow(with_resources)
+            if with_workflows:
+                # Handle multiple workflows - execute each one and collect results
+                workflow_results: list[str] = []
+
+                for workflow in with_workflows:
+                    print(f'Executing workflow: `{workflow}`...')
+                    workflow_results.append(f"""
+-----------------------------------------
+Result from workflow `{workflow}`:
+-----------------------------------------
+{workflow(with_resources)}
+""")
+
+                workflow_results_str = '\n\n\n'.join(workflow_results)
 
                 solving_prompt = f"""
 You are {agent_description}
@@ -734,11 +746,11 @@ PROBLEM:
 {problem}
 ```
 
-And the following result(s) from an expert workflow:
+And the following result(s) from expert workflow(s):
 
-EXPERT WORKFLOW RESULT:
+RESULT(S) FROM EXPERT WORKFLOW(S):
 ```
-{expert_workflow_result}
+{workflow_results_str}
 ```
 
 Return your best conclusion about / solution to the posed problem.
