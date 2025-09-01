@@ -68,9 +68,23 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
             expert_workflow_result = closest_matched_expert_workflow(resources)
 
-            expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
-                problem=problem,
-                expert_workflow_result=expert_workflow_result)
+            expert_workflow_solution_prompt: str = f"""
+                Given the following problem:
+
+                PROBLEM:
+                ```
+                {problem}
+                ```
+
+                And the following result(s) from an expert workflow:
+
+                EXPERT WORKFLOW RESULT:
+                ```
+                {expert_workflow_result}
+                ```
+
+                Return your best conclusion about / solution to the posed problem.
+            """
 
             solution = llm(expert_workflow_solution_prompt)
 
