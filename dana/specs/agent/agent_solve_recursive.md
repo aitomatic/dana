@@ -77,12 +77,12 @@ def _build_enhanced_analysis_prompt(self, problem: str, context: ProblemContext)
     workflow_instance = context.workflow_instance
     
     # Compute rich context from execution data
-    complexity_indicators = self.computable_context.get_complexity_indicators(context, workflow_instance._global_action_history)
-    constraint_violations = self.computable_context.get_constraint_violations(context, workflow_instance._global_action_history)
-    successful_patterns = self.computable_context.get_successful_patterns(context, workflow_instance._global_action_history)
+    complexity_indicators = self.computable_context.get_complexity_indicators(context, workflow_instance._global_event_history)
+    constraint_violations = self.computable_context.get_constraint_violations(context, workflow_instance._global_event_history)
+    successful_patterns = self.computable_context.get_successful_patterns(context, workflow_instance._global_event_history)
     
-    # Get recent actions from global history
-    recent_actions = workflow_instance._global_action_history.get_recent_actions(5)
+    # Get recent events from global history
+    recent_events = workflow_instance._global_event_history.get_events_by_type("workflow_start")[-5:]
     
     # Get parent context if available
     parent_context = ""
@@ -92,7 +92,7 @@ PARENT CONTEXT:
 - Problem: {workflow_instance._parent_workflow._problem_statement}
 - Objective: {workflow_instance._parent_workflow._objective}
 - Depth: {workflow_instance._parent_workflow._problem_context.depth}
-- Success Patterns: {', '.join(self.computable_context.get_successful_patterns(workflow_instance._parent_workflow._problem_context, workflow_instance._parent_workflow._global_action_history))}
+- Success Patterns: {', '.join(self.computable_context.get_successful_patterns(workflow_instance._parent_workflow._problem_context, workflow_instance._parent_workflow._global_event_history))}
 """
     
     prompt = f"""
@@ -114,7 +114,7 @@ ASSUMPTIONS: {', '.join(context.assumptions[:3])}
 LEARNING FROM EXECUTION:
 - Constraint violations: {', '.join(constraint_violations[:2])}
 - Successful patterns: {', '.join(successful_patterns)}
-- Recent actions: {self._format_recent_actions(recent_actions)}
+- Recent events: {self._format_recent_events(recent_events)}
 
 {parent_context}
 

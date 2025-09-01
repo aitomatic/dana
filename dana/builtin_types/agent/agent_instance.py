@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 from dana.builtin_types.workflow.workflow_system import WorkflowInstance, WorkflowType
 
-from .context import ActionHistory, ProblemContext
+from .context import ProblemContext
 
 
 class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
@@ -50,6 +50,11 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         self._conversation_memory = None  # Lazy initialization
         self._llm_resource = None  # Lazy initialization - now handled by resource type system
         self._llm_resource_instance = None  # Lazy initialization
+
+        # Initialize persistent event history for conversation continuity
+        from .context import EventHistory
+
+        self._global_event_history = EventHistory()
 
         # Initialize TUI metrics
         self._metrics = {
@@ -171,22 +176,24 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
         """Create a new top-level workflow for a problem."""
 
-        # Create problem context
+        # Create problem context with conversation context
+        conversation_context = self._global_event_history.get_conversation_context()
         problem_context = ProblemContext(
             problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
         )
 
-        # Create action history
-        action_history = ActionHistory()
+        # Add conversation history to constraints if available
+        if conversation_context:
+            problem_context.constraints["conversation_history"] = conversation_context
 
-        # Create workflow instance
+        # Create workflow instance using the persistent event history
         workflow = WorkflowInstance(
             struct_type=self._create_workflow_type(problem),
             values={
                 "problem_statement": problem,
                 "objective": problem_context.objective,
                 "problem_context": problem_context,
-                "action_history": action_history,
+                "action_history": self._global_event_history,
             },
             parent_workflow=None,
         )
@@ -198,10 +205,15 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         from .context import ProblemContext
         from .strategy import select_best_strategy
 
-        # Create problem context
+        # Create problem context with conversation context
+        conversation_context = self._global_event_history.get_conversation_context()
         problem_context = ProblemContext(
             problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
         )
+
+        # Add conversation history to constraints if available
+        if conversation_context:
+            problem_context.constraints["conversation_history"] = conversation_context
 
         # Select best strategy
         strategy = select_best_strategy(problem, problem_context)
@@ -240,17 +252,13 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
         """Solve a problem using the agent's problem-solving capabilities."""
 
-        # 1. Create or use workflow instance
+        # If this is a new user request (string), start a new conversation turn
         if isinstance(problem_or_workflow, str):
-            workflow = self._create_top_level_workflow(problem_or_workflow, **kwargs)
-        else:
-            workflow = problem_or_workflow
+            self._global_event_history.start_new_conversation_turn(problem_or_workflow)
 
-        # 2. Execute the workflow
-        result = workflow.execute(self._create_sandbox_context(), **kwargs)
-
-        # 3. Return the result
-        return result
+        # Always create or reuse a workflow via plan(), then execute
+        workflow = self.plan(problem_or_workflow, **kwargs)
+        return workflow.execute(self._create_sandbox_context(), **kwargs)
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent memory storage method."""

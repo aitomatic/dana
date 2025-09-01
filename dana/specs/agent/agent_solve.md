@@ -121,8 +121,8 @@ class WorkflowInstance:
         self._parent_workflow: WorkflowInstance | None = parent_workflow
         self._children: list[WorkflowInstance] = []
         
-        # Linear history (cuts across all recursion)
-        self._global_action_history: ActionHistory = values.get("action_history", ActionHistory())
+        # Linear event history (cuts across all recursion and conversation turns)
+        self._global_event_history: EventHistory = values.get("event_history", EventHistory())
         
         # Problem context (for LLM reasoning)
         self._problem_context: ProblemContext = values.get("problem_context", ProblemContext())
@@ -151,6 +151,46 @@ class WorkflowInstance:
         Returns:
             The result of workflow execution
         """
+```
+
+## Event History Design
+
+### Overview
+The EventHistory system provides a unified linear timeline that tracks all events across conversation turns and workflow executions. This design replaces the previous ActionHistory system with a cleaner, more flexible approach.
+
+### Key Benefits
+
+1. **Unified Timeline**: Single source of truth for all events (conversations, workflows, errors, etc.)
+2. **Flexible Data**: Each event can carry any data structure via the flexible `data` field
+3. **References**: Events can reference other objects (workflows, contexts) without tight coupling
+4. **Conversation Continuity**: Automatic tracking of conversation turns across multiple `solve()` calls
+5. **Simple Queries**: Easy to query events by type, conversation turn, or depth
+
+### Event Types
+
+- **`conversation_start`**: New user request starts a conversation turn
+- **`workflow_start`**: Workflow execution begins
+- **`workflow_complete`**: Workflow execution succeeds
+- **`workflow_error`**: Workflow execution fails
+- **`agent_solve_call`**: Recursive call to `agent.solve()`
+- **`agent_reason`**: LLM reasoning step
+- **`agent_input`**: User input requested
+
+### Usage Examples
+
+```python
+# Start new conversation turn
+event_history.start_new_conversation_turn("How do I learn Python?")
+
+# Record workflow execution
+event_history.add_event("workflow_start", {
+    "workflow_name": "PythonLearningWorkflow",
+    "depth": 0
+}, references={"workflow_instance": workflow})
+
+# Query events
+python_events = event_history.get_events_by_type("workflow_start")
+turn_1_events = event_history.get_events_by_conversation_turn(1)
 ```
 
 ## Context Engineering
@@ -192,49 +232,61 @@ class ProblemContext:
         )
 ```
 
-#### 2. Action History
+#### 2. Event History
 
-The `ActionHistory` provides a linear, append-only history across all workflow levels:
+The `EventHistory` provides a linear, append-only timeline of all events across conversation turns and workflow levels:
 
 ```python
-class ActionHistory:
-    """Linear, append-only history across all workflow levels."""
+class EventHistory:
+    """Linear, append-only timeline of all events."""
     
     def __init__(self):
-        self.actions: list[Action] = []
+        self.events: list[Event] = []
+        self._current_turn: int = 0
     
-    def add_action(self, action: Action) -> None:
-        """Add action to global history."""
-        self.actions.append(action)
+    def add_event(self, event_type: str, data: dict, references: dict = None) -> Event:
+        """Add an event to the timeline."""
+        event = Event(
+            timestamp=datetime.now(),
+            event_type=event_type,
+            conversation_turn=self._current_turn,
+            depth=data.get('depth', 0),
+            data=data,
+            references=references or {}
+        )
+        self.events.append(event)
+        return event
     
-    def get_recent_actions(self, count: int = 10) -> list[Action]:
-        """Get most recent actions for LLM context."""
-        return self.actions[-count:]
+    def start_new_conversation_turn(self, user_request: str) -> int:
+        """Start a new conversation turn and return the turn number."""
+        self._current_turn += 1
+        self.add_event("conversation_start", {"user_request": user_request, "depth": 0})
+        return self._current_turn
     
-    def get_actions_by_depth(self, depth: int) -> list[Action]:
-        """Get actions from specific recursion depth."""
-        return [a for a in self.actions if a.depth == depth]
+    def get_conversation_context(self) -> str:
+        """Get conversation context summary for LLM."""
+        # Implementation details...
     
-    def get_actions_by_type(self, action_type: str) -> list[Action]:
-        """Get actions of specific type."""
-        return [a for a in self.actions if a.action_type == action_type]
+    def get_events_by_type(self, event_type: str) -> list[Event]:
+        """Get events of specific type."""
+        return [e for e in self.events if e.event_type == event_type]
+    
+    def get_events_by_conversation_turn(self, turn: int) -> list[Event]:
+        """Get events from specific conversation turn."""
+        return [e for e in self.events if e.conversation_turn == turn]
 ```
 
-#### 3. Action Structure
+#### 3. Event Structure
 
 ```python
 @dataclass
-class Action:
-    action_type: str                         # Type of action taken
-    description: str                         # Description of the action
-    depth: int                              # Recursion depth when action occurred
-    timestamp: datetime                     # When action occurred
-    result: Any                             # Result of the action
-    workflow_id: str                        # ID of workflow that took the action
-    problem_statement: str                  # Problem being solved
-    success: bool                           # Did it succeed?
-    execution_time: float                   # How long it took
-    error_message: str | None = None        # What went wrong (if any)
+class Event:
+    timestamp: datetime                     # When the event occurred
+    event_type: str                         # Type of event (conversation_start, workflow_start, etc.)
+    conversation_turn: int                  # Which conversation turn this belongs to
+    depth: int                              # Recursion depth when event occurred
+    data: dict[str, Any]                   # Flexible data container for event-specific information
+    references: dict[str, Any]              # References to other data structures (workflows, contexts, etc.)
 ```
 
 #### 4. Computable Context
@@ -243,29 +295,30 @@ class Action:
 class ComputableContext:
     """Context that can be computed from existing data."""
     
-    def get_complexity_indicators(self, context: ProblemContext, action_history: ActionHistory) -> dict[str, Any]:
+    def get_complexity_indicators(self, context: ProblemContext, event_history: EventHistory) -> dict[str, Any]:
         """Compute complexity indicators from execution data."""
-        actions = action_history.actions
+        events = event_history.events
         
         return {
-            "sub_problem_count": len([a for a in actions if a.action_type == "agent_solve_call"]),
-            "execution_time_total": sum(a.execution_time for a in actions),
-            "error_rate": len([a for a in actions if not a.success]) / max(len(actions), 1),
-            "max_depth_reached": max(a.depth for a in actions) if actions else 0
+            "sub_problem_count": len([e for e in events if e.event_type == "agent_solve_call"]),
+            "execution_time_total": sum(e.data.get("execution_time", 0.0) for e in events),
+            "error_rate": len([e for e in events if e.event_type == "workflow_error"]) / max(len(events), 1),
+            "max_depth_reached": max(e.depth for e in events) if events else 0
         }
     
-    def get_constraint_violations(self, context: ProblemContext, action_history: ActionHistory) -> list[str]:
-        """Extract constraint violations from failed actions."""
+    def get_constraint_violations(self, context: ProblemContext, event_history: EventHistory) -> list[str]:
+        """Extract constraint violations from failed events."""
         violations = []
-        for action in action_history.actions:
-            if not action.success and action.error_message:
+        for event in event_history.events:
+            if event.event_type == "workflow_error" and event.data.get("error_message"):
+                error_message = event.data["error_message"]
                 # Simple pattern matching for constraint violations
-                if any(keyword in action.error_message.lower() 
+                if any(keyword in error_message.lower() 
                        for keyword in ["constraint", "limit", "violation", "exceeded"]):
-                    violations.append(f"{action.description}: {action.error_message}")
+                    violations.append(f"{event.data.get('description', 'Unknown')}: {error_message}")
         return violations
     
-    def get_successful_patterns(self, context: ProblemContext, action_history: ActionHistory) -> list[str]:
+    def get_successful_patterns(self, context: ProblemContext, event_history: EventHistory) -> list[str]:
         """Identify patterns from successful actions."""
         patterns = []
         successful_actions = [a for a in action_history.actions if a.success]
@@ -382,12 +435,12 @@ def select_context_for_llm(self, context: ProblemContext, action_history: Action
 
 #### 2. Prompt Building
 ```python
-def build_llm_prompt(self, problem: str, context: ProblemContext, action_history: ActionHistory) -> str:
+def build_llm_prompt(self, problem: str, context: ProblemContext, event_history: EventHistory) -> str:
     """Build LLM prompt with optimized context."""
     
     # Include problem and objective
     # Add computed complexity indicators
-    # Include relevant action history
+    # Include relevant event history
     # Provide constraint and assumption context
     # Share learning from execution
 ```
@@ -459,17 +512,14 @@ def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance
         depth=0
     )
     
-    # Create action history
-    action_history = ActionHistory()
-    
-    # Create workflow instance
+    # Create workflow instance with event history
     workflow = WorkflowInstance(
         struct_type=self._create_workflow_type(problem),
         values={
             "problem_statement": problem,
             "objective": problem_context.objective,
             "problem_context": problem_context,
-            "action_history": action_history
+            "event_history": self._global_event_history
         },
         parent_workflow=None
     )
@@ -511,18 +561,12 @@ def execute(self, context: SandboxContext, *args, **kwargs) -> Any:
     
     # 2. Record execution start
     start_time = time.time()
-    self._global_action_history.add_action(Action(
-        action_type="workflow_start",
-        description=f"Started executing workflow for: {self._problem_statement}",
-        depth=self._problem_context.depth,
-        timestamp=datetime.now(),
-        result=None,
-        workflow_id=self.id,
-        problem_statement=self._problem_statement,
-        success=True,
-        execution_time=0.0,
-        error_message=None
-    ))
+    self._global_event_history.add_event("workflow_start", {
+        "description": f"Started executing workflow for: {self._problem_statement}",
+        "depth": self._problem_context.depth,
+        "workflow_id": self.id,
+        "problem_statement": self._problem_statement
+    }, references={"workflow_instance": self})
     
     try:
         # 3. Execute the composed function
@@ -533,36 +577,29 @@ def execute(self, context: SandboxContext, *args, **kwargs) -> Any:
         
         # 4. Record successful completion
         execution_time = time.time() - start_time
-        self._global_action_history.add_action(Action(
-            action_type="workflow_complete",
-            description=f"Successfully completed workflow for: {self._problem_statement}",
-            depth=self._problem_context.depth,
-            timestamp=datetime.now(),
-            result=result,
-            workflow_id=self.id,
-            problem_statement=self._problem_statement,
-            success=True,
-            execution_time=execution_time,
-            error_message=None
-        ))
+        self._global_event_history.add_event("workflow_complete", {
+            "description": f"Successfully completed workflow for: {self._problem_statement}",
+            "depth": self._problem_context.depth,
+            "result": result,
+            "workflow_id": self.id,
+            "problem_statement": self._problem_statement,
+            "execution_time": execution_time
+        }, references={"workflow_instance": self})
         
         return result
         
     except Exception as e:
         # 5. Record error
         execution_time = time.time() - start_time
-        self._global_action_history.add_action(Action(
-            action_type="workflow_error",
-            description=f"Error in workflow for: {self._problem_statement}",
-            depth=self._problem_context.depth,
-            timestamp=datetime.now(),
-            result=str(e),
-            workflow_id=self.id,
-            problem_statement=self._problem_statement,
-            success=False,
-            execution_time=execution_time,
-            error_message=str(e)
-        ))
+        self._global_event_history.add_event("workflow_error", {
+            "description": f"Error in workflow for: {self._problem_statement}",
+            "depth": self._problem_context.depth,
+            "result": str(e),
+            "workflow_id": self.id,
+            "problem_statement": self._problem_statement,
+            "execution_time": execution_time,
+            "error_message": str(e)
+        }, references={"workflow_instance": self})
         raise e
 ```
 
@@ -828,7 +865,7 @@ The `agent.solve()` architecture provides a robust, extensible foundation for ag
 - **Extensibility**: Plugin architecture for custom strategies and contexts
 - **Performance**: Built-in optimization and caching capabilities
 - **Minimal Arguments**: Only essential arguments are passed, with WorkflowInstance carrying all state
-- **Linear History**: Single action history that cuts across all recursion levels
+- **Linear Event History**: Single event timeline that cuts across all recursion levels and conversation turns
 - **Context Engineering**: Systematic approach to building, propagating, and utilizing context for intelligent decision-making
 
 This architecture allows agents to solve complex problems while maintaining clean, maintainable code and supporting future enhancements and customizations.
