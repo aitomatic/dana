@@ -1,0 +1,5 @@
+deactivate  # deactivate virtual environment, in currently in one
+
+cd ..\..\resources\mcp\utils
+.\install-weather-mcp-server
+.\launch-weather-mcp-server
