@@ -1,0 +1,171 @@
+"""Financial-Analysis Functions & Workflows."""
+
+
+from .fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
+from .fin_statements import get_fixed_asset, get_fixed_asset_2y, get_fixed_asset_3y
+from .fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
+from .fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y
+from .fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
+from .fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
+from .fin_statements import get_inventory, get_inventory_2y, get_inventory_3y
+from .fin_statements import get_curr_liab, get_curr_liab_2y, get_curr_liab_3y
+from .fin_statements import get_payable, get_payable_2y, get_payable_3y
+from .fin_statements import get_lt_debt, get_lt_debt_2y, get_lt_debt_3y
+from .fin_statements import get_st_debt, get_st_debt_2y, get_st_debt_3y
+from .fin_statements import get_equity, get_equity_2y, get_equity_3y
+from .fin_statements import get_op_cf, get_op_cf_2y, get_op_cf_3y
+from .fin_statements import get_capex, get_capex_2y, get_capex_3y
+from .fin_statements import get_rev, get_rev_2y, get_rev_3y
+from .fin_statements import get_cogs, get_cogs_2y, get_cogs_3y
+from .fin_statements import get_gross_income, get_gross_income_2y, get_gross_income_3y
+from .fin_statements import get_ga_exp, get_ga_exp_2y, get_ga_exp_3y
+from .fin_statements import get_deprec_and_amort, get_deprec_and_amort_2y, get_deprec_and_amort_3y
+from .fin_statements import get_op_income, get_op_income_2y, get_op_income_3y
+from .fin_statements import get_ebit, get_ebit_2y, get_ebit_3y
+from .fin_statements import get_int_exp, get_int_exp_2y, get_int_exp_3y
+from .fin_statements import get_ebt, get_ebt_2y, get_ebt_3y
+from .fin_statements import get_tax_exp, get_tax_exp_2y, get_tax_exp_3y
+from .fin_statements import get_net_income, get_net_income_2y, get_net_income_3y
+from .fin_statements import get_div, get_div_2y, get_div_3y
+
+from .adj_income import workflow_calc_ebitda, workflow_calc_ebitda_2y, workflow_calc_ebitda_3y
+
+from .turnover_ratios import workflow_calc_total_asset_turnover_ratio
+from .turnover_ratios import workflow_calc_fixed_asset_turnover_ratio
+from .turnover_ratios import workflow_calc_inventory_turnover_ratio
+
+from .margin_ratios import workflow_calc_cogs_margin, workflow_calc_cogs_margin_3y_avg
+from .margin_ratios import workflow_calc_gross_margin, workflow_calc_gross_margin_3y_avg
+from .margin_ratios import workflow_calc_ebitda_margin, workflow_calc_ebitda_margin_3y_avg
+from .margin_ratios import workflow_calc_da_margin
+from .margin_ratios import workflow_calc_op_margin, workflow_calc_op_margin_3y_avg
+from .margin_ratios import workflow_calc_ebit_margin, workflow_calc_ebit_margin_3y_avg
+from .margin_ratios import workflow_calc_net_margin, workflow_calc_net_margin_3y_avg
+
+from .return_ratios import workflow_calc_roa_ratio, workflow_calc_roe_ratio
+
+from .liquidity import workflow_calc_quick_ratio
+from .liquidity import workflow_calc_net_work_cap, workflow_calc_work_cap_ratio
+from .liquidity import workflow_calc_op_cf_ratio
+from .liquidity import workflow_calc_fcf, workflow_calc_fcf_conv_ratio
+from .liquidity import workflow_calc_dio, workflow_calc_dso, workflow_calc_dpo, workflow_calc_ccc
+
+from .cap_intens import workflow_calc_fixed_asset_over_total_asset
+from .cap_intens import workflow_calc_total_asset_over_rev
+from .cap_intens import workflow_calc_capex_over_rev, workflow_calc_capex_over_rev_3y_avg
+from .cap_intens import workflow_assess_cap_intens
+
+from .leverage import workflow_calc_total_debt, workflow_calc_total_debt_2y, workflow_calc_total_debt_3y
+from .leverage import workflow_calc_de_ratio
+
+from .income_util_ratios import workflow_calc_int_cov_ratio
+from .income_util_ratios import workflow_calc_eff_tax_rate
+from .income_util_ratios import workflow_calc_div_payout_ratio
+from .income_util_ratios import workflow_calc_retention_ratio
+
+
+__all__ = [
+    'get_total_asset', 'get_total_asset_2y', 'get_total_asset_3y',
+    'get_fixed_asset', 'get_fixed_asset_2y', 'get_fixed_asset_3y',
+    'get_curr_asset', 'get_curr_asset_2y', 'get_curr_asset_3y',
+
+    'get_cash_and_equiv', 'get_cash_and_equiv_2y', 'get_cash_and_equiv_3y',
+    'get_st_inv', 'get_st_inv_2y', 'get_st_inv_3y',
+    'get_recvable', 'get_recvable_2y', 'get_recvable_3y',
+
+    'get_inventory', 'get_inventory_2y', 'get_inventory_3y',
+
+    'get_curr_liab', 'get_curr_liab_2y', 'get_curr_liab_3y',
+
+    'get_payable', 'get_payable_2y', 'get_payable_3y',
+
+    'get_lt_debt', 'get_lt_debt_2y', 'get_lt_debt_3y',
+    'get_st_debt', 'get_st_debt_2y', 'get_st_debt_3y',
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
+
+    'get_equity', 'get_equity_2y', 'get_equity_3y',
+
+    'get_op_cf', 'get_op_cf_2y', 'get_op_cf_3y',
+
+    'get_capex', 'get_capex_2y', 'get_capex_3y',
+
+    'get_rev', 'get_rev_2y', 'get_rev_3y',
+
+    'get_cogs', 'get_cogs_2y', 'get_cogs_3y',
+
+    'get_gross_income', 'get_gross_income_2y', 'get_gross_income_3y',
+
+    'get_ga_exp', 'get_ga_exp_2y', 'get_ga_exp_3y',
+
+    'workflow_calc_ebitda', 'workflow_calc_ebitda_2y', 'workflow_calc_ebitda_3y',
+
+    'get_deprec_and_amort', 'get_deprec_and_amort_2y', 'get_deprec_and_amort_3y',
+
+    'get_op_income', 'get_op_income_2y', 'get_op_income_3y',
+
+    'get_ebit', 'get_ebit_2y', 'get_ebit_3y',
+
+    'get_int_exp', 'get_int_exp_2y', 'get_int_exp_3y',
+
+    'get_ebt', 'get_ebt_2y', 'get_ebt_3y',
+
+    'get_tax_exp', 'get_tax_exp_2y', 'get_tax_exp_3y',
+
+    'get_net_income', 'get_net_income_2y', 'get_net_income_3y',
+
+    'get_div', 'get_div_2y', 'get_div_3y',
+
+    'workflow_calc_total_asset_turnover_ratio',
+    'workflow_calc_fixed_asset_turnover_ratio',
+    'workflow_calc_inventory_turnover_ratio',
+
+    'workflow_calc_cogs_margin', 'workflow_calc_cogs_margin_3y_avg',
+
+    'workflow_calc_gross_margin', 'workflow_calc_gross_margin_3y_avg',
+
+    'workflow_calc_ebitda_margin', 'workflow_calc_ebitda_margin_3y_avg',
+
+    'workflow_calc_da_margin',
+
+    'workflow_calc_op_margin', 'workflow_calc_op_margin_3y_avg',
+
+    'workflow_calc_ebit_margin', 'workflow_calc_ebit_margin_3y_avg',
+
+    'workflow_calc_net_margin', 'workflow_calc_net_margin_3y_avg',
+
+    'workflow_calc_roa_ratio', 'workflow_calc_roe_ratio',
+
+    'workflow_calc_quick_ratio',
+
+    'workflow_calc_net_work_cap',
+    'workflow_calc_work_cap_ratio',
+
+    'workflow_calc_op_cf_ratio',
+
+    'workflow_calc_fcf',
+    'workflow_calc_fcf_conv_ratio',
+
+    'workflow_calc_dio',
+    'workflow_calc_dso',
+    'workflow_calc_dpo',
+    'workflow_calc_ccc',
+
+    'workflow_calc_fixed_asset_over_total_asset',
+
+    'workflow_calc_total_asset_over_rev',
+
+    'workflow_calc_capex_over_rev', 'workflow_calc_capex_over_rev_3y_avg',
+
+    'workflow_assess_cap_intens',
+
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
+
+    'workflow_calc_de_ratio',
+
+    'workflow_calc_int_cov_ratio',
+
+    'workflow_calc_eff_tax_rate',
+
+    'workflow_calc_div_payout_ratio',
+    'workflow_calc_retention_ratio',
+]

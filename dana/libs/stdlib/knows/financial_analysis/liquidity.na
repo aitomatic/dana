@@ -1,0 +1,265 @@
+"""Liquidity Metrics."""
+
+
+from .fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
+from .fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y
+from .fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
+from .fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
+from .fin_statements import get_inventory_2y
+from .fin_statements import get_curr_liab, get_curr_liab_2y, get_curr_liab_3y
+from .fin_statements import get_payable_2y
+from .fin_statements import get_op_cf, get_capex
+from .fin_statements import get_rev, get_cogs, get_net_income
+
+
+__all__ = [
+    'workflow_calc_quick_ratio',
+
+    'workflow_calc_net_work_cap',
+    'workflow_calc_work_cap_ratio',
+
+    'workflow_calc_op_cf_ratio',
+    'workflow_calc_fcf',
+    'workflow_calc_fcf_conv_ratio',
+
+    'workflow_calc_dio',
+    'workflow_calc_dso',
+    'workflow_calc_dpo',
+    'workflow_calc_ccc',
+]
+
+
+def _quick_asset(intermed_results):
+    return llm(
+f'Calculate `Quick Assets` according to formula:
+
+`Quick Assets` = (
+    `Cash & Cash Equivalents` +
+    `Short-Term Investments or (Current) Marketable Securities` +
+    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_quick_asset(resources: list) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
+
+
+def _quick_asset_2y(intermed_results):
+    return llm(
+f'Calculate `Quick Assets` as at past 2 annual fiscal period ends according to formula:
+
+`Quick Assets` = (
+    `Cash & Cash Equivalents` +
+    `Short-Term Investments or (Current) Marketable Securities` +
+    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_quick_asset_2y(resources: list) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
+
+
+def _quick_asset_3y(intermed_results):
+    return llm(
+f'Calculate `Quick Assets` as at past 3 annual fiscal period ends according to formula:
+
+`Quick Assets` = (
+    `Cash & Cash Equivalents` +
+    `Short-Term Investments or (Current) Marketable Securities` +
+    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_quick_asset_3y(resources: list) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
+
+
+def _quick_ratio(intermed_results):
+    return llm(
+f'Calculate `Quick Ratio` according to formula:
+
+`Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+
+From there, assess liquidity health:
+- if `Quick Ratio` >= 1, then liquidity is healthy
+- otherwise, liquidity is not very healthy
+
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_quick_ratio(resources: list) -> float = [workflow_calc_quick_asset, get_curr_liab] | _quick_ratio
+
+
+def _net_work_cap(intermed_results):
+    return llm(
+f'Calculate `(Net) Working Capital` according to formula:
+
+`(Net) Working Capital` = `(Total) Current Assets` - `(Total) Current Liabilities`
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_net_work_cap(resources: list) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
+
+
+def _work_cap_ratio(intermed_results):
+    return llm(
+f'Calculate `(Net) Working Capital Ratio` according to formula:
+
+`(Net) Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_work_cap_ratio(resources: list) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
+
+
+def _op_cf_ratio(intermed_results):
+    return llm(
+f'Calculate `(Net) Cash Flows from Operations Ratio` according to formula:
+
+`(Net) Cash Flows from Operations Ratio` = (
+    `(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows`
+    / `(Total) Current Liabilities`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_op_cf_ratio(resources: list) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
+
+
+def _fcf(intermed_results):
+    return llm(
+f'Calculate `Free Cash Flow, a.k.a. FCF` according to formula:
+
+`Free Cash Flow, a.k.a. FCF` = (
+    `(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows` -
+    `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
+     or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_fcf(resources: list) -> float = [get_op_cf, get_capex] | _fcf
+
+
+def _fcf_conv_ratio(intermed_results):
+    return llm(
+f'Calculate `Free Cash Flow Conversion Ratio` according to formula:
+
+`Free Cash Flow Conversion Ratio` = (
+    `Free Cash Flow, a.k.a. FCF` /
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_fcf_conv_ratio(resources: list) -> float = [workflow_calc_fcf, get_net_income] | _fcf_conv_ratio
+
+
+def _dio(intermed_results):
+    return llm(
+f'Calculate `Days Inventory Outstanding, a.k.a. DIO` according to formula:
+
+`Days Inventory Outstanding, a.k.a. DIO` = (
+    365 * `average (Total) Inventory, typically between two consecutive fiscal year-ends`
+    / `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_dio(resources: list) -> float = [get_inventory_2y, get_cogs] | _dio
+
+
+def _dso(intermed_results):
+    return llm(
+f'Calculate `Days Sales Outstanding, a.k.a. DSO` according to formula:
+
+`Days Sales Outstanding, a.k.a. DSO` = (
+    365 * `average (Net) Accounts Receivable, typically between two consecutive fiscal year-ends`
+    / `(Total) Revenue, a.k.a. (Total) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_dso(resources: list) -> float = [get_recvable_2y, get_rev] | _dso
+
+
+def _dpo(intermed_results):
+    return llm(
+f'Calculate `Days Payable Outstanding, a.k.a. DPO` according to formula:
+
+`Days Payable Outstanding, a.k.a. DPO` = (
+    365 * `average Accounts Payable, typically between two consecutive fiscal year-ends`
+    / (`(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue` +
+       `change in (Total) (Net) Inventory(ies), typically between two consecutive fiscal year-ends`)
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_dpo(resources: list) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
+
+
+def _ccc(intermed_results):
+    return llm(
+f'Calculate `Cash Conversion Cycle, a.k.a. CCC` according to formula:
+
+`Cash Conversion Cycle, a.k.a. CCC` = (
+    `Days Inventory Outstanding, a.k.a. DIO`
+    + `Days Sales Oustanding, a.k.a. DSO`
+    - `Days Payable Outstanding, a.k.a. DPO`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_ccc(resources: list) -> float = [workflow_calc_dio, workflow_calc_dso, workflow_calc_dpo] | _ccc

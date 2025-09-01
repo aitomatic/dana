@@ -1,0 +1,103 @@
+"""Dana Expert Agent Blueprint."""
+
+
+# import utilities
+from .utils.prompts import CLOSEST_MATCHED_EXPERT_WORKFLOW_LOOKUP_PROMPT_TEMPLATE, EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE
+
+
+# expert agent blueprint with list of expertise
+agent_blueprint ExpertAgent:
+    """Expert Agent blueprint.
+
+    ASSUMPTIONS:
+    - `expertise` is assumed to be a list of Dana modules
+    - each `expertise_module.__all__` is assumed to be a list of exported expert workflows
+    - each expert workflow is assumed to be a function that takes a list of `ResourceInstance` objects as input
+    """
+
+    expertise: list = []
+
+
+def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
+    """Struct function `solve` dedicated to `ExpertAgent` struct.
+
+    ASSUMPTIONS:
+    - `resources` is a list of `ResourceInstance` objects
+
+    CURRENT SIMPLICATIONS:
+    - only one single expert workflow is matched, or none at all is match
+      - hence no allowing for usage of 2-3 relevant expert workflows in combination
+    """
+
+    if dxa.expertise:
+        # Build combined list of all importable workflows from all expertise modules
+        expert_workflow_names: list[str] = []
+        expert_workflow_name_to_module_map: dict[str, Module] = {}
+
+        for expertise_module in dxa.expertise:
+            _expert_workflow_names: list[str] = expertise_module.__all__
+            expert_workflow_names.extend(_expert_workflow_names)
+            for expert_workflow_name in _expert_workflow_names:
+                expert_workflow_name_to_module_map[expert_workflow_name] = expertise_module
+
+        # Find closest matched expert workflow name
+        closest_matched_expert_workflow_lookup_prompt: str = (
+            CLOSEST_MATCHED_EXPERT_WORKFLOW_LOOKUP_PROMPT_TEMPLATE.format(
+                problem=problem,
+                expert_workflow_names=expert_workflow_names))
+
+        closest_matched_expert_workflow_name: str = ''
+        while not ((closest_matched_expert_workflow_name in expert_workflow_name_to_module_map) or
+                   (closest_matched_expert_workflow_name == 'NONE')):
+            closest_matched_expert_workflow_name: str = llm(closest_matched_expert_workflow_lookup_prompt).strip('"').strip("'")
+
+        # If no matched expert workflow, use reason() to solve problem directly
+        # If matched expert workflow found, execute it and use its result to solve problem
+        if closest_matched_expert_workflow_name == 'NONE':
+            if resources:
+                solution = reason(problem, resources=resources)
+
+            else:
+                solution = llm(problem)
+
+        else:
+            matched_expertise_module = expert_workflow_name_to_module_map[closest_matched_expert_workflow_name]
+
+            print(f'{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...')
+
+            closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
+            expert_workflow_result = closest_matched_expert_workflow(resources)
+
+            # TODO (after syntax bug fix)
+            # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
+            #     problem=problem,
+            #     expert_workflow_result=expert_workflow_result)
+
+            expert_workflow_solution_prompt: str = f"""
+                Given the following problem:
+
+                PROBLEM:
+                ```
+                {problem}
+                ```
+
+                And the following result(s) from an expert workflow:
+
+                EXPERT WORKFLOW RESULT:
+                ```
+                {expert_workflow_result}
+                ```
+
+                Return your best conclusion about / solution to the posed problem.
+                Do explain your reasoning in a structured manner, with key supporting details.
+            """
+
+            solution = llm(expert_workflow_solution_prompt)
+
+    elif resources:
+        solution = reason(problem, resources=resources)
+
+    else:
+        solution = llm(problem)
+
+    return solution

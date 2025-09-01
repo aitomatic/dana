@@ -1,0 +1,84 @@
+"""Income Utilization Metrics."""
+
+
+from .fin_statements import get_ebit, get_int_exp
+from .fin_statements import get_ebt, get_tax_exp
+from .fin_statements import get_net_income, get_div
+
+
+__all__ = [
+    'workflow_calc_int_cov_ratio',
+    'workflow_calc_eff_tax_rate',
+    'workflow_calc_div_payout_ratio',
+    'workflow_calc_retention_ratio',
+]
+
+
+def _int_cov_ratio(intermed_results):
+    return llm(
+f'Calculate `Interest Coverage Ratio` according to formula:
+
+`Interest Coverage Ratio` = `Earnings before Interest & Tax, a.k.a. EBIT` / `Interest Expense`
+
+(note that if `Earnings before Interest & Tax, a.k.a. EBIT` is negative,
+ it is conventional to say `Interest Coverage Ratio` is zero)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_int_cov_ratio(resources: list) -> float = [get_ebit, get_int_exp] | _int_cov_ratio
+
+
+def _eff_tax_rate(intermed_results):
+    return llm(
+f'Calculate `Effective (Income) Tax Rate` according to formula:
+
+`Effective (Income) Tax Rate` = (
+    `(Income) Tax Expense` /
+    `Income or Profit or Earnings (or Loss(es)) before (Income) Tax(es)`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_eff_tax_rate(resources: list) -> float = [get_tax_exp, get_ebt] | _eff_tax_rate
+
+
+def _div_payout_ratio(intermed_results):
+    return llm(
+f'Calculate `Dividend Payout Ratio` according to formula:
+
+`Dividend Payout Ratio` = (
+    `Cash Dividends` /
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_div_payout_ratio(resources: list) -> float = [get_div, get_net_income] | _div_payout_ratio
+
+
+def _retention_ratio(intermed_results):
+    return llm(
+f'Calculate `Retention Ratio` according to formula:
+
+`Retention Ratio` = 1 - `Dividend Payout Ratio`
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_retention_ratio(resources: list) -> float = workflow_calc_div_payout_ratio | _retention_ratio

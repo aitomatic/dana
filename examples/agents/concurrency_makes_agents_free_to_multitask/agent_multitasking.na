@@ -1,0 +1,14 @@
+"""Dana's concurrent runtime execution makes agents free to multitask."""
+
+
+# Try these in the interactive Dana TUI or REPL
+
+
+agent Neo
+
+
+Neo.reason("What were some key milestones in proving Fermat's Last Theorem?")
+
+Neo.reason("Which of Hilbert's Problems are still open?")
+
+Neo.reason("What were Richard Hamilton's and Grigori Perelman's contributions to proving the Poincaré Conjecture?")

@@ -1,0 +1,170 @@
+"""Cash Flow Statement Items."""
+
+
+from ..utils import query_fin_data, CurrAndPrevNums
+
+
+__all__ = [
+    'get_op_cf', 'get_op_cf_2y', 'get_op_cf_3y',
+
+    'get_capex', 'get_capex_2y', 'get_capex_3y',
+
+    'get_deprec_and_amort', 'get_deprec_and_amort_2y', 'get_deprec_and_amort_3y',
+
+    'get_div', 'get_div_2y', 'get_div_3y',
+]
+
+
+# TODO: multi-line string concatenation
+CF_STATEMENT: str = '(Consolidated) Cash Flow(s) Statement(s), a.k.a. (Consolidated) Statement(s) of Cash Flows'
+
+
+OP_CF_LINE_ITEM: str = '(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows'
+
+# TODO: multi-line string concatenation
+CAPEX_LINE_ITEM: str = 'Capital Expenditure(s), a.k.a. CapEx, or Capital Spending, or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)'
+
+# TODO: multi-line string concatenation
+DnA_LINE_ITEM: str = 'Depreciation & Amortization, a.k.a. D&A (of Fixed Assets or Property, Plant & Equipment (PP&E))'
+
+DIV_LINE_ITEM: str = 'Cash Dividends'
+
+
+def get_op_cf(resources: list) -> float:
+    """Get Operating Cash Flow from Cash Flow Statement."""
+
+    op_cf = query_fin_data(
+        resources=resources,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    return op_cf
+
+
+def get_op_cf_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Operating Cash Flow from Cash Flow Statement."""
+
+    op_cf_2y = query_fin_data(
+        resources=resources,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    return op_cf_2y
+
+
+def get_op_cf_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Operating Cash Flow from Cash Flow Statement."""
+
+    op_cf_3y = query_fin_data(
+        resources=resources,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    return op_cf_3y
+
+
+def get_capex(resources: list) -> float:
+    """Get Capital Expenditure(s) from Cash Flow Statement."""
+
+    capex = query_fin_data(
+        resources=resources,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    return capex
+
+
+def get_capex_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Capital Expenditure(s) from Cash Flow Statement."""
+
+    capex_2y = query_fin_data(
+        resources=resources,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    return capex_2y
+
+
+def get_capex_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Capital Expenditure(s) from Cash Flow Statement."""
+
+    capex_3y = query_fin_data(
+        resources=resources,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    return capex_3y
+
+
+def get_deprec_and_amort(resources: list) -> float:
+    """Get Depreciation & Amortization from Cash Flow Statement."""
+
+    deprec_and_amort = query_fin_data(
+        resources=resources,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    return deprec_and_amort
+
+
+def get_deprec_and_amort_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Depreciation & Amortization from Cash Flow Statement."""
+
+    deprec_and_amort_2y = query_fin_data(
+        resources=resources,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    return deprec_and_amort_2y
+
+
+def get_deprec_and_amort_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Depreciation & Amortization from Cash Flow Statement."""
+
+    deprec_and_amort_3y = query_fin_data(
+        resources=resources,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    return deprec_and_amort_3y
+
+
+def get_div(resources: list) -> float:
+    """Get Dividend from Cash Flow Statement."""
+
+    div = query_fin_data(
+        resources=resources,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    return div
+
+
+def get_div_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Dividend from Cash Flow Statement."""
+
+    div_2y = query_fin_data(
+        resources=resources,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    return div_2y
+
+
+def get_div_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Dividend from Cash Flow Statement."""
+
+    div_3y = query_fin_data(
+        resources=resources,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    return div_3y

@@ -1,0 +1,16 @@
+"""Workflow Syntax: Sequential (pipe "|" operator)."""
+
+
+def plan_trip(location, weather):
+    return llm(f'Plan a day trip in {location} with weather being {weather}')
+
+
+def estimate_cost(trip):
+    return llm(f'Estimate the cost of the trip: {trip}. Include a summary of the trip for ease of understanding.')
+
+
+def workflow_plan_and_cost(city: str, weather: str) -> str = plan_trip | estimate_cost
+
+
+def __main__(city: str = 'Tokyo', weather: str = 'sunny'):
+    workflow_plan_and_cost(city, weather)

@@ -1,0 +1,102 @@
+"""Capital Intensity/Intensiveness Metrics."""
+
+
+from .fin_statements import get_total_asset, get_fixed_asset
+from .fin_statements import get_capex, get_capex_3y
+from .fin_statements import get_rev, get_rev_3y
+
+from .return_ratios import workflow_calc_roa_ratio
+
+
+__all__ = [
+    'workflow_calc_fixed_asset_over_total_asset',
+    'workflow_calc_total_asset_over_rev',
+    'workflow_calc_capex_over_rev', 'workflow_calc_capex_over_rev_3y_avg',
+    'workflow_assess_cap_intens',
+]
+
+
+def _fixed_asset_over_total_asset(intermed_results):
+    return llm(
+f'Calculate `Fixed Assets` as proportion of `Total Assets`
+using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_fixed_asset_over_total_asset(resources: list) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
+
+
+def _total_asset_over_rev(intermed_results):
+    return llm(
+f'Calculate `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+as decimal value, using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_total_asset_over_rev(resources: list) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
+
+
+def _capex_over_rev(intermed_results):
+    return llm(
+f'Calculate `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
+or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_capex_over_rev(resources: list) -> float = [get_capex, get_rev] | _capex_over_rev
+
+
+def _capex_over_rev_3y_avg(intermed_results):
+    return llm(
+f'Calculate 3-year average of
+`Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
+or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+using the sum-divided-by-sum method, and the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_capex_over_rev_3y_avg(resources: list) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
+
+
+def _cap_intens_assessment(intermed_results):
+    return llm(
+f'Capital-intensive businesses tend to have one or several of the following characteristics:
+
+- high `(Net) Fixed Assets, a.k.a. (Net) Property, Plant & Equipment (PP&E)` as proportion of `Total Assets`,
+  e.g., over 25%;
+
+- high `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+  e.g., over 2 times;
+
+- high `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
+  or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+  relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+  e.g., over 10%;
+
+  and/or
+
+- low `Return on (Total) Assets, a.k.a. RoA or RoTA`,
+  e.g., under 10%,
+
+Assess whether company is capital-intensive according to the concerned fiscal period data,
+using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_assess_cap_intens(resources: list) -> str = [workflow_calc_fixed_asset_over_total_asset,
+                                                          workflow_calc_total_asset_over_rev,
+                                                          workflow_calc_capex_over_rev,
+                                                          workflow_calc_roa_ratio] | _cap_intens_assessment

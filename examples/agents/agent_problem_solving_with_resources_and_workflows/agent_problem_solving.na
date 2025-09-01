@@ -1,0 +1,41 @@
+"""Agent problem-solving with Resources and Workflows."""
+
+
+agent Neo
+
+
+PROBLEM = 'Is AMD capital-intensive?'
+
+
+print(Neo.solve(PROBLEM))
+
+
+# enhanced problem-solving: with context from `resource_amd_annual_report`,
+# agent returns more informed solution
+print('
+
+CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
+=====================================================
+')
+
+resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/AMD_2022_10K.pdf'])
+
+print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))
+
+
+# expert-level problem-solving: with expert workflows,
+# agent returns precise, sophisticated solution
+from knows.financial_analysis.cap_intens import workflow_calc_fixed_asset_over_total_asset, workflow_calc_total_asset_over_rev, workflow_calc_capex_over_rev
+from knows.financial_analysis.return_ratios import workflow_calc_roa_ratio
+
+print('
+
+EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
+=============================================================
+')
+print(Neo.solve(PROBLEM,
+                resources=[resource_amd_annual_report],
+                workflows=[workflow_calc_fixed_asset_over_total_asset,
+                           workflow_calc_total_asset_over_rev,
+                           workflow_calc_capex_over_rev,
+                           workflow_calc_roa_ratio]))

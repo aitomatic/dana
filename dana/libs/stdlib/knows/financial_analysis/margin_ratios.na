@@ -1,0 +1,229 @@
+"""Margin Ratios."""
+
+
+from .fin_statements import get_rev, get_rev_3y
+from .fin_statements import get_cogs, get_cogs_3y
+from .fin_statements import get_gross_income, get_gross_income_3y
+from .fin_statements import get_deprec_and_amort
+from .fin_statements import get_op_income, get_op_income_3y
+from .fin_statements import get_ebit, get_ebit_3y
+from .fin_statements import get_net_income, get_net_income_3y
+
+from .adj_income import workflow_calc_ebitda, workflow_calc_ebitda_3y
+
+
+__all__ = [
+    'workflow_calc_cogs_margin', 'workflow_calc_cogs_margin_3y_avg',
+    'workflow_calc_gross_margin', 'workflow_calc_gross_margin_3y_avg',
+    'workflow_calc_ebitda_margin', 'workflow_calc_ebitda_margin_3y_avg',
+    'workflow_calc_da_margin',
+    'workflow_calc_op_margin', 'workflow_calc_op_margin_3y_avg',
+    'workflow_calc_ebit_margin', 'workflow_calc_ebit_margin_3y_avg',
+    'workflow_calc_net_margin', 'workflow_calc_net_margin_3y_avg',
+]
+
+
+def calc_margin_ratio(
+        revenue: float,
+        other_income_or_cf_statement_item_value: float) -> float:
+    """Calculate a Margin Ratio by dividing an Income or Cash Flow Statement item by Revenue."""
+
+    return other_income_or_cf_statement_item_value / revenue
+
+
+def calc_avg_margin_ratio(
+        revenue_nums: tuple[float],
+        other_income_or_cf_statement_item_nums: tuple[float]) -> float:
+    """Calculate an average Margin Ratio by dividing a sum of an Income or Cash Flow Statement item by a sum of Revenue."""
+
+    return sum(other_income_or_cf_statement_item_nums) / sum(revenue_nums)
+
+
+
+def _cogs_margin(intermed_results):
+        return llm(
+f'Calculate `Cost of Goods Sold (COGS) Margin`
+as decimal value according to formula:
+
+`Cost of Goods Sold (COGS) Margin` = (
+    `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_cogs_margin(resources: list) -> float = [get_rev, get_cogs] | _cogs_margin
+
+
+"""
+Calculate 3-year average `Cost of Goods Sold (COGS) Margin`
+by dividing sum of `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value
+"""
+def workflow_calc_cogs_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
+
+
+def _gross_margin(intermed_results):
+    return llm(
+f'Calculate `Gross (Income or Profit or Earnings) Margin`
+as decimal value according to formula:
+
+`Gross (Income or Profit or Earnings) Margin` = (
+    `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Loss(es))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_gross_margin(resources: list) -> float = [get_rev, get_gross_income] | _gross_margin
+
+
+"""
+Calculate 3-year average `Gross (Income or Profit or Earnings) Margin`
+by dividing sum of `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Loss(es))`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value
+"""
+def workflow_calc_gross_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
+
+
+def _ebitda_margin(intermed_results):
+    return llm(
+f'Calculate `(Unadjusted) EBITDA Margin`
+as decimal value according to formula:
+
+`(Unadjusted) EBITDA Margin` = (
+    `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
+    / `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_ebitda_margin(resources: list) -> float = [get_rev, workflow_calc_ebitda] | _ebitda_margin
+
+
+"""
+Calculate 3-year average `(Unadjusted) EBITDA Margin`
+by dividing sum of `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value
+"""
+def workflow_calc_ebitda_margin_3y_avg(resources: list) -> float = [get_rev_3y, workflow_calc_ebitda_3y] | calc_avg_margin_ratio
+
+
+def _da_margin(intermed_results):
+    return llm(
+f'Calculate `Depreciation & Amortization (D&A) Margin`
+as decimal value according to formula:
+
+`Depreciation & Amortization (D&A) Margin` = (
+    `Depreciation & Amortization, a.k.a. D&A (of Fixed Assets or Property, Plant & Equipment (PP&E))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_da_margin(resources: list) -> float = [get_rev, get_deprec_and_amort] | _da_margin
+
+
+def _op_margin(intermed_results):
+    return llm(
+f'Calculate `Operating Income Margin`
+as decimal value according to formula:
+
+`Operating Income Margin` = (
+    `(Unadjusted) Operating Income, a.k.a. Operating Profit, or Operating Earnings (or Loss(es))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_op_margin(resources: list) -> float = [get_rev, get_op_income] | _op_margin
+
+
+"""
+Calculate 3-year average `Operating Income Margin`
+
+Calculate 3-year average `(Unadjusted) Operating (Income or Profit or Earnings) Margin`
+by dividing sum of `(Unadjusted) Operating Income,
+a.k.a. Operating Profit, or Operating Earnings (or Loss(es))`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value
+"""
+def workflow_calc_op_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
+
+
+def _ebit_margin(intermed_results):
+    return llm(
+f'Calculate `EBIT Margin`
+as decimal value according to formula:
+
+`EBIT Margin` = (
+    `Earnings before Interest & Tax, a.k.a. EBIT` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_ebit_margin(resources: list) -> float = [get_rev, get_ebit] | _ebit_margin
+
+
+"""
+Calculate 3-year average `EBIT Margin`
+by dividing sum of `Earnings before Interest & Tax, a.k.a. EBIT`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value
+"""
+def workflow_calc_ebit_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
+
+
+def _net_margin(intermed_results):
+    return llm(
+f'Calculate `Net Income Margin`
+as decimal value according to formula:
+
+`Net Income Margin` = (
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_net_margin(resources: list) -> float = [get_rev, get_net_income] | _net_margin
+
+
+"""
+Calculate 3-year average `Net Income Margin`
+by dividing sum of `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as decimal value"""
+def workflow_calc_net_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio

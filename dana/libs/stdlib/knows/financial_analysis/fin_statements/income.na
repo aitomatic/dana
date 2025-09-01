@@ -1,0 +1,405 @@
+"""Income Statement Items."""
+
+
+from ..utils import query_fin_data, CurrAndPrevNums
+
+
+__all__ = [
+    'get_rev', 'get_rev_2y', 'get_rev_3y',
+
+    'get_cogs', 'get_cogs_2y', 'get_cogs_3y',
+
+    'get_gross_income', 'get_gross_income_2y', 'get_gross_income_3y',
+
+    'get_ga_exp', 'get_ga_exp_2y', 'get_ga_exp_3y',
+
+    'get_op_income', 'get_op_income_2y', 'get_op_income_3y',
+
+    'get_ebit', 'get_ebit_2y', 'get_ebit_3y',
+
+    'get_int_exp', 'get_int_exp_2y', 'get_int_exp_3y',
+
+    'get_ebt', 'get_ebt_2y', 'get_ebt_3y',
+
+    'get_tax_exp', 'get_tax_exp_2y', 'get_tax_exp_3y',
+
+    'get_net_income', 'get_net_income_2y', 'get_net_income_3y',
+]
+
+
+# TODO: multi-line string concatenation
+INCOME_STATEMENT: str = '(Consolidated) Income Statement, a.k.a. (Consolidated) Profit-and-Loss (P&L) Statement, or (Consolidated) Earnings Statement, or (Consolidated) Operations Statement'
+
+
+REV_LINE_ITEM: str = '(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales'
+
+# TODO: multi-line string concatenation
+COGS_LINE_ITEM: str = '(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue'
+
+GROSS_INCOME_LINE_ITEM: str = 'Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Loss(es))'
+
+GnA_EXP_LINE_ITEM: str = 'General and Administrative Expenses, a.k.a. G&A Expenses'
+
+# TODO: multi-line string concatenation
+OP_INCOME_LINE_ITEM: str = '(Unadjusted) Operating Income, a.k.a. Operating Profit, or Operating Earnings (or Loss(es))'
+
+EBIT_LINE_ITEM: str = 'Earnings before Interest & Tax, a.k.a. EBIT'
+
+INT_EXP_LINE_ITEM: str = 'Interest Expense'
+
+EBT_LINE_ITEM: str = 'Income or Profit or Earnings (or Loss(es)) before (Income) Tax(es)'
+
+TAX_EXP_LINE_ITEM: str = '(Income) Tax Expense'
+
+# TODO: multi-line string concatenation
+NET_INCOME_LINE_ITEM: str = 'Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)'
+
+
+def get_rev(resources: list) -> float:
+    """Get Revenue from Income Statement."""
+
+    rev = query_fin_data(
+        resources=resources,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return rev
+
+
+def get_rev_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Revenue from Income Statement."""
+
+    rev_2y = query_fin_data(
+        resources=resources,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return rev_2y
+
+
+def get_rev_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Revenue from Income Statement."""
+
+    rev_3y = query_fin_data(
+        resources=resources,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return rev_3y
+
+
+def get_cogs(resources: list) -> float:
+    """Get Cost of Goods Sold from Income Statement."""
+
+    cogs = query_fin_data(
+        resources=resources,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return cogs
+
+
+def get_cogs_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Cost of Goods Sold from Income Statement."""
+
+    cogs_2y = query_fin_data(
+        resources=resources,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return cogs_2y
+
+
+def get_cogs_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Cost of Goods Sold from Income Statement."""
+
+    cogs_3y = query_fin_data(
+        resources=resources,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return cogs_3y
+
+
+def get_gross_income(resources: list) -> float:
+    """Get Gross Income from Income Statement."""
+
+    gross_income = query_fin_data(
+        resources=resources,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return gross_income
+
+
+def get_gross_income_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Gross Income from Income Statement."""
+
+    gross_income_2y = query_fin_data(
+        resources=resources,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return gross_income_2y
+
+
+def get_gross_income_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Gross Income from Income Statement."""
+
+    gross_income_3y = query_fin_data(
+        resources=resources,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return gross_income_3y
+
+
+def get_ga_exp(resources: list) -> float:
+    """Get General and Administrative Expenses from Income Statement."""
+
+    ga_exp = query_fin_data(
+        resources=resources,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ga_exp
+
+
+def get_ga_exp_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of General and Administrative Expenses from Income Statement."""
+
+    ga_exp_2y = query_fin_data(
+        resources=resources,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ga_exp_2y
+
+
+def get_ga_exp_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of General and Administrative Expenses from Income Statement."""
+
+    ga_exp_3y = query_fin_data(
+        resources=resources,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ga_exp_3y
+
+
+def get_op_income(resources: list) -> float:
+    """Get Operating Income from Income Statement."""
+
+    op_income = query_fin_data(
+        resources=resources,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return op_income
+
+
+def get_op_income_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Operating Income from Income Statement."""
+
+    op_income_2y = query_fin_data(
+        resources=resources,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return op_income_2y
+
+
+def get_op_income_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Operating Income from Income Statement."""
+
+    op_income_3y = query_fin_data(
+        resources=resources,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return op_income_3y
+
+
+def get_ebit(resources: list) -> float:
+    """Get Earnings before Interest & Tax from Income Statement."""
+
+    ebit = query_fin_data(
+        resources=resources,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ebit
+
+
+def get_ebit_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Earnings before Interest & Tax from Income Statement."""
+
+    ebit_2y = query_fin_data(
+        resources=resources,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ebit_2y
+
+
+def get_ebit_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Earnings before Interest & Tax from Income Statement."""
+
+    ebit_3y = query_fin_data(
+        resources=resources,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ebit_3y
+
+
+def get_int_exp(resources: list) -> float:
+    """Get Interest Expense from Income Statement."""
+
+    int_exp = query_fin_data(
+        resources=resources,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return int_exp
+
+
+def get_int_exp_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Interest Expense from Income Statement."""
+
+    int_exp_2y = query_fin_data(
+        resources=resources,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return int_exp_2y
+
+
+def get_int_exp_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Interest Expense from Income Statement."""
+
+    int_exp_3y = query_fin_data(
+        resources=resources,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return int_exp_3y
+
+
+def get_ebt(resources: list) -> float:
+    """Get Earnings before Tax from Income Statement."""
+
+    ebt = query_fin_data(
+        resources=resources,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ebt
+
+
+def get_ebt_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Earnings before Tax from Income Statement."""
+
+    ebt_2y = query_fin_data(
+        resources=resources,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ebt_2y
+
+
+def get_ebt_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Earnings before Tax from Income Statement."""
+
+    ebt_3y = query_fin_data(
+        resources=resources,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ebt_3y
+
+
+def get_tax_exp(resources: list) -> float:
+    """Get (Income) Tax Expense from Income Statement."""
+
+    tax_exp = query_fin_data(
+        resources=resources,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return tax_exp
+
+
+def get_tax_exp_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of (Income) Tax Expense from Income Statement."""
+
+    tax_exp_2y = query_fin_data(
+        resources=resources,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return tax_exp_2y
+
+
+def get_tax_exp_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of (Income) Tax Expense from Income Statement."""
+
+    tax_exp_3y = query_fin_data(
+        resources=resources,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return tax_exp_3y
+
+
+def get_net_income(resources: list) -> float:
+    """Get Net Income from Income Statement."""
+
+    net_income = query_fin_data(
+        resources=resources,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return net_income
+
+
+def get_net_income_2y(resources: list) -> CurrAndPrevNums:
+    """Get 2 years of Net Income from Income Statement."""
+
+    net_income_2y = query_fin_data(
+        resources=resources,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return net_income_2y
+
+
+def get_net_income_3y(resources: list) -> tuple[float, float, float]:
+    """Get 3 years of Net Income from Income Statement."""
+
+    net_income_3y = query_fin_data(
+        resources=resources,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return net_income_3y

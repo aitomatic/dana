@@ -1,0 +1,50 @@
+"""Return on Capital Metrics."""
+
+
+from .fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
+
+from .utils import over_avg_denom
+
+
+__all__ = [
+    'workflow_calc_roa_ratio',
+    'workflow_calc_roe_ratio',
+]
+
+
+def _roa_ratio(intermed_results):
+    return llm(
+f'Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
+as decimal value according to formula:
+
+`Return on (Total) Assets, a.k.a. RoA or RoTA` = (
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
+    `average Total Assets, typically between two consecutive fiscal year-ends`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_roa_ratio(resources: list) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
+
+
+def _roe_ratio(intermed_results):
+    return llm(
+f'Calculate `Return on Equity, a.k.a. RoE`
+as decimal value according to formula:
+
+`Return on Equity, a.k.a. RoE` = (
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
+    `average Equity, typically between two consecutive fiscal year-ends`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_roe_ratio(resources: list) -> float = [get_net_income, get_equity_2y] | _roe_ratio

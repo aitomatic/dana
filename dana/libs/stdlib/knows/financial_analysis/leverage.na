@@ -1,0 +1,83 @@
+"""Leverage Metrics."""
+
+
+from .fin_statements import get_lt_debt, get_lt_debt_2y, get_lt_debt_3y
+from .fin_statements import get_st_debt, get_st_debt_2y, get_st_debt_3y
+from .fin_statements import get_equity
+
+
+__all__ = [
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
+    'workflow_calc_de_ratio',
+]
+
+
+def _total_debt(intermed_results):
+    return llm(
+f'Calculate `Total Debt` according to formula:
+
+`Total Debt` = (
+  `Long-Term Debt (EXCLUDING any current/short-term portion)` +
+  `Short-Term Debt, or Current Portion of (Long-Term) Debt`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_total_debt(resources: list) -> float = [get_lt_debt, get_st_debt] | _total_debt
+
+
+def _total_debt_2y(intermed_results):
+    return llm(
+f'Calculate `Total Debt` as at last 2 annual fiscal period ends
+according to formula:
+
+`Total Debt` = (
+  `Long-Term Debt (EXCLUDING any current/short-term portion)` +
+  `Short-Term Debt, or Current Portion of (Long-Term) Debt`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_total_debt_2y(resources: list) -> float = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
+
+
+def _total_debt_3y(intermed_results):
+    return llm(
+f'Calculate `Total Debt` as at last 3 annual fiscal period ends
+according to formula:
+
+`Total Debt` = (
+  `Long-Term Debt (EXCLUDING any current/short-term portion)` +
+  `Short-Term Debt, or Current Portion of (Long-Term) Debt`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_total_debt_3y(resources: list) -> float = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
+
+
+def _de_ratio(intermed_results):
+    return llm(
+f'Calculate `Debt/Equity Ratio` according to formula:
+
+`Debt/Equity Ratio` = `Total Debt` / `Total Equity`
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+
+def workflow_calc_de_ratio(resources: list) -> float = [workflow_calc_total_debt, get_equity] | _de_ratio

@@ -1,0 +1,70 @@
+"""Turnover Ratios."""
+
+
+from .fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
+from .fin_statements import get_rev, get_cogs
+
+
+__all__ = [
+    'workflow_calc_total_asset_turnover_ratio',
+    'workflow_calc_fixed_asset_turnover_ratio',
+    'workflow_calc_inventory_turnover_ratio',
+]
+
+
+
+def _total_asset_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `(Total) Asset Turnover Ratio`
+as decimal value according to formula:
+
+`(Total) Asset Turnover Ratio` = (
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
+    `average Total Assets, typically between two consecutive fiscal year-ends`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_total_asset_turnover_ratio(resources: list) -> float = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
+
+
+def _fixed_asset_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `(Fixed) Asset Turnover Ratio`
+as decimal value according to formula:
+
+`(Fixed) Asset Turnover Ratio` = (
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
+    `average Fixed Assets, typically between two consecutive fiscal year-ends`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_fixed_asset_turnover_ratio(resources: list) -> float = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
+
+
+def _inventory_turnover_ratio(intermed_results):
+    return llm(
+f'Calculate `Inventory Turnover Ratio`
+as decimal value according to formula:
+
+`Inventory Turnover Ratio` = (
+    `Cost of Goods Sold, a.k.a. COGS` /
+    `average Inventory, typically between two consecutive fiscal year-ends`
+)
+
+and using the following intermediate results:
+```
+{intermed_results}
+```
+State your result together with the supporting calculation(s).')
+# TODO: parenthesized workflow def
+def workflow_calc_inventory_turnover_ratio(resources: list) -> float = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio
