@@ -40,6 +40,7 @@ import json
 import os
 from typing import Any
 
+from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.common.exceptions import SandboxError
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
@@ -54,6 +55,7 @@ def _execute_reason_call(
     context: SandboxContext,
     prompt: str,
     options: dict[str, Any] | None = None,
+    llm_resource: LLMResourceInstance | None = None,
     use_mock: bool | None = None,
 ) -> Any:
     """Execute the original reason function to make a synchronous LLM call.
@@ -89,7 +91,7 @@ def _execute_reason_call(
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
     # Get LLM resource from context using system resource access
-    llm_resource = context.get_system_llm_resource(use_mock=should_mock)
+    llm_resource = llm_resource or context.get_system_llm_resource(use_mock=should_mock)
 
     if llm_resource is None:
         # Create fallback LLM resource with auto model selection instead of hardcoded OpenAI
@@ -189,6 +191,7 @@ def py_reason(
     context: SandboxContext,
     prompt: str,
     options: dict[str, Any] | None = None,
+    llm_resource: LLMResourceInstance | None = None,
     use_mock: bool | None = None,
 ) -> Any:
     """Execute the POET-enhanced reason function with automatic prompt optimization.
@@ -284,4 +287,4 @@ def py_reason(
     except Exception:
         # Fallback to original function on any error
         logger.debug(f"LLM PROMPT: {prompt}")
-        return _execute_reason_call(context, prompt, options, use_mock)
+        return _execute_reason_call(context, prompt, options, llm_resource, use_mock)

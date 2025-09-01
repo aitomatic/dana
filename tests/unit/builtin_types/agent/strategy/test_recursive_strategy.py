@@ -18,7 +18,6 @@ class TestRecursiveStrategy:
         strategy = RecursiveStrategy(max_depth=5)
 
         assert strategy.max_depth == 5
-        assert strategy.llm_client is None
         assert strategy.computable_context is not None
 
     def test_can_handle_basic_problem(self):
@@ -56,7 +55,10 @@ class TestRecursiveStrategy:
 
         context = ProblemContext(problem_statement="Test problem", objective="Solve test problem", original_problem="Test problem", depth=0)
 
-        workflow = strategy.create_workflow("Test problem", context)
+        # Create mock agent instance
+        mock_agent = type("MockAgent", (), {"llm": lambda self, request: "agent.output('test result')"})()
+
+        workflow = strategy.create_workflow("Test problem", context, mock_agent)
 
         assert isinstance(workflow, WorkflowInstance)
         assert workflow.name.startswith("RecursiveWorkflow_")
@@ -68,7 +70,10 @@ class TestRecursiveStrategy:
 
         context = ProblemContext(problem_statement="Deep problem", objective="Solve deep problem", original_problem="Deep problem", depth=2)
 
-        workflow = strategy.create_workflow("Deep problem", context)
+        # Create mock agent instance
+        mock_agent = type("MockAgent", (), {"llm": lambda self, request: "agent.output('base case result')"})()
+
+        workflow = strategy.create_workflow("Deep problem", context, mock_agent)
 
         assert isinstance(workflow, WorkflowInstance)
         assert "BaseCaseWorkflow" in str(workflow)
@@ -108,20 +113,21 @@ class TestRecursiveStrategy:
         assert "agent.output" in prompt
         assert "agent.solve" in prompt
 
-    def test_mock_llm_response_generation(self):
-        """Test mock LLM response generation for testing."""
-        strategy = RecursiveStrategy(max_depth=5)
-
-        # Test complex problem response
-        complex_response = strategy._generate_mock_response("This is a complex problem that needs to be broken down")
-        assert "agent.reason" in complex_response
-        assert "agent.solve" in complex_response
-        assert "agent.output" in complex_response
-
-        # Test simple problem response
-        simple_response = strategy._generate_mock_response("Simple problem")
-        assert "agent.reason" in simple_response
-        assert "agent.output" in simple_response
+    # Mock response method removed - now uses agent.llm() directly
+    # def test_mock_llm_response_generation(self):
+    #     """Test mock LLM response generation for testing."""
+    #     strategy = RecursiveStrategy(max_depth=5)
+    #
+    #     # Test complex problem response
+    #     complex_response = strategy._generate_mock_response("This is a complex problem that needs to be broken down")
+    #     assert "agent.reason" in complex_response
+    #     assert "agent.solve" in complex_response
+    #     assert "agent.output" in complex_response
+    #
+    #     # Test simple problem response
+    #     simple_response = strategy._generate_mock_response("Simple problem")
+    #     assert "agent.reason" in simple_response
+    #     assert "agent.output" in simple_response
 
     def test_dana_code_compilation(self):
         """Test Dana code compilation (mock implementation)."""
@@ -231,8 +237,11 @@ class TestRecursiveStrategyIntegration:
             problem_statement="Complex problem", objective="Solve complex problem", original_problem="Complex problem", depth=0
         )
 
+        # Create mock agent instance
+        mock_agent = type("MockAgent", (), {"llm": lambda self, request: "agent.output('complex result')"})()
+
         # Create workflow
-        workflow = strategy.create_workflow("Complex problem", context)
+        workflow = strategy.create_workflow("Complex problem", context, mock_agent)
 
         assert isinstance(workflow, WorkflowInstance)
         assert workflow.name.startswith("RecursiveWorkflow_")
@@ -267,8 +276,11 @@ class TestRecursiveStrategyIntegration:
             problem_statement="Root problem", objective="Solve root problem", original_problem="Root problem", depth=0
         )
 
+        # Create mock agent instance
+        mock_agent = type("MockAgent", (), {"llm": lambda self, request: "agent.output('root result')"})()
+
         # Create root workflow
-        root_workflow = strategy.create_workflow("Root problem", root_context)
+        root_workflow = strategy.create_workflow("Root problem", root_context, mock_agent)
 
         # Create sub-context
         sub_context = root_context.create_sub_context("Sub problem", "Solve sub problem")
@@ -277,7 +289,7 @@ class TestRecursiveStrategyIntegration:
         sub_context.workflow_instance = root_workflow
 
         # Create sub-workflow
-        sub_workflow = strategy.create_workflow("Sub problem", sub_context)
+        sub_workflow = strategy.create_workflow("Sub problem", sub_context, mock_agent)
 
         assert sub_workflow._parent_workflow == root_workflow
         assert sub_workflow.composed_function is not None

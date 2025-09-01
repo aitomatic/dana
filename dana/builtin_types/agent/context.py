@@ -24,13 +24,15 @@ class ProblemContext:
 
     def create_sub_context(self, sub_problem: str, sub_objective: str) -> "ProblemContext":
         """Create context for sub-problem."""
+        import copy
+
         return ProblemContext(
             problem_statement=sub_problem,
             objective=sub_objective,
             original_problem=self.original_problem,
             depth=self.depth + 1,
-            constraints=self.constraints.copy(),
-            assumptions=self.assumptions.copy(),
+            constraints=copy.deepcopy(self.constraints),
+            assumptions=copy.deepcopy(self.assumptions),
         )
 
 
