@@ -1,0 +1,23 @@
+"""Workflow Syntax: Conditional (`case`): Collatz arithmetic process example."""
+
+
+def is_even(n: int) -> bool:
+    return n % 2 == 0
+
+def over_2(n: int) -> int:
+    return n // 2
+
+def times_3_plus_1(n: int) -> int:
+    return 3 * n + 1
+
+
+# Collatz transform in Dana workflow form
+def collatz(n: int) -> int = case((is_even, over_2),
+                                  times_3_plus_1)
+
+
+n: int = 1010
+while n > 1:
+    next_n: int = collatz(n)
+    print(f'Collatz iteration: {n} --> {next_n}')
+    n: int = next_n

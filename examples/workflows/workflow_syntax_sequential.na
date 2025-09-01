@@ -1,4 +1,4 @@
-"""Workflow as Composed Function."""
+"""Workflow Syntax: Sequential (pipe "|" operator)."""
 
 
 def plan_trip(location, weather):
