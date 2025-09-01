@@ -1,4 +1,1 @@
-deactivate  # deactive virtual environment if currently in one
-
-python3 -m pip install https://GitHub.com/AI-App/IsDaniel.MCP-Weather-Server/archive/dev.zip ^
-  --upgrade --user
+uv pip install https://GitHub.com/AI-App/IsDaniel.MCP-Weather-Server/archive/dev.zip --upgrade
