@@ -68,6 +68,11 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
             expert_workflow_result = closest_matched_expert_workflow(resources)
 
+            # TODO (after syntax bug fix)
+            # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
+            #     problem=problem,
+            #     expert_workflow_result=expert_workflow_result)
+
             expert_workflow_solution_prompt: str = f"""
                 Given the following problem:
 
@@ -84,6 +89,7 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
                 ```
 
                 Return your best conclusion about / solution to the posed problem.
+                Do explain your reasoning in a structured manner, with key supporting details.
             """
 
             solution = llm(expert_workflow_solution_prompt)
