@@ -1,4 +1,4 @@
-"""CFO Dana Expert Agent."""
+"""Instant Domain-Expert Agent (DXA) leveraging Dana's standard library's `ExpertAgent` blueprint and `knows` expertise packs."""
 
 
 # import expert agent blueprint from `blueprints` stdlib
