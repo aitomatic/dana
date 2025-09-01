@@ -114,7 +114,7 @@
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",
-                "base_url": "https://api.openai.com/v1",
+                "base_url": "env:OPENAI_BASE_URL",
                 "dimension": 1024,
                 "batch_size": 100
             },
