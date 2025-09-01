@@ -97,51 +97,108 @@ DEPTH: {context.depth}
 - agent.input(prompt): Get user input during problem solving
 - agent.reason(thought): Express natural language reasoning
 
-ITERATIVE STRATEGY:
+DECISION: You must decide whether to:
+1. SOLVE DIRECTLY: If the problem is simple enough, solve it directly and output the result
+2. GENERATE DANA CODE: If the problem requires iterative refinement, generate Dana code that will execute step by step
+
+ITERATIVE STRATEGY (if generating Dana code):
 - Break down the problem into manageable steps
 - Execute each step and evaluate results
 - Use agent.iterate() to plan improvements
 - Continue until the problem is solved or max iterations reached
 
-Generate Dana code that solves: {problem}
+Choose the appropriate approach and implement it. For Dana code generation, use the available functions above.
+
+Generate Dana code or solve directly for: {problem}
 """
 
     def _get_llm_response(self, prompt: str) -> str:
         """Get LLM response (Dana code)."""
-        if self.llm_client:
-            # Use actual LLM client
-            return self.llm_client.generate(prompt)
-        else:
-            # Mock response for testing
-            return self._generate_mock_response(prompt)
+        if not self.llm_client:
+            raise ValueError("LLM client is required for IterativeStrategy to work")
 
-    def _generate_mock_response(self, prompt: str) -> str:
-        """Generate a mock LLM response for testing."""
-        if "complex" in prompt.lower():
-            return """
-def iterative_solution():
-    # Complex problem - break into steps
-    agent.reason("This is a complex problem that needs iterative refinement")
-    
-    # Step 1: Initial analysis
-    result1 = analyze_problem()
-    agent.reason(f"Initial analysis result: {result1}")
-    
-    # Step 2: Iterate and improve
-    improvement_plan = agent.iterate("Refine based on initial results")
-    result2 = apply_improvements(result1, improvement_plan)
-    
-    # Step 3: Final output
-    agent.output(result2)
-"""
-        else:
-            return """
-def iterative_solution():
-    # Simple problem - direct solution
-    agent.reason("This is a straightforward problem")
-    result = solve_directly()
-    agent.output(result)
-"""
+        # The LLM always makes the decision about how to solve the problem
+        return self.llm_client.generate(prompt)
+
+    # Mock response method removed - LLM client is required
+    # def _generate_mock_response(self, prompt: str) -> str:
+    #     """Generate a mock LLM response for testing."""
+    #     # Simulate LLM decision-making based on problem content
+    #     problem = prompt.split("PROBLEM:")[1].split("\n")[0].strip() if "PROBLEM:" in prompt else ""
+    #
+    #     if "trip" in problem.lower() and "mexico" in problem.lower():
+    #         # Complex travel planning - needs iterative refinement
+    #         return """
+    # agent.reason("Planning a trip to Mexico requires iterative refinement")
+    # agent.reason("I'll start with initial research and improve the plan step by step")
+    #
+    # # Iteration 1: Initial research
+    # agent.reason("Starting with basic destination research")
+    # destinations = ["Mexico City", "Cancun", "Guadalajara"]
+    # agent.reason(f"Initial destinations: {destinations}")
+    #
+    # # Iteration 2: Refine based on feedback
+    # improvement_plan = agent.iterate("Research safety considerations and cultural aspects")
+    # agent.reason("Refining destinations based on safety and culture")
+    # refined_destinations = ["Mexico City (cultural hub)", "Oaxaca (safe, authentic)", "Merida (colonial charm)"]
+    #
+    # # Iteration 3: Final logistics
+    # agent.reason("Final iteration: planning logistics and itinerary")
+    # final_plan = {
+    #     "destinations": refined_destinations,
+    #     "logistics": "Book flights, hotels, local transport",
+    #     "itinerary": "7-day cultural exploration route"
+    # }
+    #
+    # agent.output(final_plan)
+    # """
+    #     elif "plan" in problem.lower() and "planning" in problem.lower():
+    #         # Meta-planning - explain iterative approach
+    #         return """
+    # agent.reason("The user wants me to explain my iterative methodology")
+    # agent.reason("I should demonstrate how I approach complex problem-solving")
+    #
+    # iterative_method = {
+    #     "iteration1": "Initial analysis and basic solution",
+    #     "iteration2": "Identify areas for improvement",
+    #     "iteration3": "Refine based on feedback and constraints",
+    #     "iteration4": "Validate and finalize solution"
+    # }
+    #
+    # agent.reason(f"Here's my iterative methodology: {iterative_method}")
+    #
+    # agent.output({
+    #     "iterative_methodology": iterative_method,
+    #     "explanation": "I solve complex problems through multiple iterations, starting with basic solutions and refining them based on feedback, constraints, and deeper analysis.",
+    #     "example": "For trip planning, I'd start with basic research, then refine destinations, then logistics, then create detailed itineraries."
+    # })
+    # """
+    #     else:
+    #         # Default case - iterative approach
+    #         return """
+    # agent.reason("I'll solve this problem through iterative refinement")
+    # agent.reason("Starting with initial analysis and improving step by step")
+    #
+    # # Iteration 1: Initial analysis
+    # agent.reason("First iteration: basic problem analysis")
+    # initial_analysis = analyze_problem_basics()
+    # agent.reason(f"Initial analysis: {initial_analysis}")
+    #
+    # # Iteration 2: Refine approach
+    # improvement_plan = agent.iterate("Identify areas for improvement")
+    # agent.reason("Second iteration: refining the approach")
+    # refined_approach = apply_improvements(initial_analysis, improvement_plan)
+    #
+    # # Iteration 3: Final solution
+    # agent.reason("Final iteration: implementing refined solution")
+    # final_solution = implement_solution(refined_approach)
+    #
+    # agent.output({
+    #     "iterations": 3,
+    #     "final_solution": final_solution,
+    #     "improvement_path": "Basic analysis → Refinement → Implementation"
+    # })
+    # """
 
     def _compile_dana_code(self, dana_code: str, context: ProblemContext) -> Any:
         """Compile Dana code to a function."""

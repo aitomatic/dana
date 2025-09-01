@@ -125,33 +125,108 @@ DEPTH: {context.depth}
 - agent.input(prompt): Get user input during problem solving
 - agent.reason(thought): Express natural language reasoning
 
-Generate Dana code that solves: {problem}
+DECISION: You must decide whether to:
+1. SOLVE DIRECTLY: If the problem is simple enough, solve it directly and output the result
+2. GENERATE DANA CODE: If the problem requires multiple steps, generate Dana code that will execute to solve it
+
+Choose the appropriate approach and implement it. For Dana code generation, use the available functions above.
+
+Generate Dana code or solve directly for: {problem}
 """
 
     def _get_llm_response(self, prompt: str) -> str:
         """Get LLM response (Dana code)."""
-        if self.llm_client:
-            # Use actual LLM client
-            return self.llm_client.generate(prompt)
-        else:
-            # Mock response for testing
-            return self._generate_mock_response(prompt)
+        if not self.llm_client:
+            raise ValueError("LLM client is required for RecursiveStrategy to work")
 
-    def _generate_mock_response(self, prompt: str) -> str:
-        """Generate a mock LLM response for testing."""
-        if "complex" in prompt.lower() or "break down" in prompt.lower():
-            return """
-agent.reason("This is a complex problem that needs to be broken down")
-sub_problem_1 = agent.solve("Analyze the problem structure", "Break down into components", workflow_instance=workflow_instance)
-sub_problem_2 = agent.solve("Solve the main components", "Apply solution to components", workflow_instance=workflow_instance)
-agent.output({"analysis": sub_problem_1, "solution": sub_problem_2})
-"""
-        else:
-            return """
-agent.reason("This is a straightforward problem")
-result = "Solution to the problem"
-agent.output(result)
-"""
+        # The LLM always makes the decision about how to solve the problem
+        return self.llm_client.generate(prompt)
+
+    # Mock response method removed - LLM client is required
+    # def _generate_mock_response(self, prompt: str) -> str:
+    #     """Generate a mock LLM response for testing."""
+    #     # Simulate LLM decision-making based on problem content
+    #     problem = prompt.split("PROBLEM:")[1].split("\n")[0].strip() if "PROBLEM:" in prompt else ""
+    #
+    #     if "trip" in problem.lower() and "mexico" in problem.lower():
+    #         # Complex travel planning - needs Dana code
+    #         return """
+    # agent.reason("Planning a trip to Mexico requires multiple steps and research")
+    # agent.reason("I'll break this down into manageable components")
+    #
+    # # Step 1: Research destinations
+    # destinations = agent.solve("Research best cities to visit in Mexico",
+    #                          "Find top tourist destinations and attractions",
+    #                          workflow_instance=workflow_instance)
+    #
+    # # Step 2: Plan logistics
+    # logistics = agent.solve("Plan travel logistics for Mexico trip",
+    #                        "Book flights, hotels, transportation, and safety considerations",
+    #                        workflow_instance=workflow_instance)
+    #
+    # # Step 3: Create itinerary
+    # itinerary = agent.solve("Create detailed day-by-day itinerary for Mexico trip",
+    #                        "Plan activities, schedule, and cultural experiences",
+    #                        workflow_instance=workflow_instance)
+    #
+    # agent.output({
+    #     "destinations": destinations,
+    #     "logistics": logistics,
+    #     "itinerary": itinerary,
+    #     "summary": "Complete Mexico trip plan with destinations, logistics, and daily itinerary"
+    # })
+    # """
+    #     elif "plan" in problem.lower() and "planning" in problem.lower():
+    #         # Meta-planning - explain the planning process
+    #         return """
+    # agent.reason("The user wants me to explain my planning methodology")
+    # agent.reason("I should demonstrate how I approach complex problem-solving")
+    #
+    # planning_method = {
+    #     "step1": "Analyze problem complexity and requirements",
+    #     "step2": "Break down into manageable sub-problems",
+    #     "step3": "Research and gather information for each component",
+    #     "step4": "Synthesize solutions into coherent plan",
+    #     "step5": "Validate and refine the final solution"
+    # }
+    #
+    # agent.reason(f"Here's my planning methodology: {planning_method}")
+    #
+    # agent.output({
+    #     "planning_methodology": planning_method,
+    #     "explanation": "I approach complex problems by breaking them down systematically, researching each component, and then synthesizing a comprehensive solution. This method ensures thorough coverage and manageable execution.",
+    #     "example": "For trip planning, I'd research destinations, logistics, and create detailed itineraries - exactly as I demonstrated above."
+    # })
+    # """
+    #     elif "simple" in problem.lower() or "calculate" in problem.lower():
+    #         # Simple calculation - direct solution
+    #         return """
+    # agent.reason("This is a straightforward calculation that I can solve directly")
+    # result = 42 * 2 + 10  # Example calculation
+    # agent.output(result)
+    # """
+    #     else:
+    #         # Default case - generate Dana code for execution
+    #         return """
+    # agent.reason("I'll solve this problem by breaking it down and executing step by step")
+    # agent.reason("Let me analyze the requirements and create a solution plan")
+    #
+    # # Analyze the problem
+    # analysis = agent.solve(f"Analyze the problem: {problem}",
+    #                       "Break down requirements and identify solution approach",
+    #                       workflow_instance=workflow_instance)
+    #
+    # # Execute the solution
+    # solution = agent.solve(f"Execute solution for: {problem}",
+    #                       "Implement the solution based on analysis",
+    #                       workflow_instance=workflow_instance)
+    #
+    # agent.output({
+    #     "analysis": analysis,
+    #     "solution": solution,
+    #     "summary": f"Solved: {problem}"
+    # })
+    # """
 
     def _compile_dana_code(self, dana_code: str, context: ProblemContext) -> Any:
         """Compile Dana code to a ComposedFunction."""
