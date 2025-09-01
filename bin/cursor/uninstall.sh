@@ -23,4 +23,4 @@ if [[ ! -f "$VSCODE_SCRIPT" ]]; then
 fi
 
 # Call the VSCode uninstall script with --cursor flag
-exec "$VSCODE_SCRIPT" --cursor 
+exec "$VSCODE_SCRIPT" --cursor
