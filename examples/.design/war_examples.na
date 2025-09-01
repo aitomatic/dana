@@ -1,0 +1,117 @@
+# Agent, Resource, Workflow – user-level scenarios (design-first)
+# This file demonstrates desired Dana syntax/behavior for:
+# 1) agent singletons with built-in conversational memory across TUI sessions
+# 2) resource declaration/usage patterns
+# 3) workflow declaration/usage patterns
+
+# --- Session 1 (Dana TUI) ----------------------------------------------------
+# In a fresh TUI session, the user types the following lines interactively.
+
+agent Neo
+
+print(Neo.chat("Hi! My name is Christopher."))
+print(Neo.chat("I specialize in neurosymbolic AI."))
+
+
+# End Session 1 (user exits the TUI)
+
+
+# --- Session 2 (Dana TUI, new process) --------------------------------------
+# In a new TUI session, the user again types the following.
+
+agent Neo
+
+
+# Built-in Conversational Memory
+# ==============================
+
+print('
+
+BUILT-IN CONVERSATIONAL MEMORY
+==============================
+')
+print(Neo.chat("What is my name and what do I know?"))
+
+
+# Reasoning with Contextual Awareness
+# ===================================
+
+REASONING_PREMISE = 'I am in Sapporo. Is it too hot to go outside today? I prefer temperature from 20 to 25 C.'
+
+print('
+
+BASE REASONING WITHOUT RESOURCES
+================================
+')
+print(Neo.reason(REASONING_PREMISE))
+
+
+# enhanced reasoning: with context from `resource_weather_info`,
+# agent returns more informed & definitive reasoned conclusion
+resource_weather_info = get_resource('mcp', url='http://127.0.0.1:8000/mcp')
+
+print('
+
+CONTEXT-AWARE ENHANCED REASONING WITH RESOURCES
+===============================================
+')
+print(Neo.reason(REASONING_PREMISE, resources=[resource_weather_info]))
+
+
+# Problem-Solving with Expertise
+# ==============================
+
+PROBLEM = "Is AMD's liquidity healthy?"
+
+print('
+
+BASE PROBLEM-SOLVING WITHOUT RESOURCES & WORKFLOW
+=================================================
+')
+print(Neo.solve(PROBLEM))
+
+
+# enhanced problem-solving: with context from `resource_amd_annual_report`,
+# agent returns more informed solution
+resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
+
+print('
+
+CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
+=====================================================
+')
+print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))
+
+
+# expert-level problem-solving: with expert workflow,
+# agent returns precise, sophisticated solution
+
+from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab, workflow_calc_quick_ratio
+
+print('
+
+EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
+=============================================================
+')
+print(Neo.solve(PROBLEM,
+                resources=[resource_amd_annual_report],
+                workflows=[workflow_calc_quick_ratio]))
+
+
+# Instant Expert Agent
+# by leveraging Dana's standard library's
+# `ExpertAgent` blueprint and `knows` expertise packs
+# ===================================================
+
+from blueprints.expert_agent import ExpertAgent
+from knows import financial_analysis
+
+print("""
+
+INSTANT EXPERT AGENT PROBLEM-SOLVING
+leveraging Dana's standard library's
+`ExpertAgent` blueprint and `knows` expertise packs
+===================================================
+""")
+Neo = ExpertAgent(expertise=[financial_analysis])
+print(Neo.solve(PROBLEM, resources=[resource_amd_annual_report]))

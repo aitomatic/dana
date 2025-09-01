@@ -1,0 +1,8 @@
+"""Multiple Documents & Webpages Resource Querying."""
+
+
+resource_aitomatic_website = get_resource('rag', sources=['https://www.aitomatic.com'])
+resource_dana_readme = get_resource('rag', sources=['../../../README.md'])
+
+reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?",
+       resources=[resource_aitomatic_website, resource_dana_readme])
