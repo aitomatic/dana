@@ -35,87 +35,129 @@ class ProblemContext:
 
 
 @dataclass
-class Action:
-    """Represents an action taken during problem solving."""
+class Event:
+    """A single event in the linear timeline."""
 
-    action_type: str  # Type of action taken
-    description: str  # Description of the action
-    depth: int  # Recursion depth when action occurred
-    timestamp: datetime  # When action occurred
-    result: Any  # Result of the action
-    workflow_id: str  # ID of workflow that took the action
-    problem_statement: str  # Problem being solved
-    success: bool  # Did it succeed?
-    execution_time: float  # How long it took
-    error_message: str | None = None  # What went wrong (if any)
+    timestamp: datetime
+    event_type: str  # "conversation_start", "workflow_start", "workflow_complete", etc.
+    conversation_turn: int
+    depth: int
+    data: dict[str, Any]  # Flexible data container
+    references: dict[str, Any]  # References to other data structures
 
 
-class ActionHistory:
-    """Linear, append-only history across all workflow levels."""
+class EventHistory:
+    """Linear, append-only timeline of all events."""
 
     def __init__(self):
-        self.actions: list[Action] = []
+        self.events: list[Event] = []
+        self._current_turn: int = 0
 
-    def add_action(self, action: Action) -> None:
-        """Add action to global history."""
-        self.actions.append(action)
+    def add_event(self, event_type: str, data: dict, references: dict = None) -> Event:
+        """Add an event to the timeline."""
+        event = Event(
+            timestamp=datetime.now(),
+            event_type=event_type,
+            conversation_turn=self._current_turn,
+            depth=data.get("depth", 0),
+            data=data,
+            references=references or {},
+        )
+        self.events.append(event)
+        return event
 
-    def get_recent_actions(self, count: int = 10) -> list[Action]:
-        """Get most recent actions for LLM context."""
-        return self.actions[-count:]
+    def start_new_conversation_turn(self, user_request: str) -> int:
+        """Start a new conversation turn and return the turn number."""
+        self._current_turn += 1
+        self.add_event("conversation_start", {"user_request": user_request, "depth": 0})
+        return self._current_turn
 
-    def get_actions_by_depth(self, depth: int) -> list[Action]:
-        """Get actions from specific recursion depth."""
-        return [a for a in self.actions if a.depth == depth]
+    def get_conversation_context(self) -> str:
+        """Get conversation context summary for LLM."""
+        recent_turns = self.get_recent_conversation_turns(3)
+        context_parts = []
 
-    def get_actions_by_type(self, action_type: str) -> list[Action]:
-        """Get actions of specific type."""
-        return [a for a in self.actions if a.action_type == action_type]
+        for turn_events in recent_turns:
+            # Find the conversation start event
+            start_event = next((e for e in turn_events if e.event_type == "conversation_start"), None)
+            if start_event:
+                # Find the final result
+                completion_events = [e for e in turn_events if e.event_type in ["workflow_complete", "workflow_error"]]
+                final_result = completion_events[-1].data.get("result", "No result") if completion_events else "No result"
+                context_parts.append(f"User: {start_event.data['user_request']}\nAgent: {final_result}")
+
+        return "\n\n".join(context_parts)
+
+    def get_recent_conversation_turns(self, count: int = 3) -> list[list[Event]]:
+        """Get recent conversation turns grouped by turn."""
+        turns = {}
+        for event in self.events:
+            if event.conversation_turn not in turns:
+                turns[event.conversation_turn] = []
+            turns[event.conversation_turn].append(event)
+
+        # Return the most recent turns
+        recent_turn_numbers = sorted(turns.keys())[-count:]
+        return [turns[turn_num] for turn_num in recent_turn_numbers]
+
+    def get_events_by_type(self, event_type: str) -> list[Event]:
+        """Get events of specific type."""
+        return [e for e in self.events if e.event_type == event_type]
+
+    def get_events_by_conversation_turn(self, turn: int) -> list[Event]:
+        """Get events from specific conversation turn."""
+        return [e for e in self.events if e.conversation_turn == turn]
+
+    def get_previous_user_requests(self, count: int = 5) -> list[str]:
+        """Get previous user requests for context."""
+        conversation_starts = [e for e in self.events if e.event_type == "conversation_start"]
+        return [e.data["user_request"] for e in conversation_starts[-count:] if e.data.get("user_request")]
 
 
 class ComputableContext:
     """Context that can be computed from existing data."""
 
-    def get_complexity_indicators(self, context: ProblemContext, action_history: ActionHistory) -> dict[str, Any]:
+    def get_complexity_indicators(self, context: ProblemContext, event_history: EventHistory) -> dict[str, Any]:
         """Compute complexity indicators from execution data."""
-        actions = action_history.actions
+        events = event_history.events
 
-        if not actions:
+        if not events:
             return {"sub_problem_count": 0, "execution_time_total": 0.0, "error_rate": 0.0, "max_depth_reached": 0}
 
         return {
-            "sub_problem_count": len([a for a in actions if a.action_type == "agent_solve_call"]),
-            "execution_time_total": sum(a.execution_time for a in actions),
-            "error_rate": len([a for a in actions if not a.success]) / len(actions),
-            "max_depth_reached": max(a.depth for a in actions) if actions else 0,
+            "sub_problem_count": len([e for e in events if e.event_type == "agent_solve_call"]),
+            "execution_time_total": sum(e.data.get("execution_time", 0.0) for e in events),
+            "error_rate": len([e for e in events if e.event_type == "workflow_error"]) / len(events),
+            "max_depth_reached": max(e.depth for e in events) if events else 0,
         }
 
-    def get_constraint_violations(self, context: ProblemContext, action_history: ActionHistory) -> list[str]:
+    def get_constraint_violations(self, context: ProblemContext, event_history: EventHistory) -> list[str]:
         """Extract constraint violations from failed actions."""
         violations = []
-        for action in action_history.actions:
-            if not action.success and action.error_message:
+        for event in event_history.events:
+            if event.event_type == "workflow_error" and event.data.get("error_message"):
+                error_message = event.data["error_message"]
                 # Simple pattern matching for constraint violations
-                if any(keyword in action.error_message.lower() for keyword in ["constraint", "limit", "violation", "exceeded"]):
-                    violations.append(f"{action.description}: {action.error_message}")
+                if any(keyword in error_message.lower() for keyword in ["constraint", "limit", "violation", "exceeded"]):
+                    violations.append(f"{event.data.get('description', 'Unknown')}: {error_message}")
         return violations
 
-    def get_successful_patterns(self, context: ProblemContext, action_history: ActionHistory) -> list[str]:
+    def get_successful_patterns(self, context: ProblemContext, event_history: EventHistory) -> list[str]:
         """Identify patterns from successful actions."""
         patterns = []
-        successful_actions = [a for a in action_history.actions if a.success]
+        successful_events = [e for e in event_history.events if e.event_type != "workflow_error"]
 
-        # Count action types
-        action_counts = {}
-        for action in successful_actions:
-            action_counts[action.action_type] = action_counts.get(action.action_type, 0) + 1
+        # Count event types
+        event_counts = {}
+        for event in successful_events:
+            event_counts[event.event_type] = event_counts.get(event.event_type, 0) + 1
 
         # Identify common patterns
-        if action_counts.get("agent_solve_call", 0) > 2:
+        if event_counts.get("agent_solve_call", 0) > 2:
             patterns.append("recursive_decomposition")
-        if action_counts.get("agent_input", 0) > 0:
+        if event_counts.get("agent_input", 0) > 0:
             patterns.append("user_interaction")
-        if action_counts.get("agent_reason", 0) > 3:
+        if event_counts.get("agent_reason", 0) > 3:
             patterns.append("reasoning_intensive")
 
         return patterns

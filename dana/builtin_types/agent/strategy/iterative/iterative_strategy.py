@@ -74,6 +74,16 @@ class IterativeStrategy(BaseStrategy):
 
     def _build_analysis_prompt(self, problem: str, context: ProblemContext) -> str:
         """Build the LLM analysis prompt."""
+
+        # Include conversation history if available
+        conversation_section = ""
+        if "conversation_history" in context.constraints:
+            conversation_section = f"""
+CONVERSATION HISTORY:
+{context.constraints["conversation_history"]}
+
+"""
+
         return f"""
 You are an AI agent solving problems using Dana code through iterative refinement.
 
@@ -81,7 +91,7 @@ PROBLEM: {problem}
 OBJECTIVE: {context.objective}
 DEPTH: {context.depth}
 
-AVAILABLE FUNCTIONS:
+{conversation_section}AVAILABLE FUNCTIONS:
 - agent.output(result): Specify final result when problem is solved
 - agent.iterate(improvement_plan): Plan the next iteration
 - agent.input(prompt): Get user input during problem solving

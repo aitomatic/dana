@@ -102,6 +102,16 @@ class RecursiveStrategy(BaseStrategy):
 
     def _build_basic_prompt(self, problem: str, context: ProblemContext) -> str:
         """Build a basic prompt when rich context is not available."""
+
+        # Include conversation history if available
+        conversation_section = ""
+        if "conversation_history" in context.constraints:
+            conversation_section = f"""
+CONVERSATION HISTORY:
+{context.constraints["conversation_history"]}
+
+"""
+
         return f"""
 You are an AI agent solving problems using Dana code.
 
@@ -109,7 +119,7 @@ PROBLEM: {problem}
 OBJECTIVE: {context.objective}
 DEPTH: {context.depth}
 
-AVAILABLE FUNCTIONS:
+{conversation_section}AVAILABLE FUNCTIONS:
 - agent.output(result): Specify final result when problem is solved
 - agent.solve(sub_problem, objective): Solve a sub-problem recursively
 - agent.input(prompt): Get user input during problem solving
