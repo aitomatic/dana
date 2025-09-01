@@ -76,11 +76,9 @@ fi
 echo -e "${BLUE}📦 Installing dependencies...${NC}"
 npm install
 
-# Check if vsce is installed globally
-if ! command -v vsce &> /dev/null; then
-    echo -e "${YELLOW}📦 Installing vsce (VS Code Extension Manager)...${NC}"
-    npm install -g vsce
-fi
+# Use the newer @vscode/vsce package via npx to avoid compatibility issues
+echo -e "${YELLOW}📦 Using @vscode/vsce via npx (VS Code Extension Manager)...${NC}"
+VSCE_CMD="npx @vscode/vsce"
 
 # Compile TypeScript
 echo -e "${BLUE}🔨 Compiling TypeScript...${NC}"
@@ -88,7 +86,7 @@ npm run compile
 
 # Package extension
 echo -e "${BLUE}📦 Packaging extension...${NC}"
-vsce package --allow-missing-repository
+$VSCE_CMD package --allow-missing-repository
 
 # Find the generated .vsix file
 VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
@@ -146,4 +144,4 @@ if [[ -x "$DANA_CLI" ]]; then
 else
     echo -e "${YELLOW}⚠️  Warning: Dana CLI not found at ${DANA_CLI}${NC}"
     echo -e "${YELLOW}   The extension will look for 'dana' in PATH when running files${NC}"
-fi 
+fi
