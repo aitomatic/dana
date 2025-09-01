@@ -16,22 +16,22 @@ from .base import BaseStrategy
 from .iterative.iterative_strategy import IterativeStrategy
 from .recursive.recursive_strategy import RecursiveStrategy
 
-# Registry of all available strategies
-AVAILABLE_STRATEGIES = [
-    RecursiveStrategy(),
-    IterativeStrategy(),
-]
+# Registry of all available strategies - these are templates
+# Actual instances will be created with LLM clients from the agent
+STRATEGY_TEMPLATES = {
+    "recursive": RecursiveStrategy,
+    "iterative": IterativeStrategy,
+}
 
 
 def get_strategy_by_name(name: str) -> BaseStrategy | None:
     """Get strategy by name."""
-    for strategy in AVAILABLE_STRATEGIES:
-        if strategy.name == name:
-            return strategy
+    if name in STRATEGY_TEMPLATES:
+        return STRATEGY_TEMPLATES[name]()
     return None
 
 
-def select_best_strategy(problem: str, context: Any = None) -> BaseStrategy:
+def select_best_strategy(problem: str, context: Any = None, agent_instance=None) -> BaseStrategy:
     """Select the best strategy for the given problem."""
     from dana.builtin_types.agent.context import ProblemContext
 
@@ -41,7 +41,8 @@ def select_best_strategy(problem: str, context: Any = None) -> BaseStrategy:
 
     best_strategy = None
 
-    for strategy in AVAILABLE_STRATEGIES:
+    for _, strategy_class in STRATEGY_TEMPLATES.items():
+        strategy = strategy_class()
         if strategy.can_handle(problem, context):
             best_strategy = strategy
             break

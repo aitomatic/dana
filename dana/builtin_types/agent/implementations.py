@@ -5,8 +5,9 @@ This module contains the implementation methods for agent functionality includin
 memory, reasoning, chat, and LLM resource management.
 """
 
-from typing import Any
+from typing import Any, cast
 
+from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -187,7 +188,7 @@ class AgentImplementationMixin:
             self._llm_resource_instance.initialize()
             self._llm_resource_instance.start()
 
-    def _get_llm_resource(self, sandbox_context: SandboxContext | None = None):
+    def get_llm_resource(self, sandbox_context: SandboxContext | None = None):
         """Get LLM resource - prioritize agent's own LLM resource, fallback to sandbox context."""
         try:
             # First, try to use the agent's own LLM resource
@@ -318,7 +319,7 @@ context: {fallback_response["context"]}
 
         try:
             # Try to use LLM if available
-            llm_resource = self._get_llm_resource(sandbox_context)
+            llm_resource = self.get_llm_resource(sandbox_context)
             if llm_resource is not None:
                 # Build system prompt in YAML format
                 system_prompt = self._build_agent_description()
@@ -374,6 +375,7 @@ context: {fallback_response["context"]}
                 sandbox_context,
                 premise,
                 options=options,
+                llm_resource=cast(LLMResourceInstance, self.get_llm_resource(sandbox_context)),
             )
             self.debug("py_reason() call successful")
             self.debug(f"Response type: {type(py_reason_result)}")

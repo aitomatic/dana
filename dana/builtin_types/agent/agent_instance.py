@@ -5,10 +5,12 @@ This module defines the AgentInstance class which extends StructInstance to prov
 agent-specific state and methods. This is the main implementation file for agent instances.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
+from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.builtin_types.struct_system import StructInstance
 from dana.common.mixins.loggable import Loggable
+from dana.common.types import BaseRequest, BaseResponse
 
 # Removed direct import of LegacyLLMResource - now using resource type system
 from dana.core.concurrency.promise_factory import PromiseFactory
@@ -107,6 +109,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         """
 
         return {
+            "llm": AgentInstance.llm,
             "plan": AgentInstance.plan,
             "solve": AgentInstance.solve,
             "remember": AgentInstance.remember,
@@ -160,6 +163,35 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
 
         # Return the response
         return response
+
+    def llm(self, request: str | dict | BaseRequest, **kwargs) -> str | BaseResponse:
+        """Execute agent LLM method."""
+        if isinstance(request, str):
+            request = BaseRequest(arguments={"prompt": request})
+        elif isinstance(request, dict):
+            request = BaseRequest(arguments=request)
+        elif isinstance(request, BaseRequest):
+            pass
+        else:
+            raise ValueError(f"Invalid request type: {type(request)}")
+
+        llm_resource = self.get_llm_resource()
+        if llm_resource is None:
+            return "LLM resource not available - please configure an LLM resource for this agent"
+
+        try:
+            response = cast(LLMResourceInstance, llm_resource).query_sync(request)
+            if response is not None:
+                if response.success:
+                    if response.content is not None:
+                        return response.content
+                else:
+                    if response.error is not None:
+                        return response.error
+
+            return "No valid or error response from LLM"
+        except Exception as e:
+            return f"Error calling LLM: {str(e)}"
 
     def plan(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> WorkflowInstance:
         """Create a plan (workflow) for solving the problem."""
@@ -219,7 +251,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         strategy = select_best_strategy(problem, problem_context)
 
         # Create workflow using strategy
-        workflow = strategy.create_workflow(problem, problem_context)
+        workflow = strategy.create_workflow(problem, problem_context, self)
 
         return workflow
 
@@ -362,19 +394,19 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def info(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
         # _notify_log_callbacks(self.name, f"[INFO] {message}", sandbox_context)
-        self.log(message, "INFO", sandbox_context, is_sync)
+        return self.log(message, "INFO", sandbox_context, is_sync)
 
     def warning(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "WARNING", sandbox_context, is_sync)
+        return self.log(message, "WARNING", sandbox_context, is_sync)
 
     def debug(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "DEBUG", sandbox_context, is_sync)
+        return self.log(message, "DEBUG", sandbox_context, is_sync)
 
     def error(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "ERROR", sandbox_context, is_sync)
+        return self.log(message, "ERROR", sandbox_context, is_sync)
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
@@ -439,6 +471,52 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             logging.error(f"Failed to initialize agent resources for {self.name}: {e}")
             # Update metrics to indicate initialization failure
             self.update_metric("current_step", "initialization_failed")
+
+    def _get_llm_resource(self):
+        """Get the LLM resource for this agent.
+
+        Returns:
+            LLMResourceInstance or None if no LLM resource is available
+        """
+        if self._llm_resource_instance is None:
+            self._initialize_llm_resource()
+        return self._llm_resource_instance
+
+    def get_llm_resource(self, sandbox_context: SandboxContext | None = None):
+        """Public method to get the LLM resource for this agent.
+
+        Args:
+            sandbox_context: Optional sandbox context to get LLM resource from
+
+        Returns:
+            LLMResourceInstance or None if no LLM resource is available
+        """
+        # If sandbox context is provided, try to get LLM resource from there first
+        if sandbox_context is not None:
+            try:
+                resources = sandbox_context.get_resources()
+                for resource in resources.values():
+                    if hasattr(resource, "kind") and resource.kind == "llm":
+                        return resource
+            except Exception:
+                pass
+
+        # Fall back to agent's own LLM resource
+        return self._get_llm_resource()
+
+    def _initialize_llm_resource(self):
+        """Initialize the LLM resource for this agent."""
+        try:
+            # In a real implementation, this would be configured based on agent settings
+            # For now, we'll return None to indicate no LLM resource is available
+            # This allows the system to work in test environments without full LLM setup
+            self._llm_resource_instance = None
+
+        except Exception as e:
+            import logging
+
+            logging.warning(f"Failed to initialize LLM resource for {self.name}: {e}")
+            self._llm_resource_instance = None
 
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""

@@ -19,9 +19,8 @@ from ..base import BaseStrategy
 class RecursiveStrategy(BaseStrategy):
     """Strategy that solves problems by breaking them down recursively."""
 
-    def __init__(self, llm_client=None, max_depth: int = 10):
+    def __init__(self, max_depth: int = 10):
         """Initialize the recursive strategy."""
-        self.llm_client = llm_client
         self.max_depth = max_depth
         self.computable_context = ComputableContext()
 
@@ -31,7 +30,7 @@ class RecursiveStrategy(BaseStrategy):
         # but check for obvious infinite loops
         return not self._detect_obvious_loop(problem, context)
 
-    def create_workflow(self, problem: str, context: ProblemContext) -> WorkflowInstance:
+    def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None) -> WorkflowInstance:
         """Create a workflow instance using LLM-generated Dana code."""
 
         # 1. Check recursion depth limits
@@ -42,7 +41,7 @@ class RecursiveStrategy(BaseStrategy):
         prompt = self._build_enhanced_analysis_prompt(problem, context)
 
         # 3. Get LLM response (Dana code)
-        dana_code = self._get_llm_response(prompt)
+        dana_code = self._get_llm_response(prompt, agent_instance)
 
         # 4. Validate and compile Dana code
         compiled_function = self._compile_dana_code(dana_code, context)
@@ -134,13 +133,16 @@ Choose the appropriate approach and implement it. For Dana code generation, use 
 Generate Dana code or solve directly for: {problem}
 """
 
-    def _get_llm_response(self, prompt: str) -> str:
+    def _get_llm_response(self, prompt: str, agent_instance=None) -> str:
         """Get LLM response (Dana code)."""
-        if not self.llm_client:
-            raise ValueError("LLM client is required for RecursiveStrategy to work")
+        if not agent_instance:
+            raise ValueError("Agent instance is required for RecursiveStrategy to work")
 
         # The LLM always makes the decision about how to solve the problem
-        return self.llm_client.generate(prompt)
+        # Call the agent's LLM method with the prompt
+        response = agent_instance.llm({"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt})
+
+        return str(response)
 
     # Mock response method removed - LLM client is required
     # def _generate_mock_response(self, prompt: str) -> str:
