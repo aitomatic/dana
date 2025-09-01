@@ -1,0 +1,28 @@
+"""Workflow Syntax: Parallel ("[]")."""
+
+
+from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable
+
+
+def sum_quick_asset_components(components) -> float:
+    quick_asset: float = reason(f'
+Calculate the quick asset of the company by summing
+Cash & Cash Equivalents, Short-Term Investments, and Accounts Receivable
+
+from the following component results:
+```
+{components}
+```')
+
+    return quick_asset
+
+
+def workflow_calc_quick_asset(resources) -> float = [get_cash_and_equiv,
+                                                     get_st_inv,
+                                                     get_recvable] | sum_quick_asset_components
+
+
+resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
+
+
+workflow_calc_quick_asset([resource_amd_annual_report])
