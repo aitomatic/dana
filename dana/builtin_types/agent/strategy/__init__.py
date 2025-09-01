@@ -12,17 +12,9 @@ from typing import Any
 from .base import BaseStrategy
 
 # Import strategy implementations
-from .enums import (
-    ConfidenceLevel,
-    PlanType,
-    ProblemComplexity,
-    parse_complexity,
-    parse_confidence,
-    parse_plan_type,
-)
-from .iterative import IterativeStrategy
-from .plan import StrategyPlan
-from .recursive import RecursiveStrategy
+# Enums removed as they're not used in simplified system
+from .iterative.iterative_strategy import IterativeStrategy
+from .recursive.recursive_strategy import RecursiveStrategy
 
 # Registry of all available strategies
 AVAILABLE_STRATEGIES = [
@@ -39,16 +31,20 @@ def get_strategy_by_name(name: str) -> BaseStrategy | None:
     return None
 
 
-def select_best_strategy(problem: str, context: dict[str, Any] | None = None) -> BaseStrategy:
+def select_best_strategy(problem: str, context: Any = None) -> BaseStrategy:
     """Select the best strategy for the given problem."""
+    from dana.builtin_types.agent.context import ProblemContext
+
+    # Create default context if none provided
+    if context is None:
+        context = ProblemContext(problem_statement=problem, objective=f"Solve: {problem}", original_problem=problem, depth=0)
+
     best_strategy = None
-    best_score = 0.0
 
     for strategy in AVAILABLE_STRATEGIES:
-        score = strategy.can_handle(problem, context)
-        if score > best_score:
-            best_score = score
+        if strategy.can_handle(problem, context):
             best_strategy = strategy
+            break
 
     # Fallback to recursive if no strategy is confident
     return best_strategy or RecursiveStrategy()
@@ -56,13 +52,6 @@ def select_best_strategy(problem: str, context: dict[str, Any] | None = None) ->
 
 __all__ = [
     "BaseStrategy",
-    "StrategyPlan",
-    "PlanType",
-    "ProblemComplexity",
-    "ConfidenceLevel",
-    "parse_plan_type",
-    "parse_complexity",
-    "parse_confidence",
     "RecursiveStrategy",
     "IterativeStrategy",
     "get_strategy_by_name",
