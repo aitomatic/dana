@@ -35,7 +35,7 @@ class WorkflowType(StructType):
                 "comment": "Name of the workflow",
             },
             "composed_function": {
-                "type": "ComposedFunction",
+                "type": "ComposedFunction | None",
                 "default": None,
                 "comment": "The composed function that implements the workflow",
             },
@@ -90,12 +90,13 @@ class WorkflowInstance(StructInstance):
     system for execution.
     """
 
-    def __init__(self, struct_type: WorkflowType, values: dict[str, Any]):
+    def __init__(self, struct_type: WorkflowType, values: dict[str, Any], parent_workflow: "WorkflowInstance | None" = None):
         """Create a new workflow struct instance.
 
         Args:
             struct_type: The workflow struct type definition
             values: Field values (must match struct type requirements)
+            parent_workflow: Parent workflow instance for recursive calls
         """
         # Ensure we have a WorkflowType
         if not isinstance(struct_type, WorkflowType):
@@ -104,6 +105,14 @@ class WorkflowInstance(StructInstance):
         # Initialize workflow-specific state
         self._execution_history = []
         self._composed_function = None
+        self._parent_workflow = parent_workflow
+        self._children = []
+
+        # Initialize workflow-specific state
+        self._execution_history = []
+        self._composed_function = None
+        self._parent_workflow = parent_workflow
+        self._children = []
 
         # Initialize the base StructInstance
         super().__init__(struct_type, values, None)
@@ -112,26 +121,9 @@ class WorkflowInstance(StructInstance):
         if "composed_function" in values:
             self._composed_function = values["composed_function"]
 
-    @staticmethod
-    def get_default_workflow_fields() -> dict[str, dict[str, Any]]:
-        """Get the default fields that all workflows should have."""
-        return {
-            "name": {
-                "type": "str",
-                "default": "A Workflow",
-                "comment": "Name of the workflow",
-            },
-            "composed_function": {
-                "type": "ComposedFunction",
-                "default": None,
-                "comment": "The composed function that implements the workflow",
-            },
-            "metadata": {
-                "type": "dict",
-                "default": {},
-                "comment": "Additional workflow metadata",
-            },
-        }
+        # Link to parent if provided
+        if parent_workflow:
+            parent_workflow._children.append(self)
 
     def set_composed_function(self, composed_function: SandboxFunction) -> None:
         """Set the composed function for this workflow."""
@@ -140,6 +132,30 @@ class WorkflowInstance(StructInstance):
     def get_composed_function(self) -> SandboxFunction | None:
         """Get the composed function for this workflow."""
         return self._composed_function
+
+    def get_root_workflow(self) -> "WorkflowInstance":
+        """Navigate to root workflow."""
+        current = self
+        while current._parent_workflow:
+            current = current._parent_workflow
+        return current
+
+    def get_sibling_workflows(self) -> list["WorkflowInstance"]:
+        """Get workflows at same level."""
+        if not self._parent_workflow:
+            return []
+        return [w for w in self._parent_workflow._children if w != self]
+
+    def get_ancestor_context(self, levels_up: int) -> Any:
+        """Get context from ancestor workflow (simplified version)."""
+        current = self
+        for _ in range(levels_up):
+            if current._parent_workflow:
+                current = current._parent_workflow
+            else:
+                break
+        # In simplified design, no problem_context available
+        return None
 
     def get_execution_history(self) -> list[dict[str, Any]]:
         """Get the execution history of the workflow."""
@@ -162,34 +178,45 @@ class WorkflowInstance(StructInstance):
             The result of workflow execution
 
         Raises:
-            RuntimeError: If no composed function is set
+            RuntimeError: If no composed function set
         """
         if not self._composed_function:
             raise RuntimeError("No composed function set for this workflow")
 
-        # Use stored sandbox context if available (has loaded functions), otherwise use provided context
-        execution_context = context
+        # Set up execution context
+        context.workflow_instance = self
+
+        # Record execution start
+        import time
+
+        start_time = time.time()
+
+        # Add execution step to history
+        self.add_execution_step({"step": "start", "timestamp": start_time, "status": "executing"})
 
         try:
-            # Record execution start
-            self.add_execution_step({"step": "start", "timestamp": self._get_timestamp(), "args": args, "kwargs": kwargs})
-
             # Execute the composed function - handle both ComposedFunction and regular callables
             if hasattr(self._composed_function, "execute"):
                 # It's a ComposedFunction or similar object with execute method
-                result = self._composed_function.execute(execution_context, *args, **kwargs)
+                result = self._composed_function.execute(context, *args, **kwargs)
             else:
                 # It's a regular callable function
                 result = self._composed_function(*args, **kwargs)
 
             # Record successful completion
-            self.add_execution_step({"step": "complete", "timestamp": self._get_timestamp(), "result": result})
+            execution_time = time.time() - start_time
+            self.add_execution_step(
+                {"step": "complete", "timestamp": time.time(), "status": "completed", "execution_time": execution_time, "result": result}
+            )
 
             return result
 
         except Exception as e:
             # Record error
-            self.add_execution_step({"step": "error", "timestamp": self._get_timestamp(), "error": str(e)})
+            execution_time = time.time() - start_time
+            self.add_execution_step(
+                {"step": "error", "timestamp": time.time(), "status": "error", "execution_time": execution_time, "error": str(e)}
+            )
             raise e
 
     def get_status(self) -> str:

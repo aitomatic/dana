@@ -1,0 +1,359 @@
+"""
+Tests for the agent solve integration with context engineering.
+
+This module tests the integration between AgentInstance, strategies, and workflows
+in the new agent solving system.
+"""
+
+import pytest
+
+from dana.builtin_types.agent.agent_instance import AgentInstance
+from dana.builtin_types.agent.agent_type import AgentType
+from dana.builtin_types.agent.context import ActionHistory, ProblemContext
+from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+
+
+class TestAgentSolveIntegration:
+    """Test the complete agent solve integration."""
+
+    def test_create_agent_instance(self):
+        """Test creating an agent instance with the new system."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        assert agent.name == "TestAgent"
+        assert hasattr(agent, "solve")
+        assert hasattr(agent, "plan")
+
+    def test_agent_plan_method(self):
+        """Test the agent plan method."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Test planning with string problem
+        workflow = agent.plan("Test problem")
+
+        assert isinstance(workflow, WorkflowInstance)
+        assert workflow._problem_statement == "Test problem"
+        assert workflow._objective == "Solve: Test problem"
+
+    def test_agent_solve_method(self):
+        """Test the agent solve method."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Test solving with string problem
+        result = agent.solve("Test problem")
+
+        # Should return the result of workflow execution
+        assert result is not None
+
+    def test_agent_workflow_reuse(self):
+        """Test that agent can reuse existing workflows."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create a workflow first
+        workflow = agent.plan("Test problem")
+
+        # Then solve using the existing workflow
+        result = agent.solve(workflow)
+
+        assert result is not None
+
+    def test_agent_top_level_workflow_creation(self):
+        """Test creating top-level workflows through the agent."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        workflow = agent._create_top_level_workflow("Test problem", objective="Custom objective")
+
+        assert isinstance(workflow, WorkflowInstance)
+        assert workflow._problem_statement == "Test problem"
+        assert workflow._objective == "Custom objective"
+        assert workflow._problem_context is not None
+        assert workflow._global_action_history is not None
+        assert workflow._parent_workflow is None
+
+    def test_agent_workflow_type_creation(self):
+        """Test that agent creates proper workflow types."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        workflow_type = agent._create_workflow_type("Test problem")
+
+        assert workflow_type.name.startswith("AgentWorkflow_")
+        assert "problem_statement" in workflow_type.fields
+        assert "objective" in workflow_type.fields
+        assert "problem_context" in workflow_type.fields
+        assert "action_history" in workflow_type.fields
+
+    def test_agent_sandbox_context_creation(self):
+        """Test that agent creates proper sandbox contexts."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        context = agent._create_sandbox_context()
+
+        assert context is not None
+        # In a real implementation, this would be a SandboxContext
+        # For now, we just check it's not None
+
+    def test_agent_problem_context_creation(self):
+        """Test that agent creates proper problem contexts."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        workflow = agent._create_top_level_workflow("Test problem", objective="Custom objective")
+
+        problem_context = workflow._problem_context
+        assert isinstance(problem_context, ProblemContext)
+        assert problem_context.problem_statement == "Test problem"
+        assert problem_context.objective == "Custom objective"
+        assert problem_context.original_problem == "Test problem"
+        assert problem_context.depth == 0
+
+    def test_agent_action_history_creation(self):
+        """Test that agent creates proper action histories."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        workflow = agent._create_top_level_workflow("Test problem")
+
+        action_history = workflow._global_action_history
+        assert isinstance(action_history, ActionHistory)
+        assert len(action_history.actions) == 0  # Initially empty
+
+    def test_agent_strategy_integration(self):
+        """Test that agent integrates with the strategy system."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Test that the agent can create workflows through strategy selection
+        workflow = agent._create_new_workflow("Complex problem", objective="Solve complex problem")
+
+        assert isinstance(workflow, WorkflowInstance)
+        assert workflow._problem_statement == "Complex problem"
+        assert workflow._objective == "Solve complex problem"
+
+
+class TestAgentContextPropagation:
+    """Test context propagation through the agent system."""
+
+    def test_context_propagation_through_workflows(self):
+        """Test that context properly propagates through workflow creation and execution."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create initial workflow
+        root_workflow = agent.plan("Root problem")
+
+        # Verify context is properly set
+        assert root_workflow._problem_context is not None
+        assert root_workflow._global_action_history is not None
+
+        # Create sub-workflow (simulating recursive call)
+        sub_workflow = agent.plan("Sub problem")
+
+        # Verify sub-workflow has its own context
+        assert sub_workflow._problem_context is not None
+        assert sub_workflow._global_action_history is not None
+
+    def test_action_history_tracking(self):
+        """Test that action history is properly tracked across workflows."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create workflow
+        workflow = agent.plan("Test problem")
+
+        # Execute workflow to generate actions
+        result = agent.solve(workflow)
+
+        # Check that actions were recorded
+        action_history = workflow._global_action_history
+        assert len(action_history.actions) > 0
+
+        # Should have at least workflow_start and workflow_complete actions
+        action_types = [action.action_type for action in action_history.actions]
+        assert "workflow_start" in action_types
+        assert "workflow_complete" in action_types
+
+    def test_problem_context_hierarchy(self):
+        """Test that problem contexts maintain proper hierarchy."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create root workflow
+        root_workflow = agent.plan("Root problem")
+        root_context = root_workflow._problem_context
+
+        # Create sub-problem context
+        sub_context = root_context.create_sub_context("Sub problem", "Solve sub problem")
+
+        # Verify hierarchy
+        assert sub_context.depth == 1
+        assert sub_context.original_problem == "Root problem"
+        assert sub_context.problem_statement == "Sub problem"
+        assert sub_context.objective == "Solve sub problem"
+
+
+class TestAgentErrorHandling:
+    """Test agent error handling and recovery."""
+
+    def test_agent_handles_workflow_errors(self):
+        """Test that agent properly handles workflow execution errors."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create workflow
+        workflow = agent.plan("Test problem")
+
+        # Create a function that raises an error
+        def error_function(*args, **kwargs):
+            raise ValueError("Test error")
+
+        workflow.set_composed_function(error_function)
+
+        # Execute and expect error
+        with pytest.raises(ValueError, match="Test error"):
+            agent.solve(workflow)
+
+        # Check that error action was recorded
+        action_history = workflow._global_action_history
+        error_actions = [a for a in action_history.actions if a.action_type == "workflow_error"]
+        assert len(error_actions) == 1
+        assert error_actions[0].error_message == "Test error"
+
+    def test_agent_handles_missing_composed_function(self):
+        """Test that agent handles workflows without composed functions."""
+        agent_type = AgentType(
+            name="TestAgent",
+            fields={"name": "str"},
+            field_order=["name"],
+            field_comments={"name": "Agent name"},
+            field_defaults={"name": "TestAgent"},
+            docstring="Test agent",
+        )
+
+        agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
+
+        # Create workflow without composed function
+        workflow = agent.plan("Test problem")
+        workflow._composed_function = None
+
+        # Execute and expect error
+        with pytest.raises(RuntimeError, match="No composed function set"):
+            agent.solve(workflow)

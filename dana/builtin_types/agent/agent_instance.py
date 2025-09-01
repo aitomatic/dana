@@ -20,9 +20,11 @@ from .events import AgentEventMixin
 from .implementations import AgentImplementationMixin
 
 if TYPE_CHECKING:
-    from .strategy.plan import StrategyPlan
+    pass
 
-ProblemContext = dict[str, Any]
+from dana.builtin_types.workflow.workflow_system import WorkflowInstance, WorkflowType
+
+from .context import ActionHistory, ProblemContext
 
 
 class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
@@ -154,53 +156,101 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         # Return the response
         return response
 
-    def plan(
-        self, task: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None, is_sync: bool = False
-    ) -> "StrategyPlan":
-        """Execute agent planning method - analyzes problem and determines approach using strategy system."""
-        sandbox_context = sandbox_context or SandboxContext()
+    def plan(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> WorkflowInstance:
+        """Create a plan (workflow) for solving the problem."""
 
-        def wrapper():
-            from .strategy import select_best_strategy
+        if isinstance(problem_or_workflow, str):
+            # Create new workflow for string problem
+            workflow = self._create_new_workflow(problem_or_workflow, **kwargs)
+        else:
+            # Use existing workflow
+            workflow = problem_or_workflow
 
-            strategy = select_best_strategy(task, problem_context)
-            return strategy.create_plan(self, task, sandbox_context, problem_context)
+        return workflow
 
-        return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
+    def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
+        """Create a new top-level workflow for a problem."""
 
-    def solve(
-        self,
-        problem: str,
-        sandbox_context: SandboxContext | None = None,
-        problem_context: ProblemContext | None = None,
-        is_sync: bool = False,
-    ) -> Any:
-        """Execute agent problem-solving method with strategy system.
+        # Create problem context
+        problem_context = ProblemContext(
+            problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
+        )
 
-        Fixed/hardcoded function: plan() + execute().
-        """
-        sandbox_context = sandbox_context or SandboxContext()
+        # Create action history
+        action_history = ActionHistory()
 
-        self.debug(f"IN SOLVE: is_sync={is_sync}")
+        # Create workflow instance
+        workflow = WorkflowInstance(
+            struct_type=self._create_workflow_type(problem),
+            values={
+                "problem_statement": problem,
+                "objective": problem_context.objective,
+                "problem_context": problem_context,
+                "action_history": action_history,
+            },
+            parent_workflow=None,
+        )
 
-        def wrapper():
-            try:
-                # Step 1: Create plan using strategy system
-                plan = self.plan(problem, sandbox_context, problem_context, is_sync=True)
+        return workflow
 
-                # Step 2: Execute the plan
-                result = plan.execute(self, problem, sandbox_context, problem_context)
+    def _create_new_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
+        """Create a new workflow for a string problem."""
+        from .context import ProblemContext
+        from .strategy import select_best_strategy
 
-                return result
-            except Exception as e:
-                import traceback
+        # Create problem context
+        problem_context = ProblemContext(
+            problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
+        )
 
-                traceback.print_exc()
-                self.error(f"Error in solve: {e}")
-                raise e
+        # Select best strategy
+        strategy = select_best_strategy(problem, problem_context)
 
-        is_sync = True  # CTN
-        return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
+        # Create workflow using strategy
+        workflow = strategy.create_workflow(problem, problem_context)
+
+        return workflow
+
+    def _create_workflow_type(self, problem: str) -> WorkflowType:
+        """Create a workflow type for the problem."""
+
+        return WorkflowType(
+            name=f"AgentWorkflow_{hash(problem) % 10000}",
+            fields={"problem_statement": "str", "objective": "str", "problem_context": "Any", "action_history": "Any"},
+            field_order=["problem_statement", "objective", "problem_context", "action_history"],
+            field_comments={
+                "problem_statement": "The problem to solve",
+                "objective": "The objective of the workflow",
+                "problem_context": "Problem-specific context",
+                "action_history": "Global action history",
+            },
+            field_defaults={
+                "problem_statement": problem,
+                "objective": "Solve the problem",
+                "problem_context": None,
+                "action_history": None,
+            },
+            docstring=f"Agent workflow for solving: {problem}",
+        )
+
+    def _create_sandbox_context(self) -> SandboxContext:
+        """Create a sandbox context for workflow execution."""
+        return SandboxContext()
+
+    def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
+        """Solve a problem using the agent's problem-solving capabilities."""
+
+        # 1. Create or use workflow instance
+        if isinstance(problem_or_workflow, str):
+            workflow = self._create_top_level_workflow(problem_or_workflow, **kwargs)
+        else:
+            workflow = problem_or_workflow
+
+        # 2. Execute the workflow
+        result = workflow.execute(self._create_sandbox_context(), **kwargs)
+
+        # 3. Return the result
+        return result
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent memory storage method."""

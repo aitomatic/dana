@@ -6,7 +6,7 @@ Tests the creation of WorkflowInstance objects from YAML text.
 
 import pytest
 
-from dana.builtin_types.workflow.factory import WorkflowFactory, YAMLWorkflowParser, WorkflowDefinition, WorkflowStep
+from dana.builtin_types.workflow.factory import WorkflowDefinition, WorkflowFactory, WorkflowStep, YAMLWorkflowParser
 
 
 class TestWorkflowFactory:
@@ -34,8 +34,8 @@ workflow:
 
         assert workflow is not None
         assert workflow.name == "TestWorkflow"
-        assert workflow.get_status() == "created"
-        assert hasattr(workflow, "fsm")
+        assert workflow.get_status() == "ready"
+        assert hasattr(workflow, "composed_function")
 
     def test_create_from_yaml_invalid(self):
         """Test creating workflow from invalid YAML."""
@@ -61,7 +61,7 @@ description: "A test workflow"
 
         assert workflow is not None
         assert workflow.name == "SimpleWorkflow"
-        assert workflow.get_status() == "created"
+        assert workflow.get_status() == "ready"
 
     def test_validate_workflow_text_valid(self):
         """Test workflow text validation with valid YAML."""
@@ -219,13 +219,13 @@ class TestWorkflowDefinition:
         assert workflow_type.docstring == "A test workflow"
 
         # Check that step fields were created
-        assert "step_step_1" in workflow_type.fields
-        assert "step_step_2" in workflow_type.fields
+        assert "step_1" in workflow_type.fields
+        assert "step_2" in workflow_type.fields
         assert "result" in workflow_type.fields
 
         # Check field defaults
-        assert workflow_type.field_defaults["step_step_1"] == "pending"
-        assert workflow_type.field_defaults["step_step_2"] == "pending"
+        assert workflow_type.field_defaults["step_1"] == "pending"
+        assert workflow_type.field_defaults["step_2"] == "pending"
         assert workflow_type.field_defaults["result"] == {}
 
     def test_to_workflow_instance(self):
@@ -233,17 +233,17 @@ class TestWorkflowDefinition:
         workflow_instance = self.workflow_def.to_workflow_instance()
 
         assert workflow_instance.name == "TestWorkflow"
-        assert workflow_instance.get_status() == "created"
-        assert hasattr(workflow_instance, "fsm")
+        assert workflow_instance.get_status() == "ready"  # New workflow system returns "ready"
+        assert hasattr(workflow_instance, "composed_function")
 
         # Check that step status fields were created
-        assert hasattr(workflow_instance, "step_step_1")
-        assert hasattr(workflow_instance, "step_step_2")
+        assert hasattr(workflow_instance, "step_1")
+        assert hasattr(workflow_instance, "step_2")
         assert hasattr(workflow_instance, "result")
 
         # Check initial values
-        assert workflow_instance.step_step_1 == "pending"
-        assert workflow_instance.step_step_2 == "pending"
+        assert workflow_instance.step_1 == "pending"
+        assert workflow_instance.step_2 == "pending"
         assert workflow_instance.result == {}
 
     def test_to_workflow_instance_with_custom_fsm(self):
@@ -258,8 +258,8 @@ class TestWorkflowDefinition:
         workflow_instance = workflow_def.to_workflow_instance()
 
         assert workflow_instance.name == "FSMWorkflow"
-        assert workflow_instance.fsm is not None
-        # Note: We can't easily test the FSM content without more complex setup
+        assert hasattr(workflow_instance, "composed_function")
+        # Note: The new system uses ComposedFunction instead of FSM
 
 
 class TestWorkflowStep:

@@ -51,6 +51,7 @@ def create_resource_type_from_ast(resource_def: ResourceDefinition, context=None
             field_defaults[field.name] = field.default_value
 
         if getattr(field, "comment", None):
+            assert field.comment is not None
             field_comments[field.name] = field.comment
 
     # Create the resource type
