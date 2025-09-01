@@ -287,6 +287,13 @@ verify_installations() {
 # Function to show next steps
 show_next_steps() {
     log ""
+
+    # Check if this script is being run from the installer (non-interactive)
+    if [[ "${DANA_AUTO_INSTALL:-}" == "true" ]]; then
+        log "${GREEN}✅ Dependencies ready for automatic installation${NC}"
+        return
+    fi
+
     log "${BLUE}📋 Next Steps:${NC}"
     log "1. Restart your terminal or run: source ~/.bashrc"
     log "2. Navigate to Dana extension directory: cd dana/integrations/vscode"

@@ -21,18 +21,47 @@ log() {
     echo -e "$1" | tee -a "$LOG_FILE"
 }
 
-# Function to check if dependencies are ready
-check_dependencies() {
+# Function to check and install dependencies if needed
+check_and_install_dependencies() {
     log "${BLUE}🔍 Checking dependencies...${NC}"
 
-    # Simple check - if the deps script exists and we can run basic commands, assume deps are ready
+    # Check if basic dependencies are available
     if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-        log "${RED}❌ Dependencies not ready${NC}"
-        log "${YELLOW}💡 Run: ./bin/install-upgrade-linux-deps${NC}"
-        exit 1
-    fi
+        log "${YELLOW}⚠️  Dependencies not ready, installing them automatically...${NC}"
 
-    log "${GREEN}✅ Dependencies ready${NC}"
+        # Get the project root directory
+        local project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+        local deps_script="$project_root/dana/integrations/vscode/bin/install-upgrade-linux-deps"
+
+        # Check if the deps script exists
+        if [[ ! -f "$deps_script" ]]; then
+            log "${RED}❌ Dependencies script not found at ${deps_script}${NC}"
+            log "${YELLOW}💡 Please ensure the Dana repository is properly cloned${NC}"
+            exit 1
+        fi
+
+        # Make sure the deps script is executable
+        chmod +x "$deps_script"
+
+        # Run the dependencies installation
+        log "${BLUE}🔄 Running dependencies installation...${NC}"
+        if DANA_AUTO_INSTALL=true "$deps_script"; then
+            log "${GREEN}✅ Dependencies installed successfully${NC}"
+        else
+            log "${RED}❌ Failed to install dependencies${NC}"
+            log "${YELLOW}💡 Please run manually: ${deps_script}${NC}"
+            exit 1
+        fi
+
+        # Verify dependencies are now available
+        if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+            log "${RED}❌ Dependencies still not available after installation${NC}"
+            log "${YELLOW}💡 Please restart your terminal and try again${NC}"
+            exit 1
+        fi
+    else
+        log "${GREEN}✅ Dependencies ready${NC}"
+    fi
 }
 
 # Function to check if target editor is available
@@ -53,8 +82,9 @@ check_editor() {
 setup_paths() {
     log "${BLUE}📁 Setting up project paths...${NC}"
 
-    # Get the project root directory
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    # Get the current working directory (where the script was called from)
+    # This should be the project root when called via make
+    PROJECT_ROOT="$(pwd)"
     EXTENSION_DIR="$PROJECT_ROOT/dana/integrations/vscode"
 
     log "${BLUE}📁 Project root: ${PROJECT_ROOT}${NC}"
@@ -108,14 +138,16 @@ package_extension() {
     # Use @vscode/vsce via npx to avoid compatibility issues
     log "${YELLOW}📦 Using @vscode/vsce via npx (VS Code Extension Manager)...${NC}"
 
-    # Package the extension
-    npx @vscode/vsce package --allow-missing-repository
+    # Package the extension and capture output
+    local package_output
+    package_output=$(npx @vscode/vsce package --allow-missing-repository 2>&1)
 
     # Find the generated .vsix file
     VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
 
     if [[ -z "$VSIX_FILE" ]]; then
         log "${RED}❌ Error: No .vsix file found after packaging${NC}"
+        log "${YELLOW}Package output: ${package_output}${NC}"
         exit 1
     fi
 
@@ -218,9 +250,9 @@ EXAMPLES:
     $SCRIPT_NAME --vscode          # Install for VS Code
 
 NOTES:
-    - Dependencies must be installed first (run: ./bin/install-upgrade-linux-deps)
+    - Dependencies are automatically installed if needed
     - Target editor must be installed and accessible
-    - Script assumes dependencies are ready and focuses on plugin installation
+    - Script handles both dependency setup and plugin installation
 
 EOF
 }
@@ -282,10 +314,11 @@ main() {
     log "${BLUE}🚀 Dana Language Plugin - Linux Installer${NC}"
     log "${BLUE}==========================================${NC}"
     log "${BLUE}Target Editor: ${editor_name}${NC}"
+    log "${YELLOW}💡 Dependencies will be automatically installed if needed${NC}"
     log ""
 
     # Run installation steps
-    check_dependencies
+    check_and_install_dependencies
     check_editor "$editor" "$editor_name"
     setup_paths
     install_npm_dependencies
