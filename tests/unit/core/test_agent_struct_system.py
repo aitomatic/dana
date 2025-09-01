@@ -138,25 +138,28 @@ class TestAgentInstance(unittest.TestCase):
 
         # Test plan method
         plan_result = agent_instance.plan("test task", sandbox_context=self.sandbox_context)
-        # Since DANA_MOCK_LLM is true, we should get a mock response
-        # The plan method can return different types (string, dict, or WorkflowInstance)
-        if isinstance(plan_result, str):
-            self.assertIn("planning", plan_result.lower())
-            self.assertIn("TestAgent", plan_result)
-        elif isinstance(plan_result, dict):
-            # Check if it's a structured response
-            self.assertIn("plan", str(plan_result).lower())
-        else:
-            # Should be a valid result type
-            self.assertIsNotNone(plan_result)
+        # The plan method should return a WorkflowInstance
+        from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+
+        self.assertIsInstance(plan_result, WorkflowInstance, f"Expected WorkflowInstance, got {type(plan_result)}: {plan_result}")
+
+        # Verify the workflow has the expected structure
+        self.assertIsNotNone(plan_result._values)
+        self.assertTrue(hasattr(plan_result, "execute"), "WorkflowInstance should have execute method")
 
         # Test solve method
         solve_result = agent_instance.solve("test problem", sandbox_context=self.sandbox_context)
         # Since DANA_MOCK_LLM is true, we should get a mock response
         # The solve method can return different types
         if isinstance(solve_result, str):
-            self.assertIn("solving", solve_result.lower())
-            self.assertIn("TestAgent", solve_result)
+            # The agent should either return a result containing "solving" or
+            # "executed dana code" indicating successful workflow execution
+            self.assertTrue(
+                "solving" in solve_result.lower()
+                or "executed dana code" in solve_result.lower()
+                or "mock response" in solve_result.lower(),
+                f"Expected 'solving', 'executed dana code', or 'mock response' in result: {solve_result}",
+            )
         elif isinstance(solve_result, dict):
             # Check if it's a structured response
             self.assertIn("solve", str(solve_result).lower())

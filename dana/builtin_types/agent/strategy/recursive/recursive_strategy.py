@@ -30,7 +30,7 @@ class RecursiveStrategy(BaseStrategy):
         # but check for obvious infinite loops
         return not self._detect_obvious_loop(problem, context)
 
-    def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None) -> WorkflowInstance:
+    def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None, sandbox_context=None) -> WorkflowInstance:
         """Create a workflow instance using LLM-generated Dana code."""
 
         # 1. Check recursion depth limits
@@ -41,7 +41,7 @@ class RecursiveStrategy(BaseStrategy):
         prompt = self._build_enhanced_analysis_prompt(problem, context)
 
         # 3. Get LLM response (Dana code)
-        dana_code = self._get_llm_response(prompt, agent_instance)
+        dana_code = self._get_llm_response(prompt, agent_instance, sandbox_context)
 
         # 4. Validate and compile Dana code
         compiled_function = self._compile_dana_code(dana_code, context)
@@ -133,14 +133,20 @@ Choose the appropriate approach and implement it. For Dana code generation, use 
 Generate Dana code or solve directly for: {problem}
 """
 
-    def _get_llm_response(self, prompt: str, agent_instance=None) -> str:
+    def _get_llm_response(self, prompt: str, agent_instance=None, sandbox_context=None) -> str:
         """Get LLM response (Dana code)."""
         if not agent_instance:
             raise ValueError("Agent instance is required for RecursiveStrategy to work")
 
         # The LLM always makes the decision about how to solve the problem
         # Call the agent's LLM method with the prompt
-        response = agent_instance.llm({"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt})
+        # Pass sandbox_context to agent_instance.llm() if available
+        if sandbox_context:
+            response = agent_instance.llm(
+                {"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt}, sandbox_context=sandbox_context
+            )
+        else:
+            response = agent_instance.llm({"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt})
 
         return str(response)
 

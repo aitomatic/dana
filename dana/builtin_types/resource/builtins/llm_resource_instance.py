@@ -37,6 +37,9 @@ class LLMResourceInstance(ResourceInstance):
         self._llm_resource = llm_resource
         self._backend = llm_resource  # Set backend for compatibility
 
+        # Set the kind attribute for resource identification
+        self.kind = "llm"
+
         # Initialize with the provided resource type and values
         super().__init__(resource_type, values or {})
 
