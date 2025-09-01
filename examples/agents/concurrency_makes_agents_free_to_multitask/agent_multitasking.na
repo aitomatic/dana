@@ -1,0 +1,17 @@
+"""Dana's concurrent runtime execution makes agents free to multitask."""
+
+
+# Try these in the interactive Dana TUI or REPL
+
+
+agent Neo
+
+
+resource_hilbert_problems_wikis = get_resource('rag', sources=["https://en.wikipedia.org/wiki/David_Hilbert", "https://en.wikipedia.org/wiki/Hilbert's_problems"])
+
+
+Neo.solve("Which of Hilbert's problems are still open but seem close to resolution?", resources=[resource_hilbert_problems_wikis])
+
+Neo.solve("What were some key milestones in the proof of Fermat's Last Theorem?")
+
+Neo.solve("What were Richard Hamilton's and Grigori Perelman's respective contributions to proving the Poincaré Conjecture?")
