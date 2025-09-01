@@ -36,7 +36,11 @@ class LlamaIndexEmbeddingResource(Loggable):
 
         for model_name in preferred_models:
             if self._is_model_available(model_name):
-                return self._create_embedding(model_name, dimension_override)
+                try:
+                    return self._create_embedding(model_name, dimension_override)
+                except Exception as e:
+                    self.debug(f"Failed to create embedding model {model_name}: {e}")
+                    continue
 
         raise EmbeddingError("No available embedding models found. Check API keys.")
 
@@ -131,22 +135,40 @@ class LlamaIndexEmbeddingResource(Loggable):
         """
         try:
             from llama_index.embeddings.openai import OpenAIEmbedding  # type: ignore
+            from llama_index.embeddings.openai.base import DEFAULT_OPENAI_API_BASE  # type: ignore
         except ImportError:
             raise EmbeddingError("Install: pip install llama-index-embeddings-openai")
 
         api_key = self._resolve_env_var(provider_config.get("api_key", ""))
+        base_url = self._resolve_env_var(provider_config.get("base_url", DEFAULT_OPENAI_API_BASE))
+
         if not api_key:
             raise EmbeddingError("OpenAI API key not found")
 
         # Use dimension_override if provided, else fall back to provider_config
         dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
 
-        return OpenAIEmbedding(
-            api_key=api_key,
-            model=model_name,
-            embed_batch_size=provider_config.get("batch_size", 100),
-            dimensions=dimensions,
-        )
+        try:
+            embedding = OpenAIEmbedding(
+                api_key=api_key,
+                api_base=base_url,
+                model=model_name,
+                embed_batch_size=provider_config.get("batch_size", 100),
+                dimensions=dimensions,
+            )
+            return embedding
+        except Exception as _:
+            # Retry embedding with `model_name` and don't use batch_size and dimensions
+            embedding = OpenAIEmbedding(
+                api_key=api_key,
+                api_base=base_url,
+                model_name=model_name,
+            )
+            embedding.get_text_embedding("test") # Try running embedding to see if it works
+            print(f"\033[92mSuccessfully initialized embedding with model_name: {model_name}\033[0m")
+            return embedding
+
+
 
     def _create_azure_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         try:

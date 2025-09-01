@@ -102,6 +102,7 @@
     },
     "embedding": {
         "preferred_models": [
+            "openai:az004.bge-m3:567m",
             "openai:text-embedding-3-large",
             "openai:text-embedding-3-small",
             "azure:text-embedding-3-large",
@@ -114,7 +115,7 @@
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",
-                "base_url": "https://api.openai.com/v1",
+                "base_url": "env:OPENAI_BASE_URL",
                 "dimension": 1024,
                 "batch_size": 100
             },
