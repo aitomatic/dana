@@ -19,6 +19,6 @@ class BaseStrategy(ABC):
         pass
 
     @abstractmethod
-    def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None) -> WorkflowInstance:
+    def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None, sandbox_context=None) -> WorkflowInstance:
         """Create a workflow instance for the problem."""
         pass

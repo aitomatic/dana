@@ -1,0 +1,61 @@
+{
+  "conversation_id": "5cc2fcd8-465f-496c-a38e-ba35b352210e",
+  "created_at": "2025-09-01T16:59:38.084808+00:00",
+  "updated_at": "2025-09-01T17:03:08.083278+00:00",
+  "history": [
+    {
+      "turn_id": "efa17a7e-2f6d-4bb0-ac6e-9242090c2482",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T16:59:47.572831+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "6e75791a-c759-484e-b9ea-fe1653e3a000",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T16:59:49.178443+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "5e7f4f34-fe5f-4e54-a718-46627127d7bf",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T16:59:53.994545+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "da7c6ccd-9426-47d7-b790-f8e4406bbe7a",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T16:59:57.997490+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "7a3a8452-1485-4f7f-b253-0e14f7fdd3fb",
+      "user_input": "Test wrapper function",
+      "agent_response": "Wrapper function response",
+      "timestamp": "2025-09-01T17:00:46.653235+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "d6adfe43-14e0-4361-ac8d-319e98116c8c",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T17:03:05.966195+00:00",
+      "metadata": {}
+    },
+    {
+      "turn_id": "66e4ca09-b6c0-45a9-aadf-f68fec249e6d",
+      "user_input": "hi",
+      "agent_response": "This is a mock response. In a real scenario, I would provide a thoughtful answer to: hi",
+      "timestamp": "2025-09-01T17:03:08.083278+00:00",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 8,
+    "total_turns": 7
+  }
+}

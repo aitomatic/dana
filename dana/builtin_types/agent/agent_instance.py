@@ -16,6 +16,7 @@ from dana.common.types import BaseRequest, BaseResponse
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.frameworks.memory.conversation_memory import ConversationMemory
 
 from .agent_type import AgentType
 from .events import AgentEventMixin
@@ -164,7 +165,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         # Return the response
         return response
 
-    def llm(self, request: str | dict | BaseRequest, **kwargs) -> str | BaseResponse:
+    def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> str | BaseResponse:
         """Execute agent LLM method."""
         if isinstance(request, str):
             request = BaseRequest(arguments={"prompt": request})
@@ -175,7 +176,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         else:
             raise ValueError(f"Invalid request type: {type(request)}")
 
-        llm_resource = self.get_llm_resource()
+        llm_resource = self.get_llm_resource(sandbox_context)
         if llm_resource is None:
             return "LLM resource not available - please configure an LLM resource for this agent"
 
@@ -193,12 +194,14 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         except Exception as e:
             return f"Error calling LLM: {str(e)}"
 
-    def plan(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> WorkflowInstance:
+    def plan(
+        self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs
+    ) -> WorkflowInstance:
         """Create a plan (workflow) for solving the problem."""
 
         if isinstance(problem_or_workflow, str):
             # Create new workflow for string problem
-            workflow = self._create_new_workflow(problem_or_workflow, **kwargs)
+            workflow = self._create_new_workflow(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
         else:
             # Use existing workflow
             workflow = problem_or_workflow
@@ -232,7 +235,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
 
         return workflow
 
-    def _create_new_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
+    def _create_new_workflow(self, problem: str, sandbox_context: SandboxContext | None = None, **kwargs) -> WorkflowInstance:
         """Create a new workflow for a string problem."""
         from .context import ProblemContext
         from .strategy import select_best_strategy
@@ -251,7 +254,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         strategy = select_best_strategy(problem, problem_context)
 
         # Create workflow using strategy
-        workflow = strategy.create_workflow(problem, problem_context, self)
+        workflow = strategy.create_workflow(problem, problem_context, self, sandbox_context=sandbox_context)
 
         return workflow
 
@@ -281,7 +284,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         """Create a sandbox context for workflow execution."""
         return SandboxContext()
 
-    def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
+    def solve(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
         """Solve a problem using the agent's problem-solving capabilities."""
 
         # If this is a new user request (string), start a new conversation turn
@@ -289,8 +292,8 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             self._global_event_history.start_new_conversation_turn(problem_or_workflow)
 
         # Always create or reuse a workflow via plan(), then execute
-        workflow = self.plan(problem_or_workflow, **kwargs)
-        return workflow.execute(self._create_sandbox_context(), **kwargs)
+        workflow = self.plan(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
+        return workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent memory storage method."""
@@ -472,6 +475,10 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             # Update metrics to indicate initialization failure
             self.update_metric("current_step", "initialization_failed")
 
+    def _initialize_conversation_memory(self):
+        """Initialize the conversation memory for this agent."""
+        self._conversation_memory = ConversationMemory()
+
     def _get_llm_resource(self):
         """Get the LLM resource for this agent.
 
@@ -494,6 +501,12 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         # If sandbox context is provided, try to get LLM resource from there first
         if sandbox_context is not None:
             try:
+                # First try to get the system LLM resource specifically
+                system_llm = sandbox_context.get_system_llm_resource()
+                if system_llm is not None:
+                    return system_llm
+
+                # Fall back to checking all resources for LLM kind
                 resources = sandbox_context.get_resources()
                 for resource in resources.values():
                     if hasattr(resource, "kind") and resource.kind == "llm":
@@ -507,10 +520,18 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def _initialize_llm_resource(self):
         """Initialize the LLM resource for this agent."""
         try:
-            # In a real implementation, this would be configured based on agent settings
-            # For now, we'll return None to indicate no LLM resource is available
-            # This allows the system to work in test environments without full LLM setup
-            self._llm_resource_instance = None
+            # Check if we're in a test environment by looking for DANA_MOCK_LLM
+            import os
+
+            if os.getenv("DANA_MOCK_LLM", "false").lower() == "true":
+                # Create a mock LLM resource for testing
+                from tests.conftest import create_mock_llm_resource
+
+                self._llm_resource_instance = create_mock_llm_resource()
+            else:
+                # In a real implementation, this would be configured based on agent settings
+                # For now, we'll return None to indicate no LLM resource is available
+                self._llm_resource_instance = None
 
         except Exception as e:
             import logging
