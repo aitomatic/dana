@@ -1,1 +1,304 @@
 #!/usr/bin/env bash
+# Install Dana Language Plugin on Linux
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+# This script installs the Dana language plugin after dependencies are ready
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Script configuration
+SCRIPT_NAME="$(basename "$0")"
+LOG_FILE="/tmp/dana-plugin-install.log"
+
+# Function to log messages
+log() {
+    echo -e "$1" | tee -a "$LOG_FILE"
+}
+
+# Function to check if dependencies are ready
+check_dependencies() {
+    log "${BLUE}🔍 Checking dependencies...${NC}"
+
+    # Simple check - if the deps script exists and we can run basic commands, assume deps are ready
+    if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+        log "${RED}❌ Dependencies not ready${NC}"
+        log "${YELLOW}💡 Run: ./bin/install-upgrade-linux-deps${NC}"
+        exit 1
+    fi
+
+    log "${GREEN}✅ Dependencies ready${NC}"
+}
+
+# Function to check if target editor is available
+check_editor() {
+    local editor="$1"
+    local editor_name="$2"
+
+    if ! command -v "$editor" &> /dev/null; then
+        log "${RED}❌ Error: $editor_name is not installed or not in PATH${NC}"
+        log "${YELLOW}💡 Install with: sudo snap install $editor --classic${NC}"
+        exit 1
+    fi
+
+    log "${GREEN}✅ $editor_name available${NC}"
+}
+
+# Function to get project paths
+setup_paths() {
+    log "${BLUE}📁 Setting up project paths...${NC}"
+
+    # Get the project root directory
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    EXTENSION_DIR="$PROJECT_ROOT/dana/integrations/vscode"
+
+    log "${BLUE}📁 Project root: ${PROJECT_ROOT}${NC}"
+    log "${BLUE}📁 Extension directory: ${EXTENSION_DIR}${NC}"
+
+    # Check if extension directory exists
+    if [[ ! -d "$EXTENSION_DIR" ]]; then
+        log "${RED}❌ Error: Extension directory not found at ${EXTENSION_DIR}${NC}"
+        exit 1
+    fi
+
+    # Change to extension directory
+    cd "$EXTENSION_DIR"
+    log "${GREEN}✅ Changed to extension directory${NC}"
+}
+
+# Function to install npm dependencies
+install_npm_dependencies() {
+    log "${BLUE}📦 Installing npm dependencies...${NC}"
+
+    # Check if package.json exists
+    if [[ ! -f "package.json" ]]; then
+        log "${RED}❌ Error: package.json not found in extension directory${NC}"
+        exit 1
+    fi
+
+    # Install dependencies
+    npm install
+    log "${GREEN}✅ npm dependencies installed${NC}"
+}
+
+# Function to compile TypeScript
+compile_typescript() {
+    log "${BLUE}🔨 Compiling TypeScript...${NC}"
+
+    # Check if compile script exists
+    if ! grep -q '"compile"' package.json; then
+        log "${RED}❌ Error: compile script not found in package.json${NC}"
+        exit 1
+    fi
+
+    # Run compilation
+    npm run compile
+    log "${GREEN}✅ TypeScript compilation completed${NC}"
+}
+
+# Function to package the extension
+package_extension() {
+    log "${BLUE}📦 Packaging extension...${NC}"
+
+    # Use @vscode/vsce via npx to avoid compatibility issues
+    log "${YELLOW}📦 Using @vscode/vsce via npx (VS Code Extension Manager)...${NC}"
+
+    # Package the extension
+    npx @vscode/vsce package --allow-missing-repository
+
+    # Find the generated .vsix file
+    VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
+
+    if [[ -z "$VSIX_FILE" ]]; then
+        log "${RED}❌ Error: No .vsix file found after packaging${NC}"
+        exit 1
+    fi
+
+    log "${GREEN}✅ Extension packaged: ${VSIX_FILE}${NC}"
+    echo "$VSIX_FILE"
+}
+
+# Function to install extension in editor
+install_extension() {
+    local vsix_file="$1"
+    local editor="$2"
+    local editor_name="$3"
+
+    log "${BLUE}🔧 Installing extension in ${editor_name}...${NC}"
+
+    # Install the extension
+    "$editor" --install-extension "$vsix_file"
+
+    if [[ $? -eq 0 ]]; then
+        log "${GREEN}✅ Extension successfully installed in ${editor_name}!${NC}"
+    else
+        log "${RED}❌ Failed to install extension in ${editor_name}${NC}"
+        exit 1
+    fi
+}
+
+# Function to verify installation
+verify_installation() {
+    local editor="$1"
+    local editor_name="$2"
+
+    log "${BLUE}🔍 Verifying installation...${NC}"
+
+    # Check if editor can list extensions
+    if "$editor" --list-extensions | grep -q "dana-language"; then
+        log "${GREEN}✅ Dana language extension found in ${editor_name}${NC}"
+    else
+        log "${YELLOW}⚠️  Dana language extension not found in ${editor_name} extensions list${NC}"
+        log "${YELLOW}   This may be normal for some editors${NC}"
+    fi
+
+    log "${GREEN}✅ Installation verification completed${NC}"
+}
+
+# Function to show success message and next steps
+show_success() {
+    local editor_name="$1"
+
+    log ""
+    log "${GREEN}🎉 Dana Language Support successfully installed in ${editor_name}!${NC}"
+    log ""
+
+    log "${YELLOW}📝 Next steps:${NC}"
+    log "1. Open ${editor_name}"
+    log "2. Create or open a .na file"
+    log "3. Press F5 to run Dana code"
+    log ""
+    log "${BLUE}💡 Dana Features in ${editor_name}:${NC}"
+    log "  - F5: Run current Dana file"
+    log "  - Syntax highlighting for .na files"
+    log "  - Real-time error checking (if LSP enabled)"
+    log "  - Hover help on Dana keywords"
+    log "  - Smart auto-completion"
+    log ""
+    log "${BLUE}💡 Tip: Make sure 'dana' command is in your PATH${NC}"
+
+    # Check if local dana command is available
+    local dana_cli="$PROJECT_ROOT/bin/dana"
+    if [[ -x "$dana_cli" ]]; then
+        log "${GREEN}✅ Dana CLI is available at ${dana_cli}${NC}"
+    else
+        log "${YELLOW}⚠️  Warning: Dana CLI not found at ${dana_cli}${NC}"
+        log "${YELLOW}   The extension will look for 'dana' in PATH when running files${NC}"
+    fi
+}
+
+# Function to show usage
+show_usage() {
+    cat << EOF
+Usage: $SCRIPT_NAME [OPTIONS] [EDITOR]
+
+Install Dana Language Plugin on Linux
+
+OPTIONS:
+    -h, --help          Show this help message
+    -v, --verbose       Enable verbose output
+    --cursor            Install for Cursor editor
+    --vscode           Install for VS Code editor
+
+EDITOR:
+    cursor              Install for Cursor (default)
+    code                Install for VS Code
+    vscode              Install for VS Code
+
+EXAMPLES:
+    $SCRIPT_NAME                    # Install for Cursor
+    $SCRIPT_NAME cursor            # Install for Cursor
+    $SCRIPT_NAME code              # Install for VS Code
+    $SCRIPT_NAME --cursor          # Install for Cursor
+    $SCRIPT_NAME --vscode          # Install for VS Code
+
+NOTES:
+    - Dependencies must be installed first (run: ./bin/install-upgrade-linux-deps)
+    - Target editor must be installed and accessible
+    - Script assumes dependencies are ready and focuses on plugin installation
+
+EOF
+}
+
+# Main execution
+main() {
+    local editor="cursor"
+    local editor_name="Cursor"
+    local verbose=false
+
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -v|--verbose)
+                verbose=true
+                shift
+                ;;
+            --cursor)
+                editor="cursor"
+                editor_name="Cursor"
+                shift
+                ;;
+            --vscode)
+                editor="code"
+                editor_name="VS Code"
+                shift
+                ;;
+            cursor|code|vscode)
+                if [[ "$1" == "vscode" ]]; then
+                    editor="code"
+                    editor_name="VS Code"
+                else
+                    editor="$1"
+                    if [[ "$1" == "code" ]]; then
+                        editor_name="VS Code"
+                    else
+                        editor_name="Cursor"
+                    fi
+                fi
+                shift
+                ;;
+            *)
+                log "${RED}❌ Error: Unknown option: $1${NC}"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+
+    # Set verbose mode if requested
+    if [[ "$verbose" == true ]]; then
+        set -x
+    fi
+
+    log "${BLUE}🚀 Dana Language Plugin - Linux Installer${NC}"
+    log "${BLUE}==========================================${NC}"
+    log "${BLUE}Target Editor: ${editor_name}${NC}"
+    log ""
+
+    # Run installation steps
+    check_dependencies
+    check_editor "$editor" "$editor_name"
+    setup_paths
+    install_npm_dependencies
+    compile_typescript
+    local vsix_file=$(package_extension)
+    install_extension "$vsix_file" "$editor" "$editor_name"
+    verify_installation "$editor" "$editor_name"
+    show_success "$editor_name"
+
+    log ""
+    log "${GREEN}🎉 Installation completed successfully!${NC}"
+    log "${BLUE}📝 Log saved to: $LOG_FILE${NC}"
+}
+
+# Run main function
+main "$@"

@@ -2,6 +2,7 @@
 # Install Dana Language Support for VS Code/Cursor
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 # Usage: ./bin/install-vscode-extension.sh [--cursor]
+# This script delegates to the new Linux installer for better reliability
 
 set -e
 
@@ -30,118 +31,37 @@ if ! command -v $EDITOR &> /dev/null; then
     echo -e "${YELLOW}💡 Please install ${EDITOR_NAME} first:${NC}"
     if [[ "$EDITOR" == "code" ]]; then
         echo "   - Download from: https://code.visualstudio.com/"
-        echo "   - Or install via brew: brew install --cask visual-studio-code"
+        echo "   - Or install via snap: sudo snap install code --classic"
     else
         echo "   - Download from: https://cursor.sh/"
-        echo "   - Or install via brew: brew install --cask cursor"
+        echo "   - Or install via snap: sudo snap install cursor --classic"
     fi
     exit 1
 fi
 
 # Get the project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-EXTENSION_DIR="$PROJECT_ROOT/dana/integrations/vscode"
+NEW_INSTALLER="$PROJECT_ROOT/dana/integrations/vscode/bin/install-on-linux"
 
-echo -e "${BLUE}📁 Extension directory: ${EXTENSION_DIR}${NC}"
+echo -e "${BLUE}📁 Using new Linux installer: ${NEW_INSTALLER}${NC}"
 
-# Check if extension directory exists
-if [[ ! -d "$EXTENSION_DIR" ]]; then
-    echo -e "${RED}❌ Error: Extension directory not found at ${EXTENSION_DIR}${NC}"
+# Check if new installer exists
+if [[ ! -f "$NEW_INSTALLER" ]]; then
+    echo -e "${RED}❌ Error: New Linux installer not found at ${NEW_INSTALLER}${NC}"
+    echo -e "${YELLOW}💡 This suggests the Dana repository structure has changed${NC}"
     exit 1
 fi
 
-# Change to extension directory
-cd "$EXTENSION_DIR"
+# Make sure the new installer is executable
+chmod +x "$NEW_INSTALLER"
 
-# Check if Node.js is installed
-if ! command -v npm &> /dev/null; then
-    echo -e "${RED}❌ Error: Node.js/npm is not installed${NC}"
-    echo -e "${YELLOW}💡 Please install Node.js first:${NC}"
-    echo "   - Download from: https://nodejs.org/"
-    echo "   - Or install via brew: brew install node"
-    exit 1
-fi
-
-# Check for LSP dependencies
-echo -e "${BLUE}🔍 Checking LSP dependencies...${NC}"
-LSP_AVAILABLE=false
-if python3 -c "import lsprotocol, pygls" 2>/dev/null; then
-    LSP_AVAILABLE=true
-    echo -e "${GREEN}✅ LSP dependencies available${NC}"
-else
-    echo -e "${YELLOW}⚠️  LSP dependencies not found. Install with: pip install lsprotocol pygls${NC}"
-fi
-
-# Install dependencies
-echo -e "${BLUE}📦 Installing dependencies...${NC}"
-npm install
-
-# Use the newer @vscode/vsce package via npx to avoid compatibility issues
-echo -e "${YELLOW}📦 Using @vscode/vsce via npx (VS Code Extension Manager)...${NC}"
-VSCE_CMD="npx @vscode/vsce"
-
-# Compile TypeScript
-echo -e "${BLUE}🔨 Compiling TypeScript...${NC}"
-npm run compile
-
-# Package extension
-echo -e "${BLUE}📦 Packaging extension...${NC}"
-$VSCE_CMD package --allow-missing-repository
-
-# Find the generated .vsix file
-VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
-
-if [[ -z "$VSIX_FILE" ]]; then
-    echo -e "${RED}❌ Error: No .vsix file found after packaging${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Extension packaged: ${VSIX_FILE}${NC}"
-
-# Install the extension
-echo -e "${BLUE}🔧 Installing extension in ${EDITOR_NAME}...${NC}"
-$EDITOR --install-extension "$VSIX_FILE"
-
-echo -e "${GREEN}🎉 Dana Language Support successfully installed in ${EDITOR_NAME}!${NC}"
+# Delegate to the new installer
+echo -e "${BLUE}🔄 Delegating to new Linux installer...${NC}"
 echo ""
 
-if [[ "$LSP_AVAILABLE" == "true" ]]; then
-    echo -e "${GREEN}✅ LSP Features Enabled:${NC}"
-    echo "  - Real-time syntax checking"
-    echo "  - Hover documentation"
-    echo "  - Auto-completion"
-    echo "  - Error diagnostics"
-    echo "  - Go-to-definition (coming soon)"
-    echo ""
+# Call the new installer with appropriate arguments
+if [[ "$EDITOR" == "cursor" ]]; then
+    "$NEW_INSTALLER" cursor
 else
-    echo -e "${YELLOW}⚠️  Basic Dana support installed (no LSP features)${NC}"
-    echo -e "${BLUE}💡 To enable LSP features:${NC}"
-    echo "  1. Install dependencies: pip install lsprotocol pygls"
-    echo "  2. Restart ${EDITOR_NAME}"
-    echo ""
-fi
-
-echo -e "${YELLOW}📝 Next steps:${NC}"
-echo "1. Open ${EDITOR_NAME}"
-echo "2. Create or open a .na file"
-echo "3. Press F5 to run Dana code"
-echo ""
-echo -e "${BLUE}💡 Dana Features in ${EDITOR_NAME}:${NC}"
-echo "  - F5: Run current Dana file"
-echo "  - Syntax highlighting for .na files"
-if [[ "$LSP_AVAILABLE" == "true" ]]; then
-    echo "  - Real-time error checking"
-    echo "  - Hover help on Dana keywords"
-    echo "  - Smart auto-completion"
-fi
-echo ""
-echo -e "${BLUE}💡 Tip: Make sure 'dana' command is in your PATH${NC}"
-
-# Check if local dana command is available
-DANA_CLI="$PROJECT_ROOT/bin/dana"
-if [[ -x "$DANA_CLI" ]]; then
-    echo -e "${GREEN}✅ Dana CLI is available at ${DANA_CLI}${NC}"
-else
-    echo -e "${YELLOW}⚠️  Warning: Dana CLI not found at ${DANA_CLI}${NC}"
-    echo -e "${YELLOW}   The extension will look for 'dana' in PATH when running files${NC}"
+    "$NEW_INSTALLER" code
 fi

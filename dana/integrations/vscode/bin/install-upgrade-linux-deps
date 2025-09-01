@@ -1,1 +1,330 @@
 #!/usr/bin/env bash
+# Install and Upgrade Linux Dependencies for Dana Language Plugin
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+# This script installs all necessary dependencies for building and running Dana extensions on Ubuntu/Debian
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Script configuration
+SCRIPT_NAME="$(basename "$0")"
+LOG_FILE="/tmp/dana-deps-install.log"
+
+# Function to log messages
+log() {
+    echo -e "$1" | tee -a "$LOG_FILE"
+}
+
+# Function to check if running as root
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        log "${RED}❌ Error: This script should not be run as root${NC}"
+        log "${YELLOW}💡 Please run as a regular user with sudo privileges${NC}"
+        exit 1
+    fi
+}
+
+# Function to check if we're on a supported distribution
+check_distribution() {
+    if [[ ! -f /etc/os-release ]]; then
+        log "${RED}❌ Error: Cannot determine Linux distribution${NC}"
+        exit 1
+    fi
+
+    source /etc/os-release
+    if [[ "$ID" != "ubuntu" && "$ID" != "debian" ]]; then
+        log "${YELLOW}⚠️  Warning: This script is optimized for Ubuntu/Debian${NC}"
+        log "${YELLOW}   You're running: $PRETTY_NAME${NC}"
+        log "${YELLOW}   Some commands may need adjustment${NC}"
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    else
+        log "${GREEN}✅ Detected: $PRETTY_NAME${NC}"
+    fi
+}
+
+# Function to check sudo privileges
+check_sudo() {
+    if ! sudo -n true 2>/dev/null; then
+        log "${YELLOW}🔐 Requesting sudo privileges...${NC}"
+        sudo -v
+    fi
+}
+
+# Function to update package lists
+update_packages() {
+    log "${BLUE}🔄 Updating package lists...${NC}"
+    sudo apt update
+    log "${GREEN}✅ Package lists updated${NC}"
+}
+
+# Function to install system packages
+install_system_packages() {
+    log "${BLUE}📦 Installing system packages...${NC}"
+
+    # Core development tools
+    sudo apt install -y \
+        build-essential \
+        git \
+        curl \
+        wget \
+        unzip \
+        ca-certificates \
+        software-properties-common
+
+    log "${GREEN}✅ System packages installed${NC}"
+}
+
+# Function to install Node.js and npm
+install_nodejs() {
+    log "${BLUE}🟢 Installing Node.js and npm...${NC}"
+
+    # Check if Node.js is already installed
+    if command -v node &> /dev/null && command -v npm &> /dev/null; then
+        NODE_VERSION=$(node --version)
+        NPM_VERSION=$(npm --version)
+        log "${YELLOW}⚠️  Node.js already installed: $NODE_VERSION${NC}"
+        log "${YELLOW}⚠️  npm already installed: $NPM_VERSION${NC}"
+
+        # Check if version is sufficient
+        if [[ "${NODE_VERSION#v}" =~ ^([0-9]+)\. ]]; then
+            MAJOR_VERSION="${BASH_REMATCH[1]}"
+            if [[ $MAJOR_VERSION -lt 20 ]]; then
+                log "${YELLOW}⚠️  Node.js version $NODE_VERSION is below recommended (20+)${NC}"
+                log "${BLUE}💡 Installing Node.js 20 from NodeSource...${NC}"
+
+                # Install NodeSource repository
+                curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                sudo apt install -y nodejs
+
+                log "${GREEN}✅ Node.js 20 installed${NC}"
+            else
+                log "${GREEN}✅ Node.js version $NODE_VERSION is sufficient${NC}"
+            fi
+        fi
+    else
+        log "${BLUE}💡 Installing Node.js from Ubuntu repositories...${NC}"
+        sudo apt install -y nodejs npm
+
+        # Check if we got a recent version
+        if command -v node &> /dev/null; then
+            NODE_VERSION=$(node --version)
+            if [[ "${NODE_VERSION#v}" =~ ^([0-9]+)\. ]]; then
+                MAJOR_VERSION="${BASH_REMATCH[1]}"
+                if [[ $MAJOR_VERSION -lt 20 ]]; then
+                    log "${YELLOW}⚠️  Ubuntu package version $NODE_VERSION is below recommended (20+)${NC}"
+                    log "${BLUE}💡 Installing Node.js 20 from NodeSource...${NC}"
+
+                    # Install NodeSource repository
+                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                    sudo apt install -y nodejs
+                fi
+            fi
+        fi
+
+        log "${GREEN}✅ Node.js and npm installed${NC}"
+    fi
+
+    # Verify installation
+    NODE_VERSION=$(node --version)
+    NPM_VERSION=$(npm --version)
+    log "${GREEN}✅ Node.js: $NODE_VERSION${NC}"
+    log "${GREEN}✅ npm: $NPM_VERSION${NC}"
+}
+
+# Function to install Python and pip
+install_python() {
+    log "${BLUE}🐍 Installing Python and pip...${NC}"
+
+    # Install Python 3 and pip
+    sudo apt install -y python3 python3-pip python3-venv
+
+    # Verify installation
+    PYTHON_VERSION=$(python3 --version)
+    PIP_VERSION=$(pip3 --version)
+    log "${GREEN}✅ Python: $PYTHON_VERSION${NC}"
+    log "${GREEN}✅ pip: $PIP_VERSION${NC}"
+}
+
+# Function to install Python LSP packages
+install_python_lsp() {
+    log "${BLUE}🔍 Installing Python LSP packages...${NC}"
+
+    # Try to install via apt first (more stable)
+    if sudo apt install -y python3-lsprotocol python3-pygls 2>/dev/null; then
+        log "${GREEN}✅ LSP packages installed via apt${NC}"
+    else
+        log "${YELLOW}⚠️  LSP packages not available via apt, using pip...${NC}"
+        pip3 install --user lsprotocol pygls
+        log "${GREEN}✅ LSP packages installed via pip${NC}"
+    fi
+
+    # Verify LSP installation
+    if python3 -c "import lsprotocol, pygls" 2>/dev/null; then
+        log "${GREEN}✅ LSP dependencies verified${NC}"
+    else
+        log "${YELLOW}⚠️  LSP dependencies not accessible${NC}"
+        log "${YELLOW}   You may need to add ~/.local/bin to your PATH${NC}"
+    fi
+}
+
+# Function to configure npm for user installation
+configure_npm() {
+    log "${BLUE}⚙️  Configuring npm for user installation...${NC}"
+
+    # Create user npm directory
+    mkdir -p ~/.npm-global
+
+    # Configure npm to use user directory
+    npm config set prefix '~/.npm-global'
+
+    # Add to PATH if not already there
+    if ! grep -q "~/.npm-global/bin" ~/.bashrc; then
+        echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+        log "${GREEN}✅ Added npm-global to ~/.bashrc${NC}"
+    else
+        log "${YELLOW}⚠️  npm-global already in ~/.bashrc${NC}"
+    fi
+
+    # Source bashrc for current session
+    export PATH=~/.npm-global/bin:$PATH
+
+    log "${GREEN}✅ npm configured for user installation${NC}"
+}
+
+# Function to check if editors are available (optional)
+check_editors() {
+    log "${BLUE}📝 Checking code editors...${NC}"
+
+    # Check if VS Code is available
+    if command -v code &> /dev/null; then
+        log "${GREEN}✅ VS Code: Available${NC}"
+    else
+        log "${YELLOW}⚠️  VS Code: Not found${NC}"
+        log "${YELLOW}   Install with: sudo snap install code --classic${NC}"
+    fi
+
+    # Check if Cursor is available
+    if command -v cursor &> /dev/null; then
+        log "${GREEN}✅ Cursor: Available${NC}"
+    else
+        log "${YELLOW}⚠️  Cursor: Not found${NC}"
+        log "${YELLOW}   Install with: sudo snap install cursor --classic${NC}"
+    fi
+}
+
+# Function to verify all installations
+verify_installations() {
+    log "${BLUE}🔍 Verifying all installations...${NC}"
+
+    local all_good=true
+
+    # Check Node.js
+    if command -v node &> /dev/null; then
+        NODE_VERSION=$(node --version)
+        log "${GREEN}✅ Node.js: $NODE_VERSION${NC}"
+
+        # Check version requirement
+        if [[ "${NODE_VERSION#v}" =~ ^([0-9]+)\. ]]; then
+            MAJOR_VERSION="${BASH_REMATCH[1]}"
+            if [[ $MAJOR_VERSION -lt 20 ]]; then
+                log "${RED}❌ Node.js version $NODE_VERSION is below required (20+)${NC}"
+                all_good=false
+            fi
+        fi
+    else
+        log "${RED}❌ Node.js not found${NC}"
+        all_good=false
+    fi
+
+    # Check npm
+    if command -v npm &> /dev/null; then
+        NPM_VERSION=$(npm --version)
+        log "${GREEN}✅ npm: $NPM_VERSION${NC}"
+    else
+        log "${RED}❌ npm not found${NC}"
+        all_good=false
+    fi
+
+    # Check Python
+    if command -v python3 &> /dev/null; then
+        PYTHON_VERSION=$(python3 --version)
+        log "${GREEN}✅ Python: $PYTHON_VERSION${NC}"
+    else
+        log "${RED}❌ Python3 not found${NC}"
+        all_good=false
+    fi
+
+    # Check LSP dependencies
+    if python3 -c "import lsprotocol, pygls" 2>/dev/null; then
+        log "${GREEN}✅ LSP dependencies: Available${NC}"
+    else
+        log "${YELLOW}⚠️  LSP dependencies: Not accessible${NC}"
+        log "${YELLOW}   Run: pip3 install --user lsprotocol pygls${NC}"
+    fi
+
+        # Note: Editors are checked separately and are optional
+    log "${YELLOW}ℹ️  Editors: Checked separately (optional)${NC}"
+
+    if [[ "$all_good" == true ]]; then
+        log "${GREEN}🎉 All critical dependencies verified successfully!${NC}"
+    else
+        log "${RED}❌ Some dependencies failed verification${NC}"
+        log "${YELLOW}💡 Check the output above and re-run if needed${NC}"
+        exit 1
+    fi
+}
+
+# Function to show next steps
+show_next_steps() {
+    log ""
+    log "${BLUE}📋 Next Steps:${NC}"
+    log "1. Restart your terminal or run: source ~/.bashrc"
+    log "2. Navigate to Dana extension directory: cd dana/integrations/vscode"
+    log "3. Install extension dependencies: npm install"
+    log "4. Compile the extension: npm run compile"
+    log "5. Package the extension: npx @vscode/vsce package"
+    log "6. Install in your editor: code --install-extension *.vsix"
+    log ""
+    log "${BLUE}💡 Tips:${NC}"
+    log "- Use 'make install-cursor' or 'make install-vscode' for automated installation"
+    log "- LSP features require Python packages: pip3 install --user lsprotocol pygls"
+    log "- Check logs at: $LOG_FILE"
+}
+
+# Main execution
+main() {
+    log "${BLUE}🚀 Dana Language Plugin - Linux Dependencies Installer${NC}"
+    log "${BLUE}=====================================================${NC}"
+    log ""
+
+    # Run all installation steps
+    check_root
+    check_distribution
+    check_sudo
+    update_packages
+    install_system_packages
+    install_nodejs
+    install_python
+    install_python_lsp
+    configure_npm
+    check_editors
+    verify_installations
+    show_next_steps
+
+    log ""
+    log "${GREEN}🎉 Installation completed successfully!${NC}"
+    log "${BLUE}📝 Log saved to: $LOG_FILE${NC}"
+}
+
+# Run main function
+main "$@"
