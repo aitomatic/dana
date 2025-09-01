@@ -17,4 +17,5 @@ resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/
 
 
 # use expert agent to solve problems
-JeanHu.solve('Is AMD capital-intensive?', resources=[resource_amd_annual_report])
+def __main__(problem='Is AMD capital-intensive?'):
+    JeanHu.solve(problem, resources=[resource_amd_annual_report])
