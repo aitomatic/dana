@@ -1,4 +1,4 @@
-# Agents
+# Dana Agent Examples
 
 - [Agents have identity & built-in memory](agent_identity_and_memory)
 
