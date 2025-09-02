@@ -84,7 +84,7 @@ def demonstrate_workflow_factory():
     """Demonstrate the WorkflowFactory functionality."""
     
     # Import the factory
-    from dana.builtin_types.workflow.factory import WorkflowFactory
+    from dana.core.workflow.factory import WorkflowFactory
     
     # Create factory instance
     factory = WorkflowFactory()
@@ -158,7 +158,7 @@ def demonstrate_workflow_execution():
     log("-" * 40)
     
     try:
-        from dana.builtin_types.workflow.factory import WorkflowFactory
+        from dana.core.workflow.factory import WorkflowFactory
         
         factory = WorkflowFactory()
         
@@ -217,7 +217,7 @@ workflow:
 """
     
     try:
-        from dana.builtin_types.workflow.factory import WorkflowFactory
+        from dana.core.workflow.factory import WorkflowFactory
         
         factory = WorkflowFactory()
         

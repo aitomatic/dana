@@ -10,7 +10,7 @@ import pytest
 from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.builtin_types.agent.agent_type import AgentType
 from dana.builtin_types.agent.context import EventHistory, ProblemContext
-from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+from dana.core.workflow.workflow_system import WorkflowInstance
 
 
 class TestAgentSolveIntegration:

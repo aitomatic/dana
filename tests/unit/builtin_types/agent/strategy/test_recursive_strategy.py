@@ -7,7 +7,7 @@ with rich context engineering integration.
 
 from dana.builtin_types.agent.context import EventHistory, ProblemContext
 from dana.builtin_types.agent.strategy.recursive.recursive_strategy import RecursiveStrategy
-from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+from dana.core.workflow.workflow_system import WorkflowInstance
 
 
 class TestRecursiveStrategy:
