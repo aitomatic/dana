@@ -1,4 +1,4 @@
-"""Instant Domain-Expert Agent (DXA) leveraging Dana's standard library's `ExpertAgent` blueprint and `knows` expertise packs."""
+"""Instant expert agent leveraging Dana's standard library's `ExpertAgent` blueprint and `knows` expertise packs."""
 
 
 # import expert agent blueprint from `blueprints` stdlib
@@ -17,4 +17,5 @@ resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/
 
 
 # use expert agent to solve problems
-JeanHu.solve('Is AMD capital-intensive?', resources=[resource_amd_annual_report])
+def __main__(problem='Is AMD capital-intensive?'):
+    JeanHu.solve(problem, resources=[resource_amd_annual_report])
