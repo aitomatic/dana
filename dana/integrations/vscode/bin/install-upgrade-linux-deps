@@ -181,22 +181,39 @@ install_python_lsp() {
 configure_npm() {
     log "${BLUE}⚙️  Configuring npm for user installation...${NC}"
 
-    # Create user npm directory
-    mkdir -p ~/.npm-global
+    # Create user npm directory structure
+    mkdir -p ~/.npm-global/lib/node_modules
+    mkdir -p ~/.npm-global/bin
 
     # Configure npm to use user directory
-    npm config set prefix '~/.npm-global'
+    npm config set prefix "$HOME/.npm-global"
+    
+    # Verify the configuration was set correctly
+    local npm_prefix=$(npm config get prefix 2>/dev/null || echo "")
+    if [[ "$npm_prefix" != "$HOME/.npm-global" ]]; then
+        log "${RED}❌ Error: Failed to configure npm prefix${NC}"
+        log "${YELLOW}💡 Attempting to fix permissions...${NC}"
+        chmod -R 755 "$HOME/.npm-global" 2>/dev/null || true
+        npm config set prefix "$HOME/.npm-global"
+        
+        # Check again
+        npm_prefix=$(npm config get prefix 2>/dev/null || echo "")
+        if [[ "$npm_prefix" != "$HOME/.npm-global" ]]; then
+            log "${RED}❌ Error: Still cannot configure npm prefix${NC}"
+            exit 1
+        fi
+    fi
 
     # Add to PATH if not already there
-    if ! grep -q "~/.npm-global/bin" ~/.bashrc; then
-        echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+    if ! grep -q "$HOME/.npm-global/bin" ~/.bashrc; then
+        echo "export PATH=$HOME/.npm-global/bin:\$PATH" >> ~/.bashrc
         log "${GREEN}✅ Added npm-global to ~/.bashrc${NC}"
     else
         log "${YELLOW}⚠️  npm-global already in ~/.bashrc${NC}"
     fi
 
     # Source bashrc for current session
-    export PATH=~/.npm-global/bin:$PATH
+    export PATH="$HOME/.npm-global/bin:$PATH"
 
     log "${GREEN}✅ npm configured for user installation${NC}"
 }

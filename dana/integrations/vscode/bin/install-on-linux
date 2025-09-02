@@ -21,6 +21,56 @@ log() {
     echo -e "$1" | tee -a "$LOG_FILE"
 }
 
+# Function to ensure npm environment is properly configured
+ensure_npm_environment() {
+    log "${BLUE}🔧 Ensuring npm environment is properly configured...${NC}"
+    
+    # Create npm global directory structure if it doesn't exist
+    mkdir -p ~/.npm-global/lib/node_modules
+    mkdir -p ~/.npm-global/bin
+    
+    # Configure npm to use user directory
+    npm config set prefix "$HOME/.npm-global"
+    
+    # Add to PATH for current session
+    export PATH="$HOME/.npm-global/bin:$PATH"
+    
+    # Verify npm configuration
+    local npm_prefix=$(npm config get prefix 2>/dev/null || echo "")
+    if [[ "$npm_prefix" != "$HOME/.npm-global" ]]; then
+        log "${RED}❌ Error: Failed to configure npm prefix${NC}"
+        exit 1
+    fi
+    
+    # Verify the directory structure exists and is accessible
+    if [[ ! -d "$HOME/.npm-global/lib" ]] || [[ ! -w "$HOME/.npm-global/lib" ]]; then
+        log "${RED}❌ Error: npm global lib directory is not accessible${NC}"
+        log "${YELLOW}💡 Attempting to fix permissions...${NC}"
+        chmod -R 755 "$HOME/.npm-global" 2>/dev/null || true
+        if [[ ! -w "$HOME/.npm-global/lib" ]]; then
+            log "${RED}❌ Cannot fix npm global directory permissions${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Additional WSL-specific fixes
+    log "${BLUE}🔧 Applying WSL-specific fixes...${NC}"
+    
+    # Ensure npm cache directory exists and is accessible
+    mkdir -p "$HOME/.npm/_cacache"
+    chmod -R 755 "$HOME/.npm/_cacache" 2>/dev/null || true
+    
+    # Set npm cache directory explicitly
+    npm config set cache "$HOME/.npm/_cacache"
+    
+    # Verify npm can write to its directories
+    if ! npm config get cache &> /dev/null; then
+        log "${YELLOW}⚠️  Warning: npm cache configuration issue${NC}"
+    fi
+    
+    log "${GREEN}✅ npm environment properly configured${NC}"
+}
+
 # Function to check and install dependencies if needed
 check_and_install_dependencies() {
     log "${BLUE}🔍 Checking dependencies...${NC}"
@@ -111,8 +161,23 @@ install_npm_dependencies() {
         exit 1
     fi
 
-    # Install dependencies
-    npm install
+    # Ensure npm environment is properly configured
+    ensure_npm_environment
+    
+    # Install dependencies with explicit cache directory
+    log "${BLUE}📦 Installing dependencies...${NC}"
+    export npm_config_cache="$HOME/.npm/_cacache"
+    
+    if ! npm install; then
+        log "${RED}❌ Error: npm install failed${NC}"
+        log "${YELLOW}💡 Attempting to clear npm cache and retry...${NC}"
+        npm cache clean --force
+        if ! npm install; then
+            log "${RED}❌ Error: npm install failed even after cache cleanup${NC}"
+            exit 1
+        fi
+    fi
+    
     log "${GREEN}✅ npm dependencies installed${NC}"
 
     # Fix permissions on TypeScript binary (common Linux issue)
@@ -154,12 +219,40 @@ compile_typescript() {
 package_extension() {
     log "${BLUE}📦 Packaging extension...${NC}"
 
-    # Use @vscode/vsce via npx to avoid compatibility issues
-    log "${YELLOW}📦 Using @vscode/vsce via npx (VS Code Extension Manager)...${NC}"
-
+    # Ensure npm environment is still properly configured
+    ensure_npm_environment
+    
+    # Check if vsce is already available
+    if command -v vsce &> /dev/null; then
+        log "${GREEN}✅ @vscode/vsce already available${NC}"
+    else
+        # Install vsce globally first to avoid npx issues
+        log "${BLUE}📦 Installing @vscode/vsce globally...${NC}"
+        if ! npm install -g @vscode/vsce; then
+            log "${RED}❌ Error: Failed to install @vscode/vsce globally${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Use vsce directly instead of npx
+    log "${YELLOW}📦 Using @vscode/vsce directly...${NC}"
+    
     # Package the extension and capture output
     local package_output
-    package_output=$(npx @vscode/vsce package --allow-missing-repository 2>&1)
+    local exit_code
+    
+    # Set npm cache directory to avoid permission issues
+    export npm_config_cache="$HOME/.npm/_cacache"
+    
+    # Run the packaging command
+    package_output=$(vsce package --allow-missing-repository 2>&1)
+    exit_code=$?
+    
+    if [[ $exit_code -ne 0 ]]; then
+        log "${RED}❌ Error: vsce packaging failed with exit code $exit_code${NC}"
+        log "${YELLOW}Package output: ${package_output}${NC}"
+        exit 1
+    fi
 
     # Find the generated .vsix file
     VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
