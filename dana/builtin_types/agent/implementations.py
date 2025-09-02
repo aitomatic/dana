@@ -7,8 +7,8 @@ memory, reasoning, chat, and LLM resource management.
 
 from typing import Any, cast
 
-from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 def build_agent_description(
@@ -162,7 +162,7 @@ class AgentImplementationMixin:
                 self._llm_resource_instance = create_mock_llm_resource()
                 return
 
-            from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
             # Get LLM parameters from agent's config field
             llm_params = {}

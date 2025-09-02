@@ -7,11 +7,11 @@ logic for LLM resources in the core resource system.
 
 from typing import TYPE_CHECKING, Any
 
-from dana.builtin_types.resource.resource_type import ResourceType
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.core.resource.resource_type import ResourceType
 
 if TYPE_CHECKING:
-    from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class LLMResourceType(ResourceType):
@@ -66,7 +66,7 @@ class LLMResourceType(ResourceType):
         Returns:
             A new LLMResourceInstance wrapping the LLMResource
         """
-        from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
         # Extract values from the LLMResource
         resource_values = {
@@ -95,8 +95,8 @@ class LLMResourceType(ResourceType):
         Returns:
             A new LLMResourceInstance with a newly created LLMResource
         """
-        from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
         # Extract LLMResource constructor arguments
         name = values.get("name", "default_llm")
@@ -126,7 +126,7 @@ class LLMResourceType(ResourceType):
         Returns:
             The registered LLMResourceType instance
         """
-        from dana.builtin_types.resource.resource_registry import ResourceTypeRegistry
+        from dana.core.resource.resource_registry import ResourceTypeRegistry
 
         instance = cls()
         ResourceTypeRegistry.register_resource_type(instance)

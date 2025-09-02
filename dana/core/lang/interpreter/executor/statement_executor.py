@@ -488,9 +488,9 @@ class StatementExecutor(BaseExecutor):
             None (registers type and constructor in scope)
         """
         # Import lazily to avoid circulars
-        from dana.builtin_types.resource.resource_ast import create_resource_type_from_ast
-        from dana.builtin_types.resource.resource_registry import ResourceTypeRegistry
         from dana.common.exceptions import SandboxError
+        from dana.core.resource.resource_ast import create_resource_type_from_ast
+        from dana.core.resource.resource_registry import ResourceTypeRegistry
 
         try:
             # Build ResourceType from AST

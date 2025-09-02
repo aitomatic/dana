@@ -65,8 +65,8 @@ def test_na_file(na_file):
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -213,7 +213,7 @@ print("Resource Instance Type:", type(r))
 
     # Verify instance types
     from dana.builtin_types.agent import AgentInstance
-    from dana.builtin_types.resource.resource_instance import ResourceInstance
+    from dana.core.resource.resource_instance import ResourceInstance
 
     assert isinstance(a_instance, AgentInstance), f"a should be AgentInstance, got {type(a_instance)}"
     assert isinstance(aa_singleton, AgentInstance), f"AA should be AgentInstance, got {type(aa_singleton)}"

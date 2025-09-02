@@ -14,8 +14,8 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.common.utils.logging import DANA_LOGGER
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.registry import AGENT_REGISTRY
 
 from .core.runtime import DanaSandbox
@@ -217,8 +217,8 @@ class DanaTUI(App):
         # Create core DanaSandbox with LegacyLLMResource for TUI usage
         self.sandbox = DanaSandbox(do_initialize=True)
         # Set the legacy LLM resource for TUI compatibility
-        from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
         # Create a default LLM resource for TUI compatibility
         llm_resource = LegacyLLMResource(name="tui_default", model="auto")

@@ -1017,7 +1017,7 @@ class FunctionExecutor(BaseExecutor):
 
             # Check resource registry if available
             try:
-                from dana.builtin_types.resource.resource_registry import ResourceTypeRegistry
+                from dana.core.resource.resource_registry import ResourceTypeRegistry
 
                 is_resource_type = ResourceTypeRegistry.exists(type_name)
             except ImportError:
