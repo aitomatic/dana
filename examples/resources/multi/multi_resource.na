@@ -1,6 +1,5 @@
 """Multiple Documents & Webpages Resource Querying."""
 
-
 agent Neo
 
 resource_aitomatic_website = get_resource('rag', sources=['https://www.aitomatic.com'])

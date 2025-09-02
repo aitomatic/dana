@@ -13,7 +13,6 @@ from the following component results:
 ```
 {components}
 ```')
-
     return quick_asset
 
 

@@ -1,6 +1,5 @@
 """Mixed Documents & Webpages Resource Querying."""
 
-
 agent Neo
 
 resource_aitomatic_and_dana_info = get_resource('rag', sources=['https://www.aitomatic.com', '../../../README.md'])
