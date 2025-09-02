@@ -4,11 +4,9 @@
 from .fin_statements import get_op_income, get_op_income_2y, get_op_income_3y
 from .fin_statements import get_deprec_and_amort, get_deprec_and_amort_2y, get_deprec_and_amort_3y
 
-from .utils import FinDoc
-
 
 __all__ = [
-    'calc_ebitda', 'calc_ebitda_2y', 'calc_ebitda_3y',
+    'workflow_calc_ebitda', 'workflow_calc_ebitda_2y', 'workflow_calc_ebitda_3y',
 ]
 
 
@@ -28,7 +26,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_ebitda(doc: FinDoc) -> float = [get_op_income, get_deprec_and_amort] | _ebitda
+def workflow_calc_ebitda(resources: list) -> float = [get_op_income, get_deprec_and_amort] | _ebitda
 
 
 def _ebitda_2y(intermed_results):
@@ -47,7 +45,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_ebitda_2y(doc: FinDoc) -> float = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
+def workflow_calc_ebitda_2y(resources: list) -> float = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
 
 
 def _ebitda_3y(intermed_results):
@@ -66,4 +64,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_ebitda_3y(doc: FinDoc) -> float = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y
+def workflow_calc_ebitda_3y(resources: list) -> float = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y

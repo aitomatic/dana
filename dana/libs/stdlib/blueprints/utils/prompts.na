@@ -38,4 +38,5 @@ EXPERT WORKFLOW RESULT:
 ```
 
 Return your best conclusion about / solution to the posed problem.
+Do explain your reasoning in a structured manner, with key supporting details.
 """

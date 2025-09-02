@@ -9,19 +9,17 @@ from .fin_statements import get_op_income, get_op_income_3y
 from .fin_statements import get_ebit, get_ebit_3y
 from .fin_statements import get_net_income, get_net_income_3y
 
-from .adj_income import calc_ebitda, calc_ebitda_3y
-
-from .utils import FinDoc
+from .adj_income import workflow_calc_ebitda, workflow_calc_ebitda_3y
 
 
 __all__ = [
-    'calc_cogs_margin', 'calc_cogs_margin_3y_avg',
-    'calc_gross_margin', 'calc_gross_margin_3y_avg',
-    'calc_ebitda_margin', 'calc_ebitda_margin_3y_avg',
-    'calc_da_margin',
-    'calc_op_margin', 'calc_op_margin_3y_avg',
-    'calc_ebit_margin', 'calc_ebit_margin_3y_avg',
-    'calc_net_margin', 'calc_net_margin_3y_avg',
+    'workflow_calc_cogs_margin', 'workflow_calc_cogs_margin_3y_avg',
+    'workflow_calc_gross_margin', 'workflow_calc_gross_margin_3y_avg',
+    'workflow_calc_ebitda_margin', 'workflow_calc_ebitda_margin_3y_avg',
+    'workflow_calc_da_margin',
+    'workflow_calc_op_margin', 'workflow_calc_op_margin_3y_avg',
+    'workflow_calc_ebit_margin', 'workflow_calc_ebit_margin_3y_avg',
+    'workflow_calc_net_margin', 'workflow_calc_net_margin_3y_avg',
 ]
 
 
@@ -58,7 +56,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_cogs_margin(doc: FinDoc) -> float = [get_rev, get_cogs] | _cogs_margin
+def workflow_calc_cogs_margin(resources: list) -> float = [get_rev, get_cogs] | _cogs_margin
 
 
 """
@@ -67,7 +65,7 @@ by dividing sum of `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) 
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value
 """
-def calc_cogs_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
+def workflow_calc_cogs_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
 
 
 def _gross_margin(intermed_results):
@@ -86,7 +84,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_gross_margin(doc: FinDoc) -> float = [get_rev, get_gross_income] | _gross_margin
+def workflow_calc_gross_margin(resources: list) -> float = [get_rev, get_gross_income] | _gross_margin
 
 
 """
@@ -95,7 +93,7 @@ by dividing sum of `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Los
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value
 """
-def calc_gross_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
+def workflow_calc_gross_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
 
 
 def _ebitda_margin(intermed_results):
@@ -114,7 +112,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_ebitda_margin(doc: FinDoc) -> float = [get_rev, calc_ebitda] | _ebitda_margin
+def workflow_calc_ebitda_margin(resources: list) -> float = [get_rev, workflow_calc_ebitda] | _ebitda_margin
 
 
 """
@@ -123,7 +121,7 @@ by dividing sum of `(Unadjusted) Earnings before Interest, Tax, Depreciation & A
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value
 """
-def calc_ebitda_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, calc_ebitda_3y] | calc_avg_margin_ratio
+def workflow_calc_ebitda_margin_3y_avg(resources: list) -> float = [get_rev_3y, workflow_calc_ebitda_3y] | calc_avg_margin_ratio
 
 
 def _da_margin(intermed_results):
@@ -142,7 +140,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_da_margin(doc: FinDoc) -> float = [get_rev, get_deprec_and_amort] | _da_margin
+def workflow_calc_da_margin(resources: list) -> float = [get_rev, get_deprec_and_amort] | _da_margin
 
 
 def _op_margin(intermed_results):
@@ -161,7 +159,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_op_margin(doc: FinDoc) -> float = [get_rev, get_op_income] | _op_margin
+def workflow_calc_op_margin(resources: list) -> float = [get_rev, get_op_income] | _op_margin
 
 
 """
@@ -173,7 +171,7 @@ a.k.a. Operating Profit, or Operating Earnings (or Loss(es))`
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value
 """
-def calc_op_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
+def workflow_calc_op_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
 
 
 def _ebit_margin(intermed_results):
@@ -192,7 +190,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_ebit_margin(doc: FinDoc) -> float = [get_rev, get_ebit] | _ebit_margin
+def workflow_calc_ebit_margin(resources: list) -> float = [get_rev, get_ebit] | _ebit_margin
 
 
 """
@@ -201,7 +199,7 @@ by dividing sum of `Earnings before Interest & Tax, a.k.a. EBIT`
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value
 """
-def calc_ebit_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
+def workflow_calc_ebit_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
 
 
 def _net_margin(intermed_results):
@@ -220,7 +218,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_net_margin(doc: FinDoc) -> float = [get_rev, get_net_income] | _net_margin
+def workflow_calc_net_margin(resources: list) -> float = [get_rev, get_net_income] | _net_margin
 
 
 """
@@ -228,4 +226,4 @@ Calculate 3-year average `Net Income Margin`
 by dividing sum of `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as decimal value"""
-def calc_net_margin_3y_avg(doc: FinDoc) -> float = [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio
+def workflow_calc_net_margin_3y_avg(resources: list) -> float = [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio
