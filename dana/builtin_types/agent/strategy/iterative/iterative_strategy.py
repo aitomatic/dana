@@ -73,43 +73,9 @@ class IterativeStrategy(BaseStrategy):
 
     def _build_analysis_prompt(self, problem: str, context: ProblemContext) -> str:
         """Build the LLM analysis prompt."""
+        from .prompts import build_analysis_prompt
 
-        # Include conversation history if available
-        conversation_section = ""
-        if "conversation_history" in context.constraints:
-            conversation_section = f"""
-CONVERSATION HISTORY:
-{context.constraints["conversation_history"]}
-
-"""
-
-        return f"""
-You are an AI agent solving problems using Dana code through iterative refinement.
-
-PROBLEM: {problem}
-OBJECTIVE: {context.objective}
-DEPTH: {context.depth}
-
-{conversation_section}AVAILABLE FUNCTIONS:
-- agent.output(result): Specify final result when problem is solved
-- agent.iterate(improvement_plan): Plan the next iteration
-- agent.input(prompt): Get user input during problem solving
-- agent.reason(thought): Express natural language reasoning
-
-DECISION: You must decide whether to:
-1. SOLVE DIRECTLY: If the problem is simple enough, solve it directly and output the result
-2. GENERATE DANA CODE: If the problem requires iterative refinement, generate Dana code that will execute step by step
-
-ITERATIVE STRATEGY (if generating Dana code):
-- Break down the problem into manageable steps
-- Execute each step and evaluate results
-- Use agent.iterate() to plan improvements
-- Continue until the problem is solved or max iterations reached
-
-Choose the appropriate approach and implement it. For Dana code generation, use the available functions above.
-
-Generate Dana code or solve directly for: {problem}
-"""
+        return build_analysis_prompt(problem, context)
 
     def _get_llm_response(self, prompt: str, agent_instance=None, sandbox_context=None) -> str:
         """Get LLM response (Dana code)."""
@@ -119,13 +85,15 @@ Generate Dana code or solve directly for: {problem}
         # The LLM always makes the decision about how to solve the problem
         # Call the agent's LLM method with the prompt
         # Pass sandbox_context to agent_instance.llm() if available
+        from .prompts import SYSTEM_MESSAGE
+
         if sandbox_context:
             response = agent_instance.llm(
-                {"system": "You are an AI agent solving problems using iterative refinement.", "prompt": prompt},
+                {"system": SYSTEM_MESSAGE, "prompt": prompt},
                 sandbox_context=sandbox_context,
             )
         else:
-            response = agent_instance.llm({"system": "You are an AI agent solving problems using iterative refinement.", "prompt": prompt})
+            response = agent_instance.llm({"system": SYSTEM_MESSAGE, "prompt": prompt})
 
         return str(response)
 

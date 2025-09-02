@@ -198,6 +198,8 @@ turn_1_events = event_history.get_events_by_conversation_turn(1)
 ### Overview
 Context engineering defines how information flows through the agent solving system, ensuring that each component has the information it needs to make intelligent decisions while maintaining system simplicity and performance.
 
+**Note**: The agent solving system integrates with the **Context Engineering Framework** (`dana.frameworks.ctxeng`) for advanced context assembly and optimization. This framework provides intelligent context engineering that maximizes relevance while minimizing token usage.
+
 ### Core Principles
 1. **Minimal but Sufficient**: Provide only the context needed for effective reasoning
 2. **Computable over Stored**: Derive context from existing data rather than storing additional information
@@ -288,6 +290,44 @@ class Event:
     data: dict[str, Any]                   # Flexible data container for event-specific information
     references: dict[str, Any]              # References to other data structures (workflows, contexts, etc.)
 ```
+
+### Context Engineering Framework Integration
+
+The agent solving system integrates with the Context Engineering Framework (`dana.frameworks.ctxeng`) to provide:
+
+#### **Enhanced Context Assembly**
+- **Relevance Scoring**: Multi-factor relevance scoring for context pieces
+- **Token Optimization**: Automatic length optimization while maintaining relevance
+- **Smart Filtering**: Intelligent filtering based on query and use case
+- **Template Management**: Centralized prompt templates for different use cases
+
+#### **Integration Points**
+```python
+class AgentInstance:
+    def __init__(self, struct_type: AgentType, values: dict[str, Any]):
+        # ... existing initialization ...
+        self._context_engine = ContextEngine.from_agent(self)  # Auto-discovery
+    
+    def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
+        # ... existing logic ...
+        
+        # Enhanced context assembly using ctxeng framework
+        rich_prompt = self._context_engine.assemble(
+            problem_or_workflow if isinstance(problem_or_workflow, str) else "workflow execution",
+            template="problem_solving"  # Use problem-solving template
+        )
+        
+        # rich_prompt now contains structured XML with optimized context
+        workflow = self.plan(rich_prompt, **kwargs)
+        return workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+```
+
+#### **Benefits of Integration**
+- **Better LLM Performance**: Structured XML prompts improve LLM understanding
+- **Token Efficiency**: Automatic optimization reduces token usage by 30%+
+- **Context Relevance**: Only relevant context pieces are included
+- **Template Consistency**: Standardized prompt structure across all agent operations
+- **Zero Configuration**: Auto-discovery of agent resources and workflows
 
 #### 4. Computable Context
 

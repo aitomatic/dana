@@ -33,21 +33,39 @@ class RecursiveStrategy(BaseStrategy):
     def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None, sandbox_context=None) -> WorkflowInstance:
         """Create a workflow instance using LLM-generated Dana code."""
 
+        print("[DEBUG] RecursiveStrategy.create_workflow() called")
+        print(f"[DEBUG] problem: {problem}")
+        print(f"[DEBUG] context: {context}")
+        print(f"[DEBUG] agent_instance: {type(agent_instance)}")
+        print(f"[DEBUG] sandbox_context: {sandbox_context}")
+
         # 1. Check recursion depth limits
+        print("[DEBUG] Checking depth limits...")
         if not self._check_depth_limits(context):
+            print("[DEBUG] Depth limit reached, creating base case workflow")
             return self._create_base_case_workflow(problem, context)
 
         # 2. Generate LLM prompt with rich computable context
+        print("[DEBUG] Building analysis prompt...")
         prompt = self._build_enhanced_analysis_prompt(problem, context)
+        print(f"[DEBUG] Built prompt: {prompt[:200]}...")
 
         # 3. Get LLM response (Dana code)
+        print("[DEBUG] Getting LLM response...")
         dana_code = self._get_llm_response(prompt, agent_instance, sandbox_context)
+        print(f"[DEBUG] LLM response: {dana_code[:200]}...")
 
         # 4. Validate and compile Dana code
+        print("[DEBUG] Compiling Dana code...")
         compiled_function = self._compile_dana_code(dana_code, context)
+        print(f"[DEBUG] Compiled function: {type(compiled_function)}")
 
         # 5. Create WorkflowInstance with parent reference
-        return self._create_workflow_instance(problem, context, compiled_function)
+        print("[DEBUG] Creating workflow instance...")
+        workflow = self._create_workflow_instance(problem, context, compiled_function)
+        print(f"[DEBUG] Created workflow: {type(workflow)}")
+
+        return workflow
 
     def _check_depth_limits(self, context: ProblemContext) -> bool:
         """Check if recursion depth limits have been reached."""
@@ -91,47 +109,15 @@ class RecursiveStrategy(BaseStrategy):
 
     def _build_enhanced_analysis_prompt(self, problem: str, context: ProblemContext) -> str:
         """Build the LLM analysis prompt with rich computable context."""
+        from .prompts import build_enhanced_prompt
 
-        # In simplified workflow system, fallback to basic prompt
-        # since we don't have rich context data anymore
-        return self._build_basic_prompt(problem, context)
-
-        # Return basic prompt since we don't have rich context in simplified system
-        return self._build_basic_prompt(problem, context)
+        return build_enhanced_prompt(problem, context)
 
     def _build_basic_prompt(self, problem: str, context: ProblemContext) -> str:
         """Build a basic prompt when rich context is not available."""
+        from .prompts import build_basic_prompt
 
-        # Include conversation history if available
-        conversation_section = ""
-        if "conversation_history" in context.constraints:
-            conversation_section = f"""
-CONVERSATION HISTORY:
-{context.constraints["conversation_history"]}
-
-"""
-
-        return f"""
-You are an AI agent solving problems using Dana code.
-
-PROBLEM: {problem}
-OBJECTIVE: {context.objective}
-DEPTH: {context.depth}
-
-{conversation_section}AVAILABLE FUNCTIONS:
-- agent.output(result): Specify final result when problem is solved
-- agent.solve(sub_problem, objective): Solve a sub-problem recursively
-- agent.input(prompt): Get user input during problem solving
-- agent.reason(thought): Express natural language reasoning
-
-DECISION: You must decide whether to:
-1. SOLVE DIRECTLY: If the problem is simple enough, solve it directly and output the result
-2. GENERATE DANA CODE: If the problem requires multiple steps, generate Dana code that will execute to solve it
-
-Choose the appropriate approach and implement it. For Dana code generation, use the available functions above.
-
-Generate Dana code or solve directly for: {problem}
-"""
+        return build_basic_prompt(problem, context)
 
     def _get_llm_response(self, prompt: str, agent_instance=None, sandbox_context=None) -> str:
         """Get LLM response (Dana code)."""
@@ -141,12 +127,12 @@ Generate Dana code or solve directly for: {problem}
         # The LLM always makes the decision about how to solve the problem
         # Call the agent's LLM method with the prompt
         # Pass sandbox_context to agent_instance.llm() if available
+        from .prompts import SYSTEM_MESSAGE
+
         if sandbox_context:
-            response = agent_instance.llm(
-                {"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt}, sandbox_context=sandbox_context
-            )
+            response = agent_instance.llm({"system": SYSTEM_MESSAGE, "prompt": prompt}, sandbox_context=sandbox_context)
         else:
-            response = agent_instance.llm({"system": "You are an AI agent solving problems using Dana code.", "prompt": prompt})
+            response = agent_instance.llm({"system": SYSTEM_MESSAGE, "prompt": prompt})
 
         return str(response)
 
@@ -252,8 +238,45 @@ Generate Dana code or solve directly for: {problem}
                 self.dana_code = dana_code
 
             def execute(self, context, *args, **kwargs):
-                # Mock implementation - in reality this would execute the Dana code
-                return f"Executed Dana code: {self.dana_code[:100]}..."
+                print("[DEBUG] SimpleSandboxFunction.execute() called")
+                print(f"[DEBUG] context: {context}")
+                print(f"[DEBUG] args: {args}")
+                print(f"[DEBUG] kwargs: {kwargs}")
+                print(f"[DEBUG] dana_code: {self.dana_code[:200]}...")
+
+                # Try to execute the Dana code for simple cases
+                try:
+                    # Clean up the Dana code - remove extra parentheses and whitespace
+                    clean_code = self.dana_code.strip()
+
+                    # Handle cases with extra parentheses like "(agent.output(4))"
+                    if clean_code.startswith("(") and clean_code.endswith(")"):
+                        clean_code = clean_code[1:-1].strip()
+
+                    # For simple output statements like "agent.output(4)", extract the value
+                    if clean_code.startswith("agent.output(") and clean_code.endswith(")"):
+                        # Extract the content inside agent.output()
+                        content = clean_code[13:-1]  # Remove "agent.output(" and ")"
+                        print(f"[DEBUG] Extracted content: {content}")
+
+                        # Try to evaluate the content (for simple expressions like "4", "15", "2+2")
+                        try:
+                            result = eval(content)
+                            print(f"[DEBUG] Evaluated result: {result}")
+                            return result
+                        except Exception as eval_error:
+                            print(f"[DEBUG] Could not evaluate content: {eval_error}")
+                            # Fall back to returning the content as string
+                            return content
+                    else:
+                        # For other Dana code, return as-is for now
+                        # In the future, this could be a full Dana interpreter
+                        return f"Executed Dana code: {self.dana_code[:100]}..."
+
+                except Exception as e:
+                    print(f"[DEBUG] Error executing Dana code: {e}")
+                    # Fall back to mock implementation
+                    return f"Executed Dana code: {self.dana_code[:100]}..."
 
             def restore_context(self, context, original_context):
                 # Default implementation - no context restoration needed for mock
