@@ -102,7 +102,6 @@
     },
     "embedding": {
         "preferred_models": [
-            "openai:az004.bge-m3:567m",
             "openai:text-embedding-3-large",
             "openai:text-embedding-3-small",
             "azure:text-embedding-3-large",
