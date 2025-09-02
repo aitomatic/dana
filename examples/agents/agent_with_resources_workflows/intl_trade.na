@@ -1,0 +1,21 @@
+"""International Trade Strategist Dana Expert Agent."""
+
+
+# import base Dana Expert Agent blueprint
+from dana_expert_agent_blueprint import DanaExpertAgent
+
+# import relevant expertise module(s)
+import supply_chain_strategy
+
+
+TARIFF_TRACKER_RESOURCE = use('rag', sources=['https://www.bbc.com/news/articles/c5ypxnnyg7jo'])
+
+# create expert agent with relevant expertise module(s)
+TradeStrategist = DanaExpertAgent(expertise=[supply_chain_strategy])
+
+
+# use expert agent to solve problems
+def __main__(problem="How high are US's threatened tariff rates on major trading partners?"):
+    solution = TradeStrategist.solve(problem,
+                                     resources=[TARIFF_TRACKER_RESOURCE])
+    print(solution)
