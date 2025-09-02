@@ -25,7 +25,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def workflow_calc_fixed_asset_over_total_asset(resources: list) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
+def workflow_calc_fixed_asset_over_total_asset(resources: list, task: str = None) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
 def _total_asset_over_rev(intermed_results):
@@ -37,7 +37,7 @@ as decimal value, using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def workflow_calc_total_asset_over_rev(resources: list) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
+def workflow_calc_total_asset_over_rev(resources: list, task: str = None) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
 def _capex_over_rev(intermed_results):
@@ -51,7 +51,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def workflow_calc_capex_over_rev(resources: list) -> float = [get_capex, get_rev] | _capex_over_rev
+def workflow_calc_capex_over_rev(resources: list, task: str = None) -> float = [get_capex, get_rev] | _capex_over_rev
 
 
 def _capex_over_rev_3y_avg(intermed_results):
@@ -66,7 +66,7 @@ using the sum-divided-by-sum method, and the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def workflow_calc_capex_over_rev_3y_avg(resources: list) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
+def workflow_calc_capex_over_rev_3y(resources: list, task: str = None) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg
 
 
 def _cap_intens_assessment(intermed_results):
@@ -96,7 +96,7 @@ using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 # TODO: parenthesized workflow def
-def workflow_assess_cap_intens(resources: list) -> str = [workflow_calc_fixed_asset_over_total_asset,
-                                                          workflow_calc_total_asset_over_rev,
-                                                          workflow_calc_capex_over_rev,
-                                                          workflow_calc_roa_ratio] | _cap_intens_assessment
+def workflow_assess_cap_intens(resources: list, task: str = None) -> str = [workflow_calc_fixed_asset_over_total_asset,
+                                                                            workflow_calc_total_asset_over_rev,
+                                                                            workflow_calc_capex_over_rev,
+                                                                            workflow_calc_roa_ratio] | _assess_cap_intens
