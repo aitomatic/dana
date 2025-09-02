@@ -33,7 +33,7 @@ def get_strategy_by_name(name: str) -> BaseStrategy | None:
 
 def select_best_strategy(problem: str, context: Any = None, agent_instance=None) -> BaseStrategy:
     """Select the best strategy for the given problem."""
-    from dana.builtin_types.agent.context import ProblemContext
+    from dana.core.agent.context import ProblemContext
 
     # Create default context if none provided
     if context is None:

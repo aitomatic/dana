@@ -53,7 +53,7 @@ User Input → Agent → AgentMind → Pattern Learning Engine → Adaptive Sele
 
 The `AgentMind` mixin handles the complete lifecycle of user profiles, strategy patterns, and context patterns.
 
-**Location**: `dana.builtin_types.agent.mind.AgentMind`
+**Location**: `dana.core.agent.mind.AgentMind`
 
 ```python
 class AgentMind:

@@ -5,8 +5,8 @@ This module tests the recursive strategy that implements LLM-driven problem solv
 with rich context engineering integration.
 """
 
-from dana.builtin_types.agent.context import EventHistory, ProblemContext
-from dana.builtin_types.agent.strategy.recursive.recursive_strategy import RecursiveStrategy
+from dana.core.agent.context import EventHistory, ProblemContext
+from dana.core.agent.strategy.recursive.recursive_strategy import RecursiveStrategy
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 

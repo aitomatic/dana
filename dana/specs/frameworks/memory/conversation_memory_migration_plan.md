@@ -149,7 +149,7 @@ uv run python -m pytest tests/integration/ -v
 ### Step 3: Manual Verification
 ```python
 # Test script to verify file placement
-from dana.builtin_types.agent import AgentInstance
+from dana.core.agent import AgentInstance
 from pathlib import Path
 
 # Create an agent

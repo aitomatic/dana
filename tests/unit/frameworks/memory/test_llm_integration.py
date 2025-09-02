@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.builtin_types.agent import AgentInstance, AgentType
+from dana.core.agent import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -299,7 +299,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def create_test_agent(self):
         """Create a test agent for integration tests."""
-        from dana.builtin_types.agent import AgentInstance, AgentType
+        from dana.core.agent import AgentInstance, AgentType
 
         agent_type = AgentType(
             name="TestAgent",
@@ -311,7 +311,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_sandbox_context_creation(self):
         """Test that SandboxContext is created properly."""
-        from dana.builtin_types.agent import AgentInstance, AgentType
+        from dana.core.agent import AgentInstance, AgentType
 
         agent_type = AgentType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
         agent = AgentInstance(agent_type, {"purpose": "testing"})

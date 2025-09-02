@@ -17,7 +17,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from dana.apps.tui.core.events import Done, Status, Token
-from dana.builtin_types.agent import AgentInstance, AgentType
+from dana.core.agent import AgentInstance, AgentType
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 

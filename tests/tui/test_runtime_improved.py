@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from dana.apps.tui.core.events import Done, Status, Token
-from dana.builtin_types.agent import AgentInstance
+from dana.core.agent import AgentInstance
 
 # Skip all tests in this file until TUI runtime tests are updated for new AGENT_REGISTRY architecture
 pytestmark = pytest.mark.skip(reason="TUI runtime tests need updating for AGENT_REGISTRY architecture")

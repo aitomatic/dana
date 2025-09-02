@@ -6,7 +6,7 @@ This module defines the base interface for all agent strategies.
 
 from abc import ABC, abstractmethod
 
-from dana.builtin_types.agent.context import ProblemContext
+from dana.core.agent.context import ProblemContext
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 

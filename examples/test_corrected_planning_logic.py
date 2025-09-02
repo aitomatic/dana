@@ -12,8 +12,8 @@ import sys
 # Add the project root to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_type import AgentType
+from dana.core.agent.agent_instance import AgentInstance
+from dana.core.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 from dana.common import DANA_LOGGER
 
 if TYPE_CHECKING:
-    from dana.builtin_types.agent.agent_instance import AgentInstance
+    from dana.core.agent.agent_instance import AgentInstance
 
 
 class AgentEventMixin:

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.builtin_types.agent import AgentInstance, AgentType
+from dana.core.agent import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 

@@ -29,7 +29,7 @@ from dana.core.lang.interpreter.error_context import ExecutionLocation
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
-    from dana.builtin_types.agent.agent_instance import AgentInstance
+    from dana.core.agent.agent_instance import AgentInstance
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
     from dana.core.resource import ResourceInstance
