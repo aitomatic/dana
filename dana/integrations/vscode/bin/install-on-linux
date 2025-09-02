@@ -18,7 +18,7 @@ LOG_FILE="/tmp/dana-plugin-install.log"
 
 # Function to log messages
 log() {
-    echo -e "$1" | tee -a "$LOG_FILE"
+    echo -e "$1" | tee -a "$LOG_FILE" >&2
 }
 
 # Function to ensure npm environment is properly configured
@@ -264,7 +264,8 @@ package_extension() {
     fi
 
     log "${GREEN}✅ Extension packaged: ${VSIX_FILE}${NC}"
-    echo "$VSIX_FILE"
+    # Output only the file path to stdout (no color codes or extra text)
+    printf "%s\n" "$VSIX_FILE"
 }
 
 # Function to install extension in editor
