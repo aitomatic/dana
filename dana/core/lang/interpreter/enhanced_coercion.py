@@ -361,7 +361,7 @@ class SemanticCoercer(Loggable):
             self.debug(f"Found registered struct type: {target_type}")
 
             # If value is already a struct instance of the correct type, return it
-            from dana.builtin_types.struct_system import StructInstance
+            from dana.core.builtins.struct_system import StructInstance
 
             if isinstance(value, StructInstance) and value.struct_type.name == target_type:
                 self.debug(f"Value is already a {target_type} struct instance")

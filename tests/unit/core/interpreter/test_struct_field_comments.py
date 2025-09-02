@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.builtin_types.struct_system import StructType, create_struct_type_from_ast
+from dana.core.builtins.struct_system import StructType, create_struct_type_from_ast
 from dana.core.lang.ast import StructDefinition, StructField, TypeHint
 from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 from dana.core.lang.interpreter.prompt_enhancement import PromptEnhancer

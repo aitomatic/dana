@@ -4,7 +4,7 @@ Tests for Phase 2: Struct execution functionality.
 This module tests struct instantiation and field access execution in the Dana interpreter.
 """
 
-from dana.builtin_types.struct_system import (
+from dana.core.builtins.struct_system import (
     StructInstance,
 )
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
