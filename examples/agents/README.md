@@ -1,9 +1,25 @@
 # Dana Agent Examples
 
-- [Agents have identity & built-in memory](agent_identity_and_memory)
+**Agent**  
+Plan, remember, act with built-in cognition  
+→ [Examples](agent)
 
-- [Agent can solve complex domain-specific problems with Resources & Workflows](agent_problem_solving_with_resources_and_workflows/agent_problem_solving.na)
+**Agent + Resources**  
+Adds real access to domain expertise, data, and tools  
+→ [Example](agent_with_resources_workflows/agent_with_resources.na)
 
-- [Dana's concurrent runtime execution makes Agents free to multi-task](concurrency_makes_agents_free_to_multitask/agent_multitasking.na)
+**Agent + Resources + Workflows**  
+Applies reliable, repeatable execution plans from encoded expertise  
+→ [Example](agent_with_resources_workflows/agent_with_resources_workflows.na)
 
-- [Dana's standard library modules help create instant expert Agents](instant_expert_agent_thanks_to_dana_stdlib/cfo.na)
+**Pretrained Expert Agent**  
+Reusable agent blueprint that comes preloaded with domain expertise and expert workflows
+→ [Example](expert_agent_via_dana_stdlib/cfo.na)
+
+**Concurrent by Default**  
+Agentic functions are all non-blocking.  
+Faster execution, no async headaches.  
+`agent.task1()`  
+`agent.task2()`  
+`agent.task30()` all in parallel.  
+→ [Example](agent_concurrent_bydefault/agent_concurrent_bydefault.na)

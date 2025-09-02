@@ -41,8 +41,8 @@ print(Neo.solve("How capital intensive is AMD?",
 
 print("""
 PRETRAINED EXPERT AGENT
-Blueprint + expertise: starts with the right resources and workflows built in
-============================================================================
+Reusable blueprint that comes preloaded with domain expertise and expert workflows
+==================================================================================
 """)
 
 from blueprints.expert_agent import ExpertAgent
