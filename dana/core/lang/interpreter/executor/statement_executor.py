@@ -535,8 +535,8 @@ class StatementExecutor(BaseExecutor):
             None (registers type and constructor in scope)
         """
         # Import lazily to avoid circulars
-        from dana.builtin_types.workflow.workflow_system import create_workflow_type_from_ast
         from dana.common.exceptions import SandboxError
+        from dana.core.workflow.workflow_system import create_workflow_type_from_ast
         from dana.registry import TYPE_REGISTRY
 
         try:

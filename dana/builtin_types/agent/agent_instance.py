@@ -23,7 +23,7 @@ from .implementations import AgentImplementationMixin
 if TYPE_CHECKING:
     pass
 
-from dana.builtin_types.workflow.workflow_system import WorkflowInstance, WorkflowType
+from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
 
 from .context import ProblemContext
 

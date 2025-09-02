@@ -6,7 +6,7 @@ Tests the creation of WorkflowInstance objects from YAML text.
 
 import pytest
 
-from dana.builtin_types.workflow.factory import WorkflowDefinition, WorkflowFactory, WorkflowStep, YAMLWorkflowParser
+from dana.core.workflow.factory import WorkflowDefinition, WorkflowFactory, WorkflowStep, YAMLWorkflowParser
 
 
 class TestWorkflowFactory:

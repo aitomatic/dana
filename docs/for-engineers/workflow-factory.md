@@ -38,7 +38,7 @@ The factory system consists of several key components:
 ### Basic Workflow Creation
 
 ```python
-from dana.builtin_types.workflow.factory import WorkflowFactory
+from dana.core.workflow.factory import WorkflowFactory
 
 factory = WorkflowFactory()
 
@@ -180,7 +180,7 @@ The `WorkflowFactory` is integrated into the agent solving system:
 elif plan_type == PlanType.TYPE_WORKFLOW:
     if solution:
         try:
-            from dana.builtin_types.workflow.factory import WorkflowFactory
+            from dana.core.workflow.factory import WorkflowFactory
             factory = WorkflowFactory()
             workflow_instance = factory.create_from_yaml(solution)
             return workflow_instance

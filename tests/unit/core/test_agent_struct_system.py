@@ -139,7 +139,7 @@ class TestAgentInstance(unittest.TestCase):
         # Test plan method
         plan_result = agent_instance.plan("test task", sandbox_context=self.sandbox_context)
         # The plan method should return a WorkflowInstance
-        from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+        from dana.core.workflow.workflow_system import WorkflowInstance
 
         self.assertIsInstance(plan_result, WorkflowInstance, f"Expected WorkflowInstance, got {type(plan_result)}: {plan_result}")
 

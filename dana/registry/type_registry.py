@@ -517,7 +517,7 @@ class TypeRegistry:
         if TYPE_REGISTRY.has_agent_type(struct_name):
             return AgentInstance(struct_type, data)
         elif TYPE_REGISTRY.has_workflow_type(struct_name):
-            from dana.builtin_types.workflow.workflow_system import WorkflowInstance
+            from dana.core.workflow.workflow_system import WorkflowInstance
 
             return WorkflowInstance(struct_type, data)
         else:
