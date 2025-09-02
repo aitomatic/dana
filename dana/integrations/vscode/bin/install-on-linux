@@ -29,8 +29,8 @@ check_and_install_dependencies() {
     if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
         log "${YELLOW}⚠️  Dependencies not ready, installing them automatically...${NC}"
 
-        # Get the project root directory
-        local project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+        # Get the project root directory (same as setup_paths)
+        local project_root="$(pwd)"
         local deps_script="$project_root/dana/integrations/vscode/bin/install-upgrade-linux-deps"
 
         # Check if the deps script exists
