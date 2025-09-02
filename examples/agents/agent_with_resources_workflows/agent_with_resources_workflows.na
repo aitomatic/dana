@@ -1,0 +1,54 @@
+"""How Agents Improve with Resources, Workflows, and Pretrained Expertise"""
+
+agent Neo
+
+print("""
+AGENT ALONE
+Solves using its own built-in cognition
+====================================
+""")
+
+# Step 1: Agent alone
+print(Neo.solve("How capital intensive is AMD?"))
+
+print("""
+AGENT + RESOURCE
+Gains real access to domain expertise, data, and tools
+=====================================================
+""")
+
+resource_amd_annual_report = get_resource("rag", sources=["../../resources/docs/AMD_2022_10K.pdf"])
+
+# Step 2: Agent + Resource
+print(Neo.solve("How capital intensive is AMD?", resources=[resource_amd_annual_report]))
+
+print("""
+AGENT + RESOURCE + WORKFLOWS
+Applies reliable, repeatable execution plans from encoded expertise
+==================================================================
+""")
+
+from knows.financial_analysis.cap_intens import workflow_calc_fixed_asset_over_total_asset, workflow_calc_total_asset_over_rev, workflow_calc_capex_over_rev
+from knows.financial_analysis.return_ratios import workflow_calc_roa_ratio
+
+# Step 3: Agent + Resource + Workflows
+print(Neo.solve("How capital intensive is AMD?",
+                resources=[resource_amd_annual_report],
+                workflows=[workflow_calc_fixed_asset_over_total_asset,
+                           workflow_calc_total_asset_over_rev,
+                           workflow_calc_capex_over_rev,
+                           workflow_calc_roa_ratio]))
+
+print("""
+PRETRAINED EXPERT AGENT
+Blueprint + expertise: starts with the right resources and workflows built in
+============================================================================
+""")
+
+from blueprints.expert_agent import ExpertAgent
+from knows import financial_analysis
+
+# Step 4: Pretrained Expert Agent
+# 👉 Equivalent to Agent + Resource + Workflows, but bundled via a reusable blueprint.
+Neo = ExpertAgent(expertise=[financial_analysis])
+print(Neo.solve("How capital intensive is AMD?", resources=[resource_amd_annual_report]))

@@ -1,5 +1,4 @@
-"""Dana Agents automatically come with identities and memories."""
-
+"""Dana Agents can reason, remember, and act with built-in cognition"""
 
 # 1-line creation of agent
 agent Neo

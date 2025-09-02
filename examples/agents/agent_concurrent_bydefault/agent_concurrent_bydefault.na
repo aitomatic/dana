@@ -1,14 +1,10 @@
-"""Dana's concurrent runtime execution makes agents free to multitask."""
-
+"""Dana Agents are concurrent by default, multitasking without async headaches."""
 
 # Try these in the interactive Dana TUI or REPL
 
-
 agent Neo
 
-
 resource_hilbert_problems_wikis = get_resource('rag', sources=["https://en.wikipedia.org/wiki/David_Hilbert", "https://en.wikipedia.org/wiki/Hilbert's_problems"])
-
 
 Neo.reason("Which of Hilbert's problems are still open but seem close to resolution?", resources=[resource_hilbert_problems_wikis])
 

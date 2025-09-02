@@ -1,4 +1,4 @@
-"""Dana Agents automatically come with identities and memories."""
+"""Dana Agents can reason, remember, and act with built-in cognition"""
 
 
 # agent whom I have met before (@ agent_meet_n_greet_1.na)
@@ -6,4 +6,4 @@ agent Neo
 
 
 # agent can recall past conversation on these
-Neo.chat('Have I let you know my name and domain?')
+Neo.chat('Do you know who I am?')
