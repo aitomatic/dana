@@ -7,7 +7,7 @@ compatibility with the struct system.
 
 from typing import Any
 
-from dana.builtin_types.struct_system import StructType
+from dana.core.builtins.struct_system import StructType
 
 # Import lazily where used to avoid circular import during module import
 

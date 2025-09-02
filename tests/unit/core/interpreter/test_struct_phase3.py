@@ -10,7 +10,7 @@ MIT License
 
 import pytest
 
-from dana.builtin_types.struct_system import (
+from dana.core.builtins.struct_system import (
     StructInstance,
     create_struct_instance,
     register_struct_from_ast,

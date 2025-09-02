@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dana.builtin_types.agent import AgentInstance
-from dana.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtins.struct_system import StructInstance, StructType
 
 
 # Mock classes for testing

@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from dana.builtin_types.struct_system import StructType
+from dana.core.builtins.struct_system import StructType
 
 from .function_registry import has_dana_method, lookup_dana_method, register_dana_method
 

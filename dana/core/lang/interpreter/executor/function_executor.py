@@ -654,7 +654,7 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.builtin_types.struct_system import create_struct_instance
+        from dana.core.builtins.struct_system import create_struct_instance
         from dana.registry import TYPE_REGISTRY
 
         # Extract the base struct name (remove scope prefix if present)
@@ -800,7 +800,7 @@ class FunctionExecutor(BaseExecutor):
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
             # Step 2.5: Try struct method delegation for struct instances
-            from dana.builtin_types.struct_system import StructInstance
+            from dana.core.builtins.struct_system import StructInstance
             from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
 
             if isinstance(target_object, StructInstance):

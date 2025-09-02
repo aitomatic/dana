@@ -11,7 +11,7 @@ MIT License
 from dataclasses import dataclass
 from typing import Any
 
-from dana.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtins.struct_system import StructInstance, StructType
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
 

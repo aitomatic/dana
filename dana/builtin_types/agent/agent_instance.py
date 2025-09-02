@@ -7,9 +7,9 @@ agent-specific state and methods. This is the main implementation file for agent
 
 from typing import TYPE_CHECKING, Any
 
-from dana.builtin_types.struct_system import StructInstance
 from dana.common.mixins.loggable import Loggable
 from dana.common.types import BaseRequest, BaseResponse
+from dana.core.builtins.struct_system import StructInstance
 
 # Removed direct import of LegacyLLMResource - now using resource type system
 from dana.core.concurrency.promise_factory import PromiseFactory

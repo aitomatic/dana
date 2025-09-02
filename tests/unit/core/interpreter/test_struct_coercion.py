@@ -13,7 +13,7 @@ import unittest
 
 import pytest
 
-from dana.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtins.struct_system import StructInstance, StructType
 from dana.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
 from dana.registry import TYPE_REGISTRY
 

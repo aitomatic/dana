@@ -8,7 +8,7 @@ compatibility with the struct system.
 from collections.abc import Callable
 from typing import Any
 
-from dana.builtin_types.struct_system import StructInstance
+from dana.core.builtins.struct_system import StructInstance
 
 from .resource_type import ResourceType
 

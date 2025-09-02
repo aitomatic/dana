@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.builtin_types.struct_system import (
+from dana.core.builtins.struct_system import (
     StructInstance,
 )
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult

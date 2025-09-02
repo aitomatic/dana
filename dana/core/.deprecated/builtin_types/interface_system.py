@@ -9,6 +9,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+raise DeprecationWarning("This module is deprecated and will be removed in the future. Use the new interface system instead.")
+
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable

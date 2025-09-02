@@ -6,7 +6,7 @@ Tests coexistence, method dispatch priority, and registry integration.
 import unittest
 
 from dana.builtin_types.agent import AgentInstance, AgentType, create_agent_instance
-from dana.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtins.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.registry import register_agent_type
 

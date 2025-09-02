@@ -511,7 +511,7 @@ class TypeRegistry:
 
         # Create the instance
         from dana.builtin_types.agent.agent_instance import AgentInstance
-        from dana.builtin_types.struct_system import StructInstance
+        from dana.core.builtins.struct_system import StructInstance
 
         # Check if this is an agent type and create appropriate instance
         if TYPE_REGISTRY.has_agent_type(struct_name):
