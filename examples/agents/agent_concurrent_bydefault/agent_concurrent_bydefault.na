@@ -4,10 +4,9 @@
 
 agent Neo
 
-resource_hilbert_problems_wikis = get_resource('rag', sources=["https://en.wikipedia.org/wiki/David_Hilbert", "https://en.wikipedia.org/wiki/Hilbert's_problems"])
 
-Neo.reason("Which of Hilbert's problems are still open but seem close to resolution?", resources=[resource_hilbert_problems_wikis])
+Neo.reason("What were some key milestones in proving Fermat's Last Theorem?")
 
-Neo.reason("What were some key milestones in the proof of Fermat's Last Theorem?")
+Neo.reason("Which of Hilbert's Problems are still open?")
 
-Neo.reason("What were Richard Hamilton's and Grigori Perelman's respective contributions to proving the Poincaré Conjecture?")
+Neo.reason("What were Richard Hamilton's and Grigori Perelman's contributions to proving the Poincaré Conjecture?")
