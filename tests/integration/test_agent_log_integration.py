@@ -17,6 +17,11 @@ class TestAgentLogIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        # Set mock LLM mode for testing
+        import os
+
+        os.environ["DANA_MOCK_LLM"] = "true"
+
         # Create a test agent type
         self.agent_type = AgentType(
             name="LogTestAgent",
@@ -30,6 +35,9 @@ class TestAgentLogIntegration(unittest.TestCase):
 
         # Create agent instance
         self.agent_instance = AgentInstance(self.agent_type, {"name": "test_logger", "role": "debugger"})
+
+        # Initialize agent resources to ensure PromiseFactory works
+        self.agent_instance._initialize_agent_resources()
 
         self.sandbox_context = SandboxContext()
 
