@@ -10,7 +10,7 @@ This strategy implements recursive problem solving where the agent:
 
 from typing import Any
 
-from dana.builtin_types.agent.context import ComputableContext, ProblemContext
+from dana.core.agent.context import ComputableContext, ProblemContext
 from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
 
 from ..base import BaseStrategy

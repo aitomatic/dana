@@ -59,7 +59,7 @@ class AgentHandler(Loggable):
                     default_value = self.parent_executor.parent.execute(field.default_value, context)
                     field_defaults[field.name] = default_value
 
-            from dana.builtin_types.agent.agent_type import AgentType
+            from dana.core.agent.agent_type import AgentType
             from dana.registry import register_agent_type
 
             agent_type = AgentType(
@@ -150,7 +150,7 @@ class AgentHandler(Loggable):
         """Create and bind a singleton agent instance from a blueprint with optional overrides."""
         try:
             # Find the blueprint type
-            from dana.builtin_types.agent.agent_instance import AgentInstance, AgentType
+            from dana.core.agent.agent_instance import AgentInstance, AgentType
             from dana.registry import get_agent_type, register_agent_type
 
             blueprint_type = get_agent_type(node.blueprint_name)
@@ -205,7 +205,7 @@ class AgentHandler(Loggable):
     def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
         """Create a base AgentType with default methods and bind an instance to the alias name."""
         try:
-            from dana.builtin_types.agent.agent_instance import AgentInstance, AgentType
+            from dana.core.agent.agent_instance import AgentInstance, AgentType
             from dana.registry import register_agent_type
 
             # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
@@ -284,7 +284,7 @@ class AgentHandler(Loggable):
 
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
-        # from dana.builtin_types.agent.agent_system import register_agent_method_from_function_def
+        # from dana.core.agent.agent_system import register_agent_method_from_function_def
 
         # Try to register as agent method if first parameter is an agent type
         # register_agent_method_from_function_def(node, dana_func)

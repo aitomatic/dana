@@ -8,8 +8,8 @@ for agent logging events.
 
 import logging
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_type import AgentType
+from dana.core.agent.agent_instance import AgentInstance
+from dana.core.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 # Set up logging to see the output

@@ -875,7 +875,7 @@ ctx = ContextEngine(format_type="text") # Text output
 
 **AgentMind Configuration Interface**:
 ```python
-from dana.builtin_types.agent.mind import AgentMind
+from dana.core.agent.mind import AgentMind
 
 class AgentMind:
     def __init__(self):

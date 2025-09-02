@@ -174,7 +174,7 @@ class DanaLogger:
                   - "dana" (default): Set level for all Dana components
                   - "*": Set level for all loggers system-wide
                   - None: Set level only for this logger instance
-                  - "dana.builtin_types.agent": Set level for specific Dana subsystem
+                  - "dana.core.agent": Set level for specific Dana subsystem
         """
         if scope is None:
             # Set level only for this logger instance

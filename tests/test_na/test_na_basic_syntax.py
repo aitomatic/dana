@@ -212,7 +212,7 @@ print("Resource Instance Type:", type(r))
     assert callable(r_constructor), "R should be a callable constructor"
 
     # Verify instance types
-    from dana.builtin_types.agent import AgentInstance
+    from dana.core.agent import AgentInstance
     from dana.core.resource.resource_instance import ResourceInstance
 
     assert isinstance(a_instance, AgentInstance), f"a should be AgentInstance, got {type(a_instance)}"

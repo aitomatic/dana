@@ -58,7 +58,7 @@ def mock_agent():
     from collections.abc import AsyncIterator
 
     from dana.apps.tui.core.events import AgentEvent, Done, Status, Token
-    from dana.builtin_types.agent import AgentInstance
+    from dana.core.agent import AgentInstance
 
     class MockAgent(AgentInstance):
         def __init__(self, name: str):
@@ -97,7 +97,7 @@ def slow_agent():
     from collections.abc import AsyncIterator
 
     from dana.apps.tui.core.events import AgentEvent, Done, Status, Token
-    from dana.builtin_types.agent import AgentInstance
+    from dana.core.agent import AgentInstance
 
     class SlowMockAgent(AgentInstance):
         def __init__(self, name: str, delay: float = 0.1):
@@ -132,7 +132,7 @@ def error_agent():
     from collections.abc import AsyncIterator
 
     from dana.apps.tui.core.events import AgentEvent, Error
-    from dana.builtin_types.agent import AgentInstance
+    from dana.core.agent import AgentInstance
 
     class ErrorMockAgent(AgentInstance):
         def __init__(self, name: str, error_message: str = "Test error"):

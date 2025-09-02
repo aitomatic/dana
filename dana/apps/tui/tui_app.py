@@ -13,8 +13,8 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
 from dana.common.utils.logging import DANA_LOGGER
+from dana.core.agent.agent_instance import AgentInstance
 from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.registry import AGENT_REGISTRY
 

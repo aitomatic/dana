@@ -5,7 +5,7 @@ This module tests the ProblemContext, EventHistory, and ComputableContext classe
 that form the foundation of the agent solving system's context management.
 """
 
-from dana.builtin_types.agent.context import (
+from dana.core.agent.context import (
     ComputableContext,
     EventHistory,
     ProblemContext,

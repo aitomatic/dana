@@ -7,8 +7,8 @@ by refining solutions through multiple iterations rather than recursion.
 
 from typing import Any
 
-from dana.builtin_types.agent.context import ProblemContext
-from dana.builtin_types.agent.strategy.base import BaseStrategy
+from dana.core.agent.context import ProblemContext
+from dana.core.agent.strategy.base import BaseStrategy
 from dana.core.workflow import WorkflowInstance, WorkflowType
 
 

@@ -12,8 +12,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_type import AgentType
+from dana.core.agent.agent_instance import AgentInstance
+from dana.core.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 

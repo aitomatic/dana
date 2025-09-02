@@ -6,8 +6,8 @@ Tests that the new log() method integrates correctly with the existing agent sys
 
 import unittest
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_type import AgentType
+from dana.core.agent.agent_instance import AgentInstance
+from dana.core.agent.agent_type import AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.registry import register_agent_type
 
@@ -57,7 +57,7 @@ class TestAgentLogIntegration(unittest.TestCase):
 
     def test_log_method_in_default_methods(self):
         """Test that log() is included in default agent methods."""
-        from dana.builtin_types.agent.agent_instance import AgentInstance
+        from dana.core.agent.agent_instance import AgentInstance
 
         default_methods = AgentInstance.get_default_dana_methods()
 

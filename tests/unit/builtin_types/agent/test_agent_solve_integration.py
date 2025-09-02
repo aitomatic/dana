@@ -7,9 +7,9 @@ in the new agent solving system.
 
 import pytest
 
-from dana.builtin_types.agent.agent_instance import AgentInstance
-from dana.builtin_types.agent.agent_type import AgentType
-from dana.builtin_types.agent.context import EventHistory, ProblemContext
+from dana.core.agent.agent_instance import AgentInstance
+from dana.core.agent.agent_type import AgentType
+from dana.core.agent.context import EventHistory, ProblemContext
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 
