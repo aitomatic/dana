@@ -40,11 +40,11 @@ import json
 import os
 from typing import Any
 
-from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.common.exceptions import SandboxError
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 # ============================================================================
 # Original Reason Function (Legacy Implementation)
@@ -95,7 +95,7 @@ def _execute_reason_call(
 
     if llm_resource is None:
         # Create fallback LLM resource with auto model selection instead of hardcoded OpenAI
-        from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceType.create_instance_from_values({"model": "auto"})
         context.set_system_llm_resource(llm_resource)

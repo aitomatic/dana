@@ -10,15 +10,15 @@ This module tests the resource keyword functionality including:
 
 import pytest
 
-from dana.builtin_types.resource import (
-    ResourceInstance,
-    ResourceType,
-    ResourceTypeRegistry,
-)
 from dana.core.lang.ast import (
     ResourceDefinition,
     ResourceField,
     TypeHint,
+)
+from dana.core.resource import (
+    ResourceInstance,
+    ResourceType,
+    ResourceTypeRegistry,
 )
 
 

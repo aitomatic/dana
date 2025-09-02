@@ -19,11 +19,11 @@ Discord: https://discord.gg/6jGD4PYk
 
 import re
 
-from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.common.exceptions import TranscoderError
 from dana.common.types import BaseRequest
 from dana.core.lang.parser.dana_parser import ParseResult, Program
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 try:
     from .templates.common_patterns import get_all_examples
