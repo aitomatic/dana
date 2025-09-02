@@ -8,7 +8,7 @@ from dana_expert_agent_blueprint import DanaExpertAgent
 import supply_chain_strategy
 
 
-TARIFF_TRACKER_RESOURCE = use('rag', sources=['https://www.bbc.com/news/articles/c5ypxnnyg7jo'])
+TARIFF_TRACKER_RESOURCE = get_resource('rag', sources=['https://www.bbc.com/news/articles/c5ypxnnyg7jo'])
 
 # create expert agent with relevant expertise module(s)
 TradeStrategist = DanaExpertAgent(expertise=[supply_chain_strategy])
