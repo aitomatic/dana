@@ -143,7 +143,8 @@ class TestRecursiveStrategy:
 
         # Test execution
         result = compiled_function()
-        assert "Executed Dana code" in result
+        # The function should return the actual content from agent.output()
+        assert result == "test result"
 
     def test_workflow_instance_creation(self):
         """Test creating workflow instances with proper state."""
