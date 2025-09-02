@@ -21,5 +21,5 @@ Agentic functions are all non-blocking.
 Faster execution, no async headaches.  
 `agent.task1()`  
 `agent.task2()`  
-`agent.task30()` all in parallel.  
+`agent.task3()` all in parallel.  
 → [Example](agent_concurrent_bydefault/agent_concurrent_bydefault.na)
