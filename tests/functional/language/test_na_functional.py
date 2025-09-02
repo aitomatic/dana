@@ -75,7 +75,17 @@ def test_na_file(na_file):
         from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
         from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
-        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
+        # Create values dict for the resource instance
+        values = {
+            "name": "test_llm",
+            "model": "openai:gpt-4o-mini",
+            "state": "READY",
+            "provider": "auto",
+            "temperature": 0.7,
+            "max_tokens": 2048,
+        }
+
+        llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"), values)
         llm_resource.initialize()
 
         # Enable mock mode for testing

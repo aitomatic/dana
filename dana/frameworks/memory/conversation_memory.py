@@ -25,14 +25,17 @@ class ConversationMemory:
     - Supports automatic summarization (future feature)
     """
 
-    def __init__(self, filepath: str = "conversation_memory.json", max_turns: int = 20):
+    def __init__(self, filepath: str, max_turns: int = 20):
         """
         Initialize conversation memory.
 
         Args:
-            filepath: Path to JSON file for persistence
+            filepath: Path to JSON file for persistence (required)
             max_turns: Maximum number of turns to keep in active memory
         """
+        if not filepath:
+            raise ValueError("filepath is required for ConversationMemory")
+
         self.filepath = Path(filepath)
         self.max_turns = max_turns
         self.conversation_id = str(uuid.uuid4())

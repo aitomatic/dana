@@ -318,7 +318,7 @@ class ConfigurationManager:
             DanaSandbox._resource_users = 0
 
             # Create a sandbox and test the reason function
-            sandbox = DanaSandbox()
+            sandbox = DanaSandbox(do_initialize=True)
             sandbox.logger.setLevel(logging.CRITICAL)
 
             # Test: Basic reason function

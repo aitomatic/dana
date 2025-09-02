@@ -69,7 +69,13 @@ class DanaSandbox(Loggable):
     _shared_llm_resource: LegacyLLMResource | None = None
     _resource_users = 0  # Count of instances using shared resources
 
-    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
+    def __init__(
+        self,
+        debug_mode: bool = False,
+        context: SandboxContext | None = None,
+        module_search_paths: list[str] | None = None,
+        do_initialize: bool = True,
+    ):
         """
         Initialize a Dana sandbox.
 
@@ -133,6 +139,10 @@ class DanaSandbox(Loggable):
 
         # Register for automatic cleanup on garbage collection
         self._weakref = weakref.ref(self, self._cleanup_on_deletion)
+
+        # Finally, eagerly initialize the sandbox if requested (else lazy)
+        if do_initialize:
+            self._ensure_initialized()
 
     def _register_cleanup(self):
         """Register process exit cleanup handler"""

@@ -19,7 +19,7 @@ def run_na_file_service(request: RunNAFileRequest):
         logger.info(f"Running Dana file: {request.file_path}")
 
         # Create a new DanaSandbox instance
-        sandbox = DanaSandbox()
+        sandbox = DanaSandbox(do_initialize=True)
 
         # Execute the file
         result = sandbox.execute_file(request.file_path, input_data=request.input)

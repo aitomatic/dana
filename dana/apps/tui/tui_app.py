@@ -14,6 +14,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
+from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.common.utils.logging import DANA_LOGGER
 from dana.registry import AGENT_REGISTRY
 
@@ -213,7 +214,23 @@ class DanaTUI(App):
         self.minimal_style = os.getenv("DANA_TUI_MINIMAL", "").lower() in ("1", "true", "yes")
 
         # Initialize core systems
-        self.sandbox = DanaSandbox()
+        # Create core DanaSandbox with LegacyLLMResource for TUI usage
+        self.sandbox = DanaSandbox(do_initialize=True)
+        # Set the legacy LLM resource for TUI compatibility
+        from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+
+        # Create a default LLM resource for TUI compatibility
+        llm_resource = LegacyLLMResource(name="tui_default", model="auto")
+        values = {
+            "name": "tui_default",
+            "model": "auto",
+            "state": "READY",
+            "provider": "auto",
+            "temperature": 0.7,
+            "max_tokens": 2048,
+        }
+        self.sandbox._context.set_system_llm_resource(LLMResourceInstance(LLMResourceType(), llm_resource, values))
 
         # UI components
         self.repl_panel: TerminalREPL | None = None
