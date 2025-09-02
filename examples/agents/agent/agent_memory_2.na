@@ -1,9 +1,7 @@
-"""Dana Agents can reason, remember, and act with built-in cognition"""
+"""Dana Agents can reason, remember, and act with built-in cognition."""
 
-
-# agent whom I have met before (@ agent_meet_n_greet_1.na)
+# agent whom I have met before (@ agent_memory_1.na)
 agent Neo
 
-
-# agent can recall past conversation on these
+# agent can recall past conversations
 Neo.chat('Do you know who I am?')

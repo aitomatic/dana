@@ -1,8 +1,7 @@
-"""Dana Agents can reason, remember, and act with built-in cognition"""
+"""Dana Agents can reason, remember, and act with built-in cognition."""
 
 # 1-line creation of agent
 agent Neo
-
 
 # agent would remember this conversation
 Neo.chat('My name is Christopher.')

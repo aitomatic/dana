@@ -1,9 +1,9 @@
 """Dana Agents are concurrent by default, multitasking without async headaches."""
 
-# Try these in the interactive Dana TUI or REPL
+# NOTE: Try pasting these in an interactive Dana environment,
+# either TUI (`uv run dana` command) or REPL (`uv run dana repl` command)
 
 agent Neo
-
 
 Neo.reason("What were some key milestones in proving Fermat's Last Theorem?")
 

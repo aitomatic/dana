@@ -1,20 +1,22 @@
-"""How Agents Improve with Added Resources"""
+"""How Agents Improve with Added Resources."""
+
 
 agent Neo
 
-print(Neo.solve("I'm in Sapporo. Should I go out today? I prefer weather between 20-25 °C."))
 
 # Step 1: Agent alone
 # 👉 Uses only built-in cognition.
+print(Neo.solve("I'm in Sapporo. Should I go out today? I prefer weather between 20-25 °C."))
 
-print('''
-AGENT SOLVES PROBLEMS BETTER WITH ADDED RESOURCES
-==================================================
-''')
-
-resource_weather_info = get_resource('mcp', url='http://127.0.0.1:8000/mcp')
 
 # Step 2: Agent + Resource
 # 👉 Gains access to real-world weather data.
+print("""
+AGENT SOLVES PROBLEMS BETTER WITH ADDED RESOURCES
+=================================================
+""")
+
+resource_weather_info = get_resource('mcp', url='http://127.0.0.1:8000/mcp')
+
 print(Neo.solve("I'm in Sapporo. Should I go out today? I prefer weather between 20-25 C.",
                 resources=[resource_weather_info]))

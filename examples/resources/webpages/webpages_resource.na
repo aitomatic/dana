@@ -1,6 +1,5 @@
 """Webpages Resource Querying."""
 
-
 agent Neo
 
 def __main__(site='https://asia.nikkei.com'):
