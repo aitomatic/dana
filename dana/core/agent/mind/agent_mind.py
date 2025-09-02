@@ -16,6 +16,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .world_model import DomainKnowledge, LocationContext, SystemContext, TimeContext, WorldModel, WorldState
+
 
 class ExpertiseLevel(Enum):
     """User expertise levels."""
@@ -109,7 +111,7 @@ class AgentMind:
         self.user_profile: UserProfile | None = None
         self.strategy_patterns: dict[str, StrategyPattern] = {}
         self.context_patterns: dict[str, ContextPattern] = {}
-        self.world_model = None  # Future: shared knowledge
+        self.world_model = WorldModel()  # World model for shared knowledge
 
         # Storage paths
         self.models_dir = Path("~/.models").expanduser()
@@ -126,6 +128,9 @@ class AgentMind:
         # Load learned patterns
         self.strategy_patterns = self._load_strategy_patterns(user_id)
         self.context_patterns = self._load_context_patterns(user_id)
+
+        # Initialize world model
+        self.world_model.initialize()
 
         # Ensure storage directories exist
         self._ensure_storage_directories()
@@ -516,3 +521,120 @@ class AgentMind:
         # Simple hash-based ID generation
         config_str = str(sorted(config.items()))
         return str(hash(config_str))[-8:]  # Last 8 characters of hash
+
+    # World Model Integration Methods
+
+    def get_world_context(self) -> WorldState:
+        """Get current world context."""
+        return self.world_model.get_current_state()
+
+    def get_temporal_context(self) -> TimeContext:
+        """Get current temporal context."""
+        return self.world_model.get_temporal_context()
+
+    def get_location_context(self) -> LocationContext:
+        """Get current location context."""
+        return self.world_model.get_location_context()
+
+    def get_system_context(self) -> SystemContext:
+        """Get current system context."""
+        return self.world_model.get_system_context()
+
+    def get_domain_knowledge(self, domain: str) -> DomainKnowledge | None:
+        """Get knowledge for a specific domain."""
+        return self.world_model.get_domain_knowledge(domain)
+
+    def update_domain_knowledge(self, domain: str, knowledge: DomainKnowledge):
+        """Update domain knowledge."""
+        self.world_model.update_domain_knowledge(domain, knowledge)
+
+    def get_shared_patterns(self, pattern_type: str | None = None) -> dict[str, Any]:
+        """Get shared patterns from world model."""
+        return self.world_model.get_shared_patterns(pattern_type)
+
+    def add_shared_pattern(self, pattern_type: str, pattern_id: str, pattern_data: dict[str, Any]):
+        """Add a new shared pattern to world model."""
+        self.world_model.add_shared_pattern(pattern_type, pattern_id, pattern_data)
+
+    def is_business_hours(self) -> bool:
+        """Check if current time is during business hours."""
+        return self.get_temporal_context().is_business_hours
+
+    def is_holiday(self) -> bool:
+        """Check if current date is a holiday."""
+        return self.get_temporal_context().is_holiday
+
+    def get_current_season(self) -> str:
+        """Get current season."""
+        return self.get_temporal_context().season
+
+    def get_time_period(self) -> str:
+        """Get current time period of day."""
+        return self.get_temporal_context().time_period
+
+    def get_system_health(self) -> str:
+        """Get current system health status."""
+        return self.get_system_context().system_health
+
+    def is_system_healthy(self) -> bool:
+        """Check if system is healthy."""
+        return self.get_system_context().system_health == "healthy"
+
+    def get_available_resources(self) -> dict[str, Any]:
+        """Get available system resources."""
+        return self.get_system_context().available_resources
+
+    def get_location_info(self) -> dict[str, str]:
+        """Get current location information."""
+        location = self.get_location_context()
+        return {
+            "country": location.country,
+            "region": location.region,
+            "city": location.city,
+            "timezone": location.timezone,
+            "environment": location.environment,
+            "network": location.network,
+        }
+
+    def should_use_lightweight_processing(self) -> bool:
+        """Determine if lightweight processing should be used based on system health."""
+        system_health = self.get_system_health()
+        return system_health in ["degraded", "critical"]
+
+    def get_optimal_concurrency_level(self) -> int:
+        """Get optimal concurrency level based on system health and resources."""
+        if self.should_use_lightweight_processing():
+            return 1
+
+        # Check available CPU resources
+        resources = self.get_available_resources()
+        cpu_info = resources.get("cpu", {})
+        available_cpu = cpu_info.get("available", 1)
+
+        # Check memory usage
+        memory_usage = self.get_system_context().memory_usage
+
+        # Determine concurrency based on available resources
+        if memory_usage > 80:
+            return max(1, int(available_cpu * 0.5))
+        elif memory_usage > 60:
+            return max(1, int(available_cpu * 0.8))
+        else:
+            return max(1, int(available_cpu))
+
+    def get_localization_settings(self) -> dict[str, str]:
+        """Get localization settings based on current location."""
+        location = self.get_location_context()
+
+        # Default settings
+        settings = {"date_format": "MM/DD/YYYY", "time_format": "12-hour", "currency": "USD", "language": "en"}
+
+        # Override based on location
+        if location.country == "US":
+            settings.update({"date_format": "MM/DD/YYYY", "time_format": "12-hour", "currency": "USD"})
+        elif location.country in ["UK", "GB"]:
+            settings.update({"date_format": "DD/MM/YYYY", "time_format": "24-hour", "currency": "GBP"})
+        elif location.country in ["DE", "FR", "IT", "ES"]:
+            settings.update({"date_format": "DD/MM/YYYY", "time_format": "24-hour", "currency": "EUR"})
+
+        return settings
