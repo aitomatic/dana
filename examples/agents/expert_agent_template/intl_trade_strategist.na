@@ -5,7 +5,7 @@
 from dana_expert_agent_blueprint import DanaExpertAgent
 
 # import relevant expertise module(s)
-import supply_chain_strategy
+from expertise import supply_chain_strategy
 
 
 TARIFF_TRACKER_RESOURCE = get_resource('rag', sources=['https://www.bbc.com/news/articles/c5ypxnnyg7jo'])
