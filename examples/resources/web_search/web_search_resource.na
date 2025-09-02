@@ -1,7 +1,8 @@
 """Aitomatic Web Search Resource Querying."""
 
+agent Neo
 
 resource_aitomatic_web_search = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
 
 def __main__(query='name key founding member organizations of AI Alliance'):
-    reason(query, resources=[resource_aitomatic_web_search])
+    Neo.reason(query, resources=[resource_aitomatic_web_search])

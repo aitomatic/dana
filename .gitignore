@@ -62,6 +62,7 @@ node_modules/
 .refactoring_*/
 .cache/
 .ipynb_checkpoints/
+# .cursor/
 CLAUDE.md
 
 .deprecated_opendxa

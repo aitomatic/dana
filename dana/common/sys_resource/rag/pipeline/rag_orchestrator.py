@@ -11,7 +11,7 @@ from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedC
 from dana.common.sys_resource.embedding import get_default_embedding_model
 from dana.common.utils.misc import Misc
 from llama_index.core.vector_stores import MetadataFilters
-
+import traceback
 
 class RAGOrchestrator(Loggable):
     def __init__(
@@ -124,6 +124,7 @@ class RAGOrchestrator(Loggable):
                     new_indices_by_source = await self.index_builder.build_indices(docs_for_indexing, embed_model=self.embedding_model)
                 except Exception as e:
                     self.error(f"Error building indices for {sources_needing_indices}: {e}")
+                    self.error(f"{traceback.format_exc()}")
                     new_indices_by_source = {}
                 indices_by_source.update(new_indices_by_source)
                 # Cache newly built indices

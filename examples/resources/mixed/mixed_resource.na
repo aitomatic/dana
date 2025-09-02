@@ -1,7 +1,8 @@
 """Mixed Documents & Webpages Resource Querying."""
 
+agent Neo
 
 resource_aitomatic_and_dana_info = get_resource('rag', sources=['https://www.aitomatic.com', '../../../README.md'])
 
-reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?",
-       resources=[resource_aitomatic_and_dana_info])
+Neo.reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?",
+           resources=[resource_aitomatic_and_dana_info])

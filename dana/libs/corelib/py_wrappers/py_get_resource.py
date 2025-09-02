@@ -58,7 +58,7 @@ def py_get_resource(
         use("rag", ["doc1.pdf", "doc2.txt"]) -> creates a RAG resource
     """
     if _name is None:
-        _name = Misc.generate_base64_uuid(length=6)
+        _name = Misc.generate_uuid(length=6)
 
     # Check if resource already exists in context
     try:
