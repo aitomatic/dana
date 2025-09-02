@@ -1,6 +1,5 @@
 """Aitomatic Web Search Resource Querying."""
 
-
 agent Neo
 
 resource_aitomatic_web_search = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')

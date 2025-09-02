@@ -1,14 +1,10 @@
 """Semantic type coercion makes resource outputs structured."""
 
-
 agent Neo
-
 
 resource_hilbert_wiki = get_resource('rag', sources=["https://en.wikipedia.org/wiki/David_Hilbert"])
 
-
 # semantic type coercion helps enforce data structures & types and output determinism
-
 struct MathematicianProfile:
     name: str
     birth_year: int
