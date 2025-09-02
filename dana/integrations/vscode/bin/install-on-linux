@@ -114,6 +114,25 @@ install_npm_dependencies() {
     # Install dependencies
     npm install
     log "${GREEN}✅ npm dependencies installed${NC}"
+
+    # Fix permissions on TypeScript binary (common Linux issue)
+    local tsc_bin="./node_modules/.bin/tsc"
+    if [[ -f "$tsc_bin" ]]; then
+        log "${BLUE}🔧 Fixing TypeScript binary permissions...${NC}"
+        chmod +x "$tsc_bin"
+        log "${GREEN}✅ TypeScript binary permissions fixed${NC}"
+    else
+        log "${YELLOW}⚠️  TypeScript binary not found, checking if it's a symlink...${NC}"
+        # Sometimes tsc is a symlink to another location
+        if [[ -L "$tsc_bin" ]]; then
+            local target=$(readlink "$tsc_bin")
+            log "${BLUE}🔗 TypeScript is symlinked to: $target${NC}"
+            if [[ -f "$target" ]]; then
+                chmod +x "$target"
+                log "${GREEN}✅ Target TypeScript binary permissions fixed${NC}"
+            fi
+        fi
+    fi
 }
 
 # Function to compile TypeScript
