@@ -9,6 +9,7 @@ import asyncio
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from dana.builtin_types.agent.agent_instance import AgentInstance
@@ -21,9 +22,33 @@ class TestAgentContextManager(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        # Set mock LLM mode for testing
+        import os
+
+        os.environ["DANA_MOCK_LLM"] = "true"
+
         # Create a temporary directory for test files
         self.temp_dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.temp_dir)
+
+        # Create chats directory in temp (mimicking ~/.dana/chats/)
+        self.memory_dir = Path(self.temp_dir) / ".dana" / "chats"
+        self.memory_dir.mkdir(parents=True, exist_ok=True)
+
+        # Patch the memory initialization to use temp directory
+        def mock_init(agent_self):
+            if agent_self._conversation_memory is None:
+                from dana.frameworks.memory.conversation_memory import ConversationMemory
+
+                # Use temp directory instead of ~/.dana/chats/
+                agent_name = getattr(agent_self.agent_type, "name", "agent")
+                memory_file = self.memory_dir / f"{agent_name}_conversation.json"
+                agent_self._conversation_memory = ConversationMemory(filepath=str(memory_file), max_turns=20)
+
+        from unittest.mock import patch
+
+        self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
+        self.init_patcher.start()
 
         # Create a test agent type
         self.agent_type = AgentType(
@@ -50,6 +75,9 @@ class TestAgentContextManager(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after tests."""
+        # Stop the patcher
+        self.init_patcher.stop()
+
         # Clear any registered callbacks
         self.agent_instance._log_callbacks.clear()
 

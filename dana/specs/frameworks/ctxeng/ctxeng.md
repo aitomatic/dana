@@ -4,10 +4,36 @@
 
 The Context Engineering Framework (`dana.frameworks.ctxeng`) provides intelligent context assembly for LLM interactions, maximizing relevance while minimizing token usage. The framework extracts proven patterns from `agent.solve()` and provides a general-purpose solution for context engineering across the Dana ecosystem.
 
+## Core Architectural Principle
+
+**"Decide First, Then Engineer Context"**
+
+The CTXENG framework follows a fundamental principle: **make your high-level decisions first, then engage context engineering at the last moment when you have clarity about what you need.**
+
+### **The Principle in Practice:**
+
+1. **Make Strategy Selection First**: Choose your problem-solving approach, agent type, or workflow strategy based on the raw problem
+2. **Make Other Significant Choices**: Determine your execution path, resource requirements, and high-level approach
+3. **Then Engage Context Engineering**: At the last moment, when you have higher-level clarity, use CTXENG to:
+   - **Select the appropriate context-aware prompt template** based on your strategy and requirements
+   - **Weave together your context-aware prompt** using the selected template and available resources
+
+### **Why This Matters:**
+
+- **Better Strategy Selection**: Raw problems lead to better strategy choices than pre-processed ones
+- **Context-Aware Templates**: Strategy-specific templates provide more relevant context assembly
+- **Eliminates Waste**: No context engineering for strategies that don't need it
+- **Cleaner Architecture**: Clear separation between decision-making and context assembly
+- **Flexible Integration**: Strategies can choose their own context engineering approach
+
 ## Core Principles
 
+- **Decide First, Then Engineer Context**: Make high-level decisions before engaging context engineering
 - **Relevance-First Design**: Every piece of context must justify its token cost
 - **Token Optimization**: Automatic length optimization to fit token budgets
+- **Strategy-Driven Templates**: Context assembly based on strategy requirements, not pre-emptive processing
+- **Adaptive Learning**: Agents learn from repeated problem-solving experiences to optimize future selections
+- **User Profile Intelligence**: Personalized experiences based on user preferences and learned patterns
 - **KISS + YAGNI**: Simple, focused interfaces with minimal configuration
 - **Performance Conscious**: Efficient algorithms with intelligent caching
 
@@ -17,14 +43,51 @@ The Context Engineering Framework (`dana.frameworks.ctxeng`) provides intelligen
 - **RelevanceEngine**: Intelligence core for scoring and filtering context
 - **TokenOptimizer**: Length management with relevance preservation
 - **ContextAssembler**: Smart prompt assembly with optimization
+- **TemplateManager**: Manages prompt templates for different use cases
+- **Context Keys Reference**: Comprehensive documentation of expected context data
+- **UserProfileManager**: Manages user preferences and learning patterns
+- **PatternLearningEngine**: Learns from problem-solving experiences
+- **AdaptiveSelectionEngine**: Dynamically selects strategies and context based on learned patterns
 
 ## Use Cases
 
-- **Problem Solving**: Rich context for agent.solve() operations
+- **Strategy-Driven Problem Solving**: Rich context assembled based on strategy requirements
 - **Conversation**: Optimized conversation history and context
 - **Analysis**: Data-driven context assembly for analytical tasks
+- **Workflow Orchestration**: Context engineering for complex workflow execution
+- **Personalized Problem Solving**: User-specific strategies and context based on learned preferences
+- **Adaptive Learning**: Continuous improvement through pattern recognition and learning
+- **Repetitive Task Optimization**: Automatic optimization of frequently performed tasks
+- **Multi-Domain Intelligence**: Domain-specific optimization based on user expertise and patterns
 
 ## Quick Start
+
+### **Simple User Interface**
+
+The framework provides a simple interface while maintaining full capability under the hood:
+
+```python
+# Basic usage - everything is inferred automatically
+result = agent.solve("Calculate 2 + 2")
+
+# With simple overrides
+result = agent.solve("Calculate 2 + 2", urgency="quick", domain="technical")
+
+# Advanced usage (for power users)
+result = agent.solve(
+    "Analyze Q4 sales data and create executive summary",
+    urgency="thorough",
+    domain="business",
+    preferences={
+        "detail_level": "executive",
+        "output_format": "structured"
+    }
+)
+```
+
+### **Developer Interface**
+
+For developers and strategies, the full CTXENG capability is available:
 
 ```python
 from dana.frameworks.ctxeng import ContextEngine
@@ -32,34 +95,287 @@ from dana.frameworks.ctxeng import ContextEngine
 # Create context engine with auto-discovery
 ctx = ContextEngine.from_agent(agent)
 
-# Use it - that's it!
-prompt = ctx.assemble("Plan a trip to Mexico")
+# Use it in strategies - that's it!
+prompt = ctx.assemble("Plan a trip to Mexico", template="problem_solving")
 
 # With additional context
 context = {"budget": "$3000", "duration": "7 days"}
-prompt = ctx.assemble("Plan a trip to Mexico", context)
+prompt = ctx.assemble("Plan a trip to Mexico", context, template="problem_solving")
 
 # With options
 prompt = ctx.assemble("Plan a trip to Mexico", context, max_tokens=2000, focus="safety")
 ```
 
+**Note**: CTXENG follows the "Decide First, Then Engineer Context" principle. The correct flow is:
+1. **Strategy selection** based on raw problem
+2. **High-level decisions** about execution approach and requirements
+3. **Then engage CTXENG** with appropriate template when strategy clarity is achieved
+4. **Use assembled prompt** for LLM interaction
+
+**Context Keys**: See [CONTEXT_KEYS_REFERENCE.md](CONTEXT_KEYS_REFERENCE.md) for detailed documentation of what context data each template expects.
+
+**User Profiles & Pattern Learning**: See [user_profiles_and_patterns.md](user_profiles_and_patterns.md) for comprehensive documentation of the adaptive learning system.
+
+## Enhanced Architecture with Adaptive Learning
+
+### **Agent Mind Management**
+
+The framework uses an `AgentMind` mixin to manage user profiles, strategy patterns, and context patterns under separate storage directories:
+
+```python
+# ~/.models/users/default.json
+{
+    "expertise_level": "intermediate",
+    "domain_preferences": ["general", "technical"],
+    "urgency_patterns": {"quick": 0.6, "standard": 0.3, "thorough": 0.1},
+    "template_preferences": {
+        "problem_solving": "problem_solving",
+        "conversation": "conversation",
+        "analysis": "analysis"
+    },
+    "context_depth_preferences": {
+        "general": "standard",
+        "technical": "comprehensive",
+        "business": "detailed"
+    }
+}
+```
+
+### **Pattern Learning & Storage**
+
+The AgentMind mixin manages pattern storage across three specialized directories:
+
+```python
+# ~/.models/strategies/default.json
+{
+    "arithmetic_calculation_simple": {
+        "strategy_type": "RecursiveStrategy",
+        "success_rate": 0.95,
+        "execution_time": 0.8,
+        "user_satisfaction": 0.9,
+        "usage_count": 47,
+        "last_used": "2024-01-15T10:30:00Z",
+        "context_requirements": ["minimal", "no_history"],
+        "fallback_strategies": ["DirectExecutionStrategy"]
+    }
+}
+
+# ~/.models/contexts/default.json
+{
+    "arithmetic_calculation_simple": {
+        "template": "problem_solving",
+        "scope": "minimal",
+        "priority": "relevant",
+        "token_efficiency": 0.85,
+        "llm_performance": 0.92,
+        "usage_count": 47,
+        "last_used": "2024-01-15T10:30:00Z",
+        "context_keys_used": ["query", "objective"]
+    }
+}
+```
+
+### **Adaptive Selection Process**
+
+The system automatically selects optimal strategies and context configurations based on learned patterns:
+
+```python
+def _select_strategy(self, problem: str, user_profile: UserProfile) -> Strategy:
+    # 1. Create problem signature
+    problem_signature = self._create_problem_signature(problem)
+    
+    # 2. Look for existing patterns
+    strategy_pattern = self._find_strategy_pattern(problem_signature)
+    
+    if strategy_pattern and strategy_pattern.success_rate > 0.8:
+        # Use learned pattern if it's reliable
+        strategy_type = strategy_pattern.strategy_type
+        self._log_pattern_usage(strategy_pattern, "strategy")
+    else:
+        # Fall back to user preferences or defaults
+        strategy_type = self._get_fallback_strategy(problem, user_profile)
+    
+    return self._create_strategy(strategy_type)
+```
+
+### **AgentMind Mixin Design**
+
+The `AgentMind` mixin handles the complete lifecycle of user profiles, strategy patterns, and context patterns:
+
+```python
+class AgentMind:
+    """Mixin for managing agent intelligence, learning, and memory."""
+    
+    def __init__(self):
+        self.user_profile: UserProfile = None
+        self.strategy_patterns: Dict[str, StrategyPattern] = {}
+        self.context_patterns: Dict[str, ContextPattern] = {}
+        self.world_model: WorldModel = None  # Future: shared knowledge
+        
+        # Storage paths
+        self.models_dir = Path("~/.models").expanduser()
+        self.users_dir = self.models_dir / "users"
+        self.strategies_dir = self.models_dir / "strategies"
+        self.contexts_dir = self.models_dir / "contexts"
+        self.world_dir = self.models_dir / "world"
+    
+    def initialize_mind(self, user_id: str = "default"):
+        """Initialize the agent's mind with user profile and patterns."""
+        # Load user profile
+        self.user_profile = self._load_user_profile(user_id)
+        
+        # Load strategy patterns
+        self.strategy_patterns = self._load_strategy_patterns(user_id)
+        
+        # Load context patterns
+        self.context_patterns = self._load_context_patterns(user_id)
+        
+        # Future: Load world model
+        # self.world_model = self._load_world_model()
+    
+    def _load_user_profile(self, user_id: str) -> UserProfile:
+        """Load user profile from ~/.users/{user_id}.json"""
+        profile_file = self.users_dir / f"{user_id}.json"
+        if profile_file.exists():
+            with open(profile_file, 'r') as f:
+                data = json.load(f)
+                return UserProfile(**data)
+        else:
+            return self._create_default_profile(user_id)
+    
+    def _load_strategy_patterns(self, user_id: str) -> Dict[str, StrategyPattern]:
+        """Load strategy patterns from ~/.strategies/{user_id}.json"""
+        patterns_file = self.strategies_dir / f"{user_id}.json"
+        if patterns_file.exists():
+            with open(patterns_file, 'r') as f:
+                data = json.load(f)
+                return {k: StrategyPattern(**v) for k, v in data.items()}
+        else:
+            return {}
+    
+    def _load_context_patterns(self, user_id: str) -> Dict[str, ContextPattern]:
+        """Load context patterns from ~/.contexts/{user_id}.json"""
+        patterns_file = self.contexts_dir / f"{user_id}.json"
+        if patterns_file.exists():
+            with open(patterns_file, 'r') as f:
+                data = json.load(f)
+                return {k: ContextPattern(**v) for k, v in data.items()}
+        else:
+            return {}
+    
+    def update_user_preference(self, key: str, value: Any):
+        """Update a user preference and persist to storage."""
+        if hasattr(self.user_profile, key):
+            setattr(self.user_profile, key, value)
+            self._save_user_profile()
+    
+    def learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
+        """Learn from execution results and update patterns."""
+        problem_signature = self._create_problem_signature(problem)
+        
+        # Update strategy patterns
+        self._update_strategy_pattern(problem_signature, strategy, result)
+        
+        # Update context patterns
+        self._update_context_pattern(problem_signature, context_config, result)
+        
+        # Persist updated patterns
+        self._save_patterns()
+    
+    def _save_user_profile(self):
+        """Save user profile to ~/.users/{user_id}.json"""
+        os.makedirs(self.users_dir, exist_ok=True)
+        profile_file = self.users_dir / f"{self.user_profile.user_id}.json"
+        with open(profile_file, 'w') as f:
+            json.dump(self.user_profile.dict(), f, indent=2)
+    
+    def _save_patterns(self):
+        """Save strategy and context patterns to storage."""
+        # Save strategy patterns
+        os.makedirs(self.strategies_dir, exist_ok=True)
+        strategy_file = self.strategies_dir / f"{self.user_profile.user_id}.json"
+        with open(strategy_file, 'w') as f:
+            json.dump(self.strategy_patterns, f, indent=2, default=str)
+        
+        # Save context patterns
+        os.makedirs(self.contexts_dir, exist_ok=True)
+        context_file = self.contexts_dir / f"{self.user_profile.user_id}.json"
+        with open(context_file, 'w') as f:
+            json.dump(self.context_patterns, f, indent=2, default=str)
+    
+    def cleanup_expired_patterns(self):
+        """Remove expired patterns based on TTL and usage."""
+        current_time = datetime.now()
+        
+        # Cleanup strategy patterns
+        expired_strategies = [
+            k for k, v in self.strategy_patterns.items()
+            if self._is_pattern_expired(v, current_time)
+        ]
+        for k in expired_strategies:
+            del self.strategy_patterns[k]
+        
+        # Cleanup context patterns
+        expired_contexts = [
+            k for k, v in self.context_patterns.items()
+            if self._is_pattern_expired(v, current_time)
+        ]
+        for k in expired_contexts:
+            del self.context_patterns[k]
+    
+    def _is_pattern_expired(self, pattern: BasePattern, current_time: datetime) -> bool:
+        """Check if a pattern has expired based on TTL and usage."""
+        days_since_use = (current_time - pattern.last_used).days
+        return (
+            pattern.usage_count < self.user_profile.learning_preferences.min_pattern_usage and
+            days_since_use > self.user_profile.learning_preferences.pattern_ttl_days
+        )
+```
+
+### **Learning from Execution Results**
+
+After each problem-solving session, the system learns and updates patterns:
+
+```python
+def _learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
+    problem_signature = self._create_problem_signature(problem)
+    
+    # Update strategy pattern
+    strategy_pattern = self._get_or_create_strategy_pattern(problem_signature)
+    strategy_pattern.success_rate = self._update_success_rate(
+        strategy_pattern.success_rate, 
+        self._assess_success(result), 
+        strategy_pattern.usage_count
+    )
+    
+    # Update context pattern
+    context_pattern = self._get_or_create_context_pattern(problem_signature)
+    context_pattern.llm_performance = self._update_performance(
+        context_pattern.llm_performance,
+        self._assess_llm_performance(result),
+        context_pattern.usage_count
+    )
+```
+
 ## Integration
 
 The framework integrates seamlessly with:
-- **Agent solving system** (`agent.solve()`) - One line integration
+- **Agent solving system** (`agent.solve()`) - Strategy-driven integration with adaptive learning
 - **KNOWS framework** for knowledge management - Auto-discovered resources
 - **POET framework** for objective inference - Context-aware assembly
 - **Memory framework** for conversation history - Built-in providers
-- **Workflow framework** for execution context - Pattern recognition
+- **Workflow framework** for execution context - Pattern recognition and learning
 
 ### Integration Philosophy
 
-**"Explicit where it matters, automatic where it's safe"**
+**"Decide First, Then Engineer Context"**
 
-- **Resources**: Explicitly provided (no magic)
-- **Discovery**: Automatic for common patterns (convenient)
-- **Usage**: Single method (simple)
-- **Configuration**: Optional with sensible defaults (flexible)
+- **Strategy Selection First**: Raw problems used for strategy selection
+- **High-Level Decisions First**: Execution path, resource requirements, and approach determined early
+- **Context Engineering Last**: Applied only when strategy clarity is achieved
+- **Strategy-Specific Templates**: Different strategies can use different CTXENG templates
+- **Clean Separation**: `agent.solve()` doesn't know about context engineering details
+- **Flexible Integration**: Strategies can choose to use CTXENG or not
 
 ## Performance Targets
 
@@ -67,6 +383,9 @@ The framework integrates seamlessly with:
 - Relevance scoring: < 50ms per context piece
 - Token optimization: < 200ms for complex optimization
 - Token usage reduction: > 30% compared to naive assembly
+- Pattern learning: < 50ms per execution result
+- Adaptive selection: < 20ms for strategy and context selection
+- User profile loading: < 10ms for profile and pattern access
 
 ## Design Principles
 
@@ -75,17 +394,29 @@ The framework integrates seamlessly with:
 - Multi-factor relevance scoring with configurable thresholds
 - Intelligent filtering based on query, use case, and execution context
 
-### 2. **Token Optimization**
+### 2. **Adaptive Learning Design**
+- Learn from every problem-solving experience
+- Continuously optimize strategy and context selection
+- Balance learned patterns with user preferences
+- Evolve patterns based on changing performance
+
+### 3. **User-Centric Design**
+- Simple interface for users, full capability for developers
+- Personalized experiences based on user profiles
+- Intelligent defaults that improve over time
+- Progressive disclosure of advanced features
+
+### 4. **Token Optimization**
 - Automatic length optimization to fit token budgets
 - Smart truncation of high-relevance content
 - Token-aware assembly with relevance preservation
 
-### 3. **KISS + YAGNI**
+### 5. **KISS + YAGNI**
 - Simple, focused interfaces
 - Minimal configuration for common use cases
 - Extensible for advanced customization
 
-### 4. **Performance Conscious**
+### 6. **Performance Conscious**
 - Efficient relevance scoring algorithms
 - Lazy evaluation of context providers
 - Caching of relevance scores where appropriate
@@ -255,7 +586,7 @@ where weights are configurable per use case
 
 ## Use Case Support
 
-### 1. **Problem Solving (agent.solve())**
+### 1. **Strategy-Driven Problem Solving**
 
 **Context Requirements**:
 - Problem statement and objective
@@ -269,6 +600,12 @@ where weights are configurable per use case
 - Include execution timeline for debugging
 - Maintain constraint and assumption context
 - Prioritize recent successful patterns
+
+**Integration Pattern**:
+- Strategy selection happens first based on raw problem
+- Strategy decides what context engineering is needed
+- Strategy calls CTXENG with appropriate template
+- Strategy uses assembled prompt for LLM interaction
 
 ### 2. **Conversation**
 
@@ -337,7 +674,7 @@ prompt = ctx.assemble(query, context, template="problem_solving")  # With templa
 prompt = ctx.assemble(query, context, max_tokens=2000)  # With options
 ```
 
-### 3. **Resource and Workflow Registration**
+### 4. **Resource and Workflow Registration**
 
 ```python
 # Manual registration (explicit)
@@ -357,26 +694,69 @@ ctx = ContextEngine.from_agent(agent)  # Creates and configures automatically
 ### 4. **Integration Examples**
 
 ```python
-# In Agent System (Zero Changes)
+# In Agent System (Enhanced with AgentMind)
 class AgentInstance:
     def __init__(self, struct_type: AgentType, values: dict[str, Any]):
         # ... existing code ...
-        self._context_engine = ContextEngine.from_agent(self)  # Just create it
+        # Initialize agent mind for learning and personalization
+        self._mind = AgentMind()
+        self._mind.initialize_mind(user_id=values.get("user_id", "default"))
+        
+        # Context engine available for strategies to use
+        self._context_engine = ContextEngine.from_agent(self)
     
     def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
         # ... existing code ...
         
-        # Add one line for rich context (XML format by default)
-        rich_prompt = self._context_engine.assemble(
-            problem_or_workflow if isinstance(problem_or_workflow, str) else "workflow execution"
-        )
+        # Apply user overrides to mind
+        if kwargs:
+            self._mind.apply_user_overrides(**kwargs)
         
-        # rich_prompt now contains structured XML like:
-        # <context><query>Plan a trip to Mexico</query><problem_context>...</problem_context></context>
+        # Pass raw problem to plan() - let strategy decide on context engineering
+        workflow = self.plan(problem_or_workflow, **kwargs)
         
-        # Use rich prompt instead of basic problem
-        workflow = self.plan(rich_prompt, **kwargs)
-        return workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+        # Execute and learn from results
+        result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+        
+        # Learn from execution
+        self._mind.learn_from_execution(problem_or_workflow, workflow.strategy, workflow.context_config, result)
+        
+        return result
+
+# In Strategy (Enhanced with AgentMind)
+class RecursiveStrategy:
+    def create_workflow(self, problem: str, context: ProblemContext, agent_instance, sandbox_context=None):
+        # Strategy can access agent mind for personalized decisions
+        if hasattr(agent_instance, '_mind'):
+            # Get user preferences and learned patterns
+            user_profile = agent_instance._mind.user_profile
+            strategy_patterns = agent_instance._mind.strategy_patterns
+            
+            # Use learned patterns to optimize strategy selection
+            optimal_template = self._select_optimal_template(problem, user_profile, strategy_patterns)
+            optimal_scope = self._select_optimal_scope(problem, user_profile, strategy_patterns)
+        else:
+            # Fall back to defaults
+            optimal_template = "problem_solving"
+            optimal_scope = "standard"
+        
+        # Strategy decides what context engineering is needed
+        if hasattr(agent_instance, '_context_engine'):
+            # Use CTXENG for rich context assembly with learned optimizations
+            rich_prompt = agent_instance._context_engine.assemble(
+                problem, 
+                template=optimal_template,
+                context=context.to_dict(),
+                scope=optimal_scope
+            )
+        else:
+            # Fall back to basic prompt
+            rich_prompt = self._build_basic_prompt(problem, context)
+        
+        # Use rich prompt for LLM interaction
+        dana_code = self._get_llm_response(rich_prompt, agent_instance, sandbox_context)
+        
+        # Continue with workflow creation...
 ```
 
 ## Output Formats and Templates
@@ -446,6 +826,12 @@ dana/frameworks/ctxeng/templates/
 - **analysis**: Data-driven analysis and reporting
 - **general**: Default template for unspecified use cases
 
+**Template Details**: Each template expects specific context dictionary keys. See [CONTEXT_KEYS_REFERENCE.md](CONTEXT_KEYS_REFERENCE.md) for comprehensive documentation of:
+- Required vs. optional context keys
+- Example context data structures
+- Output XML/text formats
+- When to use each template
+
 **Template Selection**:
 ```python
 # Explicit template selection
@@ -464,12 +850,96 @@ ctx = ContextEngine(format_type="text") # Text output
 
 ## Configuration and Customization
 
-### 1. **Resource and Workflow Registration**
+### 1. **AgentMind Storage Management**
+
+**Storage Structure**:
+```
+~/.models/                     # All agent models and learning data
+├── users/                     # User profiles and preferences
+│   ├── default.json           # Default user profile
+│   ├── ctn.json               # Specific user profile
+│   └── shared.json            # Shared user preferences
+├── strategies/                 # Strategy patterns and learning
+│   ├── default.json           # Default strategy patterns
+│   ├── ctn.json               # User-specific strategy patterns
+│   └── global.json            # Global strategy patterns
+├── contexts/                   # Context patterns and learning
+│   ├── default.json           # Default context patterns
+│   ├── ctn.json               # User-specific context patterns
+│   └── global.json            # Global context patterns
+└── world/                     # Future: World model and shared knowledge
+    ├── domain_knowledge.json  # Domain-specific knowledge
+    ├── shared_patterns.json   # Cross-user patterns
+    └── system_intelligence.json # System-level learning
+```
+
+**AgentMind Configuration Interface**:
+```python
+from dana.builtin_types.agent.mind import AgentMind
+
+class AgentMind:
+    def __init__(self):
+        # Storage paths
+        self.models_dir = Path("~/.models").expanduser()
+        self.users_dir = self.models_dir / "users"
+        self.strategies_dir = self.models_dir / "strategies"
+        self.contexts_dir = self.models_dir / "contexts"
+        self.world_dir = self.models_dir / "world"
+    
+    def initialize_mind(self, user_id: str = "default"):
+        """Initialize agent mind with user profile and patterns"""
+    
+    def update_user_preference(self, key: str, value: Any):
+        """Update user preference and persist to storage"""
+    
+    def learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
+        """Learn from execution results and update patterns"""
+    
+    def cleanup_expired_patterns(self):
+        """Remove expired patterns based on TTL and usage"""
+```
+
+### 2. **Pattern Learning Configuration**
+
+**Learning Parameters**:
+```python
+class LearningConfig:
+    min_pattern_usage: int = 3          # Minimum uses before pattern is considered reliable
+    success_rate_threshold: float = 0.8 # Minimum success rate for pattern usage
+    pattern_ttl_days: int = 30          # Days before unused patterns are cleaned up
+    learning_rate: float = 0.1          # How quickly patterns adapt to new data
+    cross_user_learning: bool = False   # Whether to learn from other users' patterns
+```
+
+### 3. **Lifecycle Management**
+
+**Initialization**:
+- **Agent Creation**: Load user profile and patterns from storage
+- **First Use**: Create default profiles if none exist
+- **User Switch**: Load different user profile and patterns
+
+**Runtime Updates**:
+- **User Preferences**: Update when user explicitly changes preferences
+- **Pattern Learning**: Update after each problem-solving execution
+- **Performance Metrics**: Track success rates, execution times, user satisfaction
+
+**Maintenance**:
+- **Pattern Cleanup**: Remove expired patterns based on TTL and usage
+- **Storage Optimization**: Compress old patterns, archive unused data
+- **Cross-User Learning**: Share successful patterns across similar users
+
+**Future Extensions**:
+- **World Model**: Load shared knowledge and domain expertise
+- **Collaborative Learning**: Learn from team and organization patterns
+- **System Intelligence**: Aggregate learning across all agents
+
+### 4. **Resource and Workflow Registration**
 
 **Default Resources** (auto-discovered):
 - Event history and conversation memory
 - Problem context and execution state
 - Agent resources and capabilities
+- User profile and learning patterns
 
 **Custom Resource Interface**:
 ```python
@@ -826,4 +1296,68 @@ flowchart TD
     end
 ```
 
-This specification provides a comprehensive framework for context engineering that balances relevance maximization with token minimization, while maintaining the simplicity and extensibility needed for the Dana ecosystem.
+## Future Enhancements
+
+### **Advanced Learning Features**
+- **Multi-modal learning**: Learn from different types of user interactions
+- **Collaborative learning**: Share patterns across similar users
+- **Predictive selection**: Predict optimal strategies before execution
+- **A/B testing**: Test different approaches to optimize learning
+
+### **World Model Integration**
+- **Domain Knowledge**: Shared expertise across problem domains
+- **Cross-User Intelligence**: Aggregate learning from similar users
+- **System-Level Patterns**: Identify global optimization opportunities
+- **Knowledge Evolution**: Continuous improvement of shared knowledge
+
+### **Enterprise Features**
+- **Team learning**: Learn from team problem-solving patterns
+- **Compliance-aware learning**: Ensure patterns meet compliance requirements
+- **Audit trails**: Track pattern usage and learning decisions
+- **Performance analytics**: Detailed analysis of learning effectiveness
+
+## Conclusion
+
+The enhanced CTXENG framework provides a comprehensive solution for context engineering that integrates seamlessly with the Dana agent system through the **"Decide First, Then Engineer Context"** principle, now enhanced with adaptive learning and user profile intelligence.
+
+### **Key Architectural Principles**
+
+1. **Decide First**: Make strategy selection and high-level decisions based on raw problems
+2. **Then Engineer Context**: Engage CTXENG only when strategy clarity is achieved
+3. **Strategy-Specific Templates**: Different strategies can use different CTXENG templates for optimal context assembly
+4. **Adaptive Learning**: Continuously improve performance through pattern recognition and learning
+5. **User Profile Intelligence**: Personalized experiences based on user preferences and learned patterns
+6. **Clean Separation**: `agent.solve()` doesn't know about context engineering details
+7. **Flexible Integration**: Strategies can choose to use CTXENG or fall back to basic prompts
+
+### **Benefits of the Enhanced Architecture**
+
+- **Cleaner Separation of Concerns**: Strategy selection and context engineering are properly separated
+- **Better Strategy Flexibility**: Each strategy can optimize its own context engineering approach
+- **Intelligent Automation**: Agents automatically select optimal strategies and context configurations
+- **Personalized Experience**: User preferences and learned patterns create tailored approaches
+- **Continuous Improvement**: System performance improves over time through pattern learning
+- **Simple Interface**: Users get powerful capabilities without complex configuration
+- **Improved Testing**: Raw problems can be tested without CTXENG complexity
+- **Easier Debugging**: Clear flow from problem to solution
+- **Extensible Design**: New strategies can define their own context engineering needs
+
+### **Enhanced Integration Summary**
+
+The framework integrates seamlessly with:
+- **Agent solving system** - Strategy-driven integration with adaptive learning
+- **KNOWS framework** - Auto-discovered knowledge resources
+- **POET framework** - Context-aware objective inference
+- **Memory framework** - Built-in conversation history providers
+- **Workflow framework** - Execution context pattern recognition and learning
+- **User Profile System** - Persistent user preferences and learning patterns
+- **Pattern Learning Engine** - Continuous improvement through experience
+
+### **Real-World Impact**
+
+- **Individual Users**: Get personalized, intelligent problem-solving that improves over time
+- **Developers**: Have access to enterprise-grade context engineering capabilities
+- **Enterprises**: Can deploy intelligent agents that learn and adapt to their specific needs
+- **System Administrators**: Benefit from self-improving systems that require minimal maintenance
+
+This specification provides a comprehensive framework for context engineering that balances relevance maximization with token minimization, while maintaining the simplicity and extensibility needed for the Dana ecosystem. The enhanced architecture transforms CTXENG from a static configuration-driven system to a dynamic, learning system that gets smarter with each interaction.

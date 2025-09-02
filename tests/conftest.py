@@ -29,10 +29,24 @@ def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
     from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
     from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
-    llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name=name, model=model))
-    llm_resource.initialize()
-    llm_resource.with_mock_llm_call(True)  # Enable mock mode
-    return llm_resource
+    # Create the resource type and extract values
+    resource_type = LLMResourceType()
+    llm_resource = LegacyLLMResource(name=name, model=model)
+
+    # Create values dict for the resource instance
+    values = {
+        "name": name,
+        "model": model,
+        "state": "READY",
+        "provider": "auto",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+    }
+
+    llm_resource_instance = LLMResourceInstance(resource_type, llm_resource, values)
+    llm_resource_instance.initialize()
+    llm_resource_instance.with_mock_llm_call(True)  # Enable mock mode
+    return llm_resource_instance
 
 
 @pytest.fixture

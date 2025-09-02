@@ -74,9 +74,7 @@ class REPL(Loggable):
         super().__init__()  # Initialize Loggable
 
         # Create DanaSandbox and let it manage the context
-        self.sandbox = DanaSandbox(debug_mode=False, context=context)
-        # Force initialization to start API service
-        self.sandbox._ensure_initialized()
+        self.sandbox = DanaSandbox(debug_mode=False, context=context, do_initialize=True)
 
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
@@ -317,6 +315,7 @@ class REPL(Loggable):
                         "Full traceback: "
                         + "".join(traceback.format_exception(type(result.error), result.error, result.error.__traceback__))
                     )
+                assert result.error is not None
                 raise result.error
         except Exception as e:
             # Log debug information but don't print to user

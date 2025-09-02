@@ -15,7 +15,6 @@ from dana.common.types import BaseRequest, BaseResponse
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.frameworks.memory.conversation_memory import ConversationMemory
 
 from .agent_type import AgentType
 from .events import AgentEventMixin
@@ -581,9 +580,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             # Update metrics to indicate initialization failure
             self.update_metric("current_step", "initialization_failed")
 
-    def _initialize_conversation_memory(self):
-        """Initialize the conversation memory for this agent."""
-        self._conversation_memory = ConversationMemory()
+    # _initialize_conversation_memory is implemented by AgentImplementationMixin
 
     def _get_llm_resource(self):
         """Get the LLM resource for this agent.
@@ -623,27 +620,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         # Fall back to agent's own LLM resource
         return self._get_llm_resource()
 
-    def _initialize_llm_resource(self):
-        """Initialize the LLM resource for this agent."""
-        try:
-            # Check if we're in a test environment by looking for DANA_MOCK_LLM
-            import os
-
-            if os.getenv("DANA_MOCK_LLM", "false").lower() == "true":
-                # Create a mock LLM resource for testing
-                from tests.conftest import create_mock_llm_resource
-
-                self._llm_resource_instance = create_mock_llm_resource()
-            else:
-                # In a real implementation, this would be configured based on agent settings
-                # For now, we'll return None to indicate no LLM resource is available
-                self._llm_resource_instance = None
-
-        except Exception as e:
-            import logging
-
-            logging.warning(f"Failed to initialize LLM resource for {self.name}: {e}")
-            self._llm_resource_instance = None
+    # _initialize_llm_resource is implemented by AgentImplementationMixin
 
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""

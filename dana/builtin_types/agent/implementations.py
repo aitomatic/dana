@@ -152,6 +152,16 @@ class AgentImplementationMixin:
     def _initialize_llm_resource(self):
         """Initialize LLM resource from agent's config if not already done."""
         if self._llm_resource_instance is None:
+            # Check if we're in a test environment by looking for DANA_MOCK_LLM
+            import os
+
+            if os.getenv("DANA_MOCK_LLM", "false").lower() == "true":
+                # Create a mock LLM resource for testing
+                from tests.conftest import create_mock_llm_resource
+
+                self._llm_resource_instance = create_mock_llm_resource()
+                return
+
             from dana.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
             # Get LLM parameters from agent's config field
