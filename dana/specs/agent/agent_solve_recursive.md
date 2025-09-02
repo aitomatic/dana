@@ -15,7 +15,7 @@ The **Recursive Strategy** is a concrete implementation of the `BaseStrategy` in
 3. **Compiles and executes** the generated code within a workflow
 4. **Supports recursion** by allowing the generated code to call `agent.solve()` again
 5. **Prevents infinite loops** through depth limits and logical analysis
-6. **Leverages rich context** from the context engineering system for optimal LLM reasoning
+6. **Leverages rich context** from the Context Engineering Framework (`dana.frameworks.ctxeng`) for optimal LLM reasoning
 
 ## Implementation Details
 
@@ -67,7 +67,7 @@ def create_workflow(self, problem: str, context: ProblemContext) -> WorkflowInst
 
 ### 3. Enhanced LLM Prompt Generation
 
-The strategy generates comprehensive prompts using the rich context engineering system:
+The strategy generates comprehensive prompts using the Context Engineering Framework:
 
 ```python
 def _build_enhanced_analysis_prompt(self, problem: str, context: ProblemContext) -> str:
@@ -95,8 +95,61 @@ PARENT CONTEXT:
 - Success Patterns: {', '.join(self.computable_context.get_successful_patterns(workflow_instance._parent_workflow._problem_context, workflow_instance._parent_workflow._global_event_history))}
 """
     
-    prompt = f"""
-You are an AI agent solving problems using Dana code.
+    # Use Context Engineering Framework for optimal prompt generation
+    from dana.frameworks.ctxeng import ContextEngine
+    
+    context_engine = ContextEngine.from_agent(workflow_instance._agent_instance)
+    
+    # Assemble rich context using ctxeng framework
+    rich_prompt = context_engine.assemble(
+        problem,
+        context={
+            "complexity_indicators": complexity_indicators,
+            "constraint_violations": constraint_violations,
+            "successful_patterns": successful_patterns,
+            "recent_events": recent_events,
+            "parent_context": parent_context
+        },
+        template="problem_solving"
+    )
+    
+    # rich_prompt now contains structured XML with optimized context
+    return rich_prompt
+```
+
+### 4. Context Engineering Framework Integration
+
+The Recursive Strategy integrates with the Context Engineering Framework to provide:
+
+#### **Enhanced Prompt Generation**
+- **Structured XML Output**: LLM receives well-structured, parseable prompts
+- **Relevance Optimization**: Only relevant context pieces are included
+- **Token Efficiency**: Automatic length optimization reduces token usage
+- **Template Consistency**: Standardized prompt structure across all recursive calls
+
+#### **Integration Benefits**
+- **Better LLM Performance**: Structured prompts improve problem decomposition
+- **Context Relevance**: Multi-factor relevance scoring ensures optimal context
+- **Recursive Context**: Rich context flows through recursive `agent.solve()` calls
+- **Template Management**: Problem-solving template automatically selected
+- **Zero Configuration**: Auto-discovery of agent resources and workflows
+
+#### **Context Flow in Recursion**
+```
+Level 0: agent.solve("Plan trip to Mexico")
+  ↓ Uses ctxeng framework for rich context
+  ↓ LLM generates Dana code with agent.solve() calls
+  
+Level 1: agent.solve("Research destinations")
+  ↓ Inherits context from parent + adds new context
+  ↓ Uses ctxeng framework for enhanced context
+  ↓ LLM continues with rich context
+  
+Level 2: agent.solve("Find safety information")
+  ↓ Builds on full context chain
+  ↓ ctxeng optimizes context for current depth
+  ↓ Maximum context relevance maintained
+```
 
 PROBLEM: {problem}
 OBJECTIVE: {context.objective}
@@ -591,7 +644,7 @@ class RecursiveStrategyConfig:
     compilation_timeout: int = 30
     llm_timeout: int = 60
     fallback_strategy: str = "iterative"
-    enable_enhanced_context: bool = True  # Use rich context engineering
+    enable_enhanced_context: bool = True  # Use Context Engineering Framework
 ```
 
 ### 2. Environment Variables
@@ -604,12 +657,12 @@ DANA_RECURSIVE_ENABLE_PROMPT_CACHING=true
 DANA_RECURSIVE_ENABLE_PARALLEL_EXECUTION=true
 DANA_RECURSIVE_COMPILATION_TIMEOUT=30
 DANA_RECURSIVE_LLM_TIMEOUT=60
-DANA_RECURSIVE_ENABLE_ENHANCED_CONTEXT=true
+DANA_RECURSIVE_ENABLE_ENHANCED_CONTEXT=true  # Use Context Engineering Framework
 ```
 
 ## Conclusion
 
-The **Recursive Strategy** provides a powerful, flexible approach to problem-solving that leverages LLM capabilities while maintaining control through recursion limits and state management. By implementing the core architecture defined in `agent_solve.md` and leveraging the rich context engineering system, this strategy enables agents to:
+The **Recursive Strategy** provides a powerful, flexible approach to problem-solving that leverages LLM capabilities while maintaining control through recursion limits and state management. By implementing the core architecture defined in `agent_solve.md` and leveraging the Context Engineering Framework (`dana.frameworks.ctxeng`), this strategy enables agents to:
 
 - **Break down complex problems** into manageable sub-problems
 - **Generate executable code** using LLM reasoning enhanced with rich context
@@ -618,4 +671,4 @@ The **Recursive Strategy** provides a powerful, flexible approach to problem-sol
 - **Recover from errors** with fallback strategies and error handling
 - **Learn from execution** using computable context and pattern recognition
 
-The strategy balances complexity with usability, providing agents with the tools they need to solve complex problems while preventing infinite loops and maintaining context throughout the problem-solving process. The integration with the context engineering system ensures that the LLM receives optimal information for reasoning, leading to better problem decomposition and more effective recursive solutions.
+The strategy balances complexity with usability, providing agents with the tools they need to solve complex problems while preventing infinite loops and maintaining context throughout the problem-solving process. The integration with the Context Engineering Framework ensures that the LLM receives optimal information for reasoning, leading to better problem decomposition and more effective recursive solutions.

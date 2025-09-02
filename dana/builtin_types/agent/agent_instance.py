@@ -5,9 +5,8 @@ This module defines the AgentInstance class which extends StructInstance to prov
 agent-specific state and methods. This is the main implementation file for agent instances.
 """
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
-from dana.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.builtin_types.struct_system import StructInstance
 from dana.common.mixins.loggable import Loggable
 from dana.common.types import BaseRequest, BaseResponse
@@ -58,6 +57,9 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         from .context import EventHistory
 
         self._global_event_history = EventHistory()
+
+        # Initialize context engine (lazy initialization)
+        self._context_engine = None
 
         # Initialize TUI metrics
         self._metrics = {
@@ -166,31 +168,75 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         return response
 
     def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> str | BaseResponse:
-        """Execute agent LLM method."""
-        if isinstance(request, str):
-            request = BaseRequest(arguments={"prompt": request})
-        elif isinstance(request, dict):
-            request = BaseRequest(arguments=request)
-        elif isinstance(request, BaseRequest):
-            pass
-        else:
-            raise ValueError(f"Invalid request type: {type(request)}")
+        """Execute agent LLM method using py_llm for proper Dana integration."""
+        if not sandbox_context:
+            return "Sandbox context required for LLM calls"
 
+        # Get LLM resource
         llm_resource = self.get_llm_resource(sandbox_context)
         if llm_resource is None:
             return "LLM resource not available - please configure an LLM resource for this agent"
 
         try:
-            response = cast(LLMResourceInstance, llm_resource).query_sync(request)
-            if response is not None:
-                if response.success:
-                    if response.content is not None:
-                        return response.content
-                else:
-                    if response.error is not None:
-                        return response.error
+            # Import py_llm
+            from dana.libs.corelib.py_wrappers.py_llm import py_llm
 
-            return "No valid or error response from LLM"
+            # Prepare the prompt
+            if isinstance(request, str):
+                prompt = request
+            elif isinstance(request, dict):
+                if "prompt" in request:
+                    prompt = request["prompt"]
+                elif "messages" in request:
+                    # Extract user message from messages
+                    messages = request["messages"]
+                    if messages and isinstance(messages, list):
+                        # Find the last user message
+                        for msg in reversed(messages):
+                            if isinstance(msg, dict) and msg.get("role") == "user":
+                                prompt = msg.get("content", "")
+                                break
+                        else:
+                            prompt = str(messages[-1]) if messages else ""
+                    else:
+                        prompt = str(messages)
+                else:
+                    prompt = str(request)
+            elif isinstance(request, BaseRequest):
+                # Extract prompt from BaseRequest arguments
+                args = request.arguments
+                if isinstance(args, dict):
+                    if "prompt" in args:
+                        prompt = args["prompt"]
+                    elif "messages" in args:
+                        messages = args["messages"]
+                        if messages and isinstance(messages, list):
+                            for msg in reversed(messages):
+                                if isinstance(msg, dict) and msg.get("role") == "user":
+                                    prompt = msg.get("content", "")
+                                    break
+                            else:
+                                prompt = str(messages[-1]) if messages else ""
+                        else:
+                            prompt = str(messages)
+                    else:
+                        prompt = str(args)
+                else:
+                    prompt = str(args)
+            else:
+                raise ValueError(f"Invalid request type: {type(request)}")
+
+            # Prepare options
+            options = {}
+            if isinstance(request, dict) and "system" in request:
+                options["system_message"] = request["system"]
+
+            # Call py_llm with the agent's LLM resource directly, synchronously
+            result = py_llm(context=sandbox_context, prompt=prompt, options=options, llm_resource=llm_resource, is_sync=True)
+
+            # Return the result directly (no Promise handling needed)
+            return result
+
         except Exception as e:
             return f"Error calling LLM: {str(e)}"
 
@@ -199,13 +245,21 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     ) -> WorkflowInstance:
         """Create a plan (workflow) for solving the problem."""
 
+        print(f"[DEBUG] agent.plan() called with: {type(problem_or_workflow)} = {problem_or_workflow}")
+        print(f"[DEBUG] sandbox_context: {sandbox_context}")
+        print(f"[DEBUG] kwargs: {kwargs}")
+
         if isinstance(problem_or_workflow, str):
             # Create new workflow for string problem
+            print("[DEBUG] Creating new workflow for string problem...")
             workflow = self._create_new_workflow(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
+            print(f"[DEBUG] New workflow created: {type(workflow)}")
         else:
             # Use existing workflow
+            print(f"[DEBUG] Using existing workflow: {type(problem_or_workflow)}")
             workflow = problem_or_workflow
 
+        print(f"[DEBUG] Plan returning workflow: {type(workflow)}")
         return workflow
 
     def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
@@ -240,21 +294,34 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         from .context import ProblemContext
         from .strategy import select_best_strategy
 
+        print(f"[DEBUG] _create_new_workflow() called with problem: {problem}")
+        print(f"[DEBUG] sandbox_context: {sandbox_context}")
+        print(f"[DEBUG] kwargs: {kwargs}")
+
         # Create problem context with conversation context
+        print("[DEBUG] Creating problem context...")
         conversation_context = self._global_event_history.get_conversation_context()
+        print(f"[DEBUG] Conversation context: {conversation_context}")
+
         problem_context = ProblemContext(
             problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
         )
+        print(f"[DEBUG] Problem context created: {problem_context}")
 
         # Add conversation history to constraints if available
         if conversation_context:
+            print("[DEBUG] Adding conversation history to constraints")
             problem_context.constraints["conversation_history"] = conversation_context
 
         # Select best strategy
+        print("[DEBUG] Selecting best strategy...")
         strategy = select_best_strategy(problem, problem_context)
+        print(f"[DEBUG] Selected strategy: {type(strategy)}")
 
         # Create workflow using strategy
+        print("[DEBUG] Creating workflow using strategy...")
         workflow = strategy.create_workflow(problem, problem_context, self, sandbox_context=sandbox_context)
+        print(f"[DEBUG] Strategy created workflow: {type(workflow)}")
 
         return workflow
 
@@ -287,13 +354,52 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def solve(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
         """Solve a problem using the agent's problem-solving capabilities."""
 
+        print(f"[DEBUG] agent.solve() called with: {type(problem_or_workflow)} = {problem_or_workflow}")
+        print(f"[DEBUG] sandbox_context: {sandbox_context}")
+        print(f"[DEBUG] kwargs: {kwargs}")
+
         # If this is a new user request (string), start a new conversation turn
         if isinstance(problem_or_workflow, str):
+            print(f"[DEBUG] Starting new conversation turn for: {problem_or_workflow}")
             self._global_event_history.start_new_conversation_turn(problem_or_workflow)
 
+        # Enhanced context assembly using Context Engineering Framework
+        if isinstance(problem_or_workflow, str):
+            try:
+                from dana.frameworks.ctxeng import ContextEngine
+
+                # Create context engine for this agent
+                if self._context_engine is None:
+                    self._context_engine = ContextEngine.from_agent(self)
+
+                # Assemble rich context using ctxeng framework
+                rich_prompt = self._context_engine.assemble(
+                    problem_or_workflow,
+                    template="problem_solving",  # Use problem-solving template
+                )
+
+                print(f"[DEBUG] Context Engine assembled rich prompt (length: {len(rich_prompt)})")
+                print(f"[DEBUG] Rich prompt preview: {rich_prompt[:200]}...")
+
+                # Use rich prompt instead of basic problem
+                problem_or_workflow = rich_prompt
+
+            except ImportError:
+                print("[DEBUG] Context Engineering Framework not available, using basic problem")
+            except Exception as e:
+                print(f"[DEBUG] Context Engine failed: {e}, using basic problem")
+
         # Always create or reuse a workflow via plan(), then execute
+        print("[DEBUG] Calling agent.plan()...")
         workflow = self.plan(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
-        return workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+        print(f"[DEBUG] Plan returned workflow: {type(workflow)}")
+        print(f"[DEBUG] Workflow values: {getattr(workflow, '_values', 'No _values')}")
+
+        print("[DEBUG] Executing workflow...")
+        result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+        print(f"[DEBUG] Workflow execution result: {type(result)} = {result}")
+
+        return result
 
     def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent memory storage method."""
@@ -397,19 +503,19 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
     def info(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
         # _notify_log_callbacks(self.name, f"[INFO] {message}", sandbox_context)
-        return self.log(message, "INFO", sandbox_context, is_sync)
+        self.log(message, "INFO", sandbox_context, is_sync)
 
     def warning(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        return self.log(message, "WARNING", sandbox_context, is_sync)
+        self.log(message, "WARNING", sandbox_context, is_sync)
 
     def debug(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        return self.log(message, "DEBUG", sandbox_context, is_sync)
+        self.log(message, "DEBUG", sandbox_context, is_sync)
 
     def error(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
         """Execute agent logging method. Override to notify log callbacks."""
-        return self.log(message, "ERROR", sandbox_context, is_sync)
+        self.log(message, "ERROR", sandbox_context, is_sync)
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
