@@ -137,18 +137,18 @@ def generate_report(final_data):
     # Calculate confidence scores
     confidence_scores = []
     for entity in final_data.entities:
-        confidence_scores.push(entity.confidence)
+        confidence_scores.append(entity.confidence)
     
     report = {
         "processing_summary": {
             "document": final_data.file_path,
             "total_processing_time": "8.7s",
-            "insights_extracted": final_data.key_insights.length(),
-            "entities_found": final_data.entities.length()
+            "insights_extracted": len(final_data.key_insights),
+            "entities_found": len(final_data.entities)
         },
         "knowledge_base_stats": {
             "total_knowledge_points": context.get_stats().total_knowledge_points,
-            "topics_covered": final_data.topics.length(),
+            "topics_covered": len(final_data.topics),
             "confidence_scores": confidence_scores
         },
         "recommendations": [
@@ -214,13 +214,13 @@ for step_info in document_processing_workflow.workflow_metadata.steps:
 # Demonstrate knowledge retrieval
 log("🔍 Retrieving processed knowledge...")
 python_knowledge = context.search_knowledge("python", limit=3)
-log("Found " + python_knowledge.length() + " Python-related knowledge points")
+log("Found " + len(python_knowledge) + " Python-related knowledge points")
 
 # Show workflow statistics
 log("📈 Workflow Statistics:")
 stats = context.get_stats()
 log("Total knowledge points: " + stats.total_knowledge_points)
-log("Unique sources: " + stats.sources.length())
+log("Unique sources: " + len(stats.sources))
 log("Topics covered: " + stats.unique_tags)
 
 # Demonstrate alternative metadata construction methods
@@ -233,7 +233,7 @@ manual_metadata = create_workflow_metadata(
     workflow_id="doc_processing_manual_001",
     description="Manual function list metadata construction"
 )
-log("Manual metadata constructed for " + manual_metadata.steps.length() + " steps")
+log("Manual metadata constructed for " + len(manual_metadata.steps) + " steps")
 
 # Method 2: Using the backward compatibility function
 legacy_metadata = build_workflow_metadata(
@@ -241,4 +241,4 @@ legacy_metadata = build_workflow_metadata(
     workflow_id="doc_processing_legacy_001",
     description="Legacy metadata construction method"
 )
-log("Legacy metadata constructed for " + legacy_metadata.steps.length() + " steps")
+log("Legacy metadata constructed for " + len(legacy_metadata.steps) + " steps")

@@ -5,6 +5,8 @@ Provides the familiar Python API for Dana functions while maintaining
 sandbox security boundaries. Now includes module import capabilities.
 """
 
+import inspect
+import os
 from typing import Any
 
 from dana.integrations.python.to_dana.core.exceptions import DanaCallError
@@ -12,6 +14,18 @@ from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSan
 from dana.integrations.python.to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
 from dana.integrations.python.to_dana.core.subprocess_sandbox import SUBPROCESS_ISOLATION_CONFIG, SubprocessSandboxInterface
 from dana.integrations.python.to_dana.utils.converter import validate_and_convert
+
+
+def _get_caller_directory() -> str:
+    """Get the directory of the script that called enable_module_imports."""
+    # Look through the call stack to find the first frame outside this module
+    for frame_info in inspect.stack():
+        frame_path = frame_info.filename
+        # Skip frames from this module and the inspect module itself
+        if not frame_path.endswith("dana_module.py") and "inspect.py" not in frame_path:
+            return os.path.dirname(os.path.abspath(frame_path))
+    # Fallback to current working directory if we can't determine caller
+    return os.getcwd()
 
 
 class Dana:
@@ -126,18 +140,29 @@ class Dana:
         """Enable importing Dana .na files directly in Python.
 
         Args:
-            search_paths: Optional list of paths to search for .na files
+            search_paths: Optional list of paths to search for .na files.
+                         If None, automatically includes the calling script's directory.
 
         Example:
             dana.enable_module_imports()
-            import simple_math  # This will load simple_math.na
+            import simple_math  # This will load simple_math.na from the script's directory
             result = simple_math.add(5, 3)
         """
         if not self._imports_enabled:
+            # Automatically include calling script's directory if no paths specified
+            if search_paths is None:
+                caller_dir = _get_caller_directory()
+                search_paths = [caller_dir]
+            else:
+                # Add calling script's directory to user-specified paths if not already included
+                caller_dir = _get_caller_directory()
+                if caller_dir not in search_paths:
+                    search_paths = [caller_dir] + search_paths
+
             install_import_hook(search_paths=search_paths, sandbox_interface=self._sandbox_interface, debug=self._debug)
             self._imports_enabled = True
             if self._debug:
-                print("DEBUG: Dana module imports enabled")
+                print(f"DEBUG: Dana module imports enabled with search paths: {search_paths}")
 
     def disable_module_imports(self) -> None:
         """Disable Dana module imports."""

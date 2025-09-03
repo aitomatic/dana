@@ -1,0 +1,6 @@
+"""Webpages Querying."""
+
+
+def __main__(site='https://asia.nikkei.com'):
+    news_agency_rag = use('rag', sources=[site], force_reload=True)
+    print(reason("What's happening today?", resources=[news_agency_rag]))

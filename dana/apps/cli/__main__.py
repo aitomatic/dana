@@ -46,8 +46,11 @@ Examples:
 """
 
 import argparse
+import json
 import logging
 import os
+from pathlib import Path
+import re
 import sys
 
 import uvicorn
@@ -65,6 +68,12 @@ from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 
+from .dana_input_args_parser import parse_dana_input_args
+
+# Regex pattern to match "def __main__(" at the beginning of a line with zero whitespace before "def"
+DEF_MAIN_PATTERN: re.Pattern = re.compile(r"^def\s+__main__\s*\(")
+MAIN_FUNC_NAME: str = "__main__"
+
 # Initialize color scheme
 colors = ColorScheme(supports_color())
 
@@ -76,6 +85,7 @@ def show_help():
     print(f"{colors.bold('Usage:')}")
     print(f"  {colors.accent('dana')}                   Start the Dana Terminal User Interface")
     print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
+    print(f"  {colors.accent('dana [file.na] [args]')}  Execute a DANA file with arguments (key=value)")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
     print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
     print(f"  {colors.accent('dana repl')}              Start the Dana Interactive REPL")
@@ -88,19 +98,52 @@ def show_help():
     print(f"{colors.bold('Requirements:')}")
     print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
     print("")
+    print(f"{colors.bold('Script Arguments:')}")
+    print(f"  {colors.accent('Format:')} key=value key2='quoted value' key3=@file.json")
+    print(f"  {colors.accent('Files:')} Use @ prefix to load file contents (JSON, YAML, CSV, text)")
+    print(f"  {colors.accent('Function:')} Arguments are passed to __main__() function if present")
+    print("")
     print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
     print("")
 
 
-def execute_file(file_path, debug=False):
-    """Execute a DANA file using the new DanaSandbox API."""
+def execute_file(file_path, debug=False, script_args=None):
+    """Execute a Dana file using the new DanaSandbox API."""
     # if developer puts an .env file in the script's directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
-    print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
+    file_path: Path = Path(file_path)
 
-    # Use the new DanaSandbox API
-    result = DanaSandbox.execute_file_once(file_path, debug_mode=debug)
+    print_header(f"Dana Execution: {file_path.name}", colors=colors)
+
+    source_code: str = file_path.read_text(encoding="utf-8")
+
+    if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
+        # Handle script arguments if provided
+        input_dict = parse_dana_input_args(script_args) if script_args else {}
+
+        # Append source code with main function call
+        source_code: str = f"""
+{source_code}
+
+{MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
+                                                 skipkeys=False,
+                                                 ensure_ascii=False,
+                                                 check_circular=True,
+                                                 allow_nan=False,
+                                                 cls=None,
+                                                 indent=None,
+                                                 separators=None,
+                                                 default=None,
+                                                 sort_keys=False)}"
+                             for key, value in input_dict.items()])})
+"""
+
+    # Run the source code with custom search paths
+    result = DanaSandbox.execute_string_once(source_code=source_code,
+                                             filename=str(file_path),
+                                             debug_mode=debug,
+                                             module_search_paths=[str(file_path.parent.resolve())])
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")
@@ -362,6 +405,7 @@ def handle_main_command():
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     parser.add_argument("--force-color", action="store_true", help="Force colored output")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("script_args", nargs=argparse.REMAINDER, help="Script arguments as key=value pairs")
 
     args = parser.parse_args()
 
@@ -392,7 +436,7 @@ def handle_main_command():
     if args.file:
         if not validate_na_file(args.file):
             return 1
-        execute_file(args.file, debug=args.debug)
+        execute_file(args.file, debug=args.debug, script_args=args.script_args)
     else:
         start_tui()
 

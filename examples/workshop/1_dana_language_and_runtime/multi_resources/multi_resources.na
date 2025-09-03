@@ -1,8 +1,0 @@
-"""Multiple Documents & Webpages Querying."""
-
-# FUTURE SYNTAX: `with` statement with multiple resources
-
-aitomatic_webpage = use("rag", sources=["https://www.aitomatic.com"])
-dana_info = use("rag", sources=["../../../../README.md"])
-
-reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?")

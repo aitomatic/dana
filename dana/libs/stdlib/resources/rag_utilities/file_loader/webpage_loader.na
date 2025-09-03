@@ -1,0 +1,13 @@
+from llama_index.core.py import Document
+from dana.common.sys_resource.rag.utility.web_fetch.py import fetch_web_content
+from typing.py import Callable
+
+
+struct WebpageLoader:
+    loading_func : Callable = fetch_web_content
+
+def (loader: WebpageLoader) load_urls(urls: list[str]) -> list[Document]:
+    res = []
+    for url in urls:
+        res.append(Document(text=loader.loading_func(url), metadata={"source": url}, id_=url))
+    return res

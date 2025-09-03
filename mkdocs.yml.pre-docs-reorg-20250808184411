@@ -1,0 +1,121 @@
+site_name: Dana - Agent-Native Programming Language
+site_description: Build agents that learn, adapt, and improve themselves in production
+site_url: https://dana.readthedocs.io/
+repo_url: https://github.com/aitomatic/dana
+repo_name: aitomatic/dana
+
+# Documentation and theme
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Navigation structure for new documentation
+nav:
+  - Home: index.md
+  - Quick Start: quick-start.md
+  - Language Reference: language-reference.md
+  - Examples:
+    - First Agent: examples/first-agent.na
+    - Chatbot: examples/chatbot.na
+    - Data Processor: examples/data-processor.na
+  - Primers:
+    - Overview: primers/README.md
+    - Agent Concepts: primers/agent.md
+    - Lambda Expressions: primers/lambda.md
+    - Workflows: primers/workflow.md
+    - Struct Methods: primers/struct_methods.md
+
+# Plugins
+plugins:
+  - search
+
+# Markdown extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: aitomatic
+      repo: dana
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra settings
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aitomatic/dana
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/dana/
+
+# Documentation directory
+docs_dir: docs
+
+# Exclude internal documentation from build
+exclude_docs: .ai-only/
+
+# Build directory
+site_dir: site
+
+# Additional settings
+strict: false
+use_directory_urls: true
+
+# Copyright
+copyright: Copyright &copy; 2025 Aitomatic, Inc.

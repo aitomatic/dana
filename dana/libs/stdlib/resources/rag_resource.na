@@ -1,0 +1,86 @@
+from dana.common.sys_resource.embedding.embedding_integrations.py import get_default_embedding_model
+from llama_index.core.py import StorageContext, VectorStoreIndex, Settings
+from dana.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
+from dana.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
+from dana.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
+from llama_index.core.ingestion.py import run_transformations
+from llama_index.core.vector_stores.py import MetadataFilter, MetadataFilters, FilterOperator
+from llama_index.core.vector_stores.types.py import BasePydanticVectorStore
+
+
+resource RagResource:
+    sources: list[str] = []
+    cache_dir: str = ".cache/rag"
+    force_reload: bool = false
+    chunk_size: int = 1024
+    chunk_overlap: int = 256
+    debug: bool = false
+    reranking: bool = false
+    initial_multiplier: int = 2
+    dimension : int = 1800
+    embedding_model: None = None # Need Union type-hint support here
+    document_loader: None = None # Need Union type-hint support here
+    vector_store: None = None # Need Union type-hint support here
+    vector_index: None = None # Need Union type-hint support here
+    default_filters: None = None # Need Union type-hint support here
+    batch_size: int = 50 # 50 files per batch
+
+def (rag: RagResource) initialize():
+    Settings.chunk_size = rag.chunk_size
+    Settings.chunk_overlap = rag.chunk_overlap
+    if rag.embedding_model is None:
+        embedding_tuple = get_embedding_model(dimension_override=rag.dimension)
+        rag.embedding_model = embedding_tuple[0]
+        if rag.dimension != embedding_tuple[1]:
+            rag.dimension = embedding_tuple[1]
+            print(f"[RagResource] Overriding dimension from {rag.dimension} to {embedding_tuple[1]}")
+    if rag.document_loader is None:
+        rag.document_loader = DocumentLoader()
+    if rag.vector_store is None:
+        rag.vector_store = get_duckdb_store(database_name="test", persist_dir=rag.cache_dir, table_name=f"test_{rag.dimension}", embed_dim=rag.dimension)
+    if rag.vector_index is None:
+        rag.vector_index = VectorStoreIndex.from_vector_store(rag.vector_store, embed_model=rag.embedding_model)
+
+    docs_dict = rag.document_loader.load_sources(rag.sources)
+    if rag.default_filters is None:
+        rag.default_filters = MetadataFilters(filters=[MetadataFilter(key="source", operator=FilterOperator.IN, value=list(docs_dict.keys()))])
+
+    # # Check if there is any existing data in the vector store to avoid rebuilding the existed index
+    if rag.force_reload:
+        matched_nodes = []
+    else:
+        matched_nodes = rag.vector_index.vector_store.get_nodes(filters=rag.default_filters)
+    existing_sources = set()
+    for node in matched_nodes:
+        existing_sources.add(node.metadata["source"])
+    left_over_sources = set(docs_dict.keys()).difference(existing_sources)
+    print(f"[RagResource] Found {len(existing_sources)}/{len(docs_dict)} cached sources")
+    total_doc = []
+    for source in left_over_sources:
+        total_doc.extend(docs_dict[source])
+
+    for i in range(0, len(total_doc), rag.batch_size):
+        start = i
+        end = i + rag.batch_size
+        if end > len(total_doc):
+            end = len(total_doc)
+        nodes = run_transformations(total_doc[start:end], rag.vector_index._transformations, show_progress=True, embed_model=rag.embedding_model)
+        rag.vector_index.insert_nodes(nodes)
+    
+    # nodes = run_transformations(total_doc, rag.vector_index._transformations, show_progress=True, embed_model=rag.embedding_model)
+    # rag.vector_index.insert_nodes(nodes)
+
+def (rag: RagResource) query(query: str, top_k: int = 10) -> list[str]:
+    retriever = rag.vector_index.as_retriever(similarity_top_k=top_k, embed_model=rag.embedding_model, filters=rag.default_filters)
+    results = retriever.retrieve(query)
+    str_results = []
+    for result in results:
+        str_results.append(result.get_content())
+    return str_results
+
+
+
+# rag = RagResource(sources=["https://www.aitomatic.com/"])
+# rag.initialize()
+
+# print(rag.query("What is the ARR of Aitomatic?"))

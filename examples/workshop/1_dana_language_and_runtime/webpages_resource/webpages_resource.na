@@ -1,4 +1,0 @@
-"""Webpages Querying."""
-
-with use("rag", sources=["https://asia.nikkei.com"], force_reload=True) as news_agency:
-    reason("What's happening today?")

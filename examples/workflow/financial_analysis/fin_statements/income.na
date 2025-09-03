@@ -1,8 +1,7 @@
 """Income Statement Items."""
 
 
-# TODO: relative importing in Dana
-from fin_statements.util import query_fin_data, CompanyAndPeriodAndCurrency, CurrAndPrevNums
+from ..utils import query_fin_data, FinDoc, CurrAndPrevNums
 
 
 __all__ = [
@@ -56,261 +55,351 @@ TAX_EXP_LINE_ITEM: str = '(Income) Tax Expense'
 NET_INCOME_LINE_ITEM: str = 'Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)'
 
 
-def get_rev(args: CompanyAndPeriodAndCurrency) -> float:
+def get_rev(doc: FinDoc) -> float:
     """Get Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    rev = query_fin_data(
+        doc,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return rev
 
 
-def get_rev_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_rev_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    rev_2y = query_fin_data(
+        doc,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return rev_2y
 
 
-def get_rev_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_rev_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    rev_3y = query_fin_data(
+        doc,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return rev_3y
 
 
-def get_cogs(args: CompanyAndPeriodAndCurrency) -> float:
+def get_cogs(doc: FinDoc) -> float:
     """Get Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    cogs = query_fin_data(
+        doc,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return cogs
 
 
-def get_cogs_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_cogs_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    cogs_2y = query_fin_data(
+        doc,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return cogs_2y
 
 
-def get_cogs_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_cogs_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    cogs_3y = query_fin_data(
+        doc,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return cogs_3y
 
 
-def get_gross_income(args: CompanyAndPeriodAndCurrency) -> float:
+def get_gross_income(doc: FinDoc) -> float:
     """Get Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    gross_income = query_fin_data(
+        doc,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return gross_income
 
 
-def get_gross_income_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_gross_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    gross_income_2y = query_fin_data(
+        doc,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return gross_income_2y
 
 
-def get_gross_income_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_gross_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    gross_income_3y = query_fin_data(
+        doc,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return gross_income_3y
 
 
-def get_ga_exp(args: CompanyAndPeriodAndCurrency) -> float:
+def get_ga_exp(doc: FinDoc) -> float:
     """Get General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ga_exp = query_fin_data(
+        doc,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ga_exp
 
 
-def get_ga_exp_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_ga_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ga_exp_2y = query_fin_data(
+        doc,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ga_exp_2y
 
 
-def get_ga_exp_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_ga_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ga_exp_3y = query_fin_data(
+        doc,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ga_exp_3y
 
 
-def get_op_income(args: CompanyAndPeriodAndCurrency) -> float:
+def get_op_income(doc: FinDoc) -> float:
     """Get Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    op_income = query_fin_data(
+        doc,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return op_income
 
 
-def get_op_income_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_op_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    op_income_2y = query_fin_data(
+        doc,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return op_income_2y
 
 
-def get_op_income_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_op_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    op_income_3y = query_fin_data(
+        doc,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return op_income_3y
 
 
-def get_ebit(args: CompanyAndPeriodAndCurrency) -> float:
+def get_ebit(doc: FinDoc) -> float:
     """Get Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ebit = query_fin_data(
+        doc,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ebit
 
 
-def get_ebit_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_ebit_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ebit_2y = query_fin_data(
+        doc,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ebit_2y
 
 
-def get_ebit_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_ebit_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ebit_3y = query_fin_data(
+        doc,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ebit_3y
 
 
-def get_int_exp(args: CompanyAndPeriodAndCurrency) -> float:
+def get_int_exp(doc: FinDoc) -> float:
     """Get Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    int_exp = query_fin_data(
+        doc,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return int_exp
 
 
-def get_int_exp_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_int_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    int_exp_2y = query_fin_data(
+        doc,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return int_exp_2y
 
 
-def get_int_exp_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_int_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    int_exp_3y = query_fin_data(
+        doc,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return int_exp_3y
 
 
-def get_ebt(args: CompanyAndPeriodAndCurrency) -> float:
+def get_ebt(doc: FinDoc) -> float:
     """Get Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ebt = query_fin_data(
+        doc,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return ebt
 
 
-def get_ebt_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_ebt_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ebt_2y = query_fin_data(
+        doc,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return ebt_2y
 
 
-def get_ebt_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_ebt_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ebt_3y = query_fin_data(
+        doc,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return ebt_3y
 
 
-def get_tax_exp(args: CompanyAndPeriodAndCurrency) -> float:
+def get_tax_exp(doc: FinDoc) -> float:
     """Get (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    tax_exp = query_fin_data(
+        doc,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return tax_exp
 
 
-def get_tax_exp_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_tax_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    tax_exp_2y = query_fin_data(
+        doc,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return tax_exp_2y
 
 
-def get_tax_exp_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_tax_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    tax_exp_3y = query_fin_data(
+        doc,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return tax_exp_3y
 
 
-def get_net_income(args: CompanyAndPeriodAndCurrency) -> float:
+def get_net_income(doc: FinDoc) -> float:
     """Get Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    net_income = query_fin_data(
+        doc,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    return net_income
 
 
-def get_net_income_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_net_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    net_income_2y = query_fin_data(
+        doc,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    return net_income_2y
 
 
-def get_net_income_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_net_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    net_income_3y = query_fin_data(
+        doc,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    return net_income_3y

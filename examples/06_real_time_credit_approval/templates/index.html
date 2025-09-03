@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Approval Agent - Dana AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .engine-status {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        .engine-dana {
+            border: 2px solid #28a745;
+            color: #28a745;
+        }
+
+        .engine-simulated {
+            border: 2px solid #ffc107;
+            color: #ffc107;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .chat-section {
+            flex: 2;
+            padding: 30px;
+            border-right: 1px solid #eee;
+        }
+
+        .results-section {
+            flex: 1;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .agent-message {
+            background: #e9ecef;
+            color: #333;
+            margin-right: auto;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #007bff;
+        }
+
+        .input-group button {
+            padding: 15px 25px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .input-group button:hover {
+            background: #0056b3;
+        }
+
+        .samples {
+            margin-top: 20px;
+        }
+
+        .sample-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .sample-btn:hover {
+            background: #218838;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .decision-approved {
+            border-left: 5px solid #28a745;
+        }
+
+        .decision-conditional {
+            border-left: 5px solid #ffc107;
+        }
+
+        .decision-rejected {
+            border-left: 5px solid #dc3545;
+        }
+
+        .decision-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .badge-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-conditional {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .engine-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .engine-badge-dana {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .engine-badge-simulated {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .compliance-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .compliance-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .chat-section {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Credit Approval Agent</h1>
+            <p>Powered by Dana AI - Natural Language Credit Processing</p>
+            <div class="engine-status" id="engineStatus">
+                🔧 Engine: Checking...
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-section">
+                <h3>💬 Chat with the Agent</h3>
+                <div class="chat-container" id="chatContainer">
+                    <div class="message agent-message">
+                        👋 Hello! I'm your Dana credit approval agent. Ask me to process a credit application in natural language. For example:
+                        <br><br>
+                        • "Process a loan for a permanent employee with ¥80M income"
+                        <br>
+                        • "Evaluate a contract worker with ¥40M income requesting ¥20M"
+                        <br>
+                        • "Check credit for someone with ¥20M income wanting ¥40M loan"
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="queryInput" placeholder="Ask me to process a credit application..." onkeypress="handleKeyPress(event)">
+                    <button onclick="processQuery()">Send</button>
+                </div>
+
+                <div class="samples">
+                    <h4>📋 Quick Samples</h4>
+                    <button class="sample-btn" onclick="loadSample('high_income_permanent')">
+                        High Income Permanent Employee
+                    </button>
+                    <button class="sample-btn" onclick="loadSample('medium_income_contract')">
+                        Medium Income Contract Worker
+                    </button>
+                    <button class="sample-btn" onclick="loadSample('low_income_high_risk')">
+                        Low Income High Risk Applicant
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h3>📊 Results</h3>
+                <div id="resultsContainer">
+                    <div class="result-card">
+                        <p style="text-align: center; color: #666;">
+                            💡 Ask a question or select a sample to see results here
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check engine status on page load
+        window.onload = function() {
+            checkEngineStatus();
+        };
+
+        function checkEngineStatus() {
+            fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                const engineStatus = document.getElementById('engineStatus');
+                if (data.dana_available) {
+                    engineStatus.innerHTML = '🔧 Engine: Dana LLM';
+                    engineStatus.className = 'engine-status engine-dana';
+                } else {
+                    engineStatus.innerHTML = '🔧 Engine: Simulated (Dana not available)';
+                    engineStatus.className = 'engine-status engine-simulated';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking engine status:', error);
+                const engineStatus = document.getElementById('engineStatus');
+                engineStatus.innerHTML = '🔧 Engine: Unknown';
+                engineStatus.className = 'engine-status engine-simulated';
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                processQuery();
+            }
+        }
+
+        function addMessage(message, isUser = false) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'agent-message'}`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showLoading() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing credit application...</p>
+                </div>
+            `;
+        }
+
+        function processQuery() {
+            const queryInput = document.getElementById('queryInput');
+            const query = queryInput.value.trim();
+            
+            if (!query) return;
+            
+            addMessage(query, true);
+            queryInput.value = '';
+            showLoading();
+            
+            fetch('/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    addMessage(`❌ Error: ${data.error}`);
+                    showError(data.error);
+                } else {
+                    const engine = data.engine === 'dana_llm' ? 'Dana LLM' : 'Simulated';
+                    addMessage(`✅ Processed application for ${data.application.employment_type} employee with ¥${data.application.income/1000000}M income. Decision: ${data.decision} (${engine})`);
+                    showResults(data);
+                }
+            })
+            .catch(error => {
+                addMessage(`❌ Error: ${error.message}`);
+                showError(error.message);
+            });
+        }
+
+        function loadSample(sampleType) {
+            addMessage(`📋 Loading sample: ${sampleType.replace(/_/g, ' ')}`, true);
+            showLoading();
+            
+            fetch(`/api/sample/${sampleType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    addMessage(`❌ Error: ${data.error}`);
+                    showError(data.error);
+                } else {
+                    const engine = data.engine === 'dana_llm' ? 'Dana LLM' : 'Simulated';
+                    addMessage(`✅ Loaded sample application. Decision: ${data.decision} (${engine})`);
+                    showResults(data);
+                }
+            })
+            .catch(error => {
+                addMessage(`❌ Error: ${error.message}`);
+                showError(error.message);
+            });
+        }
+
+        function showResults(data) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const app = data.application;
+            
+            const decisionClass = data.decision.toLowerCase();
+            const badgeClass = `badge-${decisionClass}`;
+            const engineBadgeClass = data.engine === 'dana_llm' ? 'engine-badge-dana' : 'engine-badge-simulated';
+            const engineText = data.engine === 'dana_llm' ? 'Dana LLM' : 'Simulated';
+            
+            resultsContainer.innerHTML = `
+                <div class="result-card decision-${decisionClass}">
+                    <div class="decision-badge ${badgeClass}">
+                        ${data.decision}
+                        <span class="engine-badge ${engineBadgeClass}">${engineText}</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">Applicant ID:</span>
+                        <span class="metric-value">${app.applicant_id}</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">Employment Type:</span>
+                        <span class="metric-value">${app.employment_type}</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">Income:</span>
+                        <span class="metric-value">¥${(app.income/1000000).toFixed(0)}M</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">Loan Amount:</span>
+                        <span class="metric-value">¥${(app.amount/1000000).toFixed(0)}M</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">Credit Score:</span>
+                        <span class="metric-value">${data.score}/100</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-label">DTI Ratio:</span>
+                        <span class="metric-value">${data.dti_ratio}%</span>
+                    </div>
+                    
+                    ${data.approved_amount > 0 ? `
+                        <div class="metric">
+                            <span class="metric-label">Approved Amount:</span>
+                            <span class="metric-value">¥${(data.approved_amount/1000000).toFixed(0)}M</span>
+                        </div>
+                        
+                        <div class="metric">
+                            <span class="metric-label">Interest Rate:</span>
+                            <span class="metric-value">${data.interest_rate}%</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="metric">
+                        <span class="metric-label">Reason:</span>
+                        <span class="metric-value">${data.reason}</span>
+                    </div>
+                    
+                    <div class="compliance-grid">
+                        <div class="compliance-item compliance-pass">
+                            ✅ FSA
+                        </div>
+                        <div class="compliance-item compliance-pass">
+                            ✅ Basel III
+                        </div>
+                        <div class="compliance-item compliance-pass">
+                            ✅ Fair Lending
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(error) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="result-card decision-rejected">
+                    <h4>❌ Error</h4>
+                    <p>${error}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html> 

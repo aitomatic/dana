@@ -1,0 +1,26 @@
+"""Financial Calculations."""
+
+
+from .types import CurrAndPrevNums
+
+
+__all__ = [
+    'over_avg_denom',
+    'sum_over_sum',
+]
+
+
+def over_avg_denom(numerator: float, denominators: CurrAndPrevNums) -> float:
+    """Divide sum of numerator by average of denominator."""
+    denominator_sum = denominators.curr + denominators.prev
+    if denominator_sum == 0:
+        raise ValueError("Cannot divide by zero: denominator sum is zero")
+    return numerator / (denominator_sum / 2)
+
+
+def sum_over_sum(numerators: tuple[float], denominators: tuple[float]) -> float:
+    """Sum numerator and denominator and divide."""
+    denominator_sum = sum(denominators)
+    if denominator_sum == 0:
+        raise ValueError("Cannot divide by zero: denominator sum is zero")
+    return sum(numerators) / denominator_sum

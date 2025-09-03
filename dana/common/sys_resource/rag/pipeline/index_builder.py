@@ -33,7 +33,7 @@ class IndexBuilder(BaseStage):
         super().__init__(**kwargs)
         self.sources_info = sources_info or []
 
-    async def build_indices(self, docs_by_source: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
+    async def build_indices(self, docs_by_source: dict[str, list[Document]], embed_model: str | None = None) -> dict[str, VectorStoreIndex]:
         """Create separate indices for each source and a combined index.
 
         This method creates individual vector indices for each document source
@@ -69,7 +69,7 @@ class IndexBuilder(BaseStage):
 
             self.debug(f"Creating index for source {source_key} with {len(documents)} documents")
 
-            individual_indices[source_key] = VectorStoreIndex.from_documents(documents)  # NOTE : ADD embedding_model
+            individual_indices[source_key] = VectorStoreIndex.from_documents(documents, embed_model=embed_model)  # NOTE : ADD embedding_model
 
         if not individual_indices:
             raise RuntimeError("No indices were successfully created from any source")

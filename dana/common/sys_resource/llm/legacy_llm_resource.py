@@ -75,11 +75,11 @@ class LegacyLLMResource(BaseSysResource):
 
     1.  **Use Configuration File Defaults (Simplest Case):**
         ```python
-        # Instantiating with no arguments uses the name "default_llm".
+        # Instantiating with no arguments uses the name "system_llm".
         # Relies entirely on 'dana_config.json' found by ConfigLoader.
         # Requires 'preferred_models' or 'default_model' in the config.
         # Requires relevant API keys (e.g., OPENAI_API_KEY) in environment.
-        llm = LLMResource() # Name defaults to "default_llm"
+        llm = LLMResource() # Name defaults to "system_llm"
 
         # You can still provide a custom name:
         # llm = LLMResource(name="my_specific_llm")
@@ -126,14 +126,14 @@ class LegacyLLMResource(BaseSysResource):
 
     # Removed hardcoded DEFAULT_PREFERRED_MODELS, loaded from ConfigLoader now
 
-    def __init__(self, name: str = "default_llm", model: str | None = None, preferred_models: list[dict[str, Any]] | None = None, **kwargs):
+    def __init__(self, name: str = "system_llm", model: str | None = None, preferred_models: list[dict[str, Any]] | None = None, **kwargs):
         """Initializes the LLMResource.
 
         Loads base configuration using ConfigLoader, applies overrides from
         constructor arguments, and determines the final LLM model to use.
 
         Args:
-            name: The name of the resource instance. Defaults to "default_llm".
+            name: The name of the resource instance. Defaults to "system_llm".
             model: Explicitly sets the model to use, overriding automatic selection.
             preferred_models: Overrides the preferred models list from the config file.
                               Used for automatic model selection if `model` is not set.

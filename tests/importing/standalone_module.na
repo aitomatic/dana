@@ -1,0 +1,3 @@
+import pkg
+
+I_AM = 'standalone_module'

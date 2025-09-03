@@ -1,0 +1,26 @@
+=== AI DOCUMENTATION MASTER AUTOMATION Tue Aug  5 12:26:50 PDT 2025 ===
+Project root: /Users/annieha/opendxa
+Script directory: /Users/annieha/opendxa/docs/.ai-only/scripts
+Output directory: /Users/annieha/opendxa/docs/.ai-only/ai_output
+[0;32m[SUCCESS][0m Environment initialized
+[0;34m[INFO][0m Progress: [1/4] Discovery phase...
+Phase 1: Discovery
+[0;32m[SUCCESS][0m Discovery phase completed
+Phase 1: Discovery - SUCCESS
+[0;34m[INFO][0m Progress: [2/4] Content Update phase...
+Phase 2: Content Update
+[0;32m[SUCCESS][0m Content Update phase completed
+Phase 2: Content Update - SUCCESS
+[0;34m[INFO][0m Progress: [3/4] Structure Validation phase...
+Phase 3: Structure Validation
+[0;32m[SUCCESS][0m Structure Validation phase completed
+Phase 3: Structure Validation - SUCCESS
+[0;34m[INFO][0m Progress: [4/4] Quality Assurance phase...
+Phase 4: Quality Assurance
+[0;31m[ERROR][0m Quality Assurance phase failed (exit code: 1)
+Phase 4: Quality Assurance - FAILED (exit code: 1)
+[0;31m[ERROR][0m Last 10 lines of Quality Assurance phase log:
+[0;34m[INFO][0m Generating master summary...
+[0;32m[SUCCESS][0m Master summary generated: /Users/annieha/opendxa/docs/.ai-only/ai_output/master_summary.txt
+[0;31m[ERROR][0m === AI DOCUMENTATION MASTER AUTOMATION FAILED Tue Aug  5 12:32:19 PDT 2025 ===
+[0;31m[ERROR][0m Script exited with code 1
