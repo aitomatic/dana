@@ -59,7 +59,7 @@ def get_rev(resources: list, task: str = None) -> float:
     """Get Revenue from Income Statement."""
 
     rev = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=REV_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -70,7 +70,7 @@ def get_rev_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Revenue from Income Statement."""
 
     rev_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=REV_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -82,7 +82,7 @@ def get_rev_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Revenue from Income Statement."""
 
     rev_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=REV_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -94,7 +94,7 @@ def get_cogs(resources: list, task: str = None) -> float:
     """Get Cost of Goods Sold from Income Statement."""
 
     cogs = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=COGS_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -105,7 +105,7 @@ def get_cogs_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Cost of Goods Sold from Income Statement."""
 
     cogs_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=COGS_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -117,7 +117,7 @@ def get_cogs_3y(resources: list, task: str = None) -> tuple[float, float, float]
     """Get 3 years of Cost of Goods Sold from Income Statement."""
 
     cogs_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=COGS_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -129,7 +129,7 @@ def get_gross_income(resources: list, task: str = None) -> float:
     """Get Gross Income from Income Statement."""
 
     gross_income = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GROSS_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -140,7 +140,7 @@ def get_gross_income_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Gross Income from Income Statement."""
 
     gross_income_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GROSS_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -152,7 +152,7 @@ def get_gross_income_3y(resources: list, task: str = None) -> tuple[float, float
     """Get 3 years of Gross Income from Income Statement."""
 
     gross_income_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GROSS_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -164,7 +164,7 @@ def get_ga_exp(resources: list, task: str = None) -> float:
     """Get General and Administrative Expenses from Income Statement."""
 
     ga_exp = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GnA_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -175,7 +175,7 @@ def get_ga_exp_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of General and Administrative Expenses from Income Statement."""
 
     ga_exp_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GnA_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -187,7 +187,7 @@ def get_ga_exp_3y(resources: list, task: str = None) -> tuple[float, float, floa
     """Get 3 years of General and Administrative Expenses from Income Statement."""
 
     ga_exp_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=GnA_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -199,7 +199,7 @@ def get_op_income(resources: list, task: str = None) -> float:
     """Get Operating Income from Income Statement."""
 
     op_income = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=OP_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -210,7 +210,7 @@ def get_op_income_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Operating Income from Income Statement."""
 
     op_income_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=OP_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -222,7 +222,7 @@ def get_op_income_3y(resources: list, task: str = None) -> tuple[float, float, f
     """Get 3 years of Operating Income from Income Statement."""
 
     op_income_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=OP_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -234,7 +234,7 @@ def get_ebit(resources: list, task: str = None) -> float:
     """Get Earnings before Interest & Tax from Income Statement."""
 
     ebit = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBIT_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -245,7 +245,7 @@ def get_ebit_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Interest & Tax from Income Statement."""
 
     ebit_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBIT_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -257,7 +257,7 @@ def get_ebit_3y(resources: list, task: str = None) -> tuple[float, float, float]
     """Get 3 years of Earnings before Interest & Tax from Income Statement."""
 
     ebit_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBIT_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -269,7 +269,7 @@ def get_int_exp(resources: list, task: str = None) -> float:
     """Get Interest Expense from Income Statement."""
 
     int_exp = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=INT_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -280,7 +280,7 @@ def get_int_exp_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Interest Expense from Income Statement."""
 
     int_exp_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=INT_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -292,7 +292,7 @@ def get_int_exp_3y(resources: list, task: str = None) -> tuple[float, float, flo
     """Get 3 years of Interest Expense from Income Statement."""
 
     int_exp_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=INT_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -304,7 +304,7 @@ def get_ebt(resources: list, task: str = None) -> float:
     """Get Earnings before Tax from Income Statement."""
 
     ebt = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBT_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -315,7 +315,7 @@ def get_ebt_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Tax from Income Statement."""
 
     ebt_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBT_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -327,7 +327,7 @@ def get_ebt_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Earnings before Tax from Income Statement."""
 
     ebt_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=EBT_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -339,7 +339,7 @@ def get_tax_exp(resources: list, task: str = None) -> float:
     """Get (Income) Tax Expense from Income Statement."""
 
     tax_exp = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=TAX_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -350,7 +350,7 @@ def get_tax_exp_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of (Income) Tax Expense from Income Statement."""
 
     tax_exp_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=TAX_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -362,7 +362,7 @@ def get_tax_exp_3y(resources: list, task: str = None) -> tuple[float, float, flo
     """Get 3 years of (Income) Tax Expense from Income Statement."""
 
     tax_exp_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=TAX_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
@@ -374,7 +374,7 @@ def get_net_income(resources: list, task: str = None) -> float:
     """Get Net Income from Income Statement."""
 
     net_income = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=NET_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
@@ -385,7 +385,7 @@ def get_net_income_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Net Income from Income Statement."""
 
     net_income_2y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=NET_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
@@ -397,7 +397,7 @@ def get_net_income_3y(resources: list, task: str = None) -> tuple[float, float, 
     """Get 3 years of Net Income from Income Statement."""
 
     net_income_3y = query_fin_data(
-        resources=resources, task=task
+        resources=resources, task=task,
         line_item=NET_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
