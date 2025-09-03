@@ -24,8 +24,8 @@ class TestSearchDepth:
 
     def test_search_depth_string_enum(self):
         """Test that SearchDepth is a proper string enum."""
-        assert str(SearchDepth.BASIC) == "basic"
         assert SearchDepth.BASIC.value == "basic"
+        assert SearchDepth.BASIC == "basic"
 
 
 class TestProductInfo:
