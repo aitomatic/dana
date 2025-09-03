@@ -271,7 +271,7 @@ class TestWebSearchResource:
         # Verify default parameters
         call_args = self.mock_llama_service.search.call_args[0][0]
         assert call_args.query == "simple query"
-        assert call_args.search_depth == SearchDepth.STANDARD
+        assert call_args.search_depth == SearchDepth.BASIC
         assert call_args.domain == ""
         assert call_args.with_full_content is False
 

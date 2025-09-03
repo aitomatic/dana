@@ -269,7 +269,7 @@ class TestContentSummarizer:
     def test_content_summarizer_initialization(self):
         """Test ContentSummarizer initialization."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
                 assert summarizer.content == self.test_content
@@ -305,7 +305,7 @@ class TestContentSummarizer:
     async def test_retrieve_success(self):
         """Test successful content retrieval."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
                 # Mock retriever
@@ -327,7 +327,7 @@ class TestContentSummarizer:
     async def test_retrieve_no_retriever(self):
         """Test retrieval when no retriever is available."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.retriever = None
 
@@ -339,7 +339,7 @@ class TestContentSummarizer:
     async def test_retrieve_exception_handling(self):
         """Test retrieval with exception handling."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
                 mock_retriever = AsyncMock()
@@ -354,7 +354,7 @@ class TestContentSummarizer:
     async def test_get_relevant_context(self):
         """Test getting relevant context chunks."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
 
                 # Mock the retrieve method
@@ -368,7 +368,7 @@ class TestContentSummarizer:
     async def test_get_relevant_context_empty_chunks(self):
         """Test getting relevant context with empty chunks."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.retrieve = AsyncMock(return_value=[])
 
@@ -380,7 +380,7 @@ class TestContentSummarizer:
     async def test_summarize_for_query_success(self):
         """Test successful query-focused summarization."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 # Mock LLM response
                 mock_response = MagicMock()
                 mock_response.success = True
@@ -401,7 +401,7 @@ class TestContentSummarizer:
     async def test_summarize_for_query_no_context(self):
         """Test summarization with no relevant context."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource"):
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 summarizer = ContentSummarizer(self.test_content)
                 summarizer.get_relevant_context = AsyncMock(return_value=None)
 
@@ -413,7 +413,7 @@ class TestContentSummarizer:
     async def test_summarize_for_query_llm_failure(self):
         """Test summarization with LLM failure."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 # Mock failed LLM response
                 mock_response = MagicMock()
                 mock_response.success = False
@@ -437,7 +437,7 @@ class TestContentSummarizer:
     async def test_summarize_for_query_different_response_formats(self):
         """Test summarization with different LLM response formats."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 with patch.object(
                     ContentSummarizer, "get_relevant_context", new=AsyncMock(return_value="Context chunk 1\n\nContext chunk 2")
                 ):
@@ -469,7 +469,7 @@ class TestContentSummarizer:
     async def test_summarize_for_query_exception_handling(self):
         """Test summarization with exception handling."""
         with patch("dana.common.sys_resource.web_search.utils.summarizer.LegacyLLMResource") as mock_llm_resource_class:
-            with patch.object(ContentSummarizer, "_build_query_engine"):
+            with patch.object(ContentSummarizer, "_build_retriever"):
                 with patch.object(
                     ContentSummarizer, "get_relevant_context", new=AsyncMock(return_value="Context chunk 1\n\nContext chunk 2")
                 ):
