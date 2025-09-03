@@ -54,7 +54,7 @@ ST_DEBT_LINE_ITEM: str = 'Short-Term Debt, or Current Portion of (Long-Term) Deb
 EQUITY_LINE_ITEM: str = "Total Equity, a.k.a. Shareholders' Equity, or Net Assets"
 
 
-def get_total_asset(resources: list) -> float:
+def get_total_asset(resources: list, task: str = None) -> float:
     """Get Total Assets from Balance Sheet."""
 
     total_asset = query_fin_data(
@@ -66,7 +66,7 @@ def get_total_asset(resources: list) -> float:
     return total_asset
 
 
-def get_total_asset_2y(resources: list) -> CurrAndPrevNums:
+def get_total_asset_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Total Assets from Balance Sheet."""
 
     total_asset_2y = query_fin_data(
@@ -79,7 +79,7 @@ def get_total_asset_2y(resources: list) -> CurrAndPrevNums:
     return total_asset_2y
 
 
-def get_total_asset_3y(resources: list) -> tuple[float, float, float]:
+def get_total_asset_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Total Assets from Balance Sheet."""
 
     total_asset_3y = query_fin_data(
@@ -92,7 +92,7 @@ def get_total_asset_3y(resources: list) -> tuple[float, float, float]:
     return total_asset_3y
 
 
-def get_fixed_asset(resources: list) -> float:
+def get_fixed_asset(resources: list, task: str = None) -> float:
     """Get Fixed Assets from Balance Sheet."""
 
     fixed_asset = query_fin_data(
@@ -104,7 +104,7 @@ def get_fixed_asset(resources: list) -> float:
     return fixed_asset
 
 
-def get_fixed_asset_2y(resources: list) -> CurrAndPrevNums:
+def get_fixed_asset_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Fixed Assets from Balance Sheet."""
 
     fixed_asset_2y = query_fin_data(
@@ -117,7 +117,7 @@ def get_fixed_asset_2y(resources: list) -> CurrAndPrevNums:
     return fixed_asset_2y
 
 
-def get_fixed_asset_3y(resources: list) -> tuple[float, float, float]:
+def get_fixed_asset_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Fixed Assets from Balance Sheet."""
 
     fixed_asset_3y = query_fin_data(
@@ -130,7 +130,7 @@ def get_fixed_asset_3y(resources: list) -> tuple[float, float, float]:
     return fixed_asset_3y
 
 
-def get_curr_asset(resources: list) -> float:
+def get_curr_asset(resources: list, task: str = None) -> float:
     """Get Current Assets from Balance Sheet."""
 
     curr_asset = query_fin_data(
@@ -142,7 +142,7 @@ def get_curr_asset(resources: list) -> float:
     return curr_asset
 
 
-def get_curr_asset_2y(resources: list) -> CurrAndPrevNums:
+def get_curr_asset_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Current Assets from Balance Sheet."""
 
     curr_asset_2y = query_fin_data(
@@ -155,7 +155,7 @@ def get_curr_asset_2y(resources: list) -> CurrAndPrevNums:
     return curr_asset_2y
 
 
-def get_curr_asset_3y(resources: list) -> tuple[float, float, float]:
+def get_curr_asset_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Current Assets from Balance Sheet."""
 
     curr_asset_3y = query_fin_data(
@@ -168,7 +168,7 @@ def get_curr_asset_3y(resources: list) -> tuple[float, float, float]:
     return curr_asset_3y
 
 
-def get_cash_and_equiv(resources: list) -> float:
+def get_cash_and_equiv(resources: list, task: str = None) -> float:
     """Get Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv = query_fin_data(
@@ -180,7 +180,7 @@ def get_cash_and_equiv(resources: list) -> float:
     return cash_and_equiv
 
 
-def get_cash_and_equiv_2y(resources: list) -> CurrAndPrevNums:
+def get_cash_and_equiv_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv_2y = query_fin_data(
@@ -193,7 +193,7 @@ def get_cash_and_equiv_2y(resources: list) -> CurrAndPrevNums:
     return cash_and_equiv_2y
 
 
-def get_cash_and_equiv_3y(resources: list) -> tuple[float, float, float]:
+def get_cash_and_equiv_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv_3y = query_fin_data(
@@ -206,7 +206,7 @@ def get_cash_and_equiv_3y(resources: list) -> tuple[float, float, float]:
     return cash_and_equiv_3y
 
 
-def get_st_inv(resources: list) -> float:
+def get_st_inv(resources: list, task: str = None) -> float:
     """Get Short-Term Investments from Balance Sheet."""
 
     st_inv = query_fin_data(
@@ -218,7 +218,7 @@ def get_st_inv(resources: list) -> float:
     return st_inv
 
 
-def get_st_inv_2y(resources: list) -> CurrAndPrevNums:
+def get_st_inv_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Short-Term Investments from Balance Sheet."""
 
     st_inv_2y = query_fin_data(
@@ -231,7 +231,7 @@ def get_st_inv_2y(resources: list) -> CurrAndPrevNums:
     return st_inv_2y
 
 
-def get_st_inv_3y(resources: list) -> tuple[float, float, float]:
+def get_st_inv_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Short-Term Investments from Balance Sheet."""
 
     st_inv_3y = query_fin_data(
@@ -244,7 +244,7 @@ def get_st_inv_3y(resources: list) -> tuple[float, float, float]:
     return st_inv_3y
 
 
-def get_recvable(resources: list) -> float:
+def get_recvable(resources: list, task: str = None) -> float:
     """Get Accounts Receivable from Balance Sheet."""
 
     recvable = query_fin_data(
@@ -256,7 +256,7 @@ def get_recvable(resources: list) -> float:
     return recvable
 
 
-def get_recvable_2y(resources: list) -> CurrAndPrevNums:
+def get_recvable_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Accounts Receivable from Balance Sheet."""
 
     recvable_2y = query_fin_data(
@@ -269,7 +269,7 @@ def get_recvable_2y(resources: list) -> CurrAndPrevNums:
     return recvable_2y
 
 
-def get_recvable_3y(resources: list) -> tuple[float, float, float]:
+def get_recvable_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Accounts Receivable from Balance Sheet."""
 
     recvable_3y = query_fin_data(
@@ -282,7 +282,7 @@ def get_recvable_3y(resources: list) -> tuple[float, float, float]:
     return recvable_3y
 
 
-def get_inventory(resources: list) -> float:
+def get_inventory(resources: list, task: str = None) -> float:
     """Get Inventories from Balance Sheet."""
 
     inventory = query_fin_data(
@@ -294,7 +294,7 @@ def get_inventory(resources: list) -> float:
     return inventory
 
 
-def get_inventory_2y(resources: list) -> CurrAndPrevNums:
+def get_inventory_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Inventories from Balance Sheet."""
 
     inventory_2y = query_fin_data(
@@ -307,7 +307,7 @@ def get_inventory_2y(resources: list) -> CurrAndPrevNums:
     return inventory_2y
 
 
-def get_inventory_3y(resources: list) -> tuple[float, float, float]:
+def get_inventory_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Inventories from Balance Sheet."""
 
     inventory_3y = query_fin_data(
@@ -320,7 +320,7 @@ def get_inventory_3y(resources: list) -> tuple[float, float, float]:
     return inventory_3y
 
 
-def get_curr_liab(resources: list) -> float:
+def get_curr_liab(resources: list, task: str = None) -> float:
     """Get Current Liabilities from Balance Sheet."""
 
     curr_liab = query_fin_data(
@@ -332,7 +332,7 @@ def get_curr_liab(resources: list) -> float:
     return curr_liab
 
 
-def get_curr_liab_2y(resources: list) -> CurrAndPrevNums:
+def get_curr_liab_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Current Liabilities from Balance Sheet."""
 
     curr_liab_2y = query_fin_data(
@@ -345,7 +345,7 @@ def get_curr_liab_2y(resources: list) -> CurrAndPrevNums:
     return curr_liab_2y
 
 
-def get_curr_liab_3y(resources: list) -> tuple[float, float, float]:
+def get_curr_liab_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Current Liabilities from Balance Sheet."""
 
     curr_liab_3y = query_fin_data(
@@ -358,7 +358,7 @@ def get_curr_liab_3y(resources: list) -> tuple[float, float, float]:
     return curr_liab_3y
 
 
-def get_payable(resources: list) -> float:
+def get_payable(resources: list, task: str = None) -> float:
     """Get Accounts Payable from Balance Sheet."""
 
     payable = query_fin_data(
@@ -370,7 +370,7 @@ def get_payable(resources: list) -> float:
     return payable
 
 
-def get_payable_2y(resources: list) -> CurrAndPrevNums:
+def get_payable_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Accounts Payable from Balance Sheet."""
 
     payable_2y = query_fin_data(
@@ -383,7 +383,7 @@ def get_payable_2y(resources: list) -> CurrAndPrevNums:
     return payable_2y
 
 
-def get_payable_3y(resources: list) -> tuple[float, float, float]:
+def get_payable_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Accounts Payable from Balance Sheet."""
 
     payable_3y = query_fin_data(
@@ -396,7 +396,7 @@ def get_payable_3y(resources: list) -> tuple[float, float, float]:
     return payable_3y
 
 
-def get_lt_debt(resources: list) -> float:
+def get_lt_debt(resources: list, task: str = None) -> float:
     """Get Long-Term Debt from Balance Sheet."""
 
     lt_debt = query_fin_data(
@@ -408,7 +408,7 @@ def get_lt_debt(resources: list) -> float:
     return lt_debt
 
 
-def get_lt_debt_2y(resources: list) -> CurrAndPrevNums:
+def get_lt_debt_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Long-Term Debt from Balance Sheet."""
 
     lt_debt_2y = query_fin_data(
@@ -421,7 +421,7 @@ def get_lt_debt_2y(resources: list) -> CurrAndPrevNums:
     return lt_debt_2y
 
 
-def get_lt_debt_3y(resources: list) -> tuple[float, float, float]:
+def get_lt_debt_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Long-Term Debt from Balance Sheet."""
 
     lt_debt_3y = query_fin_data(
@@ -434,7 +434,7 @@ def get_lt_debt_3y(resources: list) -> tuple[float, float, float]:
     return lt_debt_3y
 
 
-def get_st_debt(resources: list) -> float:
+def get_st_debt(resources: list, task: str = None) -> float:
     """Get Short-Term Debt from Balance Sheet."""
 
     st_debt = query_fin_data(
@@ -446,7 +446,7 @@ def get_st_debt(resources: list) -> float:
     return st_debt
 
 
-def get_st_debt_2y(resources: list) -> CurrAndPrevNums:
+def get_st_debt_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Short-Term Debt from Balance Sheet."""
 
     st_debt_2y = query_fin_data(
@@ -459,7 +459,7 @@ def get_st_debt_2y(resources: list) -> CurrAndPrevNums:
     return st_debt_2y
 
 
-def get_st_debt_3y(resources: list) -> tuple[float, float, float]:
+def get_st_debt_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Short-Term Debt from Balance Sheet."""
 
     st_debt_3y = query_fin_data(
@@ -472,7 +472,7 @@ def get_st_debt_3y(resources: list) -> tuple[float, float, float]:
     return st_debt_3y
 
 
-def get_equity(resources: list) -> float:
+def get_equity(resources: list, task: str = None) -> float:
     """Get Total Equity from Balance Sheet."""
 
     equity = query_fin_data(
@@ -484,7 +484,7 @@ def get_equity(resources: list) -> float:
     return equity
 
 
-def get_equity_2y(resources: list) -> CurrAndPrevNums:
+def get_equity_2y(resources: list, task: str = None) -> CurrAndPrevNums:
     """Get 2 years of Total Equity from Balance Sheet."""
 
     equity_2y = query_fin_data(
@@ -497,7 +497,7 @@ def get_equity_2y(resources: list) -> CurrAndPrevNums:
     return equity_2y
 
 
-def get_equity_3y(resources: list) -> tuple[float, float, float]:
+def get_equity_3y(resources: list, task: str = None) -> tuple[float, float, float]:
     """Get 3 years of Total Equity from Balance Sheet."""
 
     equity_3y = query_fin_data(
