@@ -280,6 +280,7 @@ class ConversationMemory:
         return {
             "conversation_id": self.conversation_id,
             "total_turns": self.metadata.get("total_turns", 0),
+            "total_messages": self.metadata.get("total_turns", 0),  # Alias for backward compatibility
             "active_turns": len(history_list),
             "summary_count": len(self.summaries),
             "session_count": self.metadata.get("session_count", 1),

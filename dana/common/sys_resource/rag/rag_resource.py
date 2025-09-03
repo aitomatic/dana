@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from llama_index.core import Settings
-from pathlib import Path
 
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
@@ -54,7 +53,6 @@ class RAGResource(BaseSysResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        
         danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
@@ -120,7 +118,7 @@ class RAGResource(BaseSysResource):
         # If cache_dir is absolute, use it as is
         if cache_dir and os.path.isabs(cache_dir):
             return cache_dir
-        
+
         # If cache_dir is relative, try to combine it with DANAPATH
         if danapath:
             if cache_dir:

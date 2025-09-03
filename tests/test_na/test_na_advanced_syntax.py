@@ -65,8 +65,8 @@ def test_na_file(na_file):
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -81,18 +81,18 @@ def test_na_file(na_file):
     # These tests focus on advanced syntax features like lambdas, comprehensions, and pipelines
     filename = Path(na_file).name
     advanced_syntax_tests = [
-        "test_basic_lambdas.na",
-        "test_basic_pipelines.na",
-        "test_conditional_expressions.na",
-        "test_dict_comprehensions.na",
+        "test_lambdas_basic.na",
         "test_lambda_closures.na",
         "test_lambda_complex.na",
         "test_lambda_parameters.na",
         "test_lambda_with_structs.na",
-        "test_list_comprehensions.na",
-        "test_named_pipelines.na",
-        "test_nested_comprehensions.na",
+        "test_pipelines_basic.na",
+        "test_pipelines_named.na",
         "test_placeholder_expressions.na",
+        "test_conditional_expressions.na",
+        "test_dict_comprehensions.na",
+        "test_list_comprehensions.na",
+        "test_nested_comprehensions.na",
         "test_set_comprehensions.na",
     ]
 
@@ -103,6 +103,9 @@ def test_na_file(na_file):
 
     # Initialize interpreter
     interpreter = DanaInterpreter()
+
+    # Set the interpreter in the context (required for background thread execution)
+    context.interpreter = interpreter
 
     result = None
     exception_info = None

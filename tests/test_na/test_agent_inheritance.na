@@ -10,7 +10,7 @@ agent_blueprint BaseAgent:
 
 # Try to inherit from base agent blueprint
 # This should work if agents support inheritance
-agent_blueprint SpecializedAgent(BaseAgent):
+agent_blueprint SpecializedAgent:
     expertise: str = "specialized"
     tools: list = ["tool1", "tool2"]
 

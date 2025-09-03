@@ -14,13 +14,11 @@ from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.ast import (
     AgentDefinition,
-    AgentPoolStatement,
-    AgentStatement,
     BaseAgentSingletonDefinition,
     FunctionDefinition,
     SingletonAgentDefinition,
-    UseStatement,
 )
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -38,132 +36,6 @@ class AgentHandler(Loggable):
         self._resource_count = 0
         # Track the last agent definition for method association
         self._last_agent_type: Any = None
-
-    def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
-        """Execute an agent statement with optimized processing.
-
-        Args:
-            node: The agent statement to execute
-            context: The execution context
-
-        Returns:
-            An A2A agent resource object that can be used to call methods
-        """
-        self._resource_count += 1
-
-        # Evaluate the arguments efficiently
-        if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
-            raise SandboxError("Parent executor not properly initialized")
-
-        args = [self.parent_executor.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent_executor.parent.execute(v, context) for k, v in node.kwargs.items()}
-
-        # Remove any user-provided 'name' parameter - agent names come from variable assignment
-        if "name" in kwargs:
-            provided_name = kwargs["name"]
-            del kwargs["name"]
-            self.warning(
-                f"Agent name parameter '{provided_name}' will be overridden with variable name. Agent names are automatically derived from variable assignment."
-            )
-
-        # Set target name for agent
-        target = node.target
-        target_name = "anonymous"
-        if target is not None:
-            target_name = target.name if hasattr(target, "name") else str(target)
-            kwargs["_name"] = target_name
-
-        # Trace resource operation
-        self._trace_resource_operation("agent", target_name if target else "anonymous", len(args), len(kwargs))
-
-        # Grammar-based agent(...) is deprecated; guide users to a2a_agent()
-        raise SandboxError(
-            "The 'agent(...)' statement is deprecated. Use a2a_agent(url=...) or import a module and call its functions directly."
-        )
-
-    def execute_agent_pool_statement(self, node: AgentPoolStatement, context: SandboxContext) -> Any:
-        """Execute an agent pool statement with optimized processing.
-
-        Args:
-            node: The agent pool statement to execute
-            context: The execution context
-
-        Returns:
-            An agent pool resource object that can be used to call methods
-        """
-        self._resource_count += 1
-
-        # Evaluate the arguments efficiently
-        if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
-            raise SandboxError("Parent executor not properly initialized")
-
-        args = [self.parent_executor.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent_executor.parent.execute(v, context) for k, v in node.kwargs.items()}
-
-        # Remove any user-provided 'name' parameter - agent pool names come from variable assignment
-        if "name" in kwargs:
-            provided_name = kwargs["name"]
-            del kwargs["name"]
-            self.warning(
-                f"Agent pool name parameter '{provided_name}' will be overridden with variable name. Agent pool names are automatically derived from variable assignment."
-            )
-
-        # Set target name for agent pool
-        target = node.target
-        target_name = "anonymous"
-        if target is not None:
-            target_name = target.name if hasattr(target, "name") else str(target)
-            kwargs["_name"] = target_name
-
-        # Trace resource operation
-        self._trace_resource_operation("agent_pool", target_name if target else "anonymous", len(args), len(kwargs))
-
-        # Call the agent_pool function through the registry
-        if self.function_registry is not None:
-            result = self.function_registry.call("agent_pool", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_pool_statement")
-            result = None
-
-        return result
-
-    def execute_use_statement(self, node: UseStatement, context: SandboxContext) -> Any:
-        """Execute a use statement with optimized processing.
-
-        Args:
-            node: The use statement to execute
-            context: The execution context
-
-        Returns:
-            A resource object that can be used to call methods
-        """
-        self._resource_count += 1
-
-        # Evaluate the arguments efficiently
-        if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
-            raise SandboxError("Parent executor not properly initialized")
-
-        args = [self.parent_executor.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent_executor.parent.execute(v, context) for k, v in node.kwargs.items()}
-
-        # Set target name for resource
-        target = node.target
-        target_name = "anonymous"
-        if target is not None:
-            target_name = target.split(".")[-1] if isinstance(target, str) else (target.name if hasattr(target, "name") else str(target))
-            kwargs["_name"] = target_name
-
-        # Trace resource operation
-        self._trace_resource_operation("use", target_name if target else "anonymous", len(args), len(kwargs))
-
-        # Call the use function through the registry
-        if self.function_registry is not None:
-            result = self.function_registry.call("use", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_use_statement")
-            result = None
-
-        return result
 
     # Note: export and struct definition responsibilities moved to dedicated handlers
 
@@ -187,7 +59,7 @@ class AgentHandler(Loggable):
                     default_value = self.parent_executor.parent.execute(field.default_value, context)
                     field_defaults[field.name] = default_value
 
-            from dana.agent import AgentType
+            from dana.core.builtin_types.agent_system import AgentType
             from dana.registry import register_agent_type
 
             agent_type = AgentType(
@@ -212,16 +84,73 @@ class AgentHandler(Loggable):
             context.set(f"local:{node.name}", agent_constructor)
             self._trace_resource_operation("agent_blueprint", node.name, len(node.fields), 0)
 
+            # Process agent methods (FunctionDefinition nodes)
+            for method_def in node.methods:
+                if isinstance(method_def, FunctionDefinition):
+                    # Create DanaFunction from FunctionDefinition
+                    dana_func = self._create_dana_function_from_definition(method_def, context)
+
+                    # Register the method in unified registry
+                    # Agent methods are registered with the agent type name as the receiver type
+                    from dana.registry import FUNCTION_REGISTRY
+
+                    FUNCTION_REGISTRY.register_struct_function(agent_type.name, method_def.name.name, dana_func)
+                    self.debug(f"Registered agent method {method_def.name.name} for type {agent_type.name}")
+
         except Exception as e:
             raise SandboxError(f"Failed to register agent blueprint {node.name}: {e}")
 
         return None
 
+    def _create_dana_function_from_definition(self, func_def: FunctionDefinition, context=None) -> DanaFunction:
+        """
+        Create a DanaFunction from a FunctionDefinition AST node.
+
+        Args:
+            func_def: The FunctionDefinition node
+            context: Optional execution context
+
+        Returns:
+            DanaFunction object
+        """
+        # Extract parameter names and defaults
+        param_names = []
+        param_defaults = {}
+
+        # Handle parameters (including receiver if present)
+        all_params = []
+        if func_def.receiver:
+            all_params.append(func_def.receiver)
+        all_params.extend(func_def.parameters)
+
+        for param in all_params:
+            if hasattr(param, "name"):
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    param_defaults[param_name] = param.default_value
+
+        # Create DanaFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+        return DanaFunction(
+            name=func_def.name.name,
+            parameters=param_names,
+            defaults=param_defaults,
+            body=func_def.body,
+            return_type=func_def.return_type,
+            decorators=func_def.decorators,
+            is_sync=func_def.is_sync,
+            location=func_def.location,
+        )
+
     def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
         """Create and bind a singleton agent instance from a blueprint with optional overrides."""
         try:
             # Find the blueprint type
-            from dana.agent import AgentInstance, AgentType
+            from dana.core.builtin_types.agent_system import AgentInstance, AgentType
             from dana.registry import get_agent_type, register_agent_type
 
             blueprint_type = get_agent_type(node.blueprint_name)
@@ -276,7 +205,7 @@ class AgentHandler(Loggable):
     def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
         """Create a base AgentType with default methods and bind an instance to the alias name."""
         try:
-            from dana.agent import AgentInstance, AgentType
+            from dana.core.builtin_types.agent_system import AgentInstance, AgentType
             from dana.registry import register_agent_type
 
             # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
@@ -344,12 +273,18 @@ class AgentHandler(Loggable):
 
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body,
+            parameters=param_names,
+            context=context,
+            return_type=return_type,
+            defaults=param_defaults,
+            name=node.name.name,
+            is_sync=node.is_sync,
         )
 
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
-        # from dana.agent.agent_system import register_agent_method_from_function_def
+        # from dana.core.builtin_types.agent_system import register_agent_method_from_function_def
 
         # Try to register as agent method if first parameter is an agent type
         # register_agent_method_from_function_def(node, dana_func)

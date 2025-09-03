@@ -62,7 +62,7 @@ from dana.core.lang.interpreter.executor.expression.pipe_operation_handler impor
     PipeOperationHandler,
 )
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import STRUCT_FUNCTION_REGISTRY
+from dana.registry import FUNCTION_REGISTRY
 from dana.registry.function_registry import FunctionRegistry
 
 
@@ -444,10 +444,11 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # 1. Try STRUCT_FUNCTION_REGISTRY (fast O(1) lookup)
-        method = STRUCT_FUNCTION_REGISTRY.lookup_method_for_instance(obj, method_name)
+        # 1. Try unified registry (fast O(1) lookup for struct methods)
+        method = FUNCTION_REGISTRY.lookup_struct_function_for_instance(obj, method_name)
         if method is not None:
-            self.debug("DEBUG: Found method in STRUCT_FUNCTION_REGISTRY")
+            self.debug("DEBUG: Found method in unified registry")
+
             # Create a context for the function call
             func_context = context.create_child_context()
             # Ensure the interpreter is available in the new context
@@ -1198,6 +1199,18 @@ class ExpressionExecutor(BaseExecutor):
             A callable function object representing the lambda
         """
 
+        # Capture the current context's local scope at lambda creation time
+        # This ensures that variables are captured by value, not by reference
+        captured_locals = {}
+        if hasattr(context, "get_scope"):
+            try:
+                local_scope = context.get_scope("local")
+                if local_scope:
+                    captured_locals = local_scope.copy()
+            except Exception:
+                # If we can't get the scope, continue with empty captured_locals
+                pass
+
         def lambda_function(*args, **kwargs):
             """The callable function created from the lambda expression."""
             # Validate parameter compatibility if type checking is enabled
@@ -1212,6 +1225,22 @@ class ExpressionExecutor(BaseExecutor):
 
             # Create a new scope for lambda execution
             lambda_context = context.copy()
+
+            # Restore the captured local variables from lambda creation time
+            # This ensures that variables captured by the lambda are available
+            # BUT don't overwrite variables that are being assigned to in the current context
+            current_local_scope = {}
+            if hasattr(context, "get_scope"):
+                try:
+                    current_local_scope = context.get_scope("local") or {}
+                except Exception:
+                    pass
+
+            for var_name, var_value in captured_locals.items():
+                # Only restore if the variable is not being assigned to in the current context
+                # or if it's not present in the current context (meaning it was captured but not modified)
+                if var_name not in current_local_scope:
+                    lambda_context.set(var_name, var_value)
 
             # Handle receiver binding if present
             if node.receiver and args:
@@ -1244,6 +1273,7 @@ class ExpressionExecutor(BaseExecutor):
         setattr(lambda_function, "_dana_receiver", node.receiver)
         setattr(lambda_function, "_dana_parameters", node.parameters)
         setattr(lambda_function, "_dana_body", node.body)
+        setattr(lambda_function, "_dana_captured_locals", captured_locals)
 
         return lambda_function
 

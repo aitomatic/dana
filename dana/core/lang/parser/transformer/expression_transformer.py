@@ -565,6 +565,26 @@ class ExpressionTransformer(BaseTransformer):
         value = token.value
         location = self.create_location(token)  # Create location from token
 
+        # Handle NUMBER tokens specifically
+        if hasattr(token, "type") and token.type == "NUMBER":
+            try:
+                if "." in value:
+                    return LiteralExpression(value=float(value), location=location)
+                else:
+                    return LiteralExpression(value=int(value), location=location)
+            except (ValueError, TypeError):
+                # Fallback if conversion fails
+                pass
+
+        # Handle boolean and None tokens
+        if hasattr(token, "type"):
+            if token.type == "TRUE" or value in ["True", "true", "TRUE"]:
+                return LiteralExpression(value=True, location=location)
+            elif token.type == "FALSE" or value in ["False", "false", "FALSE"]:
+                return LiteralExpression(value=False, location=location)
+            elif token.type == "NONE" or value in ["None", "none", "NONE"]:
+                return LiteralExpression(value=None, location=location)
+
         # String literal: strip quotes
         if (
             value
@@ -584,19 +604,19 @@ class ExpressionTransformer(BaseTransformer):
             else:
                 value = value[1:-1]
             return LiteralExpression(value=value, location=location)
-        # Try to convert to int, float, bool, or None
-        if value.isdigit():
-            value = int(value)
-        else:
-            try:
+
+        # Fallback: try to convert numeric strings to int or float
+        try:
+            # Try int first (for simple digits)
+            if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
+                value = int(value)
+            else:
+                # Try float
                 value = float(value)
-            except Exception:
-                if value == "True":
-                    value = True
-                elif value == "False":
-                    value = False
-                elif value == "None":
-                    value = None
+        except (ValueError, TypeError):
+            # Not numeric, keep as string for identifiers
+            pass
+
         return LiteralExpression(value=value, location=location)
 
     # ================================================================

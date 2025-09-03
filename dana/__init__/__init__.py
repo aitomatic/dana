@@ -7,58 +7,51 @@ A language and framework for building domain-expert multi-agent systems.
 #
 # Dana Startup Sequence - Initialize all systems in dependency order
 #
-import os
 
-if not os.getenv("DANA_TEST_MODE"):
-    # 1. Environment System - Load .env files and validate environment
-    from .init_environment import initialize_environment_system
+# 1. Environment System - Load .env files and validate environment
+from .init_environment import initialize_environment_system
 
-    initialize_environment_system()
+initialize_environment_system()
 
-    # 2. Configuration System - Pre-load and cache configuration
-    from .init_config import initialize_config_system
+# 2. Configuration System - Pre-load and cache configuration
+from .init_config import initialize_config_system
 
-    initialize_config_system()
+initialize_config_system()
 
-    # 3. Logging System - Configure logging with default settings
-    from .init_logging import initialize_logging_system
+# 3. Logging System - Configure logging with default settings
+from .init_logging import initialize_logging_system
 
-    initialize_logging_system()
+initialize_logging_system()
 
-    # 4. Module System - Set up .na file imports and module resolution
-    from .init_modules import initialize_module_system
+# 4. Module System - Set up .na file imports and module resolution
+from .init_modules import initialize_module_system
 
-    initialize_module_system()
+initialize_module_system()
 
-    # 5. Resource System - Load stdlib resources at startup
-    from .init_resources import initialize_resource_system
+# 5. Resource System - Load stdlib resources at startup
+from .init_resources import initialize_resource_system
 
-    initialize_resource_system()
+initialize_resource_system()
 
-    # 6. Library System - Initialize core Dana libraries
-    from .init_libs import initialize_library_system
+# 6. Library System - Initialize core Dana libraries
+from .init_libs import initialize_library_system
 
-    initialize_library_system()
+initialize_library_system()
 
-    # 7. Integration System - Set up integration bridges
-    from .init_integrations import initialize_integration_system
+# 7. FSM System - Initialize FSM struct type
+from .init_fsm import initialize_fsm_system
 
-    initialize_integration_system()
+initialize_fsm_system()
 
-    # 8. Runtime System - Initialize Parser, Interpreter, and Sandbox
-    from .init_runtime import initialize_runtime_system
+# 8. Integration System - Set up integration bridges
+from .init_integrations import initialize_integration_system
 
-    initialize_runtime_system()
+initialize_integration_system()
 
-else:
-    # Test mode - minimal initialization
-    from .init_environment import initialize_environment_system
+# 9. Runtime System - Initialize Parser, Interpreter, and Sandbox
+from .init_runtime import initialize_runtime_system
 
-    initialize_environment_system()
-
-    from .init_logging import initialize_logging_system
-
-    initialize_logging_system()
+initialize_runtime_system()
 
 #
 # Get the version of the dana package

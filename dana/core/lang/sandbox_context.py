@@ -24,14 +24,15 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
 from dana.common.runtime_scopes import RuntimeScopes
+from dana.core.concurrency.promise_limiter import get_global_promise_limiter
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
-    from dana.agent import AgentInstance
+    from dana.core.builtin_types.agent_system import AgentInstance
+    from dana.core.builtin_types.resource import ResourceInstance
+    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-    from dana.core.resource import ResourceInstance
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class ExecutionStatus(Enum):
@@ -64,6 +65,9 @@ class SandboxContext(Loggable):
 
         # Private system LLM resource for efficient access
         self._system_llm_resource: LLMResourceInstance | None = None
+
+        # Initialize PromiseLimiter for safe concurrent execution
+        self._promise_limiter = get_global_promise_limiter()
 
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
@@ -935,7 +939,11 @@ class SandboxContext(Loggable):
         try:
             return cast("LLMResourceInstance", self.get_resource("system_llm"))
         except KeyError:
-            return None
+            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+
+            sys_llm_resource = LLMResourceType.create_default_instance()
+            self.set_system_llm_resource(sys_llm_resource)
+            return sys_llm_resource
 
     def set_system_llm_resource(self, llm_resource: "LLMResourceInstance") -> None:
         """Set the system LLM resource.
@@ -947,3 +955,12 @@ class SandboxContext(Loggable):
             self.info(f"Stored system LLM resource: {llm_resource.model}")
         except Exception as e:
             self.error(f"Failed to set system LLM resource: {e}")
+
+    @property
+    def promise_limiter(self):
+        """Get the PromiseLimiter instance for this context.
+
+        Returns:
+            The PromiseLimiter instance
+        """
+        return self._promise_limiter

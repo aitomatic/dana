@@ -4,7 +4,7 @@
 # showing how to define and use resources within agents.
 
 # Define a custom RAG resource 
-resource CustomRAG(BaseResource):
+resource CustomRAG:
     kind: str = "rag"
     sources: list[str] = []
     domain: str = "custom"
@@ -26,7 +26,7 @@ resource CustomRAG(BaseResource):
         )
 
 # Define a specialized financial resource
-resource FinancialRAG(CustomRAG):
+resource FinancialRAG:
     sources = ["financial_reports.pdf", "market_analysis.txt"]
     domain = "finance"
     description = "Financial document analysis resource"
