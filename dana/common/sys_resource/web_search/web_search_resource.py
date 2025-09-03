@@ -1,11 +1,14 @@
 """Web Search Resource implementation for DANA framework."""
 
+from dana.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.exceptions import ResourceError
 
 from .core.models import SearchRequest, SearchResults, SearchDepth
 from .google_search_service import GoogleSearchService
 from .llama_search_service import LlamaSearchService
+
+from dataclasses import asdict
 
 
 class WebSearchResource(BaseSysResource):
@@ -38,7 +41,7 @@ class WebSearchResource(BaseSysResource):
     async def search(
         self,
         query: str,
-        search_depth: SearchDepth = SearchDepth.STANDARD,
+        search_depth: SearchDepth = SearchDepth.BASIC,
         domain: str = "",
         with_full_content: bool = False,
     ) -> SearchResults:
@@ -59,3 +62,15 @@ class WebSearchResource(BaseSysResource):
             return await self._search_service.search(request)
         except Exception as e:
             raise ResourceError(f"Search failed: {e}") from e
+
+    async def answer(
+        self, query: str, search_depth: SearchDepth = SearchDepth.BASIC, domain: str = "", with_full_content: bool = False
+    ) -> dict:
+        """Answer a question using web search."""
+        result = await self.search(query, search_depth, domain, with_full_content)
+        context = "\n\n".join([source.content for source in result.sources])
+        summarizer = ContentSummarizer(context)
+        summary = await summarizer.summarize_for_query(query)
+        data = asdict(result)
+        data["summary"] = summary
+        return data

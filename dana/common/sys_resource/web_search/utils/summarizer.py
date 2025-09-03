@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class ContentSummarizer:
     """Content summarizer using RAG for query-focused summarization."""
 
-    def __init__(self, content: str):
+    def __init__(self, content: str, top_k: int = 5):
         """
         Initialize ContentSummarizer with content.
 
@@ -20,6 +20,7 @@ class ContentSummarizer:
         """
         self.content = content
         self.retriever = None
+        self.top_k = top_k
 
         # Initialize LLM resource for summarization
         self._llm_resource = LegacyLLMResource(
@@ -27,9 +28,9 @@ class ContentSummarizer:
             temperature=0.1,  # Low temperature for consistent, factual summaries
         )
 
-        self._build_query_engine()
+        self._build_retriever()
 
-    def _build_query_engine(self):
+    def _build_retriever(self):
         """Build retrieval system from content."""
         try:
             from llama_index.core import VectorStoreIndex, Document
@@ -46,7 +47,7 @@ class ContentSummarizer:
             index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 
             # Create retriever only (no LLM response generation)
-            self.retriever = index.as_retriever(similarity_top_k=5)
+            self.retriever = index.as_retriever(similarity_top_k=self.top_k)
 
             logger.debug(f"Content retriever built for {len(self.content)} chars")
 
@@ -92,7 +93,7 @@ class ContentSummarizer:
 
         return "\n\n".join(chunks)
 
-    async def summarize_for_query(self, query: str) -> str | None:
+    async def summarize_for_query(self, query: str, filter_context: bool = True) -> str | None:
         """
         Summarize content focusing on specific query using RAG approach.
 
@@ -104,7 +105,11 @@ class ContentSummarizer:
         """
         try:
             # Get relevant context chunks
-            relevant_context = await self.get_relevant_context(query)
+            if filter_context:
+                relevant_context = await self.get_relevant_context(query)
+            else:
+                relevant_context = self.content
+
             if not relevant_context:
                 logger.warning("No relevant context found for query")
                 return None
