@@ -760,7 +760,15 @@ class SandboxContext(Loggable):
         if included is None:
             # Return all resources from context
             resource_names = self.list_resources()
-            return {name: self.get_resource(name) for name in resource_names}
+            available_resources = {}
+            for name in resource_names:
+                try:
+                    available_resources[name] = self.get_resource(name)
+                except Exception:
+                    # Resource not found in context - skip it
+                    pass
+
+            return available_resources
 
         # Handle mixed list of resource objects and string names
         resources = {}
@@ -969,7 +977,11 @@ class SandboxContext(Loggable):
         try:
             return cast("LLMResourceInstance", self.get_resource("system_llm"))
         except KeyError:
-            return None
+            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+
+            sys_llm_resource = LLMResourceType.create_default_instance()
+            self.set_system_llm_resource(sys_llm_resource)
+            return sys_llm_resource
 
     def set_system_llm_resource(self, llm_resource: "LLMResourceInstance") -> None:
         """Set the system LLM resource.

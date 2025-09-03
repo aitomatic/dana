@@ -1,0 +1,11 @@
+"""Test import of credit_agent module"""
+
+# Test basic import
+import credit_agent
+
+print("Successfully imported credit_agent module!")
+
+# Test that the module exists
+print(f"Module name: {credit_agent.__name__}")
+
+print("Import test completed successfully!") 

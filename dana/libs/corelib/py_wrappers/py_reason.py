@@ -265,7 +265,7 @@ def py_reason(
         logger.debug(f"LLM PROMPT: {enhanced_prompt}")
 
         # Execute with enhanced prompt using original function
-        result = _execute_reason_call(context, enhanced_prompt, options, use_mock)
+        result = _execute_reason_call(context, enhanced_prompt, options, llm_resource, use_mock)
 
         # Apply semantic coercion if type information is available
         if execution_context and execution_context.expected_type and result is not None:

@@ -291,8 +291,20 @@ class UnifiedFunctionDispatcher:
         evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
-        """Execute a regular callable."""
-        raw_result = resolved_func.func(*evaluated_args, **evaluated_kwargs)
+        """Execute a regular callable with automatic async detection."""
+        import asyncio
+        from dana.common.utils.misc import Misc
+
+        func = resolved_func.func
+
+        # Execute-time async detection and handling
+        if asyncio.iscoroutinefunction(func):
+            # Function is async - use Misc.safe_asyncio_run
+            raw_result = Misc.safe_asyncio_run(func, *evaluated_args, **evaluated_kwargs)
+        else:
+            # Function is sync - call directly
+            raw_result = func(*evaluated_args, **evaluated_kwargs)
+
         return self._assign_and_coerce_result(raw_result, func_name)
 
     def _assign_and_coerce_result(self, raw_result: Any, func_name: str) -> Any:
