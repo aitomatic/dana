@@ -108,13 +108,14 @@
             "azure:text-embedding-3-small",
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
-            "cohere:embed-english-v3.0"
+            "cohere:embed-english-v3.0",
+            "ibm_watsonx:ibm/slate-125m-english-rtrvr"
         ],
         "provider_configs": {
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",
-                "base_url": "https://api.openai.com/v1",
+                "base_url": "env:OPENAI_BASE_URL",
                 "dimension": 1024,
                 "batch_size": 100
             },
@@ -133,6 +134,13 @@
                 "api_version": "env:AZURE_OPENAI_API_VERSION",
                 "api_type": "azure",
                 "dimension": 1024
+            },
+            "ibm_watsonx": {
+                "url" : "env:WATSONX_URL",
+                "apikey" : "env:WATSONX_API_KEY",
+                "project_id" : "env:WATSONX_PROJECT_ID",
+                "instance_id" : "env:WATSONX_INSTANCE_ID",
+                "version" : "env:WATSONX_VERSION"
             }
         }
     }

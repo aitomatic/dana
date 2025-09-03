@@ -136,6 +136,7 @@ dependencies = [
     "pymupdf>=1.25.3", # PDF processing and manipulation library
     "llama-index-embeddings-azure-openai>=0.3.9",
     "llama-index-llms-azure-openai>=0.3.4",
+    "llama-index-embeddings-ibm>=0.3.1",
 ]
 
 # Command-line entry points
