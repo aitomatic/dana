@@ -15,6 +15,8 @@ class WebSearchResource(BaseSysResource):
         """Initialize WebSearchResource."""
         super().__init__(name, description or f"Web Search Resource using {service_type}")
 
+        self._service_type = service_type or "llama-search"  # Store service type for error messages
+
         if service_type == "google":
             self._search_service = GoogleSearchService()
         elif service_type == "llama-search":
@@ -29,7 +31,7 @@ class WebSearchResource(BaseSysResource):
         await super().initialize()
 
         if hasattr(self._search_service, "is_available") and not self._search_service.is_available():
-            raise ResourceError(f"Search service '{self._config.service_type}' is not available")
+            raise ResourceError(f"Search service '{self._service_type}' is not available")
 
         self._is_ready = True
 

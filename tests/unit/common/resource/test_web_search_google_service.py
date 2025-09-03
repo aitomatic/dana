@@ -97,14 +97,14 @@ class TestGoogleSearchConfig:
 
         config_str = str(config)
         assert "test_api_key_1234567890" not in config_str
-        assert "test****7890" in config_str
-        assert "test_cse_..." in config_str
+        assert "test***************7890" in config_str  # 23 chars: first 4 + (23-8) asterisks + last 4
+        assert "test_cse..." in config_str
 
     def test_mask_api_key_function(self):
         """Test API key masking utility function."""
-        # Normal case
+        # Normal case (23 chars: first 4 + (23-8) asterisks + last 4)
         masked = _mask_api_key("test_api_key_1234567890")
-        assert masked == "test****7890"
+        assert masked == "test***************7890"
 
         # Short key
         short_masked = _mask_api_key("short")
@@ -133,22 +133,17 @@ class TestLoadGoogleConfig:
         assert config.cse_id == "env_cse_id_456"
         assert config.max_results == 10  # Default value
 
-    @patch.dict("os.environ", {}, clear=True)
     def test_load_google_config_missing_api_key(self):
         """Test loading configuration with missing API key."""
-        with pytest.raises(ConfigurationError, match="GOOGLE_SEARCH_API_KEY environment variable is required"):
-            load_google_config()
+        with patch.dict("os.environ", {}, clear=True):
+            with pytest.raises(ConfigurationError, match="GOOGLE_SEARCH_API_KEY environment variable is required"):
+                load_google_config()
 
-    @patch.dict(
-        "os.environ",
-        {
-            "GOOGLE_SEARCH_API_KEY": "test_key",
-        },
-    )
     def test_load_google_config_missing_cse_id(self):
         """Test loading configuration with missing CSE ID."""
-        with pytest.raises(ConfigurationError, match="GOOGLE_SEARCH_CX environment variable is required"):
-            load_google_config()
+        with patch.dict("os.environ", {"GOOGLE_SEARCH_API_KEY": "test_key"}, clear=True):
+            with pytest.raises(ConfigurationError, match="GOOGLE_SEARCH_CX environment variable is required"):
+                load_google_config()
 
     @patch.dict(
         "os.environ",
@@ -192,11 +187,11 @@ class TestGoogleSearchEngine:
         """Test GoogleSearchEngine availability check."""
         assert self.engine.is_available() is True
 
-        # Test with missing credentials
-        invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
-        invalid_config.validate = MagicMock()  # Skip validation for this test
-        invalid_engine = GoogleSearchEngine(invalid_config)
-        assert invalid_engine.is_available() is False
+        # Test with missing credentials - use patch to bypass validation
+        with patch.object(GoogleSearchConfig, "__post_init__", return_value=None):
+            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
+            invalid_engine = GoogleSearchEngine(invalid_config)
+            assert invalid_engine.is_available() is False
 
     def test_optimize_query(self):
         """Test query optimization based on search depth."""
@@ -253,7 +248,7 @@ class TestGoogleSearchEngine:
             mock_response.status_code = 200
             mock_response.json.return_value = mock_response_data
 
-            mock_client_instance = MagicMock()
+            mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
             mock_client.return_value.__aenter__.return_value = mock_client_instance
 
@@ -277,7 +272,7 @@ class TestGoogleSearchEngine:
             mock_response.status_code = 200
             mock_response.json.return_value = mock_response_data
 
-            mock_client_instance = MagicMock()
+            mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
             mock_client.return_value.__aenter__.return_value = mock_client_instance
 
@@ -293,7 +288,7 @@ class TestGoogleSearchEngine:
             mock_response.headers = {"content-type": "application/json"}
             mock_response.json.return_value = {"error": {"message": "Invalid API key provided"}}
 
-            mock_client_instance = MagicMock()
+            mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
             mock_client.return_value.__aenter__.return_value = mock_client_instance
 
@@ -307,7 +302,7 @@ class TestGoogleSearchEngine:
             mock_response = MagicMock()
             mock_response.status_code = 429
 
-            mock_client_instance = MagicMock()
+            mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
             mock_client.return_value.__aenter__.return_value = mock_client_instance
 
@@ -321,7 +316,7 @@ class TestGoogleSearchEngine:
             mock_response = MagicMock()
             mock_response.status_code = 500
 
-            mock_client_instance = MagicMock()
+            mock_client_instance = AsyncMock()
             mock_client_instance.get.return_value = mock_response
             mock_client.return_value.__aenter__.return_value = mock_client_instance
 
@@ -335,7 +330,7 @@ class TestGoogleSearchEngine:
 
         sanitized = _sanitize_api_key(text_with_key, api_key)
         assert api_key not in sanitized
-        assert "test****6789" in sanitized
+        assert "test**************6789" in sanitized
 
         # Test with short key
         short_key = "short"
@@ -382,14 +377,14 @@ class TestGoogleSearchService:
 
     def test_google_search_service_not_available(self):
         """Test GoogleSearchService initialization when not available."""
-        invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
-        invalid_config.validate = MagicMock()  # Skip validation
+        with patch.object(GoogleSearchConfig, "__post_init__", return_value=None):
+            invalid_config = GoogleSearchConfig(api_key="", cse_id="test_cse")
 
-        with patch("dana.common.sys_resource.web_search.google.search_engine.GoogleSearchEngine.is_available") as mock_available:
-            mock_available.return_value = False
+            with patch("dana.common.sys_resource.web_search.google.search_engine.GoogleSearchEngine.is_available") as mock_available:
+                mock_available.return_value = False
 
-            with pytest.raises(GoogleSearchError, match="Google Search service not available"):
-                GoogleSearchService(config=invalid_config)
+                with pytest.raises(GoogleSearchError, match="Google Search service not available"):
+                    GoogleSearchService(config=invalid_config)
 
     @pytest.mark.asyncio
     async def test_search_basic_functionality(self):

@@ -144,6 +144,12 @@ class MockLlamaSearchService(LlamaSearchService):
                 f"Detailed technical information and compatibility data.",
                 full_content=(f"Complete technical documentation for {request.query}" if request.with_full_content else ""),
             ),
+            SearchSource(
+                url="https://reviews.com/expert-review",
+                content=f"Expert reviews and analysis for {request.query}. "
+                f"Comprehensive evaluation including performance metrics and comparisons.",
+                full_content=(f"Detailed expert analysis and benchmark data for {request.query}" if request.with_full_content else ""),
+            ),
         ]
 
         # Vary number of sources based on search depth

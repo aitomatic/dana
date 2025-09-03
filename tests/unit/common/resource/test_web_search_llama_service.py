@@ -245,8 +245,10 @@ class TestLlamaSearchService:
 
             results = await service.search(request)
 
-            assert results.success is True
+            # Empty sources should result in failed search due to validation
+            assert results.success is False
             assert len(results.sources) == 0
+            assert "successful search must have sources" in results.error_message
 
 
 class TestMockLlamaSearchService:
@@ -327,7 +329,11 @@ class TestMockLlamaSearchService:
         assert results.success is True
         for source in results.sources:
             assert source.full_content != ""
-            assert "Extended mock content" in source.full_content
+
+        # First source should contain "Extended mock content"
+        assert "Extended mock content" in results.sources[0].full_content
+        # Second source should contain "Complete technical documentation"
+        assert "Complete technical documentation" in results.sources[1].full_content
 
     @pytest.mark.asyncio
     async def test_mock_search_without_full_content(self):
