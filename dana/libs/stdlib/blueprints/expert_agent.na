@@ -63,7 +63,9 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
         else:
             matched_expertise_module = expert_workflow_name_to_module_map[closest_matched_expert_workflow_name]
 
-            print(f'{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...')
+            print(f'
+{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...
+')
 
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
             expert_workflow_result = closest_matched_expert_workflow(resources, task=problem)
