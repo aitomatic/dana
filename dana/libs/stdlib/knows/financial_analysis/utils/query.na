@@ -4,7 +4,7 @@
 __all__ = ['query_fin_data']
 
 
-def _get_company_currency_and_period(resources: list) -> tuple[str, str, str]:
+def _get_company_currency_and_period(resources: list, task: str = None) -> tuple[str, str, str]:
     """Get main company name, currency and fiscal period."""
     company = reason(
 'Get the name of the main company these documents concern.
@@ -24,12 +24,14 @@ resources=resources)
     return (company, currency, period)
 
 
+# TODO: n_years: Literal[1, 2, 3]
 def query_fin_data(resources: list,
                    line_item: str, statement: str,
                    as_at_period_end: bool = False,
-                   n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]
+                   n_years: int = 1,
+                   task: str = None) -> str:
     """Query financial statement item value(s)."""
-    _company_currency_and_period = _get_company_currency_and_period(resources=resources)
+    _company_currency_and_period = _get_company_currency_and_period(resources=resources, task=task)
     # TODO: tuple unpacking syntax in Dana
     company = _company_currency_and_period[0]
     currency = _company_currency_and_period[1]
