@@ -34,7 +34,7 @@ def get_op_cf(resources: list) -> float:
     """Get Operating Cash Flow from Cash Flow Statement."""
 
     op_cf = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=OP_CF_LINE_ITEM,
         statement=CF_STATEMENT)
 
@@ -45,7 +45,7 @@ def get_op_cf_2y(resources: list) -> CurrAndPrevNums:
     """Get 2 years of Operating Cash Flow from Cash Flow Statement."""
 
     op_cf_2y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=OP_CF_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=2)
@@ -57,7 +57,7 @@ def get_op_cf_3y(resources: list) -> tuple[float, float, float]:
     """Get 3 years of Operating Cash Flow from Cash Flow Statement."""
 
     op_cf_3y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=OP_CF_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=3)
@@ -69,7 +69,7 @@ def get_capex(resources: list) -> float:
     """Get Capital Expenditure(s) from Cash Flow Statement."""
 
     capex = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=CAPEX_LINE_ITEM,
         statement=CF_STATEMENT)
 
@@ -80,7 +80,7 @@ def get_capex_2y(resources: list) -> CurrAndPrevNums:
     """Get 2 years of Capital Expenditure(s) from Cash Flow Statement."""
 
     capex_2y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=CAPEX_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=2)
@@ -92,7 +92,7 @@ def get_capex_3y(resources: list) -> tuple[float, float, float]:
     """Get 3 years of Capital Expenditure(s) from Cash Flow Statement."""
 
     capex_3y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=CAPEX_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=3)
@@ -104,7 +104,7 @@ def get_deprec_and_amort(resources: list) -> float:
     """Get Depreciation & Amortization from Cash Flow Statement."""
 
     deprec_and_amort = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DnA_LINE_ITEM,
         statement=CF_STATEMENT)
 
@@ -115,7 +115,7 @@ def get_deprec_and_amort_2y(resources: list) -> CurrAndPrevNums:
     """Get 2 years of Depreciation & Amortization from Cash Flow Statement."""
 
     deprec_and_amort_2y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DnA_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=2)
@@ -127,7 +127,7 @@ def get_deprec_and_amort_3y(resources: list) -> tuple[float, float, float]:
     """Get 3 years of Depreciation & Amortization from Cash Flow Statement."""
 
     deprec_and_amort_3y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DnA_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=3)
@@ -139,7 +139,7 @@ def get_div(resources: list) -> float:
     """Get Dividend from Cash Flow Statement."""
 
     div = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DIV_LINE_ITEM,
         statement=CF_STATEMENT)
 
@@ -150,7 +150,7 @@ def get_div_2y(resources: list) -> CurrAndPrevNums:
     """Get 2 years of Dividend from Cash Flow Statement."""
 
     div_2y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DIV_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=2)
@@ -162,7 +162,7 @@ def get_div_3y(resources: list) -> tuple[float, float, float]:
     """Get 3 years of Dividend from Cash Flow Statement."""
 
     div_3y = query_fin_data(
-        resources=resources,
+        resources=resources, task=task,
         line_item=DIV_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=3)
