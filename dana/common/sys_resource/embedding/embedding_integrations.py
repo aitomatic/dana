@@ -187,14 +187,23 @@ class LlamaIndexEmbeddingResource(Loggable):
         # Use dimension_override if provided, else fall back to provider_config
         dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
 
-        return AzureOpenAIEmbedding(
-            model=model_name,
-            api_key=api_key,
-            api_version=api_version,
-            azure_endpoint=azure_endpoint,
-            embed_batch_size=provider_config.get("batch_size", 100),
-            dimensions=dimensions,
-        )
+        try:
+            return AzureOpenAIEmbedding(
+                model=model_name,
+                api_key=api_key,
+                api_version=api_version,
+                azure_endpoint=azure_endpoint,
+                embed_batch_size=provider_config.get("batch_size", 100),
+                dimensions=dimensions,
+            )
+        except Exception as _:
+            # Fallback to not using batch_size and dimensions for compatibility with text-embedding-ada-002
+            return AzureOpenAIEmbedding(
+                model=model_name,
+                api_key=api_key,
+                api_version=api_version,
+                azure_endpoint=azure_endpoint,
+            )
 
     def _create_cohere_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         """Create Cohere LlamaIndex embedding.
