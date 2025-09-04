@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.core.builtin_types.struct_system import StructInstance, StructType
+from dana.core.builtins.struct_system import StructInstance, StructType
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.concurrency.promise_utils import is_promise
 from dana.core.lang.sandbox_context import SandboxContext
@@ -481,7 +481,7 @@ class AgentInstance(StructInstance):
         """Initialize LLM resource from agent's config if not already done."""
         if self._llm_resource_instance is None:
             from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
             # Get LLM parameters from agent's config field
             llm_params = {}

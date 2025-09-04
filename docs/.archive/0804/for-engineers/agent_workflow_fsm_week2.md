@@ -195,7 +195,7 @@ Problem: Analyze sensor data from Line 3 for the past 24 hours
 ### Basic Usage
 ```python
 from dana.frameworks.workflow import Agent
-from dana.core.builtin_types.agent_system import AgentType
+from dana.core.agent_system import AgentType
 
 # Create agent
 agent_type = AgentType("DataAgent")

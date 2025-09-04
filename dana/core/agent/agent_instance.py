@@ -7,18 +7,24 @@ agent-specific state and methods. This is the main implementation file for agent
 
 from typing import TYPE_CHECKING, Any
 
-from dana.common.mixins.loggable import Loggable
-from dana.common.types import BaseRequest, BaseResponse
+from dana.common.types import BaseRequest
 from dana.core.builtins.struct_system import StructInstance
 
 # Removed direct import of LegacyLLMResource - now using resource type system
 from dana.core.concurrency.promise_factory import PromiseFactory
-from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
 
 from .agent_type import AgentType
 from .events import AgentEventMixin
-from .implementations import AgentImplementationMixin
+from .methods import (
+    ChatMixin,
+    InputMixin,
+    LLMMixin,
+    LoggingMixin,
+    MemoryMixin,
+    ReasonMixin,
+    SolvingMixin,
+)
 
 if TYPE_CHECKING:
     pass
@@ -28,11 +34,25 @@ from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
 from .context import ProblemContext
 
 
-class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
+class AgentInstance(
+    StructInstance,
+    AgentEventMixin,
+    ChatMixin,
+    InputMixin,
+    LLMMixin,
+    LoggingMixin,
+    MemoryMixin,
+    ReasonMixin,
+    SolvingMixin,
+):
     """Agent struct instance with built-in agent capabilities.
 
     Inherits from StructInstance and adds agent-specific state and methods.
     """
+
+    # ============================================================================
+    # CONSTRUCTOR AND CORE PROPERTIES
+    # ============================================================================
 
     def __init__(self, struct_type: AgentType, values: dict[str, Any]):
         """Create a new agent struct instance.
@@ -74,33 +94,20 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         super().__init__(struct_type, values, AGENT_REGISTRY)
         AgentEventMixin.__init__(self)
 
-    def get_metrics(self) -> dict[str, Any]:
-        """Get current agent metrics for TUI display.
-
-        Returns:
-            Dictionary containing:
-            - is_running: bool - Whether agent is currently processing
-            - current_step: str - Current processing step
-            - elapsed_time: float - Time elapsed for current operation
-            - tokens_per_sec: float - Token processing rate
-        """
-        return self._metrics.copy()
-
-    def update_metric(self, key: str, value: Any) -> None:
-        """Update a specific metric value.
-
-        Args:
-            key: The metric key to update
-            value: The new value for the metric
-        """
-        if key in self._metrics:
-            self._metrics[key] = value
-
     @property
     def name(self) -> str:
         """Get the agent's name for TUI compatibility."""
         # Return the instance name field value, not the struct type name
         return self._values.get("name", "unnamed_agent")
+
+    @property
+    def agent_type(self) -> AgentType:
+        """Get the agent type."""
+        return self.__struct_type__  # type: ignore
+
+    # ============================================================================
+    # STATIC/CLASS METHODS
+    # ============================================================================
 
     @staticmethod
     def get_default_dana_methods() -> dict[str, Any]:
@@ -141,125 +148,25 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             }
         }
 
-    @property
-    def agent_type(self) -> AgentType:
-        """Get the agent type."""
-        return self.__struct_type__  # type: ignore
+    # ============================================================================
+    # CORE AGENT METHODS (Main Public Interface)
+    # ============================================================================
 
-    def answer(self, answer: str, sandbox_context: SandboxContext | None = None):
-        """Execute agent answer method."""
-        print(answer)
+    def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Asynchronous agent LLM method."""
+        return PromiseFactory.create_promise(computation=lambda: self.llm_sync(request, sandbox_context, **kwargs))
 
-    def input(
-        self,
-        request: str,
-        sandbox_context: SandboxContext | None = None,
-        problem_context: ProblemContext | None = None,
-        is_sync: bool = False,
-    ) -> Any:
-        """Execute agent input method."""
-        sandbox_context = sandbox_context or SandboxContext()
+    def plan(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Asynchronous agent plan method."""
+        return PromiseFactory.create_promise(computation=lambda: self.plan_sync(problem_or_workflow, sandbox_context, **kwargs))
 
-        # Prompt the user for input from the console
-        response = input(request)
+    def solve(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Asynchronous agent solve method."""
+        return PromiseFactory.create_promise(computation=lambda: self.solve_sync(problem_or_workflow, sandbox_context, **kwargs))
 
-        # Return the response
-        return response
-
-    def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> str | BaseResponse:
-        """Execute agent LLM method using py_llm for proper Dana integration."""
-        if not sandbox_context:
-            return "Sandbox context required for LLM calls"
-
-        # Get LLM resource
-        llm_resource = self.get_llm_resource(sandbox_context)
-        if llm_resource is None:
-            return "LLM resource not available - please configure an LLM resource for this agent"
-
-        try:
-            # Import py_llm
-            from dana.libs.corelib.py_wrappers.py_llm import py_llm
-
-            # Prepare the prompt
-            if isinstance(request, str):
-                prompt = request
-            elif isinstance(request, dict):
-                if "prompt" in request:
-                    prompt = request["prompt"]
-                elif "messages" in request:
-                    # Extract user message from messages
-                    messages = request["messages"]
-                    if messages and isinstance(messages, list):
-                        # Find the last user message
-                        for msg in reversed(messages):
-                            if isinstance(msg, dict) and msg.get("role") == "user":
-                                prompt = msg.get("content", "")
-                                break
-                        else:
-                            prompt = str(messages[-1]) if messages else ""
-                    else:
-                        prompt = str(messages)
-                else:
-                    prompt = str(request)
-            elif isinstance(request, BaseRequest):
-                # Extract prompt from BaseRequest arguments
-                args = request.arguments
-                if isinstance(args, dict):
-                    if "prompt" in args:
-                        prompt = args["prompt"]
-                    elif "messages" in args:
-                        messages = args["messages"]
-                        if messages and isinstance(messages, list):
-                            for msg in reversed(messages):
-                                if isinstance(msg, dict) and msg.get("role") == "user":
-                                    prompt = msg.get("content", "")
-                                    break
-                            else:
-                                prompt = str(messages[-1]) if messages else ""
-                        else:
-                            prompt = str(messages)
-                    else:
-                        prompt = str(args)
-                else:
-                    prompt = str(args)
-            else:
-                raise ValueError(f"Invalid request type: {type(request)}")
-
-            # Prepare options
-            options = {}
-            if isinstance(request, dict) and "system" in request:
-                options["system_message"] = request["system"]
-
-            # Call py_llm with the agent's LLM resource directly, synchronously
-            result = py_llm(context=sandbox_context, prompt=prompt, options=options, llm_resource=llm_resource, is_sync=True)
-
-            # Return the result directly (no Promise handling needed)
-            return result
-
-        except Exception as e:
-            return f"Error calling LLM: {str(e)}"
-
-    def plan(
-        self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs
-    ) -> WorkflowInstance:
-        """Create a plan (workflow) for solving the problem."""
-
-        print(f"[DEBUG] agent.plan() called with: {type(problem_or_workflow)} = {problem_or_workflow}")
-        print(f"[DEBUG] sandbox_context: {sandbox_context}")
-        print(f"[DEBUG] kwargs: {kwargs}")
-
-        if isinstance(problem_or_workflow, str):
-            # Create new workflow for string problem
-            print("[DEBUG] Creating new workflow for string problem...")
-            workflow = self._create_new_workflow(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
-            print(f"[DEBUG] New workflow created: {type(workflow)}")
-        else:
-            # Use existing workflow
-            print(f"[DEBUG] Using existing workflow: {type(problem_or_workflow)}")
-            workflow = problem_or_workflow
-
-        print(f"[DEBUG] Plan returning workflow: {type(workflow)}")
-        return workflow
+    # ============================================================================
+    # PROBLEM SOLVING METHODS (Workflow Creation and Management)
+    # ============================================================================
 
     def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
         """Create a new top-level workflow for a problem."""
@@ -350,75 +257,39 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         """Create a sandbox context for workflow execution."""
         return SandboxContext()
 
-    def solve(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
-        """Solve a problem using the agent's problem-solving capabilities."""
+    # ============================================================================
+    # COMMUNICATION METHODS
+    # ============================================================================
 
-        print(f"[DEBUG] agent.solve() called with: {type(problem_or_workflow)} = {problem_or_workflow}")
-        print(f"[DEBUG] sandbox_context: {sandbox_context}")
-        print(f"[DEBUG] kwargs: {kwargs}")
+    def chat(
+        self, message: str, context: dict | None = None, max_context_turns: int = 5, sandbox_context: SandboxContext | None = None
+    ) -> Any:
+        """Asynchronous agent chat method."""
+        return PromiseFactory.create_promise(computation=lambda: self.chat_sync(message, context, max_context_turns, sandbox_context))
 
-        # If this is a new user request (string), start a new conversation turn
-        if isinstance(problem_or_workflow, str):
-            print(f"[DEBUG] Starting new conversation turn for: {problem_or_workflow}")
-            self._global_event_history.start_new_conversation_turn(problem_or_workflow)
+    def input(self, request: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None) -> Any:
+        """Asynchronous agent input method."""
+        return PromiseFactory.create_promise(computation=lambda: self.input_sync(request, sandbox_context, problem_context))
 
-        # Enhanced context assembly using Context Engineering Framework
-        if isinstance(problem_or_workflow, str):
-            try:
-                from dana.frameworks.ctxeng import ContextEngine
+    def answer(self, answer: str, sandbox_context: SandboxContext | None = None):
+        """Execute agent answer method."""
+        print(answer)
 
-                # Create context engine for this agent
-                if self._context_engine is None:
-                    self._context_engine = ContextEngine.from_agent(self)
+    # ============================================================================
+    # MEMORY METHODS
+    # ============================================================================
 
-                # Assemble rich context using ctxeng framework
-                rich_prompt = self._context_engine.assemble(
-                    problem_or_workflow,
-                    template="problem_solving",  # Use problem-solving template
-                )
+    def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent memory storage method."""
+        return PromiseFactory.create_promise(computation=lambda: self.remember_sync(key, value, sandbox_context))
 
-                print(f"[DEBUG] Context Engine assembled rich prompt (length: {len(rich_prompt)})")
-                print(f"[DEBUG] Rich prompt preview: {rich_prompt[:200]}...")
+    def recall(self, key: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent memory retrieval method."""
+        return PromiseFactory.create_promise(computation=lambda: self.recall_sync(key, sandbox_context))
 
-                # Use rich prompt instead of basic problem
-                problem_or_workflow = rich_prompt
-
-            except ImportError:
-                print("[DEBUG] Context Engineering Framework not available, using basic problem")
-            except Exception as e:
-                print(f"[DEBUG] Context Engine failed: {e}, using basic problem")
-
-        # Always create or reuse a workflow via plan(), then execute
-        print("[DEBUG] Calling agent.plan()...")
-        workflow = self.plan(problem_or_workflow, sandbox_context=sandbox_context, **kwargs)
-        print(f"[DEBUG] Plan returned workflow: {type(workflow)}")
-        print(f"[DEBUG] Workflow values: {getattr(workflow, '_values', 'No _values')}")
-
-        print("[DEBUG] Executing workflow...")
-        result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
-        print(f"[DEBUG] Workflow execution result: {type(result)} = {result}")
-
-        return result
-
-    def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent memory storage method."""
-
-        sandbox_context = sandbox_context or SandboxContext()
-
-        def wrapper():
-            return self._remember_impl(sandbox_context, key, value)
-
-        return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
-
-    def recall(self, key: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent memory retrieval method."""
-
-        sandbox_context = sandbox_context or SandboxContext()
-
-        def wrapper():
-            return self._recall_impl(sandbox_context, key)
-
-        return wrapper() if is_sync else PromiseFactory.create_promise(computation=wrapper)
+    # ============================================================================
+    # REASONING METHODS
+    # ============================================================================
 
     def reason(
         self,
@@ -426,95 +297,61 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         sandbox_context: SandboxContext | None = None,
         problem_context: dict | None = None,
         system_message: str | None = None,
-        is_sync: bool = False,
     ) -> Any:
-        """Execute agent reasoning method."""
-        sandbox_context = sandbox_context or SandboxContext()
-        return self._reason_impl(sandbox_context, premise, problem_context, system_message, is_sync=True)
+        """Asynchronous agent reasoning method."""
+        return PromiseFactory.create_promise(
+            computation=lambda: self.reason_sync(premise, sandbox_context, problem_context, system_message)
+        )
 
-    def chat(
-        self,
-        message: str,
-        context: dict | None = None,
-        max_context_turns: int = 5,
-        sandbox_context: SandboxContext | None = None,
-        is_sync: bool = False,
-    ) -> Any:
-        """Execute agent chat method."""
+    # ============================================================================
+    # LOGGING METHODS
+    # ============================================================================
 
-        sandbox_context = sandbox_context or SandboxContext()
+    def log(self, message: str, level: str = "INFO", sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.log_sync(message, level, sandbox_context))
 
-        def wrapper():
-            return self._chat_impl(sandbox_context, message, context, max_context_turns)
+    def info(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent info logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.info_sync(message, sandbox_context))
 
-        def save_conversation_callback(response):
-            """Callback to save the conversation turn when the response is ready."""
-            if self._conversation_memory:
-                # Handle case where response might be an EagerPromise
-                response = resolve_if_promise(response)
-                self._conversation_memory.add_turn(message, response)
+    def warning(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent warning logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.warning_sync(message, sandbox_context))
 
-        if is_sync:
-            result = wrapper()
-            save_conversation_callback(result)
-            return result
-        else:
-            return PromiseFactory.create_promise(computation=wrapper, on_delivery=save_conversation_callback)
+    def debug(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent debug logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.debug_sync(message, sandbox_context))
 
-    def log(self, message: str, level: str = "INFO", sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent logging method."""
+    def error(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent error logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.error_sync(message, sandbox_context))
 
-        sandbox_context = sandbox_context or SandboxContext()
+    # ============================================================================
+    # UTILITY METHODS (Metrics, Stats, Context Management)
+    # ============================================================================
 
-        def wrapper():
-            self._notify_log_callbacks(message, level, sandbox_context)
+    def get_metrics(self) -> dict[str, Any]:
+        """Get current agent metrics for TUI display.
 
-            _message = f"[{self.name}] {message}"
-            _level = level.upper()
+        Returns:
+            Dictionary containing:
+            - is_running: bool - Whether agent is currently processing
+            - current_step: str - Current processing step
+            - elapsed_time: float - Time elapsed for current operation
+            - tokens_per_sec: float - Token processing rate
+        """
+        return self._metrics.copy()
 
-            # Use both custom logging and standard Python logging
-            import logging
+    def update_metric(self, key: str, value: Any) -> None:
+        """Update a specific metric value.
 
-            # Standard Python logging for test compatibility
-            if _level == "INFO":
-                logging.info(_message)
-                Loggable.info(self, _message)
-            elif _level == "WARNING":
-                logging.warning(_message)
-                Loggable.warning(self, _message)
-            elif _level == "DEBUG":
-                logging.debug(_message)
-                Loggable.debug(self, _message)
-            elif _level == "ERROR":
-                logging.error(_message)
-                Loggable.error(self, _message)
-            else:
-                logging.info(_message)
-                Loggable.info(self, _message)
-
-            return message
-
-        if is_sync:
-            return wrapper()
-        else:
-            return PromiseFactory.create_promise(computation=wrapper)
-
-    def info(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent logging method. Override to notify log callbacks."""
-        # _notify_log_callbacks(self.name, f"[INFO] {message}", sandbox_context)
-        self.log(message, "INFO", sandbox_context, is_sync)
-
-    def warning(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "WARNING", sandbox_context, is_sync)
-
-    def debug(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "DEBUG", sandbox_context, is_sync)
-
-    def error(self, message: str, sandbox_context: SandboxContext | None = None, is_sync: bool = False) -> Any:
-        """Execute agent logging method. Override to notify log callbacks."""
-        self.log(message, "ERROR", sandbox_context, is_sync)
+        Args:
+            key: The metric key to update
+            value: The new value for the metric
+        """
+        if key in self._metrics:
+            self._metrics[key] = value
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
@@ -536,51 +373,9 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         self._conversation_memory.clear()
         return True
 
-    def __enter__(self):
-        """Context manager entry - initialize agent resources.
-
-        Returns:
-            self: The agent instance for use in with statement
-        """
-        self._initialize_agent_resources()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit - cleanup agent resources.
-
-        Args:
-            exc_type: Exception type if an exception occurred
-            exc_val: Exception value if an exception occurred
-            exc_tb: Exception traceback if an exception occurred
-        """
-        self._cleanup_agent_resources()
-        # Don't suppress exceptions - let them propagate
-
-    def _initialize_agent_resources(self):
-        """Initialize all agent resources that need explicit initialization."""
-        try:
-            # Initialize conversation memory
-            self._initialize_conversation_memory()
-
-            # Initialize LLM resource
-            self._initialize_llm_resource()
-
-            # Update metrics to indicate agent is ready
-            self.update_metric("is_running", False)
-            self.update_metric("current_step", "initialized")
-
-            # Log initialization
-            self.log("Agent resources initialized", is_sync=True)
-
-        except Exception as e:
-            # Log initialization error but don't fail completely
-            import logging
-
-            logging.error(f"Failed to initialize agent resources for {self.name}: {e}")
-            # Update metrics to indicate initialization failure
-            self.update_metric("current_step", "initialization_failed")
-
-    # _initialize_conversation_memory is implemented by AgentImplementationMixin
+    # ============================================================================
+    # RESOURCE MANAGEMENT (LLM Resources, Initialization, Cleanup)
+    # ============================================================================
 
     def _get_llm_resource(self):
         """Get the LLM resource for this agent.
@@ -620,7 +415,98 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
         # Fall back to agent's own LLM resource
         return self._get_llm_resource()
 
-    # _initialize_llm_resource is implemented by AgentImplementationMixin
+    def _initialize_conversation_memory(self):
+        """Initialize conversation memory if not already done."""
+        if self._conversation_memory is None:
+            from pathlib import Path
+
+            from dana.frameworks.memory.conversation_memory import ConversationMemory
+
+            # Create memory file path under ~/.dana/chats/
+            agent_name = getattr(self.agent_type, "name", "agent")
+            home_dir = Path.home()
+            dana_dir = home_dir / ".dana"
+            memory_dir = dana_dir / "chats"
+            memory_dir.mkdir(parents=True, exist_ok=True)
+            memory_file = memory_dir / f"{agent_name}_conversation.json"
+
+            self._conversation_memory = ConversationMemory(
+                filepath=str(memory_file),
+                max_turns=20,  # Keep last 20 turns in active memory
+            )
+
+    def _initialize_llm_resource(self):
+        """Initialize LLM resource from agent's config if not already done."""
+        if self._llm_resource_instance is None:
+            # Check if we're in a test environment by looking for DANA_MOCK_LLM
+            import os
+
+            if os.getenv("DANA_MOCK_LLM", "false").lower() == "true":
+                # Create a mock LLM resource for testing
+                from tests.conftest import create_mock_llm_resource
+
+                self._llm_resource_instance = create_mock_llm_resource()
+                return
+
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+            # Get LLM parameters from agent's config field
+            llm_params = {}
+            if hasattr(self, "_values") and "config" in self._values:
+                config = self._values["config"]
+                if isinstance(config, dict):
+                    # Extract LLM parameters from config
+                    llm_params = {
+                        "model": config.get("llm_model", config.get("model", "auto")),
+                        "temperature": config.get("llm_temperature", config.get("temperature", 0.7)),
+                        "max_tokens": config.get("llm_max_tokens", config.get("max_tokens", 2048)),
+                        "provider": config.get("llm_provider", config.get("provider", "auto")),
+                    }
+                    # Add any other LLM-related config keys
+                    for key, value in config.items():
+                        if key.startswith("llm_") and key not in ["llm_model", "llm_temperature", "llm_max_tokens", "llm_provider"]:
+                            llm_params[key[4:]] = value  # Remove "llm_" prefix
+
+            # Create the LLM resource instance using the resource type system
+            # This avoids direct dependency on LegacyLLMResource
+            self._llm_resource_instance = LLMResourceType.create_instance_from_values(
+                {
+                    "name": f"{self.agent_type.name}_llm",
+                    "model": llm_params.get("model", "auto"),
+                    "provider": llm_params.get("provider", "auto"),
+                    "temperature": llm_params.get("temperature", 0.7),
+                    "max_tokens": llm_params.get("max_tokens", 2048),
+                    **{k: v for k, v in llm_params.items() if k not in ["model", "temperature", "max_tokens", "provider"]},
+                }
+            )
+
+            # Initialize the resource
+            self._llm_resource_instance.initialize()
+            self._llm_resource_instance.start()
+
+    def _initialize_agent_resources(self):
+        """Initialize all agent resources that need explicit initialization."""
+        try:
+            # Initialize conversation memory
+            self._initialize_conversation_memory()
+
+            # Initialize LLM resource
+            self._initialize_llm_resource()
+
+            # Update metrics to indicate agent is ready
+            self.update_metric("is_running", False)
+            self.update_metric("current_step", "initialized")
+
+            # Log initialization
+            self.log_sync("Agent resources initialized")
+
+        except Exception as e:
+            # Log initialization error but don't fail completely
+            import logging
+
+            logging.error(f"Failed to initialize agent resources for {self.name}: {e}")
+            # Update metrics to indicate initialization failure
+            self.update_metric("current_step", "initialization_failed")
 
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""
@@ -666,7 +552,7 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             self.update_metric("tokens_per_sec", 0.0)
 
             # Log cleanup
-            self.log("Agent resources cleaned up", is_sync=True)
+            self.log_sync("Agent resources cleaned up")
 
         except Exception as e:
             # Log cleanup error but don't fail completely
@@ -675,3 +561,27 @@ class AgentInstance(StructInstance, AgentImplementationMixin, AgentEventMixin):
             logging.error(f"Failed to cleanup agent resources for {self.name}: {e}")
             # Update metrics to indicate cleanup failure
             self.update_metric("current_step", "cleanup_failed")
+
+    # ============================================================================
+    # CONTEXT MANAGER METHODS
+    # ============================================================================
+
+    def __enter__(self):
+        """Context manager entry - initialize agent resources.
+
+        Returns:
+            self: The agent instance for use in with statement
+        """
+        self._initialize_agent_resources()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - cleanup agent resources.
+
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
+        """
+        self._cleanup_agent_resources()
+        # Don't suppress exceptions - let them propagate

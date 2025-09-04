@@ -75,7 +75,16 @@ class TestAgentLogIntegration(unittest.TestCase):
 
         # Call log method
         message = "Integration test message"
-        result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
+        result = self.agent_instance.log(message, "INFO", self.sandbox_context)
+
+        # Handle both promise and direct result cases
+        # The system may fall back to synchronous execution for safety
+        if hasattr(result, "_wait_for_delivery"):
+            # Got a promise - wait for it to resolve
+            final_result = result._wait_for_delivery()
+        else:
+            # Got direct result due to safety fallback
+            final_result = result
 
         # Verify callback was called
         self.assertEqual(len(self.callback_calls), 1)
@@ -84,7 +93,7 @@ class TestAgentLogIntegration(unittest.TestCase):
         self.assertEqual(self.callback_calls[0][2], self.sandbox_context)
 
         # Verify result
-        self.assertEqual(result, message)
+        self.assertEqual(final_result, message)
 
     def test_log_method_async_integration(self):
         """Test that log() method works in async mode, handling safety fallbacks gracefully."""
@@ -97,7 +106,7 @@ class TestAgentLogIntegration(unittest.TestCase):
 
         # Call log method in async mode
         message = "Async integration test message"
-        result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=False)
+        result = self.agent_instance.log(message, "INFO", self.sandbox_context)
 
         # Handle both promise and direct result cases
         # The system may fall back to synchronous execution for safety
@@ -128,7 +137,16 @@ class TestAgentLogIntegration(unittest.TestCase):
 
         # Call log method without context
         message = "No context test message"
-        result = self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
+        result = self.agent_instance.log(message, "INFO", self.sandbox_context)
+
+        # Handle both promise and direct result cases
+        # The system may fall back to synchronous execution for safety
+        if hasattr(result, "_wait_for_delivery"):
+            # Got a promise - wait for it to resolve
+            final_result = result._wait_for_delivery()
+        else:
+            # Got direct result due to safety fallback
+            final_result = result
 
         # Verify callback was called
         self.assertEqual(len(self.callback_calls), 1)
@@ -138,7 +156,7 @@ class TestAgentLogIntegration(unittest.TestCase):
         self.assertIsInstance(self.callback_calls[0][2], SandboxContext)
 
         # Verify result
-        self.assertEqual(result, message)
+        self.assertEqual(final_result, message)
 
     def test_multiple_agents_logging(self):
         """Test that multiple agents can use log() method."""
@@ -153,8 +171,15 @@ class TestAgentLogIntegration(unittest.TestCase):
         agent2.on_log(test_callback)
 
         # Both agents log messages
-        self.agent_instance.log("Message from agent 1", "INFO", self.sandbox_context, is_sync=True)
-        agent2.log("Message from agent 2", "INFO", self.sandbox_context, is_sync=True)
+        result1 = self.agent_instance.log("Message from agent 1", "INFO", self.sandbox_context)
+        result2 = agent2.log("Message from agent 2", "INFO", self.sandbox_context)
+
+        # Handle both promise and direct result cases
+        # The system may fall back to synchronous execution for safety
+        if hasattr(result1, "_wait_for_delivery"):
+            result1._wait_for_delivery()
+        if hasattr(result2, "_wait_for_delivery"):
+            result2._wait_for_delivery()
 
         # Verify both callbacks were called
         self.assertEqual(len(self.callback_calls), 2)
@@ -167,7 +192,14 @@ class TestAgentLogIntegration(unittest.TestCase):
         """Test that log() method integrates with standard logging."""
         with self.assertLogs(level="INFO") as log_context:
             message = "Standard logging test"
-            self.agent_instance.log(message, "INFO", self.sandbox_context, is_sync=True)
+            result = self.agent_instance.log(message, "INFO", self.sandbox_context)
+
+            # Handle both promise and direct result cases
+            # The system may fall back to synchronous execution for safety
+            if hasattr(result, "_wait_for_delivery"):
+                # Got a promise - wait for it to resolve
+                result._wait_for_delivery()
+            # else: Got direct result due to safety fallback
 
             # Verify message was logged to standard logging
             self.assertIn(f"[test_logger] {message}", log_context.output[0])
