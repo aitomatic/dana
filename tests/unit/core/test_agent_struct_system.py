@@ -136,8 +136,9 @@ class TestAgentInstance(unittest.TestCase):
         llm_resource = create_mock_llm_resource()
         self.sandbox_context.set_system_llm_resource(llm_resource)
 
-        # Test plan method
-        plan_result = agent_instance.plan("test task", sandbox_context=self.sandbox_context)
+        # Test plan method - use sync method to avoid promise handling
+        plan_result = agent_instance.plan_sync("test task", sandbox_context=self.sandbox_context)
+
         # The plan method should return a WorkflowInstance
         from dana.core.workflow.workflow_system import WorkflowInstance
 
@@ -147,8 +148,9 @@ class TestAgentInstance(unittest.TestCase):
         self.assertIsNotNone(plan_result._values)
         self.assertTrue(hasattr(plan_result, "execute"), "WorkflowInstance should have execute method")
 
-        # Test solve method
-        solve_result = agent_instance.solve("test problem", sandbox_context=self.sandbox_context)
+        # Test solve method - use sync method to avoid promise handling
+        solve_result = agent_instance.solve_sync("test problem", sandbox_context=self.sandbox_context)
+
         # Since DANA_MOCK_LLM is true, we should get a mock response
         # The solve method can return different types
         if isinstance(solve_result, str):

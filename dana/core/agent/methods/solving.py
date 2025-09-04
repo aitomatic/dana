@@ -59,10 +59,14 @@ class SolvingMixin:
         print(f"[DEBUG] Workflow values: {getattr(workflow, '_values', 'No _values')}")
 
         print("[DEBUG] Executing workflow...")
-        result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
-        print(f"[DEBUG] Workflow execution result: {type(result)} = {result}")
-
-        return result
+        try:
+            result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
+            print(f"[DEBUG] Workflow execution result: {type(result)} = {result}")
+            return result
+        except Exception as e:
+            print(f"[DEBUG] Workflow execution failed with error: {e}")
+            # Return error message instead of re-raising
+            return f"Error executing workflow: {str(e)}"
 
     def _plan_impl(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext, **kwargs) -> WorkflowInstance:
         """Implementation of plan functionality."""
