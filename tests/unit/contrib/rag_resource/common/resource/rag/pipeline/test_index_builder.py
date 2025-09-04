@@ -62,7 +62,7 @@ class TestIndexBuilder:
 
         with patch("llama_index.core.VectorStoreIndex.from_documents") as mock_from_docs:
             # Setup mock to return different indices for different sources
-            def mock_from_docs_side_effect(docs):
+            def mock_from_docs_side_effect(docs, **kwargs):
                 mock_index = Mock(spec=VectorStoreIndex)
                 mock_index.source_key = "mock_index_for_" + str(len(docs))
                 return mock_index
