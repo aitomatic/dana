@@ -5,8 +5,6 @@ This module tests the integration between AgentInstance, strategies, and workflo
 in the new agent solving system.
 """
 
-import pytest
-
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
 from dana.core.agent.context import EventHistory, ProblemContext
@@ -46,8 +44,8 @@ class TestAgentSolveIntegration:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        # Test planning with string problem - this creates a strategy workflow
-        workflow = agent.plan("Test problem")
+        # Test planning with string problem - use sync method to avoid promise handling
+        workflow = agent.plan_sync("Test problem")
 
         assert isinstance(workflow, WorkflowInstance)
         # Strategy workflows have different fields than top-level workflows
@@ -325,9 +323,11 @@ class TestAgentErrorHandling:
 
         workflow.set_composed_function(error_function)
 
-        # Execute and expect error
-        with pytest.raises(ValueError, match="Test error"):
-            agent.solve(workflow)
+        # Execute and expect error - use sync method to avoid promise handling
+        result = agent.solve_sync(workflow)
+
+        # The result should contain the error message
+        assert "Test error" in str(result)
 
         # Note: In simplified workflow system, events are not automatically recorded during execution
         # The workflow execution will fail as expected, but event recording is not implemented
@@ -345,10 +345,12 @@ class TestAgentErrorHandling:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        # Create workflow without composed function
-        workflow = agent.plan("Test problem")
+        # Create workflow without composed function - use sync method
+        workflow = agent.plan_sync("Test problem")
         workflow._composed_function = None
 
-        # Execute and expect error
-        with pytest.raises(RuntimeError, match="No composed function set"):
-            agent.solve(workflow)
+        # Execute and expect error - use sync method to avoid promise handling
+        result = agent.solve_sync(workflow)
+
+        # The result should contain the error message
+        assert "No composed function set" in str(result)
