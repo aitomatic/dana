@@ -39,7 +39,7 @@ class TestContextEngineIntegration:
             mock_ctxeng.from_agent.return_value = mock_instance
 
             # This should trigger context engine creation
-            self.agent.solve("test problem")
+            self.agent.solve_sync("test problem")
 
             # Verify context engine was created
             assert self.agent._context_engine is not None
@@ -53,7 +53,7 @@ class TestContextEngineIntegration:
             mock_ctxeng.from_agent.return_value = mock_instance
 
             # Trigger context engine creation
-            self.agent.solve("test problem")
+            self.agent.solve_sync("test problem")
 
             # Verify the context engine was created and used
             assert self.agent._context_engine is not None
@@ -67,7 +67,7 @@ class TestContextEngineIntegration:
             mock_ctxeng.from_agent.return_value = mock_instance
 
             # Trigger context engine creation and assembly
-            self.agent.solve("test problem")
+            self.agent.solve_sync("test problem")
 
             # Verify assembly was called with correct parameters
             mock_instance.assemble.assert_called_once_with("test problem", template="problem_solving")
@@ -77,7 +77,7 @@ class TestContextEngineIntegration:
         # Test with a patch that affects the import inside the solve method
         with patch("dana.frameworks.ctxeng.ContextEngine", side_effect=ImportError("No module named 'dana.frameworks.ctxeng'")):
             # Should not raise an error, should fall back to basic problem
-            self.agent.solve("test problem")
+            self.agent.solve_sync("test problem")
 
             # The context engine should not be created due to import error
             # Note: In this test scenario, the mock is created before the import error
@@ -93,7 +93,7 @@ class TestContextEngineIntegration:
             mock_ctxeng.from_agent.return_value = mock_instance
 
             # Should not raise an error, should fall back to basic problem
-            self.agent.solve("test problem")
+            self.agent.solve_sync("test problem")
 
             # Verify context engine was created but assembly failed
             assert self.agent._context_engine is not None
@@ -106,11 +106,11 @@ class TestContextEngineIntegration:
             mock_ctxeng.from_agent.return_value = mock_instance
 
             # First call should create context engine
-            self.agent.solve("first problem")
+            self.agent.solve_sync("first problem")
             first_engine = self.agent._context_engine
 
             # Second call should reuse the same engine
-            self.agent.solve("second problem")
+            self.agent.solve_sync("second problem")
             second_engine = self.agent._context_engine
 
             # Verify same instance is reused
