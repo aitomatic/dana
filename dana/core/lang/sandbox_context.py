@@ -977,7 +977,7 @@ class SandboxContext(Loggable):
         try:
             return cast("LLMResourceInstance", self.get_resource("system_llm"))
         except KeyError:
-            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
             sys_llm_resource = LLMResourceType.create_default_instance()
             self.set_system_llm_resource(sys_llm_resource)

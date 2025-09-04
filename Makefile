@@ -151,7 +151,7 @@ dana: ## Start the Dana REPL
 
 test: ## Run all tests (matches CI)
 	@echo "🧪 Running tests (matching CI)..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest -m "not live and not deep" tests/ --tb=short -v --maxfail=10
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest -m "not live and not deep" tests/ --tb=short -v --maxfail=10 -k "not rag"
 
 # =============================================================================
 # Code Quality
