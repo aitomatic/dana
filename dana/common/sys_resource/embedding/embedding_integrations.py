@@ -99,6 +99,8 @@ class LlamaIndexEmbeddingResource(Loggable):
             return self._create_cohere_embedding(model_id, provider_config, dimension_override)
         elif provider == "huggingface":
             return self._create_huggingface_embedding(model_id, provider_config, dimension_override)
+        elif provider == "ibm_watsonx":
+            return self._create_ibm_watsonx_embedding(model_id, provider_config, dimension_override)
         else:
             raise EmbeddingError(f"Unsupported provider: {provider}")
 
@@ -218,6 +220,23 @@ class LlamaIndexEmbeddingResource(Loggable):
             model_name=model_name,
             embed_batch_size=provider_config.get("batch_size", 64),
         )
+    
+    def _create_ibm_watsonx_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create IBM Watsonx LlamaIndex embedding.
+        """
+        try:
+            from llama_index.embeddings.ibm import WatsonxEmbeddings  # type: ignore
+        except ImportError:
+            raise EmbeddingError("Install: pip install llama-index-embeddings-ibm")
+        
+        resolved_configs = {
+            k : self._resolve_env_var(v, None) for k, v in provider_config.items()
+        }
+
+        return WatsonxEmbeddings(
+            model_id=model_name,
+            **resolved_configs,
+        )
 
     def _create_huggingface_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         """Create HuggingFace LlamaIndex embedding.
@@ -330,3 +349,9 @@ class EmbeddingFactory:
 RAGEmbeddingResource = LlamaIndexEmbeddingResource
 get_embedding_model = RAGEmbeddingResource().get_embedding_model
 get_default_embedding_model = RAGEmbeddingResource().get_default_embedding_model
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    print(get_default_embedding_model())
