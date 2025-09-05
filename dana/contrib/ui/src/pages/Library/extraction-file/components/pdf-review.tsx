@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { IconLoader } from '@tabler/icons-react';
@@ -196,7 +197,6 @@ export const PDFReview = ({ blobUrl, currentPage, setCurrentPage }: PDFReviewPro
         lastCurrentPageRef.current = mostVisiblePage;
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numPages, visiblePages, scrollPage, currentPage, setCurrentPage]);
 
   // When PDF loads, set initial visible pages

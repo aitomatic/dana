@@ -63,7 +63,7 @@ const ChatInput = ({
     textarea.style.height = `${newHeight}px`;
   };
 
-  // SIMPLIFIED: Check for @ character and show popover
+  // Check for @ character and show popover, with special handling for @document
   const checkForMentionTrigger = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -80,8 +80,13 @@ const ChatInput = ({
       cursorPosition > atIndex &&
       !text.substring(atIndex, cursorPosition).includes(' ')
     ) {
-      // Extract the query after @ for filtering
-      const query = text.substring(atIndex + 1, cursorPosition);
+      // Check if it's @document specifically
+      const isDocumentMention = text.substring(atIndex, cursorPosition).startsWith('@document');
+
+      // Extract the query after @ or @document for filtering
+      const query = isDocumentMention
+        ? text.substring(atIndex + 10, cursorPosition) // 10 = length of '@document'
+        : text.substring(atIndex + 1, cursorPosition);
 
       setMentionQuery(query);
       setAtPosition(atIndex);
@@ -104,9 +109,20 @@ const ChatInput = ({
       const cursorPosition = textarea.selectionEnd;
       const text = textarea.value;
 
-      // Replace @query with the selected mention (keeping the @ symbol)
-      const newText =
-        text.substring(0, atPosition) + '@' + option.value + ' ' + text.substring(cursorPosition);
+      // Check if we're in a @document context
+      const isDocumentMention = text.substring(atPosition, cursorPosition).startsWith('@document');
+
+      let newText;
+      if (isDocumentMention) {
+        // Replace @document query with @document:filename
+        const beforeDocument = text.substring(0, atPosition);
+        const afterQuery = text.substring(cursorPosition);
+        newText = `${beforeDocument}@document:${option.value} ${afterQuery}`;
+      } else {
+        // Regular mention replacement
+        newText =
+          text.substring(0, atPosition) + '@' + option.value + ' ' + text.substring(cursorPosition);
+      }
 
       // Update both internal and parent state
       setInternalValue(newText);
@@ -119,7 +135,9 @@ const ChatInput = ({
       // Set cursor position after the inserted mention
       setTimeout(() => {
         if (textarea) {
-          const newCursorPosition = atPosition + option.value.length + 2; // +2 for @ and space
+          const newCursorPosition = isDocumentMention
+            ? atPosition + 10 + option.value.length + 1 // @document:filename + space
+            : atPosition + option.value.length + 2; // @filename + space
           textarea.focus();
           textarea.setSelectionRange(newCursorPosition, newCursorPosition);
           adjustTextareaHeight();
@@ -295,56 +313,97 @@ const ChatInput = ({
       {showMentionPopover && (
         <div
           ref={popoverRef}
-          className="absolute z-50 py-3 overflow-y-auto border border-gray-200 rounded-md shadow-lg dark:border-gray-300 scrollbar-hide w-80 bg-background max-h-60"
+          className="overflow-y-auto absolute z-50 py-3 w-80 max-h-60 rounded-md border border-gray-200 shadow-lg dark:border-gray-300 scrollbar-hide bg-background"
           style={{
             bottom: '100%', // Position above the textarea
             left: '0', // Start from the left edge
             marginBottom: '4px', // Give a bit of space
           }}
         >
-          <span className="px-4 text-sm text-gray-500">
-            In this chat ({filteredMentionOptions.length})
-          </span>
-          {filteredMentionOptions.length > 0 && (
-            <ul className="py-1">
-              {filteredMentionOptions.map((file, index) => (
-                <li
-                  onClick={() => insertMention(file)}
-                  onMouseEnter={() => setSelectedMentionIndex(index)}
-                  key={file.id}
-                  className={`p-4 flex gap-2 cursor-pointer hover:bg-brand-50 ${
-                    index === selectedMentionIndex ? 'bg-brand-100' : ''
-                  }`}
-                  ref={index === selectedMentionIndex ? selectedItemRef : null}
-                >
-                  <div className="flex">
-                    <FileIcon ext={file?.value?.split('.').pop()} />
-                  </div>
-                  {file.value}
-                </li>
-              ))}
-            </ul>
-          )}
-          <span className="px-4 text-sm text-gray-500">
-            Assigned Sources ({filteredMentionOptions.length})
-          </span>
-          {filteredMentionOptions.length > 0 && (
-            <ul className="py-1">
-              {filteredMentionOptions.map((option, index) => (
-                <li
-                  key={option.id}
-                  ref={index === selectedMentionIndex ? selectedItemRef : null}
-                  className={`p-4 flex gap-2 cursor-pointer hover:bg-gray-100 ${
-                    index === selectedMentionIndex ? 'bg-brand-50' : ''
-                  }`}
-                  onClick={() => insertMention(option)}
-                  onMouseEnter={() => setSelectedMentionIndex(index)}
-                >
-                  {option.icon && <span className="text-gray-600">{option.icon}</span>}
-                  <span className="font-medium">{option.label}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Check if this is a @document mention */}
+          {availableMentionOptions.length > 0 && availableMentionOptions[0]?.icon === '📄' ? (
+            // Document mention popover
+            <>
+              <span className="px-4 text-sm text-gray-500">
+                Available Documents ({filteredMentionOptions.length})
+              </span>
+              {filteredMentionOptions.length > 0 && (
+                <ul className="py-1">
+                  {filteredMentionOptions.map((doc, index) => (
+                    <li
+                      onClick={() => insertMention(doc)}
+                      onMouseEnter={() => setSelectedMentionIndex(index)}
+                      key={doc.id}
+                      className={`p-4 flex gap-2 cursor-pointer hover:bg-brand-50 ${
+                        index === selectedMentionIndex ? 'bg-brand-100' : ''
+                      }`}
+                      ref={index === selectedMentionIndex ? selectedItemRef : null}
+                    >
+                      <div className="flex gap-3 items-center">
+                        <div className="size-8">
+                          <FileIcon ext={doc.value?.split('.').pop()} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{doc.label}</span>
+                          <span className="text-xs text-gray-500">Click to select</span>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="px-4 py-2 text-xs text-gray-400 border-t">
+                Type @document:filename to query specific documents
+              </div>
+            </>
+          ) : (
+            // Regular mention popover (fallback)
+            <>
+              <span className="px-4 text-sm text-gray-500">
+                In this chat ({filteredMentionOptions.length})
+              </span>
+              {filteredMentionOptions.length > 0 && (
+                <ul className="py-1">
+                  {filteredMentionOptions.map((file, index) => (
+                    <li
+                      onClick={() => insertMention(file)}
+                      onMouseEnter={() => setSelectedMentionIndex(index)}
+                      key={file.id}
+                      className={`p-4 flex gap-2 cursor-pointer hover:bg-brand-50 ${
+                        index === selectedMentionIndex ? 'bg-brand-100' : ''
+                      }`}
+                      ref={index === selectedMentionIndex ? selectedItemRef : null}
+                    >
+                      <div className="flex">
+                        <FileIcon ext={file?.value?.split('.').pop()} />
+                      </div>
+                      {file.value}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <span className="px-4 text-sm text-gray-500">
+                Assigned Sources ({filteredMentionOptions.length})
+              </span>
+              {filteredMentionOptions.length > 0 && (
+                <ul className="py-1">
+                  {filteredMentionOptions.map((option, index) => (
+                    <li
+                      key={option.id}
+                      ref={index === selectedMentionIndex ? selectedItemRef : null}
+                      className={`p-4 flex gap-2 cursor-pointer hover:bg-gray-100 ${
+                        index === selectedMentionIndex ? 'bg-brand-50' : ''
+                      }`}
+                      onClick={() => insertMention(option)}
+                      onMouseEnter={() => setSelectedMentionIndex(index)}
+                    >
+                      {option.icon && <span className="text-gray-600">{option.icon}</span>}
+                      <span className="font-medium">{option.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       )}

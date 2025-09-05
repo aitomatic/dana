@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ArrowUp,
@@ -242,6 +243,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             console.log('==============================================');
             setCurrentStep(action);
           } catch (error) {
+            console.error('Error parsing step object:', error);
             // If parsing fails, use the raw value
             console.log(`📝 Failed to parse step object, using raw value: "${stepValue}"`);
             setCurrentStep(stepValue);
@@ -579,11 +581,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         handleSendMessage();
       }
     };
-    
+
     (window as any).setInputText = (value: string) => {
       setInputText(value);
     };
-    
+
     return () => {
       delete (window as any).handleSendMessage;
       delete (window as any).setInputText;
@@ -749,7 +751,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                           : 'text-gray-900'
                       }`}
                     >
-                      <HybridRenderer content={message.text ?? 'Empty message'} backgroundContext="agent" />
+                      <HybridRenderer
+                        content={message.text ?? 'Empty message'}
+                        backgroundContext="agent"
+                      />
                       <p className="mt-1 text-xs opacity-70">
                         {message.timestamp.toLocaleTimeString([], {
                           hour: '2-digit',

@@ -21,7 +21,7 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     cell: ({ row }) => {
       const item = row.original;
-      
+
       return (
         <div className="grid grid-cols-[max-content_1fr] gap-2">
           <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />

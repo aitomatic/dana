@@ -32,7 +32,7 @@ export const PromptSection = ({
             id="prompt"
             placeholder="Enter additional context or instructions for extraction..."
             value={prompt}
-            onChange={e => setPrompt(e.target.value)}
+            onChange={(e) => setPrompt(e.target.value)}
             className="min-h-[120px] rounded-lg resize-none border-gray-300"
             disabled={isDeepExtracting}
           />
@@ -40,7 +40,9 @@ export const PromptSection = ({
         <div className="flex gap-2">
           <Button
             leftSection={isDeepExtracting && <SystemRestart className="animate-spin size-4" />}
-            onClick={prompt && prompt.trim() !== '' ? onDeepExtractWithPrompt : onDeepExtractWithoutPrompt}
+            onClick={
+              prompt && prompt.trim() !== '' ? onDeepExtractWithPrompt : onDeepExtractWithoutPrompt
+            }
             variant="secondary"
             size="sm"
             className="w-max text-gray-700"
@@ -74,7 +76,9 @@ export const PromptSection = ({
             </Button>
           )}
         </div>
-        <span className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg">{prompt}</span>
+        <span className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg">
+          {prompt}
+        </span>
       </div>
     );
   }

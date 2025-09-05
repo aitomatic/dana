@@ -2,12 +2,21 @@ import { IconLoader } from '@tabler/icons-react';
 import { useParams } from 'react-router-dom';
 import { getAgentAvatarSync } from '@/utils/avatar';
 
-const BotThinking = ({ message, avatar, currentStep }: { message?: string; avatar?: string; currentStep?: string }) => {
+const BotThinking = ({
+  message,
+  avatar,
+  currentStep,
+}: {
+  message?: string;
+  avatar?: string;
+  currentStep?: string;
+}) => {
   const thinkingMessage = 'Thinking...';
   const { agent_id } = useParams<{ agent_id: string }>();
 
   // Use dynamic avatar based on agent ID, fallback to provided avatar or default
-  const avatarSrc = avatar || (agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg');
+  const avatarSrc =
+    avatar || (agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg');
 
   return (
     <div className="grid grid-cols-[max-content_1fr] items-start w-full gap-2 px-6 py-4">
@@ -36,11 +45,7 @@ const BotThinking = ({ message, avatar, currentStep }: { message?: string; avata
           <span className="text-sm font-normal text-gray-900 break-words xl:text-base animate-flash">
             {message ?? thinkingMessage ?? 'Thinking...'}
           </span>
-          {currentStep && (
-            <span className="text-xs text-gray-600 mt-1 italic">
-              {currentStep}
-            </span>
-          )}
+          {currentStep && <span className="text-xs text-gray-600 mt-1 italic">{currentStep}</span>}
         </div>
       </div>
     </div>
