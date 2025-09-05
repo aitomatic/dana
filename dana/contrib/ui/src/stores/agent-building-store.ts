@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import type { AgentCapabilities, MultiFileProject } from '@/lib/api';
 
@@ -82,7 +83,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
 
     set({
       currentAgent: newAgent,
-      error: null
+      error: null,
     });
   },
 
@@ -90,7 +91,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, ...updates, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
@@ -98,7 +99,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, phase, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
@@ -106,8 +107,12 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     console.log('🏪 Zustand Store: Setting ready_for_code_generation to:', ready);
     set((state) => ({
       currentAgent: state.currentAgent
-        ? { ...state.currentAgent, ready_for_code_generation: ready, updated_at: new Date().toISOString() }
-        : null
+        ? {
+            ...state.currentAgent,
+            ready_for_code_generation: ready,
+            updated_at: new Date().toISOString(),
+          }
+        : null,
     }));
   },
 
@@ -115,7 +120,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, id, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
@@ -123,7 +128,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, folder_path: folder, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
@@ -131,15 +136,19 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, dana_code: code, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
   setMultiFileProject: (project: MultiFileProject) => {
     set((state) => ({
       currentAgent: state.currentAgent
-        ? { ...state.currentAgent, multi_file_project: project, updated_at: new Date().toISOString() }
-        : null
+        ? {
+            ...state.currentAgent,
+            multi_file_project: project,
+            updated_at: new Date().toISOString(),
+          }
+        : null,
     }));
   },
 
@@ -147,7 +156,7 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? { ...state.currentAgent, capabilities, updated_at: new Date().toISOString() }
-        : null
+        : null,
     }));
   },
 
@@ -155,11 +164,11 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
     set((state) => ({
       currentAgent: state.currentAgent
         ? {
-          ...state.currentAgent,
-          conversation_context: [...state.currentAgent.conversation_context, { role, content }],
-          updated_at: new Date().toISOString()
-        }
-        : null
+            ...state.currentAgent,
+            conversation_context: [...state.currentAgent.conversation_context, { role, content }],
+            updated_at: new Date().toISOString(),
+          }
+        : null,
     }));
   },
 
@@ -183,4 +192,4 @@ export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
       error: null,
     });
   },
-})); 
+}));
