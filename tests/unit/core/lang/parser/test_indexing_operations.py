@@ -129,7 +129,7 @@ result = test_dict["nonexistent"]
 """
 
         ast = self.parser.parse(dana_code_dict)
-        with pytest.raises(Exception):  # Should raise some form of error
+        with pytest.raises((IndexError, KeyError)):  # Should raise specific error
             self.interpreter.execute_program(ast, self.context)
 
         # Test IndexError for list
@@ -143,5 +143,5 @@ result = test_list[10]
         self.interpreter = DanaInterpreter()
 
         ast = self.parser.parse(dana_code_list)
-        with pytest.raises(Exception):  # Should raise some form of error
+        with pytest.raises((IndexError, KeyError)):  # Should raise specific error
             self.interpreter.execute_program(ast, self.context)

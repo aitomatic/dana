@@ -425,7 +425,7 @@ class AgentInstance(
         if self._conversation_memory is None:
             from pathlib import Path
 
-            from dana.frameworks.memory.conversation_memory import ConversationMemory
+            from dana.core.agent.mind.memory.conversation import ConversationMemory
 
             # Create memory file path under ~/.dana/chats/
             agent_name = getattr(self.agent_type, "name", "agent")
