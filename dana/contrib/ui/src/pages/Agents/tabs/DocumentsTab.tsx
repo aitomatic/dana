@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { LibraryTable } from '@/components/library';
@@ -7,7 +8,14 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload, MultiplePagesPlus } from 'iconoir-react';
+import {
+  Search,
+  SystemRestart,
+  DocMagnifyingGlass,
+  EmptyPage,
+  Upload,
+  MultiplePagesPlus,
+} from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentStore } from '@/stores/document-store';
 import { toast } from 'sonner';
@@ -15,12 +23,12 @@ import { PdfViewer } from '@/components/library/pdf-viewer';
 
 /**
  * DocumentsTab Component
- * 
+ *
  * This component manages documents associated with a specific agent.
  * It distinguishes between two types of documents:
  * 1. Documents added from the library (have topic_id) - can only be disassociated, not deleted
  * 2. Documents uploaded directly to the agent (no topic_id) - can be completely deleted
- * 
+ *
  * When deleting documents:
  * - Library documents: Removes association with agent, keeps document in library
  * - Direct uploads: Completely deletes document from system
@@ -29,7 +37,7 @@ import { PdfViewer } from '@/components/library/pdf-viewer';
 // Convert DocumentRead to LibraryItem format
 const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
   const extension = doc.original_filename.split('.').pop() || '';
-  
+
   return {
     id: doc.id.toString(),
     name: doc.original_filename,
@@ -110,14 +118,14 @@ const DocumentsTab: React.FC = () => {
       toast.error('No agent selected');
       return;
     }
-    
+
     try {
-      const documentIds = selectedFileIds.map(id => parseInt(id));
+      const documentIds = selectedFileIds.map((id) => parseInt(id));
       console.log('🔗 Associating documents:', { agent_id, documentIds });
-      
+
       const result = await apiService.associateDocumentsWithAgent(agent_id, documentIds);
       console.log('✅ Association result:', result);
-      
+
       toast.success(`Successfully added ${selectedFileIds.length} file(s) to agent`);
       await fetchDocuments({ agent_id: parseInt(agent_id) }); // Refresh the documents list
       setLibraryModalOpen(false);
@@ -127,7 +135,7 @@ const DocumentsTab: React.FC = () => {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-        stack: error.stack
+        stack: error.stack,
       });
       toast.error('Failed to add files to agent');
     }
@@ -183,16 +191,16 @@ const DocumentsTab: React.FC = () => {
     // Simple deletion - always disassociate from agent
     console.log('🗑️ Delete item requested:', {
       itemId: item.id,
-      itemName: item.name
+      itemName: item.name,
     });
-    
+
     setSelectedItem(item);
     setShowDeleteConfirm(true);
   };
 
   /**
    * Handle document removal from agent
-   * 
+   *
    * SIMPLIFIED: Always disassociate documents from agents instead of deleting them.
    * This ensures documents remain in the library and can be re-added to other agents.
    */
@@ -201,14 +209,13 @@ const DocumentsTab: React.FC = () => {
 
     try {
       const documentId = parseInt(selectedItem.id);
-      
 
       await apiService.disassociateDocumentFromAgent(agent_id!, documentId);
       toast.success(`"${selectedItem.name}" removed successfully.`);
-      
+
       console.log('🔄 Refreshing documents after disassociation...');
       await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
-      
+
       console.log('✅ Document disassociation and refresh completed');
     } catch (error) {
       console.error('❌ Failed to remove document from agent:', error);
@@ -341,7 +348,7 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
-        <Button 
+        <Button
           onClick={handleAddFromLibrary}
           disabled={uploadingFiles.length > 0}
           variant="outline"

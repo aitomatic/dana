@@ -51,9 +51,13 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       console.log('📥 Document store: Received documents from API:', {
         count: documents?.length || 0,
         filters,
-        documents: documents?.map(d => ({ id: d.id, name: d.original_filename, agent_id: d.agent_id }))
+        documents: documents?.map((d) => ({
+          id: d.id,
+          name: d.original_filename,
+          agent_id: d.agent_id,
+        })),
       });
-      
+
       set({
         documents,
         isLoading: false,
@@ -61,7 +65,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         limit: filters?.limit || 100,
         total: documents.length, // Note: API doesn't return total count, using array length
       });
-      
+
       console.log('✅ Document store: Documents updated successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch documents';

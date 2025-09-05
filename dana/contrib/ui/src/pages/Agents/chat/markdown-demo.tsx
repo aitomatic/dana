@@ -76,16 +76,18 @@ $$
         </div>
       </div>
 
-      <div className={`border rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>
-        <MarkdownViewerSmall theme={theme}>
-          {sampleMarkdown}
-        </MarkdownViewerSmall>
+      <div
+        className={`border rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}
+      >
+        <MarkdownViewerSmall theme={theme}>{sampleMarkdown}</MarkdownViewerSmall>
       </div>
 
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
         <h3 className="font-semibold mb-2">What Changed:</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-          <li>✅ <strong>Strong tags</strong> no longer have blue backgrounds or borders</li>
+          <li>
+            ✅ <strong>Strong tags</strong> no longer have blue backgrounds or borders
+          </li>
           <li>✅ Typography now matches GitHub's default styling</li>
           <li>✅ Consistent spacing and margins throughout</li>
           <li>✅ Professional code block appearance</li>
