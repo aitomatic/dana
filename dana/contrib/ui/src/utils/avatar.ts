@@ -26,34 +26,35 @@ export const getAgentAvatar = async (agentId: number | string): Promise<string> 
  * @returns string - The avatar URL
  */
 export const getAgentAvatarSync = (agentId: number | string): string => {
+  // Get the base path for static assets
+  const basePath = import.meta.env.PROD ? '/static' : '';
+
   // Handle prebuilt agents (string IDs) - use consistent avatars based on string hash
   if (typeof agentId === 'string') {
     // Generate a consistent number from the string ID for prebuilt agents
-    const hash = agentId
-      .split('')
-      .reduce((a, b) => {
-        a = (a << 5) - a + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-    
+    const hash = agentId.split('').reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+
     // Use the hash to select from available avatars (0-30)
     const avatarNumber = Math.abs(hash) % 31; // 0-30 inclusive
-    return `/agent-avatar/agent-avatar-${avatarNumber}.svg`;
+    return `${basePath}/agent-avatar/agent-avatar-${avatarNumber}.svg`;
   }
-  
+
   // Handle numeric agent IDs - use more variety
   const numericId = Number(agentId);
-  
+
   // Use modulo to cycle through all available avatars (0-30)
   const avatarNumber = numericId % 31; // 0-30 inclusive
-  
+
   // Ensure we have a valid avatar number
   if (avatarNumber >= 0 && avatarNumber <= 30) {
-    return `/agent-avatar/agent-avatar-${avatarNumber}.svg`;
+    return `${basePath}/agent-avatar/agent-avatar-${avatarNumber}.svg`;
   }
-  
+
   // Fallback to a default avatar
-  return '/agent-avatar/agent-avatar-0.svg';
+  return `${basePath}/agent-avatar/agent-avatar-0.svg`;
 };
 
 /**
@@ -99,4 +100,4 @@ export const getAgentAvatarColor = (agentId: number | string): string => {
     }, 0);
 
   return colors[Math.abs(hash) % colors.length];
-}; 
+};

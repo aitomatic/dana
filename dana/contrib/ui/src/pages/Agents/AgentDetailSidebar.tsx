@@ -220,19 +220,19 @@ const SmartAgentChat: React.FC<{
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const [previousAgentId, setPreviousAgentId] = useState<string | null>(null);
-  const [hasShownWelcomeMessage, setHasShownWelcomeMessage] = useState(false);
   const welcomeMessageTimeoutRef = useRef<number | null>(null);
+  const hasShownWelcomeMessageRef = useRef(false);
 
   // Function to show welcome message with typing effect
   const showWelcomeMessageWithTypingEffect = useCallback(
     (displayName: string, agentDomain: string) => {
-      // Prevent duplicate welcome messages
-      if (hasShownWelcomeMessage) {
+      // Prevent duplicate welcome messages using ref to avoid stale closures
+      if (hasShownWelcomeMessageRef.current) {
         return null;
       }
 
       // Mark that we're showing a welcome message
-      setHasShownWelcomeMessage(true);
+      hasShownWelcomeMessageRef.current = true;
 
       // Show typing effect for 2 seconds before displaying the welcome message
       setIsTyping(true);
@@ -263,18 +263,18 @@ To get started, let's define its foundation:
       welcomeMessageTimeoutRef.current = timeoutId;
       return timeoutId;
     },
-    [addMessage, hasShownWelcomeMessage],
+    [addMessage],
   );
 
   // Function to show fallback welcome message with typing effect
   const showFallbackWelcomeMessageWithTypingEffect = useCallback(() => {
-    // Prevent duplicate welcome messages
-    if (hasShownWelcomeMessage) {
+    // Prevent duplicate welcome messages using ref to avoid stale closures
+    if (hasShownWelcomeMessageRef.current) {
       return null;
     }
 
     // Mark that we're showing a welcome message
-    setHasShownWelcomeMessage(true);
+    hasShownWelcomeMessageRef.current = true;
 
     // Show typing effect for 2 seconds before displaying the fallback welcome message
     setIsTyping(true);
@@ -287,7 +287,7 @@ To get started, let's define its foundation:
     // Store the timeout ID for cleanup purposes
     welcomeMessageTimeoutRef.current = timeoutId;
     return timeoutId;
-  }, [addMessage, hasShownWelcomeMessage]);
+  }, [addMessage]);
 
   // Agent switch detection and cleanup
   useEffect(() => {
@@ -307,7 +307,7 @@ To get started, let's define its foundation:
         setHasLoadedHistory(false);
         setIsLoadingHistory(false);
         setIsTyping(false);
-        setHasShownWelcomeMessage(false);
+        hasShownWelcomeMessageRef.current = false;
       }
 
       setPreviousAgentId(agent_id);
@@ -357,7 +357,7 @@ To get started, let's define its foundation:
       setIsLoadingHistory(false);
       setPreviousAgentId(null);
       setIsTyping(false);
-      setHasShownWelcomeMessage(false);
+      hasShownWelcomeMessageRef.current = false;
 
       // Clear any pending operations
       if (loading) {
