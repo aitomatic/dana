@@ -36,41 +36,42 @@ class TestContextEngineIntegration:
         # Trigger context engine creation
         with patch("dana.frameworks.ctxeng.ContextEngine") as mock_ctxeng:
             mock_instance = Mock()
-            mock_ctxeng.from_agent.return_value = mock_instance
+            mock_instance.assemble_from_state.return_value = "<context>test problem</context>"
+            mock_ctxeng.from_agent_state.return_value = mock_instance
 
             # This should trigger context engine creation
             self.agent.solve_sync("test problem")
 
             # Verify context engine was created
             assert self.agent._context_engine is not None
-            mock_ctxeng.from_agent.assert_called_once_with(self.agent)
+            mock_ctxeng.from_agent_state.assert_called_once_with(self.agent.state)
 
     def test_context_engine_resource_discovery(self):
         """Test that context engine discovers agent resources."""
         with patch("dana.frameworks.ctxeng.ContextEngine") as mock_ctxeng:
             mock_instance = Mock()
-            mock_instance.assemble.return_value = "<context><query>test problem</query></context>"
-            mock_ctxeng.from_agent.return_value = mock_instance
+            mock_instance.assemble_from_state.return_value = "<context><query>test problem</query></context>"
+            mock_ctxeng.from_agent_state.return_value = mock_instance
 
             # Trigger context engine creation
             self.agent.solve_sync("test problem")
 
             # Verify the context engine was created and used
             assert self.agent._context_engine is not None
-            mock_ctxeng.from_agent.assert_called_once_with(self.agent)
+            mock_ctxeng.from_agent_state.assert_called_once_with(self.agent.state)
 
     def test_context_engine_assembly(self):
         """Test that context engine assembles rich context."""
         with patch("dana.frameworks.ctxeng.ContextEngine") as mock_ctxeng:
             mock_instance = Mock()
-            mock_instance.assemble.return_value = "<context><query>test problem</query></context>"
-            mock_ctxeng.from_agent.return_value = mock_instance
+            mock_instance.assemble_from_state.return_value = "<context><query>test problem</query></context>"
+            mock_ctxeng.from_agent_state.return_value = mock_instance
 
             # Trigger context engine creation and assembly
             self.agent.solve_sync("test problem")
 
             # Verify assembly was called with correct parameters
-            mock_instance.assemble.assert_called_once_with("test problem", template="problem_solving")
+            mock_instance.assemble_from_state.assert_called_once_with(self.agent.state, template="problem_solving")
 
     def test_fallback_on_import_error(self):
         """Test that agent falls back to basic problem when ctxeng is not available."""
@@ -102,8 +103,8 @@ class TestContextEngineIntegration:
         """Test that context engine is reused across multiple solve calls."""
         with patch("dana.frameworks.ctxeng.ContextEngine") as mock_ctxeng:
             mock_instance = Mock()
-            mock_instance.assemble.return_value = "<context><query>test</query></context>"
-            mock_ctxeng.from_agent.return_value = mock_instance
+            mock_instance.assemble_from_state.return_value = "<context><query>test</query></context>"
+            mock_ctxeng.from_agent_state.return_value = mock_instance
 
             # First call should create context engine
             self.agent.solve_sync("first problem")
@@ -115,7 +116,7 @@ class TestContextEngineIntegration:
 
             # Verify same instance is reused
             assert first_engine is second_engine
-            assert mock_ctxeng.from_agent.call_count == 1  # Only called once
+            assert mock_ctxeng.from_agent_state.call_count == 1  # Only called once
 
 
 if __name__ == "__main__":

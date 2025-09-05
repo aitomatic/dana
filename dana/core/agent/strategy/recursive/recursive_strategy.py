@@ -10,7 +10,7 @@ This strategy implements recursive problem solving where the agent:
 
 from typing import Any
 
-from dana.core.agent.context import ComputableContext, ProblemContext
+from dana.core.agent.context import ProblemContext
 from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
 
 from ..base import BaseStrategy
@@ -22,7 +22,7 @@ class RecursiveStrategy(BaseStrategy):
     def __init__(self, max_depth: int = 10):
         """Initialize the recursive strategy."""
         self.max_depth = max_depth
-        self.computable_context = ComputableContext()
+        # ComputableContext removed - context now managed by AgentState
 
     def can_handle(self, problem: str, context: ProblemContext) -> bool:
         """Determine if this strategy can handle the problem."""

@@ -7,7 +7,11 @@ AgentStructType inherits from StructType, and AgentStructInstance inherits from 
 
 from .agent_instance import AgentInstance
 from .agent_type import AgentType
-from .function_registry import (
+from .agent_state import AgentState
+from .context import ProblemContext, ExecutionContext
+from .mind import AgentMind
+from .capabilities import CapabilityRegistry
+from .utils import (
     create_agent_instance,
     has_dana_method,
     lookup_dana_method,
@@ -18,7 +22,12 @@ __all__ = [
     # Core classes
     "AgentType",
     "AgentInstance",
-    # Default methods
+    "AgentState",
+    # Context and subsystems
+    "ProblemContext",
+    "ExecutionContext",
+    "AgentMind",
+    "CapabilityRegistry",
     # Registry functions
     "create_agent_instance",
     "lookup_dana_method",

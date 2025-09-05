@@ -1,117 +1,58 @@
 """
-AgentMind Mixin
-
-Provides intelligent agent capabilities including user profile management,
-strategy and context pattern learning, and adaptive selection.
-
-This mixin can be added to any agent to provide intelligent learning
-and adaptation capabilities.
+AgentMind - Complete cognitive system including memory, understanding, and learning.
 """
 
 import json
 import os
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from .world_model import DomainKnowledge, LocationContext, SystemContext, TimeContext, WorldModel, WorldState
+from .memory import MemorySystem
+from .models.world_model import DomainKnowledge, LocationContext, SystemContext, TimeContext, WorldModel, WorldState
+from .models.user_model import UserProfile, ExpertiseLevel
+from .learning.patterns import PatternLibrary, StrategyPattern, ContextPattern
+from ..context import ProblemContext
 
 
-class ExpertiseLevel(Enum):
-    """User expertise levels."""
-
-    BEGINNER = "beginner"
-    INTERMEDIATE = "intermediate"
-    ADVANCED = "advanced"
-    EXPERT = "expert"
-
-
-class UrgencyLevel(Enum):
-    """Problem urgency levels."""
-
-    QUICK = "quick"
-    STANDARD = "standard"
-    THOROUGH = "thorough"
-
-
-@dataclass
-class UserProfile:
-    """User profile with preferences and settings."""
-
-    user_id: str
-    expertise_level: ExpertiseLevel = ExpertiseLevel.INTERMEDIATE
-    domain_preferences: list[str] = field(default_factory=lambda: ["general"])
-    urgency_patterns: dict[str, float] = field(default_factory=lambda: {"quick": 0.6, "standard": 0.3, "thorough": 0.1})
-    template_preferences: dict[str, str] = field(
-        default_factory=lambda: {"problem_solving": "problem_solving", "conversation": "conversation", "analysis": "analysis"}
-    )
-    context_depth_preferences: dict[str, str] = field(
-        default_factory=lambda: {"general": "standard", "technical": "comprehensive", "business": "detailed"}
-    )
-    created_at: datetime = field(default_factory=datetime.now)
-    last_updated: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class StrategyPattern:
-    """Learned strategy pattern for problem solving."""
-
-    pattern_id: str
-    strategy_type: str
-    success_rate: float
-    execution_time: float
-    user_satisfaction: float
-    usage_count: int = 0
-    last_used: datetime | None = None
-    context_requirements: list[str] = field(default_factory=list)
-    fallback_strategies: list[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.now)
-    last_updated: datetime = field(default_factory=datetime.now)
-
-
-@dataclass
-class ContextPattern:
-    """Learned context pattern for optimal LLM performance."""
-
-    pattern_id: str
-    template: str
-    scope: str
-    priority: str
-    token_efficiency: float
-    llm_performance: float
-    usage_count: int = 0
-    last_used: datetime | None = None
-    context_keys_used: list[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.now)
-    last_updated: datetime = field(default_factory=datetime.now)
+# Move classes to separate modules for better organization
 
 
 class AgentMind:
     """
-    AgentMind mixin providing intelligent agent capabilities.
+    Complete cognitive system including memory, understanding, and learning.
 
-    This mixin manages:
+    This class manages:
+    - All memory types (conversation, working, episodic, semantic)
     - User profiles and preferences
+    - World model and environment understanding
     - Strategy and context pattern learning
     - Adaptive selection and optimization
-    - Pattern storage and retrieval
 
     Storage Structure:
-    ~/.models/
+    ~/.dana/memory/       # Memory storage
+    ~/.models/            # Models and patterns
     ├── users/           # User profiles
     ├── strategies/      # Strategy patterns
     ├── contexts/        # Context patterns
-    └── world/          # Future: World model
+    └── world/          # World model
     """
 
-    def __init__(self):
-        """Initialize the agent mind."""
+    def __init__(self, user_id: str = "default"):
+        """Initialize the agent mind.
+
+        Args:
+            user_id: User identifier for personalization
+        """
+        # Memory systems (owned by mind)
+        self.memory = MemorySystem()
+
+        # Understanding models
         self.user_profile: UserProfile | None = None
-        self.strategy_patterns: dict[str, StrategyPattern] = {}
-        self.context_patterns: dict[str, ContextPattern] = {}
-        self.world_model = WorldModel()  # World model for shared knowledge
+        self.world_model = WorldModel()
+
+        # Learning systems
+        self.patterns = PatternLibrary()
 
         # Storage paths
         self.models_dir = Path("~/.models").expanduser()
@@ -120,20 +61,167 @@ class AgentMind:
         self.contexts_dir = self.models_dir / "contexts"
         self.world_dir = self.models_dir / "world"
 
+        # Initialize for user
+        self.initialize_mind(user_id)
+
     def initialize_mind(self, user_id: str = "default"):
         """Initialize the agent mind for a specific user."""
         # Load user profile
         self.user_profile = self._load_user_profile(user_id)
 
-        # Load learned patterns
-        self.strategy_patterns = self._load_strategy_patterns(user_id)
-        self.context_patterns = self._load_context_patterns(user_id)
+        # Load learned patterns into patterns library
+        self.patterns.load_patterns(user_id)
 
         # Initialize world model
         self.world_model.initialize()
 
         # Ensure storage directories exist
         self._ensure_storage_directories()
+
+    # Memory interface methods
+
+    def recall(self, query: str, context: ProblemContext | None = None) -> dict[str, Any]:
+        """Intelligent recall across all memory types.
+
+        Args:
+            query: What to recall
+            context: Current problem context for relevance
+
+        Returns:
+            Dictionary with recalled information from relevant memory types
+        """
+        context_dict = context.to_dict() if context else {}
+        return self.memory.recall(query, context_dict)
+
+    def form_memory(self, experience: dict[str, Any]) -> None:
+        """Process and store experience as memory.
+
+        Args:
+            experience: Experience data to store
+        """
+        # Determine memory type based on experience
+        if experience.get("type") == "conversation":
+            # Conversation memory is handled directly by its own interface
+            pass
+        elif experience.get("type") == "working":
+            key = experience.get("key", "unknown")
+            value = experience.get("value")
+            importance = experience.get("importance", 0.5)
+            self.memory.working.store(key, value, importance=importance)
+        elif experience.get("type") == "episodic":
+            identifier = experience.get("id", "unknown")
+            exp_data = experience.get("data")
+            self.memory.episodic.store_experience(identifier, exp_data, **experience.get("metadata", {}))
+        elif experience.get("type") == "semantic":
+            key = experience.get("key", "unknown")
+            fact = experience.get("fact")
+            domain = experience.get("domain", "general")
+            self.memory.semantic.store_fact(key, fact, domain=domain)
+
+    def recall_conversation(self, n_turns: int = 3) -> list[dict[str, Any]]:
+        """Recall recent conversation turns.
+
+        Args:
+            n_turns: Number of turns to recall
+
+        Returns:
+            List of recent conversation turns
+        """
+        return self.memory.get_conversation_context(n_turns)
+
+    def recall_relevant(self, problem: ProblemContext) -> dict[str, Any]:
+        """Recall all relevant information for current problem.
+
+        Args:
+            problem: Current problem context
+
+        Returns:
+            Dictionary with relevant memories
+        """
+        relevant = {}
+
+        # Get from different memory types
+        query = problem.problem_statement if problem else ""
+
+        # Working memory (current task context)
+        relevant["working"] = self.memory.get_working_context()
+
+        # Episodic memory (similar experiences)
+        if problem:
+            context_dict = problem.to_dict()
+            similar_experiences = self.memory.episodic.recall_similar(query, context_dict)
+            relevant["episodic"] = similar_experiences
+
+        # Semantic memory (domain knowledge)
+        if problem and hasattr(problem, "domain"):
+            domain_knowledge = self.memory.semantic.get_domain_knowledge(problem.domain)
+            relevant["semantic"] = domain_knowledge
+
+        return relevant
+
+    def get_user_context(self) -> dict[str, Any]:
+        """Get current user context combining profile and preferences.
+
+        Returns:
+            Dictionary with user context
+        """
+        if not self.user_profile:
+            return {}
+
+        return {
+            "user_id": self.user_profile.user_id,
+            "expertise_level": self.user_profile.expertise_level.value,
+            "domain_preferences": self.user_profile.domain_preferences,
+            "urgency_patterns": self.user_profile.urgency_patterns,
+            "template_preferences": self.user_profile.template_preferences,
+        }
+
+    def assess_context_needs(self, problem: ProblemContext | None, template: str = "general") -> dict[str, Any]:
+        """Assess what context is most important for current situation.
+
+        Args:
+            problem: Current problem context
+            template: Template being used
+
+        Returns:
+            Dictionary with context priorities and recommendations
+        """
+        priorities = {
+            "turns": 3,  # default conversation turns
+            "memory_depth": "standard",
+            "include_world": False,
+            "filters": [],
+        }
+
+        # Adjust based on problem complexity
+        if problem:
+            if problem.depth > 2:
+                priorities["turns"] = 5
+                priorities["memory_depth"] = "deep"
+
+            if len(problem.constraints) > 3:
+                priorities["include_world"] = True
+
+        # Adjust based on template
+        if template == "problem_solving":
+            priorities["turns"] = 5
+            priorities["filters"] = ["solution", "decision", "error"]
+        elif template == "conversation":
+            priorities["turns"] = 10
+            priorities["memory_depth"] = "shallow"
+        elif template == "analysis":
+            priorities["include_world"] = True
+            priorities["filters"] = ["data", "analysis", "conclusion"]
+
+        # Adjust based on user preferences
+        if self.user_profile:
+            depth_pref = self.user_profile.context_depth_preferences.get(template, "standard")
+            if depth_pref == "comprehensive":
+                priorities["turns"] = 10
+                priorities["memory_depth"] = "deep"
+                priorities["include_world"] = True
+
+        return priorities
 
     def get_user_preferences(self) -> UserProfile | None:
         """Get current user preferences."""

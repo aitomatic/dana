@@ -77,5 +77,3 @@ print(f"- Session count: {stats['session_count']}")
 # response = assistant.chat("Explain recursion to me")
 # # This would generate a proper LLM response using conversation context
 #
-# You can also manually set an LLM function:
-# assistant._context['llm'] = your_custom_llm_function

@@ -14,8 +14,8 @@ from dana.core.builtins.struct_system import StructInstance
 from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.sandbox_context import SandboxContext
 
+from .agent_state import AgentState
 from .agent_type import AgentType
-from .events import AgentEventMixin
 from .methods import (
     ChatMixin,
     InputMixin,
@@ -25,6 +25,7 @@ from .methods import (
     ReasonMixin,
     SolvingMixin,
 )
+from .utils import AgentCallbackMixin
 
 if TYPE_CHECKING:
     pass
@@ -36,7 +37,7 @@ from .context import ProblemContext
 
 class AgentInstance(
     StructInstance,
-    AgentEventMixin,
+    AgentCallbackMixin,
     ChatMixin,
     InputMixin,
     LLMMixin,
@@ -65,17 +66,17 @@ class AgentInstance(
         if not isinstance(struct_type, AgentType):
             raise TypeError(f"AgentStructInstance requires AgentStructType, got {type(struct_type)}")
 
-        # Initialize agent-specific state
-        self._memory = {}
-        self._context = {}
-        self._conversation_memory = None  # Lazy initialization
-        self._llm_resource = None  # Lazy initialization - now handled by resource type system
+        # Initialize centralized agent state
+        self.state = AgentState(session_id=f"agent_{id(self)}")
+
+        # Initialize legacy attributes for backward compatibility
+        self._memory = {}  # Will delegate to state.mind.memory.working
+        self._conversation_memory = None  # Will delegate to state.mind.memory.conversation
+        self._llm_resource = None  # Lazy initialization
         self._llm_resource_instance = None  # Lazy initialization
 
-        # Initialize persistent event history for conversation continuity
-        from .context import EventHistory
-
-        self._global_event_history = EventHistory()
+        # Timeline is now part of centralized state
+        self._timeline = self.state.timeline
 
         # Initialize context engine (lazy initialization)
         self._context_engine = None
@@ -92,7 +93,7 @@ class AgentInstance(
         from dana.registry import AGENT_REGISTRY
 
         super().__init__(struct_type, values, AGENT_REGISTRY)
-        AgentEventMixin.__init__(self)
+        AgentCallbackMixin.__init__(self)
 
     @property
     def name(self) -> str:
@@ -171,8 +172,10 @@ class AgentInstance(
     def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
         """Create a new top-level workflow for a problem."""
 
-        # Create problem context with conversation context
-        conversation_context = self._global_event_history.get_conversation_context()
+        # Create problem context with conversation context from centralized state
+        from dana.core.agent.timeline.timeline_event import ConversationTurn
+
+        conversation_context = ConversationTurn.get_conversation_context(self.state.timeline)
         problem_context = ProblemContext(
             problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
         )
@@ -181,14 +184,14 @@ class AgentInstance(
         if conversation_context:
             problem_context.constraints["conversation_history"] = conversation_context
 
-        # Create workflow instance using the persistent event history
+        # Create workflow instance using the centralized timeline
         workflow = WorkflowInstance(
             struct_type=self._create_workflow_type(problem),
             values={
                 "problem_statement": problem,
                 "objective": problem_context.objective,
                 "problem_context": problem_context,
-                "action_history": self._global_event_history,
+                "action_history": self.state.timeline,
             },
             parent_workflow=None,
         )
@@ -204,9 +207,11 @@ class AgentInstance(
         print(f"[DEBUG] sandbox_context: {sandbox_context}")
         print(f"[DEBUG] kwargs: {kwargs}")
 
-        # Create problem context with conversation context
+        # Create problem context with conversation context from centralized state
         print("[DEBUG] Creating problem context...")
-        conversation_context = self._global_event_history.get_conversation_context()
+        from dana.core.agent.timeline.timeline_event import ConversationTurn
+
+        conversation_context = ConversationTurn.get_conversation_context(self.state.timeline)
         print(f"[DEBUG] Conversation context: {conversation_context}")
 
         problem_context = ProblemContext(
@@ -543,7 +548,6 @@ class AgentInstance(
 
             # Clear agent memory and context
             self._memory.clear()
-            self._context.clear()
 
             # Update metrics to indicate cleanup
             self.update_metric("is_running", False)

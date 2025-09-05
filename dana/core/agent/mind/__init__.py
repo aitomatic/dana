@@ -1,52 +1,47 @@
 """
-Agent Mind Module
+Agent Mind - Complete cognitive system including memory, understanding, and learning.
 
-This module provides intelligent agent capabilities including:
-- User profile management
+This module provides:
+- Complete memory system (conversation, working, episodic, semantic)
+- User profile management and theory-of-mind
 - Strategy and context pattern learning
 - Adaptive selection and optimization
-- Pattern storage and retrieval
 - World model awareness (time, location, system state)
-
-The AgentMind mixin can be added to any agent to provide
-intelligent learning and adaptation capabilities.
 """
 
-from .agent_mind import AgentMind, ContextPattern, ExpertiseLevel, StrategyPattern, UrgencyLevel, UserProfile
-from .world_model import (
-    DomainKnowledge,
-    DomainKnowledgeProvider,
-    LocationContext,
-    LocationProvider,
-    SharedPatternsProvider,
-    StateProvider,
-    SystemContext,
-    SystemProvider,
-    TimeContext,
-    TimeProvider,
+from .agent_mind import AgentMind
+from .models import (
+    UserProfile,
+    ExpertiseLevel,
+    UrgencyLevel,
     WorldModel,
     WorldState,
+    TimeContext,
+    LocationContext,
+    SystemContext,
+    DomainKnowledge,
 )
+from .learning import PatternLibrary, StrategyPattern, ContextPattern
+from .memory import MemorySystem
 
 __all__ = [
-    # AgentMind classes
+    # Main class
     "AgentMind",
+    # Memory system
+    "MemorySystem",
+    # User model
     "UserProfile",
-    "StrategyPattern",
-    "ContextPattern",
     "ExpertiseLevel",
     "UrgencyLevel",
-    # World model classes
+    # Learning patterns
+    "PatternLibrary",
+    "StrategyPattern",
+    "ContextPattern",
+    # World model
     "WorldModel",
     "WorldState",
     "TimeContext",
     "LocationContext",
     "SystemContext",
     "DomainKnowledge",
-    "StateProvider",
-    "TimeProvider",
-    "LocationProvider",
-    "SystemProvider",
-    "DomainKnowledgeProvider",
-    "SharedPatternsProvider",
 ]

@@ -24,7 +24,13 @@ class SolvingMixin:
         # If this is a new user request (string), start a new conversation turn
         if isinstance(problem_or_workflow, str):
             print(f"[DEBUG] Starting new conversation turn for: {problem_or_workflow}")
-            self._global_event_history.start_new_conversation_turn(problem_or_workflow)
+
+            # Use centralized state
+            self.state.start_new_conversation_turn(problem_or_workflow)
+            # Set problem context in centralized state
+            from ..context import ProblemContext
+
+            self.state.set_problem_context(ProblemContext(problem_statement=problem_or_workflow))
 
         # Enhanced context assembly using Context Engineering Framework
         if isinstance(problem_or_workflow, str):
@@ -33,13 +39,10 @@ class SolvingMixin:
 
                 # Create context engine for this agent
                 if self._context_engine is None:
-                    self._context_engine = ContextEngine.from_agent(self)
+                    self._context_engine = ContextEngine.from_agent_state(self.state)
 
                 # Assemble rich context using ctxeng framework
-                rich_prompt = self._context_engine.assemble(
-                    problem_or_workflow,
-                    template="problem_solving",  # Use problem-solving template
-                )
+                rich_prompt = self._context_engine.assemble_from_state(self.state, template="problem_solving")
 
                 print(f"[DEBUG] Context Engine assembled rich prompt (length: {len(rich_prompt)})")
                 print(f"[DEBUG] Rich prompt preview: {rich_prompt[:200]}...")

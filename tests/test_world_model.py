@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from dana.core.agent.mind.world_model import (
+from dana.core.agent.mind.models.world_model import (
     DomainKnowledge,
     LocationContext,
     LocationProvider,
