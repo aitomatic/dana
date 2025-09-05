@@ -530,4 +530,4 @@ if __name__ == "__main__":
                                  domain="Sugar Manufacturing", role="Process Engineer", 
                                  storage_path="/Users/lam/Desktop/another_opendxa/agents/agent_11_jordan_belfort/knows", 
                                  tasks=tasks, tree_structure=tree_structure)
-    print(tool._execute(user_message="Generate knowledge for all topics in the tree structure", counts="5 facts, 2 procedures, 3 heuristics", context="Focus on practical applications and real-world scenarios"))
+    print(tool._execute(user_message="Generate knowledge for all topics in the tree structure", counts="Not specified", context="Focus on practical applications and real-world scenarios"))
