@@ -26,7 +26,7 @@ class TestLLMIntegration(unittest.TestCase):
 
         def mock_init(agent_self):
             if agent_self._conversation_memory is None:
-                from dana.frameworks.memory.conversation_memory import ConversationMemory
+                from dana.core.agent.mind.memory.conversation import ConversationMemory
 
                 # Use temp directory instead of ~/.dana/chats/
                 agent_name = getattr(agent_self.agent_type, "name", "agent")
