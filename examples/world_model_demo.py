@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 from datetime import datetime
 
 from dana.core.agent.mind.agent_mind import AgentMind
-from dana.core.agent.mind.world_model import DomainKnowledge
+from dana.core.agent.mind.models.world_model import DomainKnowledge
 
 
 def demo_world_model_basics():

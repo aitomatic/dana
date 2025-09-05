@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from dana.core.agent.mind.agent_mind import AgentMind
-from dana.core.agent.mind.world_model import LocationContext, SystemContext, TimeContext
+from dana.core.agent.mind.models.world_model import LocationContext, SystemContext, TimeContext
 
 
 class TestAgentMindWorldModelIntegration:

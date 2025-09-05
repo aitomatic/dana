@@ -11,7 +11,7 @@ from typing import Any
 
 from dana.core.builtins.struct_system import StructType
 
-from .function_registry import has_dana_method, lookup_dana_method, register_dana_method
+from .utils import has_dana_method, lookup_dana_method, register_dana_method
 
 
 @dataclass

@@ -7,7 +7,8 @@ in the new agent solving system.
 
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
-from dana.core.agent.context import EventHistory, ProblemContext
+from dana.core.agent.context import ProblemContext
+from dana.core.agent.timeline import Timeline
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 
@@ -194,7 +195,7 @@ class TestAgentSolveIntegration:
         workflow = agent._create_top_level_workflow("Test problem")
 
         action_history = workflow._values["action_history"]
-        assert isinstance(action_history, EventHistory)
+        assert isinstance(action_history, Timeline)
         assert len(action_history.events) == 0  # Initially empty
 
     def test_agent_strategy_integration(self):
@@ -266,7 +267,7 @@ class TestAgentContextPropagation:
 
         # Check that action history is properly set
         action_history = workflow._values["action_history"]
-        assert isinstance(action_history, EventHistory)
+        assert isinstance(action_history, Timeline)
 
         # The workflow should have the action history field set
         assert workflow._values["action_history"] is not None

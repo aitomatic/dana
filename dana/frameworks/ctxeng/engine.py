@@ -50,20 +50,68 @@ class ContextEngine:
 
     def discover_resources(self, obj: Any) -> None:
         """Automatically discover and register resources from an object."""
-        # Look for common resource patterns
-        if hasattr(obj, "_global_event_history"):
-            self.add_resource("event_history", obj._global_event_history)
+        # Use AgentState integration
+        if hasattr(obj, "state") and obj.state:
+            agent_state = obj.state
+            if hasattr(agent_state, "discover_resources_for_ctxeng"):
+                resources = agent_state.discover_resources_for_ctxeng()
+                for name, resource in resources.items():
+                    self.add_resource(name, resource)
+                logger.info(f"Discovered {len(resources)} resources from AgentState")
+                return
 
-        if hasattr(obj, "problem_context"):
-            self.add_resource("problem_context", obj.problem_context)
+        logger.warning("Object does not have AgentState - no resources discovered")
 
-        if hasattr(obj, "_workflow_registry"):
-            self.add_resource("workflow_registry", obj._workflow_registry)
+    @classmethod
+    def from_agent_state(cls, agent_state: Any) -> "ContextEngine":
+        """Create ContextEngine from centralized AgentState.
 
-        if hasattr(obj, "get_llm_resource"):
-            self.add_resource("llm_resource", obj.get_llm_resource())
+        Args:
+            agent_state: The centralized agent state
 
-        logger.info(f"Discovered {len(self._resources)} resources from object")
+        Returns:
+            Configured ContextEngine instance
+        """
+        engine = cls()
+
+        # Discover all resources from AgentState
+        if hasattr(agent_state, "discover_resources_for_ctxeng"):
+            resources = agent_state.discover_resources_for_ctxeng()
+            for name, resource in resources.items():
+                engine.add_resource(name, resource)
+
+        return engine
+
+    def assemble_from_state(self, agent_state: Any, template: str | None = None, **options) -> str:
+        """Assemble context directly from AgentState.
+
+        Args:
+            agent_state: The centralized agent state
+            template: Template name (auto-detected if None)
+            **options: Additional assembly options
+
+        Returns:
+            Optimized prompt string
+        """
+        # Get unified context from AgentState
+        if hasattr(agent_state, "get_llm_context"):
+            context = agent_state.get_llm_context(depth=options.get("depth", "standard"))
+        else:
+            context = {}
+
+        # Extract query from context
+        query = context.get("query", "")
+
+        # Use AgentMind priorities if available
+        if hasattr(agent_state, "mind") and agent_state.mind:
+            try:
+                priorities = agent_state.mind.assess_context_needs(getattr(agent_state, "problem_context", None), template or "general")
+                context["context_priorities"] = priorities
+            except Exception as e:
+                logger.debug(f"Could not assess context needs: {e}")
+
+        # Assemble with template
+        return self.assemble(query, context, template=template, **options)
 
     def assemble(self, query: str, context: dict[str, Any] | None = None, template: str | None = None, **options) -> str:
         """

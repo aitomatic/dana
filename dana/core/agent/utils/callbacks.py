@@ -14,20 +14,20 @@ if TYPE_CHECKING:
     from dana.core.agent.agent_instance import AgentInstance
 
 
-class AgentEventMixin:
+class AgentCallbackMixin:
     # Global callback registry for log events
     _log_callbacks: list[Callable[[str, str, Any], None]] = []
 
     def __init__(self):
-        """Initialize the AgentEventMixin."""
+        """Initialize the AgentCallbackMixin."""
         self._log_callbacks = []
 
     def __enter__(self):
-        """Enter the context of the AgentEventMixin."""
+        """Enter the context of the AgentCallbackMixin."""
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """Exit the context of the AgentEventMixin."""
+        """Exit the context of the AgentCallbackMixin."""
         del self._log_callbacks
 
     def register_log_callback(self, callback: Callable[[str, str, Any], None]) -> None:
