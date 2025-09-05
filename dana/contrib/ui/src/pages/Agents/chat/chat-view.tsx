@@ -312,7 +312,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="overflow-y-auto flex-1 items-center pt-2 pb-4 custom-scrollbar fade-in"
+                    className="overflow-y-auto items-center pt-2 pb-4 custom-scrollbar fade-in w-full min-w-[760px] 3xl:min-w-[1200px]"
                   >
                     <ChatSession
                       messages={messages}
