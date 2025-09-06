@@ -84,10 +84,14 @@ class ChatMixin:
     ) -> Any:
         response = self._chat_impl(sandbox_context or SandboxContext(), message, context, max_context_turns)
 
-        if self._conversation_memory:
+        # Add conversation turn to centralized state
+        try:
             # Handle case where response might be an EagerPromise
             response = resolve_if_promise(response)
-            self._conversation_memory.add_turn(message, response)
+            self.state.mind.memory.conversation.add_turn(message, response)
+        except Exception:
+            # If centralized state fails, continue without conversation memory
+            pass
 
         return response
 
@@ -95,16 +99,14 @@ class ChatMixin:
         self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 5
     ) -> str:
         """Implementation of chat functionality. Returns the response string directly."""
-        # Build conversation context - initialize if not already done
-        if self._conversation_memory is None:
-            self._initialize_conversation_memory()
-
-        # Ensure conversation memory is available
-        if self._conversation_memory is None:
-            # Fallback if initialization failed
+        # Build conversation context from centralized state
+        try:
+            conversation_context = self.state.mind.memory.conversation.build_llm_context(
+                message, include_summaries=True, max_turns=max_context_turns
+            )
+        except Exception:
+            # Fallback if centralized state fails
             conversation_context = ""
-        else:
-            conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
         # Try to get LLM resource - prioritize agent's own LLM resource
         llm_resource = self.get_llm_resource(sandbox_context)
@@ -195,8 +197,10 @@ class ChatMixin:
 
         # Check for memory-related queries
         elif "remember" in message_lower or "recall" in message_lower:
-            assert self._conversation_memory is not None  # Should be initialized by now
-            recent_turns = self._conversation_memory.get_recent_context(3)
+            try:
+                recent_turns = self.state.mind.memory.conversation.get_recent_context(3)
+            except Exception:
+                recent_turns = []
             if recent_turns:
                 topics = []
                 for turn in recent_turns:

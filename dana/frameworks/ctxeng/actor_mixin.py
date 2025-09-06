@@ -3,7 +3,7 @@
 from abc import ABC
 from typing import Any, Union
 
-from dana.core.agent import ProblemContext
+from dana.core.agent.context import ProblemContext
 
 from .engine import ContextEngine
 from .template_manager import TemplateManager

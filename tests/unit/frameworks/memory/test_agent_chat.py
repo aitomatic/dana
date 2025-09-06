@@ -92,8 +92,8 @@ class TestAgentChat(unittest.TestCase):
         self.assertTrue(hasattr(agent, "chat"))
         self.assertTrue(callable(agent.chat))
 
-        # Memory should be None initially
-        self.assertIsNone(agent._conversation_memory)
+        # Memory should be available through centralized state
+        self.assertIsNotNone(agent._conversation_memory)
 
     def test_basic_chat_without_llm(self):
         """Test basic chat functionality without LLM (fallback responses)."""
@@ -391,8 +391,8 @@ class TestAgentChat(unittest.TestCase):
             with patch.object(AgentInstance, "get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
-                # Memory should not be initialized initially
-                self.assertIsNone(agent._conversation_memory)
+                # Memory should be available through centralized state
+                self.assertIsNotNone(agent._conversation_memory)
 
                 # Send a message to trigger memory initialization
                 response = agent.chat_sync("Hello")

@@ -16,27 +16,41 @@ class MemoryMixin:
         """Implementation of memory storage functionality."""
         self.debug(f"REMEMBER: Storing key '{key}' with value: {value}")
 
-        # Store in agent's memory
-        self._memory[key] = value
-
-        # Note: ConversationMemory doesn't have add_memory method
-        # Memory is stored in agent's internal _memory dict
-        # Conversation memory is used for conversation turns, not key-value storage
-
-        return f"Stored '{key}' in memory"
+        # Store in centralized working memory
+        try:
+            self.state.mind.memory.working.store(key, value)
+            return f"Stored '{key}' in working memory"
+        except Exception as e:
+            self.debug(f"Failed to store in centralized memory: {e}")
+            # Fallback to direct working memory access
+            try:
+                self._memory.store(key, value)
+                return f"Stored '{key}' in working memory (fallback mode)"
+            except Exception as e2:
+                self.debug(f"Fallback memory storage also failed: {e2}")
+                return f"Failed to store '{key}' in memory"
 
     def _recall_impl(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Implementation of memory retrieval functionality."""
         self.debug(f"RECALL: Retrieving key '{key}'")
 
-        # Try agent's memory first
-        if key in self._memory:
-            self.debug(f"Found in agent memory: {self._memory[key]}")
-            return self._memory[key]
+        # Try centralized working memory first
+        try:
+            value = self.state.mind.memory.working.recall(key)
+            if value is not None:
+                self.debug(f"Found in centralized working memory: {value}")
+                return value
+        except Exception as e:
+            self.debug(f"Failed to access centralized memory: {e}")
 
-        # Note: ConversationMemory doesn't have get_memory method
-        # Memory is stored in agent's internal _memory dict
-        # Conversation memory is used for conversation turns, not key-value storage
+        # Fallback to direct working memory access
+        try:
+            value = self._memory.recall(key)
+            if value is not None:
+                self.debug(f"Found in working memory (fallback): {value}")
+                return value
+        except Exception as e:
+            self.debug(f"Fallback memory access also failed: {e}")
 
         self.debug(f"Key '{key}' not found in memory")
         return None
