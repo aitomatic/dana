@@ -291,7 +291,7 @@ class RecursiveStrategy(BaseStrategy):
         parent_workflow = getattr(context, "workflow_instance", None)
 
         # Create workflow type
-        workflow_type = self._create_workflow_type(problem)
+        workflow_type = WorkflowType.create_for_problem(problem, "Recursive")
 
         # Create workflow instance with simplified fields
         workflow = WorkflowInstance(
@@ -305,17 +305,6 @@ class RecursiveStrategy(BaseStrategy):
 
         return workflow
 
-    def _create_workflow_type(self, problem: str) -> WorkflowType:
-        """Create a workflow type for the problem."""
-        # Simple workflow type creation - only custom fields needed
-        # Default workflow fields (name, composed_function, metadata) are added automatically
-        return WorkflowType(
-            name=f"RecursiveWorkflow_{hash(problem) % 10000}",
-            fields={},  # No custom fields needed
-            field_order=[],  # No custom field order needed
-            docstring=f"Recursive workflow for solving: {problem}",
-        )
-
     def _create_base_case_workflow(self, problem: str, context: ProblemContext) -> WorkflowInstance:
         """Create a workflow for base cases (max depth reached)."""
 
@@ -327,7 +316,7 @@ class RecursiveStrategy(BaseStrategy):
 
         # Create workflow instance with simplified fields
         workflow = WorkflowInstance(
-            struct_type=self._create_workflow_type(problem),
+            struct_type=WorkflowType.create_for_problem(problem, "Recursive"),
             values={
                 "composed_function": base_function,
                 "name": f"BaseCaseWorkflow_{hash(problem) % 10000}",

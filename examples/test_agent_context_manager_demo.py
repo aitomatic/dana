@@ -133,7 +133,7 @@ def demo_memory_management():
 
     with agent_instance as agent:
         # Add data to agent memory
-        agent._memory["user_data"] = "important information"
+        agent._memory.store("user_data", "important information")
         agent._context["session_id"] = "12345"
 
         print("Inside context manager:")
@@ -149,7 +149,7 @@ def demo_memory_management():
             print(f"  Conversation turns: {stats.get('total_turns', 0)}")
 
     print("After context manager:")
-    print(f"  Memory cleared: {len(agent_instance._memory) == 0}")
+    print(f"  Memory cleared: {agent_instance._memory.size() == 0}")
     print(f"  Context cleared: {len(agent_instance._context) == 0}")
     print(f"  Conversation memory: {agent_instance._conversation_memory is None}")
 

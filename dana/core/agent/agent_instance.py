@@ -30,7 +30,7 @@ from .utils import AgentCallbackMixin
 if TYPE_CHECKING:
     pass
 
-from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
+from dana.core.workflow.workflow_system import WorkflowInstance
 
 from .context import ProblemContext
 
@@ -69,9 +69,8 @@ class AgentInstance(
         # Initialize centralized agent state
         self.state = AgentState(session_id=f"agent_{id(self)}")
 
-        # Initialize legacy attributes for backward compatibility
-        self._memory = {}  # Will delegate to state.mind.memory.working
-        self._conversation_memory = None  # Will delegate to state.mind.memory.conversation
+        # Legacy attributes now delegate to centralized state
+        # These properties provide backward compatibility while using the new state system
         self._llm_resource = None  # Lazy initialization
         self._llm_resource_instance = None  # Lazy initialization
 
@@ -105,6 +104,26 @@ class AgentInstance(
     def agent_type(self) -> AgentType:
         """Get the agent type."""
         return self.__struct_type__  # type: ignore
+
+    @property
+    def _memory(self):
+        """Legacy memory access - delegates to centralized working memory object."""
+        return self.state.mind.memory.working
+
+    @_memory.setter
+    def _memory(self, value) -> None:
+        """Legacy memory setter - not supported, use centralized state directly."""
+        raise NotImplementedError("Use self.state.mind.memory.working directly instead of setting _memory")
+
+    @property
+    def _conversation_memory(self):
+        """Legacy conversation memory access - delegates to centralized conversation memory."""
+        return self.state.mind.memory.conversation
+
+    @_conversation_memory.setter
+    def _conversation_memory(self, value) -> None:
+        """Legacy conversation memory setter - not supported, use centralized state directly."""
+        raise NotImplementedError("Use self.state.mind.memory.conversation directly instead of setting _conversation_memory")
 
     # ============================================================================
     # STATIC/CLASS METHODS
@@ -168,95 +187,6 @@ class AgentInstance(
     # ============================================================================
     # PROBLEM SOLVING METHODS (Workflow Creation and Management)
     # ============================================================================
-
-    def _create_top_level_workflow(self, problem: str, **kwargs) -> WorkflowInstance:
-        """Create a new top-level workflow for a problem."""
-
-        # Create problem context with conversation context from centralized state
-        from dana.core.agent.timeline.timeline_event import ConversationTurn
-
-        conversation_context = ConversationTurn.get_conversation_context(self.state.timeline)
-        problem_context = ProblemContext(
-            problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
-        )
-
-        # Add conversation history to constraints if available
-        if conversation_context:
-            problem_context.constraints["conversation_history"] = conversation_context
-
-        # Create workflow instance using the centralized timeline
-        workflow = WorkflowInstance(
-            struct_type=self._create_workflow_type(problem),
-            values={
-                "problem_statement": problem,
-                "objective": problem_context.objective,
-                "problem_context": problem_context,
-                "action_history": self.state.timeline,
-            },
-            parent_workflow=None,
-        )
-
-        return workflow
-
-    def _create_new_workflow(self, problem: str, sandbox_context: SandboxContext | None = None, **kwargs) -> WorkflowInstance:
-        """Create a new workflow for a string problem."""
-        from .context import ProblemContext
-        from .strategy import select_best_strategy
-
-        print(f"[DEBUG] _create_new_workflow() called with problem: {problem}")
-        print(f"[DEBUG] sandbox_context: {sandbox_context}")
-        print(f"[DEBUG] kwargs: {kwargs}")
-
-        # Create problem context with conversation context from centralized state
-        print("[DEBUG] Creating problem context...")
-        from dana.core.agent.timeline.timeline_event import ConversationTurn
-
-        conversation_context = ConversationTurn.get_conversation_context(self.state.timeline)
-        print(f"[DEBUG] Conversation context: {conversation_context}")
-
-        problem_context = ProblemContext(
-            problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
-        )
-        print(f"[DEBUG] Problem context created: {problem_context}")
-
-        # Add conversation history to constraints if available
-        if conversation_context:
-            print("[DEBUG] Adding conversation history to constraints")
-            problem_context.constraints["conversation_history"] = conversation_context
-
-        # Select best strategy
-        print("[DEBUG] Selecting best strategy...")
-        strategy = select_best_strategy(problem, problem_context)
-        print(f"[DEBUG] Selected strategy: {type(strategy)}")
-
-        # Create workflow using strategy
-        print("[DEBUG] Creating workflow using strategy...")
-        workflow = strategy.create_workflow(problem, problem_context, self, sandbox_context=sandbox_context)
-        print(f"[DEBUG] Strategy created workflow: {type(workflow)}")
-
-        return workflow
-
-    def _create_workflow_type(self, problem: str) -> WorkflowType:
-        """Create a workflow type for the problem."""
-
-        return WorkflowType(
-            name=f"AgentWorkflow_{hash(problem) % 10000}",
-            fields={"problem_statement": "str", "objective": "str", "problem_context": "Any", "action_history": "Any"},
-            field_order=["problem_statement", "objective", "problem_context", "action_history"],
-            field_comments={
-                "problem_statement": "The problem to solve",
-                "objective": "The objective of the workflow",
-                "problem_context": "Problem-specific context",
-                "action_history": "Global action history",
-            },
-            field_defaults={
-                "problem_statement": problem,
-                "objective": "Solve the problem",
-                "problem_context": None,
-                "action_history": None,
-            },
-            docstring=f"Agent workflow for solving: {problem}",
-        )
 
     def _create_sandbox_context(self) -> SandboxContext:
         """Create a sandbox context for workflow execution."""
@@ -360,40 +290,32 @@ class AgentInstance(
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
-        if self._conversation_memory is None:
+        try:
+            return self.state.mind.memory.conversation.get_statistics()
+        except Exception:
             return {
-                "error": "Conversation memory not initialized",
+                "error": "Conversation memory not available",
                 "total_messages": 0,
                 "total_turns": 0,
                 "active_turns": 0,
                 "summary_count": 0,
                 "session_count": 0,
             }
-        return self._conversation_memory.get_statistics()
 
     def clear_conversation_memory(self) -> bool:
         """Clear the conversation memory for this agent."""
-        if self._conversation_memory is None:
+        try:
+            self.state.mind.memory.conversation.clear()
+            return True
+        except Exception:
             return False
-        self._conversation_memory.clear()
-        return True
 
     # ============================================================================
     # RESOURCE MANAGEMENT (LLM Resources, Initialization, Cleanup)
     # ============================================================================
 
-    def _get_llm_resource(self):
-        """Get the LLM resource for this agent.
-
-        Returns:
-            LLMResourceInstance or None if no LLM resource is available
-        """
-        if self._llm_resource_instance is None:
-            self._initialize_llm_resource()
-        return self._llm_resource_instance
-
     def get_llm_resource(self, sandbox_context: SandboxContext | None = None):
-        """Public method to get the LLM resource for this agent.
+        """Get the LLM resource for this agent.
 
         Args:
             sandbox_context: Optional sandbox context to get LLM resource from
@@ -418,27 +340,19 @@ class AgentInstance(
                 pass
 
         # Fall back to agent's own LLM resource
-        return self._get_llm_resource()
+        if self._llm_resource_instance is None:
+            self._initialize_llm_resource()
+        return self._llm_resource_instance
 
     def _initialize_conversation_memory(self):
-        """Initialize conversation memory if not already done."""
-        if self._conversation_memory is None:
-            from pathlib import Path
+        """Initialize conversation memory if not already done.
 
-            from dana.core.agent.mind.memory.conversation import ConversationMemory
-
-            # Create memory file path under ~/.dana/chats/
-            agent_name = getattr(self.agent_type, "name", "agent")
-            home_dir = Path.home()
-            dana_dir = home_dir / ".dana"
-            memory_dir = dana_dir / "chats"
-            memory_dir.mkdir(parents=True, exist_ok=True)
-            memory_file = memory_dir / f"{agent_name}_conversation.json"
-
-            self._conversation_memory = ConversationMemory(
-                filepath=str(memory_file),
-                max_turns=20,  # Keep last 20 turns in active memory
-            )
+        Note: Conversation memory is now managed by the centralized state system.
+        This method is kept for backward compatibility but delegates to the state system.
+        """
+        # Conversation memory is automatically initialized as part of AgentState
+        # No additional initialization needed
+        pass
 
     def _initialize_llm_resource(self):
         """Initialize LLM resource from agent's config if not already done."""
@@ -492,7 +406,7 @@ class AgentInstance(
     def _initialize_agent_resources(self):
         """Initialize all agent resources that need explicit initialization."""
         try:
-            # Initialize conversation memory
+            # Initialize conversation memory (now handled by centralized state)
             self._initialize_conversation_memory()
 
             # Initialize LLM resource
@@ -535,19 +449,21 @@ class AgentInstance(
 
                 self._llm_resource_instance = None
 
-            # Clear conversation memory
-            if self._conversation_memory is not None:
-                try:
-                    self._conversation_memory.clear()
-                except Exception as e:
-                    import logging
+            # Clear conversation memory (now handled by centralized state)
+            try:
+                self.state.mind.memory.conversation.clear()
+            except Exception as e:
+                import logging
 
-                    logging.warning(f"Failed to clear conversation memory for {self.name}: {e}")
+                logging.warning(f"Failed to clear conversation memory for {self.name}: {e}")
 
-                self._conversation_memory = None
+            # Clear working memory (now handled by centralized state)
+            try:
+                self.state.mind.memory.working.clear()
+            except Exception as e:
+                import logging
 
-            # Clear agent memory and context
-            self._memory.clear()
+                logging.warning(f"Failed to clear working memory for {self.name}: {e}")
 
             # Update metrics to indicate cleanup
             self.update_metric("is_running", False)

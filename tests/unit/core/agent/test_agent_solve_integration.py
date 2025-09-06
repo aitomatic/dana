@@ -85,7 +85,7 @@ class TestAgentSolveIntegration:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Create a workflow first
-        workflow = agent._create_top_level_workflow("Test problem")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state)
 
         # Verify the workflow was created with proper fields
         assert isinstance(workflow, WorkflowInstance)
@@ -108,7 +108,7 @@ class TestAgentSolveIntegration:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        workflow = agent._create_top_level_workflow("Test problem", objective="Custom objective")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state, objective="Custom objective")
 
         assert isinstance(workflow, WorkflowInstance)
         assert workflow._values["problem_statement"] == "Test problem"
@@ -130,7 +130,9 @@ class TestAgentSolveIntegration:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        workflow_type = agent._create_workflow_type("Test problem")
+        # Test workflow type creation through WorkflowInstance.create_simple
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state)
+        workflow_type = workflow.struct_type
 
         assert workflow_type.name.startswith("AgentWorkflow_")
         assert "problem_statement" in workflow_type.fields
@@ -170,7 +172,7 @@ class TestAgentSolveIntegration:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        workflow = agent._create_top_level_workflow("Test problem", objective="Custom objective")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state, objective="Custom objective")
 
         problem_context = workflow._values["problem_context"]
         assert isinstance(problem_context, ProblemContext)
@@ -192,7 +194,7 @@ class TestAgentSolveIntegration:
 
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
-        workflow = agent._create_top_level_workflow("Test problem")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state)
 
         action_history = workflow._values["action_history"]
         assert isinstance(action_history, Timeline)
@@ -212,7 +214,7 @@ class TestAgentSolveIntegration:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Test that the agent can create workflows through strategy selection
-        workflow = agent._create_top_level_workflow("Complex problem", objective="Solve complex problem")
+        workflow = WorkflowInstance.create_simple("Complex problem", agent_state=agent.state, objective="Solve complex problem")
 
         assert isinstance(workflow, WorkflowInstance)
         assert workflow._values["problem_statement"] == "Complex problem"
@@ -236,14 +238,14 @@ class TestAgentContextPropagation:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Create initial workflow
-        root_workflow = agent._create_top_level_workflow("Root problem")
+        root_workflow = WorkflowInstance.create_simple("Root problem", agent_state=agent.state)
 
         # Verify context is properly set
         assert root_workflow._values["problem_context"] is not None
         assert root_workflow._values["action_history"] is not None
 
         # Create sub-workflow (simulating recursive call)
-        sub_workflow = agent._create_top_level_workflow("Sub problem")
+        sub_workflow = WorkflowInstance.create_simple("Sub problem", agent_state=agent.state)
 
         # Verify sub-workflow has its own context
         assert sub_workflow._values["problem_context"] is not None
@@ -263,7 +265,7 @@ class TestAgentContextPropagation:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Create workflow
-        workflow = agent._create_top_level_workflow("Test problem")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state)
 
         # Check that action history is properly set
         action_history = workflow._values["action_history"]
@@ -286,7 +288,7 @@ class TestAgentContextPropagation:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Create root workflow
-        root_workflow = agent._create_top_level_workflow("Root problem")
+        root_workflow = WorkflowInstance.create_simple("Root problem", agent_state=agent.state)
         root_context = root_workflow._values["problem_context"]
 
         # Create sub-problem context
@@ -316,7 +318,7 @@ class TestAgentErrorHandling:
         agent = AgentInstance(struct_type=agent_type, values={"name": "TestAgent"})
 
         # Create workflow
-        workflow = agent._create_top_level_workflow("Test problem")
+        workflow = WorkflowInstance.create_simple("Test problem", agent_state=agent.state)
 
         # Create a function that raises an error
         def error_function(*args, **kwargs):
