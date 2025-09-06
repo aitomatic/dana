@@ -1,4 +1,4 @@
-"""CorralActorMixin mixin for Dana agents to utilize CORRAL knowledge lifecycle."""
+"""CORRALActorMixin mixin for Dana agents to utilize CORRAL knowledge lifecycle."""
 
 from abc import ABC
 from collections.abc import Iterator
@@ -14,7 +14,7 @@ from .knowledge import Knowledge, KnowledgeCategory
 from .operations import ActionResult, CORRALResult, CurationResult, LearningResult, OrganizationResult, ReasoningResult, RetrievalResult
 
 
-class CorralActorMixin(ABC):
+class CORRALActorMixin(ABC):
     """Mixin that adds CORRAL knowledge capabilities to Dana agents.
 
     This mixin can be applied to AgentInstance to add comprehensive
@@ -394,12 +394,12 @@ class CorralActorMixin(ABC):
 
     @classmethod
     def apply_to_instance(cls, agent_instance: Any, corral_config: CORRALConfig | None = None) -> None:
-        """Apply CorralActorMixin mixin to existing agent instance."""
+        """Apply CORRALActorMixin mixin to existing agent instance."""
         # This is a simplified implementation - in practice would need more careful mixing
         instance_class = type(agent_instance)
 
-        # Create new class that includes CorralActorMixin
-        class CORRALEnhanced(instance_class, CorralActorMixin):
+        # Create new class that includes CORRALActorMixin
+        class CORRALEnhanced(instance_class, CORRALActorMixin):
             pass
 
         # Replace the instance's class
