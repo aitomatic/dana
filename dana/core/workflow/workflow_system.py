@@ -235,18 +235,14 @@ class WorkflowInstance(StructInstance):
         Raises:
             RuntimeError: If no composed function set
         """
-        print("[DEBUG] WorkflowInstance.execute() called")
-        print(f"[DEBUG] context: {context}")
-        print(f"[DEBUG] args: {args}")
-        print(f"[DEBUG] kwargs: {kwargs}")
-        print(f"[DEBUG] self._composed_function: {self._composed_function}")
+        print(f"🚀 WORKFLOW EXECUTION - Starting {self.struct_type.name}")
 
         if not self._composed_function:
-            print("[DEBUG] ERROR: No composed function set for this workflow")
+            print("❌ WORKFLOW ERROR - No composed function set for this workflow")
             raise RuntimeError("No composed function set for this workflow")
 
         # Set up execution context
-        print("[DEBUG] Setting up execution context...")
+        print("🔧 EXECUTION SETUP - Configuring context")
         context.workflow_instance = self
 
         # Record execution start
@@ -258,18 +254,16 @@ class WorkflowInstance(StructInstance):
         self.add_execution_step({"step": "start", "timestamp": start_time, "status": "executing"})
 
         try:
-            print("[DEBUG] Executing composed function...")
+            print("⚡ EXECUTING - Composed function")
             # Execute the composed function - handle both ComposedFunction and regular callables
             if hasattr(self._composed_function, "execute"):
                 # It's a ComposedFunction or similar object with execute method
-                print("[DEBUG] Using execute() method")
                 result = self._composed_function.execute(context, *args, **kwargs)
             else:
                 # It's a regular callable function
-                print("[DEBUG] Using direct call")
                 result = self._composed_function(*args, **kwargs)
 
-            print(f"[DEBUG] Function execution completed, result: {type(result)} = {result}")
+            print(f"✅ EXECUTION COMPLETE - Result: {type(result).__name__} = {str(result)[:100]}...")
 
             # Record successful completion
             execution_time = time.time() - start_time
@@ -280,7 +274,7 @@ class WorkflowInstance(StructInstance):
             return result
 
         except Exception as e:
-            print(f"[DEBUG] Function execution failed with error: {e}")
+            print(f"❌ EXECUTION FAILED - {e}")
             # Record error
             execution_time = time.time() - start_time
             self.add_execution_step(

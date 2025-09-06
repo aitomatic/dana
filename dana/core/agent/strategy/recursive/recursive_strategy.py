@@ -33,37 +33,38 @@ class RecursiveStrategy(BaseStrategy):
     def create_workflow(self, problem: str, context: ProblemContext, agent_instance=None, sandbox_context=None) -> WorkflowInstance:
         """Create a workflow instance using LLM-generated Dana code."""
 
-        print("[DEBUG] RecursiveStrategy.create_workflow() called")
-        print(f"[DEBUG] problem: {problem}")
-        print(f"[DEBUG] context: {context}")
-        print(f"[DEBUG] agent_instance: {type(agent_instance)}")
-        print(f"[DEBUG] sandbox_context: {sandbox_context}")
+        print(f"🔄 RECURSIVE STRATEGY - Creating workflow for: {problem[:50]}...")
+        print(f"📊 CONTEXT - Depth: {context.depth}, Objective: {context.objective}")
 
         # 1. Check recursion depth limits
-        print("[DEBUG] Checking depth limits...")
         if not self._check_depth_limits(context):
-            print("[DEBUG] Depth limit reached, creating base case workflow")
+            print("🛑 DEPTH LIMIT - Maximum recursion depth reached, creating base case")
             return self._create_base_case_workflow(problem, context)
 
         # 2. Generate LLM prompt with rich computable context
-        print("[DEBUG] Building analysis prompt...")
         prompt = self._build_enhanced_analysis_prompt(problem, context)
-        print(f"[DEBUG] Built prompt: {prompt[:200]}...")
+        print("=" * 80)
+        print("🤖 LLM PROMPT:")
+        print("=" * 80)
+        print(prompt)
+        print("=" * 80)
 
         # 3. Get LLM response (Dana code)
-        print("[DEBUG] Getting LLM response...")
+        print("⏳ LLM REQUEST - Getting response...")
         dana_code = self._get_llm_response(prompt, agent_instance, sandbox_context)
-        print(f"[DEBUG] LLM response: {dana_code[:200]}...")
+        print("=" * 80)
+        print("🤖 LLM RESPONSE:")
+        print("=" * 80)
+        print(dana_code)
+        print("=" * 80)
 
         # 4. Validate and compile Dana code
-        print("[DEBUG] Compiling Dana code...")
+        print("🔨 COMPILING - Converting Dana code to executable function")
         compiled_function = self._compile_dana_code(dana_code, context)
-        print(f"[DEBUG] Compiled function: {type(compiled_function)}")
 
         # 5. Create WorkflowInstance with parent reference
-        print("[DEBUG] Creating workflow instance...")
         workflow = self._create_workflow_instance(problem, context, compiled_function)
-        print(f"[DEBUG] Created workflow: {type(workflow)}")
+        print(f"✅ WORKFLOW READY - {type(workflow).__name__} with compiled function")
 
         return workflow
 
@@ -238,11 +239,8 @@ class RecursiveStrategy(BaseStrategy):
                 self.dana_code = dana_code
 
             def execute(self, context, *args, **kwargs):
-                print("[DEBUG] SimpleSandboxFunction.execute() called")
-                print(f"[DEBUG] context: {context}")
-                print(f"[DEBUG] args: {args}")
-                print(f"[DEBUG] kwargs: {kwargs}")
-                print(f"[DEBUG] dana_code: {self.dana_code[:200]}...")
+                print("⚡ EXECUTING - Dana code function")
+                print(f"📝 DANA CODE: {self.dana_code[:100]}...")
 
                 # Try to execute the Dana code for simple cases
                 try:
@@ -257,15 +255,15 @@ class RecursiveStrategy(BaseStrategy):
                     if clean_code.startswith("agent.output(") and clean_code.endswith(")"):
                         # Extract the content inside agent.output()
                         content = clean_code[13:-1]  # Remove "agent.output(" and ")"
-                        print(f"[DEBUG] Extracted content: {content}")
+                        print(f"🎯 EXTRACTED - Content: {content}")
 
                         # Try to evaluate the content (for simple expressions like "4", "15", "2+2")
                         try:
                             result = eval(content)
-                            print(f"[DEBUG] Evaluated result: {result}")
+                            print(f"✅ EVALUATED - Result: {result}")
                             return result
                         except Exception as eval_error:
-                            print(f"[DEBUG] Could not evaluate content: {eval_error}")
+                            print(f"⚠️  EVAL FAILED - {eval_error}, returning content as string")
                             # Fall back to returning the content as string
                             return content
                     else:
@@ -274,7 +272,7 @@ class RecursiveStrategy(BaseStrategy):
                         return f"Executed Dana code: {self.dana_code[:100]}..."
 
                 except Exception as e:
-                    print(f"[DEBUG] Error executing Dana code: {e}")
+                    print(f"❌ EXECUTION ERROR - {e}")
                     # Fall back to mock implementation
                     return f"Executed Dana code: {self.dana_code[:100]}..."
 
