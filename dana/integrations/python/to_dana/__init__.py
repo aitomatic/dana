@@ -15,22 +15,21 @@ from dana.integrations.python.to_dana.dana_module import Dana
 # Create the main dana instance that will be imported
 dana = Dana()
 
-__all__ = ["dana"]
-
 
 # Convenience functions for module imports
 def enable_dana_imports(search_paths: list[str] | None = None, debug: bool = False) -> None:
     """Enable importing Dana .na files directly in Python.
 
     Args:
-        search_paths: Optional list of paths to search for .na files
+        search_paths: Optional list of paths to search for .na files.
+                     If None, automatically includes the calling script's directory.
         debug: Enable debug mode
 
     Example:
         from dana.integrations.python import enable_dana_imports
         enable_dana_imports()
 
-        import simple_math  # This will load simple_math.na
+        import simple_math  # This will load simple_math.na from the script's directory
         result = simple_math.add(5, 3)
     """
     dana.enable_module_imports(search_paths)

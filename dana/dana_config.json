@@ -11,6 +11,7 @@
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4o-mini",
             "azure:gpt-4o",
+            "azure:gpt-4o-mini",
             "cohere:command",
             "deepseek:deepseek-chat",
             "google:gemini-1.5-pro-latest",
@@ -18,11 +19,11 @@
             "ibm_watsonx:ibm/granite-20b-multilingual",
             "local",
             "mistral:mistral-large-latest",
+            "openai:gpt-4.1",
             "openai:gpt-4.1-mini",
             "openai:gpt-4.1-nano",
-            "openai:gpt-4.1",
-            "openai:gpt-4o-mini",
             "openai:gpt-4o",
+            "openai:gpt-4o-mini",
             "xai:grok-2-vision-1212",
             "xai:grok-3-fast",
             "xai:grok-3-mini-fast",
@@ -107,15 +108,16 @@
             "azure:text-embedding-3-small",
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
-            "cohere:embed-english-v3.0"
+            "cohere:embed-english-v3.0",
+            "ibm_watsonx:ibm/slate-125m-english-rtrvr"
         ],
         "provider_configs": {
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",
-                "base_url": "https://api.openai.com/v1",
+                "base_url": "env:OPENAI_BASE_URL",
                 "dimension": 1024,
-                "batch_size": 512
+                "batch_size": 100
             },
             "huggingface": {
                 "api_type": "huggingface"
@@ -132,6 +134,13 @@
                 "api_version": "env:AZURE_OPENAI_API_VERSION",
                 "api_type": "azure",
                 "dimension": 1024
+            },
+            "ibm_watsonx": {
+                "url" : "env:WATSONX_URL",
+                "apikey" : "env:WATSONX_API_KEY",
+                "project_id" : "env:WATSONX_PROJECT_ID",
+                "instance_id" : "env:WATSONX_INSTANCE_ID",
+                "version" : "env:WATSONX_VERSION"
             }
         }
     }

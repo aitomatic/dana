@@ -203,7 +203,7 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        # print(f"Retrieving {num_results} results for query: {query}")
+        print(f"Retrieving {num_results} results for query: '{query}'")
         nodes = await self.index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
         return [{"text": node.text, "metadata": node.metadata} for node in nodes]
 
@@ -377,6 +377,32 @@ class TabularIndex:
         storage_context = StorageContext.from_defaults(vector_store=self.provider.vector_store)
 
         logger.info(f"Building vector index from {len(documents)} documents...")
+
+        # Ensure DuckDB table exists before adding documents (critical fix)
+        try:
+            if hasattr(self.provider.vector_store, "client") and hasattr(self.provider.vector_store, "table_name"):
+                client = self.provider.vector_store.client
+                table_name = self.provider.vector_store.table_name
+                embed_dim = getattr(self.provider.vector_store, "embed_dim", 1024)
+
+                # Check if table exists, create it if missing
+                try:
+                    client.execute(f"SELECT 1 FROM {table_name} LIMIT 1")
+                except Exception:
+                    # Table doesn't exist, create it manually
+                    create_sql = f"""
+                    CREATE TABLE {table_name} (
+                        node_id VARCHAR PRIMARY KEY,
+                        text VARCHAR,
+                        embedding FLOAT[{embed_dim}],
+                        metadata_ JSON
+                    )
+                    """
+                    client.execute(create_sql)
+                    logger.info(f"Created DuckDB table '{table_name}'")
+        except Exception as e:
+            logger.warning(f"Failed to initialize DuckDB table: {e}")
+
         t1 = time.time()
 
         index = VectorStoreIndex.from_documents(

@@ -1,0 +1,3 @@
+resource_amd_annual_report = get_resource('rag', sources=['examples/resources/docs/AMD_2022_10K.pdf'])
+
+reason("What was AMD's revenue in fiscal 2022?", resources=[resource_amd_annual_report])

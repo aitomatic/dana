@@ -1,0 +1,450 @@
+#!/usr/bin/env bash
+# Install Dana Language Plugin on Linux
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+# This script installs the Dana language plugin after dependencies are ready
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Script configuration
+SCRIPT_NAME="$(basename "$0")"
+LOG_FILE="/tmp/dana-plugin-install.log"
+
+# Function to log messages
+log() {
+    echo -e "$1" | tee -a "$LOG_FILE" >&2
+}
+
+# Function to ensure npm environment is properly configured
+ensure_npm_environment() {
+    log "${BLUE}🔧 Ensuring npm environment is properly configured...${NC}"
+    
+    # Create npm global directory structure if it doesn't exist
+    mkdir -p ~/.npm-global/lib/node_modules
+    mkdir -p ~/.npm-global/bin
+    
+    # Configure npm to use user directory
+    npm config set prefix "$HOME/.npm-global"
+    
+    # Add to PATH for current session
+    export PATH="$HOME/.npm-global/bin:$PATH"
+    
+    # Verify npm configuration
+    local npm_prefix=$(npm config get prefix 2>/dev/null || echo "")
+    if [[ "$npm_prefix" != "$HOME/.npm-global" ]]; then
+        log "${RED}❌ Error: Failed to configure npm prefix${NC}"
+        exit 1
+    fi
+    
+    # Verify the directory structure exists and is accessible
+    if [[ ! -d "$HOME/.npm-global/lib" ]] || [[ ! -w "$HOME/.npm-global/lib" ]]; then
+        log "${RED}❌ Error: npm global lib directory is not accessible${NC}"
+        log "${YELLOW}💡 Attempting to fix permissions...${NC}"
+        chmod -R 755 "$HOME/.npm-global" 2>/dev/null || true
+        if [[ ! -w "$HOME/.npm-global/lib" ]]; then
+            log "${RED}❌ Cannot fix npm global directory permissions${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Additional WSL-specific fixes
+    log "${BLUE}🔧 Applying WSL-specific fixes...${NC}"
+    
+    # Ensure npm cache directory exists and is accessible
+    mkdir -p "$HOME/.npm/_cacache"
+    chmod -R 755 "$HOME/.npm/_cacache" 2>/dev/null || true
+    
+    # Set npm cache directory explicitly
+    npm config set cache "$HOME/.npm/_cacache"
+    
+    # Verify npm can write to its directories
+    if ! npm config get cache &> /dev/null; then
+        log "${YELLOW}⚠️  Warning: npm cache configuration issue${NC}"
+    fi
+    
+    log "${GREEN}✅ npm environment properly configured${NC}"
+}
+
+# Function to check and install dependencies if needed
+check_and_install_dependencies() {
+    log "${BLUE}🔍 Checking dependencies...${NC}"
+
+    # Check if basic dependencies are available
+    if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+        log "${YELLOW}⚠️  Dependencies not ready, installing them automatically...${NC}"
+
+        # Get the project root directory (same as setup_paths)
+        local project_root="$(pwd)"
+        local deps_script="$project_root/dana/integrations/vscode/bin/install-upgrade-linux-deps"
+
+        # Check if the deps script exists
+        if [[ ! -f "$deps_script" ]]; then
+            log "${RED}❌ Dependencies script not found at ${deps_script}${NC}"
+            log "${YELLOW}💡 Please ensure the Dana repository is properly cloned${NC}"
+            exit 1
+        fi
+
+        # Make sure the deps script is executable
+        chmod +x "$deps_script"
+
+        # Run the dependencies installation
+        log "${BLUE}🔄 Running dependencies installation...${NC}"
+        if DANA_AUTO_INSTALL=true "$deps_script"; then
+            log "${GREEN}✅ Dependencies installed successfully${NC}"
+        else
+            log "${RED}❌ Failed to install dependencies${NC}"
+            log "${YELLOW}💡 Please run manually: ${deps_script}${NC}"
+            exit 1
+        fi
+
+        # Verify dependencies are now available
+        if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+            log "${RED}❌ Dependencies still not available after installation${NC}"
+            log "${YELLOW}💡 Please restart your terminal and try again${NC}"
+            exit 1
+        fi
+    else
+        log "${GREEN}✅ Dependencies ready${NC}"
+    fi
+}
+
+# Function to check if target editor is available
+check_editor() {
+    local editor="$1"
+    local editor_name="$2"
+
+    if ! command -v "$editor" &> /dev/null; then
+        log "${RED}❌ Error: $editor_name is not installed or not in PATH${NC}"
+        log "${YELLOW}💡 Install with: sudo snap install $editor --classic${NC}"
+        exit 1
+    fi
+
+    log "${GREEN}✅ $editor_name available${NC}"
+}
+
+# Function to get project paths
+setup_paths() {
+    log "${BLUE}📁 Setting up project paths...${NC}"
+
+    # Get the current working directory (where the script was called from)
+    # This should be the project root when called via make
+    PROJECT_ROOT="$(pwd)"
+    EXTENSION_DIR="$PROJECT_ROOT/dana/integrations/vscode"
+
+    log "${BLUE}📁 Project root: ${PROJECT_ROOT}${NC}"
+    log "${BLUE}📁 Extension directory: ${EXTENSION_DIR}${NC}"
+
+    # Check if extension directory exists
+    if [[ ! -d "$EXTENSION_DIR" ]]; then
+        log "${RED}❌ Error: Extension directory not found at ${EXTENSION_DIR}${NC}"
+        exit 1
+    fi
+
+    # Change to extension directory
+    cd "$EXTENSION_DIR"
+    log "${GREEN}✅ Changed to extension directory${NC}"
+}
+
+# Function to install npm dependencies
+install_npm_dependencies() {
+    log "${BLUE}📦 Installing npm dependencies...${NC}"
+
+    # Check if package.json exists
+    if [[ ! -f "package.json" ]]; then
+        log "${RED}❌ Error: package.json not found in extension directory${NC}"
+        exit 1
+    fi
+
+    # Ensure npm environment is properly configured
+    ensure_npm_environment
+    
+    # Install dependencies with explicit cache directory
+    log "${BLUE}📦 Installing dependencies...${NC}"
+    export npm_config_cache="$HOME/.npm/_cacache"
+    
+    if ! npm install; then
+        log "${RED}❌ Error: npm install failed${NC}"
+        log "${YELLOW}💡 Attempting to clear npm cache and retry...${NC}"
+        npm cache clean --force
+        if ! npm install; then
+            log "${RED}❌ Error: npm install failed even after cache cleanup${NC}"
+            exit 1
+        fi
+    fi
+    
+    log "${GREEN}✅ npm dependencies installed${NC}"
+
+    # Fix permissions on TypeScript binary (common Linux issue)
+    local tsc_bin="./node_modules/.bin/tsc"
+    if [[ -f "$tsc_bin" ]]; then
+        log "${BLUE}🔧 Fixing TypeScript binary permissions...${NC}"
+        chmod +x "$tsc_bin"
+        log "${GREEN}✅ TypeScript binary permissions fixed${NC}"
+    else
+        log "${YELLOW}⚠️  TypeScript binary not found, checking if it's a symlink...${NC}"
+        # Sometimes tsc is a symlink to another location
+        if [[ -L "$tsc_bin" ]]; then
+            local target=$(readlink "$tsc_bin")
+            log "${BLUE}🔗 TypeScript is symlinked to: $target${NC}"
+            if [[ -f "$target" ]]; then
+                chmod +x "$target"
+                log "${GREEN}✅ Target TypeScript binary permissions fixed${NC}"
+            fi
+        fi
+    fi
+}
+
+# Function to compile TypeScript
+compile_typescript() {
+    log "${BLUE}🔨 Compiling TypeScript...${NC}"
+
+    # Check if compile script exists
+    if ! grep -q '"compile"' package.json; then
+        log "${RED}❌ Error: compile script not found in package.json${NC}"
+        exit 1
+    fi
+
+    # Run compilation
+    npm run compile
+    log "${GREEN}✅ TypeScript compilation completed${NC}"
+}
+
+# Function to package the extension
+package_extension() {
+    log "${BLUE}📦 Packaging extension...${NC}"
+
+    # Ensure npm environment is still properly configured
+    ensure_npm_environment
+    
+    # Check if vsce is already available
+    if command -v vsce &> /dev/null; then
+        log "${GREEN}✅ @vscode/vsce already available${NC}"
+    else
+        # Install vsce globally first to avoid npx issues
+        log "${BLUE}📦 Installing @vscode/vsce globally...${NC}"
+        if ! npm install -g @vscode/vsce; then
+            log "${RED}❌ Error: Failed to install @vscode/vsce globally${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Use vsce directly instead of npx
+    log "${YELLOW}📦 Using @vscode/vsce directly...${NC}"
+    
+    # Package the extension and capture output
+    local package_output
+    local exit_code
+    
+    # Set npm cache directory to avoid permission issues
+    export npm_config_cache="$HOME/.npm/_cacache"
+    
+    # Run the packaging command
+    package_output=$(vsce package --allow-missing-repository 2>&1)
+    exit_code=$?
+    
+    if [[ $exit_code -ne 0 ]]; then
+        log "${RED}❌ Error: vsce packaging failed with exit code $exit_code${NC}"
+        log "${YELLOW}Package output: ${package_output}${NC}"
+        exit 1
+    fi
+
+    # Find the generated .vsix file
+    VSIX_FILE=$(find . -name "*.vsix" -type f | head -n 1)
+
+    if [[ -z "$VSIX_FILE" ]]; then
+        log "${RED}❌ Error: No .vsix file found after packaging${NC}"
+        log "${YELLOW}Package output: ${package_output}${NC}"
+        exit 1
+    fi
+
+    log "${GREEN}✅ Extension packaged: ${VSIX_FILE}${NC}"
+    # Output only the file path to stdout (no color codes or extra text)
+    printf "%s\n" "$VSIX_FILE"
+}
+
+# Function to install extension in editor
+install_extension() {
+    local vsix_file="$1"
+    local editor="$2"
+    local editor_name="$3"
+
+    log "${BLUE}🔧 Installing extension in ${editor_name}...${NC}"
+
+    # Install the extension
+    "$editor" --install-extension "$vsix_file"
+
+    if [[ $? -eq 0 ]]; then
+        log "${GREEN}✅ Extension successfully installed in ${editor_name}!${NC}"
+    else
+        log "${RED}❌ Failed to install extension in ${editor_name}${NC}"
+        exit 1
+    fi
+}
+
+# Function to verify installation
+verify_installation() {
+    local editor="$1"
+    local editor_name="$2"
+
+    log "${BLUE}🔍 Verifying installation...${NC}"
+
+    # Check if editor can list extensions
+    if "$editor" --list-extensions | grep -q "dana-language"; then
+        log "${GREEN}✅ Dana language extension found in ${editor_name}${NC}"
+    else
+        log "${YELLOW}⚠️  Dana language extension not found in ${editor_name} extensions list${NC}"
+        log "${YELLOW}   This may be normal for some editors${NC}"
+    fi
+
+    log "${GREEN}✅ Installation verification completed${NC}"
+}
+
+# Function to show success message and next steps
+show_success() {
+    local editor_name="$1"
+
+    log ""
+    log "${GREEN}🎉 Dana Language Support successfully installed in ${editor_name}!${NC}"
+    log ""
+
+    log "${YELLOW}📝 Next steps:${NC}"
+    log "1. Open ${editor_name}"
+    log "2. Create or open a .na file"
+    log "3. Press F5 to run Dana code"
+    log ""
+    log "${BLUE}💡 Dana Features in ${editor_name}:${NC}"
+    log "  - F5: Run current Dana file"
+    log "  - Syntax highlighting for .na files"
+    log "  - Real-time error checking (if LSP enabled)"
+    log "  - Hover help on Dana keywords"
+    log "  - Smart auto-completion"
+    log ""
+    log "${BLUE}💡 Tip: Make sure 'dana' command is in your PATH${NC}"
+
+    # Check if local dana command is available
+    local dana_cli="$PROJECT_ROOT/bin/dana"
+    if [[ -x "$dana_cli" ]]; then
+        log "${GREEN}✅ Dana CLI is available at ${dana_cli}${NC}"
+    else
+        log "${YELLOW}⚠️  Warning: Dana CLI not found at ${dana_cli}${NC}"
+        log "${YELLOW}   The extension will look for 'dana' in PATH when running files${NC}"
+    fi
+}
+
+# Function to show usage
+show_usage() {
+    cat << EOF
+Usage: $SCRIPT_NAME [OPTIONS] [EDITOR]
+
+Install Dana Language Plugin on Linux
+
+OPTIONS:
+    -h, --help          Show this help message
+    -v, --verbose       Enable verbose output
+    --cursor            Install for Cursor editor
+    --vscode           Install for VS Code editor
+
+EDITOR:
+    cursor              Install for Cursor (default)
+    code                Install for VS Code
+    vscode              Install for VS Code
+
+EXAMPLES:
+    $SCRIPT_NAME                    # Install for Cursor
+    $SCRIPT_NAME cursor            # Install for Cursor
+    $SCRIPT_NAME code              # Install for VS Code
+    $SCRIPT_NAME --cursor          # Install for Cursor
+    $SCRIPT_NAME --vscode          # Install for VS Code
+
+NOTES:
+    - Dependencies are automatically installed if needed
+    - Target editor must be installed and accessible
+    - Script handles both dependency setup and plugin installation
+
+EOF
+}
+
+# Main execution
+main() {
+    local editor="cursor"
+    local editor_name="Cursor"
+    local verbose=false
+
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -v|--verbose)
+                verbose=true
+                shift
+                ;;
+            --cursor)
+                editor="cursor"
+                editor_name="Cursor"
+                shift
+                ;;
+            --vscode)
+                editor="code"
+                editor_name="VS Code"
+                shift
+                ;;
+            cursor|code|vscode)
+                if [[ "$1" == "vscode" ]]; then
+                    editor="code"
+                    editor_name="VS Code"
+                else
+                    editor="$1"
+                    if [[ "$1" == "code" ]]; then
+                        editor_name="VS Code"
+                    else
+                        editor_name="Cursor"
+                    fi
+                fi
+                shift
+                ;;
+            *)
+                log "${RED}❌ Error: Unknown option: $1${NC}"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+
+    # Set verbose mode if requested
+    if [[ "$verbose" == true ]]; then
+        set -x
+    fi
+
+    log "${BLUE}🚀 Dana Language Plugin - Linux Installer${NC}"
+    log "${BLUE}==========================================${NC}"
+    log "${BLUE}Target Editor: ${editor_name}${NC}"
+    log "${YELLOW}💡 Dependencies will be automatically installed if needed${NC}"
+    log ""
+
+    # Run installation steps
+    check_and_install_dependencies
+    check_editor "$editor" "$editor_name"
+    setup_paths
+    install_npm_dependencies
+    compile_typescript
+    local vsix_file=$(package_extension)
+    install_extension "$vsix_file" "$editor" "$editor_name"
+    verify_installation "$editor" "$editor_name"
+    show_success "$editor_name"
+
+    log ""
+    log "${GREEN}🎉 Installation completed successfully!${NC}"
+    log "${BLUE}📝 Log saved to: $LOG_FILE${NC}"
+}
+
+# Run main function
+main "$@"
