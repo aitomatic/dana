@@ -1,4 +1,4 @@
-"""Tests for CorralActorMixin mixin."""
+"""Tests for CORRALActorMixin mixin."""
 
 from datetime import datetime
 from unittest.mock import Mock, patch
@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from dana.core.agent import ProblemContext
-from dana.frameworks.corral.actor_mixin import CorralActorMixin
+from dana.frameworks.corral.actor_mixin import CORRALActorMixin
 from dana.frameworks.corral.config import CORRALConfig
 from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
@@ -22,24 +22,24 @@ class MockAgent:
         self.state.execution = Mock()
 
 
-class TestCorralActorMixin:
-    """Test CorralActorMixin mixin functionality."""
+class TestCORRALActorMixin:
+    """Test CORRALActorMixin mixin functionality."""
 
     @pytest.fixture
     def corral_actor(self):
-        """Create a mock agent with CorralActorMixin mixin."""
+        """Create a mock agent with CORRALActorMixin mixin."""
 
-        class TestAgent(MockAgent, CorralActorMixin):
+        class TestAgent(MockAgent, CORRALActorMixin):
             def __init__(self):
                 # Initialize MockAgent first
                 MockAgent.__init__(self)
-                # Then initialize CorralActorMixin
-                CorralActorMixin.__init__(self)
+                # Then initialize CORRALActorMixin
+                CORRALActorMixin.__init__(self)
 
         return TestAgent()
 
     def test_initialization(self, corral_actor):
-        """Test CorralActorMixin initialization."""
+        """Test CORRALActorMixin initialization."""
         assert hasattr(corral_actor, "_corral_config")
         assert hasattr(corral_actor, "_knowledge_base")
         assert hasattr(corral_actor, "_curation_engine")
@@ -320,8 +320,8 @@ class TestCorralActorMixin:
         # Create mock agent instance
         agent = MockAgent()
 
-        # Apply CorralActorMixin mixin
-        CorralActorMixin.apply_to_instance(agent)
+        # Apply CORRALActorMixin mixin
+        CORRALActorMixin.apply_to_instance(agent)
 
         # Should have CORRAL capabilities
         assert hasattr(agent, "_corral_config")
@@ -347,12 +347,12 @@ class TestCorralActorMixin:
         """Test initialization with custom config."""
         custom_config = CORRALConfig(quality_threshold=0.9, max_retrieval_results=20)
 
-        class TestAgent(MockAgent, CorralActorMixin):
+        class TestAgent(MockAgent, CORRALActorMixin):
             def __init__(self):
                 # Initialize MockAgent first
                 MockAgent.__init__(self)
-                # Then initialize CorralActorMixin with custom config
-                CorralActorMixin.__init__(self, corral_config=custom_config)
+                # Then initialize CORRALActorMixin with custom config
+                CORRALActorMixin.__init__(self, corral_config=custom_config)
 
         agent = TestAgent()
 

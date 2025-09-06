@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from dana.core.agent import ProblemContext
-from dana.frameworks.corral import CorralActorMixin
+from dana.frameworks.corral import CORRALActorMixin
 from dana.frameworks.corral.config import LIGHTWEIGHT_CONFIG
 from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
@@ -35,12 +35,12 @@ class TestCORRALIntegration:
     def enhanced_agent(self):
         """Create agent with CORRAL capabilities."""
 
-        class EnhancedAgent(MockAgentInstance, CorralActorMixin):
+        class EnhancedAgent(MockAgentInstance, CORRALActorMixin):
             def __init__(self):
                 # Initialize MockAgentInstance first
                 MockAgentInstance.__init__(self)
-                # Then initialize CorralActorMixin
-                CorralActorMixin.__init__(self)
+                # Then initialize CORRALActorMixin
+                CORRALActorMixin.__init__(self)
 
         return EnhancedAgent()
 
@@ -251,7 +251,7 @@ class TestCORRALIntegration:
         assert "top_relevant_knowledge" in context_contribution
 
     def test_mixin_application_to_existing_agent(self):
-        """Test applying CorralActorMixin to existing agent instance."""
+        """Test applying CORRALActorMixin to existing agent instance."""
         # Create base agent
         agent = MockAgentInstance()
 
@@ -259,8 +259,8 @@ class TestCORRALIntegration:
         assert not hasattr(agent, "curate_knowledge")
         assert not hasattr(agent, "execute_corral_cycle")
 
-        # Apply CorralActorMixin mixin
-        CorralActorMixin.apply_to_instance(agent)
+        # Apply CORRALActorMixin mixin
+        CORRALActorMixin.apply_to_instance(agent)
 
         # Verify CORRAL capabilities added
         assert hasattr(agent, "curate_knowledge")
@@ -288,11 +288,12 @@ class TestCORRALIntegration:
     def test_knowledge_persistence_across_cycles(self, enhanced_agent):
         """Test that knowledge persists and improves across multiple CORRAL cycles."""
         # First cycle
-        # problem1 = "Optimize database performance"  # TODO: Use in cycle execution
-        # result1 = enhanced_agent.execute_corral_cycle(problem1)  # TODO: Use result in assertion
+        problem1 = "Optimize database performance"
+        result1 = enhanced_agent.execute_corral_cycle(problem1)
 
         initial_knowledge_count = len(enhanced_agent._knowledge_base)
         assert initial_knowledge_count > 0
+        assert result1.cycle_success is not None  # Verify first cycle completed
 
         # Second cycle with related problem
         problem2 = "Database queries are slow during peak hours"

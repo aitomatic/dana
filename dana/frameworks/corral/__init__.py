@@ -7,7 +7,7 @@ This enables Dana agents to build, maintain, and continuously improve
 their knowledge through direct experience and outcome feedback.
 """
 
-from .actor_mixin import CorralActorMixin
+from .actor_mixin import CORRALActorMixin
 from .config import CORRALConfig
 from .knowledge import (
     CausalKnowledge,
@@ -29,7 +29,7 @@ from .operations import (
 )
 
 __all__ = [
-    "CorralActorMixin",
+    "CORRALActorMixin",
     "Knowledge",
     "KnowledgeCategory",
     "DeclarativeKnowledge",
