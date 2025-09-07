@@ -2,8 +2,8 @@
 
 
 about_hinton = llm('tell me about Geoff Hinton')
-about_bengio = llm('tell me about Yoshua Bengio')
 about_lecun = llm('tell me about Yann LeCun')
+about_bengio = llm('tell me about Yoshua Bengio')
 about_huang = llm('tell me about Jensen Huang')
 
 
@@ -16,14 +16,14 @@ GEOFF HINTON
 {about_hinton}
 
 
-YOSHUA BENGIO
-=============
-{about_bengio}
-
-
 YANN LECUN
 ==========
 {about_lecun}
+
+
+YOSHUA BENGIO
+=============
+{about_bengio}
 
 
 JENSEN HUANG
