@@ -35,8 +35,28 @@ class IterativeStrategy(BaseStrategy):
         # 2. Generate LLM prompt
         prompt = self._build_analysis_prompt(problem, context)
 
+        # Color codes for terminal output
+        BLUE = "\033[94m"
+        GREEN = "\033[92m"
+        YELLOW = "\033[93m"
+        RED = "\033[91m"
+        BOLD = "\033[1m"
+        END = "\033[0m"
+
+        print("=" * 80)
+        print(f"{BLUE}{BOLD}🤖 LLM PROMPT:{END}")
+        print("=" * 80)
+        print(f"{YELLOW}{prompt}{END}")
+        print("=" * 80)
+
         # 3. Get LLM response (Dana code)
         dana_code = self._get_llm_response(prompt, agent_instance, sandbox_context)
+
+        print("=" * 80)
+        print(f"{GREEN}{BOLD}🤖 LLM RESPONSE:{END}")
+        print("=" * 80)
+        print(f"{YELLOW}{dana_code}{END}")
+        print("=" * 80)
 
         # 4. Validate and compile Dana code
         compiled_function = self._compile_dana_code(dana_code, context)
@@ -79,6 +99,8 @@ class IterativeStrategy(BaseStrategy):
 
     def _get_llm_response(self, prompt: str, agent_instance=None, sandbox_context=None) -> str:
         """Get LLM response (Dana code)."""
+        import time
+
         if not agent_instance:
             raise ValueError("Agent instance is required for IterativeStrategy to work")
 
@@ -87,15 +109,27 @@ class IterativeStrategy(BaseStrategy):
         # Pass sandbox_context to agent_instance.llm() if available
         from .prompts import SYSTEM_MESSAGE
 
-        if sandbox_context:
-            response = agent_instance.llm(
-                {"system": SYSTEM_MESSAGE, "prompt": prompt},
-                sandbox_context=sandbox_context,
-            )
-        else:
-            response = agent_instance.llm({"system": SYSTEM_MESSAGE, "prompt": prompt})
+        print("⏱️  LLM TIMEOUT - Setting 30 second timeout for LLM call")
+        start_time = time.time()
 
-        return str(response)
+        try:
+            if sandbox_context:
+                response = agent_instance.llm(
+                    {"system": SYSTEM_MESSAGE, "prompt": prompt},
+                    sandbox_context=sandbox_context,
+                )
+            else:
+                response = agent_instance.llm({"system": SYSTEM_MESSAGE, "prompt": prompt})
+
+            elapsed_time = time.time() - start_time
+            print(f"⏱️  LLM TIMEOUT - LLM call completed in {elapsed_time:.2f} seconds")
+            return str(response)
+
+        except Exception as e:
+            elapsed_time = time.time() - start_time
+            print(f"❌ LLM ERROR - Failed after {elapsed_time:.2f} seconds: {e}")
+            # Return a fallback response
+            return f'{{"approach": "direct", "reasoning": "LLM call failed: {e}", "result": "Error: LLM call failed"}}'
 
     # Mock response method removed - LLM client is required
     # def _generate_mock_response(self, prompt: str) -> str:
@@ -177,11 +211,45 @@ class IterativeStrategy(BaseStrategy):
     # })
     # """
 
-    def _compile_dana_code(self, dana_code: str, context: ProblemContext) -> Any:
-        """Compile Dana code to a function."""
-        # For now, return a simple function that can be called
-        # In a real implementation, this would compile the Dana code
-        return self._create_simple_function(dana_code)
+    def _compile_dana_code(self, llm_response: str, context: ProblemContext) -> Any:
+        """Parse LLM JSON response and compile to a function."""
+        import json
+
+        print("🔍 PARSING - LLM JSON response")
+
+        try:
+            # Try to parse the response as JSON
+            response_data = json.loads(llm_response)
+
+            # Check if it's a dictionary (valid JSON response)
+            if isinstance(response_data, dict):
+                print(f"✅ JSON PARSED - Approach: {response_data.get('approach', 'unknown')}")
+                print(f"📝 REASONING - {response_data.get('reasoning', 'No reasoning provided')}")
+
+                approach = response_data.get("approach", "dana_code")
+
+                if approach == "direct":
+                    # For direct approach, return the result directly
+                    result = response_data.get("result", "No result provided")
+                    print(f"🎯 DIRECT RESULT - {result}")
+                    return self._create_direct_result_function(result)
+                else:
+                    # For dana_code approach, extract and compile the Dana code
+                    dana_code = response_data.get("dana_code", "")
+                    if not dana_code:
+                        print("⚠️  NO DANA CODE - Falling back to mock response")
+                        dana_code = llm_response
+                    print(f"📜 DANA CODE - {dana_code[:100]}...")
+                    return self._create_simple_function(dana_code)
+            else:
+                # JSON parsed but not a dictionary (e.g., just a number or string)
+                print(f"⚠️  JSON NOT DICT - Got {type(response_data).__name__}: {response_data}, treating as raw Dana code")
+                return self._create_simple_function(llm_response)
+
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON PARSE ERROR - {e}, treating as raw Dana code")
+            # Fall back to treating the response as raw Dana code
+            return self._create_simple_function(llm_response)
 
     def _create_simple_function(self, dana_code: str):
         """Create a simple function from Dana code for testing."""
@@ -191,6 +259,16 @@ class IterativeStrategy(BaseStrategy):
             return f"Executed iterative Dana code: {dana_code[:100]}..."
 
         return simple_function
+
+    def _create_direct_result_function(self, result: Any):
+        """Create a function that returns a direct result."""
+
+        def direct_result_function(*args, **kwargs):
+            print("🎯 EXECUTING - Direct result function")
+            print(f"📤 RETURNING - {result}")
+            return result
+
+        return direct_result_function
 
     def _create_workflow_instance(self, problem: str, context: ProblemContext, compiled_function: Any) -> WorkflowInstance:
         """Create a WorkflowInstance with the compiled function."""

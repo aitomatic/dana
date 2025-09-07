@@ -39,11 +39,11 @@ The CTXENG framework follows a fundamental principle: **make your high-level dec
 
 ## Key Components
 
-- **ContextEngine**: Main orchestrator for context engineering operations
-- **RelevanceEngine**: Intelligence core for scoring and filtering context
-- **TokenOptimizer**: Length management with relevance preservation
-- **ContextAssembler**: Smart prompt assembly with optimization
+- **ContextEngineer**: Core engine for context assembly and prompt generation
+- **ContextData**: Structured data classes for type-safe context assembly
 - **TemplateManager**: Manages prompt templates for different use cases
+- **AgentState**: Assembles structured context from agent state components
+- **SolvingMixin**: Integrates context engineering into agent solve workflow
 - **Context Keys Reference**: Comprehensive documentation of expected context data
 - **UserProfileManager**: Manages user preferences and learning patterns
 - **PatternLearningEngine**: Learns from problem-solving experiences
@@ -90,20 +90,25 @@ result = agent.solve(
 For developers and strategies, the full CTXENG capability is available:
 
 ```python
-from dana.frameworks.ctxeng import ContextEngine
+from dana.frameworks.ctxeng import ContextEngineer, ContextData
 
-# Create context engine with auto-discovery
-ctx = ContextEngine.from_agent(agent)
+# Create context engineer
+engineer = ContextEngineer()
 
-# Use it in strategies - that's it!
-prompt = ctx.assemble("Plan a trip to Mexico", template="problem_solving")
+# Method 1: Using structured ContextData (recommended)
+context_data = ContextData(
+    query="Plan a trip to Mexico",
+    template="problem_solving"
+)
+context_data.problem = ProblemContextData(
+    problem_statement="Plan a trip to Mexico",
+    constraints={"budget": "$3000", "duration": "7 days"}
+)
+prompt = engineer.engineer_context_structured(context_data)
 
-# With additional context
+# Method 2: Using dictionary approach (legacy)
 context = {"budget": "$3000", "duration": "7 days"}
-prompt = ctx.assemble("Plan a trip to Mexico", context, template="problem_solving")
-
-# With options
-prompt = ctx.assemble("Plan a trip to Mexico", context, max_tokens=2000, focus="safety")
+prompt = engineer.engineer_context("Plan a trip to Mexico", context, template="problem_solving")
 ```
 
 **Note**: CTXENG follows the "Decide First, Then Engineer Context" principle. The correct flow is:
@@ -423,60 +428,59 @@ The framework integrates seamlessly with:
 
 ## Architecture Components
 
-### 1. **ContextEngine (Main Orchestrator)**
+### 1. **ContextEngineer (Core Engine)**
 
-**Purpose**: Central coordinator with simple, explicit API
-
-**Responsibilities**:
-- Manage context resources and workflows
-- Orchestrate relevance scoring and token optimization
-- Provide unified interface for context assembly
-- Auto-discover common resources when possible
-
-**Key Methods**:
-- `assemble(query, context=None, **options) -> str`
-- `add_resource(name, resource) -> None`
-- `add_workflow(name, workflow) -> None`
-- `discover_resources(obj) -> None`
-- `from_agent(agent) -> ContextEngine` (class method)
-- `from_workflow(workflow) -> ContextEngine` (class method)
-
-### 2. **ContextResource (Resource Interface)**
-
-**Purpose**: Minimal interface for resources that provide context
+**Purpose**: Central engine for context assembly and prompt generation
 
 **Responsibilities**:
-- Provide context data relevant to queries
-- Implement simple context extraction methods
-- Handle resource-specific data formatting
+- Assemble context into rich prompts using templates
+- Apply relevance filtering and token optimization
+- Support both structured and dictionary-based context
+- Manage template selection and formatting
 
 **Key Methods**:
-- `get_context_for(query, **options) -> dict`
+- `engineer_context_structured(context_data: ContextData, **options) -> str`
+- `engineer_context(query: str, context: dict, template: str, **options) -> str`
+- `from_agent(agent) -> ContextEngineer` (class method)
 
-**Example Resources**:
-- Event history and conversation memory
-- Problem context and execution state
-- Knowledge bases and domain expertise
-- Agent resources and capabilities
+### 2. **ContextData (Structured Context)**
 
-### 3. **ContextWorkflow (Workflow Interface)**
-
-**Purpose**: Minimal interface for workflows that provide context
+**Purpose**: Type-safe, structured data classes for context assembly
 
 **Responsibilities**:
-- Provide current workflow execution state
-- Share workflow pattern information
-- Handle workflow-specific context extraction
+- Provide structured, validated context data
+- Support serialization and deserialization
+- Enable type safety and validation
+- Organize context into logical components
+
+**Key Classes**:
+- `ContextData`: Main container for all context information
+- `ProblemContextData`: Problem-specific context (statement, constraints, assumptions)
+- `WorkflowContextData`: Workflow execution state and progress
+- `ConversationContextData`: Conversation history and user preferences
+- `ResourceContextData`: Available resources and usage information
+- `MemoryContextData`: Memory, learning, and user model information
+- `ExecutionContextData`: Runtime execution environment and constraints
 
 **Key Methods**:
-- `get_execution_context() -> dict`
-- `get_pattern_info() -> dict`
+- `to_dict() -> dict`: Convert to dictionary for template processing
+- `from_dict(data: dict) -> ContextData`: Create from dictionary
+- `create_for_agent(query: str, template: str) -> ContextData`: Factory method
+- `get_context_summary() -> dict`: Get metadata about available context
 
-**Example Workflows**:
-- Travel planning workflows
-- Safety assessment workflows
-- Analysis and reporting workflows
-- Problem decomposition workflows
+### 3. **AgentState (Context Assembly)**
+
+**Purpose**: Assembles structured context from agent state components
+
+**Responsibilities**:
+- Extract context from all agent state components
+- Create structured ContextData objects
+- Handle type conversion and validation
+- Provide single source of truth for agent context
+
+**Key Methods**:
+- `assemble_context_data(query: str, template: str) -> ContextData`
+- `_get_recent_events() -> list[str]`: Extract recent events from timeline
 
 ### 4. **RelevanceEngine (Intelligence Core)**
 
@@ -643,17 +647,32 @@ where weights are configurable per use case
 - **Debugging**: One method to trace and understand
 - **Templates**: Centralized management with client selection
 
-### 2. **Single Method Interface**
+### 2. **Dual Interface Design**
 
 ```python
-class ContextEngine:
-    def assemble(self, 
+class ContextEngineer:
+    def engineer_context_structured(self, 
+                context_data: ContextData,
+                **options) -> str:
+        """
+        Engineer context using structured ContextData (recommended).
+        
+        Args:
+            context_data: Structured context data object
+            **options: Additional configuration options
+            
+        Returns:
+            Optimized prompt string (XML or text format)
+        """
+        pass
+    
+    def engineer_context(self, 
                 query: str,
                 context: dict = None,
                 template: str = None,
                 **options) -> str:
         """
-        Assemble optimized context for the query.
+        Engineer context using dictionary approach (legacy).
         
         Args:
             query: What the user is asking
@@ -667,61 +686,91 @@ class ContextEngine:
         pass
 
 # Usage patterns
-ctx = ContextEngine()                    # Create once
-prompt = ctx.assemble(query)             # Basic usage
-prompt = ctx.assemble(query, context)    # With context
-prompt = ctx.assemble(query, context, template="problem_solving")  # With template
-prompt = ctx.assemble(query, context, max_tokens=2000)  # With options
+engineer = ContextEngineer()                    # Create once
+
+# Method 1: Structured approach (recommended)
+context_data = ContextData(query="solve this", template="problem_solving")
+context_data.problem = ProblemContextData(problem_statement="solve this")
+prompt = engineer.engineer_context_structured(context_data)
+
+# Method 2: Dictionary approach (legacy)
+prompt = engineer.engineer_context("solve this", {"key": "value"}, template="problem_solving")
 ```
 
-### 4. **Resource and Workflow Registration**
+### 3. **AgentState Integration**
 
 ```python
-# Manual registration (explicit)
-ctx = ContextEngine()
-ctx.add_resource("event_history", agent._global_event_history)
-ctx.add_resource("knowledge_base", knows_client)
-ctx.add_workflow("travel_planning", travel_workflow)
+# AgentState assembles its own context
+class AgentState:
+    def assemble_context_data(self, query: str, template: str = "general") -> ContextData:
+        """Assemble structured ContextData from agent state."""
+        context_data = ContextData.create_for_agent(query=query, template=template)
+        
+        # Extract from all agent state components
+        if self.problem_context:
+            context_data.problem = ProblemContextData(...)
+        if self.mind:
+            context_data.conversation = ConversationContextData(...)
+        # ... etc
+        
+        return context_data
 
-# Auto-discovery (convenient)
-ctx = ContextEngine()
-ctx.discover_resources(agent)  # One line discovers everything
-
-# Factory method (most convenient)
-ctx = ContextEngine.from_agent(agent)  # Creates and configures automatically
+# SolvingMixin uses AgentState for context assembly
+class SolvingMixin:
+    def solve_sync(self, problem: str, **kwargs):
+        # Let AgentState assemble its own context
+        context_data = self.state.assemble_context_data(problem, template="problem_solving")
+        
+        # Use ContextEngineer with structured data
+        rich_prompt = self.context_engineer.engineer_context_structured(context_data)
+        
+        # Continue with workflow planning and execution
+        workflow = self.plan_sync(rich_prompt, **kwargs)
+        return workflow.execute(**kwargs)
 ```
 
 ### 4. **Integration Examples**
 
 ```python
-# In Agent System (Enhanced with AgentMind)
+# In Agent System (Current Implementation)
 class AgentInstance:
     def __init__(self, struct_type: AgentType, values: dict[str, Any]):
         # ... existing code ...
-        # Initialize agent mind for learning and personalization
-        self._mind = AgentMind()
-        self._mind.initialize_mind(user_id=values.get("user_id", "default"))
-        
-        # Context engine available for strategies to use
-        self._context_engine = ContextEngine.from_agent(self)
+        # AgentState is initialized with all necessary components
+        self.state = AgentState()
     
     def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
-        # ... existing code ...
+        # SolvingMixin handles the context engineering integration
+        return self.solve_sync(problem_or_workflow, **kwargs)
+
+# In SolvingMixin (Current Implementation)
+class SolvingMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._context_engineer = None  # Lazy initialization
+    
+    @property
+    def context_engineer(self) -> ContextEngineer:
+        """Get or create the context engineer for this agent."""
+        if self._context_engineer is None:
+            self._context_engineer = ContextEngineer.from_agent(self)
+        return self._context_engineer
+    
+    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
+        if isinstance(problem_or_workflow, str):
+            # Set problem context in centralized state
+            self.state.set_problem_context(ProblemContext(problem_statement=problem_or_workflow))
+            
+            # Let AgentState assemble its own ContextData
+            context_data = self.state.assemble_context_data(problem_or_workflow, template="problem_solving")
+            
+            # Use ContextEngineer with structured data
+            rich_prompt = self.context_engineer.engineer_context_structured(context_data)
+            problem_or_workflow = rich_prompt
         
-        # Apply user overrides to mind
-        if kwargs:
-            self._mind.apply_user_overrides(**kwargs)
-        
-        # Pass raw problem to plan() - let strategy decide on context engineering
-        workflow = self.plan(problem_or_workflow, **kwargs)
-        
-        # Execute and learn from results
-        result = workflow.execute(sandbox_context or self._create_sandbox_context(), **kwargs)
-        
-        # Learn from execution
-        self._mind.learn_from_execution(problem_or_workflow, workflow.strategy, workflow.context_config, result)
-        
-        return result
+        # Continue with workflow planning and execution
+        workflow = self.plan_sync(problem_or_workflow, **kwargs)
+        return workflow.execute(**kwargs)
 
 # In Strategy (Enhanced with AgentMind)
 class RecursiveStrategy:
@@ -798,6 +847,24 @@ The framework generates structured XML prompts that provide:
 
 Traditional text-based prompts for compatibility with existing systems.
 
+```python
+# Text format example
+engineer = ContextEngineer(format_type="text")
+context_data = ContextData(query="How can I optimize my database performance?")
+context_data.problem = ProblemContextData(
+    problem_statement="Database optimization",
+    constraints={"time_limit": "2 hours", "budget": "$500"}
+)
+prompt = engineer.engineer_context_structured(context_data)
+
+# Output:
+# PROBLEM: How can I optimize my database performance?
+# OBJECTIVE: Database optimization
+# CONSTRAINTS:
+#   - time_limit: 2 hours
+#   - budget: $500
+```
+
 ### 3. **Template Management**
 
 **Centralized Template System**:
@@ -809,15 +876,15 @@ Traditional text-based prompts for compatibility with existing systems.
 ```
 dana/frameworks/ctxeng/templates/
 ├── xml/                    # XML format templates
-│   ├── problem_solving.xml
-│   ├── conversation.xml
-│   ├── analysis.xml
-│   └── general.xml
+│   ├── problem_solving.py
+│   ├── conversation.py
+│   ├── analysis.py
+│   └── general.py
 └── text/                   # Text format templates
-    ├── problem_solving.txt
-    ├── conversation.txt
-    ├── analysis.txt
-    └── general.txt
+    ├── problem_solving.py
+    ├── conversation.py
+    ├── analysis.py
+    └── general.py
 ```
 
 **Available Templates**:
@@ -933,25 +1000,30 @@ class LearningConfig:
 - **Collaborative Learning**: Learn from team and organization patterns
 - **System Intelligence**: Aggregate learning across all agents
 
-### 4. **Resource and Workflow Registration**
+### 4. **Structured Context Assembly**
 
-**Default Resources** (auto-discovered):
-- Event history and conversation memory
-- Problem context and execution state
-- Agent resources and capabilities
-- User profile and learning patterns
+**ContextData Components** (assembled by AgentState):
+- Problem context (statement, constraints, assumptions)
+- Workflow context (execution state, progress, values)
+- Conversation context (history, events, preferences)
+- Resource context (availability, limits, usage)
+- Memory context (memories, patterns, user model)
+- Execution context (session, constraints, environment)
 
-**Custom Resource Interface**:
+**ContextData Interface**:
 ```python
-class ContextResource:
-    def get_context_for(self, query: str, **options) -> dict
+class ContextData:
+    def to_dict(self) -> dict
+    def from_dict(data: dict) -> ContextData
+    def create_for_agent(query: str, template: str) -> ContextData
+    def get_context_summary(self) -> dict
 ```
 
-**Custom Workflow Interface**:
+**AgentState Assembly**:
 ```python
-class ContextWorkflow:
-    def get_execution_context(self) -> dict
-    def get_pattern_info(self) -> dict
+class AgentState:
+    def assemble_context_data(self, query: str, template: str) -> ContextData
+    def _get_recent_events(self) -> list[str]
 ```
 
 ### 2. **Use Case Rules**
@@ -1014,7 +1086,19 @@ class ContextTemplate:
 
 **Data Flow**:
 ```
-agent.solve() → ExecutionContext → ContextEngine → OptimizedPrompt → LLM
+User Query
+    ↓
+SolvingMixin.solve_sync()
+    ↓
+AgentState.assemble_context_data()  ← Single source of truth
+    ↓
+ContextData (structured, type-safe)
+    ↓
+ContextEngineer.engineer_context_structured()  ← Pure prompt generation
+    ↓
+Rich XML/Text Prompt
+    ↓
+LLM Processing
 ```
 
 ### 2. **Framework Integration**
@@ -1135,37 +1219,46 @@ agent.solve() → ExecutionContext → ContextEngine → OptimizedPrompt → LLM
 ```mermaid
 graph TB
     subgraph "Context Engineering Framework"
-        A[ContextEngine] --> B[RelevanceEngine]
-        A --> C[TokenOptimizer]
-        A --> D[ContextAssembler]
+        A[ContextEngineer] --> B[TemplateManager]
+        A --> C[ContextOptimizer]
+        A --> D[PromptAssembler]
         
-        B --> E[RelevanceScoring]
-        B --> F[ContextFiltering]
+        B --> E[XMLTemplates]
+        B --> F[TextTemplates]
         
-        C --> G[TokenEstimation]
-        C --> H[LengthOptimization]
+        C --> G[RelevanceFiltering]
+        C --> H[TokenOptimization]
         
-        D --> I[PromptAssembly]
-        D --> J[FormatOptimization]
+        D --> I[XMLAssembly]
+        D --> J[TextAssembly]
     end
     
-    subgraph "Data Sources"
-        K[ContextResources]
-        L[ContextWorkflows]
-        M[AutoDiscovery]
-        N[CustomProviders]
+    subgraph "Structured Context"
+        K[ContextData]
+        L[ProblemContextData]
+        M[WorkflowContextData]
+        N[ConversationContextData]
+        O[ResourceContextData]
+        P[MemoryContextData]
+        Q[ExecutionContextData]
     end
     
-    subgraph "Input/Output"
-        O[Query + Context] --> A
-        A --> P[OptimizedPrompt]
-        Q[Resources/Workflows] --> A
+    subgraph "Agent Integration"
+        R[AgentState] --> K
+        S[SolvingMixin] --> A
+        T[AgentInstance] --> S
     end
     
-    A --> K
-    A --> L
-    A --> M
-    A --> N
+    K --> L
+    K --> M
+    K --> N
+    K --> O
+    K --> P
+    K --> Q
+    
+    R --> A
+    S --> R
+    T --> S
 ```
 
 ### Data Flow Architecture
@@ -1173,65 +1266,76 @@ graph TB
 ```mermaid
 flowchart LR
     subgraph "Input Layer"
-        A[Query]
-        B[Context Dict]
+        A[User Query]
+        B[Agent State]
         C[Options]
-        D[Resources/Workflows]
+    end
+    
+    subgraph "Context Assembly"
+        D[AgentState.assemble_context_data]
+        E[ContextData Creation]
+        F[Type Validation]
     end
     
     subgraph "Processing Pipeline"
-        E[Resource Discovery]
-        F[Relevance Scoring]
-        G[Token Optimization]
-        H[Smart Assembly]
+        G[Template Selection]
+        H[Context Optimization]
+        I[Prompt Assembly]
     end
     
     subgraph "Output Layer"
-        I[Optimized Prompt]
-        J[Metadata (Optional)]
-        K[Debug Info (Optional)]
+        J[Rich XML/Text Prompt]
+        K[LLM Processing]
     end
     
-    A --> E
-    B --> E
-    C --> E
-    D --> E
+    A --> D
+    B --> D
+    C --> D
     
+    D --> E
     E --> F
     F --> G
-    G --> H
     
+    G --> H
     H --> I
-    H --> J
-    H --> K
+    I --> J
+    J --> K
 ```
 
 ### Component Interaction
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant ContextEngine
-    participant RelevanceEngine
-    participant TokenOptimizer
-    participant ContextAssembler
-    participant Providers
+    participant User
+    participant SolvingMixin
+    participant AgentState
+    participant ContextEngineer
+    participant TemplateManager
+    participant LLM
     
-    Client->>ContextEngine: assemble_context(exec_ctx, query, use_case, token_budget)
+    User->>SolvingMixin: solve_sync("How can I optimize my database?")
     
-    ContextEngine->>Providers: collect_context(exec_ctx, use_case)
-    Providers-->>ContextEngine: raw_context_data
+    SolvingMixin->>AgentState: set_problem_context(ProblemContext)
+    SolvingMixin->>AgentState: assemble_context_data(query, template)
     
-    ContextEngine->>RelevanceEngine: filter_by_relevance(raw_context, query, use_case)
-    RelevanceEngine-->>ContextEngine: relevant_context
+    AgentState->>AgentState: Extract problem context
+    AgentState->>AgentState: Extract conversation context
+    AgentState->>AgentState: Extract memory context
+    AgentState->>AgentState: Extract execution context
+    AgentState->>AgentState: Extract resource context
+    AgentState-->>SolvingMixin: ContextData (structured)
     
-    ContextEngine->>TokenOptimizer: optimize_length(relevant_context, token_budget)
-    TokenOptimizer-->>ContextEngine: optimized_context
+    SolvingMixin->>ContextEngineer: engineer_context_structured(context_data)
+    ContextEngineer->>ContextEngineer: Convert to dictionary
+    ContextEngineer->>ContextEngineer: Apply optimization
+    ContextEngineer->>TemplateManager: get_template(template, format)
+    TemplateManager-->>ContextEngineer: Template object
+    ContextEngineer->>ContextEngineer: Assemble prompt
+    ContextEngineer-->>SolvingMixin: Rich prompt (XML/Text)
     
-    ContextEngine->>ContextAssembler: assemble_prompt(query, optimized_context)
-    ContextAssembler-->>ContextEngine: final_prompt
-    
-    ContextEngine-->>Client: optimized_prompt + metrics
+    SolvingMixin->>LLM: Process rich prompt
+    LLM-->>SolvingMixin: Response
+    SolvingMixin-->>User: Final result
 ```
 
 ### Relevance Scoring Architecture
