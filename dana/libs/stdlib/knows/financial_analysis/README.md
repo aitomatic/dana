@@ -1,4 +1,4 @@
-# Financial-Analysis Dana Workflows
+# Dana `KNOWS` Financial-Analysis Expertise Module / Knowledge Pack
 
 This directory contains a comprehensive suite of Dana (`.na`) code examples and utilities for financial statement analysis and financial ratio workflows. The examples are organized to demonstrate how to extract, compute, and analyze key financial metrics from company financial statements using the Dana language.
 
