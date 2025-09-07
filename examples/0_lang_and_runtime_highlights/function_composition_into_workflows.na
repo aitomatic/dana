@@ -1,0 +1,31 @@
+"""Functions can be conveniently composed in sequential, parallel and conditional manners into workflows.
+
+Workflows can also be nested within workflows.
+"""
+
+
+def greater_than_1(n: int) -> bool:
+    return n > 1
+
+def is_even(n: int) -> bool:
+    return n % 2 == 0
+
+def over_2(n: int) -> int:
+    next_n: int = n // 2
+    print(f'{n} --> {next_n}')
+    return next_n
+
+def times_3_plus_1(n: int) -> int:
+    next_n: int = 3 * n + 1
+    print(f'{n} --> {next_n}')
+    return next_n
+
+
+# Collatz transform in Dana workflow form
+def workflow_collatz(n: int) -> int = case((is_even, over_2),
+                                           times_3_plus_1)
+
+
+n: int = 1010
+while n > 1:
+    n: int = workflow_collatz(n)

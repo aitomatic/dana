@@ -1,4 +1,4 @@
-"""Semantic type coercion by type-hinting returns from `reason(...)`."""
+"""Dana `reason(...)` outputs' data types can be semantically coerced by convenient type-hinting."""
 
 
 pi = reason('what is pi?')
