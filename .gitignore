@@ -13,8 +13,8 @@ __pycache__/
 # Environment
 .tmp/
 tmp/
-.venv/
-venv/
+.venv
+venv
 .env
 .env.*
 !.env.example
