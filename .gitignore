@@ -13,8 +13,8 @@ __pycache__/
 # Environment
 .tmp/
 tmp/
-.venv/
-venv/
+.venv
+venv
 .env
 .env.*
 !.env.example
@@ -65,6 +65,8 @@ node_modules/
 # .cursor/
 CLAUDE.md
 
+.vscode/launch.json
+.vscode/settings.json
 .deprecated_opendxa
 docs/.ai-only/ai_output/
 
@@ -88,15 +90,5 @@ experiments/
 .vscode/launch.json.backup
 **/MODULE_ANALYSIS.md
 
-# Contributors-oriented configs
-# =============================
-
-# Visual Studio Code configs
-# --------------------------
-# .vscode/extensions.json
-# .vscode/launch.json
-# .vscode/settings.json
-
-# Cursor configs
-# --------------
-# .cursor/
+# misc / other
+.bugs
