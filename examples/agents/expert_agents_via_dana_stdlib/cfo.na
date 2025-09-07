@@ -13,7 +13,7 @@ JeanHu = ExpertAgent(expertise=[financial_analysis])
 
 
 # instantiate resource(s)
-resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/AMD_2022_10K.pdf'])
+resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/AMD-2024-10K.pdf'])
 
 
 # use expert agent to solve problems
