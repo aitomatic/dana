@@ -27,5 +27,5 @@ def workflow_collatz(n: int) -> int = case((is_even, over_2),
 
 
 n: int = 1010
-while n > 1:
+while greater_than_1(n):
     n: int = workflow_collatz(n)
