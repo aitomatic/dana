@@ -62,7 +62,7 @@ node_modules/
 .refactoring_*/
 .cache/
 .ipynb_checkpoints/
-.cursor/
+# .cursor/
 CLAUDE.md
 
 .vscode/launch.json

@@ -7,8 +7,8 @@ from .fin_statements import get_equity
 
 
 __all__ = [
-    'CalcTotalDebt', 'CalcTotalDebt2y', 'CalcTotalDebt3y',
-    'CalcDeRatio',
+    'workflow_calc_total_debt', 'workflow_calc_total_debt_2y', 'workflow_calc_total_debt_3y',
+    'workflow_calc_de_ratio',
 ]
 
 
@@ -27,7 +27,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcTotalDebt(with_resources: list) -> float = [get_lt_debt, get_st_debt] | _total_debt
+def workflow_calc_total_debt(resources: list, task: str = None) -> float = [get_lt_debt, get_st_debt] | _total_debt
 
 
 def _total_debt_2y(intermed_results):
@@ -46,7 +46,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcTotalDebt2y(with_resources: list) -> float = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
+def workflow_calc_total_debt_2y(resources: list, task: str = None) -> float = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
 
 
 def _total_debt_3y(intermed_results):
@@ -65,7 +65,7 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcTotalDebt3y(with_resources: list) -> float = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
+def workflow_calc_total_debt_3y(resources: list, task: str = None) -> float = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
 
 
 def _de_ratio(intermed_results):
@@ -80,4 +80,4 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def CalcDeRatio(with_resources: list) -> float = [CalcTotalDebt, get_equity] | _de_ratio
+def workflow_calc_de_ratio(resources: list, task: str = None) -> float = [workflow_calc_total_debt, get_equity] | _de_ratio

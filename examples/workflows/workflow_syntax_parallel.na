@@ -1,0 +1,17 @@
+"""Workflow Syntax: Parallel ("[]")."""
+
+
+def add_1(n: int) -> int:
+    return n + 1
+
+def times_2(n: int) -> int:
+    return n * 2
+
+def power_3(n: int) -> int:
+    return n ** 3
+
+
+def workflow_arithmetic_transform(n: int) -> int = add_1 | [times_2, power_3]
+
+
+workflow_arithmetic_transform(n=1)

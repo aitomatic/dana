@@ -18,7 +18,7 @@ dana/libs/corelib/
 │   ├── py_log.py                  # Logging function
 │   ├── py_log_level.py            # Log level setting
 │   ├── py_noop.py                 # No-operation function
-│   ├── py_use.py                  # Resource management
+│   ├── py_get_resource.py         # Resource management
 │   ├── py_llm.py                  # LLM interactions
 │   ├── py_reason.py               # LLM reasoning
 │   ├── py_enhanced_reason.py      # Enhanced reasoning
@@ -35,7 +35,7 @@ dana/libs/corelib/
 
 - **`sum_range(start, end)`** - Sum numbers in a range (inclusive)
 - **`is_odd(n)`** - Check if a number is odd
-- **`is_even(n)`** - Check if a number is even  
+- **`is_even(n)`** - Check if a number is even
 - **`factorial(n)`** - Calculate factorial of a number
 
 ### Text Functions
@@ -131,4 +131,4 @@ def py_my_function(context: SandboxContext, arg1, arg2):
 
 ## Testing
 
-Core library functions are tested in `tests/unit/core/stdlib/test_math_functions.py`. 
+Core library functions are tested in `tests/unit/core/stdlib/test_math_functions.py`.

@@ -1,146 +1,52 @@
-# Agent, Resource, Workflow – user-level scenarios (design-first)
-# This file demonstrates desired Dana syntax/behavior for:
-# 1) agent singletons with built-in conversational memory across TUI sessions
-# 2) resource declaration/usage patterns
-# 3) workflow declaration/usage patterns
+# Dana Core Concepts: Agent, Resource, Workflow
+# - Agents can think and act on their own
+# - Resources give them access to real-world data or domain knowledge
+# - Workflows turn expertise into repeatable, reliable actions
 
-# --- Session 1 (Dana TUI) ----------------------------------------------------
-# In a fresh TUI session, the user types the following lines interactively.
+# --- Session 1: Agent ---
+# Spin up an agent. Tell it something about yourself.
+agent Helen
+print(Helen.chat("Hi, I'm Christopher."))
+print(Helen.chat("I specialize in Dana programming language."))
+# End Session 1
 
-agent Neo
+# --- Session 2: Agent (new run) ---
+# Open a new session. Ask Neo about yourself.
+agent Helen
+print(Helen.chat("What do you know about me?"))
+print(Helen.reason("How do analysts measure liquidity?"))
 
-print(Neo.chat("Hi! My name is Christopher."))
-print(Neo.chat("I specialize in neurosymbolic AI."))
+# --- Session 3: Agent + Resource ---
+# Add a Resource: AMD’s 10-K.
+resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
 
+PROBLEM = "Does AMD have enough liquid assets to cover short-term liabilities?"
+print(Helen.solve(PROBLEM, resources=[resource_amd_annual_report]))
 
-# End Session 1 (user exits the TUI)
+# --- Session 4: Agent + Resource + Workflow ---
+# Add a Workflow: codify expert steps for structured results.
+from knows.financial_analysis import workflow_calc_quick_ratio
 
+print(Helen.solve(
+    PROBLEM,
+    resources=[resource_amd_annual_report],
+    workflows=[workflow_calc_quick_ratio]
+))
 
-# --- Session 2 (Dana TUI, new process) --------------------------------------
-# In a new TUI session, the user again types the following.
+# --- Optional: Web Search (live) ---
+# Add a web search resource for live context.
+resource_aitomatic_websearch = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
 
-agent Neo
+trend_q = "Based on recent sources, how is AMD’s liquidity trending since the 2022 10-K?"
+print(Helen.solve(trend_q, resources=[resource_aitomatic_websearch, resource_amd_annual_report]))
 
+# --- Recap ---
 
-# Built-in Conversational Memory
-# ==============================
+# Agent:
+# Neo can chat, reason, solve problems, and remember context.
 
-print('
+# Agent + Resource:
+# With AMD’s 10-K as a resource, Neo grounds its answers in real financial data instead of relying only on general knowledge.
 
-BUILT-IN CONVERSATIONAL MEMORY
-==============================
-')
-print(Neo.chat("What is my name and what do I know?"))
-
-
-# Reasoning with Contextual Awareness
-# ===================================
-
-REASONING_PREMISE = 'I am in Sapporo. Is it too hot to go outside today? I prefer temperature from 20 to 25 C.'
-
-print('
-
-BASE REASONING WITHOUT RESOURCES
-================================
-')
-print(Neo.reason(REASONING_PREMISE))
-
-
-# enhanced reasoning: with context from `WeatherInfo`,
-# agent returns more informed & definitive reasoned conclusion
-
-# ********************************
-# >>> `resource`: TO IMPLEMENT >>>
-# resource WeatherInfo:
-#     type = 'mcp'
-#     url = 'http://127.0.0.1:8000/mcp'
-# ^^^ `resource`: TO IMPLEMENT ^^^
-# ********************************
-# > `resource`: current substitute impl >
-WeatherInfo = use('mcp', url='http://127.0.0.1:8000/mcp')  # COMMENT OUT THIS LINE WHEN ABOVE IS IMPLEMENTED
-# ^ `resource`: current substitute impl ^
-
-print('
-
-CONTEXT-AWARE ENHANCED REASONING WITH RESOURCES
-===============================================
-')
-print(Neo.reason(REASONING_PREMISE, with_resources=[WeatherInfo]))
-
-
-# Problem-Solving with Expertise
-# ==============================
-
-PROBLEM = "Is AMD's liquidity healthy?"
-
-print('
-
-BASE PROBLEM-SOLVING WITHOUT RESOURCES & WORKFLOW
-=================================================
-')
-print(Neo.solve(PROBLEM))
-
-
-# enhanced problem-solving: with context from `AMDAnnualReport`,
-# agent returns more informed solution
-
-# ********************************
-# >>> `resource`: TO IMPLEMENT >>>
-# resource AMDAnnualReport:
-#     type = 'rag'
-#     path = '../resources/docs/AMD_2022_10K.pdf'
-# ^^^ `resource`: TO IMPLEMENT ^^^
-# ********************************
-# > `resource`: current substitute impl >
-AMDAnnualReport = use('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])  # COMMENT OUT THIS LINE WHEN ABOVE IS IMPLEMENTED
-# ^ `resource`: current substitute impl ^
-
-print('
-
-CONTEXT-AWARE ENHANCED PROBLEM-SOLVING WITH RESOURCES
-=====================================================
-')
-print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport]))
-
-
-# expert-level problem-solving: with expert workflow,
-# agent returns precise, sophisticated solution
-
-from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable, get_curr_liab
-
-# ********************************
-# >>> `workflow`: TO IMPLEMENT >>>
-# workflow CalcQuickRatio:
-#     pipeline = [([get_cash_and_equiv, get_st_inv, get_recvable] | sum), get_curr_liab] | (lambda x, y: x / y)
-#     description = "Calculate Quick Ratio by summing Cash & Cash Equivalents, Short-Term Investments and Accounts Receivable, then dividing the sum by Current Liabilities"
-# ^^^ `workflow`: TO IMPLEMENT ^^^
-# ********************************
-# > `workflow`: current substitute impl >
-from knows.financial_analysis import CalcQuickRatio  # COMMENT OUT THIS LINE WHEN ABOVE IS IMPLEMENTED
-# ^ `workflow`: current substitute impl ^
-
-print('
-
-EXPERT-LEVEL PROBLEM-SOLVING WITH RESOURCES & EXPERT WORKFLOW
-=============================================================
-')
-print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport], by_workflow=CalcQuickRatio))
-
-
-# Instant Expert Agent
-# by leveraging Dana's standard library's
-# `ExpertAgent` blueprint and `knows` expertise packs
-# ===================================================
-
-from blueprints.expert_agent import ExpertAgent
-from knows import financial_analysis
-
-print("""
-
-INSTANT EXPERT AGENT PROBLEM-SOLVING
-leveraging Dana's standard library's
-`ExpertAgent` blueprint and `knows` expertise packs
-===================================================
-""")
-Neo = ExpertAgent(expertise=[financial_analysis])
-print(Neo.solve(PROBLEM, with_resources=[AMDAnnualReport]))
+# Agent + Resource + Workflow:
+# With a quick ratio workflow, Neo applies structured steps to calculate liquidity consistently and reliably every time.

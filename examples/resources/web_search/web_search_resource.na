@@ -1,7 +1,8 @@
-"""Web Search through Aitomatic MCP."""
+"""Aitomatic Web Search Resource Querying."""
 
+agent Neo
 
-AitomaticWebSearch = use('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
+resource_aitomatic_web_search = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
 
-def __main__(query='name key founding member organizations of AI Alliance'):    
-    print(reason(query, resources=[AitomaticWebSearch]))
+def __main__(query='name key founding member organizations of AI Alliance'):
+    Neo.reason(query, resources=[resource_aitomatic_web_search])

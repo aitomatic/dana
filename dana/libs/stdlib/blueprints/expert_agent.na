@@ -18,11 +18,11 @@ agent_blueprint ExpertAgent:
     expertise: list = []
 
 
-def (dxa: ExpertAgent) solve(problem, with_resources: list = None) -> str:
+def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
     """Struct function `solve` dedicated to `ExpertAgent` struct.
 
     ASSUMPTIONS:
-    - `with_resources` is a list of `ResourceInstance` objects
+    - `resources` is a list of `ResourceInstance` objects
 
     CURRENT SIMPLICATIONS:
     - only one single expert workflow is matched, or none at all is match
@@ -54,8 +54,8 @@ def (dxa: ExpertAgent) solve(problem, with_resources: list = None) -> str:
         # If no matched expert workflow, use reason() to solve problem directly
         # If matched expert workflow found, execute it and use its result to solve problem
         if closest_matched_expert_workflow_name == 'NONE':
-            if with_resources:
-                solution = reason(problem, resources=with_resources)
+            if resources:
+                solution = reason(problem, resources=resources)
 
             else:
                 solution = llm(problem)
@@ -63,10 +63,17 @@ def (dxa: ExpertAgent) solve(problem, with_resources: list = None) -> str:
         else:
             matched_expertise_module = expert_workflow_name_to_module_map[closest_matched_expert_workflow_name]
 
-            print(f'{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...')
+            print(f'
+{dxa.agent_type.name} executing `{matched_expertise_module.__name__}.{closest_matched_expert_workflow_name}`...
+')
 
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
-            expert_workflow_result = closest_matched_expert_workflow(with_resources)
+            expert_workflow_result = closest_matched_expert_workflow(resources, task=problem)
+
+            # TODO (after syntax bug fix)
+            # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
+            #     problem=problem,
+            #     expert_workflow_result=expert_workflow_result)
 
             expert_workflow_solution_prompt: str = f"""
                 Given the following problem:
@@ -84,12 +91,13 @@ def (dxa: ExpertAgent) solve(problem, with_resources: list = None) -> str:
                 ```
 
                 Return your best conclusion about / solution to the posed problem.
+                Do explain your reasoning in a structured manner, with key supporting details.
             """
 
             solution = llm(expert_workflow_solution_prompt)
 
-    elif with_resources:
-        solution = reason(problem, resources=with_resources)
+    elif resources:
+        solution = reason(problem, resources=resources)
 
     else:
         solution = llm(problem)
