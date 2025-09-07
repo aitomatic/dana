@@ -68,7 +68,10 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None, quick: bool = Fals
 ')
 
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
-            expert_workflow_result = closest_matched_expert_workflow(resources=resources, task=problem)
+
+            # TODO: `resources=resources` argument specification
+            # after nested-workflow-argument passing bug fix
+            expert_workflow_result = closest_matched_expert_workflow(resources, task=problem)
 
             # TODO (after syntax bug fix)
             # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
