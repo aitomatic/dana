@@ -1,421 +1,293 @@
-# ContextEngine and AgentState Integration
+# ContextEngineer and AgentState Integration
 
 ## Overview
 
-This specification defines how the Context Engineering Framework (ctxeng) integrates with the new centralized AgentState architecture. The integration leverages AgentState as the single source of truth for all context, eliminating the need for complex resource discovery.
+This specification defines how the Context Engineering Framework (ctxeng) integrates with the centralized AgentState architecture. The integration leverages AgentState as the single source of truth for context assembly, with ContextEngineer focusing purely on prompt generation.
 
 ## Design Goals
 
-1. **Simplified Discovery**: Single point to discover all resources
-2. **Intelligent Context**: Leverage AgentMind for context prioritization
-3. **Clean Interface**: Clear, minimal API between systems
-4. **Optimal Performance**: Avoid duplicate context gathering
-5. **Framework Independence**: ContextEngine remains decoupled from agent internals
+1. **Clear Separation**: AgentState owns context assembly, ContextEngineer owns prompt generation
+2. **Type Safety**: Structured ContextData provides type-safe context assembly
+3. **Single Source of Truth**: AgentState is the authoritative source for all context
+4. **Clean Interface**: Simple, focused APIs between components
+5. **Framework Independence**: ContextEngineer remains decoupled from agent internals
 
 ## Integration Architecture
-
-### Resource Discovery Flow
-
-```
-AgentState ──discover_resources()──> ContextEngine
-    │                                      │
-    ├─ problem_context ─────────────────> Resources
-    ├─ mind.memory ─────────────────────> Resources
-    ├─ timeline ────────────────────────> Resources
-    ├─ execution ───────────────────────> Resources
-    └─ capabilities ────────────────────> Resources
-```
 
 ### Context Assembly Flow
 
 ```
-AgentState ──get_llm_context()──> Unified Context
-    │                                   │
-    v                                   v
-AgentMind ──assess_priorities()──> ContextEngine
-    │                                   │
-    v                                   v
-Memory ──recall_relevant()──────> Template Assembly
-                                        │
-                                        v
-                                  Optimized Prompt
+User Query
+    ↓
+SolvingMixin.solve_sync()
+    ↓
+AgentState.assemble_context_data()  ← Single source of truth
+    │
+    ├─ Extract problem context
+    ├─ Extract conversation context  
+    ├─ Extract memory context
+    ├─ Extract execution context
+    └─ Extract resource context
+    ↓
+ContextData (structured, type-safe)
+    ↓
+ContextEngineer.engineer_context_structured()  ← Pure prompt generation
+    ↓
+Rich XML/Text Prompt
+    ↓
+LLM Processing
+```
+
+### Component Responsibilities
+
+```
+AgentState:
+├─ Assembles structured ContextData from all state components
+├─ Handles type conversion and validation
+└─ Provides single source of truth for agent context
+
+ContextEngineer:
+├─ Receives structured ContextData
+├─ Applies template selection and formatting
+├─ Generates rich prompts (XML/Text)
+└─ Focuses purely on prompt generation
+
+SolvingMixin:
+├─ Orchestrates the flow between AgentState and ContextEngineer
+├─ Handles lazy initialization of ContextEngineer
+└─ Integrates context engineering into agent solve workflow
 ```
 
 ## API Specifications
 
-### ContextEngine Extensions
-
-```python
-class ContextEngine:
-    """Extended to work with centralized AgentState."""
-    
-    @classmethod
-    def from_agent_state(cls, agent_state: AgentState) -> "ContextEngine":
-        """
-        Create ContextEngine from centralized AgentState.
-        
-        Args:
-            agent_state: The centralized agent state
-            
-        Returns:
-            Configured ContextEngine instance
-        """
-        engine = cls()
-        
-        # Discover all resources from AgentState
-        resources = agent_state.discover_resources_for_ctxeng()
-        
-        # Register each resource
-        for name, resource in resources.items():
-            engine.add_resource(name, resource)
-        
-        return engine
-    
-    def assemble_from_state(
-        self, 
-        agent_state: AgentState, 
-        template: str = None,
-        **options
-    ) -> str:
-        """
-        Assemble context directly from AgentState.
-        
-        Args:
-            agent_state: The centralized agent state
-            template: Template name (auto-detected if None)
-            **options: Additional assembly options
-            
-        Returns:
-            Optimized prompt string
-        """
-        # Get unified context from AgentState
-        context = agent_state.get_llm_context(
-            depth=options.get("depth", "standard")
-        )
-        
-        # Let AgentMind suggest priorities
-        if agent_state.mind:
-            priorities = agent_state.mind.assess_context_needs(
-                agent_state.problem_context,
-                template or "general"
-            )
-            context = self._apply_priorities(context, priorities)
-        
-        # Assemble with template
-        query = context.get("query", "")
-        return self.assemble(query, context, template=template, **options)
-```
-
-### AgentState Support
+### AgentState Extensions
 
 ```python
 class AgentState:
-    """AgentState methods supporting ContextEngine."""
+    """Extended to assemble structured context for ContextEngineer."""
     
-    def discover_resources_for_ctxeng(self) -> dict[str, Any]:
+    def assemble_context_data(self, query: str, template: str = "general") -> ContextData:
         """
-        Discover all resources for ContextEngine.
+        Assemble structured ContextData from agent state.
         
-        Returns:
-            Dictionary of resource name to resource object
-        """
-        resources = {}
-        
-        # Core resources
-        if self.timeline:
-            resources["event_history"] = self.timeline
-            resources["timeline"] = self.timeline
-        
-        if self.problem_context:
-            resources["problem_context"] = self.problem_context
-        
-        if self.capabilities:
-            resources["workflow_registry"] = self.capabilities
-            resources["capabilities"] = self.capabilities
-        
-        # Mind resources
-        if self.mind:
-            resources["memory"] = self.mind.memory
-            resources["user_model"] = self.mind.user_model
-            resources["world_model"] = self.mind.world_model
-            
-        # Execution resources
-        if self.execution:
-            resources["execution_context"] = self.execution
-            
-        return resources
-    
-    def get_llm_context(self, depth: str = "standard") -> dict[str, Any]:
-        """
-        Build unified context for LLM calls.
+        This method creates a comprehensive ContextData object by extracting
+        relevant information from all agent state components.
         
         Args:
-            depth: Context depth ("minimal", "standard", "comprehensive")
+            query: The query string
+            template: Template name to use
             
         Returns:
-            Dictionary with all context needed for LLM
+            ContextData populated with agent state information
         """
-        context = {}
+        from dana.frameworks.ctxeng import (
+            ContextData,
+            ProblemContextData,
+            WorkflowContextData,
+            ConversationContextData,
+            ResourceContextData,
+            MemoryContextData,
+            ExecutionContextData,
+        )
         
-        # Problem context
+        # Create base context data
+        context_data = ContextData.create_for_agent(query=query, template=template)
+        
+        # Extract problem context
         if self.problem_context:
-            context.update({
-                "query": self.problem_context.problem_statement,
-                "problem_statement": self.problem_context.problem_statement,
-                "objective": self.problem_context.objective,
-                "constraints": self.problem_context.constraints,
-                "assumptions": self.problem_context.assumptions,
-                "depth": self.problem_context.depth,
-            })
+            context_data.problem = ProblemContextData(
+                problem_statement=self.problem_context.problem_statement,
+                objective=self.problem_context.objective,
+                original_problem=self.problem_context.original_problem,
+                depth=self.problem_context.depth,
+                constraints=self.problem_context.constraints,
+                assumptions=self.problem_context.assumptions,
+            )
         
-        # Memory context (from mind)
+        # Extract conversation context
+        if self.mind and self.mind.memory:
+            conversation_history = self.mind.recall_conversation(3)
+            if isinstance(conversation_history, list):
+                conversation_history = "\n".join(str(item) for item in conversation_history)
+            elif not isinstance(conversation_history, str):
+                conversation_history = str(conversation_history)
+            
+            context_data.conversation = ConversationContextData(
+                conversation_history=conversation_history,
+                recent_events=self._get_recent_events(),
+                user_preferences=self.mind.get_user_context(),
+                context_depth="standard",
+            )
+        
+        # Extract memory context
         if self.mind:
-            # Conversation memory
-            if depth != "minimal":
-                n_turns = {"minimal": 1, "standard": 3, "comprehensive": 10}.get(depth, 3)
-                context["conversation_history"] = self.mind.recall_conversation(n_turns)
+            relevant_memories = self.mind.recall_relevant(self.problem_context) if self.problem_context else []
+            if not isinstance(relevant_memories, list):
+                relevant_memories = [str(relevant_memories)] if relevant_memories else []
+            else:
+                relevant_memories = [str(memory) for memory in relevant_memories]
             
-            # Relevant memories
-            if self.problem_context:
-                context["relevant_memory"] = self.mind.recall_relevant(self.problem_context)
+            context_priorities = self.mind.assess_context_needs(self.problem_context, "standard") if self.problem_context else []
+            if not isinstance(context_priorities, list):
+                context_priorities = [str(context_priorities)] if context_priorities else []
+            else:
+                context_priorities = [str(priority) for priority in context_priorities]
             
-            # User context
-            context["user_context"] = self.mind.get_user_context()
+            context_data.memory = MemoryContextData(
+                relevant_memories=relevant_memories,
+                user_model=self.mind.get_user_context(),
+                world_model=self.mind.world_model.to_dict() if self.mind.world_model else {},
+                context_priorities=context_priorities,
+            )
         
-        # Timeline context
-        if self.timeline and depth != "minimal":
-            n_events = {"standard": 5, "comprehensive": 20}.get(depth, 5)
-            context["recent_events"] = self.timeline.get_recent_events(n_events)
-        
-        # Capabilities context
-        if self.capabilities:
-            context["available_strategies"] = self.capabilities.strategies
-            context["available_tools"] = self.capabilities.tools
-        
-        # Execution context
+        # Extract execution context
         if self.execution:
-            context["execution_state"] = {
-                "workflow_id": self.execution.workflow_id,
-                "recursion_depth": self.execution.recursion_depth,
-                "constraints": self.execution.constraints,
-            }
+            context_data.execution = ExecutionContextData(
+                session_id=self.session_id,
+                execution_constraints=self.execution.get_constraints(),
+                environment_info={},
+            )
         
-        return context
-```
-
-### Resource Adapter Updates
-
-```python
-class AgentStateResource(ContextResource):
-    """Adapter for AgentState as a context resource."""
+        # Extract resource context
+        if self.capabilities:
+            context_data.resources = ResourceContextData(
+                available_resources=list(self.capabilities.get_available_tools().keys()),
+                resource_limits=self.execution.resource_limits.to_dict() if self.execution else {},
+                resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
+                resource_errors=[],
+            )
+        
+        return context_data
     
-    def __init__(self, agent_state: AgentState):
-        self.agent_state = agent_state
+    def _get_recent_events(self) -> list[str]:
+        """Get recent events from timeline for context."""
+        if not self.timeline or not self.timeline.events:
+            return []
         
-    def get_context_for(self, query: str, **options) -> dict[str, Any]:
-        """Get context from AgentState."""
-        depth = options.get("depth", "standard")
-        return self.agent_state.get_llm_context(depth)
+        try:
+            events = self.timeline.events[-5:]  # Last 5 events
+            return [f"{e.event_type}: {e.data.get('description', 'No description')}" for e in events]
+        except Exception:
+            return []
+```
+
+### ContextEngineer Integration
+
+```python
+class ContextEngineer:
+    """Simplified ContextEngineer that works with structured ContextData."""
     
-    def get_priority(self) -> float:
-        """AgentState is highest priority resource."""
-        return 1.0
-```
-
-## Integration Patterns
-
-### Pattern 1: Direct State Integration
-
-```python
-# In agent_instance.py
-class AgentInstance:
-    def solve_sync(self, problem: str) -> Any:
-        # Update problem context
-        self.state.problem_context = ProblemContext(
-            problem_statement=problem,
-            objective="solve"
-        )
-        
-        # Create context engine if needed
-        if not self._context_engine:
-            from dana.frameworks.ctxeng import ContextEngine
-            self._context_engine = ContextEngine.from_agent_state(self.state)
-        
-        # Assemble context directly from state
-        enriched_context = self._context_engine.assemble_from_state(
-            self.state,
-            template="problem_solving"
-        )
-        
-        # Use enriched context for LLM call
-        return self._execute_with_context(enriched_context)
-```
-
-### Pattern 2: Standalone Context Assembly
-
-```python
-# Standalone usage
-from dana.core.agent import AgentState
-from dana.frameworks.ctxeng import ContextEngine
-
-# Create or get agent state
-agent_state = AgentState(...)
-
-# Create context engine
-engine = ContextEngine.from_agent_state(agent_state)
-
-# Assemble context for specific need
-context = engine.assemble_from_state(
-    agent_state,
-    template="analysis",
-    depth="comprehensive"
-)
-```
-
-### Pattern 3: Custom Resource Addition
-
-```python
-# Add custom resources beyond AgentState
-engine = ContextEngine.from_agent_state(agent_state)
-
-# Add additional custom resources
-engine.add_resource("custom_data", custom_resource)
-engine.add_workflow("special_workflow", workflow_instance)
-
-# Assemble with both AgentState and custom resources
-context = engine.assemble(
-    query="analyze data",
-    template="analysis",
-    custom_param="value"
-)
-```
-
-## Template Compatibility
-
-### Required Context Keys by Template
-
-| Template | Required from AgentState | Optional from AgentState |
-|----------|-------------------------|-------------------------|
-| `problem_solving` | `problem_statement`, `objective` | `constraints`, `assumptions`, `recent_events` |
-| `conversation` | `query`, `conversation_history` | `user_context`, `recent_events` |
-| `analysis` | `query` | `relevant_memory`, `execution_state` |
-| `general` | `query` | All available context |
-
-### Context Priority Hints from AgentMind
-
-```python
-class AgentMind:
-    def assess_context_needs(
-        self, 
-        problem: ProblemContext,
-        template: str
-    ) -> ContextPriorities:
+    def engineer_context_structured(
+        self,
+        context_data: ContextData,
+        **options,
+    ) -> str:
         """
-        Suggest context priorities for template.
+        Engineer optimized context using structured ContextData.
         
+        Args:
+            context_data: Structured context data object
+            **options: Additional options
+            
         Returns:
-            ContextPriorities with:
-            - turns: Number of conversation turns needed
-            - memory_depth: How deep to search memory
-            - include_world: Whether world model is relevant
-            - filters: Event filters for timeline
+            Optimized prompt string (XML or text format)
         """
-        # Use learned patterns to determine priorities
-        if template == "problem_solving":
-            if self._is_complex_problem(problem):
-                return ContextPriorities(
-                    turns=5,
-                    memory_depth="deep",
-                    include_world=True,
-                    filters=["solution", "error", "decision"]
-                )
-        # ...
+        # Convert structured data to dictionary for template processing
+        context_dict = context_data.to_dict()
+        
+        # Use the structured data's template and query
+        query = context_data.query
+        template = context_data.template
+        
+        # Apply relevance filtering and token optimization
+        optimized_context = self._optimize_context(context_dict, query, template, options)
+        
+        # Get template and assemble final prompt
+        template_obj = self._template_manager.get_template(template, self.format_type)
+        return template_obj.assemble(query, optimized_context, options)
 ```
 
-## Benefits
+### SolvingMixin Integration
 
-### For ContextEngine
-
-1. **Single Discovery Point**: One method to get all resources
-2. **Pre-structured Context**: AgentState provides organized context
-3. **Intelligent Prioritization**: AgentMind helps optimize context
-4. **Clean Integration**: No need to understand agent internals
-
-### For AgentState
-
-1. **Clear Interface**: Well-defined context building method
-2. **Reusable Context**: Same context for multiple frameworks
-3. **Centralized Logic**: Context building in one place
-4. **Consistent Output**: Standardized context structure
-
-### For Overall System
-
-1. **Reduced Coupling**: Clean boundaries between systems
-2. **Better Performance**: No duplicate context gathering
-3. **Easier Testing**: Can test integration points separately
-4. **Future Flexibility**: Easy to add new context types
-
-## Migration Path
-
-### Phase 1: Add New Methods
-- Add `from_agent_state()` to ContextEngine
-- Add `discover_resources_for_ctxeng()` to AgentState
-- Add `get_llm_context()` to AgentState
-
-### Phase 2: Update Integration Points
-- Update `agent_instance.py` to use new methods
-- Keep backward compatibility with old discovery
-
-### Phase 3: Deprecate Old Methods
-- Mark old `from_agent()` as deprecated
-- Add deprecation warnings
-- Update documentation
-
-### Phase 4: Remove Old Methods
-- Remove deprecated methods after grace period
-- Clean up old resource discovery code
-
-## Testing Strategy
-
-### Unit Tests
 ```python
-def test_context_engine_from_agent_state():
-    """Test ContextEngine creation from AgentState."""
-    state = create_test_agent_state()
-    engine = ContextEngine.from_agent_state(state)
+class SolvingMixin:
+    """Mixin that integrates ContextEngineer into agent solve workflow."""
     
-    # Verify resources discovered
-    assert "problem_context" in engine._resources
-    assert "memory" in engine._resources
-    assert "timeline" in engine._resources
-
-def test_agent_state_context_building():
-    """Test AgentState builds correct context."""
-    state = create_test_agent_state()
-    context = state.get_llm_context("standard")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._context_engineer = None  # Lazy initialization
     
-    # Verify context structure
-    assert "query" in context
-    assert "conversation_history" in context
-    assert "available_strategies" in context
+    @property
+    def context_engineer(self) -> ContextEngineer:
+        """Get or create the context engineer for this agent."""
+        if self._context_engineer is None:
+            self._context_engineer = ContextEngineer.from_agent(self)
+        return self._context_engineer
+    
+    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
+        """Enhanced solve method with context engineering."""
+        if isinstance(problem_or_workflow, str):
+            # Set problem context in centralized state
+            self.state.set_problem_context(ProblemContext(problem_statement=problem_or_workflow))
+            
+            # Let AgentState assemble its own ContextData
+            context_data = self.state.assemble_context_data(problem_or_workflow, template="problem_solving")
+            
+            # Use ContextEngineer with structured data
+            rich_prompt = self.context_engineer.engineer_context_structured(context_data)
+            problem_or_workflow = rich_prompt
+        
+        # Continue with workflow planning and execution
+        workflow = self.plan_sync(problem_or_workflow, **kwargs)
+        return workflow.execute(**kwargs)
 ```
 
-### Integration Tests
+## Benefits of the New Architecture
+
+### 1. **Clear Separation of Concerns**
+- **AgentState**: Owns context assembly logic and is the single source of truth
+- **ContextEngineer**: Focuses purely on prompt generation and template management
+- **SolvingMixin**: Orchestrates the flow between components
+
+### 2. **Type Safety**
+- **Structured ContextData**: Provides type-safe context assembly with validation
+- **Explicit Interfaces**: Clear contracts between components
+- **Better Error Handling**: Type checking catches issues early
+
+### 3. **Simplified Integration**
+- **Single Method**: `AgentState.assemble_context_data()` handles all context assembly
+- **Lazy Initialization**: ContextEngineer is created only when needed
+- **Clean API**: Simple, focused methods with clear responsibilities
+
+### 4. **Maintainability**
+- **Single Source of Truth**: All context logic centralized in AgentState
+- **Easy Testing**: Each component can be tested independently
+- **Clear Dependencies**: Explicit relationships between components
+
+## Migration Guide
+
+### From Old Architecture
+The old architecture used resource discovery and manual context assembly:
+
 ```python
-def test_end_to_end_context_assembly():
-    """Test full context assembly flow."""
-    agent = AgentInstance(...)
-    result = agent.solve_sync("test problem")
-    
-    # Verify context was assembled correctly
-    # Verify ContextEngine was used
-    # Verify result is correct
+# Old approach (removed)
+ctx = ContextEngine.from_agent(agent)
+ctx.add_resource("memory", agent.mind.memory)
+ctx.add_workflow("current", workflow)
+prompt = ctx.assemble(query, context, template="problem_solving")
 ```
 
-## Future Enhancements
+### To New Architecture
+The new architecture uses structured context assembly:
 
-1. **Context Caching**: Cache assembled context for reuse
-2. **Incremental Updates**: Update context incrementally
-3. **Context Versioning**: Track context schema versions
-4. **Analytics**: Track what context is most useful
-5. **Optimization**: Learn optimal context per template
+```python
+# New approach (current)
+context_data = agent.state.assemble_context_data(query, template="problem_solving")
+prompt = agent.context_engineer.engineer_context_structured(context_data)
+```
+
+### Key Changes
+1. **No Resource Discovery**: AgentState handles all context extraction internally
+2. **Structured Data**: ContextData provides type-safe context assembly
+3. **Simplified API**: Single method for context assembly, single method for prompt generation
+4. **Better Integration**: Seamless integration with agent solve workflow

@@ -9,10 +9,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from .context import ProblemContext, ExecutionContext
-from .timeline import Timeline
-from .mind import AgentMind
 from .capabilities import CapabilityRegistry
+from .context import ExecutionContext, ProblemContext
+from .mind import AgentMind
+from .timeline import Timeline
 
 
 @dataclass
@@ -156,6 +156,111 @@ class AgentState:
             resources["execution_context"] = self.execution
 
         return resources
+
+    def assemble_context_data(self, query: str, template: str = "general") -> Any:
+        """Assemble structured ContextData from agent state.
+
+        This method creates a comprehensive ContextData object by extracting
+        relevant information from all agent state components.
+
+        Args:
+            query: The query string
+            template: Template name to use
+
+        Returns:
+            ContextData populated with agent state information
+        """
+        from dana.frameworks.ctxeng import (
+            ContextData,
+            ConversationContextData,
+            ExecutionContextData,
+            MemoryContextData,
+            ProblemContextData,
+            ResourceContextData,
+        )
+
+        # Create base context data
+        context_data = ContextData.create_for_agent(query=query, template=template)
+
+        # Extract problem context
+        if self.problem_context:
+            context_data.problem = ProblemContextData(
+                problem_statement=self.problem_context.problem_statement,
+                objective=self.problem_context.objective,
+                original_problem=self.problem_context.original_problem,
+                depth=self.problem_context.depth,
+                constraints=self.problem_context.constraints,
+                assumptions=self.problem_context.assumptions,
+            )
+
+        # Extract conversation context
+        if self.mind and self.mind.memory:
+            conversation_history = self.mind.recall_conversation(3)
+            # Ensure conversation_history is a string
+            if isinstance(conversation_history, list):
+                conversation_history = "\n".join(str(item) for item in conversation_history)
+            elif not isinstance(conversation_history, str):
+                conversation_history = str(conversation_history)
+
+            context_data.conversation = ConversationContextData(
+                conversation_history=conversation_history,
+                recent_events=self._get_recent_events(),
+                user_preferences=self.mind.get_user_context(),
+                context_depth="standard",
+            )
+
+        # Extract memory context
+        if self.mind:
+            relevant_memories = self.mind.recall_relevant(self.problem_context) if self.problem_context else []
+            # Ensure relevant_memories is a list of strings
+            if not isinstance(relevant_memories, list):
+                relevant_memories = [str(relevant_memories)] if relevant_memories else []
+            else:
+                relevant_memories = [str(memory) for memory in relevant_memories]
+
+            context_priorities = self.mind.assess_context_needs(self.problem_context, "standard") if self.problem_context else []
+            # Ensure context_priorities is a list of strings
+            if not isinstance(context_priorities, list):
+                context_priorities = [str(context_priorities)] if context_priorities else []
+            else:
+                context_priorities = [str(priority) for priority in context_priorities]
+
+            context_data.memory = MemoryContextData(
+                relevant_memories=relevant_memories,
+                user_model=self.mind.get_user_context(),
+                world_model=self.mind.world_model.to_dict() if self.mind.world_model else {},
+                context_priorities=context_priorities,
+            )
+
+        # Extract execution context
+        if self.execution:
+            context_data.execution = ExecutionContextData(
+                session_id=self.session_id,
+                execution_constraints=self.execution.get_constraints(),
+                environment_info={},
+            )
+
+        # Extract resource context
+        if self.capabilities:
+            context_data.resources = ResourceContextData(
+                available_resources=list(self.capabilities.get_available_tools().keys()),
+                resource_limits=self.execution.resource_limits.to_dict() if self.execution else {},
+                resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
+                resource_errors=[],
+            )
+
+        return context_data
+
+    def _get_recent_events(self) -> list[str]:
+        """Get recent events from timeline for context."""
+        if not self.timeline or not self.timeline.events:
+            return []
+
+        try:
+            events = self.timeline.events[-5:]  # Last 5 events
+            return [f"{e.event_type}: {e.data.get('description', 'No description')}" for e in events]
+        except Exception:
+            return []
 
     def set_problem_context(self, problem: ProblemContext) -> None:
         """Set the current problem context.

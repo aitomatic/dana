@@ -2,10 +2,21 @@ from typing import Any
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.workflow.workflow_system import WorkflowInstance
-from dana.frameworks.ctxeng import ContextEngineerMixin
+from dana.frameworks.ctxeng import ContextEngineer
 
 
-class SolvingMixin(ContextEngineerMixin):
+class SolvingMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._context_engineer = None
+
+    @property
+    def context_engineer(self) -> ContextEngineer:
+        """Get or create the context engineer for this agent."""
+        if self._context_engineer is None:
+            self._context_engineer = ContextEngineer.from_agent(self)
+        return self._context_engineer
+
     def solve_sync(self, problem_or_workflow: str | WorkflowInstance, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
         """Implementation of solve functionality."""
         print(f"🔧 AGENT.SOLVE() - Input: {type(problem_or_workflow).__name__} = {str(problem_or_workflow)[:100]}...")
@@ -23,8 +34,11 @@ class SolvingMixin(ContextEngineerMixin):
         # Enhanced context assembly using Context Engineering Framework
         if isinstance(problem_or_workflow, str):
             try:
-                # Assemble rich context using ctxeng framework
-                rich_prompt = self.assemble_context(problem_or_workflow, template="problem_solving")
+                # Let agent state assemble its own ContextData
+                context_data = self.state.assemble_context_data(problem_or_workflow, template="problem_solving")
+
+                # Use the agent's context engineer with structured data
+                rich_prompt = self.context_engineer.engineer_context_structured(context_data)
                 print(f"📝 CONTEXT ENGINE - Assembled rich prompt ({len(rich_prompt)} chars)")
                 # Use rich prompt instead of basic problem
                 problem_or_workflow = rich_prompt
