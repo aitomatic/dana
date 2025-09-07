@@ -89,3 +89,6 @@ experiments/
 
 .vscode/launch.json.backup
 **/MODULE_ANALYSIS.md
+
+# misc / other
+.bugs
