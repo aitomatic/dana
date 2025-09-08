@@ -5,10 +5,13 @@ Curate → Organize → Retrieve → Reason → Act → Learn
 
 This enables Dana agents to build, maintain, and continuously improve
 their knowledge through direct experience and outcome feedback.
+
+The framework uses the composition pattern:
+- CORRALEngineer: Core service class (like ctxeng)
 """
 
-from .actor_mixin import CORRALActorMixin
 from .config import CORRALConfig
+from .engineer import CORRALEngineer
 from .knowledge import (
     CausalKnowledge,
     ConditionalKnowledge,
@@ -29,7 +32,9 @@ from .operations import (
 )
 
 __all__ = [
-    "CORRALActorMixin",
+    # Core service class
+    "CORRALEngineer",
+    # Knowledge types
     "Knowledge",
     "KnowledgeCategory",
     "DeclarativeKnowledge",
@@ -37,6 +42,7 @@ __all__ = [
     "CausalKnowledge",
     "RelationalKnowledge",
     "ConditionalKnowledge",
+    # Result types
     "CurationResult",
     "OrganizationResult",
     "RetrievalResult",
@@ -44,5 +50,6 @@ __all__ = [
     "ActionResult",
     "LearningResult",
     "CORRALResult",
+    # Configuration
     "CORRALConfig",
 ]

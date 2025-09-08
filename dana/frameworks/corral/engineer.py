@@ -1,42 +1,52 @@
-"""CORRALActorMixin mixin for Dana agents to utilize CORRAL knowledge lifecycle."""
+"""
+CORRAL Engineer - Core logic for knowledge lifecycle management.
+"""
 
-from abc import ABC
 from collections.abc import Iterator
 from datetime import datetime
 from typing import Any, Union
 
 from dana.core.agent import ProblemContext
 from dana.core.agent.context import ExecutionContext
-
+from dana.common.mixins.loggable import Loggable
 from .config import DEFAULT_CONFIG, CORRALConfig
 from .engines import ActionEngine, CurationEngine, LearningEngine, OrganizationEngine, ReasoningEngine, RetrievalEngine
 from .knowledge import Knowledge, KnowledgeCategory
 from .operations import ActionResult, CORRALResult, CurationResult, LearningResult, OrganizationResult, ReasoningResult, RetrievalResult
 
 
-class CORRALActorMixin(ABC):
-    """Mixin that adds CORRAL knowledge capabilities to Dana agents.
+class CORRALEngineer(Loggable):
+    """Core engineer responsible for knowledge lifecycle management.
 
-    This mixin can be applied to AgentInstance to add comprehensive
-    knowledge management capabilities while maintaining compatibility
-    with existing agent functionality.
+    This class encapsulates the actual work of CORRAL knowledge operations:
+    - Knowledge curation from various sources
+    - Knowledge organization and categorization
+    - Knowledge retrieval and relevance scoring
+    - Reasoning with knowledge
+    - Action execution based on reasoning
+    - Learning from outcomes and feedback
     """
 
-    def __init__(self, *args, **kwargs):
-        # Extract CORRAL config before calling super()
-        self._corral_config: CORRALConfig = kwargs.pop("corral_config", DEFAULT_CONFIG)
-        super().__init__(*args, **kwargs)
-        self._knowledge_base: dict[str, Knowledge] = {}
-        self._initialize_corral_engines()
+    def __init__(self, config: CORRALConfig | None = None):
+        """
+        Initialize the CORRAL engineer.
 
-    def _initialize_corral_engines(self) -> None:
+        Args:
+            config: CORRAL configuration (uses default if None)
+        """
+        super().__init__()
+        self.config = config or DEFAULT_CONFIG
+        self._knowledge_base: dict[str, Knowledge] = {}
+        self._initialize_engines()
+
+    def _initialize_engines(self) -> None:
         """Initialize CORRAL processing engines."""
-        self._curation_engine = CurationEngine(self._corral_config)
-        self._organization_engine = OrganizationEngine(self._corral_config)
-        self._retrieval_engine = RetrievalEngine(self._corral_config)
-        self._reasoning_engine = ReasoningEngine(self._corral_config)
-        self._action_engine = ActionEngine(self._corral_config)
-        self._learning_engine = LearningEngine(self._corral_config)
+        self._curation_engine = CurationEngine(self.config)
+        self._organization_engine = OrganizationEngine(self.config)
+        self._retrieval_engine = RetrievalEngine(self.config)
+        self._reasoning_engine = ReasoningEngine(self.config)
+        self._action_engine = ActionEngine(self.config)
+        self._learning_engine = LearningEngine(self.config)
 
     # ===================== Knowledge Lifecycle Operations =====================
 
@@ -61,7 +71,7 @@ class CORRALActorMixin(ABC):
         return self._curation_engine.curate(
             source=source,
             context=context or {},
-            quality_threshold=quality_threshold or self._corral_config.quality_threshold,
+            quality_threshold=quality_threshold or self.config.quality_threshold,
             auto_categorize=auto_categorize,
         )
 
@@ -142,8 +152,8 @@ class CORRALActorMixin(ABC):
             knowledge_base=self._knowledge_base,
             categories=categories,
             context=context or {},
-            max_results=max_results or self._corral_config.max_retrieval_results,
-            min_confidence=min_confidence or self._corral_config.min_confidence_threshold,
+            max_results=max_results or self.config.max_retrieval_results,
+            min_confidence=min_confidence or self.config.min_confidence_threshold,
         )
 
     def retrieve_for_problem(self, problem_context: ProblemContext) -> RetrievalResult:
@@ -191,8 +201,8 @@ class CORRALActorMixin(ABC):
         """
         return self._action_engine.act(
             reasoning_result=reasoning_result,
-            execution_context=execution_context or getattr(self, "state", {}).get("execution"),
-            agent_instance=self,
+            execution_context=execution_context,
+            agent_instance=None,  # Will be provided by mixin
         )
 
     def recommend_workflow(self, problem: str, available_resources: list[Any] | None = None) -> dict[str, Any]:
@@ -255,20 +265,19 @@ class CORRALActorMixin(ABC):
         self,
         problem: Union[str, ProblemContext],
         initial_knowledge: list[Knowledge] | None = None,
-        cycle_config: CORRALConfig | None = None,
+        agent_instance: Any | None = None,
     ) -> CORRALResult:
         """Execute complete CORRAL cycle for problem solving.
 
         Args:
             problem: Problem to solve using CORRAL
             initial_knowledge: Starting knowledge (if any)
-            cycle_config: Configuration for cycle execution
+            agent_instance: Agent instance for action execution
 
         Returns:
             CORRALResult with complete cycle outcome and learned knowledge
         """
         start_time = datetime.now()
-        # config = cycle_config or self._corral_config  # TODO: Use config in implementation
         problem_str = problem if isinstance(problem, str) else problem.problem_statement
 
         try:
@@ -293,7 +302,11 @@ class CORRALActorMixin(ABC):
             reasoning_result = self.reason_with_knowledge(retrieval_result.knowledge_items, problem)
 
             # 5. ACT: Execute actions based on reasoning
-            action_result = self.act_on_knowledge(reasoning_result)
+            action_result = self._action_engine.act(
+                reasoning_result=reasoning_result,
+                execution_context=getattr(agent_instance, "state", {}).get("execution") if agent_instance else None,
+                agent_instance=agent_instance,
+            )
 
             # 6. LEARN: Update knowledge based on outcomes
             learning_result = self.learn_from_outcome(
@@ -334,13 +347,21 @@ class CORRALActorMixin(ABC):
                 metadata={"error": str(e)},
             )
 
-    def continuous_corral(self, problem_stream: Iterator[ProblemContext], learning_rate: float = 0.1) -> Iterator[CORRALResult]:
+    def continuous_corral(self, problem_stream: Iterator[ProblemContext], agent_instance: Any | None = None) -> Iterator[CORRALResult]:
         """Execute CORRAL continuously on stream of problems."""
         for problem_context in problem_stream:
-            result = self.execute_corral_cycle(problem_context)
+            result = self.execute_corral_cycle(problem_context, agent_instance=agent_instance)
             yield result
 
-    # ===================== Integration with Dana Architecture =====================
+    # ===================== Knowledge Base Management =====================
+
+    def add_knowledge(self, knowledge: Knowledge) -> None:
+        """Add knowledge to the knowledge base."""
+        self._knowledge_base[knowledge.id] = knowledge
+
+    def get_knowledge(self, knowledge_id: str) -> Knowledge | None:
+        """Get knowledge by ID."""
+        return self._knowledge_base.get(knowledge_id)
 
     def get_knowledge_state(self) -> dict[str, Any]:
         """Get current knowledge state for integration with AgentState."""
@@ -349,23 +370,14 @@ class CORRALActorMixin(ABC):
             "categories": {cat.value: len([k for k in self._knowledge_base.values() if k.category == cat]) for cat in KnowledgeCategory},
             "average_confidence": sum(k.confidence for k in self._knowledge_base.values()) / max(len(self._knowledge_base), 1),
             "last_updated": max((k.timestamp for k in self._knowledge_base.values()), default=datetime.now()),
-            "config": self._corral_config,
+            "config": self.config,
         }
 
     def set_knowledge_state(self, knowledge_state: dict[str, Any]) -> None:
         """Set knowledge state from AgentState."""
         if "config" in knowledge_state:
-            self._corral_config = knowledge_state["config"]
-            self._initialize_corral_engines()
-
-    def sync_with_agent_mind(self) -> None:
-        """Synchronize CORRAL knowledge with AgentMind memory systems."""
-        if hasattr(self, "state") and hasattr(self.state, "mind"):
-            # Store knowledge summary in agent memory
-            knowledge_summary = self.get_knowledge_state()
-            self.state.mind.form_memory(
-                {"type": "semantic", "key": "corral_knowledge_state", "value": knowledge_summary, "importance": 0.9}
-            )
+            self.config = knowledge_state["config"]
+            self._initialize_engines()
 
     def contribute_to_context(self, problem_context: ProblemContext, context_depth: str = "standard") -> dict[str, Any]:
         """Contribute knowledge-based context to ContextEngine."""
@@ -390,22 +402,10 @@ class CORRALActorMixin(ABC):
 
         return context_contribution
 
-    # ===================== Static Methods for Mixin Application =====================
+    # ===================== Factory Methods =====================
 
     @classmethod
-    def apply_to_instance(cls, agent_instance: Any, corral_config: CORRALConfig | None = None) -> None:
-        """Apply CORRALActorMixin mixin to existing agent instance."""
-        # This is a simplified implementation - in practice would need more careful mixing
-        instance_class = type(agent_instance)
-
-        # Create new class that includes CORRALActorMixin
-        class CORRALEnhanced(instance_class, CORRALActorMixin):
-            pass
-
-        # Replace the instance's class
-        agent_instance.__class__ = CORRALEnhanced
-
-        # Initialize CORRAL components
-        agent_instance._corral_config = corral_config or DEFAULT_CONFIG
-        agent_instance._knowledge_base = {}
-        agent_instance._initialize_corral_engines()
+    def from_agent(cls, agent: Any, **config) -> "CORRALEngineer":
+        """Create a CORRAL engineer for an agent."""
+        corral_config = config.get("corral_config", DEFAULT_CONFIG)
+        return cls(corral_config)
