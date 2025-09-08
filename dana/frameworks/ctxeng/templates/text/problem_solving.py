@@ -4,7 +4,7 @@ Text Problem Solving Template for the Context Engineering Framework.
 
 from typing import Any
 
-from ...assemblers import TextTemplate
+from ..base import TextTemplate
 
 
 class TextProblemSolvingTemplate(TextTemplate):
