@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from dana.core.agent import ProblemContext
-from dana.frameworks.corral import CORRALActorMixin
+from dana.frameworks.corral import CORRALEngineer
 from dana.frameworks.corral.config import LIGHTWEIGHT_CONFIG
 from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
@@ -35,12 +35,23 @@ class TestCORRALIntegration:
     def enhanced_agent(self):
         """Create agent with CORRAL capabilities."""
 
-        class EnhancedAgent(MockAgentInstance, CORRALActorMixin):
+        class EnhancedAgent(MockAgentInstance):
             def __init__(self):
-                # Initialize MockAgentInstance first
                 MockAgentInstance.__init__(self)
-                # Then initialize CORRALActorMixin
-                CORRALActorMixin.__init__(self)
+                self._corral_engineer = None
+
+            @property
+            def corral_engineer(self) -> CORRALEngineer:
+                if self._corral_engineer is None:
+                    self._corral_engineer = CORRALEngineer.from_agent(self)
+                return self._corral_engineer
+
+            # Delegate CORRAL methods to engineer
+            def curate_knowledge(self, *args, **kwargs):
+                return self.corral_engineer.curate_knowledge(*args, **kwargs)
+
+            def execute_corral_cycle(self, *args, **kwargs):
+                return self.corral_engineer.execute_corral_cycle(*args, **kwargs)
 
         return EnhancedAgent()
 
@@ -250,8 +261,8 @@ class TestCORRALIntegration:
         assert "knowledge_confidence" in context_contribution
         assert "top_relevant_knowledge" in context_contribution
 
-    def test_mixin_application_to_existing_agent(self):
-        """Test applying CORRALActorMixin to existing agent instance."""
+    def test_engineer_composition_pattern(self):
+        """Test CORRALEngineer composition pattern."""
         # Create base agent
         agent = MockAgentInstance()
 
@@ -259,17 +270,30 @@ class TestCORRALIntegration:
         assert not hasattr(agent, "curate_knowledge")
         assert not hasattr(agent, "execute_corral_cycle")
 
-        # Apply CORRALActorMixin mixin
-        CORRALActorMixin.apply_to_instance(agent)
+        # Add CORRALEngineer via composition
+        class EnhancedAgent(MockAgentInstance):
+            def __init__(self):
+                MockAgentInstance.__init__(self)
+                self._corral_engineer = None
+
+            @property
+            def corral_engineer(self) -> CORRALEngineer:
+                if self._corral_engineer is None:
+                    self._corral_engineer = CORRALEngineer.from_agent(self)
+                return self._corral_engineer
+
+            def curate_knowledge(self, *args, **kwargs):
+                return self.corral_engineer.curate_knowledge(*args, **kwargs)
+
+        enhanced_agent = EnhancedAgent()
 
         # Verify CORRAL capabilities added
-        assert hasattr(agent, "curate_knowledge")
-        assert hasattr(agent, "execute_corral_cycle")
-        assert hasattr(agent, "_knowledge_base")
-        assert hasattr(agent, "_corral_config")
+        assert hasattr(enhanced_agent, "curate_knowledge")
+        assert hasattr(enhanced_agent, "_corral_engineer")
+        assert enhanced_agent._corral_engineer is None  # Lazy initialization
 
         # Verify can use CORRAL functions
-        result = agent.curate_knowledge("Test knowledge")
+        result = enhanced_agent.curate_knowledge("Test knowledge")
         assert result is not None
 
     def test_configuration_impact_on_behavior(self, enhanced_agent):
