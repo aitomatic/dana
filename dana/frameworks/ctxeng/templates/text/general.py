@@ -4,7 +4,7 @@ Text General Template for the Context Engineering Framework.
 
 from typing import Any
 
-from ...assemblers import TextTemplate
+from ..base import TextTemplate
 
 
 class TextGeneralTemplate(TextTemplate):

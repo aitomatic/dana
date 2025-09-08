@@ -4,7 +4,7 @@ XML Problem Solving Template for the Context Engineering Framework.
 
 from typing import Any
 
-from ...assemblers import XMLTemplate
+from ..base import XMLTemplate
 
 
 class XMLProblemSolvingTemplate(XMLTemplate):

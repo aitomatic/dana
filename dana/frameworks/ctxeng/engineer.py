@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from .context_data import ContextData
-from .template_manager import TemplateManager
+from .templates.manager import TemplateManager
 
 logger = logging.getLogger(__name__)
 

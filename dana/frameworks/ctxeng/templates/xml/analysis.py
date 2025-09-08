@@ -4,7 +4,7 @@ XML Analysis Template for the Context Engineering Framework.
 
 from typing import Any
 
-from ...assemblers import XMLTemplate
+from ..base import XMLTemplate
 
 
 class XMLAnalysisTemplate(XMLTemplate):

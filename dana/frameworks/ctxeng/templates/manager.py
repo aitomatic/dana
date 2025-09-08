@@ -4,7 +4,7 @@ Template Manager for the Context Engineering Framework.
 
 import logging
 
-from .assemblers import BaseTemplate
+from .base import BaseTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -94,11 +94,11 @@ class TemplateManager:
 
 
 # Import template implementations
-from .templates.text.analysis import TextAnalysisTemplate
-from .templates.text.conversation import TextConversationTemplate
-from .templates.text.general import TextGeneralTemplate
-from .templates.text.problem_solving import TextProblemSolvingTemplate
-from .templates.xml.analysis import XMLAnalysisTemplate
-from .templates.xml.conversation import XMLConversationTemplate
-from .templates.xml.general import XMLGeneralTemplate
-from .templates.xml.problem_solving import XMLProblemSolvingTemplate
+from .text.analysis import TextAnalysisTemplate
+from .text.conversation import TextConversationTemplate
+from .text.general import TextGeneralTemplate
+from .text.problem_solving import TextProblemSolvingTemplate
+from .xml.analysis import XMLAnalysisTemplate
+from .xml.conversation import XMLConversationTemplate
+from .xml.general import XMLGeneralTemplate
+from .xml.problem_solving import XMLProblemSolvingTemplate

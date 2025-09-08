@@ -5,7 +5,7 @@ Provides intelligent context assembly for LLM interactions, maximizing relevance
 while minimizing token usage.
 """
 
-from .assemblers import BaseTemplate, TextTemplate, XMLTemplate
+from .templates.base import BaseTemplate, TextTemplate, XMLTemplate
 from .context_data import (
     ContextData,
     ConversationContextData,
