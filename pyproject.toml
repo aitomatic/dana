@@ -137,6 +137,7 @@ dependencies = [
     "llama-index-embeddings-azure-openai>=0.3.9",
     "llama-index-llms-azure-openai>=0.3.4",
     "llama-index-embeddings-ibm>=0.3.1",
+    "flask>=3.1.1",
 ]
 
 # Command-line entry points
