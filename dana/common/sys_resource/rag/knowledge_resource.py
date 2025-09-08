@@ -1,4 +1,3 @@
-import os
 from llama_index.core import Settings
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores import (
@@ -151,7 +150,10 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
-        knowledge_resource = KnowledgeResource(sources=["/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/test_new_knows/processed_knowledge"], force_reload=True)
+        knowledge_resource = KnowledgeResource(
+            sources=["/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/test_new_knows/processed_knowledge"],
+            force_reload=True,
+        )
         await knowledge_resource.initialize()
         res = await knowledge_resource.get_plan("What is the capital expenditure for the company?", num_results=10)
         print(res)

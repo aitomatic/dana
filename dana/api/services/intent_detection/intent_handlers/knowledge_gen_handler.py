@@ -169,8 +169,8 @@ class KnowledgeOpsHandler(AbstractHandler):
         }
         """
         # Initialize conversation with user request
-        conversation = request.chat_history # TODO : IMPROVE MANAGING CONVERSATION HISTORY
-        
+        conversation = request.chat_history  # TODO : IMPROVE MANAGING CONVERSATION HISTORY
+
         # Track if tree was modified
         tree_modified = False
 
@@ -178,9 +178,9 @@ class KnowledgeOpsHandler(AbstractHandler):
         for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
-            print("="*100)
+            print("=" * 100)
             print(tool_msg.content)
-            print("="*100)
+            print("=" * 100)
             conversation.append(tool_msg)
             init = False
             try:
@@ -218,15 +218,14 @@ class KnowledgeOpsHandler(AbstractHandler):
                     "tree_modified": tree_modified,
                     "updated_tree": self.tree_structure if tree_modified else None,
                 }
-            
+
             # Add result to conversation
             conversation.append(tool_result_msg)
-            
 
             # Check if workflow completed after tool execution
             if "attempt_completion" in tool_msg.content:
                 break
-        
+
         # Build final result
         result = {
             "status": "success",
@@ -235,11 +234,11 @@ class KnowledgeOpsHandler(AbstractHandler):
             "final_result": None,
             "tree_modified": tree_modified,
         }
-        
+
         # Only include updated tree if it was modified
         if tree_modified:
             result["updated_tree"] = self.tree_structure
-            
+
         return result
 
     async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
@@ -333,7 +332,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         Example input:
         I need to first explore the structure...
-        
+
         <thinking>...</thinking>
         <ask_follow_up_question>
         <question>What type of ratios?</question>
@@ -364,7 +363,7 @@ Your thinking logic here...
 </tool_name>""")
 
         first_tag_start = first_tag_match.start()
-        
+
         # Extract any text before the first XML tag as additional thinking content
         text_before_xml = xml_content[:first_tag_start].strip() if first_tag_start > 0 else ""
 
@@ -378,7 +377,7 @@ Your thinking logic here...
             thinking_parts.append(text_before_xml)
         if thinking_tag_content:
             thinking_parts.append(thinking_tag_content)
-        
+
         thinking_content = "\n\n".join(thinking_parts) if thinking_parts else ""
 
         # Remove thinking tags and text before XML for tool parsing
@@ -437,39 +436,39 @@ Your thinking logic here...
         """
         if not xml_content:
             raise ValueError("Empty XML content")
-        
+
         # Remove any leading/trailing whitespace
         xml_content = xml_content.strip()
-        
+
         # Ensure we have valid XML structure
-        if not xml_content.startswith('<') or not xml_content.endswith('>'):
+        if not xml_content.startswith("<") or not xml_content.endswith(">"):
             raise ValueError(f"Invalid XML structure: {xml_content[:100]}...")
-        
+
         # Handle common XML issues more carefully
         import re
-        
+
         # First, let's try to identify if there are unescaped ampersands in text content
         # This is a common cause of XML parsing errors
         def escape_ampersands_in_text(match):
             text = match.group(1)
             # Only escape ampersands that are not already part of XML entities
-            text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', text)
-            return f'>{text}<'
-        
+            text = re.sub(r"&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)", "&amp;", text)
+            return f">{text}<"
+
         # Apply the escaping to text content between tags
-        xml_content = re.sub(r'>([^<]+)<', escape_ampersands_in_text, xml_content)
-        
+        xml_content = re.sub(r">([^<]+)<", escape_ampersands_in_text, xml_content)
+
         # Also handle cases where there might be unescaped ampersands at the end of text content
         # (before closing tags)
         def escape_ampersands_at_end(match):
             text = match.group(1)
             # Only escape ampersands that are not already part of XML entities
-            text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', text)
-            return f'>{text}</'
-        
+            text = re.sub(r"&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)", "&amp;", text)
+            return f">{text}</"
+
         # Apply the escaping to text content before closing tags
-        xml_content = re.sub(r'>([^<]+)</', escape_ampersands_at_end, xml_content)
-        
+        xml_content = re.sub(r">([^<]+)</", escape_ampersands_at_end, xml_content)
+
         return xml_content
 
     def _extract_params_from_element(self, element) -> dict:
@@ -517,32 +516,25 @@ def test_xml_parsing():
     """
     Test function to help debug XML parsing issues.
     """
-    handler = KnowledgeOpsHandler(
-        domain_knowledge_path="/tmp/test_domain_knowledge.json",
-        domain="Test Domain",
-        role="Test Role"
-    )
-    
+    handler = KnowledgeOpsHandler(domain_knowledge_path="/tmp/test_domain_knowledge.json", domain="Test Domain", role="Test Role")
+
     # Test cases for common XML parsing issues
     test_cases = [
         # Valid XML
         "<test>Hello World</test>",
-        
         # XML with unescaped ampersand
         "<test>Hello & World</test>",
-        
         # XML with special characters
         "<test>Hello < World > Test</test>",
-        
         # Complex XML
         """<attempt_completion>
             <summary>Test summary with & special characters</summary>
             <details>More details here</details>
-        </attempt_completion>"""
+        </attempt_completion>""",
     ]
-    
+
     for i, test_xml in enumerate(test_cases):
-        print(f"\n--- Test Case {i+1} ---")
+        print(f"\n--- Test Case {i + 1} ---")
         print(f"Original XML: {test_xml}")
         try:
             cleaned = handler._clean_xml_content(test_xml)
@@ -551,6 +543,7 @@ def test_xml_parsing():
             print(f"✅ Parsed successfully: {root.tag}")
         except Exception as e:
             print(f"❌ Failed: {e}")
+
 
 if __name__ == "__main__":
     import asyncio

@@ -12,6 +12,41 @@ pytest_plugins = ["pytest_asyncio"]
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
+def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
+    """Create a mock LLM resource for testing.
+
+    This utility function creates a configured LLMResourceInstance with mock mode enabled,
+    reducing code duplication across test files.
+
+    Args:
+        name: Name of the LLM resource (default: "test_llm")
+        model: Model identifier (default: "openai:gpt-4o-mini")
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+
+    llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name=name, model=model))
+    llm_resource.initialize()
+    llm_resource.with_mock_llm_call(True)  # Enable mock mode
+    return llm_resource
+
+
+@pytest.fixture
+def mock_llm_resource():
+    """Pytest fixture that provides a mock LLM resource.
+
+    This fixture can be used in test functions by adding it as a parameter.
+
+    Returns:
+        Configured LLMResourceInstance with mock mode enabled
+    """
+    return create_mock_llm_resource()
+
+
 def pytest_addoption(parser):
     """Add custom command line options for pytest."""
     parser.addoption("--run-llm", action="store_true", default=False, help="Run tests that require LLM calls")
@@ -31,6 +66,64 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "llm" in item.keywords:
                 item.add_marker(skip_llm)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def load_environment_variables():
+    """Load environment variables from .env file for all tests."""
+    try:
+        from dotenv import load_dotenv
+        # Load .env file from project root
+        project_root = Path(__file__).parent.parent
+        env_file = project_root / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+            print(f"Loaded environment variables from {env_file}")
+        else:
+            print(f"No .env file found at {env_file}")
+    except ImportError:
+        print("python-dotenv not available, skipping .env file loading")
+    except Exception as e:
+        print(f"Error loading .env file: {e}")
+    yield
+
+
+@pytest.fixture(autouse=True)
+def ensure_environment_variables():
+    """Ensure critical environment variables are available for each test."""
+    # Store original values
+    original_openai_key = os.environ.get("OPENAI_API_KEY")
+    original_cohere_key = os.environ.get("COHERE_API_KEY")
+    original_azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
+    
+    # If any of these keys are missing, try to reload from .env
+    if not any([original_openai_key, original_cohere_key, original_azure_key]):
+        try:
+            from dotenv import load_dotenv
+            project_root = Path(__file__).parent.parent
+            env_file = project_root / ".env"
+            if env_file.exists():
+                load_dotenv(env_file, override=True)
+        except Exception:
+            pass  # Silently fail if we can't reload
+    
+    yield
+    
+    # Restore original values if they were changed
+    if original_openai_key is not None:
+        os.environ["OPENAI_API_KEY"] = original_openai_key
+    elif "OPENAI_API_KEY" in os.environ:
+        os.environ.pop("OPENAI_API_KEY")
+        
+    if original_cohere_key is not None:
+        os.environ["COHERE_API_KEY"] = original_cohere_key
+    elif "COHERE_API_KEY" in os.environ:
+        os.environ.pop("COHERE_API_KEY")
+        
+    if original_azure_key is not None:
+        os.environ["AZURE_OPENAI_API_KEY"] = original_azure_key
+    elif "AZURE_OPENAI_API_KEY" in os.environ:
+        os.environ.pop("AZURE_OPENAI_API_KEY")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -73,20 +166,8 @@ def configure_llm_mocking(request):
     If --run-llm is provided, we assume live credentials are set up
     and do not enable mock mode.
     """
-    if not request.config.getoption("--run-llm"):
-        os.environ["DANA_MOCK_LLM"] = "true"
-        yield
-        # Only delete if it exists
-        if "DANA_MOCK_LLM" in os.environ:
-            del os.environ["DANA_MOCK_LLM"]
-    else:
-        # When running live tests, ensure mock mode is disabled
-        original_value = os.environ.get("DANA_MOCK_LLM")
-        if original_value:
-            del os.environ["DANA_MOCK_LLM"]
-        yield
-        if original_value:
-            os.environ["DANA_MOCK_LLM"] = original_value
+    # No longer overriding DANA_MOCK_LLM - let environment control it
+    yield
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -119,6 +200,26 @@ def clear_promise_groups_per_test():
     # Clear again after test
     if hasattr(_current_promise_group, "group"):
         delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def ensure_mock_llm_for_tests():
+    """
+    Ensure DANA_MOCK_LLM is set to 'true' for tests that expect mock responses.
+
+    This prevents tests from failing when other tests clear the environment variable.
+    """
+    # Set DANA_MOCK_LLM to true for all tests unless explicitly overridden
+    original_mock_llm = os.environ.get("DANA_MOCK_LLM")
+    os.environ["DANA_MOCK_LLM"] = "true"
+
+    yield
+
+    # Restore original value
+    if original_mock_llm is None:
+        os.environ.pop("DANA_MOCK_LLM", None)
+    else:
+        os.environ["DANA_MOCK_LLM"] = original_mock_llm
 
 
 # Universal Dana (.na) file test integration
@@ -192,23 +293,21 @@ def run_dana_test_file(dana_test_file):
         from tests.conftest import run_dana_test_file
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
-    # Clear struct registry to ensure test isolation
+    # Clear only what's needed for test isolation, not everything
     from dana.__init__ import initialize_module_system, reset_module_system
     from dana.registry import GLOBAL_REGISTRY
 
     registry = GLOBAL_REGISTRY
-    registry.clear_all()
 
-    # Reload core functions after clearing
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+    # Clear type registry to prevent struct type conflicts between tests
+    registry.types.clear()
 
-    do_register_py_builtins(registry.functions)
-    register_py_wrappers(registry.functions)
+    # Clear module registry to ensure fresh module loading
+    registry.modules.clear()
 
-    # Initialize module system for tests that may use imports
-    reset_module_system()
-    initialize_module_system()
+    # Clear agent/resource instances to prevent state bleeding
+    registry.agents.clear()
+    registry.resources.clear()
 
     # Clear Promise group to prevent bleeding between tests
     from dana.core.concurrency.lazy_promise import _current_promise_group
@@ -216,6 +315,10 @@ def run_dana_test_file(dana_test_file):
     # Clear the thread-local Promise group
     if hasattr(_current_promise_group, "group"):
         delattr(_current_promise_group, "group")
+
+    # Initialize module system for tests that may use imports
+    reset_module_system()
+    initialize_module_system()
 
     sandbox = DanaSandbox()
     try:

@@ -120,6 +120,37 @@ class EnhancedErrorFormatter:
             token_match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", error_msg)
             token_value = token_match.group(2) if token_match else None
 
+            # Check for inheritance syntax attempts
+            if source_line and "(" in source_line and ")" in source_line:
+                # Look for inheritance patterns: struct/resource/agent_blueprint Name(Parent):
+                inheritance_patterns = [
+                    (r"struct\s+(\w+)\s*\(\s*(\w+)\s*\)", "struct"),
+                    (r"resource\s+(\w+)\s*\(\s*(\w+)\s*\)", "resource"),
+                    (r"agent_blueprint\s+(\w+)\s*\(\s*(\w+)\s*\)", "agent_blueprint"),
+                    (r"workflow\s+(\w+)\s*\(\s*(\w+)\s*\)", "workflow"),
+                ]
+
+                for pattern, type_name in inheritance_patterns:
+                    match = re.search(pattern, source_line)
+                    if match:
+                        child_name, parent_name = match.groups()
+                        lines = [
+                            f"Dana does not support inheritance for {type_name}s.",
+                            f"  Input: {source_line.strip()}",
+                            "",
+                            "Instead of inheritance, use composition:",
+                            f"  {type_name} {child_name}:",
+                            f"    _parent: {parent_name}  # Composition with delegation",
+                            "    # Add your own fields here",
+                            "",
+                            "Then access parent fields via delegation:",
+                            f"  instance = {child_name}()",
+                            "  instance.parent_field  # Delegated from _parent",
+                            "",
+                            "Learn more: https://docs.dana-lang.org/structs#composition-and-delegation",
+                        ]
+                        return "\n".join(lines)
+
             # Build minimal message
             header = "Syntax Error"
             if line_num is not None and col_num is not None:

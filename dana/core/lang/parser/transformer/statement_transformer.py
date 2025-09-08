@@ -24,8 +24,6 @@ from typing import Any
 from lark import Token, Tree
 
 from dana.core.lang.ast import (
-    AgentPoolStatement,
-    AgentStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -44,7 +42,6 @@ from dana.core.lang.ast import (
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
-    UseStatement,
     WhileLoop,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -65,9 +62,6 @@ AllowedAssignmentValue = (
     | SubscriptExpression
     | AttributeAccess
     | FStringExpression
-    | UseStatement
-    | AgentStatement
-    | AgentPoolStatement
 )
 
 
@@ -312,8 +306,12 @@ class StatementTransformer(BaseTransformer):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
 
+    def sync_function_def(self, items):
+        """Transform a sync function definition rule into a FunctionDefinition node."""
+        return self.function_definition_transformer.sync_function_def(items)
+
     def method_def(self, items):
-        """Transform a method definition rule into a MethodDefinition node."""
+        """Transform a method definition rule into a FunctionDefinition node (for backward compatibility)."""
         return self.function_definition_transformer.method_def(items)
 
     def decorators(self, items):
@@ -324,50 +322,26 @@ class StatementTransformer(BaseTransformer):
         """Transform decorator rule into a Decorator node."""
         return self.function_definition_transformer.decorator(items)
 
-    def struct_definition(self, items):
-        """Transform a struct definition rule into a StructDefinition node."""
-        return self.function_definition_transformer.struct_definition(items)
+    def definition(self, items):
+        """Transform a unified definition rule into appropriate AST node."""
+        return self.function_definition_transformer.definition(items)
 
-    def struct_field(self, items):
-        """Transform a struct field rule into a StructField node."""
-        return self.function_definition_transformer.struct_field(items)
-
-    def agent_definition(self, items):
-        """Transform an agent definition rule into an AgentDefinition node."""
-        return self.function_definition_transformer.agent_definition(items)
-
-    def agent_field(self, items):
-        """Transform an agent field rule into an AgentField node."""
-        return self.function_definition_transformer.agent_field(items)
-
-    def resource_definition(self, items):
-        """Transform a resource definition rule into a ResourceDefinition node."""
-        return self.function_definition_transformer.resource_definition(items)
-
-    def resource_field(self, items):
-        """Transform a resource field rule into a ResourceField node."""
-        return self.function_definition_transformer.resource_field(items)
-
-    def resource_method(self, items):
-        """Transform a resource method rule into a ResourceMethod node."""
-        return self.function_definition_transformer.resource_method(items)
+    def field(self, items):
+        """Transform a unified field rule into a StructField node."""
+        return self.function_definition_transformer.field(items)
 
     # === Agent Singleton Definitions ===
-    def singleton_agent_definition(self, items):
-        """Transform non-alias singleton agent definition into AST."""
+    def singleton_agent_def(self, items):
+        """Transform a unified singleton agent definition into AST."""
         return self.function_definition_transformer.singleton_agent_definition(items)
 
-    def singleton_agent_definition_with_alias(self, items):
-        """Transform alias-based singleton with block into AST."""
-        return self.function_definition_transformer.singleton_agent_definition_with_alias(items)
-
-    def singleton_agent_definition_with_alias_simple(self, items):
+    def agent_alias_def(self, items):
         """Transform alias-based singleton without block into AST."""
-        return self.function_definition_transformer.singleton_agent_definition_with_alias_simple(items)
+        return self.function_definition_transformer.agent_alias_def(items)
 
-    def base_agent_singleton_definition(self, items):
+    def agent_base_def(self, items):
         """Transform base agent singleton `agent Name` into AST."""
-        return self.function_definition_transformer.base_agent_singleton_definition(items)
+        return self.function_definition_transformer.agent_base_def(items)
 
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""
@@ -433,18 +407,6 @@ class StatementTransformer(BaseTransformer):
     def assert_stmt(self, items):
         """Transform an assert statement rule into an AssertStatement node."""
         return self.import_simple_statement_transformer.assert_stmt(items)
-
-    def use_stmt(self, items):
-        """Transform a use_stmt rule into a UseStatement node."""
-        return self.agent_context_transformer.use_stmt(items)
-
-    def agent_stmt(self, items):
-        """Transform an agent_stmt rule into an AgentStatement node."""
-        return self.agent_context_transformer.agent_stmt(items)
-
-    def agent_pool_stmt(self, items):
-        """Transform an agent_pool_stmt rule into an AgentPoolStatement node."""
-        return self.agent_context_transformer.agent_pool_stmt(items)
 
     # === Import Statements ===
     def import_stmt(self, items):

@@ -1,6 +1,5 @@
 # Core utility functions for Dana standard library
 
-
 def add_one(x: int) -> int:
     return x + 1
 

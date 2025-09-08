@@ -1,0 +1,9 @@
+from file_loader import FileLoader
+
+loader = FileLoader()
+
+name = loader.name # This works
+print(name)
+
+files = loader.list_files() # This doesn't work
+print(files)

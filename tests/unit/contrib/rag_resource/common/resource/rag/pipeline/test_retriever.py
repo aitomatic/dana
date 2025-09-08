@@ -8,6 +8,8 @@ import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
 
+from dana.common.exceptions import EmbeddingError
+from dana.common.sys_resource.embedding.embedding_utils import has_embedding_api_keys
 from dana.common.sys_resource.rag.pipeline.retriever import Retriever
 
 
@@ -16,47 +18,76 @@ class TestRetriever:
 
     def test_init(self):
         """Test basic initialization."""
-        mock_index = Mock(spec=VectorStoreIndex)
-        retriever = Retriever(mock_index)
-        assert retriever._index is mock_index
+        if has_embedding_api_keys():
+            # If API keys are available, test normal initialization
+            mock_index = Mock(spec=VectorStoreIndex)
+            retriever = Retriever(mock_index)
+            assert retriever._index is mock_index
+        else:
+            # If no API keys, expect EmbeddingError during initialization
+            with pytest.raises(EmbeddingError):
+                mock_index = Mock(spec=VectorStoreIndex)
+                Retriever(mock_index)
 
     def test_retrieve_basic(self):
         """Test basic retrieval functionality."""
-        # Create mock index and retriever
-        mock_index = Mock(spec=VectorStoreIndex)
-        mock_index_retriever = Mock()
-        mock_index.as_retriever.return_value = mock_index_retriever
+        if has_embedding_api_keys():
+            # If API keys are available, test normal behavior
+            # Create mock index and retriever
+            mock_index = Mock(spec=VectorStoreIndex)
+            mock_index_retriever = Mock()
+            mock_index.as_retriever.return_value = mock_index_retriever
 
-        # Mock retrieval result
-        mock_node = Mock(spec=NodeWithScore)
-        mock_index_retriever.retrieve.return_value = [mock_node]
+            # Mock retrieval result
+            mock_node = Mock(spec=NodeWithScore)
+            mock_index_retriever.retrieve.return_value = [mock_node]
 
-        retriever = Retriever(mock_index)
-        result = retriever.retrieve("test query", num_results=5)
+            retriever = Retriever(mock_index)
+            result = retriever.retrieve("test query", num_results=5)
 
-        # Should return the mock result
-        assert result == [mock_node]
-        mock_index.as_retriever.assert_called_once_with(similarity_top_k=5)
-        mock_index_retriever.retrieve.assert_called_once_with("test query")
+            # Should return the mock result
+            assert result == [mock_node]
+            # The as_retriever call includes both similarity_top_k and embed_model
+            mock_index.as_retriever.assert_called_once()
+            call_args = mock_index.as_retriever.call_args
+            assert call_args.kwargs['similarity_top_k'] == 5
+            assert 'embed_model' in call_args.kwargs
+            mock_index_retriever.retrieve.assert_called_once_with("test query")
+        else:
+            # If no API keys, expect EmbeddingError during initialization
+            with pytest.raises(EmbeddingError):
+                mock_index = Mock(spec=VectorStoreIndex)
+                Retriever(mock_index)
 
     @pytest.mark.asyncio
     async def test_aretrieve_basic(self):
         """Test basic async retrieval functionality."""
-        # Create mock index and retriever
-        mock_index = Mock(spec=VectorStoreIndex)
-        mock_index_retriever = Mock()
-        mock_index.as_retriever.return_value = mock_index_retriever
+        if has_embedding_api_keys():
+            # If API keys are available, test normal behavior
+            # Create mock index and retriever
+            mock_index = Mock(spec=VectorStoreIndex)
+            mock_index_retriever = Mock()
+            mock_index.as_retriever.return_value = mock_index_retriever
 
-        # Mock async retrieval result - need AsyncMock for async method
-        from unittest.mock import AsyncMock
+            # Mock async retrieval result - need AsyncMock for async method
+            from unittest.mock import AsyncMock
 
-        mock_node = Mock(spec=NodeWithScore)
-        mock_index_retriever.aretrieve = AsyncMock(return_value=[mock_node])
+            mock_node = Mock(spec=NodeWithScore)
+            mock_index_retriever.aretrieve = AsyncMock(return_value=[mock_node])
 
-        retriever = Retriever(mock_index)
-        result = await retriever.aretrieve("test query", num_results=3)
+            retriever = Retriever(mock_index)
+            result = await retriever.aretrieve("test query", num_results=3)
 
-        # Should return the mock result
-        assert result == [mock_node]
-        mock_index.as_retriever.assert_called_once_with(similarity_top_k=3)
-        mock_index_retriever.aretrieve.assert_called_once_with("test query")
+            # Should return the mock result
+            assert result == [mock_node]
+            # The as_retriever call includes both similarity_top_k and embed_model
+            mock_index.as_retriever.assert_called_once()
+            call_args = mock_index.as_retriever.call_args
+            assert call_args.kwargs['similarity_top_k'] == 3
+            assert 'embed_model' in call_args.kwargs
+            mock_index_retriever.aretrieve.assert_called_once_with("test query")
+        else:
+            # If no API keys, expect EmbeddingError during initialization
+            with pytest.raises(EmbeddingError):
+                mock_index = Mock(spec=VectorStoreIndex)
+                Retriever(mock_index)

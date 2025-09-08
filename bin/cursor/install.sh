@@ -7,6 +7,7 @@ set -e
 
 # Colors for output
 BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🎯 Installing Dana Language Support for Cursor...${NC}"
@@ -22,4 +23,4 @@ if [[ ! -f "$VSCODE_SCRIPT" ]]; then
 fi
 
 # Call the VSCode install script with --cursor flag
-exec "$VSCODE_SCRIPT" --cursor 
+exec "$VSCODE_SCRIPT" --cursor

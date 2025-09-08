@@ -1,0 +1,1 @@
+uv pip install https://GitHub.com/AI-App/IsDaniel.MCP-Weather-Server/archive/dev.zip --upgrade

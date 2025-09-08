@@ -1,0 +1,9 @@
+"""Webpages Resource Querying."""
+
+agent Neo
+
+def __main__(site='https://asia.nikkei.com'):
+    resource_news_webpage = get_resource('rag', sources=[site], force_reload=True)
+    # TODO: Neo.reason
+    reason("What's happening today according to the new website you've just read?",
+           resources=[resource_news_webpage])

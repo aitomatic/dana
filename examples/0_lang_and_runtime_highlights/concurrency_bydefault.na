@@ -1,0 +1,32 @@
+"""Dana runtime executes function calls concurrently by default."""
+
+
+about_hinton = llm('tell me about Geoff Hinton')
+about_lecun = llm('tell me about Yann LeCun')
+about_bengio = llm('tell me about Yoshua Bengio')
+about_huang = llm('tell me about Jensen Huang')
+
+
+print('Executing LLM calls concurrently...')
+
+
+print(f'
+GEOFF HINTON
+============
+{about_hinton}
+
+
+YANN LECUN
+==========
+{about_lecun}
+
+
+YOSHUA BENGIO
+=============
+{about_bengio}
+
+
+JENSEN HUANG
+============
+{about_huang}
+')

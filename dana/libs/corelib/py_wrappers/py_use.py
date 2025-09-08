@@ -13,8 +13,8 @@ from typing import Union
 
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
+from dana.core.builtin_types.resource import ResourceInstance
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.resource import ResourceInstance
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
@@ -58,7 +58,15 @@ def py_use(
         use("rag", ["doc1.pdf", "doc2.txt"]) -> creates a RAG resource
     """
     if _name is None:
-        _name = Misc.generate_base64_uuid(length=6)
+        _name = Misc.generate_uuid(length=6)
+
+    # Check if resource already exists in context
+    try:
+        existing_resource = context.get_resource(_name)
+        if existing_resource is not None:
+            return existing_resource
+    except:  # noqa: E722
+        pass  # Resource doesn't exist, continue with creation
 
     if function_name.lower() == "mcp":
         from dana.integrations.mcp import MCPResource
@@ -112,6 +120,7 @@ def py_use(
             name=_name,
             **tabular_index_params,
         )
+        Misc.safe_asyncio_run(resource.initialize)
         context.set_resource(_name, resource)
         return resource
     else:

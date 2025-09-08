@@ -34,17 +34,21 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
     dana_module_path = Path(dana_module.__file__).parent
     # Set up default search paths
     if search_paths is None:
-        search_paths = [
+        search_paths = []
+
+    search_paths.extend(
+        [
             str(dana_module_path / "libs" / "stdlib"),
             str(dana_module_path / "libs"),
             str(Path.cwd()),  # Current directory
             str(Path.cwd() / "dana"),  # ./dana directory
             str(Path.home() / ".dana" / "libs"),
         ]
+    )
 
-        # Add paths from DANAPATH environment variable
-        if "DANAPATH" in os.environ:
-            search_paths.extend(os.environ["DANAPATH"].split(os.pathsep))
+    # Add paths from DANAPATH environment variable
+    if "DANAPATH" in os.environ:
+        search_paths.extend(os.environ["DANAPATH"].split(os.pathsep))
 
     # Ensure DANAPATH environment variable includes our default search paths
     _ensure_danapath_includes_defaults(search_paths)

@@ -29,14 +29,18 @@ class LlamaIndexEmbeddingResource(Loggable):
         """
         return self._create_embedding(model_name, dimension_override)
 
-    def get_default_embedding_model(self):
+    def get_default_embedding_model(self, dimension_override: int | None = None):
         """Get a LlamaIndex embedding model using auto-selection."""
         config = self._get_config()
         preferred_models = config.get("embedding", {}).get("preferred_models", [])
 
         for model_name in preferred_models:
             if self._is_model_available(model_name):
-                return self._create_embedding(model_name)
+                try:
+                    return self._create_embedding(model_name, dimension_override)
+                except Exception as e:
+                    self.debug(f"Failed to create embedding model {model_name}: {e}")
+                    continue
 
         raise EmbeddingError("No available embedding models found. Check API keys.")
 
@@ -89,10 +93,14 @@ class LlamaIndexEmbeddingResource(Loggable):
 
         if provider == "openai":
             return self._create_openai_embedding(model_id, provider_config, dimension_override)
+        if provider == "azure":
+            return self._create_azure_embedding(model_id, provider_config, dimension_override)
         elif provider == "cohere":
             return self._create_cohere_embedding(model_id, provider_config, dimension_override)
         elif provider == "huggingface":
             return self._create_huggingface_embedding(model_id, provider_config, dimension_override)
+        elif provider == "ibm_watsonx":
+            return self._create_ibm_watsonx_embedding(model_id, provider_config, dimension_override)
         else:
             raise EmbeddingError(f"Unsupported provider: {provider}")
 
@@ -113,10 +121,10 @@ class LlamaIndexEmbeddingResource(Loggable):
         return required_key is None or bool(os.getenv(required_key))
 
     @staticmethod
-    def _resolve_env_var(value: str) -> str:
+    def _resolve_env_var(value: str, default: str = "") -> str:
         """Resolve environment variable if needed."""
         if isinstance(value, str) and value.startswith("env:"):
-            return os.getenv(value[4:], "")
+            return os.getenv(value[4:], default)
         return value
 
     def _create_openai_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
@@ -129,22 +137,73 @@ class LlamaIndexEmbeddingResource(Loggable):
         """
         try:
             from llama_index.embeddings.openai import OpenAIEmbedding  # type: ignore
+            from llama_index.embeddings.openai.base import DEFAULT_OPENAI_API_BASE  # type: ignore
         except ImportError:
             raise EmbeddingError("Install: pip install llama-index-embeddings-openai")
 
         api_key = self._resolve_env_var(provider_config.get("api_key", ""))
+        base_url = self._resolve_env_var(provider_config.get("base_url", DEFAULT_OPENAI_API_BASE))
+
         if not api_key:
             raise EmbeddingError("OpenAI API key not found")
 
         # Use dimension_override if provided, else fall back to provider_config
         dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
 
-        return OpenAIEmbedding(
-            api_key=api_key,
-            model=model_name,
-            embed_batch_size=provider_config.get("batch_size", 100),
-            dimensions=dimensions,
-        )
+        try:
+            embedding = OpenAIEmbedding(
+                api_key=api_key,
+                api_base=base_url,
+                model=model_name,
+                embed_batch_size=provider_config.get("batch_size", 100),
+                dimensions=dimensions,
+            )
+            return embedding
+        except Exception as _:
+            # Retry embedding with `model_name` and don't use batch_size and dimensions
+            embedding = OpenAIEmbedding(
+                api_key=api_key,
+                api_base=base_url,
+                model_name=model_name,
+            )
+            embedding.get_text_embedding("test") # Try running embedding to see if it works
+            print(f"\033[92mSuccessfully initialized embedding with model_name: {model_name}\033[0m")
+            return embedding
+
+
+
+    def _create_azure_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        try:
+            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # type: ignore
+        except ImportError:
+            raise EmbeddingError("Install: pip install llama-index-embeddings-azure")
+
+        api_key = self._resolve_env_var(provider_config.get("api_key", ""))
+        azure_endpoint = self._resolve_env_var(provider_config.get("base_url", ""))
+        api_version = self._resolve_env_var(provider_config.get("api_version", ""), "2025-01-01-preview")
+        if not api_key or not azure_endpoint:
+            raise EmbeddingError("Azure embedding failed to initialize. Please provide both AZURE_OPENAI_API_KEY and AZURE_OPENAI_API_URL")
+        
+        # Use dimension_override if provided, else fall back to provider_config
+        dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
+
+        try:
+            return AzureOpenAIEmbedding(
+                model=model_name,
+                api_key=api_key,
+                api_version=api_version,
+                azure_endpoint=azure_endpoint,
+                embed_batch_size=provider_config.get("batch_size", 100),
+                dimensions=dimensions,
+            )
+        except Exception as _:
+            # Fallback to not using batch_size and dimensions for compatibility with text-embedding-ada-002
+            return AzureOpenAIEmbedding(
+                model=model_name,
+                api_key=api_key,
+                api_version=api_version,
+                azure_endpoint=azure_endpoint,
+            )
 
     def _create_cohere_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         """Create Cohere LlamaIndex embedding.
@@ -169,6 +228,23 @@ class LlamaIndexEmbeddingResource(Loggable):
             api_key=api_key,
             model_name=model_name,
             embed_batch_size=provider_config.get("batch_size", 64),
+        )
+    
+    def _create_ibm_watsonx_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create IBM Watsonx LlamaIndex embedding.
+        """
+        try:
+            from llama_index.embeddings.ibm import WatsonxEmbeddings  # type: ignore
+        except ImportError:
+            raise EmbeddingError("Install: pip install llama-index-embeddings-ibm")
+        
+        resolved_configs = {
+            k : self._resolve_env_var(v, None) for k, v in provider_config.items()
+        }
+
+        return WatsonxEmbeddings(
+            model_id=model_name,
+            **resolved_configs,
         )
 
     def _create_huggingface_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
@@ -220,16 +296,11 @@ class EmbeddingFactory:
             if model_name:
                 # Use specified model
                 embedding_model = embedding_resource.get_embedding_model(model_name, dimensions)
-
-                # Get actual dimensions
-                if dimensions:
-                    actual_dimensions = dimensions
-                else:
-                    actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
             else:
                 # Use default from dana_config.json
-                embedding_model = embedding_resource.get_default_embedding_model()
-                actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
+                embedding_model = embedding_resource.get_default_embedding_model(dimensions)
+                
+            actual_dimensions = dimensions if dimensions else EmbeddingFactory._extract_dimensions(embedding_model)
 
             return embedding_model, actual_dimensions
 
@@ -287,3 +358,9 @@ class EmbeddingFactory:
 RAGEmbeddingResource = LlamaIndexEmbeddingResource
 get_embedding_model = RAGEmbeddingResource().get_embedding_model
 get_default_embedding_model = RAGEmbeddingResource().get_default_embedding_model
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    print(get_default_embedding_model())

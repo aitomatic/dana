@@ -265,7 +265,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 ]
                 + llm_conversation,
                 "temperature": 0.1,
-                "max_tokens": 500,
+                "max_tokens": 8000,
             }
         )
 
@@ -436,39 +436,39 @@ Your thinking logic here...
         """
         if not xml_content:
             raise ValueError("Empty XML content")
-        
+
         # Remove any leading/trailing whitespace
         xml_content = xml_content.strip()
-        
+
         # Ensure we have valid XML structure
-        if not xml_content.startswith('<') or not xml_content.endswith('>'):
+        if not xml_content.startswith("<") or not xml_content.endswith(">"):
             raise ValueError(f"Invalid XML structure: {xml_content[:100]}...")
-        
+
         # Handle common XML issues more carefully
         import re
-        
+
         # First, let's try to identify if there are unescaped ampersands in text content
         # This is a common cause of XML parsing errors
         def escape_ampersands_in_text(match):
             text = match.group(1)
             # Only escape ampersands that are not already part of XML entities
-            text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', text)
-            return f'>{text}<'
-        
+            text = re.sub(r"&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)", "&amp;", text)
+            return f">{text}<"
+
         # Apply the escaping to text content between tags
-        xml_content = re.sub(r'>([^<]+)<', escape_ampersands_in_text, xml_content)
-        
+        xml_content = re.sub(r">([^<]+)<", escape_ampersands_in_text, xml_content)
+
         # Also handle cases where there might be unescaped ampersands at the end of text content
         # (before closing tags)
         def escape_ampersands_at_end(match):
             text = match.group(1)
             # Only escape ampersands that are not already part of XML entities
-            text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)', '&amp;', text)
-            return f'>{text}</'
-        
+            text = re.sub(r"&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)", "&amp;", text)
+            return f">{text}</"
+
         # Apply the escaping to text content before closing tags
-        xml_content = re.sub(r'>([^<]+)</', escape_ampersands_at_end, xml_content)
-        
+        xml_content = re.sub(r">([^<]+)</", escape_ampersands_at_end, xml_content)
+
         return xml_content
 
     def _extract_params_from_element(self, element) -> dict:
@@ -516,32 +516,25 @@ def test_xml_parsing():
     """
     Test function to help debug XML parsing issues.
     """
-    handler = KnowledgeOpsHandler(
-        domain_knowledge_path="/tmp/test_domain_knowledge.json",
-        domain="Test Domain",
-        role="Test Role"
-    )
-    
+    handler = KnowledgeOpsHandler(domain_knowledge_path="/tmp/test_domain_knowledge.json", domain="Test Domain", role="Test Role")
+
     # Test cases for common XML parsing issues
     test_cases = [
         # Valid XML
         "<test>Hello World</test>",
-        
         # XML with unescaped ampersand
         "<test>Hello & World</test>",
-        
         # XML with special characters
         "<test>Hello < World > Test</test>",
-        
         # Complex XML
         """<attempt_completion>
             <summary>Test summary with & special characters</summary>
             <details>More details here</details>
-        </attempt_completion>"""
+        </attempt_completion>""",
     ]
-    
+
     for i, test_xml in enumerate(test_cases):
-        print(f"\n--- Test Case {i+1} ---")
+        print(f"\n--- Test Case {i + 1} ---")
         print(f"Original XML: {test_xml}")
         try:
             cleaned = handler._clean_xml_content(test_xml)
@@ -550,6 +543,7 @@ def test_xml_parsing():
             print(f"✅ Parsed successfully: {root.tag}")
         except Exception as e:
             print(f"❌ Failed: {e}")
+
 
 if __name__ == "__main__":
     import asyncio

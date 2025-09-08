@@ -2,35 +2,35 @@ import sys
 
 from .. import util_submodule
 from ..util_submodule import small_submodule as small_util_submodule_in_big_util_submodule
-from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
+from ..util_submodule.small_submodule import I_AM_PY as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
-I_AM = sys.modules[__name__].__name__
+I_AM_PY = sys.modules[__name__].__name__
 
 
 print(f"""
 IMPORTED: {util_submodule}
-INTO: {I_AM}
+INTO: {I_AM_PY}
 """)
 
 print(f"""
 ACCESSED: {util_submodule.small_submodule}
-IN: {I_AM}
+IN: {I_AM_PY}
 """)
 print(f"""
 IMPORTED: {small_util_submodule_in_big_util_submodule}
-INTO: {I_AM}
+INTO: {I_AM_PY}
 """)
 
 print(f"""
-ACCESSED: {util_submodule.small_submodule.I_AM}
-IN: {I_AM}
+ACCESSED: {util_submodule.small_submodule.I_AM_PY}
+IN: {I_AM_PY}
 """)
 print(f"""
-ACCESSED: {small_util_submodule_in_big_util_submodule.I_AM}
-IN: {I_AM}
+ACCESSED: {small_util_submodule_in_big_util_submodule.I_AM_PY}
+IN: {I_AM_PY}
 """)
 print(f"""
 IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
-INTO: {I_AM}
+INTO: {I_AM_PY}
 """)

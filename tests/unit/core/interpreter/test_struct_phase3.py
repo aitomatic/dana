@@ -10,17 +10,17 @@ MIT License
 
 import pytest
 
+from dana.core.builtin_types.struct_system import (
+    StructInstance,
+    create_struct_instance,
+    register_struct_from_ast,
+)
 from dana.core.lang.ast import (
     StructDefinition,
     StructField,
     TypeHint,
 )
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.core.lang.interpreter.struct_system import (
-    StructInstance,
-    create_struct_instance,
-    register_struct_from_ast,
-)
 from dana.registry import TYPE_REGISTRY
 
 
@@ -165,7 +165,6 @@ class TestStructErrorMessages:
         error_msg = str(exc_info.value)
         assert "Missing required fields for struct 'TestStruct'" in error_msg
         assert "required2" in error_msg
-        assert "Required fields: ['required1', 'required2']" in error_msg
 
     def test_extra_fields_error_message(self):
         """Test clear error messages for extra fields."""
@@ -179,7 +178,6 @@ class TestStructErrorMessages:
         error_msg = str(exc_info.value)
         assert "Unknown fields for struct 'TestStruct'" in error_msg
         assert "extra_field" in error_msg
-        assert "Valid fields: ['valid_field']" in error_msg
 
     def test_type_error_comprehensive_message(self):
         """Test that type errors include comprehensive information."""

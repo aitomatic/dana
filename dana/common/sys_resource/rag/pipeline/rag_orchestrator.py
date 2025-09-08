@@ -8,9 +8,10 @@ from dana.common.sys_resource.rag.pipeline.index_builder import IndexBuilder
 from dana.common.sys_resource.rag.pipeline.index_combiner import IndexCombiner
 from dana.common.sys_resource.rag.pipeline.retriever import Retriever
 from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.common.sys_resource.embedding import get_default_embedding_model
 from dana.common.utils.misc import Misc
 from llama_index.core.vector_stores import MetadataFilters
-
+import traceback
 
 class RAGOrchestrator(Loggable):
     def __init__(
@@ -21,6 +22,7 @@ class RAGOrchestrator(Loggable):
         index_combiner: IndexCombiner | None = None,
         cache_manager: UnifiedCacheManager | None = None,
         retriever_cls: type[Retriever] = Retriever,
+        embedding_model = None,
     ):
         super().__init__()
         self.loader = loader if loader else DocumentLoader()
@@ -28,6 +30,7 @@ class RAGOrchestrator(Loggable):
         self.index_builder = index_builder if index_builder else IndexBuilder()
         self.index_combiner = index_combiner if index_combiner else IndexCombiner()
         self.cache_manager = cache_manager if cache_manager else UnifiedCacheManager()
+        self.embedding_model = embedding_model if embedding_model else get_default_embedding_model()
         self._retriever_cls = retriever_cls
         self._retriever = None
 
@@ -53,7 +56,7 @@ class RAGOrchestrator(Loggable):
             combined_index = await self.cache_manager.get_combined_index(sources)
             if combined_index is not None:
                 self.debug(f"Found cached combined index for sources: {sources}")
-                self._retriever = self._retriever_cls.from_index(combined_index)
+                self._retriever = self._retriever_cls.from_index(combined_index, embed_model=self.embedding_model)
                 return
 
         # Check for cached individual components (skip if force_reload)
@@ -118,9 +121,10 @@ class RAGOrchestrator(Loggable):
             if docs_for_indexing:
                 self.debug(f"Building indices for {len(docs_for_indexing)} sources")
                 try:
-                    new_indices_by_source = await self.index_builder.build_indices(docs_for_indexing)
+                    new_indices_by_source = await self.index_builder.build_indices(docs_for_indexing, embed_model=self.embedding_model)
                 except Exception as e:
                     self.error(f"Error building indices for {sources_needing_indices}: {e}")
+                    self.error(f"{traceback.format_exc()}")
                     new_indices_by_source = {}
                 indices_by_source.update(new_indices_by_source)
                 # Cache newly built indices
@@ -133,19 +137,19 @@ class RAGOrchestrator(Loggable):
 
             # Create a dummy document to avoid completely empty index issues
             dummy_doc = Document(text="No documents found in the specified sources.", metadata={"source": "system", "type": "fallback"})
-            fallback_index = VectorStoreIndex.from_documents([dummy_doc])
+            fallback_index = VectorStoreIndex.from_documents([dummy_doc], embed_model=self.embedding_model)
             indices_by_source = {"fallback": fallback_index}
             docs_by_source = {"fallback": [dummy_doc]}
 
         # Combine indices
         self.debug(f"Combining {len(indices_by_source)} indices")
-        combined_index = await self.index_combiner.combine_indices(indices_by_source, docs_by_source)
+        combined_index = await self.index_combiner.combine_indices(indices_by_source, docs_by_source, embed_model=self.embedding_model)
 
         # Cache combined index (always cache, even with force_reload)
         await self.cache_manager.set_combined_index(sources, combined_index)
 
         # Create retriever
-        self._retriever = self._retriever_cls.from_index(combined_index)
+        self._retriever = self._retriever_cls.from_index(combined_index, embed_model=self.embedding_model)
         self.debug("Preprocessing completed successfully")
 
     def _preprocess(self, sources: list[str], force_reload: bool = False):

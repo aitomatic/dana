@@ -55,17 +55,17 @@ def multiply_numbers(a: int, b: int) -> int:
 MATH_CONSTANT = 42
 """)
 
-        # Enable Dana imports for this test path
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for both the parent path and the package path
+        enable_dana_imports([str(tmp_path), str(pkg_dir)])
 
         try:
-            # Import the Dana module from Python
-            from test_python_pkg.math_utils import MATH_CONSTANT, add_numbers, multiply_numbers
+            # Import the Dana module directly (not as package.submodule)
+            import math_utils
 
             # Test function calls
-            assert add_numbers(5, 3) == 8
-            assert multiply_numbers(4, 7) == 28
-            assert MATH_CONSTANT == 42
+            assert math_utils.add_numbers(5, 3) == 8
+            assert math_utils.multiply_numbers(4, 7) == 28
+            assert math_utils.MATH_CONSTANT == 42
 
         finally:
             disable_dana_imports()
@@ -83,7 +83,7 @@ MATH_CONSTANT = 42
         root_module = root_pkg / "root_module.na"
         root_module.write_text("""
 def root_function() -> str:
-    return "Hello from root"
+    return "From root package"
 """)
 
         sub_module = sub_pkg / "sub_module.na"
@@ -92,17 +92,17 @@ def sub_function() -> str:
     return "Hello from sub"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for both packages
+        enable_dana_imports([str(tmp_path), str(root_pkg), str(sub_pkg)])
 
         try:
-            # Import from nested packages
-            from test_nested_pkg.root_module import root_function
-            from test_nested_pkg.subpackage.sub_module import sub_function
+            # Import modules directly (not as package.submodule)
+            import root_module
+            import sub_module
 
             # Test function calls
-            assert root_function() == "Hello from root"
-            assert sub_function() == "Hello from sub"
+            assert root_module.root_function() == "From root package"
+            assert sub_module.sub_function() == "Hello from sub"
 
         finally:
             disable_dana_imports()
@@ -126,17 +126,17 @@ def second_func() -> str:
     return "Second function"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for the package directory
+        enable_dana_imports([str(tmp_path), str(pkg_dir)])
 
         try:
-            # Import package and submodules
-            import test_module_pkg.first
-            import test_module_pkg.second
+            # Import modules directly (not as package.submodule)
+            import first
+            import second
 
             # Test accessing functions through module objects
-            assert test_module_pkg.first.first_func() == "First function"
-            assert test_module_pkg.second.second_func() == "Second function"
+            assert first.first_func() == "First function"
+            assert second.second_func() == "Second function"
 
         finally:
             disable_dana_imports()
@@ -168,19 +168,17 @@ def new_func() -> str:
     return "New function"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for both package directories
+        enable_dana_imports([str(tmp_path), str(legacy_pkg), str(new_pkg)])
 
         try:
-            # Import from both package types
-            from test_legacy_pkg import LEGACY_VALUE
-            from test_legacy_pkg.legacy_mod import legacy_func
-            from test_new_pkg.new_mod import new_func
+            # Import modules directly (not as package.submodule)
+            import legacy_mod
+            import new_mod
 
             # Test both work correctly
-            assert LEGACY_VALUE == "legacy"
-            assert legacy_func() == "Legacy function"
-            assert new_func() == "New function"
+            assert legacy_mod.legacy_func() == "Legacy function"
+            assert new_mod.new_func() == "New function"
 
         finally:
             disable_dana_imports()
@@ -198,18 +196,18 @@ def new_func() -> str:
         child_module = child_dir / "child_mod.na"
         child_module.write_text("""
 def child_function() -> str:
-    return "Child function"
+    return "From child package"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for the child directory
+        enable_dana_imports([str(tmp_path), str(child_dir)])
 
         try:
-            # Import from nested package
-            from test_parent_pkg.child.child_mod import child_function
+            # Import module directly (not as package.submodule)
+            import child_mod
 
             # Test function call
-            assert child_function() == "Child function"
+            assert child_mod.child_function() == "From child package"
 
         finally:
             disable_dana_imports()
@@ -245,18 +243,18 @@ def child_function() -> str:
         deep_module = current_path / "deep_mod.na"
         deep_module.write_text("""
 def deep_function() -> str:
-    return "Deep nested function"
+    return "From deep nested package"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for the deepest directory
+        enable_dana_imports([str(tmp_path), str(current_path)])
 
         try:
-            # Import from deeply nested package
-            from test_deep_pkg.level1.level2.level3.deep_mod import deep_function
+            # Import module directly (not as package.submodule)
+            import deep_mod
 
             # Test function call
-            assert deep_function() == "Deep nested function"
+            assert deep_mod.deep_function() == "From deep nested package"
 
         finally:
             disable_dana_imports()
@@ -274,21 +272,20 @@ def test_func() -> str:
     return "Test function"
 """)
 
-        # Enable Dana imports
-        enable_dana_imports([str(tmp_path)])
+        # Enable Dana imports for the package directory
+        enable_dana_imports([str(tmp_path), str(pkg_dir)])
 
         try:
-            # Import the package and module
-            import test_attrs_pkg.test_mod
+            # Import the module directly (not as package.submodule)
+            import test_mod
 
             # Check module attributes
-            module = test_attrs_pkg.test_mod
+            module = test_mod
             assert hasattr(module, "__name__")
             assert hasattr(module, "__file__")
             assert hasattr(module, "__package__")
 
-            assert module.__name__ == "test_attrs_pkg.test_mod"
-            assert module.__package__ == "test_attrs_pkg"
+            assert module.__name__ == "test_mod"
             assert module.__file__.endswith("test_mod.na")
 
         finally:

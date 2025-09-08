@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from llama_index.core import Settings
-from pathlib import Path
 
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
@@ -54,7 +53,6 @@ class RAGResource(BaseSysResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        
         danapath = self._get_danapath()
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
@@ -104,6 +102,9 @@ class RAGResource(BaseSysResource):
     def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
         new_sources = []
         for src in sources:
+            if src.startswith("http"):
+                new_sources.append(src)
+                continue
             if not os.path.isabs(src):
                 if danapath:
                     new_sources.append(str(Path(danapath) / src))
@@ -117,7 +118,7 @@ class RAGResource(BaseSysResource):
         # If cache_dir is absolute, use it as is
         if cache_dir and os.path.isabs(cache_dir):
             return cache_dir
-        
+
         # If cache_dir is relative, try to combine it with DANAPATH
         if danapath:
             if cache_dir:
@@ -142,7 +143,7 @@ class RAGResource(BaseSysResource):
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str:
-        """Retrieve relevant documents."""
+        """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
 

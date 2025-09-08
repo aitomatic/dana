@@ -202,11 +202,7 @@ class StructFunctionRegistry:
         Returns:
             The type name or None if unable to determine
         """
-        # Try to get the type name from the instance
-        if hasattr(instance, "__class__"):
-            return instance.__class__.__name__
-
-        # Try to get from struct_type attribute
+        # Try to get from struct_type attribute first (for Dana struct instances)
         if hasattr(instance, "__struct_type__"):
             struct_type = instance.__struct_type__
             if hasattr(struct_type, "name"):
@@ -223,6 +219,11 @@ class StructFunctionRegistry:
             resource_type = instance.resource_type
             if hasattr(resource_type, "name"):
                 return resource_type.name
+
+        # Try to get the type name from the instance class (fallback)
+        if hasattr(instance, "__class__"):
+            class_name = instance.__class__.__name__
+            return class_name
 
         return None
 
