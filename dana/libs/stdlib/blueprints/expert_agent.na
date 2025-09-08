@@ -35,7 +35,10 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None, quick: bool = Fals
         expert_workflow_name_to_module_map: dict[str, Module] = {}
 
         for expertise_module in dxa.expertise:
-            _expert_workflow_names: list[str] = expertise_module.__all__
+            _expert_workflow_names = expertise_module.__all__
+            # TODO: debug why the below alternative with the `list[str]` type hint
+            # sometimes causes bugs
+            # _expert_workflow_names: list[str] = expertise_module.__all__
             expert_workflow_names.extend(_expert_workflow_names)
             for expert_workflow_name in _expert_workflow_names:
                 expert_workflow_name_to_module_map[expert_workflow_name] = expertise_module
