@@ -73,15 +73,14 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None, quick: bool = Fals
             # after nested-workflow-argument passing bug fix
             expert_workflow_result = closest_matched_expert_workflow(resources, task=problem)
 
-            # TODO (after syntax bug fix)
-            # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
-            #     problem=problem,
-            #     expert_workflow_result=expert_workflow_result)
-
             if quick:
                 solution = expert_workflow_result
 
             else:
+                # TODO (after syntax bug fix)
+                # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
+                #     problem=problem,
+                #     expert_workflow_result=expert_workflow_result)
                 expert_workflow_solution_prompt: str = f"""
                     Given the following problem:
 
