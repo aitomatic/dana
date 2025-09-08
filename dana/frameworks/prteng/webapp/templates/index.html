@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptEngineer - Interactive Prompt Improvement</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .section {
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        .section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .section.left-panel {
+            grid-column: 1;
+        }
+
+        .section.right-panel {
+            grid-column: 2;
+        }
+
+        .section.bottom-panel {
+            grid-column: 1 / -1;
+            grid-row: 3;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #4facfe;
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .prompt-display {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        .response-display {
+            background: #34495e;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+
+        .feedback-display {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .evolution-notice {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+
+        .history-item {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .history-item h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .history-item .timestamp {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .history-item .content {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        /* Fixed panel specific styles */
+        .prompt-display, .response-display {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-content {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto 1fr;
+            }
+
+            .section.left-panel, .section.right-panel {
+                grid-column: 1;
+            }
+
+            .section.bottom-panel {
+                grid-row: 4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 PromptEngineer</h1>
+            <p>Interactive Prompt Improvement with AI Feedback</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="section full-width" id="control-section">
+                <h2>🎛️ Control Panel</h2>
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div id="query-section" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="user-query" placeholder="Ask the AI anything..." style="width: 400px; padding: 12px; font-size: 16px;">
+                        <button class="btn btn-success" id="ask-button" onclick="askAI()">
+                            Ask AI
+                        </button>
+                    </div>
+                </div>
+                <div id="status-messages" style="margin-top: 10px;"></div>
+            </div>
+
+            <!-- Left Panel: Prompts -->
+            <div class="section left-panel" id="prompts-section">
+                <h2>📋 Prompts</h2>
+                <div class="form-group">
+                    <label>Prompt ID:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <select id="prompt-id-select" style="width: 200px; padding: 8px; font-size: 14px;" onchange="loadPromptId()">
+                            <option value="">Select existing or create new...</option>
+                        </select>
+                        <input type="text" id="prompt-id-input" placeholder="Enter new prompt ID" style="width: 200px; padding: 8px; font-size: 14px;">
+                        <button class="btn btn-secondary" onclick="createNewPromptId()">Create New</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>System Prompt: <span id="prompt-version" style="font-weight: normal; color: #666; font-size: 12px;"></span></label>
+                    <div id="system-prompt" class="prompt-display">(No system prompt)</div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Response & Feedback -->
+            <div class="section right-panel" id="response-feedback-section">
+                <h2>🤖 Response & Feedback</h2>
+                <div class="form-group">
+                    <label>AI Response:</label>
+                    <div id="ai-response" class="response-display">Click "Generate Response" to get an AI response.</div>
+                </div>
+
+                <div class="hidden" id="feedback-section">
+                    <div class="form-group">
+                        <label for="feedback-text">Your Feedback:</label>
+                        <textarea id="feedback-text" placeholder="e.g., 'The response was good but could be more detailed'"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn" onclick="processFeedback()">
+                            <span id="feedback-loading" class="loading hidden"></span>
+                            Process Feedback
+                        </button>
+                        <button class="btn btn-secondary" onclick="processLLMFeedback()">
+                            <span id="llm-feedback-loading" class="loading hidden"></span>
+                            AI Feedback
+                        </button>
+                    </div>
+                    <div id="feedback-status"></div>
+                    <div id="feedback-display"></div>
+                    <div id="evolution-notice"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Panel: History -->
+            <div class="section bottom-panel" id="history-section">
+                <h2>📚 Conversation History</h2>
+                <button class="btn btn-warning" onclick="loadHistory()">Refresh History</button>
+                <div id="history-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let isInitialized = false;
+        let currentPromptId = null;
+
+        // Auto-initialize when page loads
+        window.addEventListener('load', async () => {
+            await initializeSession();
+            // Only load prompt IDs after session is initialized
+            if (isInitialized) {
+                await loadExistingPromptIds();
+            }
+        });
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+                console.log('🔵 API REQUEST:', endpoint, 'Data:', data);
+            } else {
+                console.log('🔵 API REQUEST:', endpoint, 'No data');
+            }
+
+            try {
+                const response = await fetch(endpoint, options);
+                const result = await response.json();
+                console.log('🟢 API RESPONSE:', endpoint, 'Result:', result);
+                return result;
+            } catch (error) {
+                console.error('🔴 API ERROR:', endpoint, error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        function setButtonLoading(buttonId, isLoading) {
+            const button = document.getElementById(buttonId);
+            if (isLoading) {
+                button.disabled = true;
+                button.textContent = 'Working...';
+            } else {
+                button.disabled = false;
+                button.textContent = 'Ask AI';
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const element = document.getElementById('status-messages');
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showSection(sectionId) {
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        function showSections(...sectionIds) {
+            sectionIds.forEach(id => showSection(id));
+        }
+
+        async function loadExistingPromptIds() {
+            console.log('🔵 LOADING: Loading existing prompt IDs...');
+            try {
+                const result = await apiCall('/api/prompt-ids', 'GET');
+                console.log('🟢 PROMPT IDS LOADED:', result);
+
+                if (result.success) {
+                    const select = document.getElementById('prompt-id-select');
+                    select.innerHTML = '<option value="">Select existing or create new...</option>';
+
+                    result.prompt_ids.forEach(promptId => {
+                        const option = document.createElement('option');
+                        option.value = promptId;
+                        option.textContent = promptId;
+                        select.appendChild(option);
+                    });
+
+                    // Add session ID as default option
+                    if (sessionId && !result.prompt_ids.includes(sessionId)) {
+                        const option = document.createElement('option');
+                        option.value = sessionId;
+                        option.textContent = `${sessionId} (default)`;
+                        select.appendChild(option);
+                    }
+
+                    console.log('🟢 SUCCESS: Prompt IDs loaded into dropdown');
+                }
+            } catch (error) {
+                console.log('🔴 ERROR: Failed to load prompt IDs:', error);
+            }
+        }
+
+        async function loadPromptId() {
+            const selectedId = document.getElementById('prompt-id-select').value;
+            console.log('🔵 USER ACTION: loadPromptId() called');
+            console.log('🔵 USER INPUT: selected prompt_id =', selectedId);
+
+            if (selectedId) {
+                currentPromptId = selectedId;
+                console.log('🟢 SUCCESS: Prompt ID loaded:', selectedId);
+                showStatus(`✅ Loaded prompt ID: ${selectedId}`, 'success');
+
+                // Load the system prompt for this ID
+                await loadSystemPromptForId(selectedId);
+            } else {
+                currentPromptId = null;
+                console.log('ℹ️ INFO: No prompt ID selected');
+            }
+        }
+
+        async function createNewPromptId() {
+            const inputId = document.getElementById('prompt-id-input').value.trim();
+            console.log('🔵 USER ACTION: createNewPromptId() called');
+            console.log('🔵 USER INPUT: new prompt_id =', inputId);
+
+            if (!inputId) {
+                console.log('🔴 ERROR: No prompt ID provided');
+                showStatus('Please enter a prompt ID', 'error');
+                return;
+            }
+
+            currentPromptId = inputId;
+            document.getElementById('prompt-id-input').value = '';
+            console.log('🟢 SUCCESS: New prompt ID created:', inputId);
+            showStatus(`✅ Created new prompt ID: ${inputId}`, 'success');
+
+            // Load the system prompt for this new ID (will be default)
+            await loadSystemPromptForId(inputId);
+        }
+
+        async function loadSystemPromptForId(promptId) {
+            console.log('🟡 LOADING: Loading system prompt for ID:', promptId);
+            try {
+                const result = await apiCall('/api/start', 'POST', { query: 'load system prompt', prompt_id: promptId });
+                console.log('🟢 SYSTEM PROMPT LOADED FOR ID:', result);
+
+                if (result.success) {
+                    document.getElementById('system-prompt').textContent = result.system_message || '(No system prompt)';
+
+                    // Update version display
+                    const versionDisplay = document.getElementById('prompt-version');
+                    if (result.version) {
+                        versionDisplay.textContent = `(v${result.version})`;
+                    } else {
+                        versionDisplay.textContent = '(v1)';
+                    }
+
+                    console.log('🟢 SUCCESS: System prompt loaded for ID:', promptId, 'version:', result.version || 1);
+                }
+            } catch (error) {
+                console.log('🔴 ERROR: Failed to load system prompt for ID:', error);
+            }
+        }
+
+        async function initializeSession() {
+            console.log('🔵 USER ACTION: initializeSession() called');
+            if (isInitialized) {
+                console.log('ℹ️ INFO: Already initialized, skipping');
+                return;
+            }
+
+            console.log('🟡 STATUS: Initializing session...');
+            showStatus('Initializing session...', 'info');
+
+            try {
+                console.log('🟡 API CALL: /api/init');
+                const result = await apiCall('/api/init', 'POST');
+                console.log('🟢 API RESPONSE: /api/init result:', result);
+
+                if (result.success) {
+                    sessionId = result.session_id;
+                    isInitialized = true;
+                    console.log('🟢 SUCCESS: Session initialized with ID:', sessionId);
+                    showStatus(`✅ ${result.message}`, 'success');
+                    showSection('prompts-section');
+                    showSection('response-feedback-section');
+                    showSection('history-section');
+
+                    // Load existing prompt IDs after successful initialization
+                    await loadExistingPromptIds();
+                } else {
+                    console.log('🔴 API ERROR: /api/init failed:', result.error);
+                    showStatus(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.log('🔴 EXCEPTION: Error in initializeSession:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function askAI() {
+            console.log('🔵 USER ACTION: askAI() called - FUNCTION START');
+            const query = document.getElementById('user-query').value.trim();
+            console.log('🔵 USER INPUT: query =', query);
+
+            if (!query) {
+                console.log('🔴 ERROR: No query provided');
+                showStatus('Please enter a query', 'error');
+                return;
+            }
+
+            console.log('🟢 SUCCESS: Query provided, proceeding with API calls');
+
+            if (!isInitialized) {
+                console.log('🔴 ERROR: Not initialized');
+                showStatus('Please wait for initialization to complete', 'error');
+                return;
+            }
+
+            console.log('🟢 SUCCESS: Initialization check passed');
+
+            console.log('🟡 STATUS: Starting AI request...');
+            setButtonLoading('ask-button', true);
+            showStatus('Asking AI...', 'info');
+
+            try {
+                // Start conversation
+                const requestData = { query };
+                if (currentPromptId) {
+                    requestData.prompt_id = currentPromptId;
+                    console.log('🟡 API CALL: /api/start with query:', query, 'and custom prompt_id:', currentPromptId);
+                } else {
+                    console.log('🟡 API CALL: /api/start with query:', query, '(auto-generated prompt_id)');
+                }
+                const startResult = await apiCall('/api/start', 'POST', requestData);
+                console.log('🟢 API RESPONSE: /api/start result:', startResult);
+
+                if (!startResult.success) {
+                    console.log('🔴 API ERROR: /api/start failed:', startResult.error);
+                    showStatus(`❌ ${startResult.error}`, 'error');
+                    return;
+                }
+
+                // Update prompts display
+                console.log('🟡 UI UPDATE: Full startResult:', JSON.stringify(startResult, null, 2));
+                console.log('🟡 UI UPDATE: Setting system prompt:', startResult.system_message);
+                console.log('🟡 UI UPDATE: Setting user prompt:', startResult.user_message);
+                console.log('🟡 UI UPDATE: System prompt length:', startResult.system_message ? startResult.system_message.length : 'null/undefined');
+                document.getElementById('system-prompt').textContent = startResult.system_message || '(No system prompt received)';
+
+                // Generate response
+                console.log('🟡 API CALL: /api/generate');
+                const responseResult = await apiCall('/api/generate', 'POST');
+                console.log('🟢 API RESPONSE: /api/generate result:', responseResult);
+
+                if (responseResult.success) {
+                    console.log('🟢 SUCCESS: AI response generated');
+                    showStatus('✅ AI response generated', 'success');
+                    document.getElementById('ai-response').textContent = responseResult.response;
+                    showSection('feedback-section');
+                } else {
+                    console.log('🔴 API ERROR: /api/generate failed:', responseResult.error);
+                    showStatus(`❌ ${responseResult.error}`, 'error');
+                }
+            } catch (error) {
+                console.log('🔴 EXCEPTION: Error in askAI:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                console.log('🟡 UI UPDATE: Resetting button state');
+                setButtonLoading('ask-button', false);
+            }
+        }
+
+
+        async function processFeedback() {
+            const feedback = document.getElementById('feedback-text').value.trim();
+            console.log('🔵 USER ACTION: processFeedback() called');
+            console.log('🔵 USER INPUT: feedback =', feedback);
+
+            if (!feedback) {
+                console.log('🔴 ERROR: No feedback provided');
+                showStatus('Please provide feedback', 'error');
+                return;
+            }
+
+            console.log('🟡 STATUS: Processing manual feedback...');
+            showStatus('Processing feedback...', 'info');
+
+            try {
+                const promptId = currentPromptId || sessionId;
+                console.log('🟡 API CALL: /api/feedback with feedback:', feedback, 'prompt_id:', promptId);
+                const result = await apiCall('/api/feedback', 'POST', { feedback, prompt_id: promptId });
+                console.log('🟢 API RESPONSE: /api/feedback result:', result);
+
+                if (result.success) {
+                    console.log('🟢 SUCCESS: Feedback processed');
+                    showStatus('✅ Feedback processed successfully', 'success');
+
+                    // Clear the feedback input
+                    const feedbackInput = document.getElementById('feedback-text');
+                    if (feedbackInput) {
+                        feedbackInput.value = '';
+                        console.log('🟢 SUCCESS: Feedback input cleared');
+                    } else {
+                        console.log('🔴 ERROR: Feedback input element not found');
+                    }
+
+                    document.getElementById('feedback-display').innerHTML =
+                        `<div class="feedback-display">${result.feedback}</div>`;
+
+                    if (result.evolved) {
+                        console.log('🔄 EVOLUTION: System prompt evolved to version', result.version);
+                        console.log('🔄 EVOLUTION: New system message:', result.new_system_message);
+                        document.getElementById('evolution-notice').innerHTML =
+                            `<div class="evolution-notice">🔄 System prompt evolved to version ${result.version}!</div>`;
+                        document.getElementById('system-prompt').textContent = result.new_system_message;
+
+                        // Update version display
+                        const versionDisplay = document.getElementById('prompt-version');
+                        versionDisplay.textContent = `(v${result.version})`;
+
+                        // Auto-generate new response with evolved prompt
+                        console.log('🔄 AUTO-GENERATE: Generating new response with evolved prompt...');
+                        showStatus('🔄 Generating new response with evolved prompt...', 'info');
+                        await generateNewResponse();
+                    } else {
+                        console.log('ℹ️ INFO: No evolution occurred');
+                    }
+                } else {
+                    console.log('🔴 API ERROR: /api/feedback failed:', result.error);
+                    showStatus(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.log('🔴 EXCEPTION: Error in processFeedback:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function processLLMFeedback() {
+            console.log('🔵 USER ACTION: processLLMFeedback() called');
+            console.log('🟡 STATUS: Generating AI feedback...');
+            showStatus('Generating AI feedback...', 'info');
+
+            try {
+                const promptId = currentPromptId || sessionId;
+                console.log('🟡 API CALL: /api/feedback with use_llm_feedback: true, prompt_id:', promptId);
+                const result = await apiCall('/api/feedback', 'POST', { use_llm_feedback: true, prompt_id: promptId });
+                console.log('🟢 API RESPONSE: /api/feedback result:', result);
+
+                if (result.success) {
+                    console.log('🟢 SUCCESS: AI feedback generated');
+                    showStatus('✅ AI feedback generated successfully', 'success');
+                    document.getElementById('feedback-display').innerHTML =
+                        `<div class="feedback-display">🤖 AI Feedback: ${result.feedback}</div>`;
+
+                    if (result.evolved) {
+                        console.log('🔄 EVOLUTION: System prompt evolved to version', result.version);
+                        console.log('🔄 EVOLUTION: New system message:', result.new_system_message);
+                        document.getElementById('evolution-notice').innerHTML =
+                            `<div class="evolution-notice">🔄 System prompt evolved to version ${result.version}!</div>`;
+                        document.getElementById('system-prompt').textContent = result.new_system_message;
+
+                        // Update version display
+                        const versionDisplay = document.getElementById('prompt-version');
+                        versionDisplay.textContent = `(v${result.version})`;
+
+                        // Auto-generate new response with evolved prompt
+                        console.log('🔄 AUTO-GENERATE: Generating new response with evolved prompt...');
+                        showStatus('🔄 Generating new response with evolved prompt...', 'info');
+                        await generateNewResponse();
+                    } else {
+                        console.log('ℹ️ INFO: No evolution occurred');
+                    }
+                } else {
+                    console.log('🔴 API ERROR: /api/feedback failed:', result.error);
+                    showStatus(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                console.log('🔴 EXCEPTION: Error in processLLMFeedback:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function generateNewResponse() {
+            console.log('🔄 AUTO-GENERATE: Starting new response generation...');
+            try {
+                const responseResult = await apiCall('/api/generate', 'POST');
+                console.log('🟢 AUTO-GENERATE: API response:', responseResult);
+
+                if (responseResult.success) {
+                    console.log('🟢 AUTO-GENERATE: New response generated successfully');
+                    showStatus('✅ New response generated with evolved prompt!', 'success');
+                    document.getElementById('ai-response').textContent = responseResult.response;
+                } else {
+                    console.log('🔴 AUTO-GENERATE: Failed to generate new response:', responseResult.error);
+                    showStatus(`❌ Failed to generate new response: ${responseResult.error}`, 'error');
+                }
+            } catch (error) {
+                console.log('🔴 AUTO-GENERATE: Exception during new response generation:', error);
+                showStatus(`❌ Error generating new response: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const result = await apiCall('/api/history');
+
+                if (result.success) {
+                    const historyContent = document.getElementById('history-content');
+                    historyContent.innerHTML = `
+                        <div class="status info">
+                            📊 Total interactions: ${result.history.length} |
+                            Template versions: ${result.template_versions}
+                        </div>
+                    `;
+
+                    result.history.forEach((item, index) => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        historyItem.innerHTML = `
+                            <h4>Interaction ${index + 1}</h4>
+                            <div class="timestamp">${new Date(item.timestamp).toLocaleString()}</div>
+                            <div class="content"><strong>Response:</strong> ${item.response}</div>
+                            ${item.feedback ? `<div class="content"><strong>Feedback:</strong> ${item.feedback}</div>` : ''}
+                            ${item.evaluation_score ? `<div class="content"><strong>Evaluation Score:</strong> ${item.evaluation_score}</div>` : ''}
+                        `;
+                        historyContent.appendChild(historyItem);
+                    });
+                } else {
+                    document.getElementById('history-content').innerHTML =
+                        `<div class="status error">❌ ${result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('history-content').innerHTML =
+                    `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
