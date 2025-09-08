@@ -5,11 +5,22 @@ PromptEngineer - A framework for iterative prompt optimization.
 import re
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Union, TYPE_CHECKING
 from dana.common.mixins.loggable import Loggable
 
 from .models import Prompt, Interaction, Evaluation
 from .persistence import PromptEngineerPersistence
+from .prompts import (
+    LLM_EVALUATION_PROMPT,
+    FEEDBACK_PARSING_PROMPT,
+    TEMPLATE_EVOLUTION_PROMPT,
+    EVALUATION_CRITERIA,
+    DEFAULT_CRITERIA,
+    DEFAULT_LLM_CRITERIA,
+)
+
+if TYPE_CHECKING:
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class PromptEngineer(Loggable):
@@ -18,15 +29,39 @@ class PromptEngineer(Loggable):
     and user feedback to continuously improve prompt templates and generation strategies.
     """
 
-    def __init__(self, base_dir: str = "~/.dana/prteng"):
-        """Initialize the PromptEngineer with persistence layer."""
+    def __init__(self, base_dir: str = "~/.dana/prteng", llm_resource: "LLMResourceInstance | None" = None):
+        """Initialize the PromptEngineer with persistence layer and LLM resource."""
         super().__init__()
         self.persistence = PromptEngineerPersistence(base_dir)
         self._template_cache: dict[str, str] = {}
         self._prompt_cache: dict[str, Prompt] = {}
 
+        # LLM resource management
+        self.llm_resource = llm_resource
+        if self.llm_resource is None:
+            self.llm_resource = self._create_default_llm_resource()
+
+    def _create_default_llm_resource(self) -> "LLMResourceInstance | None":
+        """Create a default LLM resource if none provided."""
+        try:
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+
+            llm_resource = LLMResourceType.create_instance_from_values(
+                {
+                    "name": "prompt_engineer_default",
+                    "model": "auto",
+                    "temperature": 0.3,
+                    "max_tokens": 1000,
+                }
+            )
+            llm_resource.initialize()
+            return llm_resource
+        except ImportError:
+            self.logger.warning("No LLM resource available - some features will be limited")
+            return None
+
     def generate(
-        self, user_query: str, prompt_id: str | None = None, system_template: str | None = None, template_data: dict[str, Any] | None = None
+        self, user_query: str, prompt_id: str | None = None, system_template: str | None = None, template_data: dict[str, str] | None = None
     ) -> Prompt:
         """
         Generate a prompt with user_query as the user message and system_template as the system message.
@@ -141,6 +176,261 @@ class PromptEngineer(Loggable):
         if evaluation and evaluation.overall_score < 0.7:  # Threshold for improvement
             self._evolve_template(prompt_id, evaluation)
 
+    def evaluate(
+        self,
+        prompt_id: str,
+        response: str,
+        criteria: list[str] | None = None,
+        custom_objective: str | None = None,
+        evaluation_type: str = "auto",
+    ) -> Evaluation:
+        """
+        Evaluate a response against a prompt using the prompt_id pattern.
+
+        Args:
+            prompt_id: The ID of the prompt to evaluate against
+            response: The LLM response to evaluate
+            criteria: List of evaluation criteria (e.g., ["accuracy", "clarity", "completeness"])
+            custom_objective: Custom evaluation objective/requirement
+            evaluation_type: Type of evaluation to perform ("auto", "llm", "heuristic", "hybrid")
+
+        Returns:
+            Evaluation: Structured evaluation results with scores and suggestions
+        """
+        # Load the prompt data internally
+        prompt = self._load_prompt_for_evaluation(prompt_id)
+
+        # Determine evaluation type
+        if evaluation_type == "auto":
+            evaluation_type = "llm" if self.llm_resource else "heuristic"
+
+        # Perform evaluation based on type
+        if evaluation_type == "llm":
+            return self._llm_evaluate(prompt, response, criteria, custom_objective)
+        elif evaluation_type == "heuristic":
+            return self._heuristic_evaluate(prompt, response, criteria, custom_objective)
+        elif evaluation_type == "hybrid":
+            return self._hybrid_evaluate(prompt, response, criteria, custom_objective)
+        else:
+            raise ValueError(f"Unknown evaluation_type: {evaluation_type}")
+
+    def _load_prompt_for_evaluation(self, prompt_id: str) -> Prompt:
+        """Load prompt data for evaluation, leveraging existing caching."""
+        # Check cache first
+        if prompt_id in self._prompt_cache:
+            return self._prompt_cache[prompt_id]
+
+        # Load from persistence
+        latest_template = self.persistence.get_latest_template(prompt_id)
+
+        # Get the most recent user message from history
+        # For now, we'll use an empty string since Interaction doesn't store user_message
+        # In a future improvement, we could store user_message in Interaction or reconstruct it
+        latest_user_message = ""
+
+        prompt = Prompt(id=prompt_id, system_message=latest_template or "", user_message=latest_user_message)
+        self._prompt_cache[prompt_id] = prompt
+        return prompt
+
+    def _llm_evaluate(
+        self, prompt: Prompt, response: str, criteria: list[str] | None = None, custom_objective: str | None = None
+    ) -> Evaluation:
+        """LLM-based evaluation using self.llm_resource."""
+        if self.llm_resource is None:
+            raise ValueError("No LLM resource available for evaluation")
+
+        # Build evaluation criteria section
+        criteria_text = ""
+        if criteria:
+            criteria_list = []
+            for criterion in criteria:
+                if criterion in EVALUATION_CRITERIA:
+                    criteria_list.append(f"- {criterion.title()}: {EVALUATION_CRITERIA[criterion]}")
+
+            if criteria_list:
+                criteria_text = "\n\nEVALUATION CRITERIA (focus on these aspects):\n" + "\n".join(criteria_list)
+
+        # Add custom objective if provided
+        objective_text = ""
+        if custom_objective:
+            objective_text = f"\n\nADDITIONAL OBJECTIVE: {custom_objective}"
+
+        try:
+            from dana.common.types import BaseRequest
+
+            feedback_prompt = LLM_EVALUATION_PROMPT.format(
+                system_message=prompt.system_message,
+                user_message=prompt.user_message,
+                response=response,
+                criteria_text=criteria_text,
+                objective_text=objective_text,
+            )
+
+            request_obj = BaseRequest(
+                arguments={
+                    "messages": [{"role": "user", "content": feedback_prompt}],
+                    "temperature": 0.3,
+                    "max_tokens": 500,
+                }
+            )
+
+            result = self.llm_resource.call(request_obj)
+            feedback_text = result.content if hasattr(result, "content") else str(result)
+
+            # Parse the feedback into structured evaluation
+            return self._parse_llm_feedback_to_evaluation(feedback_text, prompt.id, response, criteria)
+
+        except Exception as e:
+            self.logger.error(f"LLM evaluation failed: {e}")
+            # Fallback to heuristic evaluation
+            return self._heuristic_evaluate(prompt, response, criteria, custom_objective)
+
+    def _heuristic_evaluate(
+        self, prompt: Prompt, response: str, criteria: list[str] | None = None, custom_objective: str | None = None
+    ) -> Evaluation:
+        """Heuristic-based evaluation."""
+        criteria_scores = {}
+
+        # Default criteria if none specified
+        if not criteria:
+            criteria = DEFAULT_CRITERIA
+
+        # Length evaluation
+        if "length" in criteria:
+            word_count = len(response.split())
+            if 50 <= word_count <= 500:
+                criteria_scores["length"] = 0.8
+            elif word_count < 50:
+                criteria_scores["length"] = 0.4
+            else:
+                criteria_scores["length"] = 0.6
+
+        # Structure evaluation
+        if "structure" in criteria:
+            if "\n\n" in response or "\n- " in response or "\n1. " in response:
+                criteria_scores["structure"] = 0.8
+            else:
+                criteria_scores["structure"] = 0.5
+
+        # Completeness evaluation
+        if "completeness" in criteria:
+            prompt_words = set(prompt.text.lower().split())
+            response_words = set(response.lower().split())
+            overlap = len(prompt_words.intersection(response_words))
+            criteria_scores["completeness"] = min(0.9, overlap / max(len(prompt_words), 1) * 2)
+
+        # Clarity evaluation
+        if "clarity" in criteria:
+            sentences = response.split(".")
+            avg_sentence_length = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
+            if 10 <= avg_sentence_length <= 25:
+                criteria_scores["clarity"] = 0.8
+            else:
+                criteria_scores["clarity"] = 0.6
+
+        # Add other criteria with default scores
+        for criterion in criteria:
+            if criterion not in criteria_scores:
+                criteria_scores[criterion] = 0.7  # Default score
+
+        overall_score = sum(criteria_scores.values()) / len(criteria_scores)
+
+        # Generate improvement suggestions
+        suggestions = []
+        if criteria_scores.get("length", 0.5) < 0.6:
+            suggestions.append("Adjust response length")
+        if criteria_scores.get("structure", 0.5) < 0.6:
+            suggestions.append("Improve response structure")
+        if criteria_scores.get("clarity", 0.5) < 0.6:
+            suggestions.append("Enhance clarity and readability")
+        if criteria_scores.get("completeness", 0.5) < 0.6:
+            suggestions.append("Provide more complete information")
+
+        return Evaluation(
+            prompt_id=prompt.id,
+            response=response,
+            criteria_scores=criteria_scores,
+            overall_score=overall_score,
+            improvement_suggestions=suggestions,
+            confidence=0.2,  # Low confidence to distinguish from LLM evaluation
+        )
+
+    def _hybrid_evaluate(
+        self, prompt: Prompt, response: str, criteria: list[str] | None = None, custom_objective: str | None = None
+    ) -> Evaluation:
+        """Hybrid evaluation combining LLM and heuristic approaches."""
+        # Get both evaluations
+        llm_eval = self._llm_evaluate(prompt, response, criteria, custom_objective)
+        heuristic_eval = self._heuristic_evaluate(prompt, response, criteria, custom_objective)
+
+        # Combine scores (weighted average)
+        combined_scores = {}
+        for criterion in set(llm_eval.criteria_scores.keys()) | set(heuristic_eval.criteria_scores.keys()):
+            llm_score = llm_eval.criteria_scores.get(criterion, 0.5)
+            heuristic_score = heuristic_eval.criteria_scores.get(criterion, 0.5)
+            combined_scores[criterion] = (llm_score * 0.7) + (heuristic_score * 0.3)
+
+        overall_score = sum(combined_scores.values()) / len(combined_scores)
+
+        # Combine suggestions
+        combined_suggestions = list(set(llm_eval.improvement_suggestions + heuristic_eval.improvement_suggestions))
+
+        return Evaluation(
+            prompt_id=prompt.id,
+            response=response,
+            criteria_scores=combined_scores,
+            overall_score=overall_score,
+            improvement_suggestions=combined_suggestions,
+            confidence=0.8,  # Higher confidence for hybrid approach
+        )
+
+    def _parse_llm_feedback_to_evaluation(
+        self, feedback_text: str, prompt_id: str, response: str, criteria: list[str] | None = None
+    ) -> Evaluation:
+        """Parse LLM feedback text into structured Evaluation object."""
+        # Simple parsing - in a real implementation, this could be more sophisticated
+        criteria_scores = {}
+
+        # Default criteria if none specified
+        if not criteria:
+            criteria = DEFAULT_LLM_CRITERIA
+
+        # Simple scoring based on feedback content
+        feedback_lower = feedback_text.lower()
+
+        for criterion in criteria:
+            if "good" in feedback_lower or "excellent" in feedback_lower:
+                criteria_scores[criterion] = 0.8
+            elif "poor" in feedback_lower or "bad" in feedback_lower:
+                criteria_scores[criterion] = 0.3
+            else:
+                criteria_scores[criterion] = 0.6
+
+        overall_score = sum(criteria_scores.values()) / len(criteria_scores)
+
+        # Extract suggestions from feedback
+        suggestions = []
+        if "length" in feedback_lower:
+            suggestions.append("Adjust response length")
+        if "structure" in feedback_lower:
+            suggestions.append("Improve response structure")
+        if "clarity" in feedback_lower:
+            suggestions.append("Enhance clarity")
+        if "complete" in feedback_lower:
+            suggestions.append("Provide more complete information")
+
+        if not suggestions:
+            suggestions = ["Review and improve the system prompt based on the feedback"]
+
+        return Evaluation(
+            prompt_id=prompt_id,
+            response=response,
+            criteria_scores=criteria_scores,
+            overall_score=overall_score,
+            improvement_suggestions=suggestions,
+            confidence=0.8,  # High confidence for LLM evaluation
+        )
+
     def _parse_template(self, template: str) -> tuple[str, str | None]:
         """
         Extract UUID from template metadata and return clean template.
@@ -186,46 +476,13 @@ class PromptEngineer(Loggable):
 
     def _llm_parse_feedback(self, feedback: str) -> Evaluation:
         """Use LLM to intelligently parse user feedback."""
+        if self.llm_resource is None:
+            raise ValueError("No LLM resource available for feedback parsing")
+
         import json
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
         from dana.common.types import BaseRequest
 
-        llm_resource = LLMResourceType.create_instance_from_values(
-            {
-                "name": "feedback_parser",
-                "model": "auto",
-                "temperature": 0.1,  # Very low temperature for consistent parsing
-                "max_tokens": 300,
-            }
-        )
-        llm_resource.initialize()
-
-        parsing_prompt = f"""You are an expert at analyzing user feedback for AI responses. Parse the following user feedback and provide a structured evaluation.
-
-USER FEEDBACK: "{feedback}"
-
-Please analyze this feedback and provide:
-1. Overall satisfaction score (0.0 to 1.0, where 1.0 is perfect)
-2. Specific improvement suggestions
-3. Scores for different criteria (clarity, completeness, style, length)
-
-Respond in this exact JSON format:
-{{
-    "overall_score": 0.7,
-    "criteria_scores": {{
-        "clarity": 0.8,
-        "completeness": 0.6,
-        "style": 0.7,
-        "length": 0.5
-    }},
-    "improvement_suggestions": [
-        "Make response more concise",
-        "Provide more relatable examples"
-    ],
-    "confidence": 0.8
-}}
-
-Only return the JSON, no other text."""
+        parsing_prompt = FEEDBACK_PARSING_PROMPT.format(feedback=feedback)
 
         request = BaseRequest(
             arguments={
@@ -235,7 +492,7 @@ Only return the JSON, no other text."""
             }
         )
 
-        response = llm_resource.query_sync(request)
+        response = self.llm_resource.call(request)
 
         if response.success and response.content:
             try:
@@ -382,20 +639,11 @@ Only return the JSON, no other text."""
 
     def _llm_evolve_template(self, current_template: str, evaluation: Evaluation, versions: list, prompt_id: str) -> str:
         """Use LLM to intelligently evolve the template based on feedback."""
-        try:
-            # Get LLM resource from the system
-            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
-            from dana.common.types import BaseRequest
+        if self.llm_resource is None:
+            raise ValueError("No LLM resource available for template evolution")
 
-            llm_resource = LLMResourceType.create_instance_from_values(
-                {
-                    "name": "template_evolver",
-                    "model": "auto",
-                    "temperature": 0.3,  # Lower temperature for more consistent evolution
-                    "max_tokens": 2000,  # Increased for full response history
-                }
-            )
-            llm_resource.initialize()
+        try:
+            from dana.common.types import BaseRequest
 
             # Build context about the template evolution history
             version_context = ""
@@ -412,32 +660,15 @@ Only return the JSON, no other text."""
             latest_interaction = history[-1] if history else None
 
             # Create the evolution prompt
-            evolution_prompt = f"""You are a prompt engineering expert. Your task is to evolve a prompt template based on user feedback and evaluation results.
-
-CURRENT TEMPLATE:
-{current_template}
-
-{interaction_history}
-
-LATEST USER FEEDBACK:
-{latest_interaction.feedback if latest_interaction and latest_interaction.feedback else 'No specific feedback provided'}
-
-LATEST EVALUATION:
-{evaluation.overall_score:.2f}/1.0 (confidence: {evaluation.confidence:.1f}) - {'LLM evaluation' if evaluation.confidence > 0.8 else 'Heuristic fallback'}
-
-{version_context}
-
-INSTRUCTIONS:
-1. Analyze the complete interaction history above to understand patterns in user feedback
-2. Identify recurring issues and what has/hasn't worked in previous iterations
-3. Create an improved version that addresses the specific issues mentioned in the latest feedback
-4. Consider the evolution of responses and feedback over time
-5. Keep the core intent of the original template while incorporating lessons learned
-6. Add specific instructions to address the feedback patterns you observe
-7. Make the template more effective for generating better responses
-8. Return ONLY the improved template text, no explanations
-
-IMPROVED TEMPLATE:"""
+            evolution_prompt = TEMPLATE_EVOLUTION_PROMPT.format(
+                current_template=current_template,
+                interaction_history=interaction_history,
+                latest_feedback=latest_interaction.feedback
+                if latest_interaction and latest_interaction.feedback
+                else "No specific feedback provided",
+                latest_evaluation=f"{evaluation.overall_score:.2f}/1.0 (confidence: {evaluation.confidence:.1f}) - {'LLM evaluation' if evaluation.confidence > 0.8 else 'Heuristic fallback'}",
+                version_context=version_context,
+            )
 
             # Debug: Show the evolution prompt being sent to LLM
             print("\n🔧 Evolving template with LLM...")
@@ -451,7 +682,7 @@ IMPROVED TEMPLATE:"""
                 }
             )
 
-            response = llm_resource.query_sync(request)
+            response = self.llm_resource.call(request)
 
             # Debug: Show the LLM response
             if response.success:
@@ -473,7 +704,7 @@ IMPROVED TEMPLATE:"""
             # Fallback to heuristic-based evolution
             return self._heuristic_evolve_template(current_template, evaluation)
 
-    def _extract_template_from_response(self, response_content: Any) -> str:
+    def _extract_template_from_response(self, response_content: Union[str, dict, Any]) -> str:
         """Extract template text from LLM response."""
         if isinstance(response_content, str):
             return response_content

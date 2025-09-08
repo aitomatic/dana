@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PromptEngineer - Interactive Prompt Improvement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,10 +15,13 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 12px;
+            color: #3c4043;
+            font-weight: 400;
+            line-height: 1.4;
         }
 
         .container {
@@ -23,126 +29,140 @@
             margin: 0 auto;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
             color: white;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 1rem;
             opacity: 0.9;
+            font-weight: 400;
+            letter-spacing: 0.01em;
         }
 
         .main-content {
-            padding: 20px;
+            padding: 16px;
+            min-height: calc(100vh - 160px);
+            padding-bottom: 16px;
+        }
+
+        .top-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto 1fr;
-            gap: 20px;
-            height: calc(100vh - 200px);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         .section {
-            padding: 20px;
-            border: 1px solid #e1e5e9;
+            padding: 16px;
+            border: 1px solid #dadce0;
             border-radius: 8px;
-            background: #f8f9fa;
-            overflow-y: auto;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .section:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border-color: #c4c7c5;
         }
 
         .section.full-width {
             grid-column: 1 / -1;
         }
 
-        .section.left-panel {
-            grid-column: 1;
-        }
-
-        .section.right-panel {
-            grid-column: 2;
-        }
-
-        .section.bottom-panel {
-            grid-column: 1 / -1;
-            grid-row: 3;
-        }
-
         .section h2 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.3em;
+            color: #1a73e8;
+            margin-bottom: 8px;
+            font-size: 0.9375rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .section h2::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: #4facfe;
-            border-radius: 2px;
+            gap: 6px;
+            letter-spacing: -0.01em;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #1a73e8;
+            font-size: 0.8125rem;
+            letter-spacing: 0.01em;
         }
 
         .form-group input, .form-group textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
+            padding: 8px 12px;
+            border: 1px solid #dadce0;
             border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            font-size: 0.8125rem;
+            font-weight: 400;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            letter-spacing: 0.01em;
         }
 
         .form-group input:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #4facfe;
+            border-color: #1a73e8;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
         }
 
         .form-group textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 80px;
         }
 
         .btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: #1a73e8;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
+            letter-spacing: 0.01em;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+            background: #1557b0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(26, 115, 232, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
         }
 
         .btn:disabled {
@@ -153,7 +173,13 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #5f6368;
+            box-shadow: 0 2px 4px rgba(95, 99, 104, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: #4a4c50;
+            box-shadow: 0 4px 8px rgba(95, 99, 104, 0.3);
         }
 
         .btn-success {
@@ -165,15 +191,18 @@
         }
 
         .prompt-display {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 20px;
+            background: #f8f9fa;
+            color: #3c4043;
+            padding: 12px;
             border-radius: 6px;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 13px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+            font-size: 0.75rem;
+            font-weight: 400;
             line-height: 1.5;
             white-space: pre-wrap;
-            margin-bottom: 15px;
+            border: 1px solid #dadce0;
+            margin-bottom: 12px;
+            letter-spacing: 0.01em;
         }
 
         .response-display {
@@ -206,28 +235,31 @@
         }
 
         .status {
-            padding: 10px;
+            padding: 8px 12px;
             border-radius: 6px;
-            margin-bottom: 15px;
-            font-weight: 600;
+            margin-bottom: 12px;
+            font-weight: 500;
+            font-size: 0.8125rem;
+            border: 1px solid transparent;
+            letter-spacing: 0.01em;
         }
 
         .status.success {
             background: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border-color: #c3e6cb;
         }
 
         .status.error {
             background: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-color: #f5c6cb;
         }
 
         .status.info {
             background: #d1ecf1;
             color: #0c5460;
-            border: 1px solid #bee5eb;
+            border-color: #bee5eb;
         }
 
         .hidden {
@@ -276,17 +308,12 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .main-content {
+            .top-row {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto 1fr;
             }
 
-            .section.left-panel, .section.right-panel {
-                grid-column: 1;
-            }
-
-            .section.bottom-panel {
-                grid-row: 4;
+            .content-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -299,71 +326,122 @@
         </div>
 
         <div class="main-content">
-            <!-- Control Panel -->
-            <div class="section full-width" id="control-section">
-                <h2>🎛️ Control Panel</h2>
-                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                    <div id="query-section" style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="user-query" placeholder="Ask the AI anything..." style="width: 400px; padding: 12px; font-size: 16px;">
-                        <button class="btn btn-success" id="ask-button" onclick="askAI()">
-                            Ask AI
+            <!-- Top Row: Prompt Selection and User Query -->
+            <div class="top-row">
+                <!-- Left: Prompt Selection -->
+                <div class="section prompt-selection" id="prompt-selection-section">
+                    <h2>Prompt Selection</h2>
+                    <div class="form-group">
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <select id="prompt-id-select" style="width: 180px; padding: 6px; font-size: 0.8125rem;" onchange="loadPromptId()">
+                                <option value="">Select existing or create new...</option>
+                            </select>
+                            <input type="text" id="prompt-id-input" placeholder="Enter new prompt ID" style="width: 180px; padding: 6px; font-size: 0.8125rem;">
+                            <button class="btn btn-secondary" onclick="createNewPromptId()">Create New</button>
+                        </div>
+                    </div>
+                    <div id="status-messages" style="margin-top: 8px;"></div>
+                </div>
+
+                <!-- Right: User Query -->
+                <div class="section user-input" id="user-input-section">
+                    <h2>User Query</h2>
+                    <div class="form-group">
+                        <input type="text" id="user-query" placeholder="Ask the AI anything..." style="width: 100%; padding: 8px; font-size: 0.8125rem; border: 1px solid #dadce0; border-radius: 6px;">
+                    </div>
+                    <button id="ask-button" class="btn" onclick="askAI()" style="width: 100%;">
+                        <span id="query-loading" class="loading hidden"></span>
+                        Query
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="section system-prompt" id="system-prompt-section">
+                <h2>System Prompt: <span id="prompt-version" style="font-weight: normal; color: #666; font-size: 0.75rem;"></span></h2>
+                <div id="system-prompt" class="prompt-display">(No system prompt)</div>
+            </div>
+
+            <!-- Content Grid: AI Response and Feedback -->
+            <div class="content-grid">
+                <!-- AI Response -->
+                <div class="section ai-response" id="ai-response-section">
+                    <h2>AI Response</h2>
+                    <div id="ai-response" class="prompt-display">(No response yet)</div>
+                </div>
+
+                <!-- Feedback -->
+                <div class="section feedback" id="feedback-section">
+                    <h2>Feedback</h2>
+
+                    <!-- AI Feedback Section -->
+                    <div class="ai-feedback-section" style="margin-bottom: 20px; padding: 12px; border: 1px solid #e1e5e9; border-radius: 6px; background: #f8f9fa;">
+                        <h3 style="margin-bottom: 12px; font-size: 0.875rem; color: #1a73e8;">AI Feedback</h3>
+
+                        <div class="evaluation-criteria" style="margin-bottom: 12px;">
+                            <div style="margin-bottom: 8px; font-size: 0.75rem; color: #666;">Evaluation Criteria:</div>
+                            <div class="criteria-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="accuracy" style="margin: 0;"> Accuracy
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="clarity" style="margin: 0;"> Clarity
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="completeness" style="margin: 0;"> Completeness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="conciseness" style="margin: 0;"> Conciseness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="helpfulness" style="margin: 0;"> Helpfulness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="relevance" style="margin: 0;"> Relevance
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="tone" style="margin: 0;"> Appropriate Tone
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="structure" style="margin: 0;"> Good Structure
+                                </label>
+                            </div>
+
+                            <div class="custom-objective">
+                                <label for="custom-objective" style="font-size: 0.75rem; color: #666; margin-bottom: 4px; display: block;">Additional Objective:</label>
+                                <input type="text" id="custom-objective"
+                                       placeholder="e.g., 'Should be under 100 words' or 'Must include examples'"
+                                       style="width: 100%; padding: 6px; font-size: 0.75rem; border: 1px solid #dadce0; border-radius: 4px;">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="processLLMFeedback()" style="width: 100%;">
+                            <span id="llm-feedback-loading" class="loading hidden"></span>
+                            Generate AI Feedback
                         </button>
                     </div>
-                </div>
-                <div id="status-messages" style="margin-top: 10px;"></div>
-            </div>
 
-            <!-- Left Panel: Prompts -->
-            <div class="section left-panel" id="prompts-section">
-                <h2>📋 Prompts</h2>
-                <div class="form-group">
-                    <label>Prompt ID:</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                        <select id="prompt-id-select" style="width: 200px; padding: 8px; font-size: 14px;" onchange="loadPromptId()">
-                            <option value="">Select existing or create new...</option>
-                        </select>
-                        <input type="text" id="prompt-id-input" placeholder="Enter new prompt ID" style="width: 200px; padding: 8px; font-size: 14px;">
-                        <button class="btn btn-secondary" onclick="createNewPromptId()">Create New</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>System Prompt: <span id="prompt-version" style="font-weight: normal; color: #666; font-size: 12px;"></span></label>
-                    <div id="system-prompt" class="prompt-display">(No system prompt)</div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Response & Feedback -->
-            <div class="section right-panel" id="response-feedback-section">
-                <h2>🤖 Response & Feedback</h2>
-                <div class="form-group">
-                    <label>AI Response:</label>
-                    <div id="ai-response" class="response-display">Click "Generate Response" to get an AI response.</div>
-                </div>
-
-                <div class="hidden" id="feedback-section">
-                    <div class="form-group">
-                        <label for="feedback-text">Your Feedback:</label>
-                        <textarea id="feedback-text" placeholder="e.g., 'The response was good but could be more detailed'"></textarea>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn" onclick="processFeedback()">
+                    <!-- Manual Feedback Section -->
+                    <div class="manual-feedback-section">
+                        <h3 style="margin-bottom: 12px; font-size: 0.875rem; color: #1a73e8;">Manual Feedback</h3>
+                        <div class="form-group">
+                            <textarea id="feedback-text" placeholder="e.g., 'The response was good but could be more detailed'" style="width: 100%; height: 60px; padding: 8px; font-size: 0.8125rem; border: 1px solid #dadce0; border-radius: 6px;"></textarea>
+                        </div>
+                        <button class="btn" onclick="processFeedback()" style="width: 100%;">
                             <span id="feedback-loading" class="loading hidden"></span>
                             Process Feedback
                         </button>
-                        <button class="btn btn-secondary" onclick="processLLMFeedback()">
-                            <span id="llm-feedback-loading" class="loading hidden"></span>
-                            AI Feedback
-                        </button>
                     </div>
+
                     <div id="feedback-status"></div>
                     <div id="feedback-display"></div>
                     <div id="evolution-notice"></div>
                 </div>
             </div>
 
-            <!-- Bottom Panel: History -->
+            <!-- Bottom: History -->
             <div class="section bottom-panel" id="history-section">
-                <h2>📚 Conversation History</h2>
+                <h2>History</h2>
                 <button class="btn btn-warning" onclick="loadHistory()">Refresh History</button>
                 <div id="history-content"></div>
             </div>
@@ -377,10 +455,15 @@
 
         // Auto-initialize when page loads
         window.addEventListener('load', async () => {
+            console.log('🔵 PAGE LOAD: Starting initialization...');
             await initializeSession();
+            console.log('🔵 PAGE LOAD: Initialization complete, isInitialized =', isInitialized);
             // Only load prompt IDs after session is initialized
             if (isInitialized) {
+                console.log('🔵 PAGE LOAD: Loading prompt IDs...');
                 await loadExistingPromptIds();
+            } else {
+                console.log('🔴 PAGE LOAD: Session not initialized, skipping prompt ID loading');
             }
         });
 
@@ -436,6 +519,7 @@
 
         async function loadExistingPromptIds() {
             console.log('🔵 LOADING: Loading existing prompt IDs...');
+            console.log('🔵 DEBUG: isInitialized =', isInitialized);
             try {
                 const result = await apiCall('/api/prompt-ids', 'GET');
                 console.log('🟢 PROMPT IDS LOADED:', result);
@@ -548,8 +632,10 @@
                     isInitialized = true;
                     console.log('🟢 SUCCESS: Session initialized with ID:', sessionId);
                     showStatus(`✅ ${result.message}`, 'success');
-                    showSection('prompts-section');
-                    showSection('response-feedback-section');
+                    showSection('prompt-selection-section');
+                    showSection('system-prompt-section');
+                    showSection('user-input-section');
+                    showSection('ai-response-section');
                     showSection('history-section');
 
                     // Load existing prompt IDs after successful initialization
@@ -613,6 +699,8 @@
                 console.log('🟡 UI UPDATE: Setting user prompt:', startResult.user_message);
                 console.log('🟡 UI UPDATE: System prompt length:', startResult.system_message ? startResult.system_message.length : 'null/undefined');
                 document.getElementById('system-prompt').textContent = startResult.system_message || '(No system prompt received)';
+
+                // User query is already displayed in the input field
 
                 // Generate response
                 console.log('🟡 API CALL: /api/generate');
@@ -704,20 +792,51 @@
 
         async function processLLMFeedback() {
             console.log('🔵 USER ACTION: processLLMFeedback() called');
+
+            // Get selected criteria
+            const selectedCriteria = Array.from(
+                document.querySelectorAll('input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+
+            // Get custom objective
+            const customObjective = document.getElementById('custom-objective').value.trim();
+
+            // Validate
+            if (selectedCriteria.length === 0 && !customObjective) {
+                console.log('🔴 ERROR: No evaluation criteria selected');
+                showStatus('Please select at least one criteria or provide a custom objective', 'error');
+                return;
+            }
+
+            console.log('🟡 EVALUATION: Selected criteria:', selectedCriteria);
+            console.log('🟡 EVALUATION: Custom objective:', customObjective);
             console.log('🟡 STATUS: Generating AI feedback...');
             showStatus('Generating AI feedback...', 'info');
 
             try {
                 const promptId = currentPromptId || sessionId;
-                console.log('🟡 API CALL: /api/feedback with use_llm_feedback: true, prompt_id:', promptId);
-                const result = await apiCall('/api/feedback', 'POST', { use_llm_feedback: true, prompt_id: promptId });
+
+                // Build evaluation request
+                const evaluationRequest = {
+                    use_llm_feedback: true,
+                    criteria: selectedCriteria,
+                    custom_objective: customObjective,
+                    prompt_id: promptId
+                };
+
+                console.log('🟡 API CALL: /api/feedback with evaluation request:', evaluationRequest);
+                const result = await apiCall('/api/feedback', 'POST', evaluationRequest);
                 console.log('🟢 API RESPONSE: /api/feedback result:', result);
 
                 if (result.success) {
                     console.log('🟢 SUCCESS: AI feedback generated');
                     showStatus('✅ AI feedback generated successfully', 'success');
+
+                    // Display the feedback with criteria info
+                    const criteriaText = selectedCriteria.length > 0 ? ` (${selectedCriteria.join(', ')})` : '';
+                    const objectiveText = customObjective ? ` | Objective: ${customObjective}` : '';
                     document.getElementById('feedback-display').innerHTML =
-                        `<div class="feedback-display">🤖 AI Feedback: ${result.feedback}</div>`;
+                        `<div class="feedback-display">🤖 AI Feedback${criteriaText}${objectiveText}: ${result.feedback}</div>`;
 
                     if (result.evolved) {
                         console.log('🔄 EVOLUTION: System prompt evolved to version', result.version);
@@ -750,8 +869,37 @@
         async function generateNewResponse() {
             console.log('🔄 AUTO-GENERATE: Starting new response generation...');
             try {
+                // Get the current user query from the input field
+                const userQuery = document.getElementById('user-query').value.trim();
+                console.log('🔄 AUTO-GENERATE: Using user query:', userQuery);
+
+                if (!userQuery) {
+                    console.log('🔴 AUTO-GENERATE: No user query available');
+                    showStatus('❌ No user query available for new response', 'error');
+                    return;
+                }
+
+                // First, start a new conversation with the evolved prompt
+                const requestData = { query: userQuery };
+                if (currentPromptId) {
+                    requestData.prompt_id = currentPromptId;
+                    console.log('🔄 AUTO-GENERATE: Using custom prompt_id:', currentPromptId);
+                } else {
+                    console.log('🔄 AUTO-GENERATE: Using auto-generated prompt_id');
+                }
+
+                const startResult = await apiCall('/api/start', 'POST', requestData);
+                console.log('🟢 AUTO-GENERATE: /api/start result:', startResult);
+
+                if (!startResult.success) {
+                    console.log('🔴 AUTO-GENERATE: /api/start failed:', startResult.error);
+                    showStatus(`❌ Failed to start new conversation: ${startResult.error}`, 'error');
+                    return;
+                }
+
+                // Then generate the response
                 const responseResult = await apiCall('/api/generate', 'POST');
-                console.log('🟢 AUTO-GENERATE: API response:', responseResult);
+                console.log('🟢 AUTO-GENERATE: /api/generate result:', responseResult);
 
                 if (responseResult.success) {
                     console.log('🟢 AUTO-GENERATE: New response generated successfully');

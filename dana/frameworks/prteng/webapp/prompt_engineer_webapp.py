@@ -85,81 +85,8 @@ def generate_llm_response(llm_resource, prompt_text: str) -> str:
     except Exception as e:
         return f"Error calling LLM: {e}"
 
-
-def generate_llm_feedback(llm_resource, system_message: str, user_message: str, response_text: str) -> str:
-    """Generate feedback using an LLM to evaluate how well the system prompt worked."""
-    if llm_resource is None:
-        return "The system prompt worked reasonably well but could be more specific about including examples and details when requested by the user."
-
-    try:
-        feedback_prompt = f"""You are an expert evaluator. Analyze how well the SYSTEM PROMPT worked to generate a good response to the user's query.
-
-SYSTEM PROMPT (the prompt we want to improve):
-{system_message}
-
-USER PROMPT (what the user actually asked for):
-{user_message}
-
-AI RESPONSE (generated using the system prompt):
-{response_text}
-
-Please provide qualitative feedback on:
-1. How well did the system prompt help generate a response that addresses the user's actual query?
-2. Is the system prompt clear and effective in guiding the AI?
-3. What specific improvements could be made to the system prompt?
-
-Provide constructive feedback that will help improve the system prompt for better responses."""
-
-        request_obj = BaseRequest(
-            arguments={
-                "messages": [{"role": "user", "content": feedback_prompt}],
-                "temperature": 0.3,
-                "max_tokens": 500,
-            }
-        )
-
-        response = llm_resource.query_sync(request_obj)
-
-        if response.success:
-            if hasattr(response, "content") and response.content:
-                if isinstance(response.content, str):
-                    return (
-                        response.content
-                        if response.content.strip()
-                        else "The system prompt needs improvement - the evaluation was unclear."
-                    )
-                elif isinstance(response.content, dict):
-                    if "choices" in response.content and response.content["choices"]:
-                        choice = response.content["choices"][0]
-                        if "message" in choice and "content" in choice["message"]:
-                            content = choice["message"]["content"]
-                            if content and content.strip():
-                                return content
-                            else:
-                                return "The system prompt needs improvement - the evaluation was unclear."
-                    elif "text" in response.content:
-                        text = response.content["text"]
-                        return text if text and text.strip() else "The system prompt needs improvement - the evaluation was unclear."
-                    elif "content" in response.content:
-                        content = response.content["content"]
-                        return (
-                            content if content and content.strip() else "The system prompt needs improvement - the evaluation was unclear."
-                        )
-                    else:
-                        return "The system prompt needs improvement - the evaluation format was unexpected."
-                else:
-                    return (
-                        str(response.content)
-                        if response.content
-                        else "The system prompt needs improvement - no evaluation content available."
-                    )
-            else:
-                return "The system prompt needs improvement - no evaluation content available."
-        else:
-            return "The system prompt needs improvement - evaluation failed, please try manual feedback."
-
-    except Exception as e:
-        return f"The system prompt needs improvement - error during evaluation: {e}"
+    # Fallback return (should never be reached, but satisfies type checker)
+    return "Unexpected error in LLM response generation"
 
 
 @app.route("/")
@@ -173,11 +100,11 @@ def init_session():
     """Initialize a new session."""
     global engineer, llm_resource, current_prompt
 
-    # Initialize the engineer
-    engineer = PromptEngineer(base_dir="~/.dana/prteng_webapp")
-
-    # Initialize LLM resource
+    # Initialize LLM resource first
     llm_resource, message = create_llm_resource()
+
+    # Initialize the engineer with the LLM resource
+    engineer = PromptEngineer(base_dir="~/.dana/prteng_webapp", llm_resource=llm_resource)
 
     # Use existing session ID or generate a new one
     if "session_id" not in session:
@@ -235,7 +162,10 @@ def start_conversation():
 
         # Get the current version number
         template_versions = engineer.persistence.load_template_versions(fixed_prompt_id)
-        current_version = len(template_versions) if template_versions else 1
+        if template_versions:
+            current_version = max(version.version for version in template_versions)
+        else:
+            current_version = 1
         print(f"DEBUG: Current version: {current_version}")
 
         response_data = {
@@ -285,6 +215,8 @@ def process_feedback():
     feedback = data.get("feedback", "").strip()
     use_llm_feedback = data.get("use_llm_feedback", False)
     prompt_id = data.get("prompt_id", "").strip()
+    criteria = data.get("criteria", [])
+    custom_objective = data.get("custom_objective", "").strip()
 
     if not feedback and not use_llm_feedback:
         return jsonify({"success": False, "error": "Please provide feedback"})
@@ -297,38 +229,49 @@ def process_feedback():
 
     # Use the provided prompt_id or fall back to current_prompt
     if prompt_id:
-        # Create a new prompt object with the specified ID
-        from dana.frameworks.prteng.models import Prompt
-
-        current_prompt = Prompt(id=prompt_id, system_message="", user_message="")
         print(f"DEBUG: Using custom prompt_id for feedback: {prompt_id}")
     elif not current_prompt:
         return jsonify({"success": False, "error": "No active prompt"})
+    else:
+        prompt_id = current_prompt.id
 
     try:
-        # Generate LLM feedback if requested
+        # Generate evaluation using the new evaluate() method
         if use_llm_feedback:
-            feedback = generate_llm_feedback(llm_resource, current_prompt.system_message or "", current_prompt.user_message, last_response)
+            print(f"DEBUG FEEDBACK: criteria={criteria}")
+            print(f"DEBUG FEEDBACK: custom_objective='{custom_objective}'")
+            evaluation = engineer.evaluate(
+                prompt_id=prompt_id, response=last_response, criteria=criteria, custom_objective=custom_objective, evaluation_type="llm"
+            )
+            feedback = "; ".join(evaluation.improvement_suggestions)
+        else:
+            feedback = feedback  # Use the manual feedback
 
         # Update the engineer with feedback
-        engineer.update(last_response, current_prompt.id, feedback)
+        engineer.update(last_response, prompt_id, feedback)
 
         # Check if template evolved
-        current_template = engineer.persistence.get_latest_template(current_prompt.id)
-        template_versions = engineer.persistence.load_template_versions(current_prompt.id)
+        current_template = engineer.persistence.get_latest_template(prompt_id)
+        template_versions = engineer.persistence.load_template_versions(prompt_id)
 
         evolved = False
-        if current_template and current_template != current_prompt.system_message:
+        if current_template and current_prompt and current_template != current_prompt.system_message:
             current_prompt.system_message = current_template
             evolved = True
+
+        # Calculate current version number
+        if template_versions:
+            current_version = max(version.version for version in template_versions)
+        else:
+            current_version = 1
 
         return jsonify(
             {
                 "success": True,
                 "feedback": feedback,
                 "evolved": evolved,
-                "version": len(template_versions),
-                "new_system_message": current_prompt.system_message or "(No system prompt)",
+                "version": current_version,
+                "new_system_message": current_template or "(No system prompt)",
             }
         )
     except Exception as e:
