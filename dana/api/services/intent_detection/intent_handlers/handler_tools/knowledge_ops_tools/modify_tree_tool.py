@@ -36,7 +36,7 @@ class ModifyTreeTool(BaseTool):
 
         tool_info = BaseToolInformation(
             name="modify_tree",
-            description="Manage domain knowledge tree structure with two operations: 'init' for comprehensive tree initialization, and 'bulk' for all tree modifications (create/modify/remove nodes). Supports single or multiple operations atomically.",
+            description="Manage domain knowledge tree structure with: 'bulk' for all tree modifications (create/modify/remove nodes). Supports single or multiple operations atomically.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
@@ -49,15 +49,15 @@ class ModifyTreeTool(BaseTool):
                     BaseArgument(
                         name="operation",
                         type="string",
-                        description="Type of operation: 'init' for LLM-driven tree initialization, 'bulk' for all tree modifications",
+                        description="Type of operation: 'bulk' for all tree modifications",
                         example="bulk",
                     ),
-                    BaseArgument(
-                        name="tree_path",
-                        type="string",
-                        description="For 'init' operation: domain topic to build comprehensive tree around",
-                        example="Financial Analysis",
-                    ),
+                    # BaseArgument(
+                    #     name="tree_path",
+                    #     type="string",
+                    #     description="For 'init' operation: domain topic to build comprehensive tree around",
+                    #     example="Financial Analysis",
+                    # ),
                     BaseArgument(
                         name="bulk_operations",
                         type="string",
