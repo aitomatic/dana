@@ -14,6 +14,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_
     ProposeKnowledgeStructureTool,
     RefineKnowledgeStructureTool,
     PreviewKnowledgeTopicTool,
+    GenerateKnowledgeFromDocTool
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 import logging
@@ -46,7 +47,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         knowledge_status_path: str | None = None,
-        notifier: Callable[[str], None] | None = None,
+        notifier: Callable[[str, str, str, float | None], None] | None = None,
     ):
         from pathlib import Path
 
@@ -98,8 +99,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         # Generation tool (unified) with persistence
         self.tools.update(
-            GenerateKnowledgeTool(
-                llm=self.llm,
+            GenerateKnowledgeFromDocTool(
                 knowledge_status_path=self.knowledge_status_path,
                 storage_path=self.storage_path,
                 tree_structure=self.tree_structure,

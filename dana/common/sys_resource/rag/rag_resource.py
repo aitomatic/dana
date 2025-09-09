@@ -28,6 +28,7 @@ class RAGResource(BaseSysResource):
         debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,
+        return_raw: bool = False,
     ):
         super().__init__(name, description)
         self.post_init(
@@ -41,6 +42,7 @@ class RAGResource(BaseSysResource):
             reranking=reranking,
             initial_multiplier=initial_multiplier,
         )
+        self.return_raw = return_raw
 
     def post_init(
         self,
@@ -143,7 +145,7 @@ class RAGResource(BaseSysResource):
         self._filenames = self._orchestrator._retriever.get_all_filenames()
 
     @ToolCallable.tool
-    async def query(self, query: str, num_results: int = 10) -> str:
+    async def query(self, query: str, num_results: int = 10) -> str | list:
         """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
@@ -165,8 +167,10 @@ class RAGResource(BaseSysResource):
         elif len(results) > num_results:
             # Truncate to requested number if no reranking
             results = results[:num_results]
-
-        return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
+        if not self.return_raw:
+            return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
+        else:
+            return results
 
     async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.
