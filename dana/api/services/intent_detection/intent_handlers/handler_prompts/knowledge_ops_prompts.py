@@ -312,3 +312,198 @@ Approval: None needed - preview was approval mechanism
 </modify_tree>
 
 """
+
+
+GENERATE_QUESTION_PROMPT = """
+You are an expert mentor guiding a junior **{role}** toward mastery.
+
+──────────────────────
+🔹 Context  
+• Domain path: {path}
+• Tasks to be performed: {tasks}  
+
+🔹 Existing Material  
+• All questions generated so far (copy–paste exactly as returned in the previous run):  
+{questions}  
+
+🔹 Focus Hint for This Iteration  
+• New suggested area to explore: **{suggestion}**
+──────────────────────
+
+🎯 Goal  
+Add a fresh set of research questions that will help the junior deepen knowledge in **{suggestion}**, while respecting everything already asked.
+
+📋 Iterative Rules  
+1. **Count how many total questions already exist** (e.g., 6).  
+2. Write **exactly 3–5 new questions** for **{suggestion}**.  
+3. Number each new question sequentially, continuing from the last count (e.g., start at 7).  
+4. Keep wording concise, practical, and ordered **simple → intermediate**.  
+5. Do **not** duplicate or rewrite any previous question.  
+6. Provide **questions only** — no answers, explanations, or references.
+
+🖨️ Output Format (for every iteration)  
+```text
+{suggestion}
+
+*Question {{n}}* : …
+*Question {{n+1}}* : …
+* …
+```
+*Return **only** the block above.*  
+"""
+
+ACCESS_COVERAGE_PROMPT = """
+You are evaluating question coverage for a {role} role assessment.
+
+**ROLE TO ASSESS**: {role}
+**DOMAIN**: {domain}
+**KEY TASKS THEY MUST PERFORM**:
+{tasks}
+
+**CURRENT QUESTIONS**:
+{questions}
+
+**CURRENT CONFIDENCE**: {confidence}
+
+**EVALUATION CRITERIA**:
+Rate each category 0-100 based on how well the questions would test the knowledge needed for this specific role and tasks:
+
+1. **domain_fundamentals**: Do questions cover essential domain knowledge?
+2. **role_expertise**: Do questions test role-specific specialized skills?  
+3. **task_execution**: Do questions cover practical knowledge for the key tasks?
+4. **tools_and_methods**: Do questions address tools/methods used in this role?
+5. **decision_making**: Do questions test judgment needed for this role?
+6. **problem_solving**: Do questions assess problem-solving in this domain?
+
+**ASSESSMENT INSTRUCTIONS**:
+- Overall confidence = average of all category scores
+- Status: "Ready to proceed" if ≥85, else "More questions needed"
+- For gaps: list categories scoring <85 with specific improvement suggestions
+
+**OUTPUT FORMAT** (valid JSON):
+```json
+{{
+  "confidence_reason": "Justification of your confidence score based on current knowledge.",
+  "confidence": 0-100,
+  "suggestion": "Specific suggestions for improving the confidence score."
+}}
+```
+"""
+
+KNOWLEDGE_EXTRACTION_PROMPT = """
+You are a careful information-extraction assistant.
+
+### Context
+Domain path: {path}
+
+The user’s questions (numbered exactly as supplied):
+{question}
+
+The RAG retrieval output (plain-text chunks, numbered in the order supplied):
+{chunks}
+
+### Task
+1. For **each question**, examine the chunks and identify every statement that is *directly relevant* to answering it.  
+2. Merge the relevant statements from all questions into a single consolidated knowledge set.  
+3. Classify each statement into one of three categories:  
+   • **Facts/Rules** – Objective, verifiable, or prescriptive statements  
+   • **Heuristics** – Practical tips or “rules of thumb”  
+   • **Procedures** – Ordered, step-by-step methods or workflows  
+4. Prepend the originating chunk number(s) in square brackets before every statement.
+
+### Output
+Return a markdown document in **exactly** the following structure.  
+If a category has no relevant items, write “None found”.
+
+```markdown
+Questions:
+{question}
+
+# Generated Knowledge
+## Facts/Rules
+- [Chunk 3] …
+
+## Heuristics
+- [Chunk 2, Chunk 5] …
+
+## Procedures
+- [Chunk 1]
+  1. …
+  2. …
+- [Chunk 4, Chunk 6]
+  1. …
+  2. …
+````
+
+### Constraints
+
+* **Source-bound** – Do **not** invent or infer information that is absent from the chunks.
+* **Relevance filter** – Include only items that help answer one or more of the listed questions.
+* **Faithful wording** – Quote or closely paraphrase; do not alter meaning.
+* **Inline references** – Use the exact label “Chunk n” where *n* is the numeric position of the chunk.
+* **No analysis** – Do not add commentary, opinions, or explanations outside the required sections.
+* **Deduplication** – If multiple questions share the same statement, list it only once.
+"""
+
+KNOWLEDGE_GENERATION_PROMPT = """
+You are a senior {role} specializing in the {domain} domain.
+
+──────────────────────
+🔹 Context  
+Domain path: {path}
+
+The user’s questions (numbered exactly as supplied):
+{question}
+
+🔹 Assignment
+Generate **practical, immediately applicable knowledge** that a {role} can use to perform the tasks above in real-world {domain} scenarios.
+
+🔹 Deliverables
+Return a single markdown document with the three sections below, **in this exact order**.
+If a section has no content, write “None found”.
+
+```markdown
+Questions:
+{question}
+
+# Generated Knowledge
+## Facts/Rules
+- …
+
+## Heuristics
+- …
+
+## Procedures
+- Overview 1
+  1. …
+  2. …
+- …
+```
+
+**Section guidelines**
+
+1. **Facts / Key Rules**
+   • Concise, verifiable statements a {role} *must* know.
+   • Include domain-specific formulas, ratios, thresholds, or regulatory rules.
+   • Keep each fact on a new bullet.
+
+2. **Procedures**
+   • Ordered workflows tailored to {domain}.
+   • Show decision points, required inputs, expected outputs, and recommended tools.
+   • Cover common scenarios in the task set.
+   • Use sub-steps (a, b, c) for branches.
+
+3. **Heuristics**
+   • Rules of thumb, expert tips, warning signs.
+   • Explain *why* each heuristic matters in one short clause.
+   • Focus on judgment calls that separate novices from experts.
+
+🔹 Constraints
+
+* **Role focus** – Assume the reader knows basic {domain} terminology.
+* **Actionability** – Favor specifics over theory; readers should act immediately.
+* **No filler** – Omit generic advice, introductions, or summaries.
+* **Accuracy** – Include only well-accepted information or clearly label emerging practices.
+* **Clarity** – Use plain language; avoid unexplained acronyms.
+* **No task echo** – Do **not** reproduce the full task list in your output; reference tasks implicitly.
+"""
