@@ -58,6 +58,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         self.knowledge_status_path = knowledge_status_path or os.path.join(str(base_path), "knowledge_status.json")
         # Derive storage path from domain_knowledge_path parent directory
         self.storage_path = os.path.join(str(base_path), "knows")
+        self.document_path = os.path.join(str(base_path), "docs")
         self.domain = domain
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
@@ -107,6 +108,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 role=self.role,
                 tasks=self.tasks,
                 notifier=self.notifier,
+                document_path=self.document_path,
             ).as_dict()
         )
 
