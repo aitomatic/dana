@@ -5,7 +5,7 @@
 from blueprints.expert_agent import ExpertAgent
 
 # import relevant expertise module(s) from `knows` stdlib
-from knows import financial_analysis
+from domain_packs import financial_analysis
 
 
 # instantiate expert agent with relevant expertise module(s)

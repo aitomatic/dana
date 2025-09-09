@@ -33,7 +33,7 @@ Applies reliable, repeatable execution plans from encoded expertise
 ===================================================================
 """)
 
-from knows.financial_analysis.cap_intens import workflow_calc_fixed_asset_over_total_asset, workflow_calc_capex_over_rev
+from domain_packs.financial_analysis.cap_intens import workflow_calc_fixed_asset_over_total_asset, workflow_calc_capex_over_rev
 
 print(Neo.solve("Is AMD capital-intensive?",
                 resources=[resource_amd_annual_report],
@@ -50,7 +50,7 @@ Reusable blueprint that comes preloaded with domain expertise and expert workflo
 """)
 
 from blueprints.expert_agent import ExpertAgent
-from knows import financial_analysis
+from domain_packs import financial_analysis
 
 Neo = ExpertAgent(expertise=[financial_analysis])
 
