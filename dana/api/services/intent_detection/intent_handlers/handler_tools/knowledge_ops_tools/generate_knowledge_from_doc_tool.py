@@ -20,6 +20,7 @@ from dana.common.sys_resource.rag.rag_resource import RAGResource
 from pydantic import BaseModel
 from pathlib import Path
 import traceback
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -293,7 +294,7 @@ class GenerateKnowledgeTool(BaseTool):
             end = start + self.question_batch_size
             new_question_list.append("\n".join(question_list[start:end]))
         question_list = new_question_list
-        if self.rag_resource.filenames:
+        if self.rag_resource.filenames and any([fn != "system" for fn in self.rag_resource.filenames]):
             relevant_chunks = await asyncio.gather(*[self.rag_resource.query(question, num_results=30) for question in question_list])
         else:
             relevant_chunks = [[] for _ in question_list]
@@ -442,7 +443,7 @@ if __name__ == "__main__":
     tool = GenerateKnowledgeTool(knowledge_status_path="agents/domain_knowledge/knows/knowledge_status.json", 
                                  domain="Sugar Manufacturing", role="Process Engineer", 
                                  storage_path="agents/domain_knowledge/knows",
-                                 document_path="agents/domain_knowledge/docs",
+                                 document_path="agents/domain_knowledge/doccs",
                                  tasks=tasks, tree_structure=tree_structure)
     print(asyncio.run(tool._execute(user_message="Generate knowledge for all topics in the tree structure", counts="Not specified", context="Focus on practical applications and real-world scenarios")))
 
