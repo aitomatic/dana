@@ -1,7 +1,7 @@
 """Workflow Syntax: Parallel ("[]")."""
 
 
-from knows.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable
+from domain_packs.financial_analysis import get_cash_and_equiv, get_st_inv, get_recvable
 
 
 def sum_quick_asset_components(components) -> float:
