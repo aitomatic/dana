@@ -127,7 +127,7 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`relative overflow-hidden transition-all duration-700 ease-out ${
+        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
             ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
             : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
@@ -363,7 +363,7 @@ export default function AgentsPage() {
                     ? setMyAgentSearch(e.target.value)
                     : setExploreSearch(e.target.value)
                 }
-                className="py-3 pr-4 pl-10 w-full text-base text-gray-900 bg-gray-50 rounded-xl border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
           </div>
@@ -372,42 +372,27 @@ export default function AgentsPage() {
         {/* Enhanced Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
-            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'Explore'
-                ? 'border-purple-500 text-purple-600 bg-purple-50'
-                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
             }`}
             onClick={() => setActiveTab('explore')}
           >
             <span className="flex gap-2 items-center">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+
               Pre-trained Agents
             </span>
           </button>
           <button
-            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'My Agent'
-                ? 'border-purple-500 text-purple-600 bg-purple-50'
-                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
             }`}
             onClick={() => setActiveTab('my')}
           >
             <span className="flex gap-2 items-center">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
               My Agents
             </span>
           </button>
