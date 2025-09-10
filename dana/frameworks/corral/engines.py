@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Any, Union
 
-from dana.core.agent import ProblemContext
+from dana.core.agent.context import ProblemContext
 from dana.core.agent.context import ExecutionContext
 
 from .config import CORRALConfig, ReasoningType

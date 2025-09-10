@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
@@ -11,21 +11,10 @@ class ReasonMixin:
         sandbox_context: SandboxContext | None = None,
         problem_context: dict | None = None,
         system_message: str | None = None,
-    ) -> Any:
-        """Synchronous agent reasoning method."""
-        return self._reason_impl(sandbox_context or SandboxContext(), premise, problem_context, system_message, is_sync=True)
-
-    def _reason_impl(
-        self,
-        sandbox_context: SandboxContext,
-        premise: str,
-        context: dict | None = None,
-        system_message: str | None = None,
-        is_sync: bool = False,
     ) -> dict:
-        """Implementation of reasoning functionality using py_reason() for LLM-powered analysis."""
+        """Synchronous agent reasoning method."""
         self.debug(f"REASON: Analyzing premise: '{premise}'")
-        self.debug(f"Context: {context}")
+        self.debug(f"Context: {problem_context}")
 
         try:
             # Use py_reason() for LLM-powered reasoning

@@ -127,7 +127,7 @@ class LambdaMethodDispatcher:
             return False
 
         struct_type = obj.__struct_type__
-        
+
         # Check direct method first
         if FUNCTION_REGISTRY.has_struct_function(struct_type.name, method_name):
             return True

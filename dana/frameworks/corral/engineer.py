@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any, Union
 
-from dana.core.agent import ProblemContext
+from dana.core.agent.context import ProblemContext
 from dana.core.agent.context import ExecutionContext
 from dana.common.mixins.loggable import Loggable
 from .config import DEFAULT_CONFIG, CORRALConfig

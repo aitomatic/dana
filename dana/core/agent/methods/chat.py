@@ -1,6 +1,5 @@
 from typing import Any
 
-from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -84,14 +83,8 @@ class ChatMixin:
     ) -> Any:
         response = self._chat_impl(sandbox_context or SandboxContext(), message, context, max_context_turns)
 
-        # Add conversation turn to centralized state
-        try:
-            # Handle case where response might be an EagerPromise
-            response = resolve_if_promise(response)
-            self.state.mind.memory.conversation.add_turn(message, response)
-        except Exception:
-            # If centralized state fails, continue without conversation memory
-            pass
+        # Note: Conversation persistence is now handled by the enhanced timeline system
+        # No need to manually add conversation turns here
 
         return response
 
@@ -101,7 +94,7 @@ class ChatMixin:
         """Implementation of chat functionality. Returns the response string directly."""
         # Build conversation context from centralized state
         try:
-            conversation_context = self.state.mind.memory.conversation.build_llm_context(
+            conversation_context = self.state.timeline.get_conversation_context(
                 message, include_summaries=True, max_turns=max_context_turns
             )
         except Exception:

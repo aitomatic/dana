@@ -58,9 +58,12 @@ class ConversationTurn(TimelineEvent):
     metadata: dict[str, Any] = None
 
     def __post_init__(self):
-        """Initialize metadata if not provided."""
+        """Initialize metadata and call parent constructor."""
         if self.metadata is None:
             object.__setattr__(self, "metadata", {})
+
+        # Call parent constructor to initialize timestamp and other attributes
+        super().__init__(conversation_turn=self.turn_number)
 
     @property
     def event_type(self) -> str:
@@ -122,8 +125,10 @@ class ConversationTurn(TimelineEvent):
 
         context_parts = []
         for event in recent_events:
-            if event.agent_response:  # Only include completed turns
+            if event.agent_response:  # Include completed turns
                 context_parts.append(event.get_context_string())
+            elif event.user_input:  # Include current turn with user input
+                context_parts.append(f"User: {event.user_input}")
 
         return "\n\n".join(context_parts)
 
