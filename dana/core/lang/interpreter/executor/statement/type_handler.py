@@ -23,7 +23,7 @@ class TypeHandler(Loggable):
         Registers a struct type and binds a constructor into the local scope.
         """
         # Import here to avoid circular imports
-        from dana.core.builtin_types.struct_system import create_struct_type_from_ast
+        from dana.core.builtins.struct_system import create_struct_type_from_ast
         from dana.registry import TYPE_REGISTRY
 
         try:
@@ -60,7 +60,7 @@ class TypeHandler(Loggable):
         Registers an interface type in the type registry.
         """
         # Import here to avoid circular imports
-        from dana.core.builtin_types.interface_system import create_interface_type_from_ast
+        from dana.core.builtins.interface_system import create_interface_type_from_ast
         from dana.registry import TYPE_REGISTRY
 
         try:

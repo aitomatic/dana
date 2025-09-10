@@ -25,14 +25,15 @@ from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.concurrency.promise_limiter import get_global_promise_limiter
+from dana.core.lang.interpreter.error_context import ExecutionLocation
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
-    from dana.core.builtin_types.agent_system import AgentInstance
-    from dana.core.builtin_types.resource import ResourceInstance
-    from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana.core.agent.agent_instance import AgentInstance
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana.core.resource import ResourceInstance
+    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class ExecutionStatus(Enum):
@@ -57,6 +58,7 @@ class SandboxContext(Loggable):
         self._parent = parent
         self._manager = manager
         self._interpreter: DanaInterpreter | None = None
+        self._parser = None  # Store parser instance
 
         # Import and initialize error context
         from dana.core.lang.interpreter.error_context import ErrorContext
@@ -105,6 +107,7 @@ class SandboxContext(Loggable):
         """Get the interpreter instance."""
         if self._interpreter is None:
             raise RuntimeError("Interpreter not set")
+
         return self._interpreter
 
     @interpreter.setter
@@ -115,6 +118,23 @@ class SandboxContext(Loggable):
             interpreter: The interpreter instance
         """
         self._interpreter = interpreter
+
+    @property
+    def parser(self):
+        """Get the Dana parser instance."""
+        if self._parser is None:
+            raise RuntimeError("Parser not set")
+
+        return self._parser
+
+    @parser.setter
+    def parser(self, parser):
+        """Set the Dana parser instance.
+
+        Args:
+            parser: The parser instance
+        """
+        self._parser = parser
 
     @property
     def error_context(self):
@@ -678,6 +698,24 @@ class SandboxContext(Loggable):
 
         return None
 
+    def get_execution_stack(self) -> list["ExecutionLocation"]:
+        """Get the current execution stack with AST nodes.
+
+        Returns:
+            List of execution locations, most recent first
+        """
+        return self._error_context.execution_stack
+
+    def get_current_node(self) -> Any | None:
+        """Get the AST node currently being executed.
+
+        Returns:
+            Current AST node or None if not available
+        """
+        if self._error_context.execution_stack:
+            return self._error_context.execution_stack[-1].ast_node
+        return None
+
     def set_resource(self, name: str, resource: "ResourceInstance") -> None:
         """Set a resource in the context.
 
@@ -939,7 +977,7 @@ class SandboxContext(Loggable):
         try:
             return cast("LLMResourceInstance", self.get_resource("system_llm"))
         except KeyError:
-            from dana.core.builtin_types.resource.builtins.llm_resource_type import LLMResourceType
+            from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 
             sys_llm_resource = LLMResourceType.create_default_instance()
             self.set_system_llm_resource(sys_llm_resource)

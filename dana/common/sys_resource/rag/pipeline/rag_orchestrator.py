@@ -22,7 +22,7 @@ class RAGOrchestrator(Loggable):
         index_combiner: IndexCombiner | None = None,
         cache_manager: UnifiedCacheManager | None = None,
         retriever_cls: type[Retriever] = Retriever,
-        embedding_model = None,
+        embedding_model=None,
     ):
         super().__init__()
         self.loader = loader if loader else DocumentLoader()

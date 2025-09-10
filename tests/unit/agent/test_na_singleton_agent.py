@@ -19,7 +19,9 @@ def get_singleton_agent_na_files():
 
 
 @pytest.mark.dana
-@pytest.mark.parametrize("dana_test_file", get_singleton_agent_na_files(), ids=[f.stem for f in get_singleton_agent_na_files()])
-def test_dana_files(dana_test_file):
+def test_singleton_agent_dana_files(dana_test_file):
     """Universal test that runs any Dana (.na) test file in singleton_agent."""
+    # Only run tests from the singleton_agent subdirectory
+    if "singleton_agent" not in str(dana_test_file):
+        pytest.skip(f"Skipping {dana_test_file.name} - not in singleton_agent directory")
     run_dana_test_file(dana_test_file)

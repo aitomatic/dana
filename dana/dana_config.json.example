@@ -1,11 +1,14 @@
 {
     "llm": {
         "preferred_models": [
-	    "huggingface:openai/gpt-oss-120b",
-	    "anthropic:kimi-k2-0711-preview",
-	    "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
-	    "moonshot:kimi",
-	    "openrouter:gpt-4o-mini",
+            "huggingface:openai/gpt-oss-120b",
+            "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
+            "huggingface:openai/gpt-oss-20b",
+            "openai:gpt-4.1-mini",
+            "anthropic:kimi-k2-0711-preview",
+            "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
+            "moonshot:kimi",
+            "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4",
             "azure:gpt-4o-mini",
@@ -77,8 +80,8 @@
             "azure": {
                 "api_key": "env:AZURE_OPENAI_API_KEY",
                 "base_url": "env:AZURE_OPENAI_API_URL",
-                "api_version": "2025-04-01-preview",
-                "api_type": "azure"
+                "api_version": "env:AZURE_OPENAI_API_VERSION",
+                "api_type": "env:AZURE_OPENAI_API_TYPE"
             },
             "ibm_watsonx": {
                 "api_key": "env:WATSONX_API_KEY",

@@ -470,7 +470,7 @@ class FunctionRegistry:
 
     def call(
         self,
-        __name: str,   # NOTE: Need to change from `name` to `__name` to avoid conflict with the possible `name` parameter. Ex : func(name="any") will fail with the previous approach
+        __name: str,  # NOTE: Need to change from `name` to `__name` to avoid conflict with the possible `name` parameter. Ex : func(name="any") will fail with the previous approach
         __context: Optional["SandboxContext"] = None,
         __namespace: str | None = None,
         *args: Any,
@@ -594,7 +594,7 @@ class FunctionRegistry:
                         # Function wants context but is not trusted - call without context with async detection
                         import asyncio
                         from dana.common.utils.misc import Misc
-                        
+
                         if asyncio.iscoroutinefunction(wrapped_func):
                             return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
                         else:
@@ -603,7 +603,7 @@ class FunctionRegistry:
                         # First parameter is context and function is trusted - add execute-time async detection
                         import asyncio
                         from dana.common.utils.misc import Misc
-                        
+
                         if asyncio.iscoroutinefunction(wrapped_func):
                             return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, __context, *positional_args, **func_kwargs))
                         else:
@@ -612,7 +612,7 @@ class FunctionRegistry:
                     # No context parameter - add execute-time async detection
                     import asyncio
                     from dana.common.utils.misc import Misc
-                    
+
                     if asyncio.iscoroutinefunction(wrapped_func):
                         return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
                     else:
@@ -658,15 +658,16 @@ class FunctionRegistry:
                     if "options" in params:
                         options = func_kwargs.pop("options", {})
                         from dana.common.utils import Misc
+
                         match_args_kwargs_result = Misc.parse_args_kwargs(func, *positional_args_with_context, **func_kwargs)
 
                         # NOTE : If there are unmatched kwargs, they are added to the options dictionary
                         if match_args_kwargs_result.unmatched_kwargs:
                             options.update(match_args_kwargs_result.unmatched_kwargs)
 
-                        matched_args = match_args_kwargs_result.matched_args # This will be matched to the function's arguments
-                        varargs = match_args_kwargs_result.varargs # This will be matched to the function's *args
-                        matched_kwargs = match_args_kwargs_result.matched_kwargs # This will be matched to the function's keyword arguments
+                        matched_args = match_args_kwargs_result.matched_args  # This will be matched to the function's arguments
+                        varargs = match_args_kwargs_result.varargs  # This will be matched to the function's *args
+                        matched_kwargs = match_args_kwargs_result.matched_kwargs  # This will be matched to the function's keyword arguments
                         if options:
                             if len(matched_args) > params.index("options"):
                                 # If options is already existed in positional args, update it
@@ -674,7 +675,7 @@ class FunctionRegistry:
                             else:
                                 # If options is not existed in positional args, add it to the matched_kwargs
                                 matched_kwargs["options"] = options
-                        varkwargs = match_args_kwargs_result.varkwargs # This will be matched to the function's **kwargs
+                        varkwargs = match_args_kwargs_result.varkwargs  # This will be matched to the function's **kwargs
 
                         return _resolve_if_promise(func(*matched_args, *varargs, **matched_kwargs, **varkwargs))
                     return _resolve_if_promise(func(*positional_args_with_context, **func_kwargs))

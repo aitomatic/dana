@@ -146,7 +146,11 @@ class DanaFunction(SandboxFunction, Loggable):
             if hasattr(prepared_context, "error_context") and prepared_context.error_context:
                 from dana.core.lang.interpreter.error_context import ExecutionLocation
 
-                function_location = ExecutionLocation(function_name=self.__name__, filename=prepared_context.error_context.current_file)
+                function_location = ExecutionLocation(
+                    function_name=self.__name__,
+                    filename=prepared_context.error_context.current_file,
+                    ast_node=self,  # Include the function definition AST node
+                )
                 prepared_context.error_context.push_location(function_location)
 
             # Execute each statement in the function body

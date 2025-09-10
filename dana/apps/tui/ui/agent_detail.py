@@ -56,7 +56,7 @@ class AgentDetail(Vertical):
     def compose(self) -> ComposeResult:
         """Create the agent detail UI."""
         yield Static("🔍 Agent Detail", classes="panel-title", id="detail-title")
-        self._text_log = CopyableRichLog(highlight=True, markup=True, wrap=False, id="detail-log", auto_scroll=True)
+        self._text_log = CopyableRichLog(highlight=True, markup=True, wrap=True, id="detail-log")
         yield self._text_log
 
     def on_mount(self) -> None:
@@ -243,7 +243,9 @@ class AgentDetail(Vertical):
         if self._text_log:
             timestamp = time.time()
             time_str = time.strftime("%H:%M:%S", time.localtime(timestamp))
-            self._text_log.write(f"[{style}]{time_str} SYSTEM: {message}[/{style}]\n")
+            if message:
+                message = message.strip()
+            self._text_log.write(f"[{style}]{time_str} {message}[/{style}]")
 
     def get_thinking_summary(self) -> dict[str, int]:
         """Get a summary of recent thinking activity."""

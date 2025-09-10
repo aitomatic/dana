@@ -19,7 +19,9 @@ def get_agent_blueprint_na_files():
 
 
 @pytest.mark.dana
-@pytest.mark.parametrize("dana_test_file", get_agent_blueprint_na_files(), ids=[f.stem for f in get_agent_blueprint_na_files()])
-def test_dana_files(dana_test_file):
+def test_agent_blueprint_dana_files(dana_test_file):
     """Universal test that runs any Dana (.na) test file in agent_blueprint."""
+    # Only run tests from the agent_blueprint subdirectory
+    if "agent_blueprint" not in str(dana_test_file):
+        pytest.skip(f"Skipping {dana_test_file.name} - not in agent_blueprint directory")
     run_dana_test_file(dana_test_file)

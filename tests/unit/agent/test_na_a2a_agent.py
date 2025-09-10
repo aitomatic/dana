@@ -19,7 +19,9 @@ def get_a2a_agent_na_files():
 
 
 @pytest.mark.dana
-@pytest.mark.parametrize("dana_test_file", get_a2a_agent_na_files(), ids=[f.stem for f in get_a2a_agent_na_files()])
-def test_dana_files(dana_test_file):
+def test_a2a_agent_dana_files(dana_test_file):
     """Universal test that runs any Dana (.na) test file in a2a_agent."""
+    # Only run tests from the a2a_agent subdirectory
+    if "a2a_agent" not in str(dana_test_file):
+        pytest.skip(f"Skipping {dana_test_file.name} - not in a2a_agent directory")
     run_dana_test_file(dana_test_file)
