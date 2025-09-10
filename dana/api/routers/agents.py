@@ -8,11 +8,13 @@ import base64
 import logging
 import os
 import shutil
-import traceback
+
+# import traceback
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import List
+
+# from typing import List
 import json
 from fastapi import (
     APIRouter,
@@ -65,7 +67,7 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 
 
 class AssociateDocumentsRequest(BaseModel):
-    document_ids: List[int]
+    document_ids: list[int]
 
 
 def clear_agent_cache(agent_folder_path: str) -> None:
@@ -663,38 +665,38 @@ async def create_agent(
         db.commit()
         db.refresh(db_agent)
 
-        # Auto-generate basic Dana code and agent folder
-        try:
-            folder_path = await _auto_generate_basic_agent_code(
-                agent_id=db_agent.id,
-                agent_name=agent.name,
-                agent_description=agent.description,
-                agent_config=agent.config or {},
-                agent_manager=agent_manager,
-            )
+        # # Auto-generate basic Dana code and agent folder
+        # try:
+        #     folder_path = await _auto_generate_basic_agent_code(
+        #         agent_id=db_agent.id,
+        #         agent_name=agent.name,
+        #         agent_description=agent.description,
+        #         agent_config=agent.config or {},
+        #         agent_manager=agent_manager,
+        #     )
 
-            # Update agent with folder path
-            if folder_path:
-                # Update config with folder_path
-                updated_config = db_agent.config.copy() if db_agent.config else {}
-                updated_config["folder_path"] = folder_path
+        #     # Update agent with folder path
+        #     if folder_path:
+        #         # Update config with folder_path
+        #         updated_config = db_agent.config.copy() if db_agent.config else {}
+        #         updated_config["folder_path"] = folder_path
 
-                # Update database record
-                db_agent.config = updated_config
-                db_agent.generation_phase = "code_generated"
+        #         # Update database record
+        #         db_agent.config = updated_config
+        #         db_agent.generation_phase = "code_generated"
 
-                # Force update by marking as dirty
-                flag_modified(db_agent, "config")
+        #         # Force update by marking as dirty
+        #         flag_modified(db_agent, "config")
 
-                db.commit()
-                db.refresh(db_agent)
-                logger.info(f"Updated agent {db_agent.id} with folder_path: {folder_path}")
-                logger.info(f"Agent config after update: {db_agent.config}")
+        #         db.commit()
+        #         db.refresh(db_agent)
+        #         logger.info(f"Updated agent {db_agent.id} with folder_path: {folder_path}")
+        #         logger.info(f"Agent config after update: {db_agent.config}")
 
-        except Exception as code_gen_error:
-            logger.error(f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}")
-            logger.error(f"Full traceback: {traceback.format_exc()}")
-            # Don't fail the agent creation if code generation fails
+        # except Exception as code_gen_error:
+        #     Don't fail the agent creation if code generation fails
+        #     logger.error(f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}")
+        #     logger.error(f"Full traceback: {traceback.format_exc()}")
 
         return AgentRead(
             id=db_agent.id,
@@ -1064,6 +1066,7 @@ async def associate_documents_with_agent(
         new_file_paths = []
         if documents_to_add:
             new_file_paths = await document_service.associate_documents_with_agent(agent_id, folder_path, list(documents_to_add), db)
+            print(f"new_file_paths: {new_file_paths}")
 
         # Handle document removals
         if documents_to_remove:
