@@ -1,4 +1,4 @@
-"""Dana `KNOWS` Financial-Analysis Expertise Module / Knowledge Pack."""
+"""Financial-Analysis Domain Expertise Module / Domain Knowledge Pack."""
 
 
 from .fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
