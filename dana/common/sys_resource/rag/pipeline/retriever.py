@@ -7,10 +7,9 @@ from dana.common.sys_resource.embedding import get_default_embedding_model
 
 
 class Retriever:
-    def __init__(self, index: VectorStoreIndex, embed_model = None, **kwargs) -> None:
+    def __init__(self, index: VectorStoreIndex, embed_model=None, **kwargs) -> None:
         self._index = index
         self._embedding_model = embed_model if embed_model else get_default_embedding_model()
-
 
     @classmethod
     def from_index(cls, index: VectorStoreIndex, embed_model: str | None = None, **kwargs) -> "Retriever":
@@ -27,7 +26,9 @@ class Retriever:
     ) -> list[NodeWithScore]:
         if filters is None:
             return await self.aretrieve(query, num_results)
-        return await self._index.as_retriever(similarity_top_k=num_results, filters=filters, embed_model=self._embedding_model).aretrieve(query)
+        return await self._index.as_retriever(similarity_top_k=num_results, filters=filters, embed_model=self._embedding_model).aretrieve(
+            query
+        )
 
     def get_all_filenames(self) -> list[str]:
         """Get all filenames from the index.

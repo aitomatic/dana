@@ -3,7 +3,6 @@ import sys
 from . import small_submodule
 from .small_submodule import (
     I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,
-
     util_submodule as util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init,
     small_util_submodule_in_big_util_submodule as small_util_submodule_in_big_util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init,
     SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE_IMPORTED_IN_SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,

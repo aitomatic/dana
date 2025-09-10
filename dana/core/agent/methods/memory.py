@@ -4,16 +4,8 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 
 class MemoryMixin:
-    def remember_sync(self, key: str, value: Any, sandbox_context: SandboxContext | None = None) -> Any:
+    def remember_sync(self, key: str, value: Any, sandbox_context: SandboxContext | None = None) -> str:
         """Synchronous agent memory storage method."""
-        return self._remember_impl(sandbox_context or SandboxContext(), key, value)
-
-    def recall_sync(self, key: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Synchronous agent memory retrieval method."""
-        return self._recall_impl(sandbox_context or SandboxContext(), key)
-
-    def _remember_impl(self, sandbox_context: SandboxContext, key: str, value: Any) -> str:
-        """Implementation of memory storage functionality."""
         self.debug(f"REMEMBER: Storing key '{key}' with value: {value}")
 
         # Store in centralized working memory
@@ -30,8 +22,8 @@ class MemoryMixin:
                 self.debug(f"Fallback memory storage also failed: {e2}")
                 return f"Failed to store '{key}' in memory"
 
-    def _recall_impl(self, sandbox_context: SandboxContext, key: str) -> Any:
-        """Implementation of memory retrieval functionality."""
+    def recall_sync(self, key: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Synchronous agent memory retrieval method."""
         self.debug(f"RECALL: Retrieving key '{key}'")
 
         # Try centralized working memory first

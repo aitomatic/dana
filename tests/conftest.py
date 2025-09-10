@@ -87,6 +87,7 @@ def load_environment_variables():
     """Load environment variables from .env file for all tests."""
     try:
         from dotenv import load_dotenv
+
         # Load .env file from project root
         project_root = Path(__file__).parent.parent
         env_file = project_root / ".env"
@@ -109,31 +110,32 @@ def ensure_environment_variables():
     original_openai_key = os.environ.get("OPENAI_API_KEY")
     original_cohere_key = os.environ.get("COHERE_API_KEY")
     original_azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
-    
+
     # If any of these keys are missing, try to reload from .env
     if not any([original_openai_key, original_cohere_key, original_azure_key]):
         try:
             from dotenv import load_dotenv
+
             project_root = Path(__file__).parent.parent
             env_file = project_root / ".env"
             if env_file.exists():
                 load_dotenv(env_file, override=True)
         except Exception:
             pass  # Silently fail if we can't reload
-    
+
     yield
-    
+
     # Restore original values if they were changed
     if original_openai_key is not None:
         os.environ["OPENAI_API_KEY"] = original_openai_key
     elif "OPENAI_API_KEY" in os.environ:
         os.environ.pop("OPENAI_API_KEY")
-        
+
     if original_cohere_key is not None:
         os.environ["COHERE_API_KEY"] = original_cohere_key
     elif "COHERE_API_KEY" in os.environ:
         os.environ.pop("COHERE_API_KEY")
-        
+
     if original_azure_key is not None:
         os.environ["AZURE_OPENAI_API_KEY"] = original_azure_key
     elif "AZURE_OPENAI_API_KEY" in os.environ:

@@ -166,11 +166,9 @@ class LlamaIndexEmbeddingResource(Loggable):
                 api_base=base_url,
                 model_name=model_name,
             )
-            embedding.get_text_embedding("test") # Try running embedding to see if it works
+            embedding.get_text_embedding("test")  # Try running embedding to see if it works
             print(f"\033[92mSuccessfully initialized embedding with model_name: {model_name}\033[0m")
             return embedding
-
-
 
     def _create_azure_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         try:
@@ -183,7 +181,7 @@ class LlamaIndexEmbeddingResource(Loggable):
         api_version = self._resolve_env_var(provider_config.get("api_version", ""), "2025-01-01-preview")
         if not api_key or not azure_endpoint:
             raise EmbeddingError("Azure embedding failed to initialize. Please provide both AZURE_OPENAI_API_KEY and AZURE_OPENAI_API_URL")
-        
+
         # Use dimension_override if provided, else fall back to provider_config
         dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
 
@@ -229,18 +227,15 @@ class LlamaIndexEmbeddingResource(Loggable):
             model_name=model_name,
             embed_batch_size=provider_config.get("batch_size", 64),
         )
-    
+
     def _create_ibm_watsonx_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
-        """Create IBM Watsonx LlamaIndex embedding.
-        """
+        """Create IBM Watsonx LlamaIndex embedding."""
         try:
             from llama_index.embeddings.ibm import WatsonxEmbeddings  # type: ignore
         except ImportError:
             raise EmbeddingError("Install: pip install llama-index-embeddings-ibm")
-        
-        resolved_configs = {
-            k : self._resolve_env_var(v, None) for k, v in provider_config.items()
-        }
+
+        resolved_configs = {k: self._resolve_env_var(v, None) for k, v in provider_config.items()}
 
         return WatsonxEmbeddings(
             model_id=model_name,
@@ -299,7 +294,7 @@ class EmbeddingFactory:
             else:
                 # Use default from dana_config.json
                 embedding_model = embedding_resource.get_default_embedding_model(dimensions)
-                
+
             actual_dimensions = dimensions if dimensions else EmbeddingFactory._extract_dimensions(embedding_model)
 
             return embedding_model, actual_dimensions
@@ -362,5 +357,6 @@ get_default_embedding_model = RAGEmbeddingResource().get_default_embedding_model
 if __name__ == "__main__":
     from dotenv import load_dotenv
     import os
+
     load_dotenv()
     print(get_default_embedding_model())

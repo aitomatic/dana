@@ -5,10 +5,6 @@ from dana.core.lang.sandbox_context import SandboxContext
 class LLMMixin:
     def llm_sync(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> str | BaseResponse:
         """Synchronous agent LLM method."""
-        return self._llm_impl(request, sandbox_context or SandboxContext(), **kwargs)
-
-    def _llm_impl(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext, **kwargs) -> str | BaseResponse:
-        """Implementation of LLM functionality. Returns the response directly."""
         if not sandbox_context:
             return "Sandbox context required for LLM calls"
 

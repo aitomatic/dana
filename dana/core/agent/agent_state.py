@@ -35,7 +35,7 @@ class AgentState:
     mind: AgentMind = field(default_factory=lambda: AgentMind())
     """Complete cognitive system including all memory types."""
 
-    timeline: Timeline = field(default_factory=Timeline)
+    timeline: Timeline = field(default_factory=lambda: Timeline(conversation_persistence=True))
     """Event timeline and audit trail."""
 
     execution: ExecutionContext = field(default_factory=ExecutionContext)
@@ -302,3 +302,34 @@ class AgentState:
             "memory_status": self.mind.memory.get_status() if self.mind and self.mind.memory else {},
             "last_updated": self.last_updated.isoformat(),
         }
+
+    def enable_persistence(self, base_path: str | None = None) -> None:
+        """Enable persistence for all state components.
+
+        Args:
+            base_path: Base path for state persistence (optional)
+        """
+        from pathlib import Path
+
+        if base_path:
+            state_path = Path(base_path)
+        else:
+            state_path = Path("~/.dana/agents/default/state").expanduser()
+
+        # Create state directory structure
+        state_path.mkdir(parents=True, exist_ok=True)
+        (state_path / "problem_context").mkdir(exist_ok=True)
+        (state_path / "mind").mkdir(exist_ok=True)
+        (state_path / "timeline").mkdir(exist_ok=True)
+        (state_path / "execution").mkdir(exist_ok=True)
+        (state_path / "capabilities").mkdir(exist_ok=True)
+
+        # Enable timeline persistence with agent-centric path
+        if self.timeline:
+            timeline_conversations_path = state_path / "timeline" / "conversations"
+            timeline_conversations_path.mkdir(parents=True, exist_ok=True)
+            # Update timeline to use the new path
+            self.timeline.conversation_filepath = timeline_conversations_path / f"conversation_{self.timeline.conversation_id}.json"
+
+        # Note: Other components (mind, execution, capabilities) would need their own
+        # persistence methods implemented in their respective classes

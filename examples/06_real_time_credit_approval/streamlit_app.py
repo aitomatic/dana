@@ -443,9 +443,9 @@ def display_decision_summary(result: dict[str, Any], app: dict[str, Any]):
         f"""
     <div class="decision-card {decision_class}">
         <h3>{decision_icon} {decision}</h3>
-        <p><strong>Reason:</strong> {result.get('reason', 'No reason provided')}</p>
-        <p><strong>Approved Amount:</strong> ¥{result.get('approved_amount', 0):,}</p>
-        <p><strong>Interest Rate:</strong> {result.get('interest_rate', 0):.2f}%</p>
+        <p><strong>Reason:</strong> {result.get("reason", "No reason provided")}</p>
+        <p><strong>Approved Amount:</strong> ¥{result.get("approved_amount", 0):,}</p>
+        <p><strong>Interest Rate:</strong> {result.get("interest_rate", 0):.2f}%</p>
     </div>
     """,
         unsafe_allow_html=True,

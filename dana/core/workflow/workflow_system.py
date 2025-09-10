@@ -362,7 +362,13 @@ class WorkflowInstance(StructInstance):
 
     @classmethod
     def create_with_strategy(
-        cls, problem: str, strategy_type: str = "auto", agent_instance=None, sandbox_context=None, **kwargs
+        cls,
+        problem: str,
+        strategy_type: str = "auto",
+        agent_instance=None,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context=None,
+        **kwargs,
     ) -> "WorkflowInstance":
         """Create a workflow using a specific strategy or auto-selection.
 
@@ -370,6 +376,7 @@ class WorkflowInstance(StructInstance):
             problem: The problem statement to solve
             strategy_type: Strategy to use ("auto", "iterative", "recursive")
             agent_instance: AgentInstance (required for strategy execution)
+            artifacts: Optional artifacts for the workflow
             sandbox_context: Optional sandbox context for execution
             **kwargs: Additional parameters including 'objective'
 

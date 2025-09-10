@@ -145,15 +145,21 @@ class LLMResourceInstance(ResourceInstance):
         """Stop the resource."""
         return self.shutdown()
 
-    async def query(self, request: BaseRequest) -> BaseResponse:  # type: ignore
+    async def query(self, request: BaseRequest | str) -> BaseResponse:  # type: ignore
+        if isinstance(request, str):
+            request = BaseRequest(arguments={"prompt": request})
         """Query the LLM resource."""
         return await self._llm_resource.query(request)
 
-    def query_sync(self, request: BaseRequest) -> BaseResponse:
+    def query_sync(self, request: BaseRequest | str) -> BaseResponse:
         """Query the LLM resource synchronously."""
+        if isinstance(request, str):
+            request = BaseRequest(arguments={"prompt": request})
         return self._llm_resource.query_sync(request)
 
-    def can_handle(self, request: BaseRequest) -> bool:
+    def can_handle(self, request: BaseRequest | str) -> bool:
+        if isinstance(request, str):
+            request = BaseRequest(arguments={"prompt": request})
         """Check if the LLM resource can handle the request."""
         if hasattr(request, "arguments") and isinstance(request.arguments, dict):
             return self._llm_resource.can_handle(request)
