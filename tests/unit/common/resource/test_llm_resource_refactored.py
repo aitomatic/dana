@@ -15,7 +15,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "DANA_MOCK_LLM"]:
+        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "DANA_MOCK_LLM", "MOONSHOT_API_KEY", "MOONSHOT_API_URL", "OPENAI_API_URL"]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]
@@ -32,6 +32,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_configuration_manager_integration(self):
         """Test that LLMResource properly integrates with LLMConfigurationManager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
@@ -42,6 +43,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_model_property_uses_config_manager(self):
         """Test that model property stays in sync with configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
@@ -54,6 +56,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_model_property_setter_uses_config_manager(self):
         """Test that model property setter uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
@@ -97,6 +100,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         else:
             # In real mode, test with actual API keys
             os.environ["OPENAI_API_KEY"] = "test-key"
+            os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
             llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
             # Test validation through LLMResource
@@ -112,6 +116,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_find_first_available_model_uses_config_manager(self):
         """Test that _find_first_available_model uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
@@ -124,6 +129,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_get_available_models_uses_config_manager(self):
         """Test that get_available_models uses configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
@@ -139,6 +145,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_backward_compatibility(self):
         """Test that refactored LLMResource maintains backward compatibility."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         # Test all original instantiation patterns still work
 
@@ -172,6 +179,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         mock_config_loader_cm.return_value.get_default_config.return_value = mock_config
 
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm")  # No explicit model
 
@@ -213,6 +221,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_api_surface_unchanged(self):
         """Test that the public API surface of LLMResource is unchanged."""
         os.environ["OPENAI_API_KEY"] = "test-key"
+        os.environ["OPENAI_API_URL"] = "https://api.openai.com/v1"
 
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 

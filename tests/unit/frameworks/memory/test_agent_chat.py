@@ -31,7 +31,13 @@ class TestAgentChat(unittest.TestCase):
                 # Create a unique agent_id to avoid conflicts
                 import uuid
                 unique_id = f"{agent_name}_{uuid.uuid4().hex[:8]}"
-                agent_self.state.timeline = Timeline(agent_id=unique_id)
+
+                # Create timeline with temp directory
+                timeline = Timeline(agent_id=unique_id)
+                # Override the timeline directory to use temp directory
+                timeline.timeline_dir = self.memory_dir / "timeline"
+                timeline.timeline_dir.mkdir(parents=True, exist_ok=True)
+                agent_self.state.timeline = timeline
 
         self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
         self.init_patcher.start()

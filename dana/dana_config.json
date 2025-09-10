@@ -45,25 +45,45 @@
                 "api_version": "env:AZURE_OPENAI_API_VERSION",
                 "api_type": "env:AZURE_OPENAI_API_TYPE"
             },
-            "huggingface": {
+            "huggingface-direct": {
+                "api_key": "env:HF_TOKEN",
+                "base_url": "https://api-inference.huggingface.co"
+	    },
+            "huggingface-router": {
+                "api_key": "env:HF_TOKEN",
+                "base_url": "https://router.huggingface.co/v1"
+	    },
+            "huggingface-env": {
                 "api_key": "env:HF_TOKEN",
                 "base_url": "env:HF_URL"
+	    },
+            "huggingface": {
+                "api_key": "env:HF_TOKEN",
+                "base_url": "https://api-inference.huggingface.co"
             },
-            "openrouter": {
+            "openrouter-env": {
                 "api_key": "env:OPENROUTER_API_KEY",
                 "base_url": "env:OPENROUTER_API_URL"
             },
-            "moonshot-openai": {
-                "api_key": "env:MOONSHOT_API_KEY",
-                "base_url": "env:MOONSHOT_API_URL"
+            "openrouter": {
+                "api_key": "env:OPENROUTER_API_KEY",
+                "base_url": "https://api.anthropic.com/v1"
             },
-            "openai": {
+            "openai-env": {
                 "api_key": "env:OPENAI_API_KEY",
                 "base_url": "env:OPENAI_API_URL"
+	    },
+            "openai": {
+                "api_key": "env:OPENAI_API_KEY",
+                "base_url": "https://api.openai.com/v1"
+            },
+            "moonshot-env": {
+                "api_key": "env:MOONSHOT_API_KEY",
+                "base_url": "env:MOONSHOT_API_URL"
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
-                "base_url": "env:MOONSHOT_API_URL"
+                "base_url": "https://api.moonshot.ai/v1"
             },
             "cohere": {
                 "api_key": "env:COHERE_API_KEY"
@@ -72,9 +92,13 @@
                 "api_key": "env:ANTHROPIC_API_KEY",
 		"base_url": "env:ANTHROPIC_API_URL"
             },
-            "anthropic": {
+            "anthropic-env": {
                 "api_key": "env:MOONSHOT_API_KEY",
 		"base_url": "env:MOONSHOT_API_URL"
+            },
+            "anthropic": {
+                "api_key": "env:MOONSHOT_API_KEY",
+		"base_url": "https://api.anthropic.com/v1"
             },
             "groq": {
                 "api_key": "env:GROQ_API_KEY",
