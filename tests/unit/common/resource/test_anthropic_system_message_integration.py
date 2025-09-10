@@ -20,6 +20,9 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
         # Enable mock mode to avoid real API calls
         os.environ["OPENAI_API_KEY"] = "test-key"
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
+        # Set required environment variables for anthropic provider config
+        os.environ["MOONSHOT_API_KEY"] = "test-key"
+        os.environ["MOONSHOT_API_URL"] = "https://api.moonshot.cn/v1"
 
     def test_aisuite_handles_anthropic_automatically(self):
         """Test that AISuite automatically handles Anthropic system message transformation."""
