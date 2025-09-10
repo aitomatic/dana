@@ -41,12 +41,18 @@ class TestAgentState:
 
     def test_start_new_conversation_turn(self):
         """Test starting new conversation turn."""
+        import uuid
+        # Create timeline with unique agent ID to avoid loading existing events
+        timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
         state = AgentState()
+        state.timeline = timeline
 
         state.start_new_conversation_turn("Hello")
 
-        # Should update memory via mind
-        assert state.mind.memory.conversation.history  # Has conversation history
+        # Should update timeline
+        conversations = state.timeline.get_events_by_type("conversation")
+        assert len(conversations) == 1
+        assert conversations[0].user_input == "Hello"
         assert state.last_updated > state.created_at
 
     def test_get_llm_context_minimal(self):
@@ -176,20 +182,27 @@ class TestAgentState:
 
     def test_timeline_integration(self):
         """Test integration with Timeline."""
+        import uuid
+        # Create timeline with unique agent ID to avoid loading existing events
+        timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
         state = AgentState()
+        state.timeline = timeline
 
         # Timeline should be empty initially
-        assert len(state.timeline.events) == 0
+        assert state.timeline.get_event_count() == 0
 
-        # Add events (would normally be done by agent operations)
-        from dana.core.agent.timeline import AgentAction
+        # Add events using new API
+        state.timeline.add_action("test", "test_action", depth=0)
+        state.timeline.add_conversation_turn("Hello", "Hi!", turn_number=1)
 
-        event = AgentAction(action_type="test", action_name="test_action", depth=0)
-        # Set timestamp via parent class constructor
-        event.timestamp = datetime.now()
-        state.timeline.add_event(event)
-
-        assert len(state.timeline.events) == 1
+        assert state.timeline.get_event_count() == 2
+        
+        # Check specific event types
+        actions = state.timeline.get_events_by_type("action")
+        conversations = state.timeline.get_events_by_type("conversation")
+        
+        assert len(actions) == 1
+        assert len(conversations) == 1
 
     def test_get_state_summary(self):
         """Test getting comprehensive state summary."""

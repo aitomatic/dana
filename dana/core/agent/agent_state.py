@@ -35,7 +35,7 @@ class AgentState:
     mind: AgentMind = field(default_factory=lambda: AgentMind())
     """Complete cognitive system including all memory types."""
 
-    timeline: Timeline = field(default_factory=lambda: Timeline(conversation_persistence=True))
+    timeline: Timeline = field(default_factory=lambda: Timeline(agent_id=f"agent_{id(object())}"))
     """Event timeline and audit trail."""
 
     execution: ExecutionContext = field(default_factory=ExecutionContext)
@@ -51,6 +51,12 @@ class AgentState:
     """When this state was created."""
     last_updated: datetime = field(default_factory=datetime.now)
     """When this state was last updated."""
+
+    def __post_init__(self):
+        """Post-initialize the agent state."""
+        # Timeline is now independent - no connection to memory needed
+        # Timeline handles its own persistence
+        pass
 
     def update_timestamp(self) -> None:
         """Update the last_updated timestamp."""
@@ -82,10 +88,10 @@ class AgentState:
 
         # Memory context from mind
         if self.mind:
-            # Conversation memory
+            # Conversation context from timeline
             if depth != "minimal":
                 n_turns = {"minimal": 1, "standard": 3, "comprehensive": 10}.get(depth, 3)
-                context["conversation_history"] = self.mind.recall_conversation(n_turns)
+                context["conversation_history"] = self.timeline.get_conversation_context(n_turns)
 
             # Relevant memories
             if self.problem_context:
@@ -279,9 +285,9 @@ class AgentState:
         Args:
             user_request: The user's request
         """
-        # Add conversation turn via mind's memory system
-        if self.mind and self.mind.memory and self.mind.memory.conversation:
-            self.mind.memory.conversation.add_turn("user", user_request)
+        # Add conversation turn via timeline
+        turn_number = len(self.timeline.get_events_by_type("conversation")) + 1
+        self.timeline.add_conversation_turn(user_request, "", turn_number)
         self.update_timestamp()
 
     def get_state_summary(self) -> dict[str, Any]:

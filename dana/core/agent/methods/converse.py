@@ -12,7 +12,6 @@ from typing import Any, Protocol, cast
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.workflow.workflow_system import WorkflowInstance
 
-from ..timeline.timeline_event import ConversationTurn
 from .solvers.base import BaseSolverMixin
 
 # --- Response and IO Types ---
@@ -81,11 +80,7 @@ class ConverseMixin:
 
             turn_number += 1
 
-            # 2. Start new conversation turn in timeline
-            conversation_turn = ConversationTurn.start_new_turn(message, turn_number)
-            self.state.timeline.add_event(conversation_turn)
-
-            # 3. Dispatch to solver
+            # 2. Dispatch to solver
             try:
                 artifacts = {}
                 if solve_fn is not None:
@@ -102,8 +97,8 @@ class ConverseMixin:
                 else:
                     response = Response(type="answer", text=str(result))
 
-                # 4. Complete the conversation turn
-                conversation_turn.complete_turn(response.text)
+                # 3. Add conversation turn to timeline
+                self.state.timeline.add_conversation_turn(message, response.text, turn_number)
 
                 # 5. Send response back
                 io.send_output(response)
@@ -111,7 +106,7 @@ class ConverseMixin:
             except Exception as e:
                 # Handle errors gracefully
                 error_response = Response(type="error", text=f"I encountered an error: {str(e)}")
-                conversation_turn.complete_turn(error_response.text)
+                self.state.timeline.add_conversation_turn(message, error_response.text, turn_number)
                 io.send_output(error_response)
 
         return "conversation ended"

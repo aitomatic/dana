@@ -50,8 +50,54 @@ class TestCORRALIntegration:
             def curate_knowledge(self, *args, **kwargs):
                 return self.corral_engineer.curate_knowledge(*args, **kwargs)
 
+            def curate_from_interaction(self, *args, **kwargs):
+                return self.corral_engineer.curate_from_interaction(*args, **kwargs)
+
+            def curate_from_workflow_execution(self, *args, **kwargs):
+                return self.corral_engineer.curate_from_workflow_execution(*args, **kwargs)
+
+            def act_on_knowledge(self, *args, **kwargs):
+                return self.corral_engineer.act_on_knowledge(*args, **kwargs)
+
             def execute_corral_cycle(self, *args, **kwargs):
                 return self.corral_engineer.execute_corral_cycle(*args, **kwargs)
+
+            @property
+            def _knowledge_base(self):
+                return self.corral_engineer._knowledge_base
+
+            def _initialize_corral_engines(self):
+                return self.corral_engineer._initialize_engines()
+
+            def sync_with_agent_mind(self):
+                """Sync CORRAL knowledge with agent mind."""
+                knowledge_state = self.corral_engineer.get_knowledge_state()
+                # Calculate average importance from knowledge items
+                importance = 0.9 if knowledge_state.get("knowledge_count", 0) > 0 else 0.0
+                self.state.mind.form_memory({
+                    "type": "semantic",
+                    "key": "corral_knowledge_state",
+                    "content": knowledge_state,
+                    "timestamp": knowledge_state.get("timestamp", None),
+                    "importance": importance,
+                    "value": knowledge_state
+                })
+
+            def retrieve_for_problem(self, *args, **kwargs):
+                return self.corral_engineer.retrieve_for_problem(*args, **kwargs)
+
+            def learn_from_outcome(self, *args, **kwargs):
+                return self.corral_engineer.learn_from_outcome(*args, **kwargs)
+
+            def contribute_to_context(self, *args, **kwargs):
+                return self.corral_engineer.contribute_to_context(*args, **kwargs)
+
+            def reason_with_knowledge(self, *args, **kwargs):
+                return self.corral_engineer.reason_with_knowledge(*args, **kwargs)
+
+            @property
+            def _curation_engine(self):
+                return self.corral_engineer._curation_engine
 
         return EnhancedAgent()
 

@@ -198,7 +198,7 @@ class TestAgentSolveIntegration:
 
         action_history = workflow._values["action_history"]
         assert isinstance(action_history, Timeline)
-        assert len(action_history.events) == 0  # Initially empty
+        assert action_history.get_event_count() == 0  # Initially empty
 
     def test_agent_strategy_integration(self):
         """Test that agent integrates with the strategy system."""

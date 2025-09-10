@@ -340,9 +340,7 @@ class WorkflowInstance(StructInstance):
 
         # Add conversation history to constraints if agent state available
         if agent_state and hasattr(agent_state, "timeline"):
-            from dana.core.agent.timeline.timeline_event import ConversationTurn
-
-            conversation_context = ConversationTurn.get_conversation_context(agent_state.timeline)
+            conversation_context = agent_state.timeline.get_conversation_context()
             if conversation_context:
                 problem_context.constraints["conversation_history"] = conversation_context
 
@@ -390,9 +388,7 @@ class WorkflowInstance(StructInstance):
             raise ValueError("agent_instance is required for strategy-based workflow creation")
 
         # Create problem context with conversation context from centralized state
-        from dana.core.agent.timeline.timeline_event import ConversationTurn
-
-        conversation_context = ConversationTurn.get_conversation_context(agent_instance.state.timeline)
+        conversation_context = agent_instance.state.timeline.get_conversation_context()
 
         problem_context = ProblemContext(
             problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0

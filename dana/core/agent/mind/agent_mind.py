@@ -118,16 +118,6 @@ class AgentMind:
             domain = experience.get("domain", "general")
             self.memory.semantic.store_fact(key, fact, domain=domain)
 
-    def recall_conversation(self, n_turns: int = 3) -> list[dict[str, Any]]:
-        """Recall recent conversation turns.
-
-        Args:
-            n_turns: Number of turns to recall
-
-        Returns:
-            List of recent conversation turns
-        """
-        return self.memory.get_conversation_context(n_turns)
 
     def recall_relevant(self, problem: ProblemContext) -> dict[str, Any]:
         """Recall all relevant information for current problem.

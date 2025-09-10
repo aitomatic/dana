@@ -163,6 +163,9 @@ class AgentAction(TimelineEvent):
         """Initialize metadata if not provided."""
         if self.metadata is None:
             object.__setattr__(self, "metadata", {})
+        
+        # Call parent constructor to initialize timestamp and other attributes
+        super().__init__(conversation_turn=0, depth=self.depth)
 
     @property
     def event_type(self) -> str:
@@ -196,6 +199,9 @@ class LearningEvent(TimelineEvent):
         """Initialize metadata if not provided."""
         if self.metadata is None:
             object.__setattr__(self, "metadata", {})
+        
+        # Call parent constructor to initialize timestamp and other attributes
+        super().__init__(conversation_turn=0, depth=0)
 
     @property
     def event_type(self) -> str:

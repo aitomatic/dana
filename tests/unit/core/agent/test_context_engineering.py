@@ -148,41 +148,47 @@ class TestTimeline:
 
     def test_create_timeline(self):
         """Test creating an empty timeline."""
-        timeline = Timeline()
-        assert len(timeline.events) == 0
+        import uuid
+        timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
+        assert timeline.get_event_count() == 0
 
-    def test_add_event(self):
-        """Test adding events to timeline."""
-        from datetime import datetime
-        from dana.core.agent.timeline import AgentAction
+    def test_add_action(self):
+        """Test adding action events to timeline."""
+        import uuid
+        timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
 
-        timeline = Timeline()
+        # Wait for async loading to complete
+        timeline._wait_for_loading()
 
-        # Create basic timeline event
-        event = AgentAction(action_type="test_event", action_name="test_action", depth=0)
-        event.timestamp = datetime.now()
+        # Add action event using new API
+        timeline.add_action("test_event", "test_action", depth=0)
 
-        timeline.add_event(event)
-
-        assert len(timeline.events) == 1
-        assert timeline.events[0].event_type == "agent_action"
+        assert timeline.get_event_count() == 1
+        actions = timeline.get_events_by_type("action")
+        assert len(actions) == 1
+        assert actions[0].event_type == "agent_action"
 
     def test_timeline_basic_functionality(self):
-        """Test basic Timeline functionality with AgentAction events."""
-        from datetime import datetime
-        from dana.core.agent.timeline import AgentAction
+        """Test basic Timeline functionality with multiple event types."""
+        import uuid
+        import time
+        timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
 
-        timeline = Timeline()
+        # Wait for async loading to complete
+        timeline._wait_for_loading()
 
-        # Add multiple events
-        event1 = AgentAction(action_type="event1", action_name="action1", depth=0)
-        event1.timestamp = datetime.now()
-        event2 = AgentAction(action_type="event2", action_name="action2", depth=1)
-        event2.timestamp = datetime.now()
+        # Add multiple events of different types
+        timeline.add_action("event1", "action1", depth=0)
+        timeline.add_action("event2", "action2", depth=1)
+        timeline.add_conversation_turn("Hello", "Hi there!", turn_number=1)
 
-        timeline.add_event(event1)
-        timeline.add_event(event2)
-
-        assert len(timeline.events) == 2
-        assert timeline.events[0] == event1
-        assert timeline.events[1] == event2
+        assert timeline.get_event_count() == 3
+        
+        # Check event types
+        actions = timeline.get_events_by_type("action")
+        conversations = timeline.get_events_by_type("conversation")
+        
+        assert len(actions) == 2
+        assert len(conversations) == 1
+        assert actions[0].event_type == "agent_action"
+        assert conversations[0].event_type == "conversation_turn"

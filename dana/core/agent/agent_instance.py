@@ -83,6 +83,8 @@ class AgentInstance(
         # Legacy attributes now delegate to centralized state
         # These properties provide backward compatibility while using the new state system
         self._llm_resource = None  # Lazy initialization
+        self._conversation_memory_cleared = False  # Track if conversation memory was cleared
+        self._context_manager_initialized = False  # Track if context manager has been used
 
         # Timeline is now part of centralized state
         self._timeline = self.state.timeline
@@ -143,15 +145,6 @@ class AgentInstance(
         """Legacy memory setter - not supported, use centralized state directly."""
         raise NotImplementedError("Use self.state.mind.memory.working directly instead of setting _memory")
 
-    @property
-    def _conversation_memory(self):
-        """Legacy conversation memory access - now delegates to enhanced timeline."""
-        return self.state.timeline
-
-    @_conversation_memory.setter
-    def _conversation_memory(self, value) -> None:
-        """Legacy conversation memory setter - not supported, use enhanced timeline directly."""
-        raise NotImplementedError("Use self.state.timeline directly instead of setting _conversation_memory")
 
     # ============================================================================
     # STATIC/CLASS METHODS
@@ -331,10 +324,23 @@ class AgentInstance(
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
         try:
-            return self.state.mind.memory.conversation.get_statistics()
+            # Get conversation events from timeline
+            conversations = self.state.timeline.get_events_by_type("conversation")
+            timeline_summary = self.state.timeline.get_timeline_summary()
+
+            return {
+                "total_messages": len(conversations),
+                "total_turns": len(conversations),
+                "active_turns": len(conversations),
+                "summary_count": 0,  # Not implemented in new system yet
+                "session_count": 1,  # Timeline doesn't track sessions yet
+                "conversation_id": getattr(self.state.timeline, 'agent_id', 'unknown'),
+                "created_at": timeline_summary.get("first_event", ""),
+                "updated_at": timeline_summary.get("last_event", ""),
+            }
         except Exception:
             return {
-                "error": "Conversation memory not available",
+                "error": "Timeline not available",
                 "total_messages": 0,
                 "total_turns": 0,
                 "active_turns": 0,
@@ -345,7 +351,11 @@ class AgentInstance(
     def clear_conversation_memory(self) -> bool:
         """Clear the conversation memory for this agent."""
         try:
-            self.state.mind.memory.conversation.clear()
+            # Clear conversation events from timeline
+            conversations = self.state.timeline.get_events_by_type("conversation")
+            for conversation in conversations:
+                self.state.timeline.conversation_events.remove(conversation)
+            self._conversation_memory_cleared = True
             return True
         except Exception:
             return False
@@ -391,8 +401,40 @@ class AgentInstance(
         This method is kept for backward compatibility but delegates to the state system.
         """
         # Conversation memory is automatically initialized as part of AgentState
-        # No additional initialization needed
-        pass
+        # Reset the cleared flag to make conversation memory available again
+        self._conversation_memory_cleared = False
+
+    @property
+    def _conversation_memory(self):
+        """Backward compatibility property for conversation memory.
+
+        Note: Conversation memory is now handled by the Timeline system.
+        This property returns None for backward compatibility.
+        """
+        return None
+
+    @property
+    def _llm_resource_instance(self):
+        """Backward compatibility property for LLM resource instance."""
+        return self._llm_resource
+
+    @_llm_resource_instance.setter
+    def _llm_resource_instance(self, value):
+        """Backward compatibility setter for LLM resource instance."""
+        self._llm_resource = value
+
+    @_llm_resource_instance.deleter
+    def _llm_resource_instance(self):
+        """Backward compatibility deleter for LLM resource instance."""
+        self._llm_resource = None
+
+    @property
+    def context_engineer(self):
+        """Get the context engineer for this agent."""
+        if self._context_engineer is None:
+            from dana.frameworks.ctxeng import ContextEngineer
+            self._context_engineer = ContextEngineer.from_agent(self)
+        return self._context_engineer
 
     def _initialize_llm_resource(self):
         """Initialize LLM resource from agent's config if not already done."""
@@ -475,9 +517,12 @@ class AgentInstance(
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""
         try:
-            self.context_engineer = None
-            self.corral_engineer = None
-            self.prompt_engineer = None
+            self._context_engineer = None
+            self._corral_engineer = None
+            self._prompt_engineer = None
+
+            # Clear conversation memory
+            self.clear_conversation_memory()
 
             # Stop LLM resource if it was initialized
             if self._llm_resource is not None:
@@ -498,6 +543,14 @@ class AgentInstance(
 
                 self._llm_resource = None
 
+            # Update metrics to indicate cleanup is complete
+            self.update_metric("current_step", "cleaned_up")
+
+        except Exception as e:
+            import logging
+
+            logging.error(f"Failed to cleanup agent resources for {self.name}: {e}")
+
             # Clear conversation memory (now handled by centralized state)
             try:
                 self.state.mind.memory.conversation.clear()
@@ -514,11 +567,13 @@ class AgentInstance(
 
                 logging.warning(f"Failed to clear working memory for {self.name}: {e}")
 
-            # Update metrics to indicate cleanup
-            self.update_metric("is_running", False)
-            self.update_metric("current_step", "cleaned_up")
-            self.update_metric("elapsed_time", 0.0)
-            self.update_metric("tokens_per_sec", 0.0)
+            # Reset all metrics to default values
+            self._metrics = {
+                "is_running": False,
+                "current_step": "cleaned_up",
+                "elapsed_time": 0.0,
+                "tokens_per_sec": 0.0,
+            }
 
             # Log cleanup
             self.log_sync("Agent resources cleaned up")
@@ -541,6 +596,7 @@ class AgentInstance(
         Returns:
             self: The agent instance for use in with statement
         """
+        self._context_manager_initialized = True
         self._initialize_agent_resources()
         return self
 
@@ -554,6 +610,10 @@ class AgentInstance(
         """
         self._cleanup_agent_resources()
         # Don't suppress exceptions - let them propagate
+
+    # ============================================================================
+    # RESOURCE MANAGEMENT (Legacy - kept for backward compatibility)
+    # ============================================================================
 
     # ---------------------------
     # Solver Integration Methods
