@@ -10,7 +10,7 @@ MIT License
 from typing import Any, Generic, TypeVar
 
 from dana.common.mixins.registry_observable import RegistryObservable
-from dana.core.builtin_types.struct_system import StructInstance
+from dana.core.builtins.struct_system import StructInstance
 
 InstanceT = TypeVar("InstanceT", bound=StructInstance)
 

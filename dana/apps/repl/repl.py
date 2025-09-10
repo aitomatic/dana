@@ -52,11 +52,11 @@ from typing import Any
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils import Misc
-from dana.core.builtin_types.resource.builtins.llm_resource_instance import LLMResourceInstance
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.lang.translator.translator import Translator
+from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class REPL(Loggable):
@@ -74,9 +74,7 @@ class REPL(Loggable):
         super().__init__()  # Initialize Loggable
 
         # Create DanaSandbox and let it manage the context
-        self.sandbox = DanaSandbox(debug_mode=False, context=context)
-        # Force initialization to start API service
-        self.sandbox._ensure_initialized()
+        self.sandbox = DanaSandbox(debug_mode=False, context=context, do_initialize=True)
 
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
@@ -317,6 +315,7 @@ class REPL(Loggable):
                         "Full traceback: "
                         + "".join(traceback.format_exception(type(result.error), result.error, result.error.__traceback__))
                     )
+                assert result.error is not None
                 raise result.error
         except Exception as e:
             # Log debug information but don't print to user

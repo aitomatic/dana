@@ -8,6 +8,7 @@ with enhanced semantic coercion capabilities while maintaining backward compatib
 import os
 from typing import Any
 
+from dana.core.concurrency.promise_utils import resolve_if_promise
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
 
@@ -96,6 +97,8 @@ class UnifiedTypeCoercion(Loggable):
         """
         if isinstance(value, target_type):
             return value
+
+        value = resolve_if_promise(value)
 
         # Handle None values - None can be assigned to any type
         # This allows for optional/nullable types in Dana

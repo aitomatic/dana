@@ -264,11 +264,7 @@ class ConfigurationManager:
         for env_var in provider_info["env_vars"]:
             while True:
                 existing_value = os.getenv(env_var)
-                prompt = (
-                    f"{env_var} (current: {'*' * min(8, len(existing_value))}...): "
-                    if existing_value
-                    else f"{env_var}: "
-                )
+                prompt = f"{env_var} (current: {'*' * min(8, len(existing_value))}...): " if existing_value else f"{env_var}: "
 
                 try:
                     value = input(prompt).strip()
@@ -326,7 +322,7 @@ class ConfigurationManager:
             return None
 
         # Preflight connectivity message
-        print("\nChecking Local LLM at: {0}".format(base_url))
+        print(f"\nChecking Local LLM at: {base_url}")
         print("If this hangs or fails, ensure your server is running and at least one model is available.")
         print(f"Quick check:  curl -s {base_url}/models\n")
 
@@ -360,9 +356,11 @@ class ConfigurationManager:
                 return self._configure_local_provider()
             # Offer fallback if endpoint is at least reachable with OpenAI semantics
             if info and info.startswith("HTTP 200"):
-                use_fallback = input(
-                    "We detected an OpenAI-compatible endpoint. Configure OpenAI provider pointing to this BASE_URL instead? (y/N): "
-                ).strip().lower()
+                use_fallback = (
+                    input("We detected an OpenAI-compatible endpoint. Configure OpenAI provider pointing to this BASE_URL instead? (y/N): ")
+                    .strip()
+                    .lower()
+                )
                 if use_fallback == "y":
                     return {"OPENAI_BASE_URL": base_url, "OPENAI_API_KEY": "not-needed"}
             return None
@@ -402,7 +400,7 @@ class ConfigurationManager:
         """
         candidates = [
             "http://127.0.0.1:11434/v1",  # Ollama default
-            "http://127.0.0.1:8000/v1",   # vLLM common
+            "http://127.0.0.1:8000/v1",  # vLLM common
         ]
         detected: list[str] = []
         for base_url in candidates:
@@ -497,7 +495,7 @@ class ConfigurationManager:
             DanaSandbox._resource_users = 0
 
             # Create a sandbox and test the reason function
-            sandbox = DanaSandbox()
+            sandbox = DanaSandbox(do_initialize=True)
             sandbox.logger.setLevel(logging.CRITICAL)
 
             # Test: Basic reason function

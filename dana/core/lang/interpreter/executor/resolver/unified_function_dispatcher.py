@@ -91,8 +91,6 @@ class UnifiedFunctionDispatcher:
         self.stats["total_resolutions"] += 1
         attempts: list[ResolutionAttempt] = []
 
-        self.logger.debug(f"Resolving function: {name_info.original_name}")
-
         # Try each resolver in priority order
         for resolver in self.resolvers:
             try:
@@ -103,8 +101,6 @@ class UnifiedFunctionDispatcher:
                     )
                     attempts.append(attempt)
                     continue
-
-                self.logger.debug(f"Trying resolver: {resolver.get_name()}")
 
                 # Attempt resolution
                 result = resolver.resolve(name_info, context)
@@ -118,7 +114,6 @@ class UnifiedFunctionDispatcher:
                     self.resolution_history.extend(attempts)
                     self.stats["successful_resolutions"] += 1
 
-                    self.logger.debug(f"Function resolved by {resolver.get_name()}: {result}")
                     return result
                 else:
                     # Not found by this resolver
@@ -162,8 +157,6 @@ class UnifiedFunctionDispatcher:
         Returns:
             The function execution result
         """
-        self.logger.debug(f"Executing {resolved_func.func_type.value} function: {func_name}")
-
         # Import here to avoid circular imports
         from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 
@@ -301,9 +294,9 @@ class UnifiedFunctionDispatcher:
         """Execute a regular callable with automatic async detection."""
         import asyncio
         from dana.common.utils.misc import Misc
-        
+
         func = resolved_func.func
-        
+
         # Execute-time async detection and handling
         if asyncio.iscoroutinefunction(func):
             # Function is async - use Misc.safe_asyncio_run
@@ -311,7 +304,7 @@ class UnifiedFunctionDispatcher:
         else:
             # Function is sync - call directly
             raw_result = func(*evaluated_args, **evaluated_kwargs)
-            
+
         return self._assign_and_coerce_result(raw_result, func_name)
 
     def _assign_and_coerce_result(self, raw_result: Any, func_name: str) -> Any:

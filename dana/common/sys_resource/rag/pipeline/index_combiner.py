@@ -19,7 +19,6 @@ from llama_index.core import VectorStoreIndex, load_index_from_storage
 from llama_index.core.data_structs import IndexDict
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
-from dana.common.sys_resource.embedding import get_default_embedding_model
 from dana.common.sys_resource.rag.pipeline.base_stage import BaseStage
 
 
@@ -69,7 +68,9 @@ class IndexCombiner(BaseStage):
 
         return combined_index
 
-    async def _create_combined_vector_store_index(self, individual_indices: dict[str, VectorStoreIndex], embed_model: str | None = None) -> VectorStoreIndex | None:
+    async def _create_combined_vector_store_index(
+        self, individual_indices: dict[str, VectorStoreIndex], embed_model: str | None = None
+    ) -> VectorStoreIndex | None:
         """Create combined vector store by merging existing vector stores."""
 
         def _recursive_update_inplace(dict1: dict, dict2: dict):
@@ -124,4 +125,6 @@ class IndexCombiner(BaseStage):
         if index_struct_cls is None:
             index_struct_cls = IndexDict
 
-        return cast(VectorStoreIndex, load_index_from_storage(storage_context_cls.from_dict(combined_storage_context_dict), embed_model=embed_model))
+        return cast(
+            VectorStoreIndex, load_index_from_storage(storage_context_cls.from_dict(combined_storage_context_dict), embed_model=embed_model)
+        )

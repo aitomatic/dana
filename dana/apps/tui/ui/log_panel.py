@@ -87,7 +87,7 @@ class LogPanel(Vertical):
             yield Button("👁️ Show", id="log-toggle-btn", variant="default")
 
         # Log display - with copy functionality
-        self._log_widget = CopyableRichLog(highlight=True, markup=True, wrap=False, id="log-output", auto_scroll=True)
+        self._log_widget = CopyableRichLog(highlight=True, markup=True, wrap=True, id="log-output")
         yield self._log_widget
 
     def on_mount(self) -> None:

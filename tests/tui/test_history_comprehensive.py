@@ -128,7 +128,6 @@ def create_test_history():
         "'''This is a docstring'''",
         "# TODO: Implement this feature",
         # Debugging
-        "import pdb; pdb.set_trace()",
         "print(f'DEBUG: {variable}')",
         "assert condition, 'Error message'",
         # Testing

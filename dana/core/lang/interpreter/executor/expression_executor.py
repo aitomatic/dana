@@ -299,6 +299,7 @@ class ExpressionExecutor(BaseExecutor):
                 source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
                 if context.error_context.current_file and node.location.line
                 else None,
+                ast_node=node,  # Include the AST node for context detection
             )
             context.error_context.push_location(location)
             self.debug(f"Pushed location to error context: {location}")
@@ -1050,7 +1051,7 @@ class ExpressionExecutor(BaseExecutor):
                     # Default: direct call for non-registry functions with async detection
                     import asyncio
                     from dana.common.utils.misc import Misc
-                    
+
                     if asyncio.iscoroutinefunction(func):
                         return Misc.safe_asyncio_run(func, current_value)
                     else:

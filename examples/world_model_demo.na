@@ -1,0 +1,176 @@
+"""
+World Model Demo
+
+This example demonstrates how to use the world model functionality
+to make agents aware of time, location, and system context.
+"""
+
+import common
+
+# Example agent that uses world model awareness
+struct WorldAwareAgent:
+    name: str
+    domain: str
+    mind: AgentMind
+    
+    def __init__(self, name: str, domain: str):
+        self.name = name
+        self.domain = domain
+        self.mind = AgentMind()
+        self.mind.initialize_mind("demo_user")
+    
+    def get_current_context(self) -> dict:
+        """Get current world context for decision making."""
+        return {
+            "time": {
+                "current_time": self.mind.get_temporal_context().current_time,
+                "is_business_hours": self.mind.is_business_hours(),
+                "is_holiday": self.mind.is_holiday(),
+                "season": self.mind.get_current_season(),
+                "time_period": self.mind.get_time_period()
+            },
+            "location": self.mind.get_location_info(),
+            "system": {
+                "health": self.mind.get_system_health(),
+                "is_healthy": self.mind.is_system_healthy(),
+                "available_resources": self.mind.get_available_resources()
+            },
+            "localization": self.mind.get_localization_settings()
+        }
+    
+    def should_process_urgently(self, problem: str) -> bool:
+        """Determine if problem should be processed urgently based on context."""
+        # Check if it's business hours
+        if not self.mind.is_business_hours():
+            return False  # Don't process urgently outside business hours
+        
+        # Check system health
+        if not self.mind.is_system_healthy():
+            return False  # Don't process urgently if system is unhealthy
+        
+        # Check if it's a holiday
+        if self.mind.is_holiday():
+            return False  # Don't process urgently on holidays
+        
+        return True
+    
+    def get_processing_strategy(self, problem: str) -> str:
+        """Get optimal processing strategy based on world context."""
+        context = self.get_current_context()
+        
+        # Check system health for resource-intensive processing
+        if context["system"]["health"] == "critical":
+            return "lightweight_processing"
+        elif context["system"]["health"] == "degraded":
+            return "conservative_processing"
+        else:
+            return "normal_processing"
+    
+    def get_concurrency_level(self) -> int:
+        """Get optimal concurrency level based on system resources."""
+        return self.mind.get_optimal_concurrency_level()
+    
+    def format_response(self, response: str) -> str:
+        """Format response based on localization settings."""
+        settings = self.mind.get_localization_settings()
+        
+        # Add timestamp in appropriate format
+        current_time = self.mind.get_temporal_context().current_time
+        
+        if settings["time_format"] == "12-hour":
+            time_str = current_time.strftime("%I:%M %p")
+        else:
+            time_str = current_time.strftime("%H:%M")
+        
+        if settings["date_format"] == "MM/DD/YYYY":
+            date_str = current_time.strftime("%m/%d/%Y")
+        else:
+            date_str = current_time.strftime("%d/%m/%Y")
+        
+        return f"[{date_str} {time_str}] {response}"
+    
+    def solve_problem(self, problem: str) -> str:
+        """Solve a problem with world-aware decision making."""
+        # Get world context
+        context = self.get_current_context()
+        
+        # Determine processing strategy
+        strategy = self.get_processing_strategy(problem)
+        
+        # Get concurrency level
+        concurrency = self.get_concurrency_level()
+        
+        # Check if urgent processing is appropriate
+        urgent = self.should_process_urgently(problem)
+        
+        # Log context information
+        print(f"Agent: {self.name}")
+        print(f"Domain: {self.domain}")
+        print(f"Time: {context['time']['current_time']}")
+        print(f"Business Hours: {context['time']['is_business_hours']}")
+        print(f"Holiday: {context['time']['is_holiday']}")
+        print(f"Season: {context['time']['season']}")
+        print(f"Time Period: {context['time']['time_period']}")
+        print(f"Location: {context['location']['city']}, {context['location']['country']}")
+        print(f"System Health: {context['system']['health']}")
+        print(f"Processing Strategy: {strategy}")
+        print(f"Concurrency Level: {concurrency}")
+        print(f"Urgent Processing: {urgent}")
+        print(f"Date Format: {context['localization']['date_format']}")
+        print(f"Time Format: {context['localization']['time_format']}")
+        print(f"Currency: {context['localization']['currency']}")
+        print("---")
+        
+        # Simulate problem solving
+        if strategy == "lightweight_processing":
+            solution = f"Lightweight solution for: {problem}"
+        elif strategy == "conservative_processing":
+            solution = f"Conservative solution for: {problem}"
+        else:
+            solution = f"Normal solution for: {problem}"
+        
+        # Format response with localization
+        formatted_solution = self.format_response(solution)
+        
+        return formatted_solution
+
+# Example usage
+def main():
+    """Demonstrate world model functionality."""
+    
+    # Create a world-aware agent
+    agent = WorldAwareAgent("Semiconductor Inspector", "semiconductor")
+    
+    # Solve a problem with world awareness
+    problem = "Detect anomalies in wafer inspection data"
+    solution = agent.solve_problem(problem)
+    
+    print(f"Problem: {problem}")
+    print(f"Solution: {solution}")
+    
+    # Demonstrate different contexts
+    print("\n=== Context Examples ===")
+    
+    # Get current world context
+    context = agent.get_current_context()
+    
+    print(f"Current Season: {context['time']['season']}")
+    print(f"Time Period: {context['time']['time_period']}")
+    print(f"Location: {context['location']['city']}, {context['location']['country']}")
+    print(f"System Health: {context['system']['health']}")
+    print(f"Optimal Concurrency: {agent.get_concurrency_level()}")
+    
+    # Check business logic
+    print(f"\n=== Business Logic ===")
+    print(f"Should Process Urgently: {agent.should_process_urgently(problem)}")
+    print(f"Processing Strategy: {agent.get_processing_strategy(problem)}")
+    
+    # Localization settings
+    print(f"\n=== Localization ===")
+    settings = agent.get_localization_settings()
+    for key, value in settings.items():
+        print(f"{key}: {value}")
+
+# Run the demo
+if __name__ == "__main__":
+    main()

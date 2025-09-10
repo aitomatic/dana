@@ -44,7 +44,7 @@ else:
 # Test that it's using the agent's own LLM resource
 print("\n--- Testing Agent's Own LLM Resource ---")
 try:
-    llm_resource = smart_agent._get_llm_resource()
+    llm_resource = smart_agent.get_llm_resource()
     if llm_resource:
         print("✅ Agent has its own LLM resource:", llm_resource)
         print("LLM Resource name:", llm_resource.name)

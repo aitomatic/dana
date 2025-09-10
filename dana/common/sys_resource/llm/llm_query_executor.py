@@ -7,6 +7,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import asyncio
 import os
 from collections.abc import Awaitable, Callable
 from typing import Any, cast
@@ -27,7 +28,6 @@ from dana.common.mixins.tool_callable import OpenAIFunctionCall
 from dana.common.types import BaseResponse
 from dana.common.utils.misc import Misc
 from dana.common.utils.token_management import TokenManagement
-import asyncio
 
 
 class LLMQueryExecutor(Loggable):

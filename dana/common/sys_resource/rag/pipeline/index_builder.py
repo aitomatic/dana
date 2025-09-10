@@ -69,7 +69,9 @@ class IndexBuilder(BaseStage):
 
             self.debug(f"Creating index for source {source_key} with {len(documents)} documents")
 
-            individual_indices[source_key] = VectorStoreIndex.from_documents(documents, embed_model=embed_model)  # NOTE : ADD embedding_model
+            individual_indices[source_key] = VectorStoreIndex.from_documents(
+                documents, embed_model=embed_model
+            )  # NOTE : ADD embedding_model
 
         if not individual_indices:
             raise RuntimeError("No indices were successfully created from any source")

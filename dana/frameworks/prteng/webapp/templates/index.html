@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptEngineer - Interactive Prompt Improvement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 PromptEngineer</h1>
+            <p>Interactive Prompt Improvement with AI Feedback</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Top Row: Prompt Selection and User Query -->
+            <div class="top-row">
+                <!-- Left: Prompt Selection -->
+                <div class="section prompt-selection" id="prompt-selection-section">
+                    <h2>Prompt Selection</h2>
+                    <div class="form-group">
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <select id="prompt-id-select" style="width: 180px; padding: 6px; font-size: 0.8125rem;" onchange="loadPromptId()">
+                                <option value="">Select existing or create new...</option>
+                            </select>
+                            <input type="text" id="prompt-id-input" placeholder="Enter new prompt ID" style="width: 180px; padding: 6px; font-size: 0.8125rem;">
+                            <button class="btn btn-secondary" onclick="createNewPromptId()">Create New</button>
+                        </div>
+                    </div>
+                    <div id="status-messages" style="margin-top: 8px;"></div>
+                </div>
+
+                <!-- Right: User Query -->
+                <div class="section user-input" id="user-input-section">
+                    <h2>User Query</h2>
+                    <div class="form-group">
+                        <input type="text" id="user-query" placeholder="Ask the AI anything..." style="width: 100%; padding: 8px; font-size: 0.8125rem; border: 1px solid #dadce0; border-radius: 6px;">
+                    </div>
+                    <button id="ask-button" class="btn" onclick="askAI()" style="width: 100%;">
+                        <span id="query-loading" class="loading hidden"></span>
+                        Query
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="section system-prompt" id="system-prompt-section">
+                <h2>System Prompt: <span id="prompt-version" style="font-weight: normal; color: #666; font-size: 0.75rem;"></span></h2>
+                <div id="system-prompt" class="prompt-display">(No system prompt)</div>
+            </div>
+
+            <!-- Content Grid: AI Response and Feedback -->
+            <div class="content-grid">
+                <!-- AI Response -->
+                <div class="section ai-response" id="ai-response-section">
+                    <h2>AI Response</h2>
+                    <div id="ai-response" class="prompt-display">(No response yet)</div>
+                </div>
+
+                <!-- Feedback -->
+                <div class="section feedback" id="feedback-section">
+                    <h2>Feedback</h2>
+
+                    <!-- AI Feedback Section -->
+                    <div class="ai-feedback-section" style="margin-bottom: 20px; padding: 12px; border: 1px solid #e1e5e9; border-radius: 6px; background: #f8f9fa;">
+                        <h3 style="margin-bottom: 12px; font-size: 0.875rem; color: #1a73e8;">AI Feedback</h3>
+
+                        <div class="evaluation-criteria" style="margin-bottom: 12px;">
+                            <div style="margin-bottom: 8px; font-size: 0.75rem; color: #666;">Evaluation Criteria:</div>
+                            <div class="criteria-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="accuracy" style="margin: 0;"> Accuracy
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="clarity" style="margin: 0;"> Clarity
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="completeness" style="margin: 0;"> Completeness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="conciseness" style="margin: 0;"> Conciseness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="helpfulness" style="margin: 0;"> Helpfulness
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="relevance" style="margin: 0;"> Relevance
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="tone" style="margin: 0;"> Appropriate Tone
+                                </label>
+                                <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" value="structure" style="margin: 0;"> Good Structure
+                                </label>
+                            </div>
+
+                            <div class="custom-objective">
+                                <label for="custom-objective" style="font-size: 0.75rem; color: #666; margin-bottom: 4px; display: block;">Additional Objective:</label>
+                                <input type="text" id="custom-objective"
+                                       placeholder="e.g., 'Should be under 100 words' or 'Must include examples'"
+                                       style="width: 100%; padding: 6px; font-size: 0.75rem; border: 1px solid #dadce0; border-radius: 4px;">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="processLLMFeedback()" style="width: 100%;">
+                            <span id="llm-feedback-loading" class="loading hidden"></span>
+                            Generate AI Feedback
+                        </button>
+                    </div>
+
+                    <!-- Manual Feedback Section -->
+                    <div class="manual-feedback-section">
+                        <h3 style="margin-bottom: 12px; font-size: 0.875rem; color: #1a73e8;">Manual Feedback</h3>
+                        <div class="form-group">
+                            <textarea id="feedback-text" placeholder="e.g., 'The response was good but could be more detailed'" style="width: 100%; height: 60px; padding: 8px; font-size: 0.8125rem; border: 1px solid #dadce0; border-radius: 6px;"></textarea>
+                        </div>
+                        <button class="btn" onclick="processFeedback()" style="width: 100%;">
+                            <span id="feedback-loading" class="loading hidden"></span>
+                            Process Feedback
+                        </button>
+                    </div>
+
+                    <div id="feedback-status"></div>
+                    <div id="feedback-display"></div>
+                    <div id="evolution-notice"></div>
+                </div>
+            </div>
+
+            <!-- Bottom: History -->
+            <div class="section bottom-panel" id="history-section">
+                <h2>History</h2>
+                <button class="btn btn-warning" onclick="loadHistory()">Refresh History</button>
+                <div id="history-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

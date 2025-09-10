@@ -17,8 +17,8 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from dana.apps.tui.core.events import Done, Status, Token
-from dana.apps.tui.core.runtime import DanaSandbox
-from dana.core.builtin_types.agent_system import AgentInstance, AgentType
+from dana.core.agent import AgentInstance, AgentType
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class MockTestAgent(AgentInstance):
@@ -113,8 +113,8 @@ class TestDanaSandbox:
     def test_initialization(self, sandbox):
         """Test sandbox initializes properly."""
         assert sandbox is not None
-        assert sandbox.get_dana_context() is not None
-        assert sandbox.get_dana_sandbox() is not None
+        assert sandbox._context is not None
+        # Core DanaSandbox doesn't need wrapper methods
 
     def test_execute_simple_expression(self, sandbox):
         """Test executing simple Dana expressions."""
@@ -146,25 +146,25 @@ class TestDanaSandbox:
 
     def test_get_dana_context(self, sandbox):
         """Test getting the Dana context."""
-        context = sandbox.get_dana_context()
+        context = sandbox._context
         assert context is not None
 
         # Execute something to modify context
         sandbox.execute_string("test_var = 42")
 
         # Context should contain the variable in local scope
-        updated_context = sandbox.get_dana_context()
+        updated_context = sandbox._context
         assert "test_var" in updated_context._state["local"]
 
     def test_get_dana_sandbox_access(self, sandbox):
         """Test getting access to underlying Dana sandbox."""
-        dana_sandbox = sandbox.get_dana_sandbox()
-        assert dana_sandbox is not None
+        # Core DanaSandbox is already the main sandbox, no wrapper needed
+        assert sandbox is not None
 
         # Should be a CoreDanaSandbox instance
         from dana.core.lang.dana_sandbox import DanaSandbox as CoreDanaSandbox
 
-        assert isinstance(dana_sandbox, CoreDanaSandbox)
+        assert isinstance(sandbox, CoreDanaSandbox)
 
 
 if __name__ == "__main__":

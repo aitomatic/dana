@@ -510,14 +510,14 @@ class TypeRegistry:
         cls.validate_json_data(data, struct_name)
 
         # Create the instance
-        from dana.core.builtin_types.agent_system import AgentInstance
-        from dana.core.builtin_types.struct_system import StructInstance
+        from dana.core.agent.agent_instance import AgentInstance
+        from dana.core.builtins.struct_system import StructInstance
 
         # Check if this is an agent type and create appropriate instance
         if TYPE_REGISTRY.has_agent_type(struct_name):
             return AgentInstance(struct_type, data)
         elif TYPE_REGISTRY.has_workflow_type(struct_name):
-            from dana.core.builtin_types.workflow_system import WorkflowInstance
+            from dana.core.workflow.workflow_system import WorkflowInstance
 
             return WorkflowInstance(struct_type, data)
         else:

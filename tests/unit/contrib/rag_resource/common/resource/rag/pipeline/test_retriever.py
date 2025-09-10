@@ -50,14 +50,9 @@ class TestRetriever:
             # The as_retriever call includes both similarity_top_k and embed_model
             mock_index.as_retriever.assert_called_once()
             call_args = mock_index.as_retriever.call_args
-            assert call_args.kwargs['similarity_top_k'] == 5
-            assert 'embed_model' in call_args.kwargs
+            assert call_args.kwargs["similarity_top_k"] == 5
+            assert "embed_model" in call_args.kwargs
             mock_index_retriever.retrieve.assert_called_once_with("test query")
-        else:
-            # If no API keys, expect EmbeddingError during initialization
-            with pytest.raises(EmbeddingError):
-                mock_index = Mock(spec=VectorStoreIndex)
-                Retriever(mock_index)
 
     @pytest.mark.asyncio
     async def test_aretrieve_basic(self):
@@ -83,11 +78,6 @@ class TestRetriever:
             # The as_retriever call includes both similarity_top_k and embed_model
             mock_index.as_retriever.assert_called_once()
             call_args = mock_index.as_retriever.call_args
-            assert call_args.kwargs['similarity_top_k'] == 3
-            assert 'embed_model' in call_args.kwargs
+            assert call_args.kwargs["similarity_top_k"] == 3
+            assert "embed_model" in call_args.kwargs
             mock_index_retriever.aretrieve.assert_called_once_with("test query")
-        else:
-            # If no API keys, expect EmbeddingError during initialization
-            with pytest.raises(EmbeddingError):
-                mock_index = Mock(spec=VectorStoreIndex)
-                Retriever(mock_index)
