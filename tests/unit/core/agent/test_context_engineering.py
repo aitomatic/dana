@@ -183,11 +183,11 @@ class TestTimeline:
         timeline.add_conversation_turn("Hello", "Hi there!", turn_number=1)
 
         assert timeline.get_event_count() == 3
-        
+
         # Check event types
         actions = timeline.get_events_by_type("action")
         conversations = timeline.get_events_by_type("conversation")
-        
+
         assert len(actions) == 2
         assert len(conversations) == 1
         assert actions[0].event_type == "agent_action"
