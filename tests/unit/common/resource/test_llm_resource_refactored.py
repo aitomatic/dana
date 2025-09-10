@@ -86,13 +86,22 @@ class TestLLMResourceRefactored(unittest.TestCase):
 
     def test_validate_model_uses_config_manager(self):
         """Test that _validate_model uses configuration manager."""
-        os.environ["OPENAI_API_KEY"] = "test-key"
-
-        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
-
-        # Test validation through LLMResource
-        self.assertTrue(llm._validate_model("openai:gpt-4"))
-        self.assertFalse(llm._validate_model("anthropic:claude-3"))  # No API key
+        # Check if we're in mock mode
+        if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
+            # In mock mode, only mock models should be valid
+            llm = LegacyLLMResource(name="test_llm", model="mock:test-model")
+            self.assertTrue(llm._validate_model("mock:test-model"))
+            # Real models will fail validation in mock mode (no API keys)
+            self.assertFalse(llm._validate_model("openai:gpt-4"))
+            self.assertFalse(llm._validate_model("anthropic:claude-3"))
+        else:
+            # In real mode, test with actual API keys
+            os.environ["OPENAI_API_KEY"] = "test-key"
+            llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+            
+            # Test validation through LLMResource
+            self.assertTrue(llm._validate_model("openai:gpt-4"))
+            self.assertFalse(llm._validate_model("anthropic:claude-3"))  # No API key
 
         # Verify it's using config manager's method
         with patch.object(llm._config_manager, "_validate_model", return_value=True) as mock_validate:

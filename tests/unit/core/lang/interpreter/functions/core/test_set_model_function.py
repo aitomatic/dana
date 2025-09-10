@@ -329,8 +329,12 @@ class TestSetModelFunction(unittest.TestCase):
         finally:
             sys.stdout = sys.__stdout__
 
-    def test_set_model_no_parameters_with_current_model(self):
+    @patch("dana.common.sys_resource.llm.llm_configuration_manager.LLMConfigurationManager.get_available_models")
+    def test_set_model_no_parameters_with_current_model(self, mock_get_available_models):
         """Test set_model() with no parameters when a current model is set."""
+        # Mock get_available_models to return the expected models
+        mock_get_available_models.return_value = ["openai:gpt-4o", "deepseek:deepseek-chat"]
+
         # Set up a model first
         os.environ["OPENAI_API_KEY"] = "test-key"
         set_model_function(self.context, "openai:gpt-4o")

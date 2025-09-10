@@ -303,24 +303,42 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
         """Test that LLMResource properly uses LLMConfigurationManager."""
         from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
-        # Set up API key
-        os.environ["OPENAI_API_KEY"] = "test-key"
+        # Check if we're in mock mode
+        if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
+            # In mock mode, use mock model
+            llm = LegacyLLMResource(name="test_llm", model="mock:test-model")
+            
+            # Verify configuration manager is created
+            self.assertIsNotNone(llm._config_manager)
+            self.assertIsInstance(llm._config_manager, LLMConfigurationManager)
+            
+            # Verify model property uses configuration manager
+            self.assertEqual(llm.model, "mock:test-model")
+            
+            # In mock mode, only mock models should be valid
+            self.assertTrue(llm._validate_model("mock:test-model"))
+            # Real models will fail validation in mock mode (no API keys)
+            self.assertFalse(llm._validate_model("openai:gpt-4"))
+            self.assertFalse(llm._validate_model("anthropic:claude-3"))
+        else:
+            # In real mode, test with actual API keys
+            os.environ["OPENAI_API_KEY"] = "test-key"
+            
+            # Create LLMResource with explicit model
+            llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
-        # Create LLMResource with explicit model
-        llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+            # Verify configuration manager is created
+            self.assertIsNotNone(llm._config_manager)
+            self.assertIsInstance(llm._config_manager, LLMConfigurationManager)
 
-        # Verify configuration manager is created
-        self.assertIsNotNone(llm._config_manager)
-        self.assertIsInstance(llm._config_manager, LLMConfigurationManager)
+            # Verify model property uses configuration manager
+            self.assertEqual(llm.model, "openai:gpt-4o-mini")
 
-        # Verify model property uses configuration manager
-        self.assertEqual(llm.model, "openai:gpt-4o-mini")
+            # Verify model validation uses configuration manager
+            self.assertTrue(llm._validate_model("openai:gpt-4"))
+            self.assertFalse(llm._validate_model("anthropic:claude-3"))  # No API key
 
-        # Verify model validation uses configuration manager
-        self.assertTrue(llm._validate_model("openai:gpt-4"))
-        self.assertFalse(llm._validate_model("anthropic:claude-3"))  # No API key
-
-        # Verify available models uses configuration manager
+        # Verify available models uses configuration manager (works in both modes)
         available = llm.get_available_models()
         self.assertIsInstance(available, list)
 
