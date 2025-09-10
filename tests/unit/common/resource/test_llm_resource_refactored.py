@@ -98,7 +98,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
             # In real mode, test with actual API keys
             os.environ["OPENAI_API_KEY"] = "test-key"
             llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
-            
+
             # Test validation through LLMResource
             self.assertTrue(llm._validate_model("openai:gpt-4"))
             self.assertFalse(llm._validate_model("anthropic:claude-3"))  # No API key

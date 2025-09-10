@@ -307,14 +307,14 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
         if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
             # In mock mode, use mock model
             llm = LegacyLLMResource(name="test_llm", model="mock:test-model")
-            
+
             # Verify configuration manager is created
             self.assertIsNotNone(llm._config_manager)
             self.assertIsInstance(llm._config_manager, LLMConfigurationManager)
-            
+
             # Verify model property uses configuration manager
             self.assertEqual(llm.model, "mock:test-model")
-            
+
             # In mock mode, only mock models should be valid
             self.assertTrue(llm._validate_model("mock:test-model"))
             # Real models will fail validation in mock mode (no API keys)
@@ -323,7 +323,7 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
         else:
             # In real mode, test with actual API keys
             os.environ["OPENAI_API_KEY"] = "test-key"
-            
+
             # Create LLMResource with explicit model
             llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
