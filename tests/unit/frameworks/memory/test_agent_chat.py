@@ -37,6 +37,12 @@ class TestAgentChat(unittest.TestCase):
                 # Override the timeline directory to use temp directory
                 timeline.timeline_dir = self.memory_dir / "timeline"
                 timeline.timeline_dir.mkdir(parents=True, exist_ok=True)
+
+                # Wait for async loading to complete, then ensure clean timeline
+                # This prevents loading stale conversation data from previous test runs
+                timeline._wait_for_loading()
+                timeline.conversation_events.clear()
+
                 agent_self.state.timeline = timeline
 
         self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
