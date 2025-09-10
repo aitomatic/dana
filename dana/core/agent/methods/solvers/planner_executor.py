@@ -30,6 +30,38 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
     # ---------------------------
     # Public entry point
     # ---------------------------
+    def plan_sync(
+        self,
+        problem_or_workflow: str | WorkflowInstance,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context: SandboxContext | None = None,
+        **kwargs: Any,
+    ) -> WorkflowInstance | None:
+        """Implementation of plan functionality."""
+        if isinstance(problem_or_workflow, str):
+            # Create new workflow for string problem
+            print("🏗️  PLANNING - Creating new workflow for string problem")
+            workflow = self._create_new_workflow(problem_or_workflow, artifacts=artifacts, sandbox_context=sandbox_context, **kwargs)
+            return workflow
+        else:
+            # Use existing workflow
+            print(f"♻️  PLANNING - Reusing existing workflow: {type(problem_or_workflow).__name__}")
+            return problem_or_workflow
+
+    def _create_new_workflow(
+        self, problem: str, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs
+    ) -> WorkflowInstance:
+        """Create a new workflow for a string problem using auto strategy selection."""
+        from dana.core.workflow.workflow_system import WorkflowInstance
+
+        print("🎲 STRATEGY SELECTION - Auto-selecting strategy for problem")
+        workflow = WorkflowInstance.create_with_strategy(
+            problem=problem, strategy_type="auto", agent_instance=self, artifacts=artifacts, sandbox_context=sandbox_context, **kwargs
+        )
+        print(f"✅ WORKFLOW CREATED - {type(workflow).__name__}")
+
+        return workflow
+
     def solve_sync(
         self,
         problem_or_workflow: str | WorkflowInstance,
@@ -45,8 +77,18 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
         resource_index: Any | None = None,
         **kwargs: Any,
     ) -> Any:
+        # Check for conversation termination commands first
+        if isinstance(problem_or_workflow, str) and self._is_conversation_termination(problem_or_workflow):
+            self._log_solver_phase("PLANNER", f"Conversation termination command detected: '{problem_or_workflow}'")
+            return "Goodbye! Have a great day!"
+
         print(f"🔍 [SOLVER] Starting solve_sync for: {problem_or_workflow}")
         artifacts = artifacts or {}
+
+        # Create sandbox context if none provided
+        if sandbox_context is None:
+            sandbox_context = SandboxContext()
+
         st = self._initialize_solver_state(artifacts, "_planner")
         entities = self._extract_entities(artifacts)
 
@@ -118,7 +160,7 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
         # (4) No direct match → PLAN
         print("📋 [SOLVER] No known workflow found, drafting plan...")
         if force_replan or "plan_struct" not in st or st.get("goal") != goal:
-            raw_steps = self._draft_plan(goal, max_steps=max_steps)
+            raw_steps = self._draft_plan(goal, max_steps=max_steps, sandbox_context=sandbox_context)
             print(f"📋 [SOLVER] Drafted {len(raw_steps)} raw steps: {raw_steps}")
             plan_struct = self._structure_plan(raw_steps)  # [{"type": "action"|"subgoal", ...}]
             print(f"📋 [SOLVER] Structured plan: {plan_struct}")
@@ -188,15 +230,20 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
         st["deliverable"] = deliverable
         st["phase"] = "delivered"
 
-        # For simple cases, return just the helpful message
+        # For planning tasks, create a comprehensive summary
         results = st.get("results", [])
         print(f"📊 [SOLVER] Final results: {len(results)} results")
         if len(results) > 0:
-            # Find the first successful result with a message
-            for result in results:
-                if result.get("status") == "ok" and "message" in result.get("result", {}):
-                    print(f"💬 [SOLVER] Returning message: {result['result']['message'][:100]}...")
-                    return result["result"]["message"]
+            # For planning tasks, create a comprehensive summary instead of just the first message
+            if "plan" in goal.lower() or "trip" in goal.lower() or "itinerary" in goal.lower():
+                print("💬 [SOLVER] Creating comprehensive planning summary...")
+                return self._create_planning_summary(goal, plan, results)
+            else:
+                # For non-planning tasks, return the first successful result message
+                for result in results:
+                    if result.get("status") == "ok" and "message" in result.get("result", {}):
+                        print(f"💬 [SOLVER] Returning message: {result['result']['message'][:100]}...")
+                        return result["result"]["message"]
 
         return self._create_answer_response(
             "planner",
@@ -212,20 +259,42 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
     # ---------------------------
     # Helpers
     # ---------------------------
-    def _draft_plan(self, goal: str, max_steps: int = 8) -> list[str]:
+    def _draft_plan(self, goal: str, max_steps: int = 8, sandbox_context: SandboxContext | None = None) -> list[str]:
         """
         Generate a plan using LLM - NO FALLBACKS to see errors clearly.
         """
-        # Try LLM-based planning if available
+        # Try to get LLM resource for planning
+        if sandbox_context is not None:
+            try:
+                # Try to get LLM resource from sandbox context
+                llm_resource = sandbox_context.get_resource("system_llm")
+                if llm_resource is not None:
+                    return self._llm_draft_plan(goal, max_steps, llm_resource)
+            except KeyError:
+                pass
+
+        # Try to get LLM resource from agent if available
+        if hasattr(self, "get_llm_resource") and sandbox_context is not None:
+            llm_resource = self.get_llm_resource(sandbox_context)
+            if llm_resource is not None:
+                return self._llm_draft_plan(goal, max_steps, llm_resource)
+
+        # Try direct access as fallback
         if hasattr(self, "_llm_resource") and self._llm_resource is not None:
-            return self._llm_draft_plan(goal, max_steps)
+            return self._llm_draft_plan(goal, max_steps, self._llm_resource)
 
         # No fallback - raise error to see what's wrong
         raise RuntimeError(f"No LLM resource available for planning. Goal: {goal}")
 
-    def _llm_draft_plan(self, goal: str, max_steps: int) -> list[str]:
+    def _llm_draft_plan(self, goal: str, max_steps: int, llm_resource: Any = None) -> list[str]:
         """Generate plan using LLM - NO FALLBACKS to see errors clearly."""
         self._log_solver_phase("LLM-PLAN", f"Generating plan for: '{goal}'", "🤖")
+
+        if llm_resource is None:
+            raise RuntimeError(f"No LLM resource provided for planning. Goal: {goal}")
+
+        # Get conversation context from timeline
+        conversation_context = self._get_conversation_context(max_turns=3)
 
         prompt = f"""Create a step-by-step plan to achieve this goal: "{goal}"
 
@@ -234,16 +303,73 @@ Requirements:
 - Each step should be actionable and specific
 - Steps should be in logical order
 - Use imperative mood (e.g., "Analyze the problem", "Implement solution")
+{conversation_context}
 
 Format: Return only the steps, one per line, without numbering or bullets."""
 
-        response_text = self._generate_llm_response_with_context(
-            prompt=prompt,
-            system_prompt="You are an AI planning assistant. Create step-by-step plans to achieve goals. Be specific and actionable.",
-        )
+        try:
+            # Create request directly with the provided LLM resource
+            from dana.common.types import BaseRequest
 
-        if response_text is None:
-            raise RuntimeError(f"LLM query failed for goal: {goal}")
+            request = BaseRequest(
+                arguments={
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an AI planning assistant. Create step-by-step plans to achieve goals. Be specific and actionable."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                }
+            )
+
+            response = llm_resource.query_sync(request)
+
+            if response is None:
+                raise RuntimeError(f"LLM query failed for goal: {goal}")
+
+
+            # Extract text from response
+            if hasattr(response, 'text'):
+                response_text = response.text
+            elif hasattr(response, 'content'):
+                # Handle BaseResponse with content field
+                content = response.content
+                if isinstance(content, dict):
+                    # Handle OpenAI-style response format
+                    if 'choices' in content and len(content['choices']) > 0:
+                        choice = content['choices'][0]
+                        if 'message' in choice and 'content' in choice['message']:
+                            response_text = choice['message']['content']
+                        else:
+                            response_text = str(choice)
+                    else:
+                        response_text = str(content)
+                else:
+                    response_text = str(content)
+            elif isinstance(response, str):
+                response_text = response
+            elif isinstance(response, dict):
+                # Handle dictionary response - look for common text fields
+                if 'text' in response:
+                    response_text = response['text']
+                elif 'content' in response:
+                    response_text = response['content']
+                elif 'response' in response:
+                    response_text = response['response']
+                elif 'message' in response:
+                    response_text = response['message']
+                else:
+                    # If it's a dict but no obvious text field, convert to string
+                    response_text = str(response)
+            else:
+                response_text = str(response)
+
+        except Exception as e:
+            raise RuntimeError(f"LLM query failed for goal: {goal}. Error: {str(e)}")
 
         steps = [step.strip() for step in response_text.split("\n") if step.strip()]
         self._log_solver_phase("LLM-PLAN", f"LLM returned {len(steps)} steps: {steps}", "🤖")
@@ -337,8 +463,18 @@ Format: Return only the steps, one per line, without numbering or bullets."""
             return {"status": "ok (dry-run)", "action": action, "message": "Action would be executed in real mode"}
 
         # Use LLM to execute the action
-        if not self._validate_llm_resource():
+        llm_resource = None
+        if sandbox_context is not None:
+            try:
+                llm_resource = sandbox_context.get_resource("system_llm")
+            except KeyError:
+                pass
+
+        if llm_resource is None:
             raise RuntimeError(f"No LLM resource available for action execution. Action: {action}")
+
+        # Get conversation context from timeline
+        conversation_context = self._get_conversation_context(max_turns=5)
 
         # Create a prompt for the LLM to execute the action
         prompt = f"""Execute this action: "{action}"
@@ -346,17 +482,54 @@ Format: Return only the steps, one per line, without numbering or bullets."""
 Provide a helpful, direct response that accomplishes what the user is asking for.
 Be concise but informative. If it's a question, answer it directly.
 If it's a request for help, provide useful guidance.
+{conversation_context}
 
 Response:"""
 
         try:
-            response_text = self._generate_llm_response_with_context(
-                prompt=prompt,
-                system_prompt="You are an AI assistant that executes actions and provides helpful responses. Be direct and helpful.",
+            # Create request directly with the provided LLM resource
+            from dana.common.types import BaseRequest
+
+            request = BaseRequest(
+                arguments={
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an AI assistant that executes actions and provides helpful responses. Be direct and helpful."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                }
             )
 
-            if response_text is None:
+            response = llm_resource.query_sync(request)
+
+            if response is None:
                 raise RuntimeError(f"LLM query failed for action: {action}")
+
+            # Extract text from response (same logic as in _llm_draft_plan)
+            if hasattr(response, 'content'):
+                content = response.content
+                if isinstance(content, dict):
+                    if 'choices' in content and len(content['choices']) > 0:
+                        choice = content['choices'][0]
+                        if 'message' in choice and 'content' in choice['message']:
+                            response_text = choice['message']['content']
+                        else:
+                            response_text = str(choice)
+                    else:
+                        response_text = str(content)
+                else:
+                    response_text = str(content)
+            elif hasattr(response, 'text'):
+                response_text = response.text
+            elif isinstance(response, str):
+                response_text = response
+            else:
+                response_text = str(response)
 
             self._log_solver_phase("LLM-ACTION", f"LLM response: {response_text[:100]}...", "🤖")
             return {"status": "ok", "action": action, "message": response_text}
@@ -447,6 +620,39 @@ Response:"""
         """Handle system command actions."""
         sandbox_context.record_event("planner.system_action", {"action": action})
         return {"status": "ok", "action": action, "type": "system_command"}
+
+    def _create_planning_summary(self, goal: str, plan: list[dict[str, Any]], results: list[dict[str, Any]]) -> str:
+        """Create a comprehensive summary for planning tasks."""
+        summary_parts = [f"# {goal.title()}\n"]
+
+        # Add overview
+        summary_parts.append("## Overview")
+        summary_parts.append(f"I've created a comprehensive plan with {len(plan)} steps to help you {goal.lower()}.\n")
+
+        # Add each step with its result
+        summary_parts.append("## Detailed Plan")
+        for i, (step, result) in enumerate(zip(plan, results, strict=True), 1):
+            step_desc = step.get("do", f"Step {i}")
+            summary_parts.append(f"### Step {i}: {step_desc}")
+
+            if result.get("status") == "ok" and "message" in result.get("result", {}):
+                message = result["result"]["message"]
+                # Clean up the message and format it nicely
+                if len(message) > 200:
+                    message = message[:200] + "..."
+                summary_parts.append(f"{message}\n")
+            else:
+                summary_parts.append("✅ Completed\n")
+
+        # Add next steps
+        summary_parts.append("## Next Steps")
+        summary_parts.append("Review this plan and let me know if you'd like me to:")
+        summary_parts.append("- Modify any specific steps")
+        summary_parts.append("- Add more details to particular areas")
+        summary_parts.append("- Help you execute any of these steps")
+        summary_parts.append("- Create a more detailed itinerary")
+
+        return "\n".join(summary_parts)
 
     def _summarize(self, goal: str, plan: list[dict[str, Any]], results: list[dict[str, Any]], dry_run: bool) -> str:
         total = len(plan)

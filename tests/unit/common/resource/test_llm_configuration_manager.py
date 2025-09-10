@@ -119,7 +119,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         result = config_manager._find_first_available_model()
         self.assertIsNone(result)
 
-    @patch("dana.common.config.config_loader.ConfigLoader")
+    @patch("dana.common.sys_resource.llm.llm_configuration_manager.ConfigLoader")
     @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_get_available_models(self, mock_config_loader):
         """Test getting list of available models."""

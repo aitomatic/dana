@@ -97,45 +97,49 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
                 # Try to get the corresponding workflow and execute it with LLM
                 if wc is not None and hasattr(wc, "get_workflow"):
                     workflow = wc.get_workflow(sig_match.workflow_id)
-                    if (
-                        workflow
-                        and hasattr(workflow, "execute_with_llm")
-                        and hasattr(self, "_llm_resource")
-                        and self._llm_resource is not None
-                    ):
-                        print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow for signature match...")
-                        try:
-                            llm_result = workflow.execute_with_llm(message, artifacts, self._llm_resource)
-                            print(f"🔧 [REACTIVE-SUPPORT] LLM workflow result: {llm_result}")
+                    if workflow and hasattr(workflow, "execute_with_llm"):
+                        # Get LLM resource from sandbox context
+                        llm_resource = None
+                        if sandbox_context is not None:
+                            try:
+                                llm_resource = sandbox_context.get_resource("system_llm")
+                            except KeyError:
+                                pass
 
-                            st.update(
-                                {
-                                    "mode": "support",
-                                    "phase": "delivered",
-                                    "used_llm_workflow": True,
-                                    "signature_score": float(sig_score),
-                                    "signature_id": sig_match.id,
-                                    "llm_result": llm_result,
-                                }
-                            )
+                        if llm_resource is not None:
+                            print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow for signature match...")
+                            try:
+                                llm_result = workflow.execute_with_llm(message, artifacts, llm_resource)
+                                print(f"🔧 [REACTIVE-SUPPORT] LLM workflow result: {llm_result}")
 
-                            # Format the LLM result as a structured response
-                            diagnosis = llm_result.get("diagnosis", sig_match.title or "Issue diagnosed")
-                            checklist = llm_result.get("checklist", [])
-                            solution = llm_result.get("solution", "Follow diagnostic steps")
+                                st.update(
+                                    {
+                                        "mode": "support",
+                                        "phase": "delivered",
+                                        "used_llm_workflow": True,
+                                        "signature_score": float(sig_score),
+                                        "signature_id": sig_match.id,
+                                        "llm_result": llm_result,
+                                    }
+                                )
 
-                            return self._create_answer_response(
-                                "support",
-                                artifacts,
-                                "llm_signature_workflow",
-                                diagnosis=diagnosis,
-                                checklist=checklist,
-                                solution=solution,
-                                score=float(sig_score),
-                            )
-                        except Exception as e:
-                            print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
-                            # Fall back to regular signature response
+                                # Format the LLM result as a structured response
+                                diagnosis = llm_result.get("diagnosis", sig_match.title or "Issue diagnosed")
+                                checklist = llm_result.get("checklist", [])
+                                solution = llm_result.get("solution", "Follow diagnostic steps")
+
+                                return self._create_answer_response(
+                                    "support",
+                                    artifacts,
+                                    "llm_signature_workflow",
+                                    diagnosis=diagnosis,
+                                    checklist=checklist,
+                                    solution=solution,
+                                    score=float(sig_score),
+                                )
+                            except Exception as e:
+                                print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
+                                # Fall back to regular signature response
 
                 # Fallback to regular signature response
                 print("🔧 [REACTIVE-SUPPORT] Using fallback signature response")
@@ -165,40 +169,49 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
             print(f"🔧 [REACTIVE-SUPPORT] Found known workflow: {wf}, score: {score}")
 
             # Try LLM-powered workflow execution if available
-            if hasattr(wf, "execute_with_llm") and hasattr(self, "_llm_resource") and self._llm_resource is not None:
-                print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow...")
-                try:
-                    llm_result = wf.execute_with_llm(message, artifacts, self._llm_resource)
-                    print(f"🔧 [REACTIVE-SUPPORT] LLM workflow result: {llm_result}")
+            if hasattr(wf, "execute_with_llm"):
+                # Get LLM resource from sandbox context
+                llm_resource = None
+                if sandbox_context is not None:
+                    try:
+                        llm_resource = sandbox_context.get_resource("system_llm")
+                    except KeyError:
+                        pass
 
-                    st.update(
-                        {
-                            "mode": "support",
-                            "phase": "delivered",
-                            "used_llm_workflow": True,
-                            "known_match_score": float(score),
-                            "known_workflow_name": getattr(wf, "name", "<unknown>"),
-                            "llm_result": llm_result,
-                        }
-                    )
+                if llm_resource is not None:
+                    print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow...")
+                    try:
+                        llm_result = wf.execute_with_llm(message, artifacts, llm_resource)
+                        print(f"🔧 [REACTIVE-SUPPORT] LLM workflow result: {llm_result}")
 
-                    # Format the LLM result as a structured response
-                    diagnosis = llm_result.get("diagnosis", "Issue diagnosed")
-                    checklist = llm_result.get("checklist", [])
-                    solution = llm_result.get("solution", "Follow diagnostic steps")
+                        st.update(
+                            {
+                                "mode": "support",
+                                "phase": "delivered",
+                                "used_llm_workflow": True,
+                                "known_match_score": float(score),
+                                "known_workflow_name": getattr(wf, "name", "<unknown>"),
+                                "llm_result": llm_result,
+                            }
+                        )
 
-                    return self._create_answer_response(
-                        "support",
-                        artifacts,
-                        "llm_workflow",
-                        diagnosis=diagnosis,
-                        checklist=checklist,
-                        solution=solution,
-                        score=float(score),
-                    )
-                except Exception as e:
-                    print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
-                    # Fall back to regular workflow execution
+                        # Format the LLM result as a structured response
+                        diagnosis = llm_result.get("diagnosis", "Issue diagnosed")
+                        checklist = llm_result.get("checklist", [])
+                        solution = llm_result.get("solution", "Follow diagnostic steps")
+
+                        return self._create_answer_response(
+                            "support",
+                            artifacts,
+                            "llm_workflow",
+                            diagnosis=diagnosis,
+                            checklist=checklist,
+                            solution=solution,
+                            score=float(score),
+                        )
+                    except Exception as e:
+                        print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
+                        # Fall back to regular workflow execution
 
             # Regular workflow execution (fallback)
             result = self._run_workflow_instance(wf, sandbox_context)
@@ -254,10 +267,17 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
         st["phase"] = "analyze"
 
         # Try to use LLM for a helpful response
-        if hasattr(self, "_llm_resource") and self._llm_resource is not None:
+        llm_resource = None
+        if sandbox_context is not None:
+            try:
+                llm_resource = sandbox_context.get_resource("system_llm")
+            except KeyError:
+                pass
+
+        if llm_resource is not None:
             print("🔧 [REACTIVE-SUPPORT] LLM resource available, generating response...")
             try:
-                llm_response = self._generate_llm_response(message, artifacts)
+                llm_response = self._generate_llm_response(message, artifacts, llm_resource)
                 print(f"🔧 [REACTIVE-SUPPORT] LLM response generated: {llm_response[:100]}...")
                 st.update({"phase": "delivered", "llm_response": llm_response})
                 return llm_response  # Return the LLM response directly as a string
@@ -284,7 +304,7 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
     # Helpers
     # ---------------------------
 
-    def _generate_llm_response(self, message: str, artifacts: dict[str, Any]) -> str:
+    def _generate_llm_response(self, message: str, artifacts: dict[str, Any], llm_resource: Any) -> str:
         """Generate a helpful LLM response for general conversation."""
         self._log_solver_phase("REACTIVE-SUPPORT-LLM", f"Generating response for: '{message}'", "🤖")
 
@@ -310,16 +330,69 @@ If it's a request for help, provide useful guidance based on the conversation co
 
 Response:"""
 
-        response_text = self._generate_llm_response_with_context(
-            prompt=prompt,
-            system_prompt="You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented.",
-        )
+        try:
+            # Create LLM request
+            from dana.common.types import BaseRequest
 
-        if response_text is None:
+            request = BaseRequest(
+                arguments={
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ]
+                }
+            )
+
+            response = llm_resource.query_sync(request)
+
+            # Extract text from response
+            if hasattr(response, 'text'):
+                response_text = response.text
+            elif hasattr(response, 'content'):
+                # Handle BaseResponse with content field
+                content = response.content
+                if isinstance(content, dict):
+                    # Handle OpenAI-style response format
+                    if 'choices' in content and len(content['choices']) > 0:
+                        choice = content['choices'][0]
+                        if 'message' in choice and 'content' in choice['message']:
+                            response_text = choice['message']['content']
+                        else:
+                            response_text = str(choice)
+                    else:
+                        response_text = str(content)
+                else:
+                    response_text = str(content)
+            elif isinstance(response, str):
+                response_text = response
+            elif isinstance(response, dict):
+                # Handle dictionary response - look for common text fields
+                if 'text' in response:
+                    response_text = response['text']
+                elif 'content' in response:
+                    response_text = response['content']
+                elif 'response' in response:
+                    response_text = response['response']
+                elif 'message' in response:
+                    response_text = response['message']
+                else:
+                    # If it's a dict but no obvious text field, convert to string
+                    response_text = str(response)
+            else:
+                response_text = str(response)
+
+            if response_text is None:
+                return "I don't have access to an LLM resource to help with this question."
+
+            self._log_solver_phase("REACTIVE-SUPPORT-LLM", f"Extracted response text: {response_text[:100]}...", "🤖")
+            return response_text
+
+        except Exception as e:
+            print(f"⚠️ [REACTIVE-SUPPORT] LLM query failed: {e}")
             return "I don't have access to an LLM resource to help with this question."
-
-        self._log_solver_phase("REACTIVE-SUPPORT-LLM", f"Extracted response text: {response_text[:100]}...", "🤖")
-        return response_text
 
     def _infer_missing(self, required_list: list[str], message: str, artifacts: dict[str, Any]) -> list[str]:
         """

@@ -10,7 +10,7 @@ from unittest.mock import Mock
 # Import only the solver mixins directly to avoid circular imports
 from dana.core.agent.methods.solvers.base import BaseSolverMixin
 from dana.core.agent.methods.solvers.planner_executor import PlannerExecutorSolverMixin
-from dana.core.agent.methods.solvers.reative_support import ReactiveSupportSolverMixin
+from dana.core.agent.methods.solvers.reactive_support import ReactiveSupportSolverMixin
 
 
 class TestBaseSolverMixinSimple:
