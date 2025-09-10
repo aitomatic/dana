@@ -1,0 +1,83 @@
+"""
+Functional tests for enhanced context detection with execution stack support.
+
+These tests verify that py_reason() correctly detects context from:
+- Typed assignments
+- Metadata comments (##)
+- Docstrings
+- Field comments
+"""
+
+# Test 1: Typed assignment context detection
+result: str = reason("What is the weather?")  ## Should detect str type from assignment
+assert isinstance(result, str), f"Expected str, got {type(result)}"
+
+# Test 2: Metadata comment context detection
+weather_data = reason("Get weather information")  ## Should return dict based on comment
+assert isinstance(weather_data, dict), f"Expected dict, got {type(weather_data)}"
+
+# Test 3: Function with docstring context
+def get_user_info() -> dict:
+    """Returns: dict with user information"""
+    return reason("Get user profile data")  ## Should detect dict from docstring
+
+user_info = get_user_info()
+assert isinstance(user_info, dict), f"Expected dict, got {type(user_info)}"
+
+# Test 4: Struct field comment context
+struct Person:
+    name: str      # User's full name
+    age: int       # User's age in years
+    email: str     # User's email address
+
+person = Person(
+    name=reason("What's your name?"),      ## Should detect str from field comment
+    age=reason("What's your age?"),        ## Should detect int from field comment
+    email=reason("What's your email?")     ## Should detect str from field comment
+)
+
+assert isinstance(person.name, str), f"Expected str, got {type(person.name)}"
+assert isinstance(person.age, int), f"Expected int, got {type(person.age)}"
+assert isinstance(person.email, str), f"Expected str, got {type(person.email)}"
+
+# Test 5: Priority order - typed assignment should override metadata comment
+priority_result: int = reason("Calculate value")  ## Should detect int from assignment, not comment
+assert isinstance(priority_result, int), f"Expected int, got {type(priority_result)}"
+
+# Test 6: Function return type annotation
+def analyze_data() -> list:
+    """Analyze sensor data and return insights"""
+    return reason("Analyze this sensor data")  ## Should detect list from return type
+
+analysis = analyze_data()
+assert isinstance(analysis, list), f"Expected list, got {type(analysis)}"
+
+# Test 7: Complex nested context
+def process_user_input() -> dict:
+    """Process user input and return structured data"""
+    user_input = reason("Enter your preferences")  ## Should detect dict from docstring
+    return user_input
+
+processed = process_user_input()
+assert isinstance(processed, dict), f"Expected dict, got {type(processed)}"
+
+# Test 8: Multiple metadata comments
+config = {
+    "host": reason("Enter server hostname"),  ## Should detect str from context
+    "port": reason("Enter server port"),      ## Should detect int from context
+    "debug": reason("Enable debug mode?")     ## Should detect bool from context
+}
+
+assert isinstance(config["host"], str), f"Expected str, got {type(config['host'])}"
+assert isinstance(config["port"], int), f"Expected int, got {type(config['port'])}"
+assert isinstance(config["debug"], bool), f"Expected bool, got {type(config['debug'])}"
+
+# Test 9: Fallback when no context is available
+simple_result = reason("Simple question without context")
+assert isinstance(simple_result, str), f"Expected str, got {type(simple_result)}"
+
+# Test 10: Cast function context
+cast_result = cast(str, reason("Convert to string"))  ## Should detect str from cast
+assert isinstance(cast_result, str), f"Expected str, got {type(cast_result)}"
+
+print("All enhanced context detection tests passed!")

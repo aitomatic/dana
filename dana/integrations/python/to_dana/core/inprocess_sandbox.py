@@ -41,7 +41,7 @@ class InProcessSandboxInterface:
         """
         self._debug = debug
         self._context = context
-        self._sandbox = DanaSandbox(debug_mode=debug, context=context)
+        self._sandbox = DanaSandbox(debug_mode=debug, context=context, do_initialize=True)
 
         # Initialize caching
         self._enable_cache = enable_cache

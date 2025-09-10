@@ -1,0 +1,11 @@
+# Square Root Test
+
+agent MathAgent
+
+print("🔢 Testing Square Root Fix")
+print("=" * 30)
+
+print("\n📊 Test: Square root calculation")
+print("Result:", MathAgent.solve("What is the square root of 16?"))
+
+print("\n✅ Test completed!")

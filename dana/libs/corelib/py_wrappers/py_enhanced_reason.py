@@ -51,7 +51,7 @@ class POETEnhancedReasonFunction(Loggable):
 
         try:
             # Phase 1: Detect expected return type context
-            type_context = self.context_detector.detect_current_context(context)
+            type_context = self.context_detector.detect_type_context(context)
 
             if type_context:
                 self.debug(f"Detected type context: {type_context}")

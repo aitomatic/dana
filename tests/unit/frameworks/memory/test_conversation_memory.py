@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 
-from dana.frameworks.memory.conversation_memory import ConversationMemory
+from dana.core.agent.mind.memory.conversation import ConversationMemory
 
 
 class TestConversationMemory(unittest.TestCase):

@@ -26,6 +26,15 @@ Specifications for memory management and context engineering frameworks:
   - Context assembly for LLM interactions
   - Task-specific context engineering
 
+### **Context Engineering Frameworks** (`ctxeng/`)
+Specifications for intelligent context assembly and optimization:
+
+- **`ctxeng.md`** - Context engineering framework specification
+  - Relevance-first context assembly
+  - Token optimization and length management
+  - Multi-factor relevance scoring
+  - Integration with agent solving system
+
 ### **Workflow Frameworks** (`workflow/`)
 Specifications for workflow orchestration and function composition frameworks:
 
@@ -57,7 +66,8 @@ These frameworks are designed to work together:
 
 - **Knowledge** provides the foundation of information
 - **Memory** maintains context and history
+- **Context Engineering** optimizes context assembly and relevance
 - **Workflow** orchestrates execution
 - **POET** adds intelligence to each step
 
-The combination creates a complete agentic system where knowledge flows into intelligent action and learning. 
+The combination creates a complete agentic system where knowledge flows into intelligent action and learning, with optimized context engineering ensuring efficient LLM interactions. 

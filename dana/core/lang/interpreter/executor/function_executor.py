@@ -306,8 +306,6 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
-        self.debug(f"Executing function call: {node.name}")
-
         # Track location in error context if available
         if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
@@ -320,10 +318,9 @@ class FunctionExecutor(BaseExecutor):
                 source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
                 if context.error_context.current_file and node.location.line
                 else None,
+                ast_node=node,  # Include the AST node for context detection
             )
             context.error_context.push_location(location)
-            self.debug(f"Pushed location to error context: {location}")
-            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
         # Phase 1: Setup and validation
         self.__setup_and_validate(node)
@@ -346,8 +343,6 @@ class FunctionExecutor(BaseExecutor):
         # Phase 3: Handle special cases before unified dispatcher
         from dana.core.lang.ast import SubscriptExpression
 
-        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
-
         if isinstance(node.name, SubscriptExpression):
             self.debug(f"Found SubscriptExpression as function name: {node.name}")
             # Evaluate the subscript expression to get the actual function
@@ -361,7 +356,7 @@ class FunctionExecutor(BaseExecutor):
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
             import asyncio
             from dana.common.utils.misc import Misc
-            
+
             if asyncio.iscoroutinefunction(actual_function):
                 result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
             else:
@@ -375,7 +370,6 @@ class FunctionExecutor(BaseExecutor):
             return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
 
         # Phase 3: Parse function name and resolve function using unified dispatcher
-        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
         name_info = FunctionNameInfo.from_node(node)
 
         try:
@@ -666,7 +660,7 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.core.builtin_types.struct_system import create_struct_instance
+        from dana.core.builtins.struct_system import create_struct_instance
         from dana.registry import TYPE_REGISTRY
 
         # Extract the base struct name (remove scope prefix if present)
@@ -681,11 +675,6 @@ class FunctionExecutor(BaseExecutor):
             base_name = func_name.split(":")[1]
         else:
             base_name = func_name
-
-        # Debug logging
-        self.debug(f"Checking struct instantiation for func_name='{func_name}', base_name='{base_name}'")
-        self.debug(f"Registered structs: {TYPE_REGISTRY.list_types()}")
-        self.debug(f"Struct exists: {TYPE_REGISTRY.exists(base_name)}")
 
         # Check if this is a registered struct type
         if TYPE_REGISTRY.exists(base_name):
@@ -817,7 +806,7 @@ class FunctionExecutor(BaseExecutor):
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
             # Step 2.5: Try struct method delegation for struct instances
-            from dana.core.builtin_types.struct_system import StructInstance
+            from dana.core.builtins.struct_system import StructInstance
             from dana.core.lang.interpreter.struct_functions.lambda_receiver import LambdaMethodDispatcher
 
             if isinstance(target_object, StructInstance):
@@ -997,7 +986,7 @@ class FunctionExecutor(BaseExecutor):
                 # Execute-time async detection for regular functions
                 import asyncio
                 from dana.common.utils.misc import Misc
-                
+
                 if asyncio.iscoroutinefunction(actual_function):
                     result = Misc.safe_asyncio_run(actual_function, *evaluated_args, **evaluated_kwargs)
                 else:
@@ -1041,7 +1030,7 @@ class FunctionExecutor(BaseExecutor):
 
             # Check resource registry if available
             try:
-                from dana.core.builtin_types.resource.resource_registry import ResourceTypeRegistry
+                from dana.core.resource.resource_registry import ResourceTypeRegistry
 
                 is_resource_type = ResourceTypeRegistry.exists(type_name)
             except ImportError:

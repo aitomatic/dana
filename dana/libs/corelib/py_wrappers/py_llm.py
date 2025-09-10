@@ -22,6 +22,8 @@ def py_llm(
     prompt: str,
     options: dict[str, Any] | None = None,
     use_mock: bool | None = None,
+    llm_resource: Any = None,
+    is_sync: bool = False,
 ) -> Any:
     """Execute the llm function to make an async LLM call and return a Promise.
 
@@ -38,9 +40,14 @@ def py_llm(
             - format: Output format ("text" or "json")
         use_mock: Force use of mock responses (True) or real LLM calls (False).
                   If None, defaults to checking DANA_MOCK_LLM environment variable.
+        llm_resource: Optional LLM resource instance to use. If provided, this will be used
+                     instead of getting the resource from context.
+        is_sync: If True, execute synchronously and return the result directly.
+                If False (default), return a Promise for async execution.
 
     Returns:
-        A Promise that will resolve to the LLM's response to the prompt
+        If is_sync=True: The LLM's response directly
+        If is_sync=False: A Promise that will resolve to the LLM's response to the prompt
 
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
@@ -60,8 +67,9 @@ def py_llm(
     # Priority: function parameter > environment variable
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
-    # Get LLM resource from context using system resource access
-    llm_resource = context.get_system_llm_resource(use_mock=should_mock)
+    # Get LLM resource - use provided one or get from context
+    if llm_resource is None:
+        llm_resource = context.get_system_llm_resource(use_mock=should_mock)
 
     if llm_resource is None:
         raise SandboxError("No LLM resource available in context")
@@ -75,9 +83,8 @@ def py_llm(
     except Exception as e:
         logger.debug(f"Could not get available resources: {e}")
 
-    # Create an async function that will be wrapped in a Promise
-    async def _async_llm_call():
-        """Async function that performs the actual LLM call."""
+    def _make_llm_call():
+        """Make the actual LLM call (synchronous version)."""
         try:
             # Log what's happening
             logger.debug(f"Starting LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
@@ -101,8 +108,8 @@ def py_llm(
 
             request = BaseRequest(arguments=request_params)
 
-            # Make the async call directly
-            response = await llm_resource.query(request)
+            # Make the synchronous call
+            response = llm_resource.query_sync(request)
 
             if not response.success:
                 raise SandboxError(f"LLM call failed: {response.error}")
@@ -151,12 +158,30 @@ def py_llm(
             logger.error(f"Error during LLM call: {str(e)}")
             raise SandboxError(f"Error during LLM call: {str(e)}") from e
 
-    # Create and return an EagerPromise that wraps the async function
-    # EagerPromise starts execution immediately in background
-    logger.debug("Creating EagerPromise for LLM call")
-    logger.debug(f"_async_llm_call type: {type(_async_llm_call)}")
-    logger.debug(f"context type: {type(context)}")
-    logger.debug(f"context class: {context.__class__.__name__}")
+    # Create an async function that will be wrapped in a Promise
+    async def _async_llm_call():
+        """Async function that performs the actual LLM call."""
+        return _make_llm_call()
 
-    # PromiseFactory.create_promise() handles DanaThreadPool internally
-    return PromiseFactory.create_promise(_async_llm_call)
+    # Handle synchronous vs asynchronous execution
+    if is_sync:
+        # Execute synchronously
+        logger.debug("Executing LLM call synchronously")
+        try:
+            # Use the synchronous version directly
+            result = _make_llm_call()
+            logger.debug(f"Synchronous execution completed, returning: {type(result)}")
+            return result
+        except Exception as e:
+            logger.error(f"Error during synchronous execution: {str(e)}")
+            raise SandboxError(f"Error during synchronous execution: {str(e)}") from e
+    else:
+        # Create and return an EagerPromise that wraps the async function
+        # EagerPromise starts execution immediately in background
+        logger.debug("Creating EagerPromise for LLM call")
+        logger.debug(f"_async_llm_call type: {type(_async_llm_call)}")
+        logger.debug(f"context type: {type(context)}")
+        logger.debug(f"context class: {context.__class__.__name__}")
+
+        # PromiseFactory.create_promise() handles DanaThreadPool internally
+        return PromiseFactory.create_promise(_async_llm_call)

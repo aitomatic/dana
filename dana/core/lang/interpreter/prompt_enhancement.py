@@ -35,17 +35,28 @@ class PromptEnhancer(Loggable):
 
     def enhance_prompt(self, prompt: str, type_context: TypeContext | None = None) -> str:
         """
-        Transform prompt to optimize for specific return type.
+        Transform prompt to optimize for specific return type and context.
 
         Args:
             prompt: Original prompt text
-            type_context: Context information about expected return type
+            type_context: Context information about expected return type and other context
 
         Returns:
-            Enhanced prompt optimized for the expected return type
+            Enhanced prompt optimized for the expected return type and context
         """
-        if not type_context or not type_context.expected_type:
+        if not type_context:
             self.debug("No type context available, returning original prompt")
+            return prompt
+
+        # Check for value instructions and combine with type enhancement
+        value_instruction = None
+        if hasattr(type_context, "metadata") and type_context.metadata:
+            value_instruction = type_context.metadata.get("value_instruction")
+            if value_instruction:
+                self.debug(f"Found value instruction: {value_instruction}")
+
+        if not type_context.expected_type:
+            self.debug("No expected type available, returning original prompt")
             return prompt
 
         expected_type = type_context.expected_type.lower()
@@ -97,11 +108,29 @@ class PromptEnhancer(Loggable):
     def _enhance_for_integer(self, prompt: str, context: TypeContext) -> str:
         """Enhance prompt to return clean integer."""
         enhancement = self._enhancement_patterns["int"]["standard"]
+
+        # Add metadata comment if present
+        if hasattr(context, "metadata") and context.metadata:
+            comment = context.metadata.get("comment")
+            if comment:
+                self.debug(f"Adding metadata comment: {comment}")
+                enhancement = f"IMPORTANT: {comment}\n\n{enhancement}"
+
         return self._apply_enhancement(prompt, enhancement, "integer")
 
     def _enhance_for_float(self, prompt: str, context: TypeContext) -> str:
         """Enhance prompt to return clean float."""
         enhancement = self._enhancement_patterns["float"]["standard"]
+        self.debug(f"Base float enhancement: {enhancement}")
+
+        # Add metadata comment if present
+        if hasattr(context, "metadata") and context.metadata:
+            comment = context.metadata.get("comment")
+            if comment:
+                self.debug(f"Adding metadata comment: {comment}")
+                enhancement = f"IMPORTANT: {comment}\n\n{enhancement}"
+
+        self.debug(f"Final float enhancement: {enhancement}")
         return self._apply_enhancement(prompt, enhancement, "float")
 
     def _enhance_for_string(self, prompt: str, context: TypeContext) -> str:

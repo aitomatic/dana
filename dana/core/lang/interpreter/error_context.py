@@ -10,6 +10,7 @@ MIT License
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -21,6 +22,8 @@ class ExecutionLocation:
     column: int | None = None
     function_name: str | None = None
     source_line: str | None = None
+    # NEW: Add AST node reference for context detection
+    ast_node: Any | None = None  # The actual AST node being executed
 
     def __str__(self) -> str:
         """Format location for display."""

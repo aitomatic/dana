@@ -1,12 +1,13 @@
 {
     "llm": {
         "preferred_models": [
-            "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
-            "huggingface:openai/gpt-oss-120b",
+            "huggingface:deepseek-ai/deepseek-r1",
             "huggingface:openai/gpt-oss-20b",
+            "huggingface:openai/gpt-oss-120b",
+            "huggingface:nvidia/Llama-3_1-Nemotron-Ultra-253B-v1",
             "anthropic:kimi-k2-0711-preview",
+            "moonshot:kimi-k2-0711-preview",
             "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
-            "moonshot:kimi",
             "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4o-mini",
@@ -19,11 +20,11 @@
             "ibm_watsonx:ibm/granite-20b-multilingual",
             "local",
             "mistral:mistral-large-latest",
-            "openai:gpt-4.1",
-            "openai:gpt-4.1-mini",
             "openai:gpt-4.1-nano",
-            "openai:gpt-4o",
+            "openai:gpt-4.1-mini",
             "openai:gpt-4o-mini",
+            "openai:gpt-4.1",
+            "openai:gpt-4o",
             "xai:grok-2-vision-1212",
             "xai:grok-3-fast",
             "xai:grok-3-mini-fast",
@@ -38,34 +39,46 @@
                 "base_url": "env:LOCAL_BASE_URL",
                 "model_name": "env:LOCAL_MODEL_NAME"
             },
+            "azure": {
+                "api_key": "env:AZURE_OPENAI_API_KEY",
+                "base_url": "env:AZURE_OPENAI_API_URL",
+                "api_version": "env:AZURE_OPENAI_API_VERSION",
+                "api_type": "env:AZURE_OPENAI_API_TYPE"
+            },
             "huggingface": {
                 "api_key": "env:HF_TOKEN",
-                "base_url": "https://router.huggingface.co/v1"
+                "base_url": "env:HF_URL"
             },
             "openrouter": {
                 "api_key": "env:OPENROUTER_API_KEY",
-                "base_url": "https://openrouter.ai/api/v1"
+                "base_url": "env:OPENROUTER_API_URL"
+            },
+            "moonshot-openai": {
+                "api_key": "env:MOONSHOT_API_KEY",
+                "base_url": "env:MOONSHOT_API_URL"
             },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
-                "base_url": "https://api.openai.com/v1"
+                "base_url": "env:OPENAI_API_URL"
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
-                "base_url": "https://api.moonshot.ai/openai"
+                "base_url": "env:MOONSHOT_API_URL"
             },
             "cohere": {
                 "api_key": "env:COHERE_API_KEY"
             },
             "old-anthropic": {
-                "api_key": "env:ANTHROPIC_API_KEY"
+                "api_key": "env:ANTHROPIC_API_KEY",
+		"base_url": "env:ANTHROPIC_API_URL"
             },
             "anthropic": {
                 "api_key": "env:MOONSHOT_API_KEY",
-                "base_url": "https://api.moonshot.ai/anthropic"
+		"base_url": "env:MOONSHOT_API_URL"
             },
             "groq": {
-                "api_key": "env:GROQ_API_KEY"
+                "api_key": "env:GROQ_API_KEY",
+		"base_url": "env:GROQ_API_URL"
             },
             "mistral": {
                 "api_key": "env:MISTRAL_API_KEY"
@@ -75,12 +88,6 @@
             },
             "deepseek": {
                 "api_key": "env:DEEPSEEK_API_KEY"
-            },
-            "azure": {
-                "api_key": "env:AZURE_OPENAI_API_KEY",
-                "base_url": "env:AZURE_OPENAI_API_URL",
-                "api_version": "2025-04-01-preview",
-                "api_type": "azure"
             },
             "ibm_watsonx": {
                 "api_key": "env:WATSONX_API_KEY",

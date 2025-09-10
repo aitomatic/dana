@@ -10,10 +10,10 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widgets import Static
 
-from dana.apps.tui.core.runtime import DanaSandbox
 from dana.common import DANA_LOGGER
 from dana.core.concurrency import is_promise
 from dana.core.concurrency.base_promise import BasePromise
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 from .copyable_richlog import CopyableRichLog
 from .prompt_textarea import PromptStyleTextArea
@@ -54,7 +54,7 @@ class TerminalREPL(Vertical):
             yield self._prompt
 
             # Enhanced prompt-style input for Dana expressions
-            self._input = PromptStyleTextArea(sandbox=self.sandbox.get_dana_sandbox(), id="terminal-input")
+            self._input = PromptStyleTextArea(sandbox=self.sandbox, id="terminal-input")
             yield self._input
 
     def on_mount(self) -> None:
