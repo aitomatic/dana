@@ -94,8 +94,8 @@ class TestRecursiveStrategy:
 
         assert "Test problem" in prompt
         assert "Solve test problem" in prompt
-        assert "DEPTH: 0" in prompt
-        assert "AVAILABLE FUNCTIONS" in prompt
+        assert "<depth>0</depth>" in prompt
+        assert "dana_syntax" in prompt
         assert "agent.output" in prompt
         assert "agent.solve" in prompt
 
@@ -109,8 +109,8 @@ class TestRecursiveStrategy:
 
         assert "Test problem" in prompt
         assert "Solve test problem" in prompt
-        assert "DEPTH: 0" in prompt
-        assert "AVAILABLE FUNCTIONS" in prompt
+        assert "<depth>0</depth>" in prompt
+        assert "dana_syntax" in prompt
         assert "agent.output" in prompt
         assert "agent.solve" in prompt
 
@@ -163,16 +163,20 @@ class TestRecursiveStrategy:
         assert workflow.name.startswith("RecursiveWorkflow_")
         assert workflow.composed_function is not None
 
-    def test_workflow_type_creation(self):
-        """Test creating workflow types for problems."""
+    def test_workflow_instance_creation(self):
+        """Test creating workflow instances for problems."""
         strategy = RecursiveStrategy(max_depth=5)
+        context = ProblemContext(problem_statement="Test problem", objective="Solve test problem", original_problem="Test problem", depth=0)
 
-        workflow_type = strategy._create_workflow_type("Test problem")
+        # Create a mock compiled function
+        def mock_function():
+            return "test result"
 
-        assert workflow_type.name.startswith("RecursiveWorkflow_")
-        assert "name" in workflow_type.fields
-        assert "composed_function" in workflow_type.fields
-        assert "metadata" in workflow_type.fields
+        workflow_instance = strategy._create_workflow_instance("Test problem", context, mock_function)
+
+        assert workflow_instance is not None
+        assert hasattr(workflow_instance, 'name')
+        assert hasattr(workflow_instance, 'execute')
 
     def test_base_case_workflow_creation(self):
         """Test creating base case workflows for depth limits."""

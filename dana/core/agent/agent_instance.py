@@ -29,6 +29,7 @@ from .methods import (
     MemoryMixin,
     ReasonMixin,
     BaseSolverMixin,
+    SimpleHelpfulSolverMixin,
     PlannerExecutorSolverMixin,
     ReactiveSupportSolverMixin,
 )
@@ -107,6 +108,19 @@ class AgentInstance(
         PlannerExecutorSolverMixin.__init__(self)
         # ReactiveSupportSolverMixin.__init__(self)
         # SimpleHelpfulSolverMixin.__init__(self)
+
+    def __post_init__(self):
+        """Post-initialize the agent instance."""
+        if isinstance(self, PlannerExecutorSolverMixin):
+            PlannerExecutorSolverMixin.__init__(self)
+
+        if isinstance(self, ReactiveSupportSolverMixin):
+            ReactiveSupportSolverMixin.__init__(self)
+
+        if isinstance(self, SimpleHelpfulSolverMixin):
+            SimpleHelpfulSolverMixin.__init__(self)
+
+        super().__post_init__()
 
     @property
     def name(self) -> str:

@@ -155,8 +155,13 @@ class BaseSolverMixin(ABC):
         """Handle direct workflow execution if input is a WorkflowInstance."""
         if isinstance(problem_or_workflow, WorkflowInstance):
             result = self._run_workflow_instance(problem_or_workflow, sandbox_context)
-            st = artifacts.setdefault("_solver_state", {})
-            st.update({"mode": mode, "last_result": result, "phase": "delivered"})
+            # Handle case where artifacts might be a SandboxContext object
+            if hasattr(artifacts, 'setdefault'):
+                st = artifacts.setdefault("_solver_state", {})
+                st.update({"mode": mode, "last_result": result, "phase": "delivered"})
+            else:
+                # If artifacts is not a dict-like object, create a new state dict
+                st = {"mode": mode, "last_result": result, "phase": "delivered"}
             return {
                 "type": "answer",
                 "mode": mode,
@@ -184,12 +189,31 @@ class BaseSolverMixin(ABC):
     # ---------------------------
     def _initialize_solver_state(self, artifacts: dict[str, Any], state_key: str = "_solver_state") -> dict[str, Any]:
         """Initialize solver state in artifacts."""
-        artifacts = artifacts or {}
-        return artifacts.setdefault(state_key, {})
+        # Handle case where artifacts might be a SandboxContext object
+        if hasattr(artifacts, 'get') and hasattr(artifacts, 'setdefault'):
+            # It's a dictionary-like object - modify it in place
+            return artifacts.setdefault(state_key, {})
+        elif hasattr(artifacts, 'get') and not hasattr(artifacts, 'setdefault'):
+            # It's a SandboxContext object - create a new dict for solver state
+            return {}
+        else:
+            # It's None or not the expected type - create a new dict
+            artifacts = artifacts or {}
+            return artifacts.setdefault(state_key, {})
 
     def _extract_entities(self, artifacts: dict[str, Any]) -> dict[str, Any]:
         """Extract entities from artifacts."""
-        return artifacts.get("_entities", {})
+        # Handle case where artifacts might be a SandboxContext object
+        if hasattr(artifacts, 'get') and hasattr(artifacts, 'setdefault'):
+            # It's a dictionary-like object
+            return artifacts.get("_entities", {})
+        elif hasattr(artifacts, 'get') and not hasattr(artifacts, 'setdefault'):
+            # It's a SandboxContext object - return empty entities
+            return {}
+        else:
+            # It's None or not the expected type
+            artifacts = artifacts or {}
+            return artifacts.get("_entities", {})
 
     # ---------------------------
     # Common response patterns
