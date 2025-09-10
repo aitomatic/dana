@@ -1,5 +1,29 @@
 [
   {
+    "id": "dana_knowledge_verifier",
+    "key": "dana_knowledge_verifier",
+    "name": "Dana",
+    "description": "Knowledge Verifier Agent",
+    "config": {
+      "domain": "General",
+      "specialties": [
+        "knowledge verification"
+      ],
+      "skills": [
+        "knowledge verification",
+        "query document",
+        "query knowledge"
+      ],
+      "expertise_level": "expert",
+      "personality": "professional and analytical",
+      "is_prebuilt": true,
+      "topic": "Knowledge Verification",
+      "role": "Knowledge Verifier",
+      "task": "Verify knowledge accuracy and completeness"
+    },
+    "generation_phase": "code_generated"
+  },
+  {
     "id": "sofia_finance_expert",
     "key": "sofia_finance_expert",
     "name": "Sofia",
