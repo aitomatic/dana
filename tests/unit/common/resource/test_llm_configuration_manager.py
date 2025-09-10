@@ -285,7 +285,7 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]:
+        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "MOONSHOT_API_KEY", "MOONSHOT_API_URL", "OPENAI_API_URL"]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]
