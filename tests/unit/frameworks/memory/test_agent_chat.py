@@ -21,15 +21,17 @@ class TestAgentChat(unittest.TestCase):
         self.memory_dir = Path(self.temp_dir) / ".dana" / "chats"
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
-        # Patch the memory initialization to use temp directory
+        # Patch the timeline initialization to use temp directory
         def mock_init(agent_self):
-            if agent_self._conversation_memory is None:
-                from dana.core.agent.mind.memory.conversation import ConversationMemory
+            if agent_self.state.timeline is None:
+                from dana.core.agent.timeline.timeline import Timeline
 
-                # Use temp directory instead of ~/.dana/chats/
+                # Use temp directory for timeline persistence
                 agent_name = getattr(agent_self.agent_type, "name", "agent")
-                memory_file = self.memory_dir / f"{agent_name}_conversation.json"
-                agent_self._conversation_memory = ConversationMemory(filepath=str(memory_file), max_turns=20)
+                # Create a unique agent_id to avoid conflicts
+                import uuid
+                unique_id = f"{agent_name}_{uuid.uuid4().hex[:8]}"
+                agent_self.state.timeline = Timeline(agent_id=unique_id)
 
         self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
         self.init_patcher.start()
@@ -92,8 +94,8 @@ class TestAgentChat(unittest.TestCase):
         self.assertTrue(hasattr(agent, "chat"))
         self.assertTrue(callable(agent.chat))
 
-        # Memory should be available through centralized state
-        self.assertIsNotNone(agent._conversation_memory)
+        # Timeline should be available through centralized state
+        self.assertIsNotNone(agent.state.timeline)
 
     def test_basic_chat_without_llm(self):
         """Test basic chat functionality without LLM (fallback responses)."""
@@ -104,13 +106,16 @@ class TestAgentChat(unittest.TestCase):
             with patch.object(AgentInstance, "get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
+                # Wait for timeline loading to complete
+                agent.state.timeline._wait_for_loading()
+
                 # Test greeting - chat now returns the actual result directly
                 response = agent.chat_sync("Hello!", sandbox_context=self.sandbox_context)
                 self.assertIn("Hello", response)
                 self.assertIn("TestAgent", response)
 
-                # Memory should now be initialized
-                self.assertIsNotNone(agent._conversation_memory)
+                # Timeline should now be initialized
+                self.assertIsNotNone(agent.state.timeline)
 
                 # Test name query
                 response = agent.chat_sync("What's your name?", sandbox_context=self.sandbox_context)
@@ -203,8 +208,8 @@ class TestAgentChat(unittest.TestCase):
                 if hasattr(response3, "_wait_for_delivery"):
                     response3._wait_for_delivery()
 
-                # Check that agents have separate conversation memories
-                self.assertNotEqual(agent1._conversation_memory, agent2._conversation_memory)
+                # Check that agents have separate timelines
+                self.assertNotEqual(agent1.state.timeline, agent2.state.timeline)
 
                 # Check conversation statistics
                 stats1 = agent1.get_conversation_stats()
@@ -273,8 +278,8 @@ class TestAgentChat(unittest.TestCase):
                 if hasattr(response, "_wait_for_delivery"):
                     response._wait_for_delivery()
 
-                # Check that memory is initialized
-                self.assertIsNotNone(agent._conversation_memory)
+                # Check that timeline is initialized
+                self.assertIsNotNone(agent.state.timeline)
                 initial_stats = agent.get_conversation_stats()
                 self.assertEqual(initial_stats["total_messages"], 1)
 
@@ -391,8 +396,11 @@ class TestAgentChat(unittest.TestCase):
             with patch.object(AgentInstance, "get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
-                # Memory should be available through centralized state
-                self.assertIsNotNone(agent._conversation_memory)
+                # Timeline should be available through centralized state
+                self.assertIsNotNone(agent.state.timeline)
+
+                # Wait for timeline loading to complete
+                agent.state.timeline._wait_for_loading()
 
                 # Send a message to trigger memory initialization
                 response = agent.chat_sync("Hello")
@@ -401,8 +409,8 @@ class TestAgentChat(unittest.TestCase):
                 if hasattr(response, "_wait_for_delivery"):
                     response._wait_for_delivery()
 
-                # Memory should now be initialized
-                self.assertIsNotNone(agent._conversation_memory)
+                # Timeline should now be initialized
+                self.assertIsNotNone(agent.state.timeline)
 
 
 class TestAgentChatIntegration(unittest.TestCase):

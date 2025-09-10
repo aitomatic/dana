@@ -13,12 +13,20 @@ from dana.core.agent.methods.solvers.planner_executor import PlannerExecutorSolv
 from dana.core.agent.methods.solvers.reactive_support import ReactiveSupportSolverMixin
 
 
+class ConcreteSolverMixin(BaseSolverMixin):
+    """Concrete implementation of BaseSolverMixin for testing."""
+
+    def solve_sync(self, problem_or_workflow, artifacts=None, sandbox_context=None, **kwargs):
+        """Concrete implementation of solve_sync."""
+        return {"result": "test"}
+
+
 class TestBaseSolverMixinSimple:
     """Test the base solver mixin functionality in isolation."""
 
     def test_base_solver_mixin_initialization(self):
         """Test that BaseSolverMixin initializes correctly."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
 
         assert hasattr(mixin, "_context_engineer")
         assert hasattr(mixin, "_llm_resource")
@@ -27,7 +35,7 @@ class TestBaseSolverMixinSimple:
 
     def test_inject_dependencies(self):
         """Test dependency injection functionality."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
 
         # Test with no dependencies
         wc, ri, sig = mixin._inject_dependencies()
@@ -47,7 +55,7 @@ class TestBaseSolverMixinSimple:
 
     def test_initialize_solver_state(self):
         """Test solver state initialization."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
 
         artifacts = {}
         state = mixin._initialize_solver_state(artifacts, "_test_state")
@@ -58,7 +66,7 @@ class TestBaseSolverMixinSimple:
 
     def test_extract_entities(self):
         """Test entity extraction from artifacts."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
 
         artifacts = {"_entities": {"user": "test", "domain": "testing"}}
         entities = mixin._extract_entities(artifacts)
@@ -72,7 +80,7 @@ class TestBaseSolverMixinSimple:
 
     def test_create_ask_response(self):
         """Test ask response creation."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
         mixin.MIXIN_NAME = "test_mixin"
 
         response = mixin._create_ask_response("Test message")
@@ -87,7 +95,7 @@ class TestBaseSolverMixinSimple:
 
     def test_create_answer_response(self):
         """Test answer response creation."""
-        mixin = BaseSolverMixin()
+        mixin = ConcreteSolverMixin()
         mixin.MIXIN_NAME = "test_mixin"
 
         artifacts = {"test": "data"}
@@ -142,7 +150,7 @@ class TestPlannerExecutorSolverMixinSimple:
         structured = mixin._structure_plan(steps)
 
         assert len(structured) == 3
-        assert structured[0]["type"] == "subgoal"  # "analyze" is a subgoal verb
+        assert structured[0]["type"] == "action"  # "analyze" is treated as action to avoid recursion
         assert structured[1]["type"] == "action"  # "implement" is an action verb
         assert structured[2]["type"] == "action"  # "test" is an action verb
 
@@ -155,27 +163,33 @@ class TestPlannerExecutorSolverMixinSimple:
         assert result["status"] == "ok (dry-run)"
         assert "would be executed" in result["message"]
 
-        # Test with no sandbox context
-        result = mixin._exec_action("test action", None, dry_run=False)
-        assert result["status"] == "ok (no-op)"
-        assert "No sandbox context" in result["message"]
+        # Test with no sandbox context - should raise error
+        with pytest.raises(RuntimeError, match="No LLM resource available for action execution"):
+            mixin._exec_action("test action", None, dry_run=False)
 
     def test_exec_action_with_patterns(self):
         """Test action execution with pattern recognition."""
         mixin = PlannerExecutorSolverMixin()
 
+        # Create a mock sandbox context with LLM resource
         mock_context = Mock()
+        mock_llm = Mock()
+        mock_response = Mock()
+        mock_response.content = {"choices": [{"message": {"content": "Action executed successfully"}}]}
+        mock_llm.query_sync.return_value = mock_response
+        mock_context.get_resource.return_value = mock_llm
 
         # Test file action
         result = mixin._exec_action("create file test.txt", mock_context, dry_run=False)
         assert result["status"] == "ok"
-        assert result["type"] == "file_operation"
-        assert result["operation"] == "write"
+        assert result["action"] == "create file test.txt"
+        assert "message" in result
 
         # Test API action
         result = mixin._exec_action("call api endpoint", mock_context, dry_run=False)
         assert result["status"] == "ok"
-        assert result["type"] == "api_call"
+        assert result["action"] == "call api endpoint"
+        assert "message" in result
 
 
 class TestReactiveSupportSolverMixinSimple:

@@ -7,27 +7,16 @@ from typing import Any
 from .working import WorkingMemory
 from .episodic import EpisodicMemory
 from .semantic import SemanticMemory
-from .conversation import ConversationMemory
 
 
 class MemorySystem:
     """Unified interface to all memory types."""
 
-    def __init__(self, conversation_filepath: str | None = None):
+    def __init__(self):
         """Initialize all memory subsystems."""
         self.working = WorkingMemory()
         self.episodic = EpisodicMemory()
         self.semantic = SemanticMemory()
-        
-        # Initialize conversation memory if filepath provided
-        if conversation_filepath:
-            self.conversation = ConversationMemory(conversation_filepath)
-        else:
-            # Create a temporary conversation memory for testing
-            import tempfile
-            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
-            temp_file.close()
-            self.conversation = ConversationMemory(temp_file.name)
 
     def recall(self, query: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Smart recall across all memory types.
@@ -100,18 +89,6 @@ class MemorySystem:
         # Clear transferred items from working memory
         self.working.clear_transferred()
 
-    def get_conversation_context(self, n_turns: int = 3) -> list[dict[str, Any]]:
-        """Get recent conversation context.
-        
-        Args:
-            n_turns: Number of recent turns to retrieve
-            
-        Returns:
-            List of recent conversation turns
-        """
-        if hasattr(self, 'conversation'):
-            return self.conversation.get_recent_context(n_turns)
-        return []
 
     def get_status(self) -> dict[str, Any]:
         """Get memory system status.

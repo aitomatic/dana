@@ -81,10 +81,14 @@ class ChatMixin:
         max_context_turns: int = 5,
         sandbox_context: SandboxContext | None = None,
     ) -> Any:
+        # Get the next turn number
+        turn_number = len(self.state.timeline.get_events_by_type("conversation")) + 1
+
+        # Get the response
         response = self._chat_impl(sandbox_context or SandboxContext(), message, context, max_context_turns)
 
-        # Note: Conversation persistence is now handled by the enhanced timeline system
-        # No need to manually add conversation turns here
+        # Add conversation turn to timeline
+        self.state.timeline.add_conversation_turn(message, str(response), turn_number)
 
         return response
 
@@ -95,7 +99,7 @@ class ChatMixin:
         # Build conversation context from centralized state
         try:
             conversation_context = self.state.timeline.get_conversation_context(
-                message, include_summaries=True, max_turns=max_context_turns
+                max_turns=max_context_turns
             )
         except Exception:
             # Fallback if centralized state fails
@@ -191,13 +195,14 @@ class ChatMixin:
         # Check for memory-related queries
         elif "remember" in message_lower or "recall" in message_lower:
             try:
-                recent_turns = self.state.mind.memory.conversation.get_recent_context(3)
+                conversations = self.state.timeline.get_events_by_type("conversation")
+                recent_turns = conversations[-3:] if conversations else []
             except Exception:
                 recent_turns = []
             if recent_turns:
                 topics = []
                 for turn in recent_turns:
-                    words = turn["user_input"].split()
+                    words = turn.user_input.split()
                     topics.extend([w for w in words if len(w) > 4])
                 if topics:
                     unique_topics = list(set(topics))[:3]
