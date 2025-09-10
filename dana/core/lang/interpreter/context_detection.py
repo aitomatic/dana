@@ -242,6 +242,313 @@ class ContextDetector(Loggable):
         """Get the current cache size."""
         return len(self._context_cache)
 
+    def detect_metadata_comment_context(self, ast_node: Any) -> TypeContext | None:
+        """Detect context from metadata comments (## comments).
+
+        Args:
+            ast_node: AST node that may have metadata comments
+
+        Returns:
+            TypeContext if metadata comment with context is detected, None otherwise
+        """
+        if not hasattr(ast_node, "metadata") or not ast_node.metadata:
+            return None
+
+        # Ensure metadata is a dictionary
+        if not isinstance(ast_node.metadata, dict):
+            return None
+
+        comment = ast_node.metadata.get("comment")
+        if not comment:
+            return None
+
+        # Extract context information from the comment
+        context_info = self._extract_context_from_comment(comment)
+        if context_info:
+            self.debug(f"Detected context from metadata comment: {context_info}")
+            return TypeContext(
+                expected_type=context_info or "str",  # Use extracted type or default to str
+                context_type=ContextType.EXPRESSION,
+                confidence=0.8,  # High confidence for explicit metadata comments
+                source_node=ast_node,
+                metadata={"source": "metadata_comment", "comment": comment},
+            )
+
+        return None
+
+    def detect_type_context(self, context) -> TypeContext | None:
+        """Detect type context from execution stack and context.
+
+        Args:
+            context: SandboxContext with execution stack
+
+        Returns:
+            TypeContext if type context is detected, None otherwise
+        """
+        if not hasattr(context, "get_execution_stack"):
+            self.debug("Context has no get_execution_stack method")
+            return None
+
+        execution_stack = context.get_execution_stack()
+        if not execution_stack:
+            self.debug("Execution stack is empty")
+            # Fallback: check for assignment type in context
+            if hasattr(context, "get"):
+                assignment_type = context.get("system:__current_assignment_type")
+                if assignment_type is not None:
+                    self.debug(f"Found assignment type in context: {assignment_type}")
+                    return TypeContext(
+                        expected_type=str(assignment_type),
+                        context_type=ContextType.ASSIGNMENT,
+                        confidence=1.0,
+                        source_node=None,
+                        metadata={"source": "context_fallback"},
+                    )
+            return None
+
+        self.debug(f"Execution stack has {len(execution_stack)} locations")
+
+        # First pass: collect all contexts with their priorities
+        contexts = []
+
+        for i, location in enumerate(execution_stack):
+            self.debug(f"Checking location {i}: {location}")
+            if hasattr(location, "ast_node") and location.ast_node:
+                node = location.ast_node
+                self.debug(f"Location {i} has AST node: {type(node).__name__}")
+
+                # Check for typed assignment (highest priority)
+                if hasattr(node, "__class__") and node.__class__.__name__ == "Assignment":
+                    self.debug("Found Assignment node")
+                    if hasattr(node, "type_hint") and node.type_hint:
+                        if hasattr(node.type_hint, "name"):
+                            self.debug(f"Assignment has type hint: {node.type_hint.name}")
+                            contexts.append(
+                                TypeContext(
+                                    expected_type=node.type_hint.name,
+                                    context_type=ContextType.ASSIGNMENT,
+                                    confidence=1.0,
+                                    source_node=node,
+                                    metadata={"target": str(getattr(node, "target", "unknown"))},
+                                )
+                            )
+
+                # Check for function call (cast) (medium priority)
+                elif hasattr(node, "__class__") and node.__class__.__name__ == "FunctionCall":
+                    self.debug("Found FunctionCall node")
+                    if hasattr(node, "name") and node.name == "cast":
+                        if hasattr(node, "args") and len(node.args) >= 2:
+                            type_arg = node.args[0]
+                            if hasattr(type_arg, "value"):
+                                type_name = str(type_arg.value)
+                            else:
+                                type_name = str(type_arg)
+                            self.debug(f"Cast function call with type: {type_name}")
+                            contexts.append(
+                                TypeContext(
+                                    expected_type=type_name,
+                                    context_type=ContextType.FUNCTION_CALL,
+                                    confidence=0.9,
+                                    source_node=node,
+                                    metadata={"function_name": "cast"},
+                                )
+                            )
+
+                # Check for function definition with docstring (medium priority)
+                elif hasattr(node, "__class__") and node.__class__.__name__ == "FunctionDefinition":
+                    self.debug("Found FunctionDefinition node")
+                    if hasattr(node, "docstring") and node.docstring:
+                        self.debug(f"FunctionDefinition has docstring: {node.docstring}")
+                        extracted_type = self._extract_type_from_docstring(node.docstring)
+                        if extracted_type:
+                            self.debug(f"Extracted type from docstring: {extracted_type}")
+                            contexts.append(
+                                TypeContext(
+                                    expected_type=extracted_type,
+                                    context_type=ContextType.RETURN_VALUE,
+                                    confidence=0.9,
+                                    source_node=node,
+                                    metadata={"source": "docstring"},
+                                )
+                            )
+                        else:
+                            self.debug("No type extracted from docstring")
+                    else:
+                        self.debug("FunctionDefinition has no docstring")
+
+                # Check for struct field with comment (lower priority)
+                elif hasattr(node, "__class__") and node.__class__.__name__ == "StructField":
+                    self.debug("Found StructField node")
+                    if hasattr(node, "comment") and node.comment:
+                        self.debug(f"StructField has comment: {node.comment}")
+                        extracted_type = self._extract_context_from_comment(node.comment)
+                        if extracted_type:
+                            self.debug(f"Extracted type from comment: {extracted_type}")
+                            contexts.append(
+                                TypeContext(
+                                    expected_type=extracted_type,
+                                    context_type=ContextType.EXPRESSION,
+                                    confidence=0.7,
+                                    source_node=node,
+                                    metadata={"source": "field_comment"},
+                                )
+                            )
+                        else:
+                            self.debug("No type extracted from comment")
+                    else:
+                        self.debug("StructField has no comment")
+
+                # Check for metadata comments (lowest priority)
+                elif hasattr(node, "metadata") and node.metadata:
+                    comment = node.metadata.get("comment", "")
+                    if comment:
+                        self.debug(f"Node has metadata comment: {comment}")
+                        extracted_type = self._extract_context_from_comment(comment)
+                        if extracted_type:
+                            self.debug(f"Extracted type from metadata comment: {extracted_type}")
+                            contexts.append(
+                                TypeContext(
+                                    expected_type=extracted_type,
+                                    context_type=ContextType.EXPRESSION,
+                                    confidence=0.8,
+                                    source_node=node,
+                                    metadata={"source": "metadata_comment"},
+                                )
+                            )
+                        else:
+                            self.debug("No type extracted from metadata comment")
+                    else:
+                        self.debug("Node has no metadata comment")
+                else:
+                    self.debug(f"Node type {type(node).__name__} not handled")
+            else:
+                self.debug(f"Location {i} has no AST node")
+
+        # Return the context with highest confidence (priority)
+        if contexts:
+            best_context = max(contexts, key=lambda c: c.confidence)
+            self.debug(f"Selected best context: {best_context}")
+            return best_context
+
+        # Final fallback: check for assignment type in context
+        if hasattr(context, "get"):
+            assignment_type = context.get("system:__current_assignment_type")
+            if assignment_type is not None:
+                self.debug(f"Found assignment type in context fallback: {assignment_type}")
+                return TypeContext(
+                    expected_type=str(assignment_type),
+                    context_type=ContextType.ASSIGNMENT,
+                    confidence=1.0,
+                    source_node=None,
+                    metadata={"source": "context_fallback"},
+                )
+
+        self.debug("No type context detected from execution stack")
+        return None
+
+    def _extract_context_from_comment(self, comment: str) -> str | None:
+        """Extract type information from comment text.
+
+        Args:
+            comment: Comment text to analyze
+
+        Returns:
+            Extracted type name or None
+        """
+        if not comment:
+            return None
+
+        # Simple pattern matching for common type indicators
+        comment_lower = comment.lower()
+
+        # Look for type patterns (but exclude "type:" which is handled separately)
+        type_patterns = ["returns", "return", "is a", "should be", "must be"]
+
+        for pattern in type_patterns:
+            if pattern in comment_lower:
+                # Extract the word after the pattern
+                parts = comment_lower.split(pattern)
+                if len(parts) > 1:
+                    after_pattern = parts[1].strip()
+                    # Extract first meaningful word as potential type
+                    words = after_pattern.split()
+                    if words:
+                        # Skip articles and other non-type words
+                        articles = ["a", "an", "the", "value", "result"]
+                        for word in words:
+                            potential_type = word.strip(".,;:")
+                            if potential_type not in articles:
+                                # Map common type indicators to actual types
+                                type_mapping = {
+                                    "string": "str",
+                                    "integer": "int",
+                                    "boolean": "bool",
+                                    "float": "float",
+                                    "list": "list",
+                                    "dict": "dict",
+                                    "object": "dict",
+                                    "array": "list",
+                                }
+                                return type_mapping.get(potential_type, potential_type)
+
+        # Look for specific patterns
+        # Pattern: "type: int"
+        if "type:" in comment_lower:
+            parts = comment_lower.split("type:")
+            if len(parts) > 1:
+                type_part = parts[1].strip()
+                words = type_part.split()
+                if words:
+                    potential_type = words[0].strip(".,;:")
+                    type_mapping = {
+                        "string": "str",
+                        "integer": "int",
+                        "boolean": "bool",
+                        "float": "float",
+                        "list": "list",
+                        "dict": "dict",
+                        "object": "dict",
+                        "array": "list",
+                    }
+                    return type_mapping.get(potential_type, potential_type)
+
+        # Pattern: "string type", "int value", etc.
+        type_indicators = {
+            "years": "int",
+            "age": "int",
+            "count": "int",
+            "number": "int",
+            "integer": "int",
+            "string": "str",
+            "text": "str",
+            "name": "str",
+            "title": "str",
+            "description": "str",
+            "float": "float",
+            "decimal": "float",
+            "price": "float",
+            "amount": "float",
+            "boolean": "bool",
+            "flag": "bool",
+            "enabled": "bool",
+            "list": "list",
+            "array": "list",
+            "items": "list",
+            "dict": "dict",
+            "object": "dict",
+            "mapping": "dict",
+        }
+
+        for indicator, type_name in type_indicators.items():
+            if indicator in comment_lower:
+                return type_name
+
+        return None
+
+    def _extract_type_from_comment(self, comment: str) -> str | None:
+        """Alias for _extract_context_from_comment for backward compatibility."""
+        return self._extract_context_from_comment(comment)
+
     def detect_current_context(self, context: Any) -> TypeContext | None:
         """Detect type context from current execution environment.
 
@@ -267,6 +574,24 @@ class ContextDetector(Loggable):
                         metadata = {"source": "assignment_handler", "dana_struct_type": type_name}
 
                     self.debug(f"Found assignment type in context: {type_name}")
+
+                    # Check for metadata comments to combine with assignment type
+                    if hasattr(context, "get_current_node"):
+                        current_node = context.get_current_node()
+                        if current_node:
+                            self.debug(f"Checking current node for metadata: {type(current_node)}")
+                            if hasattr(current_node, "metadata"):
+                                self.debug(f"Current node metadata: {current_node.metadata}")
+                            metadata_context = self.detect_metadata_comment_context(current_node)
+                            if metadata_context and metadata_context.metadata:
+                                # Merge metadata comments with assignment type
+                                metadata.update(metadata_context.metadata)
+                                self.debug(f"Merged metadata comments: {metadata_context.metadata}")
+                            else:
+                                self.debug("No metadata context found")
+                        else:
+                            self.debug("No current node found")
+
                     return TypeContext(
                         expected_type=type_name,
                         context_type=ContextType.ASSIGNMENT,
@@ -282,6 +607,11 @@ class ContextDetector(Loggable):
                     return self.detect_assignment_context(current_node)
                 elif isinstance(current_node, FunctionCall):
                     return self.detect_function_call_context(current_node)
+
+                # Check for metadata comments on the current node
+                metadata_context = self.detect_metadata_comment_context(current_node)
+                if metadata_context:
+                    return metadata_context
 
             # Try to infer from execution context
             return self._infer_from_execution_context(context)
@@ -311,6 +641,11 @@ class ContextDetector(Loggable):
                         elif isinstance(frame.node, FunctionCall):
                             return self.detect_function_call_context(frame.node)
 
+                        # Check for metadata comments on each frame node
+                        metadata_context = self.detect_metadata_comment_context(frame.node)
+                        if metadata_context:
+                            return metadata_context
+
             # Check for assignment context in the sandbox state
             if hasattr(context, "_state") and hasattr(context._state, "current_assignment"):
                 assignment = context._state.current_assignment
@@ -332,6 +667,100 @@ class ContextDetector(Loggable):
 
         except Exception as e:
             self.debug(f"Error inferring from execution context: {e}")
+
+        return None
+
+    def _extract_type_from_docstring(self, docstring: str) -> str | None:
+        """Extract type information from docstring text.
+
+        Args:
+            docstring: Docstring text to analyze
+
+        Returns:
+            Extracted type name or None
+        """
+        if not docstring:
+            return None
+
+        # Simple pattern matching for common type indicators
+        docstring_lower = docstring.lower()
+
+        # Look for type patterns (but exclude "return" and "type" which are handled by specific patterns)
+        type_patterns = ["returns:", "returns", "rtype:", "rtype", "return type:"]
+
+        for pattern in type_patterns:
+            if pattern in docstring_lower:
+                # Extract the word after the pattern
+                parts = docstring_lower.split(pattern)
+                if len(parts) > 1:
+                    after_pattern = parts[1].strip()
+                    # Extract first meaningful word as potential type
+                    words = after_pattern.split()
+                    if words:
+                        # Skip articles and other non-type words
+                        articles = ["a", "an", "the", "value", "result"]
+                        for word in words:
+                            potential_type = word.strip(".,;:")
+                            if potential_type not in articles:
+                                # Map common type indicators to actual types
+                                type_mapping = {
+                                    "string": "str",
+                                    "integer": "int",
+                                    "boolean": "bool",
+                                    "float": "float",
+                                    "list": "list",
+                                    "dict": "dict",
+                                    "object": "dict",
+                                    "array": "list",
+                                }
+                                return type_mapping.get(potential_type, potential_type)
+
+        # Look for specific patterns
+        # Pattern: "Return type dict" or "return type dict"
+        if "return type" in docstring_lower:
+            parts = docstring_lower.split("return type")
+            if len(parts) > 1:
+                type_part = parts[1].strip()
+                words = type_part.split()
+                if words:
+                    # Skip "type" if it's the first word, get the actual type
+                    start_idx = 0
+                    if words[start_idx].strip(".,;:") == "type":
+                        start_idx = 1
+
+                    if start_idx < len(words):
+                        potential_type = words[start_idx].strip(".,;:")
+                        type_mapping = {
+                            "string": "str",
+                            "integer": "int",
+                            "boolean": "bool",
+                            "float": "float",
+                            "list": "list",
+                            "dict": "dict",
+                            "object": "dict",
+                            "array": "list",
+                        }
+                        return type_mapping.get(potential_type, potential_type)
+
+        # Pattern: "-> int" (arrow notation)
+        if "->" in docstring_lower:
+            parts = docstring_lower.split("->")
+            if len(parts) > 1:
+                type_part = parts[1].strip()
+                words = type_part.split()
+                if words:
+                    potential_type = words[0].strip(".,;:")
+                    type_mapping = {
+                        "string": "str",
+                        "integer": "int",
+                        "boolean": "bool",
+                        "float": "float",
+                        "list": "list",
+                        "dict": "dict",
+                        "object": "dict",
+                        "array": "list",
+                    }
+                    return type_mapping.get(potential_type, potential_type)
 
         return None
 

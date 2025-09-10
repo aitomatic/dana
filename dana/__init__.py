@@ -9,8 +9,8 @@ from dana.__init__ import (
     DanaInterpreter,
     DanaParser,
     DanaSandbox,
-    py2na,
     __version__,
+    py2na,
 )
 
 __all__ = [

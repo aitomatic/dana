@@ -12,7 +12,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from dana.core.builtin_types.struct_system import (
+from dana.core.builtins.struct_system import (
     StructInstance,
     StructType,
 )

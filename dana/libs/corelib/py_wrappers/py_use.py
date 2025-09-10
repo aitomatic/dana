@@ -13,8 +13,8 @@ from typing import Union
 
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
 from dana.common.utils.misc import Misc
-from dana.core.builtin_types.resource import ResourceInstance
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.resource import ResourceInstance
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:

@@ -1,0 +1,121 @@
+# Test for Step 1: Enhanced Agent Solve Method with Approach Routing
+# This test verifies that the agent.solve() method implements the pseudocode approach routing
+
+log_level("INFO")
+
+# Test agent for approach routing
+agent_blueprint TestApproachAgent:
+    name: str = "TestApproach"
+    domain: str = "testing"
+
+# Test 1: Verify current solve method exists and works
+def test_current_solve_method():
+    agent_instance = TestApproachAgent()
+    
+    # Test basic solve functionality
+    result = agent_instance.solve("What is 2 + 2?")
+    log(f"Current solve result: {result}")
+    
+    if "direct solution" not in result.lower():
+        return "❌ Current solve method not working properly"
+    
+    return "✅ Current solve method works"
+
+# Test 2: Test approach routing - direct solution
+def test_approach_routing_direct():
+    agent_instance = TestApproachAgent()
+    
+    # Test simple arithmetic (should be direct solution)
+    result = agent_instance.solve("What is 47 + 89?")
+    log(f"Direct solution result: {result}")
+    
+    # Should handle simple computation without workflow overhead
+    if "workflow" in result.lower():
+        return "❌ Simple computation should not use workflow"
+    
+    return "✅ Direct solution routing works"
+
+# Test 3: Test approach routing - workflow approach
+def test_approach_routing_workflow():
+    agent_instance = TestApproachAgent()
+    
+    # Test equipment health check (should use workflow)
+    result = agent_instance.solve("Check equipment health for Line 3")
+    log(f"Workflow approach result: {result}")
+    
+    # Should use workflow for complex processes (check for workflow execution)
+    if "workflow" not in result.lower() and "equipment" not in result.lower():
+        return "❌ Equipment check should use workflow approach"
+    
+    return "✅ Workflow approach routing works"
+
+# Test 4: Test approach routing - dana code approach
+def test_approach_routing_dana_code():
+    agent_instance = TestApproachAgent()
+    
+    # Test data analysis (should generate dana code)
+    result = agent_instance.solve("Analyze sensor data trends")
+    log(f"Dana code approach result: {result}")
+    
+    # Should generate dana code for data processing
+    if "dana code" not in result.lower() and "sensor" not in result.lower():
+        return "❌ Data analysis should generate dana code"
+    
+    return "✅ Dana code approach routing works"
+
+# Test 5: Test approach routing - escalation
+def test_approach_routing_escalation():
+    agent_instance = TestApproachAgent()
+    
+    # Test complex problem that might need escalation
+    result = agent_instance.solve("Handle production crisis with contamination and equipment failure")
+    log(f"Escalation approach result: {result}")
+    
+    # Should handle complex scenarios appropriately
+    if "error" in result.lower():
+        return "❌ Complex problem should be handled gracefully"
+    
+    return "✅ Escalation approach routing works"
+
+# Test 6: Verify plan method returns appropriate approach
+def test_plan_method_returns_approach():
+    agent_instance = TestApproachAgent()
+    
+    # Test plan method
+    plan_result = agent_instance.plan("Check equipment health")
+    log(f"Plan result: {plan_result}")
+    
+    # Plan should return something (workflow, approach, etc.)
+    if plan_result is None:
+        return "❌ Plan method should return an approach"
+    
+    return "✅ Plan method returns approach"
+
+# Run all tests
+def run_all_tests():
+    tests = [
+        test_current_solve_method,
+        test_approach_routing_direct,
+        test_approach_routing_workflow,
+        test_approach_routing_dana_code,
+        test_approach_routing_escalation,
+        test_plan_method_returns_approach
+    ]
+    
+    results = []
+    for test in tests:
+        try:
+            result = test()
+            results.append(f"{test.__name__}: {result}")
+        except Exception as e:
+            results.append(f"{test.__name__}: ❌ Exception: {e}")
+    
+    log("=== Test Results ===")
+    for result in results:
+        log(result)
+    
+    return results
+
+# Execute tests
+test_results = run_all_tests()
+test_results

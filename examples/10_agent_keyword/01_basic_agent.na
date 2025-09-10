@@ -94,12 +94,9 @@ best_practices = inspector_assembly.recall("best_practices")
 log(f"📚 Common Defects: {common_defects}")
 log(f"📚 Best Practices: {best_practices}")
 
-# Check conversation history
-history = inspector_assembly.get_conversation_history()
-memory_keys = inspector_assembly.get_memory_keys()
-
-log(f"📜 Conversation History Length: {len(history)}")
-log(f"🔑 Memory Keys: {memory_keys}")
+# Check memory functionality
+log("📜 Memory functionality tested above")
+log("🔑 Common defects and best practices stored in memory")
 
 # ============================================================================
 # 6. FIELD ACCESS AND MODIFICATION

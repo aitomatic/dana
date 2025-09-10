@@ -26,7 +26,7 @@ except:
 
 # Try to get LLM resource
 print("\n--- Getting LLM Resource ---")
-llm_resource = smart_agent._get_llm_resource()
+llm_resource = smart_agent.get_llm_resource()
 print("LLM Resource:", llm_resource)
 if llm_resource:
     print("LLM Resource type:", type(llm_resource))

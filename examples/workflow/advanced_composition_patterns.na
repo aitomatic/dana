@@ -10,10 +10,10 @@
 # - Retry mechanisms with backoff
 # - Comprehensive monitoring and alerting
 
-import dana.frameworks.workflow.workflow_engine as workflow_engine
-import dana.frameworks.workflow.workflow_step as workflow_step
-import dana.frameworks.workflow.context_engine as context_engine
-import dana.frameworks.workflow.safety_validator as safety_validator
+import dana.core.workflow.workflow_system.workflow_engine as workflow_engine
+import dana.core.workflow.workflow_system.workflow_step as workflow_step
+import dana.core.workflow.workflow_system.context_engine as context_engine
+import dana.core.workflow.workflow_system.safety_validator as safety_validator
 
 # Initialize workflow components
 log("🔄 Initializing Advanced Composition Patterns...")

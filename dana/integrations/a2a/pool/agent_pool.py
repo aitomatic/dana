@@ -6,7 +6,7 @@ the most appropriate agent for a given task based on skills.
 """
 
 # TODO: Update to use new agent struct system
-# from dana.core.builtin_types.agent_system.abstract_dana_agent import AbstractDanaAgent
+# from dana.core.agent.agent_system.abstract_dana_agent import AbstractDanaAgent
 from typing import Any
 
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
