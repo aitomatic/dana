@@ -119,7 +119,7 @@ class LLMConfigurationManager:
         # Mock mode
         if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
             return "mock:test-model"
-            
+
         try:
             config = self.config_loader.get_default_config()
             preferred_models = config.get("llm", {}).get("preferred_models", [])
