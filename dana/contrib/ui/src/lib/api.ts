@@ -87,6 +87,38 @@ export interface ChatResponse {
   error?: string;
 }
 
+// Agent Suggestion Types
+export interface AgentSuggestionRequest {
+  user_message: string;
+}
+
+export interface AgentSuggestion {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  config: {
+    domain: string;
+    specialties: string[];
+    skills: string[];
+    expertise_level: string;
+    personality: string;
+    is_prebuilt: boolean;
+    topic: string;
+    role: string;
+    task: string;
+  };
+  generation_phase: string;
+  matching_percentage: number;
+  explanation: string;
+}
+
+export interface AgentSuggestionResponse {
+  success: boolean;
+  suggestions: AgentSuggestion[];
+  message: string;
+}
+
 // Workflow Execution Types
 export interface WorkflowExecutionRequest {
   agent_id: number;
@@ -1032,6 +1064,14 @@ class ApiService {
   async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
     const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
       prebuilt_key: prebuiltKey,
+    });
+    return response.data;
+  }
+
+  // Get agent suggestions based on user message
+  async getAgentSuggestions(userMessage: string): Promise<AgentSuggestionResponse> {
+    const response = await this.client.post<AgentSuggestionResponse>('/agents/suggest', {
+      user_message: userMessage,
     });
     return response.data;
   }

@@ -5,6 +5,16 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
+import { Play } from 'iconoir-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { type AgentSuggestion } from '@/lib/api';
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
@@ -25,6 +35,12 @@ export default function AgentsPage() {
   const [selectedDomain, setSelectedDomain] = useState('All domains');
   const [creating, setCreating] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [showCreateAgentPopup, setShowCreateAgentPopup] = useState(false);
+  const [userInput, setUserInput] = useState('');
+  const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionError, setSuggestionError] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
@@ -104,12 +120,34 @@ export default function AgentsPage() {
   });
 
   const handleCreateAgent = async () => {
+    setShowCreateAgentPopup(true);
+  };
+
+  const handleGetSuggestions = async () => {
+    if (!userInput.trim()) return;
+
+    setLoadingSuggestions(true);
+    setSuggestionError('');
+
+    try {
+      const response = await apiService.getAgentSuggestions(userInput.trim());
+      setSuggestions(response.suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error getting suggestions:', error);
+      setSuggestionError('Failed to get suggestions. Please try again.');
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleCreateAgentFromInput = async () => {
     setCreating(true);
     try {
-      // Minimal default agent payload
+      // Create agent with user input
       const newAgent = await apiService.createAgent({
         name: 'Untitled Agent',
-        description: '',
+        description: userInput,
         config: {},
       });
       if (newAgent && newAgent.id) {
@@ -120,6 +158,38 @@ export default function AgentsPage() {
       // Optionally show error toast
     } finally {
       setCreating(false);
+      setShowCreateAgentPopup(false);
+      setUserInput('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleCancelCreate = () => {
+    setShowCreateAgentPopup(false);
+    setUserInput('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSuggestionError('');
+  };
+
+  const handleTryAgain = () => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setSuggestionError('');
+  };
+
+  const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
+    setCreating(true);
+    try {
+      const newAgent = await apiService.cloneAgentFromPrebuilt(suggestion.key);
+      if (newAgent && newAgent.id) {
+        navigate(`/agents/${newAgent.id}`);
+      }
+    } catch (error) {
+      console.error('Error building agent from suggestion:', error);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -127,11 +197,10 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
-          headerCollapsed
-            ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
-            : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
-        }`}
+        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${headerCollapsed
+          ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
+          : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
+          }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
@@ -149,15 +218,13 @@ export default function AgentsPage() {
 
         {/* Main Content with Smooth Transitions */}
         <div
-          className={`relative z-10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${
-            headerCollapsed ? 'overflow-hidden h-0' : 'px-6 min-h-[600px]'
-          }`}
+          className={`relative z-10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${headerCollapsed ? 'overflow-hidden h-0' : 'px-6 min-h-[600px]'
+            }`}
         >
           {/* Main Title with Enhanced Typography */}
           <div
-            className={`transition-all duration-700 ease-out ${
-              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-8 opacity-100 scale-100'
-            }`}
+            className={`transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-8 opacity-100 scale-100'
+              }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400">
@@ -171,9 +238,8 @@ export default function AgentsPage() {
 
           {/* Enhanced Subtitle */}
           <p
-            className={`text-xl md:text-2xl text-gray-200 max-w-4xl leading-relaxed font-light transition-all duration-700 ease-out ${
-              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-12 opacity-100 scale-100'
-            }`}
+            className={`text-xl md:text-2xl text-gray-200 max-w-4xl leading-relaxed font-light transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-12 opacity-100 scale-100'
+              }`}
           >
             The complete platform for{' '}
             <span className="font-semibold text-purple-300">building, training, and deploying</span>{' '}
@@ -182,9 +248,8 @@ export default function AgentsPage() {
 
           {/* Feature Cards with Better Design */}
           <div
-            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl transition-all duration-700 ease-out ${
-              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-16 opacity-100 scale-100'
-            }`}
+            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-16 opacity-100 scale-100'
+              }`}
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
@@ -268,9 +333,8 @@ export default function AgentsPage() {
 
           {/* Enhanced CTA Buttons */}
           <div
-            className={`flex flex-col items-center gap-4 transition-all duration-700 ease-out ${
-              headerCollapsed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
-            }`}
+            className={`flex flex-col items-center gap-4 transition-all duration-700 ease-out ${headerCollapsed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+              }`}
           >
             <button
               onClick={() => {
@@ -308,9 +372,8 @@ export default function AgentsPage() {
 
         {/* Compact Header with Highlights - Show when collapsed */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
-            headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-          }`}
+          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
+            }`}
         >
           <div className="flex flex-col gap-4 items-center">
             {/* Main Title with Gradient Highlight */}
@@ -372,11 +435,10 @@ export default function AgentsPage() {
         {/* Enhanced Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
-            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
-              activeTab === 'Explore'
-                ? 'border-brand-500 text-brand-600'
-                : 'border-transparent text-gray-500 hover:text-brand-600'
-            }`}
+            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${activeTab === 'Explore'
+              ? 'border-brand-500 text-brand-600'
+              : 'border-transparent text-gray-500 hover:text-brand-600'
+              }`}
             onClick={() => setActiveTab('explore')}
           >
             <span className="flex gap-2 items-center">
@@ -385,11 +447,10 @@ export default function AgentsPage() {
             </span>
           </button>
           <button
-            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
-              activeTab === 'My Agent'
-                ? 'border-brand-500 text-brand-600'
-                : 'border-transparent text-gray-500 hover:text-brand-600'
-            }`}
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${activeTab === 'My Agent'
+              ? 'border-brand-500 text-brand-600'
+              : 'border-transparent text-gray-500 hover:text-brand-600'
+              }`}
             onClick={() => setActiveTab('my')}
           >
             <span className="flex gap-2 items-center">
@@ -425,6 +486,132 @@ export default function AgentsPage() {
           </div>
         )}
       </div>
+
+      {/* Create Agent Popup */}
+      <Dialog open={showCreateAgentPopup} onOpenChange={setShowCreateAgentPopup}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Train Your Own Agent</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                What would you like to build?
+              </label>
+              <textarea
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Describe what you want your agent to do or what domain it should specialize in..."
+                className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={4}
+                autoFocus
+                disabled={showSuggestions}
+              />
+            </div>
+
+            {/* Loading State */}
+            {loadingSuggestions && (
+              <div className="text-center py-4">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <p className="mt-2 text-sm text-gray-600">Getting suggestions...</p>
+              </div>
+            )}
+
+            {/* Error State */}
+            {suggestionError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{suggestionError}</p>
+              </div>
+            )}
+
+            {/* Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">Suggested Agents</h3>
+                  <Button
+                    onClick={handleTryAgain}
+                    variant="outline"
+                    size="sm"
+                    className="text-sm"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={suggestion.key}
+                      className="border border-gray-200 rounded-lg p-4 space-y-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">{suggestion.name}</h4>
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              {suggestion.matching_percentage}% match
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
+                          <p className="text-xs text-gray-500">{suggestion.explanation}</p>
+                        </div>
+                        <Button
+                          onClick={() => handleBuildFromSuggestion(suggestion)}
+                          variant="default"
+                          size="sm"
+                          disabled={creating}
+                          className="ml-4"
+                        >
+                          {creating ? (
+                            <div className="flex items-center gap-1">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              <span className="text-xs">Building...</span>
+                            </div>
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:flex-row">
+            <Button
+              onClick={handleCancelCreate}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            {!showSuggestions && (
+              <Button
+                onClick={handleGetSuggestions}
+                variant="default"
+                className="w-full sm:w-auto"
+                disabled={loadingSuggestions || !userInput.trim()}
+              >
+                {loadingSuggestions ? 'Getting Suggestions...' : 'Get Suggestions'}
+              </Button>
+            )}
+            {/* <Button
+              onClick={handleCreateAgentFromInput}
+              variant="outline"
+              className="w-full sm:w-auto"
+              disabled={creating || !userInput.trim()}
+            >
+              {creating ? 'Creating...' : 'Create Custom Agent'}
+            </Button> */}
+
+
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
