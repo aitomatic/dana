@@ -1,0 +1,4 @@
+VESSEL A: MV Navigator at position 01°15.0'N, 103°45.0'E, course 000°, speed 15 knots
+VESSEL B: MV CargoStar at position 01°15.5'N, 103°47.0'E, course 090°, speed 25 knots
+
+Determine collision avoidance recommendations for Vessel A.
