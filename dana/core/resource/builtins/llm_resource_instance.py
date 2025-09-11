@@ -53,6 +53,12 @@ class LLMResourceInstance(ResourceInstance):
         """Get the resource name."""
         return self._llm_resource.name
 
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the resource name."""
+        # self._llm_resource.name = value
+        return  # Do not allow override of name
+
     @property
     def model(self) -> str | None:
         """Get the current model."""

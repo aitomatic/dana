@@ -48,13 +48,13 @@ def (rag: RAGOrchestrator) query(query: str, top_k: int = 10, filters: MetadataF
     retriever = rag.index.as_retriever(similarity_top_k=top_k, embed_model=rag.embedding_model, filters=filters)
     return retriever.retrieve(query)
 
-orchestrator = RAGOrchestrator()
+# orchestrator = RAGOrchestrator()
 # orchestrator.build_index(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/docs/for-engineers", "/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs"])
-orchestrator.build_index(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs"])
-res = orchestrator.query("What is the ARR of Aitomatic?", top_k=4)
+# orchestrator.build_index(["https://www.aitomatic.com/", "/Users/lam/Desktop/repos/opendxa/agents/agent_1_untitled_agent/docs"])
+# res = orchestrator.query("What is the ARR of Aitomatic?", top_k=4)
 
-for r in res:
-    print("="*100)
-    print(r.get_content())
-    print("="*100)
-print(f"Total of chunk retrieved : {len(res)}")
+# for r in res:
+#     print("="*100)
+#     print(r.get_content())
+#     print("="*100)
+# print(f"Total of chunk retrieved : {len(res)}")
