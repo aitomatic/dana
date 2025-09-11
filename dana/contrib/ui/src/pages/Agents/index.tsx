@@ -14,9 +14,199 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { type AgentSuggestion } from '@/lib/api';
+import { type AgentSuggestion, type BuildAgentFromSuggestionRequest, type WorkflowInfo } from '@/lib/api';
+import { useCallback } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  ConnectionMode,
+  NodeTypes,
+  MarkerType,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
+
+// Custom Node Component for React Flow
+const WorkflowStepNode: React.FC<{ data: { label: string; index: number; isMethodAvailable: boolean } }> = ({ data }) => {
+  return (
+    <div className="relative group">
+      <div
+        className={`w-32 h-16 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all duration-300 shadow-md hover:shadow-lg ${
+          data.isMethodAvailable
+            ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-400 hover:from-blue-100 hover:to-purple-100'
+            : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-400'
+        }`}
+      >
+        {/* Node icon */}
+        <div className={`w-6 h-6 rounded-full mb-1 flex items-center justify-center ${
+          data.isMethodAvailable 
+            ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
+            : 'bg-gray-400'
+        }`}>
+          <span className="text-white text-xs font-bold">
+            {data.index}
+          </span>
+        </div>
+        
+        {/* Node label */}
+        <span className={`text-xs font-medium leading-tight ${
+          data.isMethodAvailable ? 'text-gray-800' : 'text-gray-500'
+        }`}>
+          {data.label}
+        </span>
+        
+        {/* Method indicator */}
+        {data.isMethodAvailable && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white">
+            <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+          </div>
+        )}
+      </div>
+      
+      {/* Handle for connections - React Flow will use these */}
+      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    </div>
+  );
+};
+
+// Node types for React Flow
+const nodeTypes: NodeTypes = {
+  workflowStep: WorkflowStepNode,
+};
+
+// Workflow Chart Component using React Flow
+const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; methods: string[] }> = ({ workflow, methods }) => {
+  if (!workflow.steps || workflow.steps.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+        <span>No workflow steps defined</span>
+      </div>
+    );
+  }
+
+  // Convert workflow steps to React Flow nodes
+  const initialNodes: Node[] = workflow.steps.map((step, index) => ({
+    id: `step-${index}`,
+    type: 'workflowStep',
+    position: { x: index * 180, y: 50 },
+    data: {
+      label: step.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim(),
+      index: index + 1,
+      isMethodAvailable: methods.includes(step),
+    },
+    draggable: false,
+  }));
+
+  // Add start and end nodes
+  const startNode: Node = {
+    id: 'start',
+    type: 'input',
+    position: { x: -120, y: 50 },
+    data: { label: '🟢 Start' },
+    draggable: false,
+    style: {
+      background: '#dcfce7',
+      border: '2px solid #22c55e',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      color: '#15803d',
+    },
+  };
+
+  const endNode: Node = {
+    id: 'end',
+    type: 'output',
+    position: { x: workflow.steps.length * 180, y: 50 },
+    data: { label: '🔵 End' },
+    draggable: false,
+    style: {
+      background: '#dbeafe',
+      border: '2px solid #3b82f6',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      color: '#1d4ed8',
+    },
+  };
+
+  const nodes = [startNode, ...initialNodes, endNode];
+
+  // Create edges between nodes
+  const initialEdges: Edge[] = [];
+  
+  // Connect start to first step
+  if (workflow.steps.length > 0) {
+    initialEdges.push({
+      id: 'start-to-step-0',
+      source: 'start',
+      target: 'step-0',
+      type: 'smoothstep',
+      animated: true,
+      style: { stroke: '#3b82f6', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
+    });
+  }
+
+  // Connect sequential steps
+  for (let i = 0; i < workflow.steps.length - 1; i++) {
+    initialEdges.push({
+      id: `step-${i}-to-step-${i + 1}`,
+      source: `step-${i}`,
+      target: `step-${i + 1}`,
+      type: 'smoothstep',
+      animated: true,
+      style: { stroke: '#3b82f6', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
+    });
+  }
+
+  // Connect last step to end
+  if (workflow.steps.length > 0) {
+    initialEdges.push({
+      id: `step-${workflow.steps.length - 1}-to-end`,
+      source: `step-${workflow.steps.length - 1}`,
+      target: 'end',
+      type: 'smoothstep',
+      animated: true,
+      style: { stroke: '#3b82f6', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
+    });
+  }
+
+  const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
+  const [flowEdges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const onConnect = useCallback(() => {
+    // Prevent new connections since this is a display-only flow
+  }, []);
+
+  return (
+    <div className="h-48 w-full border border-gray-200 rounded-lg overflow-hidden">
+      <ReactFlow
+        nodes={flowNodes}
+        edges={flowEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        connectionMode={ConnectionMode.Loose}
+        fitView
+        attributionPosition="bottom-right"
+        proOptions={{ hideAttribution: true }}
+      >
+        <Controls position="top-right" />
+        <Background color="#f1f5f9" gap={16} />
+      </ReactFlow>
+    </div>
+  );
+};
 
 // Tab configuration with URL-friendly identifiers
 const TAB_CONFIG = {
@@ -41,6 +231,7 @@ export default function AgentsPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestionError, setSuggestionError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [workflowInfos, setWorkflowInfos] = useState<Record<string, WorkflowInfo>>({});
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
@@ -132,6 +323,23 @@ export default function AgentsPage() {
     try {
       const response = await apiService.getAgentSuggestions(userInput.trim());
       setSuggestions(response.suggestions);
+      
+      // Fetch workflow information for each suggestion
+      const workflowData: Record<string, WorkflowInfo> = {};
+      await Promise.all(
+        response.suggestions.map(async (suggestion) => {
+          try {
+            const workflowInfo = await apiService.getPrebuiltAgentWorkflowInfo(suggestion.key);
+            workflowData[suggestion.key] = workflowInfo;
+          } catch (error) {
+            console.error(`Failed to get workflow info for ${suggestion.key}:`, error);
+            // Set empty workflow info as fallback
+            workflowData[suggestion.key] = { workflows: [], methods: [] };
+          }
+        })
+      );
+      
+      setWorkflowInfos(workflowData);
       setShowSuggestions(true);
     } catch (error) {
       console.error('Error getting suggestions:', error);
@@ -182,7 +390,13 @@ export default function AgentsPage() {
   const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
     setCreating(true);
     try {
-      const newAgent = await apiService.cloneAgentFromPrebuilt(suggestion.key);
+      const buildRequest: BuildAgentFromSuggestionRequest = {
+        prebuilt_key: suggestion.key,
+        user_input: userInput,
+        agent_name: `${suggestion.name} Assistant`,
+      };
+      
+      const newAgent = await apiService.buildAgentFromSuggestion(buildRequest);
       if (newAgent && newAgent.id) {
         navigate(`/agents/${newAgent.id}`);
       }
@@ -190,6 +404,10 @@ export default function AgentsPage() {
       console.error('Error building agent from suggestion:', error);
     } finally {
       setCreating(false);
+      setShowCreateAgentPopup(false);
+      setUserInput('');
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
   };
 
@@ -540,42 +758,114 @@ export default function AgentsPage() {
                   </Button>
                 </div>
 
-                <div className="space-y-3">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={suggestion.key}
-                      className="border border-gray-200 rounded-lg p-4 space-y-3"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold text-gray-900">{suggestion.name}</h4>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                              {suggestion.matching_percentage}% match
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{suggestion.description}</p>
-                          <p className="text-xs text-gray-500">{suggestion.explanation}</p>
+                <div className="space-y-6">
+                  {suggestions.map((suggestion, index) => {
+                    const workflowInfo = workflowInfos[suggestion.key] || { workflows: [], methods: [] };
+                    const mainWorkflow = workflowInfo.workflows.find(w => w.name === 'final_workflow') || workflowInfo.workflows[0];
+                    
+                    return (
+                      <div
+                        key={suggestion.key}
+                        className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        {/* Background Pattern */}
+                        <div className="absolute inset-0 opacity-5">
+                          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full blur-3xl"></div>
+                          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br from-pink-400 to-orange-500 rounded-full blur-3xl"></div>
                         </div>
-                        <Button
-                          onClick={() => handleBuildFromSuggestion(suggestion)}
-                          variant="default"
-                          size="sm"
-                          disabled={creating}
-                          className="ml-4"
-                        >
-                          {creating ? (
-                            <div className="flex items-center gap-1">
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                              <span className="text-xs">Building...</span>
+
+                        <div className="relative z-10">
+                          {/* Header Section */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white font-bold text-lg shadow-lg">
+                                  {suggestion.name[0]}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-xl text-gray-900">{suggestion.name}</h4>
+                                  <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-green-100 to-blue-100 text-green-800 text-xs font-semibold rounded-full border border-green-200">
+                                    ✨ {suggestion.matching_percentage}% match
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
+                              <p className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded-lg border-l-3 border-blue-400">
+                                💡 {suggestion.explanation}
+                              </p>
                             </div>
-                          ) : (
-                            <Play className="w-4 h-4" />
+                            
+                            <Button
+                              onClick={() => handleBuildFromSuggestion(suggestion)}
+                              variant="default"
+                              size="lg"
+                              disabled={creating}
+                              className="ml-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            >
+                              {creating ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span className="text-sm">Building...</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Play className="w-5 h-5" />
+                                  <span className="text-sm font-semibold">Build</span>
+                                </div>
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* Workflow Chart Visualization */}
+                          {mainWorkflow && mainWorkflow.steps.length > 0 && (
+                            <div className="mt-4 p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                              <h5 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                                🔄 <span>Workflow Chart: {mainWorkflow.name}</span>
+                              </h5>
+                              
+                              {/* Interactive Workflow Chart */}
+                              <WorkflowChart 
+                                workflow={mainWorkflow} 
+                                methods={workflowInfo.methods}
+                              />
+                              
+                              {/* Workflow Statistics */}
+                              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  🛠️ {workflowInfo.methods.length} methods available
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  📊 {workflowInfo.workflows.length} workflows defined
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  ⚡ {mainWorkflow.steps.length} execution steps
+                                </span>
+                              </div>
+                            </div>
                           )}
-                        </Button>
+
+                          {/* Domain Tags */}
+                          {suggestion.config?.specialties && suggestion.config.specialties.length > 0 && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {suggestion.config.specialties.slice(0, 4).map((specialty, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-full border border-gray-300 hover:from-gray-200 hover:to-gray-300 transition-all duration-200"
+                                >
+                                  #{specialty}
+                                </span>
+                              ))}
+                              {suggestion.config.specialties.length > 4 && (
+                                <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-500 rounded-full border border-gray-300">
+                                  +{suggestion.config.specialties.length - 4} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

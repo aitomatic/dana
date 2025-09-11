@@ -119,6 +119,24 @@ export interface AgentSuggestionResponse {
   message: string;
 }
 
+// Build Agent from Suggestion Types
+export interface BuildAgentFromSuggestionRequest {
+  prebuilt_key: string;
+  user_input: string;
+  agent_name: string;
+}
+
+// Workflow Types
+export interface WorkflowStep {
+  name: string;
+  steps: string[];
+}
+
+export interface WorkflowInfo {
+  workflows: WorkflowStep[];
+  methods: string[];
+}
+
 // Workflow Execution Types
 export interface WorkflowExecutionRequest {
   agent_id: number;
@@ -1073,6 +1091,18 @@ class ApiService {
     const response = await this.client.post<AgentSuggestionResponse>('/agents/suggest', {
       user_message: userMessage,
     });
+    return response.data;
+  }
+
+  // Build agent from suggestion (copies only .na files)
+  async buildAgentFromSuggestion(request: BuildAgentFromSuggestionRequest): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/build-from-suggestion', request);
+    return response.data;
+  }
+
+  // Get workflow information from prebuilt agent
+  async getPrebuiltAgentWorkflowInfo(prebuiltKey: string): Promise<WorkflowInfo> {
+    const response = await this.client.get<WorkflowInfo>(`/agents/${prebuiltKey}/workflow-info`);
     return response.data;
   }
 }

@@ -88,6 +88,11 @@ class BuildAgentFromSuggestionRequest(BaseModel):
     agent_name: str = "Untitled Agent"
 
 
+class WorkflowInfo(BaseModel):
+    workflows: list[dict]
+    methods: list[str]
+
+
 def _copy_na_files_from_prebuilt(prebuilt_key: str, target_folder: str) -> bool:
     """Copy only .na files from a prebuilt agent asset folder into the target agent folder, preserving structure.
 
@@ -125,6 +130,46 @@ def _copy_na_files_from_prebuilt(prebuilt_key: str, target_folder: str) -> bool:
     except Exception as e:
         logger.error(f"Error copying .na files from prebuilt '{prebuilt_key}': {e}")
         return False
+
+
+def _parse_workflow_content(content: str) -> dict:
+    """Parse workflows.na file content to extract workflow definitions and methods."""
+    try:
+        workflows = []
+        methods = set()
+
+        # Split into lines for analysis
+        lines = content.strip().split("\n")
+        current_workflow = None
+
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            # Extract methods from import statements
+            if line.startswith("from methods import"):
+                method_name = line.split("import", 1)[1].strip()
+                methods.add(method_name)
+
+            # Extract workflow definitions
+            elif "def " in line and "(" in line and ")" in line:
+                # Extract function name
+                func_def = line.split("def ", 1)[1].split("(")[0].strip()
+                current_workflow = {"name": func_def, "steps": []}
+
+                # Extract pipeline steps if using | operator
+                if "=" in line and "|" in line:
+                    pipeline_part = line.split("=", 1)[1].strip()
+                    steps = [step.strip() for step in pipeline_part.split("|")]
+                    current_workflow["steps"] = steps
+
+                workflows.append(current_workflow)
+
+        return {"workflows": workflows, "methods": list(methods)}
+    except Exception as e:
+        logger.error(f"Error parsing workflow content: {e}")
+        return {"workflows": [], "methods": []}
 
 
 def _load_prebuilt_agents() -> list[dict]:
@@ -2088,4 +2133,44 @@ async def build_agent_from_suggestion(
         raise
     except Exception as e:
         logger.error(f"Error building agent from suggestion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{prebuilt_key}/workflow-info", response_model=WorkflowInfo)
+async def get_prebuilt_agent_workflow_info(prebuilt_key: str):
+    """
+    Get workflow information from a prebuilt agent's workflows.na file.
+
+    Args:
+        prebuilt_key: The key of the prebuilt agent
+
+    Returns:
+        WorkflowInfo: Parsed workflow definitions and methods
+    """
+    try:
+        # Validate prebuilt agent exists
+        prebuilt_agents = _load_prebuilt_agents()
+        prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
+        if not prebuilt_agent:
+            raise HTTPException(status_code=404, detail=f"Prebuilt agent not found: {prebuilt_key}")
+
+        # Try to read workflows.na file
+        workflows_path = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key / "workflows.na"
+
+        if not workflows_path.exists():
+            # Return empty workflow info if file doesn't exist
+            return WorkflowInfo(workflows=[], methods=[])
+
+        # Read and parse workflow content
+        with open(workflows_path, "r", encoding="utf-8") as f:  # noqa
+            content = f.read()
+
+        parsed_data = _parse_workflow_content(content)
+
+        return WorkflowInfo(workflows=parsed_data["workflows"], methods=parsed_data["methods"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting workflow info for {prebuilt_key}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
