@@ -8,6 +8,7 @@ __all__ = [
     'workflow_recommend_collision_avoidance',
 ]
 
+from utils import STEP2_1_SITUATION_ANALYSIS_TEMPLATE
 def parse_position(position_str: str) -> tuple:
     """Parse position string like '01°15.0'N, 103°45.0'E' to decimal degrees."""
     parts = position_str.replace(' ', '').split(',')
@@ -239,9 +240,9 @@ def workflow_calculate_relative_motion(resources: list, task: str) -> str:
 - Relative speed: {relative_speed} knots
 - Closest Point of Approach (CPA): {cpa} nm
 - Time to CPA: {time_to_cpa} minutes"""
-        print(result)
+        task = STEP2_1_SITUATION_ANALYSIS_TEMPLATE.format(context=task, results=result)
         
-        return result
+        return reason(task, resources=resources)
         
     except Exception as e:
         return f"Error calculating relative motion: {str(e)}"

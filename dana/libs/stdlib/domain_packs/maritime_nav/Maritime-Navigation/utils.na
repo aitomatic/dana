@@ -82,25 +82,12 @@ Instructions:
 """
 
 STEP2_1_SITUATION_ANALYSIS_TEMPLATE = """
-ANALYZE THE CURRENT COLLISION SITUATION based on vessel positions, courses, and speeds.
+Context: {context}
 
-SCENARIO:
+Calculations results:
 ```
-{scenario}
+{results}
 ```
-
-STEP 1 RESULT:
-```
-{step1_result}
-```
-
-REQUIRED OUTPUT FORMAT:
-1. **Relative Motion Analysis**:
-   - Distance between vessels: [Distance in nautical miles]
-   - Relative bearing: [Bearing from Vessel A to Vessel B]
-   - Relative speed: [Relative speed in knots]
-   - Closest Point of Approach (CPA): [Distance in nautical miles]
-   - Time to CPA: [Time in minutes]
 
 2. **Collision Risk Assessment**:
    - Risk Level: [High/Medium/Low]
