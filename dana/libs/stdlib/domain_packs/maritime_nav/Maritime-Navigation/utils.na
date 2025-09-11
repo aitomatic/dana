@@ -51,7 +51,7 @@ STEP 1 RESULT:
 ```
 {step1_result}
 ```
-
+######
 Extract vessel information from the following scenario text and return ONLY a JSON object with this exact structure:
 
 {{
