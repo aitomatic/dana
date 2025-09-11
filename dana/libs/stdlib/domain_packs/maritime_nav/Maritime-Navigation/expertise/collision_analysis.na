@@ -240,8 +240,11 @@ def workflow_calculate_relative_motion(resources: list, task: str) -> str:
 - Relative speed: {relative_speed} knots
 - Closest Point of Approach (CPA): {cpa} nm
 - Time to CPA: {time_to_cpa} minutes"""
+        task = task.split("######")[0]
         task = STEP2_1_SITUATION_ANALYSIS_TEMPLATE.format(context=task, results=result)
         
+        print(f"Final task: {task}")
+
         return reason(task, resources=resources)
         
     except Exception as e:
