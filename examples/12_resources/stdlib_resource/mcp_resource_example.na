@@ -1,0 +1,13 @@
+from resources import MCPResource
+
+
+
+mcp = MCPResource(name="mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+
+print("List tools")
+# list tools
+print(mcp.list_tools())
+
+print("Call tool")
+# call tool
+print(mcp.call_tool("openai_websearch", {"query": "Dana programming language"}))

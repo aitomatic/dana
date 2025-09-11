@@ -27,6 +27,7 @@
       "module": "dana.apps.cli",
       "args": ["${file}"],
       "console": "integratedTerminal",
+      "justMyCode": false,
       "env" : {
         "DANAPATH" : "${workspaceFolder}"
       }

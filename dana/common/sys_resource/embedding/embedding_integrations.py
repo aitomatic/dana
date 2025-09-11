@@ -114,6 +114,7 @@ class LlamaIndexEmbeddingResource(Loggable):
         key_mapping = {
             "openai": "OPENAI_API_KEY",
             "cohere": "COHERE_API_KEY",
+            "azure": "AZURE_OPENAI_API_KEY",
             "huggingface": None,  # No API key required
         }
 

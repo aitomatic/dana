@@ -13,6 +13,6 @@ class Identifiable:
             name: Optional name for the object
             description: Optional description of the object
         """
-        self.id = Misc.generate_uuid(8)
-        self.name = name or self.__class__.__name__  # must have a name
-        self.description = description
+        self.id = Misc.generate_uuid(8) if (not hasattr(self, "id") or self.id is None) else self.id # must have an id
+        self.name = (name or self.__class__.__name__) if (not hasattr(self, "name") or self.name is None) else self.name # must have a name
+        self.description = description if (not hasattr(self, "description") or self.description is None) else self.description # must have a description
