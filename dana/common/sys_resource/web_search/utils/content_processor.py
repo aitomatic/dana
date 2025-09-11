@@ -1,7 +1,10 @@
 """Content processing with query-focused summarization."""
 
 import logging
-from .reason import LLM
+
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.types import BaseRequest
+from dana.common.utils.misc import Misc
 
 logger = logging.getLogger(__name__)
 
@@ -9,8 +12,11 @@ logger = logging.getLogger(__name__)
 class ContentProcessor:
     """Process content with query-focused extraction and summarization."""
 
-    def __init__(self, model: str = "gpt-4o-mini"):
-        self.llm = LLM(model=model)
+    def __init__(self):
+        self._llm_resource = LegacyLLMResource(
+            name="web_search_content_processor",
+            temperature=0.1,
+        )
 
     async def process_content(self, content: str, query: str) -> str:
         """
@@ -35,10 +41,19 @@ class ContentProcessor:
     async def _summarize_for_query(self, content: str, query: str) -> str:
         """Extract only query-relevant content."""
         try:
-            messages = [
-                {
-                    "role": "user",
-                    "content": f"""Extract only the information from this content that directly relates to: "{query}"
+            system_message = {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant that extracts query-relevant information. "
+                    "Focus ONLY on information directly relevant to the user's query. "
+                    "Keep all technical specs, numbers, and specific details. "
+                    "Remove unrelated sections completely. Be concise but complete."
+                ),
+            }
+
+            user_message = {
+                "role": "user",
+                "content": f"""Extract only the information from this content that directly relates to: "{query}"
 
 Content:
 {content}
@@ -51,16 +66,29 @@ Instructions:
 - If no relevant information exists, say "No relevant information found"
 
 Relevant information:""",
-                }
-            ]
+            }
 
-            summary = await self.llm.reason(messages)
-            if summary and "no relevant information" not in summary.lower():
-                logger.info(f"Summarized {len(content)} -> {len(summary)} chars")
-                return summary.strip()
+            request = BaseRequest(
+                arguments={
+                    "messages": [system_message, user_message],
+                    "max_tokens": 2000,
+                }
+            )
+
+            response = await self._llm_resource.query(request)
+
+            if response.success and response.content:
+                summary = Misc.get_response_content(response)
+
+                if summary and "no relevant information" not in summary.lower():
+                    logger.info(f"Summarized {len(content)} -> {len(summary)} chars")
+                    return summary.strip()
+                else:
+                    logger.warning(f"No relevant content found for query: {query}")
+                    return summary
             else:
-                logger.warning(f"No relevant content found for query: {query}")
-                return summary
+                logger.error(f"LLM query failed: {response.error}")
+                return content[:1000] + "... [truncated - LLM query failed]"
 
         except Exception as e:
             logger.error(f"Summarization failed: {e}")

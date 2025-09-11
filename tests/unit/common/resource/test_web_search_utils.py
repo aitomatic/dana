@@ -5,111 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from dana.common.sys_resource.web_search.utils.content_processor import ContentProcessor
 from dana.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
-from dana.common.sys_resource.web_search.utils.reason import LLM
 
-
-class TestLLM:
-    """Tests for LLM reasoning utility."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        with patch("openai.AsyncOpenAI"):
-            self.llm = LLM(model="gpt-4o-mini")
-
-    @pytest.mark.asyncio
-    async def test_reason_text_output(self):
-        """Test LLM reasoning with text output."""
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "What is 2+2?"},
-        ]
-
-        # Mock OpenAI response
-        mock_response = MagicMock()
-        mock_choice = MagicMock()
-        mock_message = MagicMock()
-        mock_message.content = "2+2 equals 4."
-        mock_choice.message = mock_message
-        mock_response.choices = [mock_choice]
-
-        with patch.object(self.llm.client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
-            mock_create.return_value = mock_response
-
-            result = await self.llm.reason(messages)
-
-            assert result == "2+2 equals 4."
-            mock_create.assert_called_once_with(
-                model="gpt-4o-mini",
-                messages=messages,
-                response_format={"type": "text"},
-            )
-
-    @pytest.mark.asyncio
-    async def test_reason_with_structured_output(self):
-        """Test LLM reasoning with structured JSON output."""
-        messages = [
-            {"role": "user", "content": "Return a JSON object with name and age."},
-        ]
-
-        # Mock OpenAI response
-        mock_response = MagicMock()
-        mock_choice = MagicMock()
-        mock_message = MagicMock()
-        mock_message.content = '{"name": "John", "age": 30}'
-        mock_choice.message = mock_message
-        mock_response.choices = [mock_choice]
-
-        with patch.object(self.llm.client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
-            mock_create.return_value = mock_response
-
-            result = await self.llm.reason_with_structured_output(messages)
-
-            assert isinstance(result, dict)
-            assert result["name"] == "John"
-            assert result["age"] == 30
-            mock_create.assert_called_once_with(
-                model="gpt-4o-mini",
-                messages=messages,
-                response_format={"type": "json_object"},
-            )
-
-    @pytest.mark.asyncio
-    async def test_reason_empty_response(self):
-        """Test LLM reasoning with empty response."""
-        messages = [{"role": "user", "content": "Test question"}]
-
-        mock_response = MagicMock()
-        mock_choice = MagicMock()
-        mock_message = MagicMock()
-        mock_message.content = None
-        mock_choice.message = mock_message
-        mock_response.choices = [mock_choice]
-
-        with patch.object(self.llm.client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
-            mock_create.return_value = mock_response
-
-            result = await self.llm.reason(messages)
-
-            assert result == ""
-
-    @pytest.mark.asyncio
-    async def test_reason_structured_empty_response(self):
-        """Test LLM reasoning with structured output and empty response."""
-        messages = [{"role": "user", "content": "Return empty JSON"}]
-
-        mock_response = MagicMock()
-        mock_choice = MagicMock()
-        mock_message = MagicMock()
-        mock_message.content = None
-        mock_choice.message = mock_message
-        mock_response.choices = [mock_choice]
-
-        with patch.object(self.llm.client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
-            mock_create.return_value = mock_response
-
-            result = await self.llm.reason_with_structured_output(messages)
-
-            assert result == {}
 
 
 class TestContentProcessor:
@@ -117,9 +13,9 @@ class TestContentProcessor:
 
     def setup_method(self):
         """Set up test fixtures."""
-        with patch("dana.common.sys_resource.web_search.utils.reason.LLM"):
-            self.processor = ContentProcessor(model="gpt-4o-mini")
-            self.processor.llm = MagicMock()
+        with patch("dana.common.sys_resource.llm.legacy_llm_resource.LegacyLLMResource"):
+            self.processor = ContentProcessor()
+            self.processor._llm_resource = MagicMock()
 
     @pytest.mark.asyncio
     async def test_process_content_short(self):
@@ -131,7 +27,7 @@ class TestContentProcessor:
 
         assert result == short_content
         # Should not call LLM for short content
-        self.processor.llm.reason.assert_not_called()
+        self.processor._llm_resource.query.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_process_content_medium_summarization(self):
@@ -141,12 +37,15 @@ class TestContentProcessor:
         query = "specific information"
 
         # Mock LLM response
-        self.processor.llm.reason = AsyncMock(return_value="Summarized content relevant to query")
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {"choices": [{"message": {"content": "Summarized content relevant to query"}}]}
+        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
 
         result = await self.processor.process_content(medium_content, query)
 
         assert result == "Summarized content relevant to query"
-        self.processor.llm.reason.assert_called_once()
+        self.processor._llm_resource.query.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_process_content_long_rag_approach(self):
@@ -174,18 +73,22 @@ class TestContentProcessor:
         content = "This content contains information about Intel processors and their specifications."
         query = "Intel processor specifications"
 
-        self.processor.llm.reason = AsyncMock(return_value="Intel processor specifications include core count and frequency.")
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {"choices": [{"message": {"content": "Intel processor specifications include core count and frequency."}}]}
+        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
 
         result = await self.processor._summarize_for_query(content, query)
 
         assert result == "Intel processor specifications include core count and frequency."
 
-        # Verify the prompt structure
-        call_args = self.processor.llm.reason.call_args[0][0]
-        assert len(call_args) == 1
-        assert "Extract only the information" in call_args[0]["content"]
-        assert query in call_args[0]["content"]
-        assert content in call_args[0]["content"]
+        # Verify the request structure
+        call_args = self.processor._llm_resource.query.call_args[0][0]
+        messages = call_args.arguments["messages"]
+        assert len(messages) == 2
+        assert "Extract only the information" in messages[1]["content"]
+        assert query in messages[1]["content"]
+        assert content in messages[1]["content"]
 
     @pytest.mark.asyncio
     async def test_summarize_for_query_no_relevant_info(self):
@@ -193,7 +96,10 @@ class TestContentProcessor:
         content = "This content is about cooking recipes."
         query = "Intel processor specifications"
 
-        self.processor.llm.reason = AsyncMock(return_value="No relevant information found")
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {"choices": [{"message": {"content": "No relevant information found"}}]}
+        self.processor._llm_resource.query = AsyncMock(return_value=mock_response)
 
         result = await self.processor._summarize_for_query(content, query)
 
@@ -205,7 +111,7 @@ class TestContentProcessor:
         content = "Test content"
         query = "test query"
 
-        self.processor.llm.reason = AsyncMock(side_effect=Exception("API error"))
+        self.processor._llm_resource.query = AsyncMock(side_effect=Exception("API error"))
 
         result = await self.processor._summarize_for_query(content, query)
 
