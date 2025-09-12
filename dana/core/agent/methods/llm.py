@@ -9,7 +9,7 @@ class LLMMixin:
             return "Sandbox context required for LLM calls"
 
         # Get LLM resource
-        llm_resource = self.get_llm_resource(sandbox_context)
+        llm_resource = self.llm_resource
         if llm_resource is None:
             return "LLM resource not available - please configure an LLM resource for this agent"
 

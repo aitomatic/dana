@@ -28,8 +28,8 @@ class TestBaseSolverMixinSimple:
         """Test that BaseSolverMixin initializes correctly."""
         mixin = ConcreteSolverMixin()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
         assert mixin._context_engineer is None
         assert mixin._llm_resource is None
 
@@ -114,8 +114,8 @@ class TestPlannerExecutorSolverMixinSimple:
         """Test that PlannerExecutorSolverMixin initializes correctly."""
         mixin = PlannerExecutorSolver()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_empty_goal(self):
         """Test solving with an empty goal string."""
@@ -194,8 +194,8 @@ class TestReactiveSupportSolverMixinSimple:
         """Test that ReactiveSupportSolverMixin initializes correctly."""
         mixin = ReactiveSupportSolver()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_empty_message(self):
         """Test solving with an empty message."""

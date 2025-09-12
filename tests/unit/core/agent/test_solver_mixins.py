@@ -36,10 +36,10 @@ class TestBaseSolverMixin:
         """Test that BaseSolverMixin initializes correctly."""
         mixin = ConcreteSolverMixin()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
-        assert mixin._context_engineer is None
-        assert mixin._llm_resource is None
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
+        assert mixin.context_engineer is None
+        assert mixin.llm_resource is None
 
     def test_inject_dependencies(self):
         """Test dependency injection functionality."""
@@ -121,8 +121,8 @@ class TestPlannerExecutorSolverMixin:
         """Test that PlannerExecutorSolverMixin initializes correctly."""
         mixin = PlannerExecutorSolver()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_workflow_instance(self):
         """Test solving with a WorkflowInstance."""
@@ -263,8 +263,8 @@ class TestReactiveSupportSolverMixin:
         """Test that ReactiveSupportSolverMixin initializes correctly."""
         mixin = ReactiveSupportSolver()
 
-        assert hasattr(mixin, "_context_engineer")
-        assert hasattr(mixin, "_llm_resource")
+        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_empty_message(self):
         """Test solving with an empty message."""

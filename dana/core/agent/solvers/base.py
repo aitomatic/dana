@@ -56,13 +56,13 @@ class BaseSolver(ABC):
         super().__init__(*args, **kwargs)
         self.agent = agent
         self._llm_resource = None
-        self.llm_resource = self.agent._llm_resource
+        self.llm_resource = self.agent.llm_resource
 
     @property
     def llm_resource(self) -> "LLMResourceInstance":
         """Get the LLM resource for this solver."""
         if self._llm_resource is None:
-            self._llm_resource = self.agent._llm_resource
+            self._llm_resource = self.agent.llm_resource
 
         if self._llm_resource is None:
             self._llm_resource = LLMResourceInstance.create_default_instance()
@@ -309,7 +309,7 @@ class BaseSolver(ABC):
             return None
 
     def _generate_llm_response_with_context(self, prompt: str, system_prompt: str | None = None, max_turns: int = 30) -> str | None:
-        """Generate LLM response with conversation context."""
+        """Generate LLM response with conversation context using PromptEngineer if available."""
         if not self._validate_llm_resource():
             return None
 
@@ -317,10 +317,28 @@ class BaseSolver(ABC):
             # Build conversation context
             conversation_context = self._get_conversation_context(max_turns)
 
-            # Create enhanced system prompt with conversation context
-            enhanced_system_prompt = system_prompt or ""
-            if conversation_context:
-                enhanced_system_prompt = f"{enhanced_system_prompt}\n\n{conversation_context}"
+            # Use PromptEngineer if available, otherwise fall back to static prompts
+            if hasattr(self.agent, 'prompt_engineer') and self.agent.prompt_engineer:
+                print("🔧 [DEBUG] Using PromptEngineer for dynamic prompt generation")
+                
+                # Generate optimized prompt using PromptEngineer
+                prompt_obj = self.agent.prompt_engineer.generate(
+                    user_query=prompt,
+                    system_template=system_prompt or "You are a helpful AI assistant.",
+                    template_data={"conversation_context": conversation_context}
+                )
+                enhanced_system_prompt = prompt_obj.system_message
+                user_prompt = prompt_obj.user_message
+                
+                print("🔧 [DEBUG] PromptEngineer generated prompt")
+            else:
+                print("🔧 [DEBUG] Using static prompt generation (PromptEngineer not available)")
+                
+                # Fallback to current behavior
+                enhanced_system_prompt = system_prompt or ""
+                if conversation_context:
+                    enhanced_system_prompt = f"{enhanced_system_prompt}\n\n{conversation_context}"
+                user_prompt = prompt
 
             # Debug prints
             print("=" * 80)
@@ -328,16 +346,16 @@ class BaseSolver(ABC):
             print("=" * 80)
             print(f"📋 SYSTEM_PROMPT:\n{enhanced_system_prompt}")
             print("-" * 80)
-            print(f"👤 USER_PROMPT:\n{prompt}")
+            print(f"👤 USER_PROMPT:\n{user_prompt}")
             print("-" * 80)
 
             # Create request with clean user message and enhanced system prompt
-            request = self._create_llm_request([{"role": "user", "content": prompt}], enhanced_system_prompt)
+            request = self._create_llm_request([{"role": "user", "content": user_prompt}], enhanced_system_prompt)
 
             # Query LLM
-            if self.agent._llm_resource is None:
+            if self.agent.llm_resource is None:
                 return None
-            response = self.agent._llm_resource.query_sync(request)
+            response = self.agent.llm_resource.query_sync(request)
 
             # Extract content
             llm_response = self._extract_llm_response_content(response)
