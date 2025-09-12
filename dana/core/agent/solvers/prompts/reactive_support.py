@@ -6,7 +6,9 @@ to maintain consistency and make prompts easier to modify.
 """
 
 # System prompts
-REACTIVE_SUPPORT_SYSTEM_PROMPT = "You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented."
+REACTIVE_SUPPORT_SYSTEM_PROMPT = """
+You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented.
+
 
 # User prompts
 def get_reactive_support_prompt_all_info_provided(message: str) -> str:
