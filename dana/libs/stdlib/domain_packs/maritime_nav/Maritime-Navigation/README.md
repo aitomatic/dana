@@ -49,6 +49,20 @@ The system uses five key knowledge databases that directly correspond to maritim
 ./run-maritime-navigation
 ```
 
+### Run with a specific scenario file
+
+From this directory:
+
+```bash
+uv run dana maritime_navigation.na scenario="$(cat .input/crossing-scenario.txt)"
+```
+
+Or with an absolute path to the scenario file:
+
+```bash
+uv run dana maritime_navigation.na scenario="$(cat /Users/aitomatic/Project/dana-internal/dana/libs/stdlib/domain_packs/maritime_nav/Maritime-Navigation/.input/crossing-scenario.txt)"
+```
+
 ### Input Format
 
 The system takes vessel encounter parameters directly:
