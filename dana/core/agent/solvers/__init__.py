@@ -5,6 +5,7 @@ from dana.registry import WorkflowRegistry, ResourceRegistry
 from .planner_executor import PlannerExecutorSolver
 from .reactive_support import ReactiveSupportSolver
 from .simple_helpful import SimpleHelpfulSolver
+from .triage import TriageSolver
 
 __all__ = [
     "BaseSolver",
@@ -14,4 +15,5 @@ __all__ = [
     "PlannerExecutorSolver",
     "ReactiveSupportSolver",
     "SimpleHelpfulSolver",
+    "TriageSolver",
 ]

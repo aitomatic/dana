@@ -1,3 +1,4 @@
+import json
 from typing import Any, TYPE_CHECKING
 from collections.abc import Callable
 
@@ -206,7 +207,7 @@ class PlannerExecutorSolver(BaseSolver):
                 # Fallback to plain action/subgoal execution
                 if step["type"] == "action":
                     print(f"⚡ [SOLVER] Step {i + 1}: Executing action '{step['do']}'")
-                    res = self._exec_action(step["do"], sandbox_context, dry_run)
+                    res = self._exec_action(step["do"], sandbox_context, dry_run, goal)
                     print(f"✅ [SOLVER] Step {i + 1} result: {res.get('status', 'unknown')}")
                     results.append({"index": i, "status": res["status"], "step": step, "result": res})
                     exec_log.append(f"[action] step {i}: {step['do']} -> {res['status']}")
@@ -293,7 +294,7 @@ class PlannerExecutorSolver(BaseSolver):
             raise RuntimeError(f"No LLM resource provided for planning. Goal: {goal}")
 
         # Use the extracted prompt template
-        prompt = get_planner_prompt(goal, max_steps) + "\n\nFormat: Return only the steps, one per line, without numbering or bullets."
+        prompt = get_planner_prompt(goal, max_steps)
 
         # Use base class method for LLM interaction with conversation context and prompt_engineer
         system_prompt = get_planner_system_prompt()
@@ -307,8 +308,19 @@ class PlannerExecutorSolver(BaseSolver):
         except Exception as e:
             raise RuntimeError(f"LLM query failed for goal: {goal}. Error: {str(e)}")
 
+        # Try to parse JSON response
+        try:
+            response_data = json.loads(response_text)
+            if "steps" in response_data and isinstance(response_data["steps"], list):
+                steps = response_data["steps"]
+                self._log_solver_phase("LLM-PLAN", f"LLM returned {len(steps)} JSON steps: {steps}", "🤖")
+                return steps[:max_steps]
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            self._log_solver_phase("LLM-PLAN", f"JSON parsing failed, falling back to text parsing: {e}", "⚠️")
+
+        # Fallback to text parsing if JSON fails
         steps = [step.strip() for step in response_text.split("\n") if step.strip()]
-        self._log_solver_phase("LLM-PLAN", f"LLM returned {len(steps)} steps: {steps}", "🤖")
+        self._log_solver_phase("LLM-PLAN", f"LLM returned {len(steps)} text steps: {steps}", "🤖")
 
         if not steps:
             raise RuntimeError(f"LLM returned empty plan for goal: {goal}")
@@ -392,7 +404,7 @@ class PlannerExecutorSolver(BaseSolver):
 
         return plan
 
-    def _exec_action(self, action: str, sandbox_context: SandboxContext | None, dry_run: bool) -> dict[str, Any]:
+    def _exec_action(self, action: str, sandbox_context: SandboxContext | None, dry_run: bool, goal_context: str = "") -> dict[str, Any]:
         """Execute an action using LLM with conversation context and prompt_engineer support."""
         self._log_solver_phase("LLM-ACTION", f"Executing action: '{action}'", "🤖")
         if dry_run:
@@ -404,7 +416,7 @@ class PlannerExecutorSolver(BaseSolver):
             raise RuntimeError(f"No LLM resource available for action execution. Action: {action}")
 
         # Use the extracted prompt template (conversation context will be handled by base class method)
-        prompt = get_executor_prompt(action)
+        prompt = get_executor_prompt(action, goal_context)
 
         try:
             # Use base class method for LLM interaction with conversation context and prompt_engineer
@@ -415,6 +427,24 @@ class PlannerExecutorSolver(BaseSolver):
             if response_text is None:
                 raise RuntimeError(f"LLM query failed for action: {action}")
 
+            # Try to parse JSON response
+            try:
+                response_data = json.loads(response_text)
+                if "execution" in response_data:
+                    execution = response_data["execution"]
+                    self._log_solver_phase("LLM-ACTION", f"LLM JSON response: {execution.get('status', 'unknown')}", "🤖")
+                    return {
+                        "status": execution.get("status", "ok"),
+                        "action": action,
+                        "message": execution.get("response", response_text),
+                        "next_steps": execution.get("next_steps", []),
+                        "tools_mentioned": execution.get("tools_mentioned", []),
+                        "resources": execution.get("resources", []),
+                    }
+            except (json.JSONDecodeError, KeyError, TypeError) as e:
+                self._log_solver_phase("LLM-ACTION", f"JSON parsing failed, using text response: {e}", "⚠️")
+
+            # Fallback to text response
             self._log_solver_phase("LLM-ACTION", f"LLM response: {response_text[:100]}...", "🤖")
             return {"status": "ok", "action": action, "message": response_text}
         except Exception as e:

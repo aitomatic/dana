@@ -35,6 +35,7 @@ from .solvers import (
     PlannerExecutorSolver,
     ReactiveSupportSolver,
     SimpleHelpfulSolver,
+    TriageSolver,
 )
 
 from dana.core.workflow.workflow_system import WorkflowInstance
@@ -95,6 +96,7 @@ class AgentInstance(
         self._planner_executor_solver = None
         self._reactive_support_solver = None
         self._simple_helpful_solver = None
+        self._triage_solver = None
 
         # Initialize TUI metrics
         self._metrics = {
@@ -226,12 +228,35 @@ class AgentInstance(
         sandbox_context: SandboxContext | None = None,
         **kwargs,
     ) -> Any:
-        """Synchronous agent solve method."""
+        """Synchronous agent solve method with intelligent triage."""
+        assert self._triage_solver is not None
         assert self._planner_executor_solver is not None
         assert self._reactive_support_solver is not None
         assert self._simple_helpful_solver is not None
 
-        return self._planner_executor_solver.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
+        # Handle WorkflowInstance directly (no triage needed)
+        if isinstance(problem_or_workflow, WorkflowInstance):
+            print("🔄 [TRIAGE] WorkflowInstance detected, using planner_executor")
+            return self._planner_executor_solver.solve_sync(problem_or_workflow, artifacts or {}, sandbox_context, **kwargs)
+
+        # Use triage solver to classify string queries
+        if isinstance(problem_or_workflow, str):
+            solver_name = self._triage_solver.classify_query(problem_or_workflow)
+
+            # Route to appropriate solver based on classification
+            if solver_name == "planner_executor":
+                print("🚀 [TRIAGE] Routing to planner_executor solver")
+                return self._planner_executor_solver.solve_sync(problem_or_workflow, artifacts or {}, sandbox_context, **kwargs)
+            elif solver_name == "reactive_support":
+                print("🚀 [TRIAGE] Routing to reactive_support solver")
+                return self._reactive_support_solver.solve_sync(problem_or_workflow, artifacts or {}, sandbox_context, **kwargs)
+            else:  # simple_helpful (default)
+                print("🚀 [TRIAGE] Routing to simple_helpful solver")
+                return self._simple_helpful_solver.solve_sync(problem_or_workflow, artifacts or {}, sandbox_context, **kwargs)
+
+        # Fallback for other types
+        print("⚠️ [TRIAGE] Unknown input type, using simple_helpful solver")
+        return self._simple_helpful_solver.solve_sync(str(problem_or_workflow), artifacts or {}, sandbox_context, **kwargs)
 
     # ============================================================================
     # COMMUNICATION METHODS
@@ -526,6 +551,8 @@ class AgentInstance(
             self._planner_executor_solver = PlannerExecutorSolver(self)
             self._reactive_support_solver = ReactiveSupportSolver(self)
             self._simple_helpful_solver = SimpleHelpfulSolver(self)
+            # Initialize triage solver for query classification
+            self._triage_solver = TriageSolver(self)
             print(f"Solvers initialized for {self.name}")
 
     def _cleanup_agent_resources(self):
@@ -534,6 +561,7 @@ class AgentInstance(
             self._planner_executor_solver = None
             self._reactive_support_solver = None
             self._simple_helpful_solver = None
+            self._triage_solver = None
 
             self._context_engineer = None
             self._corral_engineer = None

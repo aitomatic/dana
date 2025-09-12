@@ -333,9 +333,13 @@ class BaseSolver(ABC):
             else:
                 print("🔧 [DEBUG] Using static prompt generation (PromptEngineer not available)")
 
-                # Fallback to current behavior
+                # Fallback to current behavior with proper formatting
                 enhanced_system_prompt = system_prompt or ""
-                if conversation_context:
+                if conversation_context and "{conversation_context}" in enhanced_system_prompt:
+                    # Format the system prompt with conversation context
+                    enhanced_system_prompt = enhanced_system_prompt.format(conversation_context=conversation_context)
+                elif conversation_context:
+                    # Fallback: append conversation context if no placeholder found
                     enhanced_system_prompt = f"{enhanced_system_prompt}\n\n{conversation_context}"
                 user_prompt = prompt
 
