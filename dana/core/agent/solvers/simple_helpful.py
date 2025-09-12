@@ -12,6 +12,10 @@ from dana.core.workflow.workflow_system import WorkflowInstance
 from .base import BaseSolver
 from .prompts import (
     SIMPLE_HELPFUL_SYSTEM_PROMPT,
+    get_question_prompt,
+    get_help_prompt,
+    get_explanation_prompt,
+    get_problem_solving_prompt,
 )
 
 if TYPE_CHECKING:
@@ -120,13 +124,52 @@ class SimpleHelpfulSolver(BaseSolver):
         print("🤖 [DEBUG] _try_llm_response")
         print(f"📝 Problem: '{problem}'")
         print(f"📦 Artifacts: {artifacts}")
-        print("🔧 Calling _generate_llm_response_with_context...")
 
-        # Use the user message directly as the prompt, with all instructions in the system prompt
-        result = self._query_llm_with_prteng(prompt=problem, system_prompt=SIMPLE_HELPFUL_SYSTEM_PROMPT)
+        # Classify the query type and use appropriate prompt
+        query_type = self._classify_query(problem)
+        print(f"🔍 Classified query type: {query_type}")
+
+        # Get specialized prompt based on query type
+        if query_type == "question":
+            prompt = get_question_prompt(problem)
+        elif query_type == "help":
+            prompt = get_help_prompt(problem)
+        elif query_type == "explanation":
+            prompt = get_explanation_prompt(problem)
+        elif query_type == "problem_solving":
+            prompt = get_problem_solving_prompt(problem)
+        else:
+            # Use the problem directly as prompt for general queries
+            prompt = problem
+
+        print("🔧 Calling _generate_llm_response_with_context...")
+        result = self._query_llm_with_prteng(prompt=prompt, system_prompt=SIMPLE_HELPFUL_SYSTEM_PROMPT)
 
         print(f"📊 LLM result: {type(result).__name__ if result else 'None'}")
         if result:
             print(f"📄 Result preview: {str(result)[:100]}{'...' if len(str(result)) > 100 else ''}")
 
         return result
+
+    def _classify_query(self, problem: str) -> str:
+        """Classify the type of query to use appropriate prompt."""
+        problem_lower = problem.lower()
+
+        # Question indicators
+        if any(word in problem_lower for word in ["what", "how", "why", "when", "where", "who", "which", "?"]):
+            return "question"
+
+        # Help request indicators
+        if any(word in problem_lower for word in ["help", "assist", "guide", "show me", "how do i", "can you help"]):
+            return "help"
+
+        # Explanation indicators
+        if any(word in problem_lower for word in ["explain", "what is", "define", "describe", "tell me about", "meaning of"]):
+            return "explanation"
+
+        # Problem solving indicators
+        if any(word in problem_lower for word in ["solve", "fix", "issue", "problem", "troubleshoot", "error", "bug", "broken"]):
+            return "problem_solving"
+
+        # Default to general
+        return "general"

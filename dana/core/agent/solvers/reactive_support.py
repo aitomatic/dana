@@ -108,12 +108,7 @@ class ReactiveSupportSolver(BaseSolver):
                     workflow = wc.get_workflow(sig_match.workflow_id)
                     if workflow and hasattr(workflow, "execute_with_llm"):
                         # Get LLM resource from sandbox context
-                        llm_resource = None
-                        if sandbox_context is not None:
-                            try:
-                                llm_resource = sandbox_context.get_resource("system_llm")
-                            except KeyError:
-                                pass
+                        llm_resource = self.llm_resource
 
                         if llm_resource is not None:
                             print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow for signature match...")
@@ -137,7 +132,7 @@ class ReactiveSupportSolver(BaseSolver):
                                 checklist = llm_result.get("checklist", [])
                                 solution = llm_result.get("solution", "Follow diagnostic steps")
 
-                                return self._create_answer_response(
+                                response_data = self._create_answer_response(
                                     "support",
                                     artifacts,
                                     "llm_signature_workflow",
@@ -146,6 +141,7 @@ class ReactiveSupportSolver(BaseSolver):
                                     solution=solution,
                                     score=float(sig_score),
                                 )
+                                return self._format_support_response(response_data)
                             except Exception as e:
                                 print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
                                 # Fall back to regular signature response
@@ -179,12 +175,7 @@ class ReactiveSupportSolver(BaseSolver):
             # Try LLM-powered workflow execution if available
             if hasattr(wf, "execute_with_llm"):
                 # Get LLM resource from sandbox context
-                llm_resource = None
-                if sandbox_context is not None:
-                    try:
-                        llm_resource = sandbox_context.get_resource("system_llm")
-                    except KeyError:
-                        pass
+                llm_resource = self.llm_resource
 
                 if llm_resource is not None:
                     print("🔧 [REACTIVE-SUPPORT] Executing LLM-powered workflow...")
@@ -208,7 +199,7 @@ class ReactiveSupportSolver(BaseSolver):
                         checklist = llm_result.get("checklist", [])
                         solution = llm_result.get("solution", "Follow diagnostic steps")
 
-                        return self._create_answer_response(
+                        response_data = self._create_answer_response(
                             "support",
                             artifacts,
                             "llm_workflow",
@@ -217,6 +208,7 @@ class ReactiveSupportSolver(BaseSolver):
                             solution=solution,
                             score=float(score),
                         )
+                        return self._format_support_response(response_data)
                     except Exception as e:
                         print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
                         # Fall back to regular workflow execution
@@ -233,7 +225,7 @@ class ReactiveSupportSolver(BaseSolver):
                     "last_result": result,
                 }
             )
-            return self._create_answer_response(
+            response_data = self._create_answer_response(
                 "support",
                 artifacts,
                 "known_workflow",
@@ -242,6 +234,7 @@ class ReactiveSupportSolver(BaseSolver):
                 checklist=self._checklist_from_result(result, artifacts.get("_resources", {})),
                 score=float(score),
             )
+            return self._format_support_response(response_data)
 
         # 6) Artifact sufficiency check → ASK if missing (but be more helpful)
         print("🔧 [REACTIVE-SUPPORT] Checking artifact sufficiency...")
@@ -275,24 +268,20 @@ class ReactiveSupportSolver(BaseSolver):
         st["phase"] = "analyze"
 
         # Try to use LLM for a helpful response
-        llm_resource = None
-        if sandbox_context is not None:
-            try:
-                llm_resource = sandbox_context.get_resource("system_llm")
-            except KeyError:
-                pass
+        print("🔧 [REACTIVE-SUPPORT] Attempting LLM-based response...")
+        try:
+            # Use the enhanced reactive support prompt with conversation context
+            prompt = get_reactive_support_prompt_general(message)
+            llm_response = self._query_llm_with_prteng(prompt=prompt, system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT, max_turns=1)
 
-        if llm_resource is not None:
-            print("🔧 [REACTIVE-SUPPORT] LLM resource available, generating response...")
-            try:
-                llm_response = self._generate_llm_response(message, artifacts, llm_resource)
+            if llm_response:
                 print(f"🔧 [REACTIVE-SUPPORT] LLM response generated: {llm_response[:100]}...")
                 st.update({"phase": "delivered", "llm_response": llm_response})
                 return llm_response  # Return the LLM response directly as a string
-            except Exception as e:
-                print(f"⚠️ [REACTIVE-SUPPORT] LLM failed: {e}")
-        else:
-            print("🔧 [REACTIVE-SUPPORT] No LLM resource available")
+            else:
+                print("🔧 [REACTIVE-SUPPORT] No LLM response received")
+        except Exception as e:
+            print(f"⚠️ [REACTIVE-SUPPORT] LLM failed: {e}")
 
         # Fallback to original analysis
         print("🔧 [REACTIVE-SUPPORT] Falling back to original analysis...")
@@ -300,13 +289,14 @@ class ReactiveSupportSolver(BaseSolver):
         checklist = self._draft_checklist(message, entities, artifacts.get("_resources", {}), preliminary)
 
         st.update({"phase": "delivered", "last_checklist": checklist, "preliminary": preliminary})
-        return self._create_answer_response(
+        response_data = self._create_answer_response(
             "support",
             artifacts,
             "generic",
             diagnosis=preliminary.get("summary", "Preliminary diagnosis"),
             checklist=checklist,
         )
+        return self._format_support_response(response_data)
 
     # ---------------------------
     # Helpers
@@ -678,3 +668,44 @@ class ReactiveSupportSolver(BaseSolver):
                 t = str(r)
             titles.append(t)
         return titles
+
+    def _format_support_response(self, response_data: dict[str, Any]) -> str:
+        """Format the support response data into a user-friendly message."""
+        diagnosis = response_data.get("diagnosis", "Technical issue detected")
+        checklist = response_data.get("checklist", [])
+        solution = response_data.get("solution", "")
+        results = response_data.get("results", [])
+
+        # Build the formatted response
+        lines = []
+        lines.append("## 🔧 Technical Support")
+        lines.append(f"**Issue:** {diagnosis}")
+        lines.append("")
+
+        if solution:
+            lines.append(f"**Solution:** {solution}")
+            lines.append("")
+
+        if results:
+            lines.append("**Diagnostic Results:**")
+            for result in results:
+                if isinstance(result, dict):
+                    status = result.get("status", "unknown")
+                    name = result.get("name", "diagnostic")
+                    lines.append(f"- {name}: {status}")
+                else:
+                    lines.append(f"- {result}")
+            lines.append("")
+
+        if checklist:
+            lines.append("**Next Steps:**")
+            for item in checklist:
+                lines.append(f"  {item}")
+            lines.append("")
+
+        # Add helpful footer
+        lines.append(
+            "💡 **Need more help?** Provide additional details about your issue, including error messages, recent changes, or specific symptoms."
+        )
+
+        return "\n".join(lines)
