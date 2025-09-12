@@ -1,6 +1,13 @@
 from resources import RagResource, query, initialize
 
-rag = RagResource(sources=["/Users/lam/Desktop/repos/opendxa/docs"])
+rag = RagResource(sources=["/Users/lam/Desktop/repos/opendxa/docs"], description="A resource for querying and retrieving information from documents about Dana languague")
 rag.initialize()
 
-print(rag.query("What is Dana"))
+# Normal retrieval
+# print(rag.query("What is Dana"))
+
+# Reasoning with the resource
+print(reason("Tell me about agent, resource and workflow in Dana language", resources=[rag]))
+
+
+# print(rag.list_tools())

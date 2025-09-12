@@ -37,7 +37,7 @@ class TestResourceType:
         assert resource_type.name == "TestResource"
         assert resource_type.fields["name"] == "str"
         assert resource_type.fields["kind"] == "str"
-        assert resource_type.field_order == ["state", "name", "kind"]
+        assert resource_type.field_order == ["state", "name", "kind", "description", "id"]
         assert resource_type.field_defaults["kind"] == "test"
         assert resource_type.field_defaults["state"] == "CREATED"
 
@@ -55,7 +55,7 @@ class TestResourceType:
         assert "name" in extended_type.fields
         assert "kind" in extended_type.fields
         assert "extra_field" in extended_type.fields
-        assert extended_type.field_order == ["state", "name", "kind", "extra_field"]
+        assert extended_type.field_order == ["state", "name", "kind", "extra_field", "description", "id"]
         assert extended_type.field_defaults["kind"] == "extended"
         assert extended_type.field_defaults["extra_field"] == 42
         assert extended_type.field_defaults["state"] == "CREATED"

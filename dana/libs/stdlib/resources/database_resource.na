@@ -1,0 +1,113 @@
+from sqlalchemy.py import create_engine, text, inspect
+
+resource DatabaseResource:
+    connection_string: str = ""
+    engine : None = None
+    _resource : None = None
+    _expose : list[str] = ["list_tables", "list_schemas", "get_table_info", "execute_query"]
+
+def (self: DatabaseResource) initialize():
+    """
+    Initialize the database resource.
+    """
+    self.engine = create_engine(self.connection_string)
+
+def (self: DatabaseResource) list_tables(schema: str = None):
+    """
+    List all tables in the database .
+    """
+    print(f"Listing tables in schema: {schema}")
+    if self.engine is None:
+        self.initialize()
+    
+    inspector = inspect(self.engine)
+    
+    if schema is None:
+        # Get tables from default schema
+        table_names = inspector.get_table_names()
+    else:
+        # Get tables from specific schema
+        table_names = inspector.get_table_names(schema=schema)
+        
+    return table_names
+
+def (self: DatabaseResource) list_schemas():
+    """
+    List all schemas in the database.
+    """
+    print(f"Listing schemas")
+    if self.engine is None:
+        self.initialize()
+    
+    inspector = inspect(self.engine)
+    schemas = inspector.get_schema_names()
+    filtered_schemas = []
+    
+    for schema in schemas:
+        # Filter out system schemas
+        if schema != "information_schema":
+            filtered_schemas.append(schema)
+    
+    return filtered_schemas
+
+def (self: DatabaseResource) get_table_info(table_name: str, schema: str = None):
+    """
+    Get information about a table
+    """
+    print(f"Getting table info for {table_name} in schema: {schema}")
+    if self.engine is None:
+        self.initialize()
+    
+    inspector = inspect(self.engine)
+    columns = inspector.get_columns(table_name, schema=schema)
+    return columns
+
+def (self: DatabaseResource) execute_query(query: str):
+    """
+    Execute a SQL query to get the actual data
+    """
+    print(f"Execute custom query : {query}")
+    if self.engine is None:
+        self.initialize()
+    
+    with self.engine.connect() as connection:
+        result = connection.execute(text(query))
+        fetched_result = result.fetchall()
+        print(f"Fetched result: {fetched_result}")
+        return fetched_result
+
+
+# a = DatabaseResource(connection_string="postgresql://admin:admin@localhost:5432/vector_db")
+# a = DatabaseResource(connection_string="sqlite:///./local.db")
+
+
+# print(reason("SHow me what inside my database", resources=[a]))
+
+
+# print(a.connection_string)
+
+# print(a.list_tools())
+# # First, let's see what schemas are available
+# # print("=== Available Schemas ===")
+# schemas = a.list_tables(schema="public")
+# print(schemas)
+# print(type(list_schemas))
+
+# # print("\n=== All Tables by Schema ===")
+# # all_tables = a.list_tables()
+# # print(all_tables)
+
+# # print("\n=== Tables in Public Schema Only ===")
+# # public_tables = a.list_tables(schema=None)
+# # print(public_tables)
+# # # Only work with user tables in public schema
+# # for table in all_tables:
+# #     print(f"\n--- Table: {table} ---")
+# #     print(a.get_table_info(table, schema=None))
+# #     # Try to get a sample of data (limit to 5 rows)
+# #     try:
+# #         results = a.execute_query(f'SELECT * FROM "{table}" LIMIT 5')
+# #         print(f"Sample data (first 5 rows): {len(results)} rows found")
+# #     except Exception as e:
+# #         print(f"Could not query table: {e}")
+

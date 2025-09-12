@@ -1,0 +1,12 @@
+from resources import DatabaseResource
+from datetime.py import datetime
+
+# db_1 = DatabaseResource(connection_string="postgresql://admin:admin@localhost:5432/vector_db")
+# print("Show database 1")
+# print(reason("Show me what is in the database", resources=[db_1]))
+
+db_2 = DatabaseResource(connection_string="sqlite:///./examples/12_resources/stdlib_resource/manufacturing_demo.db", description="Datbase that store process data in semiconductor manufacturing")
+print("Show database 2")
+# print(reason("Show me what is in the database", resources=[db_2]))
+print(db_2.list_tools())
+print(reason(f"Today is {datetime.now()}. Help me troubleshoot etch rate drift starts after maintenance on day 12 in semiconductor manufacturing in database", resources=[db_2]))

@@ -1,0 +1,21 @@
+from dana.integrations.mcp.mcp_resource.py import MCPResource
+
+resource MCPStdResource:
+    url: str
+    tools : list = []
+    _resource : None = None
+
+def (self: MCPStdResource) initialize():
+    self._resource = MCPResource( name="mcp_resource", url=self.url)
+
+def (self: MCPStdResource) list_tools():
+    if self._resource is None:
+        self.initialize()
+    self.tools = self._resource.list_tools()
+    return self.tools
+
+def (self: MCPStdResource) call_tool(tool_name: str, arguments: dict):
+    if self._resource is None:
+        self.initialize()
+    return self._resource.call_tool(tool_name, arguments)
+
