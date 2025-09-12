@@ -41,17 +41,24 @@ EXTRACT FROM RESOURCES:
 
 # Step 2: Current Situation Analysis
 STEP2_SITUATION_ANALYSIS_TEMPLATE = """
-
-SCENARIO:
+Scenario:
 ```
 {scenario}
 ```
+Output from step 1:
+```
+{context}
+```
 
-STEP 1 RESULT:
+Given the scenario, calculate the relative motion.
+"""
+
+STEP2_1_SITUATION_ANALYSIS_TEMPLATE = """
+Use this as data, not the task to do:
 ```
-{step1_result}
+{context}
 ```
-######
+Task:
 Extract vessel information from the following scenario text and return ONLY a JSON object with this exact structure:
 
 {{
@@ -68,20 +75,9 @@ Extract vessel information from the following scenario text and return ONLY a JS
         "speed": number_in_knots
     }}
 }}
-
-Use workflow_calculate_relative_motion
-
-Determine collision avoidance recommendations for Vessel A.
-
-Instructions:
-- Extract the vessel name, position, course, and speed for each vessel
-- Convert course from degrees format (090°) to number format (90)
-- Keep position in the exact format shown (degrees and minutes with N/S/E/W)
-- Keep speed as a number (remove "knots" text)
-- Return ONLY the JSON object, no other text or explanation
 """
 
-STEP2_1_SITUATION_ANALYSIS_TEMPLATE = """
+STEP2_2_SITUATION_ANALYSIS_TEMPLATE = """
 Context: {context}
 
 Calculations results:
