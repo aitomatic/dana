@@ -11,6 +11,7 @@ from typing import Any
 from dana.core.builtins.struct_system import StructInstance
 
 from .resource_type import ResourceType
+from dana.common.utils.misc import Misc
 
 
 # Default resource method implementations
@@ -29,7 +30,11 @@ def default_resource_query(resource_instance: "ResourceInstance", request: dict[
     return resource_instance.query(request)
 
 
-class ResourceInstance(StructInstance):
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+
+class ResourceInstance(StructInstance, ToolCallable):
     """
     Resource instance that extends StructInstance with resource-specific functionality.
 
@@ -44,14 +49,59 @@ class ResourceInstance(StructInstance):
             resource_type: The resource type definition
             values: Initial field values
         """
+
+        # Assign name to resource type
         # Call parent constructor (import registry lazily to avoid circular import)
         from dana.registry import RESOURCE_REGISTRY
 
-        super().__init__(resource_type, values or {}, RESOURCE_REGISTRY)
-
+        StructInstance.__init__(self, resource_type, values or {}, RESOURCE_REGISTRY)
+        ToolCallable.__init__(self)
         # Resource-specific attributes for composition
+        if not hasattr(self, "name"):
+            ToolCallable.__setattr__(self, "name", self.resource_type.name)  # Used for tool naming
         self._backend = None
         self._delegates = {}  # Name -> delegate object mapping
+        self.bind_methods_to_resource()
+
+    def bind_methods_to_resource(self):
+        from dana.registry import FUNCTION_REGISTRY  # NOTE : Import here to avoid circular import
+
+        has_description = "description" in self._values
+        for (type_name, method_name), method in FUNCTION_REGISTRY._struct_function_registry._methods.items():
+            # Only check if the method is for the resource type
+            if type_name == self.resource_type.name:
+                if "_expose" in self._values and method_name not in self._values["_expose"]:
+                    continue
+                if isinstance(method, DanaFunction):
+                    # ONLY WORKAROUND FOR DanaFunction
+                    filtered_type_hints = {k: v for k, v in method.type_hints.items() if v != self.resource_type.name}
+                    decorated_function = self.decorate_method_with_newest_context(method)
+                    new_docstring = (
+                        method.docstring.strip()
+                        if not has_description
+                        else f"{self._values['description'].strip()}. {method.docstring.strip()}"
+                    )
+                    function_with_proper_signature = Misc.create_signature(
+                        filtered_type_hints,
+                        new_docstring,
+                    )(decorated_function)
+                    decorated_function = ToolCallable.tool(function_with_proper_signature)
+                    if hasattr(decorated_function, "_is_tool_callable"):
+                        self._tool_callable_function_cache.add(method_name)
+                    ToolCallable.__setattr__(self, method_name, decorated_function)
+                    self._delegates[method_name] = decorated_function
+
+    def decorate_method_with_newest_context(self, method: DanaFunction) -> Any:
+        """Execute a method with the newest context."""
+
+        def wrapper(*args, **kwargs):
+            if hasattr(self, "context"):
+                context = self.context.create_child_context()
+            else:
+                context = method.context.create_child_context()
+            return method.execute(context, self, *args, **kwargs)
+
+        return wrapper
 
     @staticmethod
     def get_default_resource_fields() -> dict[str, str | dict[str, Any]]:
@@ -106,6 +156,10 @@ class ResourceInstance(StructInstance):
                 return True
 
         return False
+
+    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
+        """Call a tool on this resource."""
+        return self.call_method(tool_name, **arguments)
 
     def call_method(self, method_name: str, *args, **kwargs) -> Any:
         """Call a method on this resource using composition/delegation."""

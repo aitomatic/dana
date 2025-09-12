@@ -23,7 +23,6 @@ def (loader: DocumentLoader) load_sources(sources: list[str]) -> list[Document]:
         else:
             files = loader.local_loader.list_files(source)
             for file in files:
-                print(f"file : {file}")
                 file_suffix = file.suffix.lower()
                 if (file_suffix in loader.file_extractor) and (loader.file_extractor.get(file_suffix) is not None):
                     customized_sources[file_suffix].setdefault(file_suffix, [])

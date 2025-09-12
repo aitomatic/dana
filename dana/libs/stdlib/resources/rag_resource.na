@@ -24,6 +24,8 @@ resource RagResource:
     vector_index: None = None # Need Union type-hint support here
     default_filters: None = None # Need Union type-hint support here
     batch_size: int = 50 # 50 files per batch
+    description: str = "A resource for querying and retrieving information from documents"
+    _expose : list = ["query"]
 
 def (rag: RagResource) initialize():
     Settings.chunk_size = rag.chunk_size
@@ -71,6 +73,9 @@ def (rag: RagResource) initialize():
     # rag.vector_index.insert_nodes(nodes)
 
 def (rag: RagResource) query(query: str, top_k: int = 10) -> list[str]:
+    """
+    Query data from existing documents
+    """
     retriever = rag.vector_index.as_retriever(similarity_top_k=top_k, embed_model=rag.embedding_model, filters=rag.default_filters)
     results = retriever.retrieve(query)
     str_results = []

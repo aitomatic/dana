@@ -6,8 +6,9 @@ logic for LLM resources in the core resource system.
 """
 
 from typing import TYPE_CHECKING, Any
-
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana.common.utils.misc import Misc
+
 from dana.core.resource.resource_type import ResourceType
 
 if TYPE_CHECKING:
@@ -33,8 +34,10 @@ class LLMResourceType(ResourceType):
                 "provider": "str",
                 "temperature": "float",
                 "max_tokens": "int",
+                "id": "str",
+                "description": "str",
             },
-            field_order=["name", "model", "state", "provider", "temperature", "max_tokens"],
+            field_order=["name", "model", "state", "provider", "temperature", "max_tokens", "id", "description"],
             field_defaults={
                 "name": "system_llm",
                 "model": "",
@@ -42,6 +45,8 @@ class LLMResourceType(ResourceType):
                 "provider": "auto",
                 "temperature": 0.7,
                 "max_tokens": 2048,
+                "id": Misc.generate_uuid(8),
+                "description": "Description of the LLM resource instance",
             },
             field_comments={
                 "name": "Name of the LLM resource instance",
@@ -50,6 +55,8 @@ class LLMResourceType(ResourceType):
                 "provider": "LLM provider (auto, openai, anthropic, etc.)",
                 "temperature": "Sampling temperature for LLM responses",
                 "max_tokens": "Maximum tokens in LLM responses",
+                "id": "ID of the LLM resource instance",
+                "description": "Description of the LLM resource instance",
             },
             docstring="LLM Resource type for language model interaction",
         )

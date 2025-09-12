@@ -391,3 +391,56 @@ class Misc:
         if content is None:
             raise ValueError(f"No content found in BaseResponse : {response}")
         return content
+
+    @staticmethod
+    def create_signature(type_hints: dict[str, type], docstring: str | None = None, *prefilled_args, **prefilled_kwargs) -> Callable[[Callable], Callable]:
+        """
+        Decorator factory that applies specified signature to a function.
+        For example :
+        ```python
+        @Misc.create_signature({"a": int, "b": int, "c": None})
+        def do(a, b, c):
+            print(a, b, c)
+        ```
+        will create a function that has the signature of `do(a: int, b: int, c: None)`
+        """
+        def decorator(func: Callable) -> Callable:
+            
+            def wrapper(*args, **kwargs):
+                # Convert positional args to dict
+                param_names = list(type_hints.keys())
+                args_dict = {}
+                
+                for i, arg in enumerate(args):
+                    if i < len(param_names):
+                        args_dict[param_names[i]] = arg
+                
+                args_dict.update(kwargs)
+                # Unpack the dictionary back to individual arguments
+                return func(*prefilled_args, **args_dict, **prefilled_kwargs)
+            
+            # Build signature manually
+            parameters = []
+            for name, type_hint in type_hints.items():
+                if type_hint is None:
+                    param = inspect.Parameter(name, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                else:
+                    param = inspect.Parameter(name, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=type_hint)
+                parameters.append(param)
+            
+            # Set the signature
+            wrapper.__signature__ = inspect.Signature(parameters)
+            
+            # Update docstring
+            if docstring is not None:
+                wrapper.__doc__ = docstring
+            elif func.__doc__:
+                # Keep original docstring if no new one provided
+                wrapper.__doc__ = func.__doc__
+            
+            # Copy function name
+            wrapper.__name__ = func.__name__
+            
+            return wrapper
+        
+        return decorator

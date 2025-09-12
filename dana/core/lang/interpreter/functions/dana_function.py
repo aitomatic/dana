@@ -26,6 +26,7 @@ class DanaFunction(SandboxFunction, Loggable):
         defaults: dict[str, Any] | None = None,
         name: str | None = None,
         is_sync: bool = False,
+        type_hints: dict[str, str] | None = None,
     ):
         """Initialize a Dana function.
 
@@ -45,6 +46,7 @@ class DanaFunction(SandboxFunction, Loggable):
         self.defaults = defaults or {}
         self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
         self.is_sync = is_sync  # NEW FIELD: indicates if function should execute synchronously
+        self.type_hints = type_hints or {}
         self.debug(
             f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}, is_sync={self.is_sync}"
         )
@@ -114,6 +116,17 @@ class DanaFunction(SandboxFunction, Loggable):
         if hasattr(context, "_original_locals"):
             context.set_scope("local", context._original_locals)
             delattr(context, "_original_locals")
+
+    @property
+    def docstring(self) -> str:
+        from dana.core.lang.ast import LiteralExpression
+
+        for statement in self.body:
+            if isinstance(statement, LiteralExpression):
+                return statement.value
+            # Only check the first statement after function definition
+            break
+        return ""
 
     def execute(self, context: Any, *args: Any, **kwargs: Any) -> Any:
         """Execute the function with the given arguments.

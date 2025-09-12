@@ -179,6 +179,8 @@ class LLMToolCallManager(Loggable):
                 if hasattr(response, "to_json") and callable(response.to_json):
                     response = response.to_json()
 
+                response = str(response) # NOTE : This is to ensure the response is a string
+
                 # Truncate response if needed
                 if self.max_response_length and isinstance(response, str):
                     response = response[

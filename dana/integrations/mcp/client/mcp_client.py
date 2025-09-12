@@ -30,45 +30,30 @@ from mcp.client.session import ClientSession
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from dana.integrations.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
-
+from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
 class MCPClient(Loggable):
     def __init__(self, *args, **kwargs):
         Loggable.__init__(self)
 
         # Validate transport and store it
-        self.transport = self._validate_transport(*args, **kwargs)
-        self._session = None
         self._streams_context = None
+        self._session = None
+        self._streams_context_cls, self._streams_context_args, self._streams_context_kwargs = self._validate_stream_context(*args, **kwargs)
 
     async def __aenter__(self) -> ClientSession:
         """Async context manager entry - create fresh streams and return session."""
-        from mcp.client.sse import sse_client
-        from mcp.client.streamable_http import streamablehttp_client
-
-        # Create streams context based on transport type
-        if isinstance(self.transport, MCPSSETransport):
-            self._streams_context = sse_client(url=self.transport.url)
-        elif isinstance(self.transport, MCPHTTPTransport):
-            self._streams_context = streamablehttp_client(url=self.transport.url)
-        else:
-            raise ValueError(f"Invalid transport type: {type(self.transport)}")
-
+        if self._streams_context is None:
+            self._streams_context = self._streams_context_cls(*self._streams_context_args, **self._streams_context_kwargs)
         # Get the streams - handle different return patterns
         streams_result = await self._streams_context.__aenter__()
-        if isinstance(self.transport, MCPSSETransport):
-            read_stream, write_stream = streams_result
-        elif isinstance(self.transport, MCPHTTPTransport):
-            read_stream, write_stream, _ = streams_result
-        else:
-            raise ValueError(f"Invalid transport type: {type(self.transport)}")
+        read_stream, write_stream = streams_result[0], streams_result[1]
 
         # Create and initialize the session
         self._session = ClientSession(read_stream, write_stream)
         session = await self._session.__aenter__()
         await session.initialize()
-
         return session
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -82,35 +67,30 @@ class MCPClient(Loggable):
             self._session = None
             self._streams_context = None
 
+    
     @classmethod
-    def _validate_transport(cls, *args, **kwargs) -> BaseTransport:
-        for transport_cls in [MCPSSETransport, MCPHTTPTransport]:
-            parse_result = transport_cls.parse_init_params(*args, **kwargs)
-            transport = transport_cls(*parse_result.matched_args, **parse_result.matched_kwargs)
-            is_valid = Misc.safe_asyncio_run(cls._try_client_with_valid_transport, transport)
+    def _validate_stream_context(cls, *args, **kwargs) -> tuple[type, list, dict]:
+        for stream_context_cls in [sse_client, streamablehttp_client]:
+            parse_result = Misc.parse_args_kwargs(stream_context_cls, *args, **kwargs)
+            stream_context = stream_context_cls(*parse_result.matched_args, **parse_result.matched_kwargs)
+            is_valid = Misc.safe_asyncio_run(cls._try_client_with_valid_stream_context, stream_context, \
+                                             *parse_result.matched_args, **parse_result.matched_kwargs)
             if is_valid:
-                return transport
-        raise ValueError(f"No valid transport found kwargs : {kwargs}")
+                return stream_context_cls, parse_result.matched_args, parse_result.matched_kwargs
+        raise ValueError(f"No valid stream context found kwargs : {kwargs}")
+
 
     @classmethod
-    async def _try_client_with_valid_transport(cls, transport: BaseTransport) -> bool:
-        """Test transport connection."""
+    async def _try_client_with_valid_stream_context(cls, stream_context, *args, **kwargs) -> bool:
+        """Test stream context connection."""
         session_context = None
         streams_context = None
 
         try:
-            from mcp.client.sse import sse_client
-            from mcp.client.streamable_http import streamablehttp_client
-
-            # Create streams context based on transport type
-            if isinstance(transport, MCPSSETransport):
-                streams_context = sse_client(url=transport.url)
-                read_stream, write_stream = await streams_context.__aenter__()
-            elif isinstance(transport, MCPHTTPTransport):
-                streams_context = streamablehttp_client(url=transport.url)
-                read_stream, write_stream, _ = await streams_context.__aenter__()
-            else:
-                raise ValueError(f"Invalid transport type: {type(transport)}")
+            # Create streams context based on stream context type
+            streams_context = stream_context
+            stream_tuple = await streams_context.__aenter__()
+            read_stream, write_stream = stream_tuple[0], stream_tuple[1]
 
             # Test the connection
             session_context = ClientSession(read_stream, write_stream)
@@ -120,7 +100,7 @@ class MCPClient(Loggable):
             await session.initialize()
             response = await session.list_tools()
             tools = response.tools
-            print(f"Connected to mcp server ({transport.url}) with {len(tools)} tools:", [tool.name for tool in tools])
+            print(f"Connected to mcp server {args}, {kwargs} with {len(tools)} tools:", [tool.name for tool in tools])
 
             return True
 

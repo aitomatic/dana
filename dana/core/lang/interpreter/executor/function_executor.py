@@ -96,11 +96,18 @@ class FunctionExecutor(BaseExecutor):
         # Extract parameter names and defaults
         param_names = []
         param_defaults = {}
+        type_hints = {}
 
         for _, param in enumerate(all_params):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
+
+                # Debug: Check if type hints are being lost
+                if hasattr(param, "type_hint") and param.type_hint is not None:
+                    type_hints[param_name] = param.type_hint.name
+                else:
+                    type_hints[param_name] = None
 
                 # Extract default value if present
                 if hasattr(param, "default_value") and param.default_value is not None:
@@ -133,6 +140,7 @@ class FunctionExecutor(BaseExecutor):
             defaults=param_defaults,
             name=node.name.name,
             is_sync=node.is_sync,
+            type_hints=type_hints,
         )
 
         # Register based on presence of receiver

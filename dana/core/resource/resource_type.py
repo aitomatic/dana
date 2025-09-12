@@ -7,6 +7,7 @@ compatibility with the struct system.
 
 from typing import Any
 
+from dana.common.utils.misc import Misc
 from dana.core.builtins.struct_system import StructType
 
 # Import lazily where used to avoid circular import during module import
@@ -40,6 +41,29 @@ class ResourceType(StructType):
             docstring: Documentation string
         """
         # Initialize as a regular StructType first
+
+        # Resource must have a name, description, and id
+        # Validate resource type has a name field
+        additional_fields = {}
+        additional_field_defaults = {}
+        if fields and "name" not in fields:
+            additional_fields["name"] = "str"
+            additional_field_defaults["name"] = name
+        if fields and "description" not in fields:
+            additional_fields["description"] = "str"
+            additional_field_defaults["description"] = f"Description for {name}"
+        if fields and "id" not in fields:
+            additional_fields["id"] = "str"
+            additional_field_defaults["id"] = Misc.generate_uuid(8)
+
+        # Update the instance-specific resource type (not the shared one)
+        fields.update(additional_fields)
+        if field_defaults:
+            field_defaults.update(additional_field_defaults)
+        else:
+            field_defaults = additional_field_defaults
+        field_order.extend(list(additional_fields.keys()))
+
         super().__init__(
             name=name,
             fields=fields,
