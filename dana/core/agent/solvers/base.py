@@ -39,7 +39,7 @@ class SignatureMatcher:
 
         for pattern_data in self._patterns.values():
             # Simple keyword matching - can be enhanced
-            keywords = pattern_data.get('keywords', [])
+            keywords = pattern_data.get("keywords", [])
             matches = sum(1 for keyword in keywords if keyword.lower() in text_lower)
 
             if matches > 0:
@@ -62,10 +62,11 @@ class BaseSolver(ABC):
     def llm_resource(self) -> "LLMResourceInstance":
         """Get the LLM resource for this solver."""
         if self._llm_resource is None:
-            self._llm_resource = self.agent.llm_resource
-
-        if self._llm_resource is None:
-            self._llm_resource = LLMResourceInstance.create_default_instance()
+            agent_llm = self.agent.llm_resource
+            if agent_llm is not None and isinstance(agent_llm, LLMResourceInstance):
+                self._llm_resource = agent_llm
+            else:
+                self._llm_resource = LLMResourceInstance.create_default_instance()
 
         return self._llm_resource
 
@@ -114,7 +115,9 @@ class BaseSolver(ABC):
     # ---------------------------
     # Common resource management
     # ---------------------------
-    def _attach_resource_pack(self, resource_registry: ResourceRegistry | None, entities: dict[str, Any], artifacts: dict[str, Any]) -> None:
+    def _attach_resource_pack(
+        self, resource_registry: ResourceRegistry | None, entities: dict[str, Any], artifacts: dict[str, Any]
+    ) -> None:
         """Attach resource pack to artifacts if resource registry is available."""
         if resource_registry is not None:
             try:
@@ -148,7 +151,7 @@ class BaseSolver(ABC):
         if isinstance(problem_or_workflow, WorkflowInstance):
             result = self._run_workflow_instance(problem_or_workflow, sandbox_context)
             # Handle case where artifacts might be a SandboxContext object
-            if hasattr(artifacts, 'setdefault'):
+            if hasattr(artifacts, "setdefault"):
                 st = artifacts.setdefault("_solver_state", {})
                 st.update({"mode": mode, "last_result": result, "phase": "delivered"})
             else:
@@ -181,10 +184,10 @@ class BaseSolver(ABC):
     def _initialize_solver_state(self, artifacts: dict[str, Any], state_key: str = "_solver_state") -> dict[str, Any]:
         """Initialize solver state in artifacts."""
         # Handle case where artifacts might be a SandboxContext object
-        if hasattr(artifacts, 'get') and hasattr(artifacts, 'setdefault'):
+        if hasattr(artifacts, "get") and hasattr(artifacts, "setdefault"):
             # It's a dictionary-like object - modify it in place
             return artifacts.setdefault(state_key, {})
-        elif hasattr(artifacts, 'get') and not hasattr(artifacts, 'setdefault'):
+        elif hasattr(artifacts, "get") and not hasattr(artifacts, "setdefault"):
             # It's a SandboxContext object - create a new dict for solver state
             return {}
         else:
@@ -195,10 +198,10 @@ class BaseSolver(ABC):
     def _extract_entities(self, artifacts: dict[str, Any]) -> dict[str, Any]:
         """Extract entities from artifacts."""
         # Handle case where artifacts might be a SandboxContext object
-        if hasattr(artifacts, 'get') and hasattr(artifacts, 'setdefault'):
+        if hasattr(artifacts, "get") and hasattr(artifacts, "setdefault"):
             # It's a dictionary-like object
             return artifacts.get("_entities", {})
-        elif hasattr(artifacts, 'get') and not hasattr(artifacts, 'setdefault'):
+        elif hasattr(artifacts, "get") and not hasattr(artifacts, "setdefault"):
             # It's a SandboxContext object - return empty entities
             return {}
         else:
@@ -308,22 +311,22 @@ class BaseSolver(ABC):
         except Exception:
             return None
 
-    def _generate_llm_response_with_context(self, prompt: str, system_prompt: str | None = None, max_turns: int = 30) -> str | None:
+    def _query_llm_with_prteng(self, prompt: str, system_prompt: str | None = None, max_turns: int = 30) -> str | None:
         """Generate LLM response with conversation context using PromptEngineer if available."""
         if not self._validate_llm_resource():
             return None
 
         try:
-            # Build conversation context
+            # Build conversation context internally
             conversation_context = self._get_conversation_context(max_turns)
 
             # Use PromptEngineer if available, otherwise fall back to static prompts
-            if hasattr(self.agent, 'prompt_engineer') and self.agent.prompt_engineer:
+            if hasattr(self.agent, "prompt_engineer") and self.agent.prompt_engineer:
                 # Generate optimized prompt using PromptEngineer
                 prompt_obj = self.agent.prompt_engineer.generate(
                     user_query=prompt,
                     system_template=system_prompt or "You are a helpful AI assistant.",
-                    template_data={"conversation_context": conversation_context}
+                    template_data={"conversation_context": conversation_context},
                 )
                 enhanced_system_prompt = prompt_obj.system_message
                 user_prompt = prompt_obj.user_message

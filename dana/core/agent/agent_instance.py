@@ -104,7 +104,6 @@ class AgentInstance(
             "tokens_per_sec": 0.0,
         }
 
-
         # Initialize the base StructInstance
         from dana.registry import AGENT_REGISTRY
 
@@ -197,7 +196,7 @@ class AgentInstance(
         return PromiseFactory.create_promise(computation=lambda: self.llm_sync(request, sandbox_context, **kwargs))
 
     def converse(self, io: IOAdapter = CLIAdapter(), sandbox_context: SandboxContext | None = None) -> Any:
-        """ Converse is always synchronous """
+        """Converse is always synchronous"""
         return self.converse_sync(io, sandbox_context=sandbox_context)
 
     def plan(
@@ -220,10 +219,19 @@ class AgentInstance(
         """Asynchronous agent solve method."""
         return PromiseFactory.create_promise(computation=lambda: self.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs))
 
-    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+    def solve_sync(
+        self,
+        problem_or_workflow: str | WorkflowInstance,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context: SandboxContext | None = None,
+        **kwargs,
+    ) -> Any:
         """Synchronous agent solve method."""
+        assert self._planner_executor_solver is not None
+        assert self._reactive_support_solver is not None
         assert self._simple_helpful_solver is not None
-        return self._simple_helpful_solver.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
+
+        return self._planner_executor_solver.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
 
     # ============================================================================
     # COMMUNICATION METHODS
@@ -334,7 +342,7 @@ class AgentInstance(
                 "active_turns": len(conversations),
                 "summary_count": 0,  # Not implemented in new system yet
                 "session_count": 1,  # Timeline doesn't track sessions yet
-                "conversation_id": getattr(self.state.timeline, 'agent_id', 'unknown'),
+                "conversation_id": getattr(self.state.timeline, "agent_id", "unknown"),
                 "created_at": timeline_summary.get("first_event", ""),
                 "updated_at": timeline_summary.get("last_event", ""),
             }
@@ -352,7 +360,7 @@ class AgentInstance(
         """Clear the conversation memory for this agent."""
         try:
             # Clear conversation events from timeline
-            if hasattr(self.state.timeline, 'conversation_events'):
+            if hasattr(self.state.timeline, "conversation_events"):
                 # Clear all conversation events
                 self.state.timeline.conversation_events.clear()
             return True
@@ -405,15 +413,17 @@ class AgentInstance(
         """Get the prompt engineer for this agent."""
         if self._prompt_engineer is None:
             from dana.frameworks.prteng import PromptEngineer
+
             # Ensure we have a proper LLM resource
             llm_res = self._llm_resource
             if llm_res is None:
                 llm_res = self._get_llm_resource()
             # Type check to ensure we have the right type
-            if llm_res is not None and hasattr(llm_res, 'kind') and llm_res.kind == 'llm':
+            if llm_res is not None and hasattr(llm_res, "kind") and llm_res.kind == "llm":
                 # Cast to the expected type for type checker
                 from typing import cast
                 from dana.core.resource.builtins.llm_resource_type import LLMResourceInstance
+
                 llm_resource = cast(LLMResourceInstance, llm_res)
                 self._prompt_engineer = PromptEngineer(llm_resource=llm_resource)
             else:
@@ -426,6 +436,7 @@ class AgentInstance(
         """Get the context engineer for this agent."""
         if self._context_engineer is None:
             from dana.frameworks.ctxeng import ContextEngineer
+
             self._context_engineer = ContextEngineer.from_agent(self)
         return self._context_engineer
 

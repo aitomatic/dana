@@ -13,6 +13,7 @@ from .base import BaseSolver
 from .prompts import (
     SIMPLE_HELPFUL_SYSTEM_PROMPT,
 )
+
 if TYPE_CHECKING:
     from dana.core.agent.agent_instance import AgentInstance
 
@@ -122,9 +123,7 @@ class SimpleHelpfulSolver(BaseSolver):
         print("🔧 Calling _generate_llm_response_with_context...")
 
         # Use the user message directly as the prompt, with all instructions in the system prompt
-        result = self._generate_llm_response_with_context(
-            prompt=problem, system_prompt=SIMPLE_HELPFUL_SYSTEM_PROMPT
-        )
+        result = self._query_llm_with_prteng(prompt=problem, system_prompt=SIMPLE_HELPFUL_SYSTEM_PROMPT)
 
         print(f"📊 LLM result: {type(result).__name__ if result else 'None'}")
         if result:
