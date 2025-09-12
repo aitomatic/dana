@@ -59,7 +59,7 @@ def __main__(scenario: str = None, output_path = '.output/navigation-recommendat
 
     step2_result = NavigationExpert.solve(
         STEP2_SITUATION_ANALYSIS_TEMPLATE.format(
-            step1_result=step1_result,
+            context=step1_result,
             scenario=scenario),
         resources=[resource_navigation_rules],
         quick=True)
@@ -76,7 +76,7 @@ def __main__(scenario: str = None, output_path = '.output/navigation-recommendat
     Path('.output/step-3.txt').write_text(step3_result)
 
     print('STEP 4: Historical Pattern Correlation & Decision Recommendation...')
-
+    
     step4_result = NavigationExpert.solve(
         STEP4_DECISION_RECOMMENDATION_TEMPLATE.format(
             step1_result=step1_result,
