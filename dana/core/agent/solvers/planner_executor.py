@@ -1,12 +1,18 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from collections.abc import Callable
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.workflow.workflow_system import WorkflowInstance
-from .base import BaseSolverMixin
+from .base import BaseSolver
+from .prompts import (
+    get_planner_prompt,
+    get_executor_prompt,
+)
 
+if TYPE_CHECKING:
+    from dana.core.agent.agent_instance import AgentInstance
 
-class PlannerExecutorSolverMixin(BaseSolverMixin):
+class PlannerExecutorSolver(BaseSolver):
     """
     Planner–Executor that prefers KNOWN WORKFLOWS and attaches RESOURCE PACKS.
 
@@ -24,8 +30,8 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
                                       and .expand_step(step_text, entities)->WorkflowInstance|None
       - resource_index:   object with .pack(entities)->dict (docs/kb/specs)
     """
-
-    MIXIN_NAME = "planner_executor"
+    def __init__(self, agent: "AgentInstance"):
+        super().__init__(agent)
 
     # ---------------------------
     # Public entry point
@@ -264,7 +270,10 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
         Generate a plan using LLM - NO FALLBACKS to see errors clearly.
         """
         # Try to get LLM resource for planning
-        if sandbox_context is not None:
+        if self.llm_resource is not None:
+            return self._llm_draft_plan(goal, max_steps, self.llm_resource)
+
+        elif sandbox_context is not None:
             try:
                 # Try to get LLM resource from sandbox context
                 llm_resource = sandbox_context.get_resource("system_llm")
@@ -272,16 +281,6 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
                     return self._llm_draft_plan(goal, max_steps, llm_resource)
             except KeyError:
                 pass
-
-        # Try to get LLM resource from agent if available
-        if hasattr(self, "get_llm_resource") and sandbox_context is not None:
-            llm_resource = self.get_llm_resource(sandbox_context)
-            if llm_resource is not None:
-                return self._llm_draft_plan(goal, max_steps, llm_resource)
-
-        # Try direct access as fallback
-        if hasattr(self, "_llm_resource") and self._llm_resource is not None:
-            return self._llm_draft_plan(goal, max_steps, self._llm_resource)
 
         # No fallback - raise error to see what's wrong
         raise RuntimeError(f"No LLM resource available for planning. Goal: {goal}")
@@ -296,16 +295,8 @@ class PlannerExecutorSolverMixin(BaseSolverMixin):
         # Get conversation context from timeline
         conversation_context = self._get_conversation_context(max_turns=3)
 
-        prompt = f"""Create a step-by-step plan to achieve this goal: "{goal}"
-
-Requirements:
-- Maximum {max_steps} steps
-- Each step should be actionable and specific
-- Steps should be in logical order
-- Use imperative mood (e.g., "Analyze the problem", "Implement solution")
-{conversation_context}
-
-Format: Return only the steps, one per line, without numbering or bullets."""
+        # Use the extracted prompt template
+        prompt = get_planner_prompt(goal, max_steps) + f"\n{conversation_context}\n\nFormat: Return only the steps, one per line, without numbering or bullets."
 
         try:
             # Create request directly with the provided LLM resource
@@ -476,15 +467,8 @@ Format: Return only the steps, one per line, without numbering or bullets."""
         # Get conversation context from timeline
         conversation_context = self._get_conversation_context(max_turns=5)
 
-        # Create a prompt for the LLM to execute the action
-        prompt = f"""Execute this action: "{action}"
-
-Provide a helpful, direct response that accomplishes what the user is asking for.
-Be concise but informative. If it's a question, answer it directly.
-If it's a request for help, provide useful guidance.
-{conversation_context}
-
-Response:"""
+        # Use the extracted prompt template
+        prompt = get_executor_prompt(action, conversation_context)
 
         try:
             # Create request directly with the provided LLM resource

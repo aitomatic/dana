@@ -6,7 +6,7 @@ agent-specific state and methods. This is the main implementation file for agent
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from dana.common.types import BaseRequest
 from dana.core.builtins.struct_system import StructInstance
@@ -28,34 +28,32 @@ from .methods import (
     LoggingMixin,
     MemoryMixin,
     ReasonMixin,
-    BaseSolverMixin,
-    SimpleHelpfulSolverMixin,
-    PlannerExecutorSolverMixin,
-    ReactiveSupportSolverMixin,
 )
 from .utils import AgentCallbackMixin
 
-if TYPE_CHECKING:
-    pass
+from .solvers import (
+    PlannerExecutorSolver,
+    ReactiveSupportSolver,
+    SimpleHelpfulSolver,
+)
 
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 from .context import ProblemContext
+
+from .methods.converse import IOAdapter, CLIAdapter
 
 
 class AgentInstance(
     StructInstance,
     AgentCallbackMixin,
     ChatMixin,
-    ConverseMixin,
     InputMixin,
     LLMMixin,
     LoggingMixin,
     MemoryMixin,
     ReasonMixin,
-    PlannerExecutorSolverMixin,
-    # ReactiveSupportSolverMixin,
-    # SimpleHelpfulSolverMixin,
+    ConverseMixin,
 ):
     """Agent struct instance with built-in agent capabilities.
 
@@ -83,7 +81,6 @@ class AgentInstance(
         # Legacy attributes now delegate to centralized state
         # These properties provide backward compatibility while using the new state system
         self._llm_resource = None  # Lazy initialization
-        self._conversation_memory_cleared = False  # Track if conversation memory was cleared
         self._context_manager_initialized = False  # Track if context manager has been used
 
         # Timeline is now part of centralized state
@@ -94,6 +91,11 @@ class AgentInstance(
         self._corral_engineer = None
         self._prompt_engineer = None
 
+        # Initialize solvers
+        self._planner_executor_solver = None
+        self._reactive_support_solver = None
+        self._simple_helpful_solver = None
+
         # Initialize TUI metrics
         self._metrics = {
             "is_running": False,
@@ -102,27 +104,21 @@ class AgentInstance(
             "tokens_per_sec": 0.0,
         }
 
+
         # Initialize the base StructInstance
         from dana.registry import AGENT_REGISTRY
 
         super().__init__(struct_type, values, AGENT_REGISTRY)
+
+        self._initialize_agent_resources()
+
         AgentCallbackMixin.__init__(self)
-        PlannerExecutorSolverMixin.__init__(self)
-        # ReactiveSupportSolverMixin.__init__(self)
-        # SimpleHelpfulSolverMixin.__init__(self)
+        ConverseMixin.__init__(self)
 
     def __post_init__(self):
         """Post-initialize the agent instance."""
-        if isinstance(self, PlannerExecutorSolverMixin):
-            PlannerExecutorSolverMixin.__init__(self)
-
-        if isinstance(self, ReactiveSupportSolverMixin):
-            ReactiveSupportSolverMixin.__init__(self)
-
-        if isinstance(self, SimpleHelpfulSolverMixin):
-            SimpleHelpfulSolverMixin.__init__(self)
-
         super().__post_init__()
+
 
     @property
     def name(self) -> str:
@@ -159,19 +155,20 @@ class AgentInstance(
         """
 
         return {
-            "llm": AgentInstance.llm,
-            "plan": AgentInstance.plan,
-            "solve": AgentInstance.solve,
-            "remember": AgentInstance.remember,
-            "recall": AgentInstance.recall,
-            "reason": AgentInstance.reason,
             "chat": AgentInstance.chat,
-            "log": AgentInstance.log,
-            "info": AgentInstance.info,
-            "warning": AgentInstance.warning,
+            "converse": AgentInstance.converse,
             "debug": AgentInstance.debug,
             "error": AgentInstance.error,
+            "info": AgentInstance.info,
             "input": AgentInstance.input,
+            "llm": AgentInstance.llm,
+            "log": AgentInstance.log,
+            "plan": AgentInstance.plan,
+            "reason": AgentInstance.reason,
+            "recall": AgentInstance.recall,
+            "remember": AgentInstance.remember,
+            "solve": AgentInstance.solve,
+            "warning": AgentInstance.warning,
         }
 
     @staticmethod
@@ -197,6 +194,10 @@ class AgentInstance(
         """Asynchronous agent LLM method."""
         return PromiseFactory.create_promise(computation=lambda: self.llm_sync(request, sandbox_context, **kwargs))
 
+    def converse(self, io: IOAdapter = CLIAdapter(), sandbox_context: SandboxContext | None = None) -> Any:
+        """ Converse is always synchronous """
+        return self.converse_sync(io, sandbox_context=sandbox_context)
+
     def plan(
         self,
         problem_or_workflow: str | WorkflowInstance,
@@ -216,6 +217,11 @@ class AgentInstance(
     ) -> Any:
         """Asynchronous agent solve method."""
         return PromiseFactory.create_promise(computation=lambda: self.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs))
+
+    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Synchronous agent solve method."""
+        assert self._simple_helpful_solver is not None
+        return self._simple_helpful_solver.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
 
     # ============================================================================
     # PROBLEM SOLVING METHODS (Workflow Creation and Management)
@@ -355,7 +361,6 @@ class AgentInstance(
             conversations = self.state.timeline.get_events_by_type("conversation")
             for conversation in conversations:
                 self.state.timeline.conversation_events.remove(conversation)
-            self._conversation_memory_cleared = True
             return True
         except Exception:
             return False
@@ -394,24 +399,7 @@ class AgentInstance(
             self._initialize_llm_resource()
         return self._llm_resource
 
-    def _initialize_conversation_memory(self):
-        """Initialize conversation memory if not already done.
 
-        Note: Conversation memory is now managed by the centralized state system.
-        This method is kept for backward compatibility but delegates to the state system.
-        """
-        # Conversation memory is automatically initialized as part of AgentState
-        # Reset the cleared flag to make conversation memory available again
-        self._conversation_memory_cleared = False
-
-    @property
-    def _conversation_memory(self):
-        """Backward compatibility property for conversation memory.
-
-        Note: Conversation memory is now handled by the Timeline system.
-        This property returns None for backward compatibility.
-        """
-        return None
 
     @property
     def _llm_resource_instance(self):
@@ -488,11 +476,11 @@ class AgentInstance(
     def _initialize_agent_resources(self):
         """Initialize all agent resources that need explicit initialization."""
         try:
-            # Initialize conversation memory (now handled by centralized state)
-            self._initialize_conversation_memory()
-
             # Initialize LLM resource
             self._initialize_llm_resource()
+
+            # Initialize solvers
+            self._initialize_solvers()
 
             # Initializing engineering resources
             self._corral_engineer = CORRALEngineer()
@@ -511,12 +499,26 @@ class AgentInstance(
             import logging
 
             logging.error(f"Failed to initialize agent resources for {self.name}: {e}")
+            print(f"Failed to initialize agent resources for {self.name}: {e}")
             # Update metrics to indicate initialization failure
             self.update_metric("current_step", "initialization_failed")
+
+    def _initialize_solvers(self):
+        """Initialize all solvers that need explicit initialization."""
+        if self._simple_helpful_solver is None:
+            print(f"Initializing solvers for {self.name}")
+            self._planner_executor_solver = PlannerExecutorSolver(self)
+            self._reactive_support_solver = ReactiveSupportSolver(self)
+            self._simple_helpful_solver = SimpleHelpfulSolver(self)
+            print(f"Solvers initialized for {self.name}")
 
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""
         try:
+            self._planner_executor_solver = None
+            self._reactive_support_solver = None
+            self._simple_helpful_solver = None
+
             self._context_engineer = None
             self._corral_engineer = None
             self._prompt_engineer = None
@@ -620,85 +622,51 @@ class AgentInstance(
     # ---------------------------
     def enable_planner_executor_solver(
         self,
-        workflow_catalog: Any | None = None,
-        resource_index: Any | None = None,
+        workflow_registry: Any | None = None,
+        resource_registry: Any | None = None,
     ) -> "AgentInstance":
         """Enable planner-executor solver capabilities on this agent.
 
         Args:
-            workflow_catalog: Optional workflow catalog for known workflow matching
-            resource_index: Optional resource index for resource pack attachment
+            workflow_registry: Optional workflow registry for known workflow matching
+            resource_registry: Optional resource registry for resource pack attachment
 
         Returns:
             Self for method chaining
         """
-        # Dynamically add the solver mixin methods
-        self._add_solver_methods(PlannerExecutorSolverMixin)
-
         # Set up dependencies
-        if workflow_catalog:
-            self.workflow_catalog = workflow_catalog
-        if resource_index:
-            self.resource_index = resource_index
+        if workflow_registry:
+            self.workflow_registry = workflow_registry
+        if resource_registry:
+            self.resource_registry = resource_registry
 
         return self
 
     def enable_reactive_support_solver(
         self,
         signature_matcher: Any | None = None,
-        workflow_catalog: Any | None = None,
-        resource_index: Any | None = None,
+        workflow_registry: Any | None = None,
+        resource_registry: Any | None = None,
     ) -> "AgentInstance":
         """Enable reactive support solver capabilities on this agent.
 
         Args:
             signature_matcher: Optional signature matcher for known issue patterns
-            workflow_catalog: Optional workflow catalog for diagnostic workflows
-            resource_index: Optional resource index for resource pack attachment
+            workflow_registry: Optional workflow registry for diagnostic workflows
+            resource_registry: Optional resource registry for resource pack attachment
 
         Returns:
             Self for method chaining
         """
-        # Dynamically add the solver mixin methods
-        self._add_solver_methods(ReactiveSupportSolverMixin)
-
         # Set up dependencies
         if signature_matcher:
             self.signature_matcher = signature_matcher
-        if workflow_catalog:
-            self.workflow_catalog = workflow_catalog
-        if resource_index:
-            self.resource_index = resource_index
+        if workflow_registry:
+            self.workflow_registry = workflow_registry
+        if resource_registry:
+            self.resource_registry = resource_registry
 
         return self
-
-    def _add_solver_methods(self, solver_mixin_class: type[BaseSolverMixin]) -> None:
-        """Dynamically add solver methods to this agent instance."""
-        solver_instance = solver_mixin_class()
-
-        # Copy all methods from the solver mixin to this instance
-        for attr_name in dir(solver_instance):
-            if (
-                not attr_name.startswith("_")
-                or attr_name.startswith("_solve")
-                or attr_name.startswith("_run")
-                or attr_name.startswith("_match")
-                or attr_name.startswith("_create")
-                or attr_name.startswith("_handle")
-                or attr_name.startswith("_attach")
-                or attr_name.startswith("_inject")
-                or attr_name.startswith("_initialize")
-                or attr_name.startswith("_extract")
-            ):
-                attr = getattr(solver_instance, attr_name)
-                if callable(attr):
-                    # Bind the method to this instance
-                    bound_method = attr.__get__(self, type(self))
-                    setattr(self, attr_name, bound_method)
-
-        # Set the MIXIN_NAME attribute
-        if hasattr(solver_instance, "MIXIN_NAME"):
-            setattr(self, f"_active_solver_{solver_instance.MIXIN_NAME}", True)
 
     # ============================================================================
     # AGENT PERSISTENCE METHODS
@@ -710,7 +678,9 @@ class AgentInstance(
         agent_name = self.name if hasattr(self, "name") else "unnamed_agent"
         # Create a safe filename from the agent name
         safe_name = "".join(c for c in agent_name if c.isalnum() or c in ("-", "_")).rstrip()
-        return f"{safe_name}_{id(self)}"
+        # Use a more stable ID based on agent type and name rather than object ID
+        # This allows multiple instances of the same agent type to share persistence
+        return f"{safe_name}_{hash(str(self.agent_type))}"
 
     def get_agent_base_path(self) -> Path:
         """Get the base persistence path for this agent."""

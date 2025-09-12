@@ -45,20 +45,21 @@ class TestAgentChat(unittest.TestCase):
 
                 agent_self.state.timeline = timeline
 
-        self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
-        self.init_patcher.start()
+        # No longer needed - conversation memory is handled by Timeline
+        self.init_patcher = None
 
         # Create a sandbox context for testing
         self.sandbox_context = SandboxContext()
 
     def tearDown(self):
         """Clean up test cases."""
-        self.init_patcher.stop()
+        if self.init_patcher:
+            self.init_patcher.stop()
         # Clean up temp files
         import os
         import shutil
 
-        # Clean up any temporary files created by ConversationMemory
+        # Clean up any temporary files created by Timeline
         if hasattr(self, "memory_dir") and self.memory_dir.exists():
             for file_path in self.memory_dir.iterdir():
                 if file_path.is_file():
@@ -343,7 +344,7 @@ class TestAgentChat(unittest.TestCase):
         import os
         if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("JENKINS_URL"):
             self.skipTest("Skipping test_max_context_turns in CI environment due to race condition issues")
-        
+
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)

@@ -8,12 +8,12 @@ import pytest
 from unittest.mock import Mock
 
 # Import only the solver mixins directly to avoid circular imports
-from dana.core.agent.methods.solvers.base import BaseSolverMixin
-from dana.core.agent.methods.solvers.planner_executor import PlannerExecutorSolverMixin
-from dana.core.agent.methods.solvers.reactive_support import ReactiveSupportSolverMixin
+from dana.core.agent.solvers.base import BaseSolver
+from dana.core.agent.solvers.planner_executor import PlannerExecutorSolver
+from dana.core.agent.solvers.reactive_support import ReactiveSupportSolver
 
 
-class ConcreteSolverMixin(BaseSolverMixin):
+class ConcreteSolverMixin(BaseSolver):
     """Concrete implementation of BaseSolverMixin for testing."""
 
     def solve_sync(self, problem_or_workflow, artifacts=None, sandbox_context=None, **kwargs):
@@ -81,7 +81,6 @@ class TestBaseSolverMixinSimple:
     def test_create_ask_response(self):
         """Test ask response creation."""
         mixin = ConcreteSolverMixin()
-        mixin.MIXIN_NAME = "test_mixin"
 
         response = mixin._create_ask_response("Test message")
 
@@ -96,7 +95,6 @@ class TestBaseSolverMixinSimple:
     def test_create_answer_response(self):
         """Test answer response creation."""
         mixin = ConcreteSolverMixin()
-        mixin.MIXIN_NAME = "test_mixin"
 
         artifacts = {"test": "data"}
         response = mixin._create_answer_response("test_mode", artifacts, "test_selection", extra="value")
@@ -114,26 +112,23 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_planner_executor_initialization(self):
         """Test that PlannerExecutorSolverMixin initializes correctly."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
-        assert mixin.MIXIN_NAME == "planner_executor"
         assert hasattr(mixin, "_context_engineer")
         assert hasattr(mixin, "_llm_resource")
 
     def test_solve_sync_with_empty_goal(self):
         """Test solving with an empty goal string."""
-        mixin = PlannerExecutorSolverMixin()
-        mixin.MIXIN_NAME = "planner_executor"
+        mixin = PlannerExecutorSolver()
 
         result = mixin.solve_sync("")
 
         assert result["type"] == "ask"
         assert "goal to plan" in result["message"]
-        assert result["telemetry"]["mixin"] == "planner_executor"
 
     def test_draft_plan_heuristic(self):
         """Test heuristic plan drafting."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Test with a simple goal
         steps = mixin._heuristic_draft_plan("test goal", max_steps=3)
@@ -144,7 +139,7 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_structure_plan(self):
         """Test plan structuring."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         steps = ["analyze the problem", "implement solution", "test the result"]
         structured = mixin._structure_plan(steps)
@@ -156,7 +151,7 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_exec_action_dry_run(self):
         """Test action execution in dry run mode."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Test dry run
         result = mixin._exec_action("test action", None, dry_run=True)
@@ -169,7 +164,7 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_exec_action_with_patterns(self):
         """Test action execution with pattern recognition."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Create a mock sandbox context with LLM resource
         mock_context = Mock()
@@ -197,26 +192,23 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_reactive_support_initialization(self):
         """Test that ReactiveSupportSolverMixin initializes correctly."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
-        assert mixin.MIXIN_NAME == "reactive_support"
         assert hasattr(mixin, "_context_engineer")
         assert hasattr(mixin, "_llm_resource")
 
     def test_solve_sync_with_empty_message(self):
         """Test solving with an empty message."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         result = mixin.solve_sync("")
 
         assert result["type"] == "ask"
         assert "describe the issue" in result["message"]
-        assert result["telemetry"]["mixin"] == "reactive_support"
 
     def test_preliminary_analysis(self):
         """Test preliminary analysis functionality."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         # Test critical severity
         analysis = mixin._preliminary_analysis("system crash data loss", {})
@@ -242,7 +234,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_infer_missing(self):
         """Test missing artifact inference."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         # Test with no artifacts
         missing = mixin._infer_missing(["logs", "config"], "test message", {})
@@ -261,7 +253,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_draft_checklist(self):
         """Test checklist drafting."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         preliminary = {"category": "performance", "severity": "high"}
         checklist = mixin._draft_checklist("performance issue", {}, {}, preliminary)
@@ -273,7 +265,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_canonical_key(self):
         """Test canonical key generation."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         assert mixin._canonical_key("log snippet") == "logs"
         assert mixin._canonical_key("config block") == "config"
@@ -283,7 +275,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_ref_titles(self):
         """Test reference title extraction."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         refs = [{"title": "Test Doc", "id": "doc1"}, {"name": "Another Doc", "id": "doc2"}, "Simple String", {"id": "doc3"}]
 

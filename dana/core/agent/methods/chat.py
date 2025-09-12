@@ -93,12 +93,12 @@ class ChatMixin:
         return response
 
     def _chat_impl(
-        self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 5
+        self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 30
     ) -> str:
         """Implementation of chat functionality. Returns the response string directly."""
         # Build conversation context from centralized state
         try:
-            conversation_context = self.state.timeline.get_conversation_context(
+            conversation_context = self.state.timeline.get_conversation_turns(
                 max_turns=max_context_turns
             )
         except Exception:

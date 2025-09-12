@@ -137,6 +137,56 @@ class ContextEngineer:
 
     # ===================== Factory Methods =====================
 
+    def engineer_context_from_registries(
+        self,
+        query: str,
+        workflow_registry: Any | None = None,
+        resource_registry: Any | None = None,
+        template: str | None = None,
+        **options,
+    ) -> str:
+        """Engineer optimized context using workflow and resource registries.
+
+        Args:
+            query: What the user is asking
+            workflow_registry: Optional workflow registry for workflow context
+            resource_registry: Optional resource registry for resource context
+            template: Template name (e.g., "problem_solving", "conversation")
+            **options: Additional options
+
+        Returns:
+            Optimized prompt string (XML or text format)
+        """
+        # Build context from registries
+        context = {}
+
+        # Add workflow context if registry is available
+        if workflow_registry:
+            workflow_score, workflow, workflow_metadata = workflow_registry.match_workflow_for_llm(query, {})
+            if workflow and workflow_metadata:
+                context.update({
+                    "workflow_current_workflow": workflow_metadata.get("name", ""),
+                    "workflow_workflow_state": workflow_metadata.get("status", ""),
+                    "workflow_metadata": workflow_metadata,
+                })
+
+        # Add resource context if registry is available
+        if resource_registry:
+            resource_score, resource, resource_metadata = resource_registry.match_resource_for_llm(query, {})
+            if resource and resource_metadata:
+                context.update({
+                    "available_resources": [resource_metadata.get("name", "")],
+                    "resource_metadata": resource_metadata,
+                })
+
+            # Pack resources for context
+            packed_resources = resource_registry.pack_resources_for_llm({})
+            if packed_resources:
+                context["packed_resources"] = {k: v.get_metadata() for k, v in packed_resources.items()}
+
+        # Use the standard context engineering with registry-derived context
+        return self.engineer_context(query, context, template, **options)
+
     @classmethod
     def from_agent(cls, agent: Any, **config) -> "ContextEngineer":
         """Create a context engineer for an agent (simplified - no resource discovery)."""

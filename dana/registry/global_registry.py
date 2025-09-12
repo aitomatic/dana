@@ -16,6 +16,7 @@ from .module_registry import ModuleRegistry
 from .resource_registry import ResourceRegistry
 from .struct_function_registry import StructFunctionRegistry
 from .type_registry import TypeRegistry
+from .workflow_registry import WorkflowRegistry
 
 
 class GlobalRegistry:
@@ -55,7 +56,7 @@ class GlobalRegistry:
         self.resources = ResourceRegistry()
 
         # Workflow instance registry
-        self.workflows = StructRegistry()
+        self.workflows = WorkflowRegistry()
 
     def clear_all(self) -> None:
         """Clear all registries (for testing)."""

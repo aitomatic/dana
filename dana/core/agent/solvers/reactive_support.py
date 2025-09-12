@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.workflow.workflow_system import WorkflowInstance
-from .base import BaseSolverMixin
+from .base import BaseSolver
+from .prompts import (
+    REACTIVE_SUPPORT_SYSTEM_PROMPT,
+    get_reactive_support_prompt_all_info_provided,
+    get_reactive_support_prompt_general,
+)
 
+if TYPE_CHECKING:
+    from dana.core.agent.agent_instance import AgentInstance
 
-class ReactiveSupportSolverMixin(BaseSolverMixin):
+class ReactiveSupportSolver(BaseSolver):
     """
     Conversational, case-based troubleshooting mixin.
 
@@ -25,7 +32,8 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
       - resource_index:    object with .pack(entities)->dict (docs/kb/specs)
     """
 
-    MIXIN_NAME = "reactive_support"
+    def __init__(self, agent: "AgentInstance"):
+        super().__init__(agent)
 
     def solve_sync(
         self,
@@ -158,7 +166,6 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
                     "mode": "support",
                     "diagnosis": sig_match.title or "Matched known issue",
                     "checklist": checklist,
-                    "telemetry": {"mixin": self.MIXIN_NAME, "selected": "signature", "score": float(sig_score)},
                     "artifacts": artifacts,
                 }
 
@@ -312,87 +319,15 @@ class ReactiveSupportSolverMixin(BaseSolverMixin):
         user_says_that_is_all = self._user_indicates_no_more_info(message)
 
         if user_says_that_is_all:
-            prompt = f"""You are a helpful technical support assistant. The user said: "{message}"
-
-The user has indicated they've provided all available information. Be understanding and helpful - provide the best advice you can with the information given.
-Don't ask for more information. Instead, give practical next steps and solutions based on what you know.
-Be empathetic and acknowledge that you understand they've shared what they can.
-
-Response:"""
+            prompt = get_reactive_support_prompt_all_info_provided(message)
         else:
-            prompt = f"""You are a helpful technical support assistant. The user said: "{message}"
+            prompt = get_reactive_support_prompt_general(message)
 
-Provide a helpful, direct response that addresses what the user is asking for.
-Be conversational and friendly. If this is a follow-up question, reference what was discussed earlier and provide next steps.
-If it's a question, answer it directly with actionable advice.
-If it's a greeting, respond appropriately.
-If it's a request for help, provide useful guidance based on the conversation context.
-
-Response:"""
-
-        try:
-            # Create LLM request
-            from dana.common.types import BaseRequest
-
-            request = BaseRequest(
-                arguments={
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ]
-                }
-            )
-
-            response = llm_resource.query_sync(request)
-
-            # Extract text from response
-            if hasattr(response, 'text'):
-                response_text = response.text
-            elif hasattr(response, 'content'):
-                # Handle BaseResponse with content field
-                content = response.content
-                if isinstance(content, dict):
-                    # Handle OpenAI-style response format
-                    if 'choices' in content and len(content['choices']) > 0:
-                        choice = content['choices'][0]
-                        if 'message' in choice and 'content' in choice['message']:
-                            response_text = choice['message']['content']
-                        else:
-                            response_text = str(choice)
-                    else:
-                        response_text = str(content)
-                else:
-                    response_text = str(content)
-            elif isinstance(response, str):
-                response_text = response
-            elif isinstance(response, dict):
-                # Handle dictionary response - look for common text fields
-                if 'text' in response:
-                    response_text = response['text']
-                elif 'content' in response:
-                    response_text = response['content']
-                elif 'response' in response:
-                    response_text = response['response']
-                elif 'message' in response:
-                    response_text = response['message']
-                else:
-                    # If it's a dict but no obvious text field, convert to string
-                    response_text = str(response)
-            else:
-                response_text = str(response)
-
-            if response_text is None:
-                return "I don't have access to an LLM resource to help with this question."
-
-            self._log_solver_phase("REACTIVE-SUPPORT-LLM", f"Extracted response text: {response_text[:100]}...", "🤖")
-            return response_text
-
-        except Exception as e:
-            print(f"⚠️ [REACTIVE-SUPPORT] LLM query failed: {e}")
-            return "I don't have access to an LLM resource to help with this question."
+        # Use the base class method that includes conversation context
+        return self._generate_llm_response_with_context(
+            prompt=prompt,
+            system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT
+        ) or "I'm here to help! Could you provide more details about what you'd like me to assist you with?"
 
     def _infer_missing(self, required_list: list[str], message: str, artifacts: dict[str, Any]) -> list[str]:
         """

@@ -9,10 +9,10 @@ from unittest.mock import Mock
 
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
-from dana.core.agent.methods.solvers import (
-    BaseSolverMixin,
-    PlannerExecutorSolverMixin,
-    ReactiveSupportSolverMixin,
+from dana.core.agent.solvers import (
+    BaseSolver,
+    PlannerExecutorSolver,
+    ReactiveSupportSolver,
     WorkflowCatalog,
     SignatureMatcher,
     ResourceIndex,
@@ -21,7 +21,7 @@ from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.workflow.workflow_system import WorkflowInstance
 
 
-class ConcreteSolverMixin(BaseSolverMixin):
+class ConcreteSolverMixin(BaseSolver):
     """Concrete implementation of BaseSolverMixin for testing."""
 
     def solve_sync(self, problem_or_workflow, artifacts=None, sandbox_context=None, **kwargs):
@@ -89,13 +89,11 @@ class TestBaseSolverMixin:
     def test_create_ask_response(self):
         """Test ask response creation."""
         mixin = ConcreteSolverMixin()
-        mixin.MIXIN_NAME = "test_mixin"
 
         response = mixin._create_ask_response("Test message")
 
         assert response["type"] == "ask"
         assert response["message"] == "Test message"
-        assert response["telemetry"]["mixin"] == "test_mixin"
 
         # Test with missing items
         response = mixin._create_ask_response("Test message", missing=["item1", "item2"])
@@ -104,7 +102,6 @@ class TestBaseSolverMixin:
     def test_create_answer_response(self):
         """Test answer response creation."""
         mixin = ConcreteSolverMixin()
-        mixin.MIXIN_NAME = "test_mixin"
 
         artifacts = {"test": "data"}
         response = mixin._create_answer_response("test_mode", artifacts, "test_selection", extra="value")
@@ -122,16 +119,14 @@ class TestPlannerExecutorSolverMixin:
 
     def test_planner_executor_initialization(self):
         """Test that PlannerExecutorSolverMixin initializes correctly."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
-        assert mixin.MIXIN_NAME == "planner_executor"
         assert hasattr(mixin, "_context_engineer")
         assert hasattr(mixin, "_llm_resource")
 
     def test_solve_sync_with_workflow_instance(self):
         """Test solving with a WorkflowInstance."""
-        mixin = PlannerExecutorSolverMixin()
-        mixin.MIXIN_NAME = "planner_executor"
+        mixin = PlannerExecutorSolver()
 
         # Mock workflow instance
         mock_workflow = Mock(spec=WorkflowInstance)
@@ -148,24 +143,20 @@ class TestPlannerExecutorSolverMixin:
         assert result["type"] == "answer"
         assert result["mode"] == "workflow"
         assert result["result"]["status"] == "ok"
-        assert result["telemetry"]["mixin"] == "planner_executor"
         assert result["telemetry"]["selected"] == "direct"
 
     def test_solve_sync_with_empty_goal(self):
         """Test solving with an empty goal string."""
-        mixin = PlannerExecutorSolverMixin()
-        mixin.MIXIN_NAME = "planner_executor"
+        mixin = PlannerExecutorSolver()
 
         result = mixin.solve_sync("")
 
         assert result["type"] == "ask"
         assert "goal to plan" in result["message"]
-        assert result["telemetry"]["mixin"] == "planner_executor"
 
     def test_solve_sync_with_known_workflow(self):
         """Test solving with a known workflow match."""
-        mixin = PlannerExecutorSolverMixin()
-        mixin.MIXIN_NAME = "planner_executor"
+        mixin = PlannerExecutorSolver()
 
         # Mock workflow catalog
         mock_workflow = Mock(spec=WorkflowInstance)
@@ -186,8 +177,7 @@ class TestPlannerExecutorSolverMixin:
 
     def test_solve_sync_with_planning(self):
         """Test solving with planning when no known workflow matches."""
-        mixin = PlannerExecutorSolverMixin()
-        mixin.MIXIN_NAME = "planner_executor"
+        mixin = PlannerExecutorSolver()
 
         # Mock the planning methods
         mixin._draft_plan = Mock(return_value=["step1", "step2", "step3"])
@@ -207,7 +197,7 @@ class TestPlannerExecutorSolverMixin:
 
     def test_draft_plan_heuristic(self):
         """Test heuristic plan drafting."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Test with a simple goal
         steps = mixin._heuristic_draft_plan("test goal", max_steps=3)
@@ -218,7 +208,7 @@ class TestPlannerExecutorSolverMixin:
 
     def test_structure_plan(self):
         """Test plan structuring."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         steps = ["analyze the problem", "implement solution", "test the result"]
         structured = mixin._structure_plan(steps)
@@ -230,7 +220,7 @@ class TestPlannerExecutorSolverMixin:
 
     def test_exec_action(self):
         """Test action execution."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Test dry run
         result = mixin._exec_action("test action", None, dry_run=True)
@@ -243,7 +233,7 @@ class TestPlannerExecutorSolverMixin:
 
     def test_exec_action_with_patterns(self):
         """Test action execution with pattern recognition."""
-        mixin = PlannerExecutorSolverMixin()
+        mixin = PlannerExecutorSolver()
 
         # Create a mock sandbox context with LLM resource
         mock_context = Mock(spec=SandboxContext)
@@ -271,27 +261,23 @@ class TestReactiveSupportSolverMixin:
 
     def test_reactive_support_initialization(self):
         """Test that ReactiveSupportSolverMixin initializes correctly."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
-        assert mixin.MIXIN_NAME == "reactive_support"
         assert hasattr(mixin, "_context_engineer")
         assert hasattr(mixin, "_llm_resource")
 
     def test_solve_sync_with_empty_message(self):
         """Test solving with an empty message."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         result = mixin.solve_sync("")
 
         assert result["type"] == "ask"
         assert "describe the issue" in result["message"]
-        assert result["telemetry"]["mixin"] == "reactive_support"
 
     def test_solve_sync_with_signature_match(self):
         """Test solving with a signature match."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         # Mock signature matcher
         mock_signature = Mock()
@@ -314,8 +300,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_solve_sync_with_known_workflow(self):
         """Test solving with a known diagnostic workflow."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         # Mock workflow catalog
         mock_workflow = Mock(spec=WorkflowInstance)
@@ -336,8 +321,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_solve_sync_with_missing_artifacts(self):
         """Test solving when artifacts are missing."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         # Test with missing artifacts - should return ask response
         # Provide no artifacts, missing both required ones
@@ -350,8 +334,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_solve_sync_with_generic_analysis(self):
         """Test solving with generic analysis."""
-        mixin = ReactiveSupportSolverMixin()
-        mixin.MIXIN_NAME = "reactive_support"
+        mixin = ReactiveSupportSolver()
 
         # Provide artifacts to avoid the "missing artifacts" path
         artifacts = {"logs": "test logs", "config": "test config"}
@@ -366,7 +349,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_preliminary_analysis(self):
         """Test preliminary analysis functionality."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         # Test critical severity
         analysis = mixin._preliminary_analysis("system crash data loss", {})
@@ -392,7 +375,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_infer_missing(self):
         """Test missing artifact inference."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         # Test with no artifacts
         missing = mixin._infer_missing(["logs", "config"], "test message", {})
@@ -411,7 +394,7 @@ class TestReactiveSupportSolverMixin:
 
     def test_draft_checklist(self):
         """Test checklist drafting."""
-        mixin = ReactiveSupportSolverMixin()
+        mixin = ReactiveSupportSolver()
 
         preliminary = {"category": "performance", "severity": "high"}
         checklist = mixin._draft_checklist("performance issue", {}, {}, preliminary)

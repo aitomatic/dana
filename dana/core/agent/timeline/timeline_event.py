@@ -105,12 +105,13 @@ class ConversationTurn(TimelineEvent):
         """Get formatted conversation context string.
 
         Returns:
-            Formatted string: "User: {input}\nAgent: {response}"
+            Formatted string: "User: {input}\nAgent: {response}\n[Timestamp: {timestamp}]"
         """
-        return f"User: {self.user_input}\nAgent: {self.agent_response}"
+        timestamp_str = self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        return f"User: {self.user_input}\nAgent: {self.agent_response}\n[Timestamp: {timestamp_str}]"
 
     @classmethod
-    def get_conversation_context(cls, timeline: "Timeline", max_turns: int = 3) -> str:
+    def get_conversation_turns(cls, timeline: "Timeline", max_turns: int = 30) -> str:
         """Get conversation context summary for LLM from a timeline.
 
         Args:

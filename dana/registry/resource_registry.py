@@ -9,7 +9,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dana.registry.instance_registry import StructRegistry
 
@@ -221,6 +221,121 @@ class ResourceRegistry(StructRegistry["ResourceInstance"]):
             for instance_id, resource in self._instances.items()
             if self._resource_status.get(instance_id) == "available"
         }
+
+    def get_resource_metadata_for_llm(self, instance_id: str) -> dict[str, Any] | None:
+        """Get LLM-friendly metadata from ResourceInstance.
+
+        Args:
+            instance_id: The resource instance ID
+
+        Returns:
+            Dictionary of metadata suitable for LLM decision-making, or None if not found
+        """
+        resource = self._instances.get(instance_id)
+        if not resource:
+            return None
+
+        # Extract metadata from the ResourceInstance's built-in fields
+        metadata = {
+            "instance_id": instance_id,
+            "name": getattr(resource, "name", ""),
+            "kind": getattr(resource, "kind", ""),
+            "resource_type": self._resource_types.get(instance_id, ""),
+            "provider": self._resource_providers.get(instance_id, ""),
+            "status": self._resource_status.get(instance_id, "unknown"),
+            "permissions": self._resource_permissions.get(instance_id, []),
+        }
+
+        # Add built-in metadata from ResourceInstance
+        if hasattr(resource, "get_metadata"):
+            metadata["builtin_metadata"] = resource.get_metadata()
+        if hasattr(resource, "resource_type"):
+            metadata["docstring"] = resource.resource_type.docstring
+            metadata["field_comments"] = resource.resource_type.field_comments
+            metadata["fields"] = resource.resource_type.fields
+
+        return metadata
+
+    def match_resource_for_llm(self, query: str, context: dict[str, Any]) -> tuple[float, ResourceInstance | None, dict[str, Any] | None]:
+        """Match resource for LLM decision-making.
+
+        Args:
+            query: The search query
+            context: Context entities for matching
+
+        Returns:
+            Tuple of (confidence_score, ResourceInstance or None, metadata or None)
+        """
+        query_lower = query.lower()
+        best_score = 0.0
+        best_resource = None
+        best_metadata = None
+
+        for instance_id, resource in self._instances.items():
+            metadata = self.get_resource_metadata_for_llm(instance_id)
+            if not metadata:
+                continue
+
+            # Calculate match score based on name, kind, type, and metadata
+            score = 0.0
+
+            # Match by name
+            if metadata.get("name", "").lower() in query_lower:
+                score += 0.8
+
+            # Match by kind
+            if metadata.get("kind", "").lower() in query_lower:
+                score += 0.7
+
+            # Match by resource type
+            if metadata.get("resource_type", "").lower() in query_lower:
+                score += 0.6
+
+            # Match by provider
+            if metadata.get("provider", "").lower() in query_lower:
+                score += 0.5
+
+            # Match by docstring
+            docstring = metadata.get("docstring", "")
+            if docstring and any(word in docstring.lower() for word in query_lower.split()):
+                score += 0.4
+
+            # Match by field comments
+            field_comments = metadata.get("field_comments", {})
+            for comment in field_comments.values():
+                if any(word in comment.lower() for word in query_lower.split()):
+                    score += 0.2
+
+            if score > best_score:
+                best_score = score
+                best_resource = resource
+                best_metadata = metadata
+
+        return best_score, best_resource, best_metadata
+
+    def pack_resources_for_llm(self, entities: dict[str, Any]) -> dict[str, ResourceInstance]:
+        """Pack resources for LLM context based on entities.
+
+        Args:
+            entities: Context entities for resource selection
+
+        Returns:
+            Dictionary of packed ResourceInstance objects
+        """
+        packed = {}
+
+        # Simple selection logic - can be enhanced with more sophisticated selection
+        for instance_id, resource in self._instances.items():
+            if self._should_include_resource_for_llm(instance_id, resource, entities):
+                packed[instance_id] = resource
+
+        return packed
+
+    def _should_include_resource_for_llm(self, instance_id: str, resource: ResourceInstance, entities: dict[str, Any]) -> bool:
+        """Determine if a resource should be included for LLM context based on entities."""
+        # Simple implementation - can be enhanced with more sophisticated selection
+        # For now, include all available resources
+        return self._resource_status.get(instance_id) == "available"
 
     def clear(self) -> None:
         """Clear all resources and their metadata."""

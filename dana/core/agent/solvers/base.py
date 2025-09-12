@@ -1,45 +1,28 @@
-from typing import Any, Protocol
+from typing import Any, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.workflow.workflow_system import WorkflowInstance
-from dana.frameworks.ctxeng import ContextEngineer
+from dana.registry import WorkflowRegistry, ResourceRegistry
+
+if TYPE_CHECKING:
+    from dana.core.agent.agent_instance import AgentInstance
 
 
 # ---------------------------
-# Formal Interfaces
+# Signature Matcher (kept for backward compatibility)
 # ---------------------------
-class WorkflowCatalog(Protocol):
-    """Protocol for workflow catalog implementations."""
+class SignatureMatcher:
+    """Strongly-typed signature matcher for issue patterns."""
 
-    def match(self, query: str, entities: dict[str, Any]) -> tuple[float, WorkflowInstance | None]:
-        """Match a query against known workflows.
+    def __init__(self):
+        self._patterns: dict[str, dict[str, Any]] = {}
 
-        Args:
-            query: The search query
-            entities: Context entities for matching
-
-        Returns:
-            Tuple of (confidence_score, WorkflowInstance or None)
-        """
-        ...
-
-    def expand_step(self, step_text: str, entities: dict[str, Any]) -> WorkflowInstance | None:
-        """Expand a step into a known workflow.
-
-        Args:
-            step_text: The step description
-            entities: Context entities for expansion
-
-        Returns:
-            WorkflowInstance if expansion successful, None otherwise
-        """
-        ...
-
-
-class SignatureMatcher(Protocol):
-    """Protocol for signature matcher implementations."""
+    def add_pattern(self, pattern_id: str, pattern_data: dict[str, Any]) -> None:
+        """Add a signature pattern."""
+        self._patterns[pattern_id] = pattern_data
 
     def match(self, text: str, entities: dict[str, Any]) -> tuple[float, dict[str, Any] | None]:
         """Match text against known issue signatures.
@@ -51,36 +34,45 @@ class SignatureMatcher(Protocol):
         Returns:
             Tuple of (confidence_score, match_data or None)
         """
-        ...
+        text_lower = text.lower()
+        best_score = 0.0
+        best_match = None
+
+        for pattern_data in self._patterns.values():
+            # Simple keyword matching - can be enhanced
+            keywords = pattern_data.get('keywords', [])
+            matches = sum(1 for keyword in keywords if keyword.lower() in text_lower)
+
+            if matches > 0:
+                score = min(0.3 + (matches * 0.2), 1.0)
+                if score > best_score:
+                    best_score = score
+                    best_match = pattern_data
+
+        return best_score, best_match
 
 
-class ResourceIndex(Protocol):
-    """Protocol for resource index implementations."""
-
-    def pack(self, entities: dict[str, Any]) -> dict[str, Any]:
-        """Pack resources based on entities.
-
-        Args:
-            entities: Context entities for resource selection
-
-        Returns:
-            Dictionary of packed resources (docs, kb, specs, etc.)
-        """
-        ...
-
-
-class BaseSolverMixin(ABC):
-    def __init__(self, *args, **kwargs):
+class BaseSolver(ABC):
+    def __init__(self, agent: "AgentInstance", *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._context_engineer = None
-        self._llm_resource: LLMResourceInstance | None = getattr(self, "_llm_resource", None)
+        self.agent = agent
+        self.llm_resource = self.agent._llm_resource
 
     @property
-    def context_engineer(self) -> ContextEngineer:
-        """Get or create the context engineer for this agent."""
-        if self._context_engineer is None:
-            self._context_engineer = ContextEngineer.from_agent(self)
-        return self._context_engineer
+    def llm_resource(self) -> "LLMResourceInstance":
+        """Get the LLM resource for this solver."""
+        if self._llm_resource is None:
+            self._llm_resource = self._agent._llm_resource
+
+        if self._llm_resource is None:
+            self._llm_resource = LLMResourceInstance.create_default_instance()
+
+        return self._llm_resource
+
+    @llm_resource.setter
+    def llm_resource(self, value: "LLMResourceInstance"):
+        """Set the LLM resource for this solver."""
+        self._llm_resource = value
 
     @abstractmethod
     def solve_sync(
@@ -122,11 +114,11 @@ class BaseSolverMixin(ABC):
     # ---------------------------
     # Common resource management
     # ---------------------------
-    def _attach_resource_pack(self, resource_index: ResourceIndex | None, entities: dict[str, Any], artifacts: dict[str, Any]) -> None:
-        """Attach resource pack to artifacts if resource index is available."""
-        if resource_index is not None:
+    def _attach_resource_pack(self, resource_registry: ResourceRegistry | None, entities: dict[str, Any], artifacts: dict[str, Any]) -> None:
+        """Attach resource pack to artifacts if resource registry is available."""
+        if resource_registry is not None:
             try:
-                resources = resource_index.pack(entities)
+                resources = resource_registry.pack_resources_for_llm(entities)
                 artifacts["_resources"] = resources
             except Exception:
                 artifacts.setdefault("_resources", {})
@@ -134,13 +126,13 @@ class BaseSolverMixin(ABC):
     # ---------------------------
     # Common dependency injection
     # ---------------------------
-    def _inject_dependencies(self, **kwargs: Any) -> tuple[WorkflowCatalog | None, ResourceIndex | None, SignatureMatcher | None]:
+    def _inject_dependencies(self, **kwargs: Any) -> tuple[WorkflowRegistry | None, ResourceRegistry | None, SignatureMatcher | None]:
         """Inject dependencies from kwargs or fall back to instance attributes."""
         # Use __dict__ to avoid triggering __getattr__ recursion
-        workflow_catalog = kwargs.get("workflow_catalog") or self.__dict__.get("workflow_catalog", None)
-        resource_index = kwargs.get("resource_index") or self.__dict__.get("resource_index", None)
+        workflow_registry = kwargs.get("workflow_registry") or self.__dict__.get("workflow_registry", None)
+        resource_registry = kwargs.get("resource_registry") or self.__dict__.get("resource_registry", None)
         signature_matcher = kwargs.get("signature_matcher") or self.__dict__.get("signature_matcher", None)
-        return workflow_catalog, resource_index, signature_matcher
+        return workflow_registry, resource_registry, signature_matcher
 
     # ---------------------------
     # Common workflow execution patterns
@@ -166,20 +158,19 @@ class BaseSolverMixin(ABC):
                 "type": "answer",
                 "mode": mode,
                 "result": result,
-                "telemetry": {"mixin": self.MIXIN_NAME, "selected": "direct"},
                 "artifacts": artifacts,
             }
         return None
 
     def _match_known_workflow(
-        self, query: str, entities: dict[str, Any], workflow_catalog: WorkflowCatalog | None, known_match_threshold: float = 0.75
+        self, query: str, entities: dict[str, Any], workflow_registry: WorkflowRegistry | None, known_match_threshold: float = 0.75
     ) -> tuple[float, WorkflowInstance | None]:
-        """Match a query against known workflows in the catalog."""
-        if workflow_catalog is None:
+        """Match a query against known workflows in the registry."""
+        if workflow_registry is None:
             return 0.0, None
 
         try:
-            score, wf = workflow_catalog.match(query, entities)
+            score, wf, metadata = workflow_registry.match_workflow_for_llm(query, entities)
             return float(score), wf if wf is not None and score >= known_match_threshold else None
         except Exception:
             return 0.0, None
@@ -223,7 +214,6 @@ class BaseSolverMixin(ABC):
         response = {
             "type": "ask",
             "message": message,
-            "telemetry": {"mixin": self.MIXIN_NAME},
         }
         if missing:
             response["missing"] = missing
@@ -235,7 +225,6 @@ class BaseSolverMixin(ABC):
         return {
             "type": "answer",
             "mode": mode,
-            "telemetry": {"mixin": self.MIXIN_NAME, "selected": selected},
             "artifacts": artifacts,
             **kwargs,
         }
@@ -266,11 +255,11 @@ class BaseSolverMixin(ABC):
 
         return message_lower in termination_commands
 
-    def _get_conversation_context(self, max_turns: int = 3) -> str:
+    def _get_conversation_context(self, max_turns: int = 30) -> str:
         """Get conversation context from agent timeline."""
         try:
             if hasattr(self, "state") and hasattr(self.state, "timeline"):
-                context_string = self.state.timeline.get_conversation_context(max_turns=max_turns)
+                context_string = self._agent.state.timeline.get_conversation_turns(max_turns=max_turns)
                 if context_string:
                     return f"\n\nPrevious conversation context:\n{context_string}"
         except Exception:
@@ -282,7 +271,7 @@ class BaseSolverMixin(ABC):
     # ---------------------------
     def _validate_llm_resource(self) -> bool:
         """Validate that LLM resource is available."""
-        return hasattr(self, "_llm_resource") and self._llm_resource is not None
+        return hasattr(self, "llm_resource") and self.llm_resource is not None
 
     def _create_llm_request(self, messages: list[dict], system_prompt: str | None = None) -> Any:
         """Create a BaseRequest for LLM interaction."""
@@ -319,7 +308,7 @@ class BaseSolverMixin(ABC):
         except Exception:
             return None
 
-    def _generate_llm_response_with_context(self, prompt: str, system_prompt: str | None = None, max_turns: int = 3) -> str | None:
+    def _generate_llm_response_with_context(self, prompt: str, system_prompt: str | None = None, max_turns: int = 30) -> str | None:
         """Generate LLM response with conversation context."""
         if not self._validate_llm_resource():
             return None
@@ -328,21 +317,39 @@ class BaseSolverMixin(ABC):
             # Build conversation context
             conversation_context = self._get_conversation_context(max_turns)
 
-            # Create full prompt with context
-            full_prompt = f"{prompt}{conversation_context}"
+            # Create enhanced system prompt with conversation context
+            enhanced_system_prompt = system_prompt or ""
+            if conversation_context:
+                enhanced_system_prompt = f"{enhanced_system_prompt}\n\n{conversation_context}"
 
-            # Create request
-            request = self._create_llm_request([{"role": "user", "content": full_prompt}], system_prompt)
+            # Debug prints
+            print("=" * 80)
+            print("🔧 [DEBUG] LLM REQUEST DETAILS")
+            print("=" * 80)
+            print(f"📋 SYSTEM_PROMPT:\n{enhanced_system_prompt}")
+            print("-" * 80)
+            print(f"👤 USER_PROMPT:\n{prompt}")
+            print("-" * 80)
+
+            # Create request with clean user message and enhanced system prompt
+            request = self._create_llm_request([{"role": "user", "content": prompt}], enhanced_system_prompt)
 
             # Query LLM
-            if self._llm_resource is None:
+            if self._agent._llm_resource is None:
                 return None
-            response = self._llm_resource.query_sync(request)
+            response = self._agent._llm_resource.query_sync(request)
 
             # Extract content
-            return self._extract_llm_response_content(response)
+            llm_response = self._extract_llm_response_content(response)
 
-        except Exception:
+            # Debug print for response
+            print(f"🤖 LLM_RESPONSE:\n{llm_response}")
+            print("=" * 80)
+
+            return llm_response
+
+        except Exception as e:
+            print(f"❌ [DEBUG] LLM request failed: {e}")
             return None
 
     # ---------------------------
