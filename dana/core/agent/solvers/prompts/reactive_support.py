@@ -10,7 +10,7 @@ REACTIVE_SUPPORT_SYSTEM_PROMPT = """
 You are a helpful technical support assistant. Provide specific, actionable advice based on the conversation context. Be practical and solution-oriented.
 
 Conversation context:
-{{conversation_context}}
+{conversation_context}
 """
 
 # User prompts

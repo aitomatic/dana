@@ -28,7 +28,6 @@ from .methods import (
     LoggingMixin,
     MemoryMixin,
     ReasonMixin,
-    SolvingMixin,
 )
 from .utils import AgentCallbackMixin
 
@@ -55,7 +54,6 @@ class AgentInstance(
     MemoryMixin,
     ReasonMixin,
     ConverseMixin,
-    SolvingMixin,
 ):
     """Agent struct instance with built-in agent capabilities.
 
@@ -101,22 +99,25 @@ class AgentInstance(
         # Initialize TUI metrics
         self._metrics = {
             "is_running": False,
-            "current_step": "initialized",
-            "total_steps": 0,
-            "success_rate": 0.0,
-            "average_response_time": 0.0,
-            "conversation_turns": 0,
-            "memory_usage": 0,
-            "last_updated": None,
+            "current_step": "idle",
+            "elapsed_time": 0.0,
+            "tokens_per_sec": 0.0,
         }
 
-        # Call parent constructor
-        super().__init__(struct_type, values)
+
+        # Initialize the base StructInstance
+        from dana.registry import AGENT_REGISTRY
+
+        super().__init__(struct_type, values, AGENT_REGISTRY)
+
+        self._initialize_agent_resources()
+
+        AgentCallbackMixin.__init__(self)
+        ConverseMixin.__init__(self)
 
     def __post_init__(self):
-        """Post-initialization setup."""
-        # Initialize agent resources
-        self._initialize_agent_resources()
+        """Post-initialize the agent instance."""
+        super().__post_init__()
 
     # ============================================================================
     # CORE PROPERTIES
@@ -124,51 +125,243 @@ class AgentInstance(
 
     @property
     def name(self) -> str:
-        """Get the agent's name."""
-        return self.agent_type.name
+        """Get the agent's name for TUI compatibility."""
+        # Return the instance name field value, not the struct type name
+        return self._values.get("name", "unnamed_agent")
 
     @property
     def agent_type(self) -> AgentType:
         """Get the agent type."""
-        return self._type
+        return self.__struct_type__  # type: ignore
 
     @property
     def _memory(self):
-        """Get the agent's memory system (backward compatibility)."""
-        return self.state.mind.memory if self.state.mind else None
+        """Legacy memory access - delegates to centralized working memory object."""
+        return self.state.mind.memory.working
 
     @_memory.setter
     def _memory(self, value) -> None:
-        """Set the agent's memory system (backward compatibility)."""
-        if self.state.mind:
-            self.state.mind.memory = value
+        """Legacy memory setter - not supported, use centralized state directly."""
+        raise NotImplementedError("Use self.state.mind.memory.working directly instead of setting _memory")
+
+    # ============================================================================
+    # STATIC METHODS
+    # ============================================================================
+
+    @staticmethod
+    def get_default_dana_methods() -> dict[str, Any]:
+        """Get the default agent methods that all agents should have.
+
+        This method defines what the standard agent methods are,
+        keeping the definition close to where they're implemented.
+        """
+
+        return {
+            "chat": AgentInstance.chat,
+            "converse": AgentInstance.converse,
+            "debug": AgentInstance.debug,
+            "error": AgentInstance.error,
+            "info": AgentInstance.info,
+            "input": AgentInstance.input,
+            "llm": AgentInstance.llm,
+            "log": AgentInstance.log,
+            "plan": AgentInstance.plan,
+            "reason": AgentInstance.reason,
+            "recall": AgentInstance.recall,
+            "remember": AgentInstance.remember,
+            "solve": AgentInstance.solve,
+            "warning": AgentInstance.warning,
+        }
+
+    @staticmethod
+    def get_default_agent_fields() -> dict[str, str | dict[str, Any]]:
+        """Get the default fields that all agents should have.
+
+        This method defines what the standard agent fields are,
+        keeping the definition close to where they're used.
+        """
+        return {
+            "state": {
+                "type": "str",
+                "default": "CREATED",
+                "comment": "Current state of the agent",
+            }
+        }
+
+    # ============================================================================
+    # CORE AGENT OPERATIONS
+    # ============================================================================
+
+    def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Asynchronous agent LLM method."""
+        return PromiseFactory.create_promise(computation=lambda: self.llm_sync(request, sandbox_context, **kwargs))
+
+    def converse(self, io: IOAdapter = CLIAdapter(), sandbox_context: SandboxContext | None = None) -> Any:
+        """ Converse is always synchronous """
+        return self.converse_sync(io, sandbox_context=sandbox_context)
+
+    def plan(
+        self,
+        problem_or_workflow: str | WorkflowInstance,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context: SandboxContext | None = None,
+        **kwargs,
+    ) -> Any:
+        """Asynchronous agent plan method."""
+        return PromiseFactory.create_promise(computation=lambda: self.plan_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs))
+
+    def solve(
+        self,
+        problem_or_workflow: str | WorkflowInstance,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context: SandboxContext | None = None,
+        **kwargs,
+    ) -> Any:
+        """Asynchronous agent solve method."""
+        return PromiseFactory.create_promise(computation=lambda: self.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs))
+
+    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
+        """Synchronous agent solve method."""
+        assert self._simple_helpful_solver is not None
+        return self._simple_helpful_solver.solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
+
+    # ============================================================================
+    # COMMUNICATION METHODS
+    # ============================================================================
+
+    def chat(
+        self, message: str, context: dict | None = None, max_context_turns: int = 5, sandbox_context: SandboxContext | None = None
+    ) -> Any:
+        """Asynchronous agent chat method."""
+        return PromiseFactory.create_promise(computation=lambda: self.chat_sync(message, context, max_context_turns, sandbox_context))
+
+    def input(self, request: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None) -> Any:
+        """Asynchronous agent input method."""
+        return PromiseFactory.create_promise(computation=lambda: self.input_sync(request, sandbox_context, problem_context))
+
+    def answer(self, answer: str, sandbox_context: SandboxContext | None = None):
+        """Execute agent answer method."""
+        print(answer)
+
+    # ============================================================================
+    # MEMORY METHODS
+    # ============================================================================
+
+    def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent memory storage method."""
+        return PromiseFactory.create_promise(computation=lambda: self.remember_sync(key, value, sandbox_context))
+
+    def recall(self, key: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent memory retrieval method."""
+        return PromiseFactory.create_promise(computation=lambda: self.recall_sync(key, sandbox_context))
+
+    # ============================================================================
+    # REASONING METHODS
+    # ============================================================================
+
+    def reason(
+        self,
+        premise: str,
+        sandbox_context: SandboxContext | None = None,
+        problem_context: dict | None = None,
+        system_message: str | None = None,
+    ) -> Any:
+        """Asynchronous agent reasoning method."""
+        return PromiseFactory.create_promise(
+            computation=lambda: self.reason_sync(premise, sandbox_context, problem_context, system_message)
+        )
+
+    # ============================================================================
+    # LOGGING METHODS
+    # ============================================================================
+
+    def log(self, message: str, level: str = "INFO", sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.log_sync(message, level, sandbox_context))
+
+    def info(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent info logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.info_sync(message, sandbox_context))
+
+    def warning(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent warning logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.warning_sync(message, sandbox_context))
+
+    def debug(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent debug logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.debug_sync(message, sandbox_context))
+
+    def error(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
+        """Asynchronous agent error logging method."""
+        return PromiseFactory.create_promise(computation=lambda: self.error_sync(message, sandbox_context))
+
+    # ============================================================================
+    # METRICS AND STATISTICS
+    # ============================================================================
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Get current agent metrics for TUI display.
+
+        Returns:
+            Dictionary containing:
+            - is_running: bool - Whether agent is currently processing
+            - current_step: str - Current processing step
+            - elapsed_time: float - Time elapsed for current operation
+            - tokens_per_sec: float - Token processing rate
+        """
+        return self._metrics.copy()
+
+    def update_metric(self, key: str, value: Any) -> None:
+        """Update a specific metric value.
+
+        Args:
+            key: The metric key to update
+            value: The new value for the metric
+        """
+        if key in self._metrics:
+            self._metrics[key] = value
+
+    def get_conversation_stats(self) -> dict:
+        """Get conversation statistics for this agent."""
+        try:
+            # Get conversation events from timeline
+            conversations = self.state.timeline.get_events_by_type("conversation")
+            timeline_summary = self.state.timeline.get_timeline_summary()
+
+            return {
+                "total_messages": len(conversations),
+                "total_turns": len(conversations),
+                "active_turns": len(conversations),
+                "summary_count": 0,  # Not implemented in new system yet
+                "session_count": 1,  # Timeline doesn't track sessions yet
+                "conversation_id": getattr(self.state.timeline, 'agent_id', 'unknown'),
+                "created_at": timeline_summary.get("first_event", ""),
+                "updated_at": timeline_summary.get("last_event", ""),
+            }
+        except Exception:
+            return {
+                "error": "Timeline not available",
+                "total_messages": 0,
+                "total_turns": 0,
+                "active_turns": 0,
+                "summary_count": 0,
+                "session_count": 0,
+            }
+
+    def clear_conversation_memory(self) -> bool:
+        """Clear the conversation memory for this agent."""
+        try:
+            # Clear conversation events from timeline
+            if hasattr(self.state.timeline, 'conversation_events'):
+                # Clear all conversation events
+                self.state.timeline.conversation_events.clear()
+            return True
+        except Exception:
+            return False
 
     # ============================================================================
     # RESOURCE MANAGEMENT
     # ============================================================================
-
-    @property
-    def llm_resource(self):
-        """Get the LLM resource for this agent."""
-        if self._llm_resource is None:
-            self._llm_resource = self._get_llm_resource()
-        return self._llm_resource
-
-    @property
-    def prompt_engineer(self):
-        """Get the prompt engineer for this agent."""
-        if self._prompt_engineer is None:
-            from dana.frameworks.prteng import PromptEngineer
-            self._prompt_engineer = PromptEngineer(llm_resource=self._llm_resource)
-        return self._prompt_engineer
-
-    @property
-    def context_engineer(self):
-        """Get the context engineer for this agent."""
-        if self._context_engineer is None:
-            from dana.frameworks.ctxeng import ContextEngineer
-            self._context_engineer = ContextEngineer.from_agent(self)
-        return self._context_engineer
 
     def _get_llm_resource(self, sandbox_context: SandboxContext | None = None):
         """Get the LLM resource for this agent.
@@ -199,6 +392,42 @@ class AgentInstance(
         if self._llm_resource is None:
             self._initialize_llm_resource()
         return self._llm_resource
+
+    @property
+    def llm_resource(self):
+        """Get the LLM resource for this agent."""
+        if self._llm_resource is None:
+            self._llm_resource = self._get_llm_resource()
+        return self._llm_resource
+
+    @property
+    def prompt_engineer(self):
+        """Get the prompt engineer for this agent."""
+        if self._prompt_engineer is None:
+            from dana.frameworks.prteng import PromptEngineer
+            # Ensure we have a proper LLM resource
+            llm_res = self._llm_resource
+            if llm_res is None:
+                llm_res = self._get_llm_resource()
+            # Type check to ensure we have the right type
+            if llm_res is not None and hasattr(llm_res, 'kind') and llm_res.kind == 'llm':
+                # Cast to the expected type for type checker
+                from typing import cast
+                from dana.core.resource.builtins.llm_resource_type import LLMResourceInstance
+                llm_resource = cast(LLMResourceInstance, llm_res)
+                self._prompt_engineer = PromptEngineer(llm_resource=llm_resource)
+            else:
+                # Fallback to None if not a proper LLM resource
+                self._prompt_engineer = PromptEngineer(llm_resource=None)
+        return self._prompt_engineer
+
+    @property
+    def context_engineer(self):
+        """Get the context engineer for this agent."""
+        if self._context_engineer is None:
+            from dana.frameworks.ctxeng import ContextEngineer
+            self._context_engineer = ContextEngineer.from_agent(self)
+        return self._context_engineer
 
     def _initialize_llm_resource(self):
         """Initialize LLM resource from agent's config if not already done."""
@@ -250,310 +479,140 @@ class AgentInstance(
             self._llm_resource.start()
 
     def _initialize_agent_resources(self):
-        """Initialize all agent resources."""
-        # Initialize LLM resource
-        self._initialize_llm_resource()
+        """Initialize all agent resources that need explicit initialization."""
+        try:
+            # Initialize LLM resource
+            self._initialize_llm_resource()
 
-        # Initialize solvers
-        self._initialize_solvers()
+            # Initialize solvers
+            self._initialize_solvers()
 
-        # Initializing engineering resources
-        self._corral_engineer = CORRALEngineer()
-        self._prompt_engineer = PromptEngineer()
-        self._context_engineer = ContextEngineer()
+            # Initializing engineering resources
+            self._corral_engineer = CORRALEngineer()
+            self._prompt_engineer = PromptEngineer()
+            self._context_engineer = ContextEngineer()
 
-        # Update metrics to indicate agent is ready
-        self.update_metric("is_running", False)
-        self.update_metric("current_step", "initialized")
+            # Update metrics to indicate agent is ready
+            self.update_metric("is_running", False)
+            self.update_metric("current_step", "initialized")
+
+            # Log initialization
+            self.log_sync("Agent resources initialized")
+
+        except Exception as e:
+            # Log initialization error but don't fail completely
+            import logging
+
+            logging.error(f"Failed to initialize agent resources for {self.name}: {e}")
+            print(f"Failed to initialize agent resources for {self.name}: {e}")
+            # Update metrics to indicate initialization failure
+            self.update_metric("current_step", "initialization_failed")
 
     def _initialize_solvers(self):
-        """Initialize all available solvers."""
-        print(f"Initializing solvers for {self.name}")
-        self._planner_executor_solver = PlannerExecutorSolver(self)
-        self._reactive_support_solver = ReactiveSupportSolver(self)
-        self._simple_helpful_solver = SimpleHelpfulSolver(self)
-        print(f"Solvers initialized for {self.name}")
+        """Initialize all solvers that need explicit initialization."""
+        if self._simple_helpful_solver is None:
+            print(f"Initializing solvers for {self.name}")
+            self._planner_executor_solver = PlannerExecutorSolver(self)
+            self._reactive_support_solver = ReactiveSupportSolver(self)
+            self._simple_helpful_solver = SimpleHelpfulSolver(self)
+            print(f"Solvers initialized for {self.name}")
 
     def _cleanup_agent_resources(self):
-        """Clean up all agent resources."""
-        # Clean up LLM resource
-        if self._llm_resource is not None:
-            try:
-                if hasattr(self._llm_resource, "stop"):
+        """Cleanup all agent resources that need explicit cleanup."""
+        try:
+            self._planner_executor_solver = None
+            self._reactive_support_solver = None
+            self._simple_helpful_solver = None
+
+            self._context_engineer = None
+            self._corral_engineer = None
+            self._prompt_engineer = None
+
+            # Clear conversation memory
+            self.clear_conversation_memory()
+
+            # Stop LLM resource if it was initialized
+            if self._llm_resource is not None:
+                try:
                     self._llm_resource.stop()
-            except Exception as e:
-                print(f"Warning: Error stopping LLM resource: {e}")
+                except Exception as e:
+                    import logging
 
-            try:
-                if hasattr(self._llm_resource, "cleanup"):
+                    logging.warning(f"Failed to stop LLM resource for {self.name}: {e}")
+
+                # Cleanup LLM resource
+                try:
                     self._llm_resource.cleanup()
-            except Exception as e:
-                print(f"Warning: Error cleaning up LLM resource: {e}")
+                except Exception as e:
+                    import logging
 
-            try:
+                    logging.warning(f"Failed to cleanup LLM resource for {self.name}: {e}")
+
                 self._llm_resource = None
-            except Exception as e:
-                print(f"Warning: Error setting LLM resource to None: {e}")
 
-        # Clean up engineering resources
-        self._context_engineer = None
-        self._corral_engineer = None
-        self._prompt_engineer = None
-
-        # Clean up solvers
-        self._planner_executor_solver = None
-        self._reactive_support_solver = None
-        self._simple_helpful_solver = None
-
-        # Clear conversation memory
-        self.clear_conversation_memory()
-
-        # Update metrics
-        self.update_metric("is_running", False)
-        self.update_metric("current_step", "cleaned_up")
-
-    # ============================================================================
-    # CORE AGENT OPERATIONS
-    # ============================================================================
-
-    def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
-        """Call the LLM with a request."""
-        return self.llm_sync(request, sandbox_context, **kwargs)
-
-    def converse(self, io: IOAdapter = CLIAdapter(), sandbox_context: SandboxContext | None = None) -> Any:
-        """Start a conversation loop with the agent."""
-        return super().converse(io, sandbox_context)
-
-    def plan(
-        self,
-        problem_or_workflow: str | WorkflowInstance,
-        artifacts: dict[str, Any] | None = None,
-        sandbox_context: SandboxContext | None = None,
-        **kwargs,
-    ) -> WorkflowInstance:
-        """Plan a solution for the given problem."""
-        return super().plan(problem_or_workflow, artifacts, sandbox_context, **kwargs)
-
-    def solve(
-        self,
-        problem_or_workflow: str | WorkflowInstance,
-        artifacts: dict[str, Any] | None = None,
-        sandbox_context: SandboxContext | None = None,
-        **kwargs,
-    ) -> Any:
-        """Solve a problem or execute a workflow."""
-        return super().solve(problem_or_workflow, artifacts, sandbox_context, **kwargs)
-
-    def solve_sync(self, problem_or_workflow: str | WorkflowInstance, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
-        """Synchronous solve method."""
-        return super().solve_sync(problem_or_workflow, artifacts, sandbox_context, **kwargs)
-
-    def chat(
-        self,
-        message: str,
-        sandbox_context: SandboxContext | None = None,
-        **kwargs,
-    ) -> str:
-        """Chat with the agent."""
-        return super().chat(message, sandbox_context, **kwargs)
-
-    def input(self, request: str, sandbox_context: SandboxContext | None = None, problem_context: ProblemContext | None = None) -> Any:
-        """Process input from the user."""
-        return super().input(request, sandbox_context, problem_context)
-
-    def answer(self, answer: str, sandbox_context: SandboxContext | None = None):
-        """Provide an answer to the user."""
-        return super().answer(answer, sandbox_context)
-
-    def reason(
-        self,
-        premise: str,
-        options: list[str] | None = None,
-        sandbox_context: SandboxContext | None = None,
-        **kwargs,
-    ) -> Any:
-        """Reason about a premise with optional options."""
-        return super().reason(premise, options, sandbox_context, **kwargs)
-
-    # ============================================================================
-    # MEMORY AND PERSISTENCE
-    # ============================================================================
-
-    def remember(self, key: str, value: Any, sandbox_context: SandboxContext | None = None) -> Any:
-        """Remember a key-value pair."""
-        return super().remember(key, value, sandbox_context)
-
-    def recall(self, key: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Recall a value by key."""
-        return super().recall(key, sandbox_context)
-
-    def clear_conversation_memory(self) -> bool:
-        """Clear the conversation memory."""
-        try:
-            # Clear the timeline
-            if self.state.timeline:
-                self.state.timeline.clear_events()
-
-            # Clear other memory components
-            if self.state.mind and self.state.mind.memory:
-                self.state.mind.memory.clear()
-
-            # Update metrics
-            self.update_metric("conversation_turns", 0)
-            self.update_metric("memory_usage", 0)
-
-            return True
-        except Exception as e:
-            print(f"Error clearing conversation memory: {e}")
-            return False
-
-    def get_conversation_stats(self) -> dict:
-        """Get conversation statistics."""
-        stats = {
-            "total_turns": 0,
-            "user_messages": 0,
-            "agent_responses": 0,
-            "conversation_duration": 0,
-            "average_response_time": 0,
-            "memory_usage": 0,
-        }
-
-        try:
-            if self.state.timeline:
-                events = self.state.timeline.get_events()
-                conversation_events = [e for e in events if e.event_type == "conversation_turn"]
-
-                stats["total_turns"] = len(conversation_events)
-                stats["user_messages"] = len([e for e in conversation_events if hasattr(e, "user_input")])
-                stats["agent_responses"] = len([e for e in conversation_events if hasattr(e, "agent_response")])
-
-                if conversation_events:
-                    first_event = conversation_events[0]
-                    last_event = conversation_events[-1]
-                    duration = (last_event.timestamp - first_event.timestamp).total_seconds()
-                    stats["conversation_duration"] = duration
-                    stats["average_response_time"] = duration / len(conversation_events) if conversation_events else 0
-
-            # Get memory usage from state
-            if self.state.mind and self.state.mind.memory:
-                memory_status = self.state.mind.memory.get_status()
-                stats["memory_usage"] = memory_status.get("total_items", 0)
+            # Update metrics to indicate cleanup is complete
+            self.update_metric("current_step", "cleaned_up")
 
         except Exception as e:
-            print(f"Error getting conversation stats: {e}")
+            import logging
 
-        return stats
+            logging.error(f"Failed to cleanup agent resources for {self.name}: {e}")
 
-    def get_agent_id(self) -> str:
-        """Get a unique identifier for this agent instance."""
-        agent_name = self.name if hasattr(self, "name") else "unnamed_agent"
-        safe_name = "".join(c for c in agent_name if c.isalnum() or c in ("-", "_")).rstrip()
-        # Use a more stable ID based on agent type and name rather than object ID
-        return f"{safe_name}_{hash(str(self.agent_type))}"
+            # Clear conversation memory (now handled by centralized state)
+            try:
+                self.state.mind.memory.conversation.clear()
+            except Exception as mem_e:
+                import logging
 
-    def get_agent_base_path(self) -> Path:
-        """Get the base path for this agent's persistence."""
-        return Path(f"~/.dana/agents/{self.get_agent_id()}").expanduser()
+                logging.warning(f"Failed to clear conversation memory for {self.name}: {mem_e}")
 
-    def enable_persistence(self, base_path: str | None = None) -> None:
-        """Enable persistence for this agent."""
-        if base_path:
-            agent_path = Path(base_path)
-        else:
-            agent_path = self.get_agent_base_path()
+            # Clear working memory (now handled by centralized state)
+            try:
+                self.state.mind.memory.working.clear()
+            except Exception as mem_e:
+                import logging
 
-        # Enable persistence in the centralized state
-        self.state.enable_persistence(agent_path)
+                logging.warning(f"Failed to clear working memory for {self.name}: {mem_e}")
 
-    def save_agent_metadata(self, agent_path: Path | None = None) -> None:
-        """Save agent metadata to disk."""
-        if agent_path is None:
-            agent_path = self.get_agent_base_path()
-
-        metadata = {
-            "agent_type": self.agent_type.name,
-            "agent_id": self.get_agent_id(),
-            "created_at": self._metrics.get("created_at"),
-            "last_updated": self._metrics.get("last_updated"),
-            "version": "1.0",
-        }
-
-        metadata_path = agent_path / "metadata.json"
-        metadata_path.parent.mkdir(parents=True, exist_ok=True)
-
-        import json
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f, indent=2)
-
-    def save_session(self, session_name: str) -> None:
-        """Save the current session state."""
-        try:
-            agent_path = self.get_agent_base_path()
-            sessions_path = agent_path / "sessions"
-            sessions_path.mkdir(parents=True, exist_ok=True)
-
-            session_data = {
-                "session_name": session_name,
-                "timestamp": self._metrics.get("last_updated"),
-                "conversation_stats": self.get_conversation_stats(),
-                "agent_state": self.state.get_state_summary(),
+            # Reset all metrics to default values
+            self._metrics = {
+                "is_running": False,
+                "current_step": "cleaned_up",
+                "elapsed_time": 0.0,
+                "tokens_per_sec": 0.0,
             }
 
-            session_file = sessions_path / f"{session_name}.json"
-            import json
-            with open(session_file, "w") as f:
-                json.dump(session_data, f, indent=2)
+            # Log cleanup
+            self.log_sync("Agent resources cleaned up")
 
-            print(f"Session '{session_name}' saved successfully")
+    # ============================================================================
+    # CONTEXT MANAGEMENT
+    # ============================================================================
 
-        except Exception as e:
-            print(f"Error saving session: {e}")
+    def __enter__(self):
+        """Context manager entry - initialize agent resources.
 
-    def list_sessions(self) -> list[str]:
-        """List all saved sessions."""
-        try:
-            agent_path = self.get_agent_base_path()
-            sessions_path = agent_path / "sessions"
+        Returns:
+            self: The agent instance for use in with statement
+        """
+        self._context_manager_initialized = True
+        self._initialize_agent_resources()
+        return self
 
-            if not sessions_path.exists():
-                return []
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - cleanup agent resources.
 
-            sessions = []
-            for session_file in sessions_path.glob("*.json"):
-                sessions.append(session_file.stem)
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
+        """
+        self._cleanup_agent_resources()
+        # Don't suppress exceptions - let them propagate
 
-            return sorted(sessions)
-
-        except Exception as e:
-            print(f"Error listing sessions: {e}")
-            return []
-
-    def restore_session(self, session_name: str) -> bool:
-        """Restore a saved session."""
-        try:
-            agent_path = self.get_agent_base_path()
-            sessions_path = agent_path / "sessions"
-            session_file = sessions_path / f"{session_name}.json"
-
-            if not session_file.exists():
-                print(f"Session '{session_name}' not found")
-                return False
-
-            import json
-            with open(session_file, "r") as f:
-                session_data = json.load(f)
-
-            # Restore conversation stats
-            stats = session_data.get("conversation_stats", {})
-            self.update_metric("conversation_turns", stats.get("total_turns", 0))
-            self.update_metric("memory_usage", stats.get("memory_usage", 0))
-
-            print(f"Session '{session_name}' restored successfully")
-            return True
-
-        except Exception as e:
-            print(f"Error restoring session: {e}")
-            return False
+    def _create_sandbox_context(self) -> SandboxContext:
+        """Create a sandbox context for workflow execution."""
+        return SandboxContext()
 
     # ============================================================================
     # SOLVER MANAGEMENT
@@ -561,162 +620,191 @@ class AgentInstance(
 
     def enable_planner_executor_solver(
         self,
-        workflow_catalog: Any | None = None,
-        resource_index: Any | None = None,
-        **kwargs,
+        workflow_registry: Any | None = None,
+        resource_registry: Any | None = None,
     ) -> "AgentInstance":
-        """Enable the planner-executor solver with optional dependencies."""
-        if self._planner_executor_solver is None:
-            self._planner_executor_solver = PlannerExecutorSolver(self)
+        """Enable planner-executor solver capabilities on this agent.
 
-        # Set dependencies if provided
-        if workflow_catalog is not None:
-            self._planner_executor_solver.workflow_catalog = workflow_catalog
-        if resource_index is not None:
-            self._planner_executor_solver.resource_index = resource_index
+        Args:
+            workflow_registry: Optional workflow registry for known workflow matching
+            resource_registry: Optional resource registry for resource pack attachment
 
-        # Set as the primary solver
-        self._primary_solver = self._planner_executor_solver
+        Returns:
+            Self for method chaining
+        """
+        # Set up dependencies
+        if workflow_registry:
+            self.workflow_registry = workflow_registry
+        if resource_registry:
+            self.resource_registry = resource_registry
 
         return self
 
     def enable_reactive_support_solver(
         self,
         signature_matcher: Any | None = None,
-        workflow_catalog: Any | None = None,
-        resource_index: Any | None = None,
-        **kwargs,
+        workflow_registry: Any | None = None,
+        resource_registry: Any | None = None,
     ) -> "AgentInstance":
-        """Enable the reactive support solver with optional dependencies."""
-        if self._reactive_support_solver is None:
-            self._reactive_support_solver = ReactiveSupportSolver(self)
+        """Enable reactive support solver capabilities on this agent.
 
-        # Set dependencies if provided
-        if signature_matcher is not None:
-            self._reactive_support_solver.signature_matcher = signature_matcher
-        if workflow_catalog is not None:
-            self._reactive_support_solver.workflow_catalog = workflow_catalog
-        if resource_index is not None:
-            self._reactive_support_solver.resource_index = resource_index
+        Args:
+            signature_matcher: Optional signature matcher for known issue patterns
+            workflow_registry: Optional workflow registry for diagnostic workflows
+            resource_registry: Optional resource registry for resource pack attachment
 
-        # Set as the primary solver
-        self._primary_solver = self._reactive_support_solver
+        Returns:
+            Self for method chaining
+        """
+        # Set up dependencies
+        if signature_matcher:
+            self.signature_matcher = signature_matcher
+        if workflow_registry:
+            self.workflow_registry = workflow_registry
+        if resource_registry:
+            self.resource_registry = resource_registry
 
         return self
 
     # ============================================================================
-    # LOGGING AND METRICS
+    # PERSISTENCE METHODS
     # ============================================================================
 
-    def log(self, message: str, level: str = "INFO", sandbox_context: SandboxContext | None = None) -> Any:
-        """Log a message."""
-        return super().log(message, level, sandbox_context)
+    def get_agent_id(self) -> str:
+        """Get a unique identifier for this agent instance."""
+        # Use the agent name if available, otherwise generate a unique ID
+        agent_name = self.name if hasattr(self, "name") else "unnamed_agent"
+        # Create a safe filename from the agent name
+        safe_name = "".join(c for c in agent_name if c.isalnum() or c in ("-", "_")).rstrip()
+        # Use a more stable ID based on agent type and name rather than object ID
+        # This allows multiple instances of the same agent type to share persistence
+        return f"{safe_name}_{hash(str(self.agent_type))}"
 
-    def info(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Log an info message."""
-        return super().info(message, sandbox_context)
+    def get_agent_base_path(self) -> Path:
+        """Get the base persistence path for this agent."""
+        agent_id = self.get_agent_id()
+        return Path(f"~/.dana/agents/{agent_id}").expanduser()
 
-    def warning(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Log a warning message."""
-        return super().warning(message, sandbox_context)
+    def enable_persistence(self, base_path: str | None = None) -> None:
+        """Enable persistence for this agent and all its state components.
 
-    def debug(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Log a debug message."""
-        return super().debug(message, sandbox_context)
+        Args:
+            base_path: Custom base path for persistence (optional)
+        """
+        if base_path:
+            agent_path = Path(base_path).expanduser()
+        else:
+            agent_path = self.get_agent_base_path()
 
-    def error(self, message: str, sandbox_context: SandboxContext | None = None) -> Any:
-        """Log an error message."""
-        return super().error(message, sandbox_context)
+        # Create agent directory structure
+        agent_path.mkdir(parents=True, exist_ok=True)
+        (agent_path / "state").mkdir(exist_ok=True)
+        (agent_path / "sessions").mkdir(exist_ok=True)
+        (agent_path / "logs").mkdir(exist_ok=True)
 
-    def get_metrics(self) -> dict[str, Any]:
-        """Get current metrics."""
-        # Update last_updated timestamp
+        # Enable state persistence
+        self.state.enable_persistence(str(agent_path / "state"))
+
+        # Save agent metadata
+        self.save_agent_metadata(agent_path)
+
+    def save_agent_metadata(self, agent_path: Path | None = None) -> None:
+        """Save agent metadata to the agent directory.
+
+        Args:
+            agent_path: Path to agent directory (optional)
+        """
+        import json
         from datetime import datetime
-        self._metrics["last_updated"] = datetime.now().isoformat()
 
-        # Get conversation stats
-        conversation_stats = self.get_conversation_stats()
-        self._metrics.update(conversation_stats)
+        if agent_path is None:
+            agent_path = self.get_agent_base_path()
 
-        return self._metrics.copy()
+        metadata = {
+            "agent_id": self.get_agent_id(),
+            "agent_name": self.name if hasattr(self, "name") else "unnamed_agent",
+            "agent_type": str(self.agent_type) if hasattr(self, "agent_type") else "unknown",
+            "created_at": datetime.now().isoformat(),
+            "last_updated": datetime.now().isoformat(),
+            "state_summary": self.state.get_state_summary() if hasattr(self, "state") else {},
+        }
 
-    def update_metric(self, key: str, value: Any) -> None:
-        """Update a metric value."""
-        self._metrics[key] = value
+        metadata_path = agent_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
 
-    # ============================================================================
-    # CONTEXT MANAGEMENT
-    # ============================================================================
+    def save_session(self, session_name: str) -> None:
+        """Save current agent state as a named session.
 
-    def _create_sandbox_context(self) -> SandboxContext:
-        """Create a sandbox context for this agent."""
-        context = SandboxContext()
-        if self._llm_resource is not None:
-            context.set_system_llm_resource(self._llm_resource)
-        return context
+        Args:
+            session_name: Name for the session
+        """
+        import json
+        from datetime import datetime
 
-    # ============================================================================
-    # CONTEXT MANAGER SUPPORT
-    # ============================================================================
+        agent_path = self.get_agent_base_path()
+        sessions_path = agent_path / "sessions" / "active"
+        sessions_path.mkdir(parents=True, exist_ok=True)
 
-    def __enter__(self):
-        """Enter the agent context manager."""
-        if not self._context_manager_initialized:
-            self._initialize_agent_resources()
-            self._context_manager_initialized = True
-        return self
+        session_data = {
+            "session_name": session_name,
+            "created_at": datetime.now().isoformat(),
+            "agent_metadata": {
+                "agent_id": self.get_agent_id(),
+                "agent_name": self.name if hasattr(self, "name") else "unnamed_agent",
+            },
+            "state_summary": self.state.get_state_summary() if hasattr(self, "state") else {},
+        }
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Exit the agent context manager."""
+        session_path = sessions_path / f"{session_name}.json"
+        with open(session_path, "w") as f:
+            json.dump(session_data, f, indent=2)
+
+    def list_sessions(self) -> list[str]:
+        """List available sessions for this agent.
+
+        Returns:
+            List of session names
+        """
+        agent_path = self.get_agent_base_path()
+        sessions_path = agent_path / "sessions" / "active"
+
+        if not sessions_path.exists():
+            return []
+
+        sessions = []
+        for session_file in sessions_path.glob("*.json"):
+            sessions.append(session_file.stem)
+
+        return sorted(sessions)
+
+    def restore_session(self, session_name: str) -> bool:
+        """Restore agent state from a named session.
+
+        Args:
+            session_name: Name of the session to restore
+
+        Returns:
+            True if restoration was successful, False otherwise
+        """
+        import json
+
+        agent_path = self.get_agent_base_path()
+        session_path = agent_path / "sessions" / "active" / f"{session_name}.json"
+
+        if not session_path.exists():
+            return False
+
         try:
-            self._cleanup_agent_resources()
-        except Exception as e:
-            print(f"Warning: Error during agent cleanup: {e}")
+            with open(session_path) as f:
+                session_data = json.load(f)
 
-    # ============================================================================
-    # STATIC METHODS AND CLASS METHODS
-    # ============================================================================
+            # Restore state if available
+            if hasattr(self, "state") and "state_summary" in session_data:
+                # Note: This is a basic restoration - full state restoration would need
+                # more sophisticated serialization/deserialization
+                pass
 
-    @staticmethod
-    def get_default_dana_methods() -> dict[str, Any]:
-        """Get default Dana methods for agents."""
-        return {
-            "llm": lambda self, request, **kwargs: self.llm(request, **kwargs),
-            "converse": lambda self, io=None, **kwargs: self.converse(io, **kwargs),
-            "plan": lambda self, problem, **kwargs: self.plan(problem, **kwargs),
-            "solve": lambda self, problem, **kwargs: self.solve(problem, **kwargs),
-            "chat": lambda self, message, **kwargs: self.chat(message, **kwargs),
-            "input": lambda self, request, **kwargs: self.input(request, **kwargs),
-            "answer": lambda self, answer, **kwargs: self.answer(answer, **kwargs),
-            "remember": lambda self, key, value, **kwargs: self.remember(key, value, **kwargs),
-            "recall": lambda self, key, **kwargs: self.recall(key, **kwargs),
-            "reason": lambda self, premise, **kwargs: self.reason(premise, **kwargs),
-            "log": lambda self, message, **kwargs: self.log(message, **kwargs),
-            "info": lambda self, message, **kwargs: self.info(message, **kwargs),
-            "warning": lambda self, message, **kwargs: self.warning(message, **kwargs),
-            "debug": lambda self, message, **kwargs: self.debug(message, **kwargs),
-            "error": lambda self, message, **kwargs: self.error(message, **kwargs),
-        }
-
-    @staticmethod
-    def get_default_agent_fields() -> dict[str, str | dict[str, Any]]:
-        """Get default fields for agent struct types."""
-        return {
-            "name": "str",
-            "description": "str",
-            "config": {
-                "type": "dict",
-                "default": {},
-                "description": "Agent configuration including LLM settings",
-            },
-            "capabilities": {
-                "type": "list",
-                "default": [],
-                "description": "List of agent capabilities",
-            },
-            "memory_config": {
-                "type": "dict",
-                "default": {},
-                "description": "Memory system configuration",
-            },
-        }
+            return True
+        except Exception:
+            return False
