@@ -23,6 +23,7 @@ from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
 from .resource_registry import ResourceRegistry
 from .type_registry import TypeRegistry
+from .workflow_registry import WorkflowRegistry
 
 # Global singleton instance
 GLOBAL_REGISTRY: GlobalRegistry = GlobalRegistry()
@@ -37,7 +38,7 @@ FUNCTION_REGISTRY: FunctionRegistry = GLOBAL_REGISTRY.functions
 
 AGENT_REGISTRY: AgentRegistry = GLOBAL_REGISTRY.agents
 RESOURCE_REGISTRY: ResourceRegistry = GLOBAL_REGISTRY.resources
-WORKFLOW_REGISTRY: StructRegistry = GLOBAL_REGISTRY.workflows
+WORKFLOW_REGISTRY: WorkflowRegistry = GLOBAL_REGISTRY.workflows
 
 # def get_global_registry() -> GlobalRegistry:
 #     """Get the global registry singleton instance."""

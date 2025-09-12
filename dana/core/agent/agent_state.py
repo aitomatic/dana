@@ -90,8 +90,8 @@ class AgentState:
         if self.mind:
             # Conversation context from timeline
             if depth != "minimal":
-                n_turns = {"minimal": 1, "standard": 3, "comprehensive": 10}.get(depth, 3)
-                context["conversation_history"] = self.timeline.get_conversation_context(n_turns)
+                n_turns = {"minimal": 1, "standard": 10, "comprehensive": 30}.get(depth, 10)
+                context["conversation_history"] = self.timeline.get_conversation_turns(n_turns)
 
             # Relevant memories
             if self.problem_context:
@@ -301,7 +301,7 @@ class AgentState:
             "problem_statement": self.problem_context.problem_statement if self.problem_context else None,
             "workflow_id": self.execution.workflow_id if self.execution else None,
             "recursion_depth": self.execution.recursion_depth if self.execution else 0,
-            "timeline_events_count": len(self.timeline.events) if self.timeline else 0,
+            "timeline_events_count": self.timeline.get_event_count() if self.timeline else 0,
             "can_proceed": self.execution.can_proceed() if self.execution else True,
             "available_strategies": len(self.capabilities.get_available_strategies()) if self.capabilities else 0,
             "available_tools": len(self.capabilities.get_available_tools()) if self.capabilities else 0,
@@ -331,11 +331,11 @@ class AgentState:
         (state_path / "capabilities").mkdir(exist_ok=True)
 
         # Enable timeline persistence with agent-centric path
-        if self.timeline:
-            timeline_conversations_path = state_path / "timeline" / "conversations"
-            timeline_conversations_path.mkdir(parents=True, exist_ok=True)
-            # Update timeline to use the new path
-            self.timeline.conversation_filepath = timeline_conversations_path / f"conversation_{self.timeline.conversation_id}.json"
+        if self.timeline is not None:
+            # Update timeline to use the correct directory structure
+            self.timeline.timeline_dir = state_path / "timeline"
+            # Start loading if we have a valid directory
+            self.timeline.start_loading_if_needed()
 
         # Note: Other components (mind, execution, capabilities) would need their own
         # persistence methods implemented in their respective classes

@@ -20,15 +20,20 @@ from .timeline_event import AgentAction, ConversationTurn, LearningEvent, Timeli
 class Timeline:
     """Concrete class for temporal sequences of events with type-based persistence."""
 
-    def __init__(self, agent_id: str = "default", persistence_config: dict[str, bool] | None = None):
+    def __init__(self, agent_id: str = "default", persistence_config: dict[str, bool] | None = None, timeline_dir: Path | None = None):
         """Initialize timeline with type-based persistence.
 
         Args:
             agent_id: Agent identifier for file organization
             persistence_config: Configuration for which event types to persist
+            timeline_dir: Optional timeline directory path (if None, uses default structure)
         """
         self.agent_id = agent_id
-        self.timeline_dir = Path(f"~/.dana/agents/{agent_id}/timeline").expanduser()
+        if timeline_dir:
+            self.timeline_dir = timeline_dir
+        else:
+            # Default structure for standalone timeline usage
+            self.timeline_dir = Path(f"~/.dana/agents/{agent_id}/timeline").expanduser()
 
         # Default persistence configuration
         self.persistence_config = {
@@ -51,14 +56,25 @@ class Timeline:
         self._load_thread = None
         self._load_lock = threading.Lock()
 
-        # Start async loading
-        self._start_loading()
+        # Start async loading only if we have a valid timeline directory
+        if self.timeline_dir and self.timeline_dir.exists():
+            self._start_loading()
+        else:
+            # If no valid directory, mark as not loading
+            self._loading = False
 
     def _start_loading(self):
         """Start loading all event types in background thread."""
-        self._load_thread = threading.Thread(target=self._load_all_events)
-        self._load_thread.daemon = True
-        self._load_thread.start()
+        if not self._loading:  # Only start if not already loading
+            self._loading = True
+            self._load_thread = threading.Thread(target=self._load_all_events)
+            self._load_thread.daemon = True
+            self._load_thread.start()
+
+    def start_loading_if_needed(self):
+        """Start loading if we have a valid timeline directory and aren't already loading."""
+        if self.timeline_dir and self.timeline_dir.exists() and not self._loading:
+            self._start_loading()
 
     def _load_all_events(self):
         """Load all event types from disk."""
@@ -240,7 +256,7 @@ class Timeline:
     # Conversation-Specific Methods
     # ============================================================================
 
-    def get_conversation_context(self, max_turns: int = 3) -> str:
+    def get_conversation_turns(self, max_turns: int = 30) -> str:
         """Get conversation context summary for LLM.
 
         Args:

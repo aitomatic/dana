@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
 from dana.core.agent.methods.converse import CLIAdapter
-from dana.core.agent.methods.solvers.domain_support import create_llm_powered_support_components
+from dana.core.agent.solvers.domain_support import create_llm_powered_support_components
 
 
 def create_example_agent() -> AgentInstance:
@@ -74,6 +74,7 @@ def domain_support_solver(message: str, artifacts=None, sandbox_context=None, **
 
     # Call the agent's solve_sync with the domain components
     try:
+        import pdb; pdb.set_trace()
         result = agent.solve_sync(
             problem_or_workflow=message,
             artifacts=artifacts,

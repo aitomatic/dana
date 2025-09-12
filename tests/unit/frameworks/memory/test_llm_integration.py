@@ -22,30 +22,20 @@ class TestLLMIntegration(unittest.TestCase):
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
         # Patch memory initialization to use temp directory
-        _original_init = AgentInstance._initialize_conversation_memory
-
-        def mock_init(agent_self):
-            if agent_self._conversation_memory is None:
-                from dana.core.agent.mind.memory.conversation import ConversationMemory
-
-                # Use temp directory instead of ~/.dana/chats/
-                agent_name = getattr(agent_self.agent_type, "name", "agent")
-                memory_file = self.memory_dir / f"{agent_name}_conversation.json"
-                agent_self._conversation_memory = ConversationMemory(filepath=str(memory_file), max_turns=20)
-
-        self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
-        self.init_patcher.start()
+        # No longer needed - conversation memory is handled by Timeline
+        self.init_patcher = None
 
         # Create a sandbox context for testing
         self.sandbox_context = SandboxContext()
 
     def tearDown(self):
         """Clean up test cases."""
-        self.init_patcher.stop()
+        if self.init_patcher:
+            self.init_patcher.stop()
         import os
         import shutil
 
-        # Clean up any temporary files created by ConversationMemory
+        # Clean up any temporary files created by Timeline
         if hasattr(self, "memory_dir") and self.memory_dir.exists():
             for file_path in self.memory_dir.iterdir():
                 if file_path.is_file():

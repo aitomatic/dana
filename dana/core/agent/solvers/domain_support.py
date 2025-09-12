@@ -7,6 +7,7 @@ for the ReactiveSupportSolverMixin to demonstrate its intended behavior.
 
 from typing import Any
 from dataclasses import dataclass
+from .prompts import get_diagnostic_workflow_prompt
 
 
 @dataclass
@@ -20,29 +21,8 @@ class DiagnosticWorkflow:
 
     def execute_with_llm(self, issue_description: str, artifacts: dict[str, Any], llm_resource) -> dict[str, Any]:
         """Execute the workflow using LLM to generate dynamic diagnostic steps."""
-        # Create a comprehensive prompt for the LLM
-        prompt = f"""You are a technical support expert. A user has reported: "{issue_description}"
-
-This is a {self.name.lower()} issue. Based on the information provided, generate a diagnostic plan and solution.
-
-Available information:
-- Issue: {issue_description}
-- Artifacts: {artifacts}
-- Available resources: {", ".join(self.resources)}
-
-Please provide:
-1. A brief diagnosis of the likely cause
-2. A prioritized checklist of diagnostic steps (5-7 items)
-3. Specific troubleshooting actions
-4. Expected outcomes for each step
-
-Format your response as:
-DIAGNOSIS: [brief diagnosis]
-CHECKLIST:
-1. [step 1]
-2. [step 2]
-...
-SOLUTION: [specific solution or next steps]"""
+        # Use the extracted prompt template
+        prompt = get_diagnostic_workflow_prompt(issue_description, self.name, artifacts, self.resources)
 
         try:
             # Create LLM request
