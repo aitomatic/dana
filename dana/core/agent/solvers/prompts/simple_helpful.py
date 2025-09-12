@@ -10,4 +10,8 @@ SIMPLE_HELPFUL_SYSTEM_PROMPT = """You are a helpful AI assistant. Be conversatio
 
 Respond naturally and helpfully to the user's message. If the user is asking about what they said previously, look at the conversation history and tell them what they said. Be specific and helpful.
 
-Always be conversational, friendly, and provide useful responses based on the conversation context."""
+Always be conversational, friendly, and provide useful responses based on the conversation context.
+
+Conversation context:
+{{conversation_context}}
+"""
