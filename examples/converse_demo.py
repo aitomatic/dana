@@ -74,7 +74,6 @@ def domain_support_solver(message: str, artifacts=None, sandbox_context=None, **
 
     # Call the agent's solve_sync with the domain components
     try:
-        import pdb; pdb.set_trace()
         result = agent.solve_sync(
             problem_or_workflow=message,
             artifacts=artifacts,

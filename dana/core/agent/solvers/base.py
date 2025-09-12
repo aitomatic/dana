@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.workflow.workflow_system import WorkflowInstance
 from dana.registry import WorkflowRegistry, ResourceRegistry
 
@@ -56,13 +55,14 @@ class BaseSolver(ABC):
     def __init__(self, agent: "AgentInstance", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.agent = agent
+        self._llm_resource = None
         self.llm_resource = self.agent._llm_resource
 
     @property
     def llm_resource(self) -> "LLMResourceInstance":
         """Get the LLM resource for this solver."""
         if self._llm_resource is None:
-            self._llm_resource = self._agent._llm_resource
+            self._llm_resource = self.agent._llm_resource
 
         if self._llm_resource is None:
             self._llm_resource = LLMResourceInstance.create_default_instance()
@@ -211,7 +211,7 @@ class BaseSolver(ABC):
     # ---------------------------
     def _create_ask_response(self, message: str, missing: list[str] | None = None, **kwargs: Any) -> dict[str, Any]:
         """Create a standardized ask response."""
-        response = {
+        response: dict[str, Any] = {
             "type": "ask",
             "message": message,
         }
@@ -258,8 +258,8 @@ class BaseSolver(ABC):
     def _get_conversation_context(self, max_turns: int = 30) -> str:
         """Get conversation context from agent timeline."""
         try:
-            if hasattr(self, "state") and hasattr(self.state, "timeline"):
-                context_string = self._agent.state.timeline.get_conversation_turns(max_turns=max_turns)
+            if hasattr(self.agent, "state") and hasattr(self.agent.state, "timeline"):
+                context_string = self.agent.state.timeline.get_conversation_turns(max_turns=max_turns)
                 if context_string:
                     return f"\n\nPrevious conversation context:\n{context_string}"
         except Exception:
@@ -335,9 +335,9 @@ class BaseSolver(ABC):
             request = self._create_llm_request([{"role": "user", "content": prompt}], enhanced_system_prompt)
 
             # Query LLM
-            if self._agent._llm_resource is None:
+            if self.agent._llm_resource is None:
                 return None
-            response = self._agent._llm_resource.query_sync(request)
+            response = self.agent._llm_resource.query_sync(request)
 
             # Extract content
             llm_response = self._extract_llm_response_content(response)
