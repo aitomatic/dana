@@ -8,7 +8,7 @@ __all__ = [
     'workflow_recommend_collision_avoidance',
 ]
 
-from utils import STEP2_1_SITUATION_ANALYSIS_TEMPLATE
+from utils import STEP2_1_SITUATION_ANALYSIS_TEMPLATE, STEP2_2_SITUATION_ANALYSIS_TEMPLATE
 def parse_position(position_str: str) -> tuple:
     """Parse position string like '01°15.0'N, 103°45.0'E' to decimal degrees."""
     parts = position_str.replace(' ', '').split(',')
@@ -210,9 +210,8 @@ def workflow_analyze_collision_risk(resources: list, task: str) -> str:
 
 def workflow_calculate_relative_motion(resources: list, task: str) -> str:
     """Calculate relative motion and closest point of approach between vessels."""
-    print(task)
-    data: dict = reason(task, resources=resources)
-    print(data)
+
+    data: dict = reason(STEP2_1_SITUATION_ANALYSIS_TEMPLATE.format(context=task), resources=resources)
     
     # Extract vessel data from the reasoned data
     try:
@@ -224,7 +223,6 @@ def workflow_calculate_relative_motion(resources: list, task: str) -> str:
         vessel_b_speed = float(data.get('vessel_b', {}).get('speed', 0))
         vessel_b_course = float(data.get('vessel_b', {}).get('course', 0))
 
-        print(vessel_a_pos, vessel_a_speed, vessel_a_course, vessel_b_pos, vessel_b_speed, vessel_b_course)
         
         # Calculate relative motion parameters using internal functions
         distance = calculate_distance_between_vessels(vessel_a_pos, vessel_b_pos)
@@ -240,10 +238,8 @@ def workflow_calculate_relative_motion(resources: list, task: str) -> str:
 - Relative speed: {relative_speed} knots
 - Closest Point of Approach (CPA): {cpa} nm
 - Time to CPA: {time_to_cpa} minutes"""
-        task = task.split("######")[0]
-        task = STEP2_1_SITUATION_ANALYSIS_TEMPLATE.format(context=task, results=result)
-        
-        print(f"Final task: {task}")
+
+        task = STEP2_2_SITUATION_ANALYSIS_TEMPLATE.format(context=task, results=result)
 
         return reason(task, resources=resources)
         
@@ -253,4 +249,5 @@ def workflow_calculate_relative_motion(resources: list, task: str) -> str:
 
 def workflow_recommend_collision_avoidance(resources: list, task: str) -> str:
     """Recommend specific course and speed changes for collision avoidance."""
+    print(task)
     return reason(task, resources=resources)
