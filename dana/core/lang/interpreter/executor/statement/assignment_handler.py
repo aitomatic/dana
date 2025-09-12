@@ -86,8 +86,12 @@ class AssignmentHandler(Loggable):
             return value
 
         finally:
-            # Clean up type information
-            context.set("system:__current_assignment_type", None)
+            # Clean up type information only if value is not a Promise
+            # Promises need to preserve context for when they resolve
+            from dana.core.concurrency.eager_promise import EagerPromise
+
+            if not isinstance(value, EagerPromise):
+                context.set("system:__current_assignment_type", None)
 
     def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
         """Execute a compound assignment statement (e.g., x += 1).
