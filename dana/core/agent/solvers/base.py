@@ -319,8 +319,6 @@ class BaseSolver(ABC):
 
             # Use PromptEngineer if available, otherwise fall back to static prompts
             if hasattr(self.agent, 'prompt_engineer') and self.agent.prompt_engineer:
-                print("🔧 [DEBUG] Using PromptEngineer for dynamic prompt generation")
-
                 # Generate optimized prompt using PromptEngineer
                 prompt_obj = self.agent.prompt_engineer.generate(
                     user_query=prompt,
@@ -329,8 +327,6 @@ class BaseSolver(ABC):
                 )
                 enhanced_system_prompt = prompt_obj.system_message
                 user_prompt = prompt_obj.user_message
-
-                print("🔧 [DEBUG] PromptEngineer generated prompt")
             else:
                 print("🔧 [DEBUG] Using static prompt generation (PromptEngineer not available)")
 

@@ -13,5 +13,5 @@ Respond naturally and helpfully to the user's message. If the user is asking abo
 Always be conversational, friendly, and provide useful responses based on the conversation context.
 
 Conversation context:
-{{conversation_context}}
+{conversation_context}
 """
