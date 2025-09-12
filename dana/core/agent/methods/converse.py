@@ -73,7 +73,6 @@ class ConverseMixin:
     """Mixin that adds conversation loop functionality to agents."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._agent: "AgentInstance" = self
 
     def converse_sync(
         self,
@@ -120,7 +119,7 @@ class ConverseMixin:
                 else:
                     # Use agent's own solve method
                     print("🔧 Using AGENT'S SOLVE_SYNC method")
-                    result = self._agent.solve_sync(message, artifacts, sandbox_context)
+                    result = self.solve_sync(message, artifacts, sandbox_context)
 
                 print("✅ Solver completed successfully")
                 print(f"📊 Result type: {type(result).__name__}")
@@ -134,7 +133,7 @@ class ConverseMixin:
                     response = Response(type="answer", text=str(result))
 
                 # 3. Add conversation turn to timeline
-                self._agent.state.timeline.add_conversation_turn(message, response.text, turn_number)
+                self.state.timeline.add_conversation_turn(message, response.text, turn_number)
 
                 # 5. Send response back
                 io.send_output(response)
@@ -142,7 +141,7 @@ class ConverseMixin:
             except Exception as e:
                 # Handle errors gracefully
                 error_response = Response(type="error", text=f"I encountered an error: {str(e)}")
-                self._agent.state.timeline.add_conversation_turn(message, error_response.text, turn_number)
+                self.state.timeline.add_conversation_turn(message, error_response.text, turn_number)
                 io.send_output(error_response)
 
         return "conversation ended"
