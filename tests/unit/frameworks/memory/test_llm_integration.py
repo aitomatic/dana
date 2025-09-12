@@ -259,7 +259,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
         agent = AgentInstance(agent_type, {"purpose": "testing"})
 
         # Test the LLM resource creation without mocking
-        llm_resource = agent.get_llm_resource()
+        llm_resource = agent._get_llm_resource()
 
         # Should return None if LLM resource is not available, or an LLMResource instance
         self.assertTrue(llm_resource is None or hasattr(llm_resource, "query_sync"))

@@ -369,7 +369,7 @@ class AgentInstance(
     # RESOURCE MANAGEMENT (LLM Resources, Initialization, Cleanup)
     # ============================================================================
 
-    def get_llm_resource(self, sandbox_context: SandboxContext | None = None):
+    def _get_llm_resource(self, sandbox_context: SandboxContext | None = None):
         """Get the LLM resource for this agent.
 
         Args:
@@ -399,22 +399,20 @@ class AgentInstance(
             self._initialize_llm_resource()
         return self._llm_resource
 
-
-
     @property
-    def _llm_resource_instance(self):
-        """Backward compatibility property for LLM resource instance."""
+    def llm_resource(self):
+        """Get the LLM resource for this agent."""
+        if self._llm_resource is None:
+            self._llm_resource = self._get_llm_resource()
         return self._llm_resource
 
-    @_llm_resource_instance.setter
-    def _llm_resource_instance(self, value):
-        """Backward compatibility setter for LLM resource instance."""
-        self._llm_resource = value
-
-    @_llm_resource_instance.deleter
-    def _llm_resource_instance(self):
-        """Backward compatibility deleter for LLM resource instance."""
-        self._llm_resource = None
+    @property
+    def prompt_engineer(self):
+        """Get the prompt engineer for this agent."""
+        if self._prompt_engineer is None:
+            from dana.frameworks.prteng import PromptEngineer
+            self._prompt_engineer = PromptEngineer(llm_resource=self._llm_resource)
+        return self._prompt_engineer
 
     @property
     def context_engineer(self):

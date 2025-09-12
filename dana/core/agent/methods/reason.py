@@ -35,7 +35,7 @@ class ReasonMixin:
                 sandbox_context,
                 premise,
                 options=options,
-                llm_resource=cast(LLMResourceInstance, self.get_llm_resource(sandbox_context)),
+                llm_resource=self.llm_resource,
             )
             self.debug("py_reason() call successful")
             self.debug(f"Response type: {type(py_reason_result)}")

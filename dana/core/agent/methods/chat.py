@@ -106,7 +106,7 @@ class ChatMixin:
             conversation_context = ""
 
         # Try to get LLM resource - prioritize agent's own LLM resource
-        llm_resource = self.get_llm_resource(sandbox_context)
+        llm_resource = self.llm_resource
 
         if llm_resource:
             try:
