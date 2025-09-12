@@ -14,7 +14,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { type AgentSuggestion, type BuildAgentFromSuggestionRequest, type WorkflowInfo } from '@/lib/api';
+import {
+  type AgentSuggestion,
+  type BuildAgentFromSuggestionRequest,
+  type WorkflowInfo,
+} from '@/lib/api';
 import { useCallback } from 'react';
 import ReactFlow, {
   Node,
@@ -32,7 +36,9 @@ import 'reactflow/dist/style.css';
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
 // Custom Node Component for React Flow
-const WorkflowStepNode: React.FC<{ data: { label: string; index: number; isMethodAvailable: boolean } }> = ({ data }) => {
+const WorkflowStepNode: React.FC<{
+  data: { label: string; index: number; isMethodAvailable: boolean };
+}> = ({ data }) => {
   return (
     <div className="relative group">
       <div
@@ -43,23 +49,23 @@ const WorkflowStepNode: React.FC<{ data: { label: string; index: number; isMetho
         }`}
       >
         {/* Node icon */}
-        <div className={`w-6 h-6 rounded-full mb-1 flex items-center justify-center ${
-          data.isMethodAvailable 
-            ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
-            : 'bg-gray-400'
-        }`}>
-          <span className="text-white text-xs font-bold">
-            {data.index}
-          </span>
+        <div
+          className={`w-6 h-6 rounded-full mb-1 flex items-center justify-center ${
+            data.isMethodAvailable ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-400'
+          }`}
+        >
+          <span className="text-white text-xs font-bold">{data.index}</span>
         </div>
-        
+
         {/* Node label */}
-        <span className={`text-xs font-medium leading-tight ${
-          data.isMethodAvailable ? 'text-gray-800' : 'text-gray-500'
-        }`}>
+        <span
+          className={`text-xs font-medium leading-tight ${
+            data.isMethodAvailable ? 'text-gray-800' : 'text-gray-500'
+          }`}
+        >
           {data.label}
         </span>
-        
+
         {/* Method indicator */}
         {data.isMethodAvailable && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white">
@@ -67,7 +73,7 @@ const WorkflowStepNode: React.FC<{ data: { label: string; index: number; isMetho
           </div>
         )}
       </div>
-      
+
       {/* Handle for connections - React Flow will use these */}
       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -81,7 +87,10 @@ const nodeTypes: NodeTypes = {
 };
 
 // Workflow Chart Component using React Flow
-const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; methods: string[] }> = ({ workflow, methods }) => {
+const WorkflowChart: React.FC<{
+  workflow: { name: string; steps: string[] };
+  methods: string[];
+}> = ({ workflow, methods }) => {
   if (!workflow.steps || workflow.steps.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
@@ -90,13 +99,19 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
     );
   }
 
+  // Calculate center Y position for vertical alignment
+  const centerY = 80;
+
   // Convert workflow steps to React Flow nodes
   const initialNodes: Node[] = workflow.steps.map((step, index) => ({
     id: `step-${index}`,
     type: 'workflowStep',
-    position: { x: index * 180, y: 50 },
+    position: { x: index * 180, y: centerY },
     data: {
-      label: step.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim(),
+      label: step
+        .replace(/_/g, ' ')
+        .replace(/([A-Z])/g, ' $1')
+        .trim(),
       index: index + 1,
       isMethodAvailable: methods.includes(step),
     },
@@ -107,8 +122,8 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
   const startNode: Node = {
     id: 'start',
     type: 'input',
-    position: { x: -120, y: 50 },
-    data: { label: '🟢 Start' },
+    position: { x: -200, y: centerY },
+    data: { label: 'User message' },
     draggable: false,
     style: {
       background: '#dcfce7',
@@ -117,14 +132,15 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
       fontSize: '12px',
       fontWeight: 'bold',
       color: '#15803d',
+      padding: '8px 12px',
     },
   };
 
   const endNode: Node = {
     id: 'end',
     type: 'output',
-    position: { x: workflow.steps.length * 180, y: 50 },
-    data: { label: '🔵 End' },
+    position: { x: workflow.steps.length * 180, y: centerY },
+    data: { label: 'Task Completed' },
     draggable: false,
     style: {
       background: '#dbeafe',
@@ -133,6 +149,7 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
       fontSize: '12px',
       fontWeight: 'bold',
       color: '#1d4ed8',
+      padding: '8px 12px',
     },
   };
 
@@ -140,7 +157,7 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
 
   // Create edges between nodes
   const initialEdges: Edge[] = [];
-  
+
   // Connect start to first step
   if (workflow.steps.length > 0) {
     initialEdges.push({
@@ -188,7 +205,7 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
   }, []);
 
   return (
-    <div className="h-48 w-full border border-gray-200 rounded-lg overflow-hidden">
+    <div className="h-64 w-full border border-gray-200 rounded-lg overflow-hidden">
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
@@ -198,6 +215,12 @@ const WorkflowChart: React.FC<{ workflow: { name: string; steps: string[] }; met
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
+        fitViewOptions={{
+          padding: 0.1,
+          includeHiddenNodes: false,
+          minZoom: 0.5,
+          maxZoom: 1.5,
+        }}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
       >
@@ -234,6 +257,37 @@ export default function AgentsPage() {
   const [workflowInfos, setWorkflowInfos] = useState<Record<string, WorkflowInfo>>({});
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+
+  // Agent display information mapping for UI
+  const agentDisplayInfo: Record<string, { name: string; description: string }> = {
+    sofia: {
+      name: 'Essential Agent',
+      description:
+        'Financial Analysis Expert with focus on behavioral finance, technical analysis, and risk management',
+    },
+    jordan_belfort: {
+      name: 'Data Analysis',
+      description: 'Operational agent specialized in data processing and analysis workflows',
+    },
+    nova: {
+      name: 'Autonomous',
+      description: 'Self-directed agent capable of independent decision-making and task execution',
+    },
+    // Fallback mappings by name
+    Sofia: {
+      name: 'Q&A Agent',
+      description:
+        'Financial Analysis Expert with focus on behavioral finance, technical analysis, and risk management',
+    },
+    'Jordan Belfort': {
+      name: 'Operational Agent',
+      description: 'Specialized in data processing and analysis workflows',
+    },
+    Nova: {
+      name: 'Autonomous Agent',
+      description: 'Self-directed agent capable of independent decision-making and task execution',
+    },
+  };
 
   // Get activeTab from URL params, default to 'explore'
   const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
@@ -323,7 +377,7 @@ export default function AgentsPage() {
     try {
       const response = await apiService.getAgentSuggestions(userInput.trim());
       setSuggestions(response.suggestions);
-      
+
       // Fetch workflow information for each suggestion
       const workflowData: Record<string, WorkflowInfo> = {};
       await Promise.all(
@@ -336,9 +390,9 @@ export default function AgentsPage() {
             // Set empty workflow info as fallback
             workflowData[suggestion.key] = { workflows: [], methods: [] };
           }
-        })
+        }),
       );
-      
+
       setWorkflowInfos(workflowData);
       setShowSuggestions(true);
     } catch (error) {
@@ -395,7 +449,7 @@ export default function AgentsPage() {
         user_input: userInput,
         agent_name: `${suggestion.name} Assistant`,
       };
-      
+
       const newAgent = await apiService.buildAgentFromSuggestion(buildRequest);
       if (newAgent && newAgent.id) {
         navigate(`/agents/${newAgent.id}`);
@@ -415,10 +469,11 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${headerCollapsed
-          ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
-          : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
-          }`}
+        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
+          headerCollapsed
+            ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
+            : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
+        }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
@@ -436,13 +491,15 @@ export default function AgentsPage() {
 
         {/* Main Content with Smooth Transitions */}
         <div
-          className={`relative z-10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${headerCollapsed ? 'overflow-hidden h-0' : 'px-6 min-h-[600px]'
-            }`}
+          className={`relative z-10 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${
+            headerCollapsed ? 'overflow-hidden h-0' : 'px-6 min-h-[600px]'
+          }`}
         >
           {/* Main Title with Enhanced Typography */}
           <div
-            className={`transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-8 opacity-100 scale-100'
-              }`}
+            className={`transition-all duration-700 ease-out ${
+              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-8 opacity-100 scale-100'
+            }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400">
@@ -456,8 +513,9 @@ export default function AgentsPage() {
 
           {/* Enhanced Subtitle */}
           <p
-            className={`text-xl md:text-2xl text-gray-200 max-w-4xl leading-relaxed font-light transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-12 opacity-100 scale-100'
-              }`}
+            className={`text-xl md:text-2xl text-gray-200 max-w-4xl leading-relaxed font-light transition-all duration-700 ease-out ${
+              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-12 opacity-100 scale-100'
+            }`}
           >
             The complete platform for{' '}
             <span className="font-semibold text-purple-300">building, training, and deploying</span>{' '}
@@ -466,8 +524,9 @@ export default function AgentsPage() {
 
           {/* Feature Cards with Better Design */}
           <div
-            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl transition-all duration-700 ease-out ${headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-16 opacity-100 scale-100'
-              }`}
+            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl transition-all duration-700 ease-out ${
+              headerCollapsed ? 'mb-0 opacity-0 scale-75' : 'mb-16 opacity-100 scale-100'
+            }`}
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
@@ -551,8 +610,9 @@ export default function AgentsPage() {
 
           {/* Enhanced CTA Buttons */}
           <div
-            className={`flex flex-col items-center gap-4 transition-all duration-700 ease-out ${headerCollapsed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
-              }`}
+            className={`flex flex-col items-center gap-4 transition-all duration-700 ease-out ${
+              headerCollapsed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
+            }`}
           >
             <button
               onClick={() => {
@@ -590,8 +650,9 @@ export default function AgentsPage() {
 
         {/* Compact Header with Highlights - Show when collapsed */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-            }`}
+          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
+            headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
+          }`}
         >
           <div className="flex flex-col gap-4 items-center">
             {/* Main Title with Gradient Highlight */}
@@ -653,27 +714,24 @@ export default function AgentsPage() {
         {/* Enhanced Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
-            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${activeTab === 'Explore'
-              ? 'border-brand-500 text-brand-600'
-              : 'border-transparent text-gray-500 hover:text-brand-600'
-              }`}
+            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'Explore'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
+            }`}
             onClick={() => setActiveTab('explore')}
           >
-            <span className="flex gap-2 items-center">
-
-              Pre-trained Agents
-            </span>
+            <span className="flex gap-2 items-center">Pre-trained Agents</span>
           </button>
           <button
-            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${activeTab === 'My Agent'
-              ? 'border-brand-500 text-brand-600'
-              : 'border-transparent text-gray-500 hover:text-brand-600'
-              }`}
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'My Agent'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
+            }`}
             onClick={() => setActiveTab('my')}
           >
-            <span className="flex gap-2 items-center">
-              My Agents
-            </span>
+            <span className="flex gap-2 items-center">My Agents</span>
           </button>
         </div>
 
@@ -707,34 +765,48 @@ export default function AgentsPage() {
 
       {/* Create Agent Popup */}
       <Dialog open={showCreateAgentPopup} onOpenChange={setShowCreateAgentPopup}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent
+          className={`${showSuggestions && suggestions.length > 0 ? 'sm:max-w-[1000px]' : 'sm:max-w-xl'} max-h-[80vh] overflow-y-auto`}
+        >
           <DialogHeader>
             <DialogTitle>Train Your Own Agent</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                What would you like to build?
+          <div className="flex space-y-4 flex-col">
+            <div className="flex w-full flex-col gap-2">
+              <label className="block text-md font-medium text-gray-700 mb-4">
+                What your agent will do?
               </label>
               <textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Describe what you want your agent to do or what domain it should specialize in..."
-                className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g. I want an agent that can help me with financial analysis"
+                className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 rows={4}
                 autoFocus
-                disabled={showSuggestions}
               />
+              {/* Regenerate Button */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="flex">
+                  <Button
+                    onClick={handleGetSuggestions}
+                    variant="outline"
+                    size="sm"
+                    className="text-sm"
+                    disabled={loadingSuggestions}
+                  >
+                    {loadingSuggestions ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        <span>Regenerating...</span>
+                      </div>
+                    ) : (
+                      'Regenerate Suggestions'
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
-
-            {/* Loading State */}
-            {loadingSuggestions && (
-              <div className="text-center py-4">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                <p className="mt-2 text-sm text-gray-600">Getting suggestions...</p>
-              </div>
-            )}
 
             {/* Error State */}
             {suggestionError && (
@@ -746,23 +818,25 @@ export default function AgentsPage() {
             {/* Suggestions */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">Suggested Agents</h3>
-                  <Button
-                    onClick={handleTryAgain}
-                    variant="outline"
-                    size="sm"
-                    className="text-sm"
-                  >
-                    Try Again
-                  </Button>
+                <div className="flex flex-col justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Templates that fit your agent
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Agent template includes pre-built code and workflows to get you started.
+                  </p>
                 </div>
 
                 <div className="space-y-6">
                   {suggestions.map((suggestion, index) => {
-                    const workflowInfo = workflowInfos[suggestion.key] || { workflows: [], methods: [] };
-                    const mainWorkflow = workflowInfo.workflows.find(w => w.name === 'final_workflow') || workflowInfo.workflows[0];
-                    
+                    const workflowInfo = workflowInfos[suggestion.key] || {
+                      workflows: [],
+                      methods: [],
+                    };
+                    const mainWorkflow =
+                      workflowInfo.workflows.find((w) => w.name === 'final_workflow') ||
+                      workflowInfo.workflows[0];
+
                     return (
                       <div
                         key={suggestion.key}
@@ -779,38 +853,47 @@ export default function AgentsPage() {
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white font-bold text-lg shadow-lg">
-                                  {suggestion.name[0]}
-                                </div>
                                 <div>
-                                  <h4 className="font-bold text-xl text-gray-900">{suggestion.name}</h4>
-                                  <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-green-100 to-blue-100 text-green-800 text-xs font-semibold rounded-full border border-green-200">
-                                    ✨ {suggestion.matching_percentage}% match
-                                  </span>
+                                  <div>
+                                    <h4 className="font-semibold text-md text-gray-900">
+                                      {(() => {
+                                        console.log('Suggestion debug:', {
+                                          key: suggestion.key,
+                                          name: suggestion.name,
+                                        });
+                                        const agentInfo =
+                                          agentDisplayInfo[suggestion.key] ||
+                                          agentDisplayInfo[suggestion.name];
+                                        return agentInfo?.name || suggestion.name;
+                                      })()}
+                                    </h4>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {(() => {
+                                        const agentInfo =
+                                          agentDisplayInfo[suggestion.key] ||
+                                          agentDisplayInfo[suggestion.name];
+                                        return agentInfo?.description || '';
+                                      })()}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                              <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
-                              <p className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded-lg border-l-3 border-blue-400">
-                                💡 {suggestion.explanation}
-                              </p>
                             </div>
-                            
+
                             <Button
                               onClick={() => handleBuildFromSuggestion(suggestion)}
                               variant="default"
                               size="lg"
                               disabled={creating}
-                              className="ml-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                             >
                               {creating ? (
                                 <div className="flex items-center gap-2">
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span className="text-sm">Building...</span>
+                                  <span className="text-sm">Starting...</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <Play className="w-5 h-5" />
-                                  <span className="text-sm font-semibold">Build</span>
+                                  <span className="text-sm font-semibold">Select</span>
                                 </div>
                               )}
                             </Button>
@@ -818,48 +901,16 @@ export default function AgentsPage() {
 
                           {/* Workflow Chart Visualization */}
                           {mainWorkflow && mainWorkflow.steps.length > 0 && (
-                            <div className="mt-4 p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                            <div className=" ">
                               <h5 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                🔄 <span>Workflow Chart: {mainWorkflow.name}</span>
+                                <span>Workflow Chart</span>
                               </h5>
-                              
+
                               {/* Interactive Workflow Chart */}
-                              <WorkflowChart 
-                                workflow={mainWorkflow} 
+                              <WorkflowChart
+                                workflow={mainWorkflow}
                                 methods={workflowInfo.methods}
                               />
-                              
-                              {/* Workflow Statistics */}
-                              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  🛠️ {workflowInfo.methods.length} methods available
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  📊 {workflowInfo.workflows.length} workflows defined
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  ⚡ {mainWorkflow.steps.length} execution steps
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Domain Tags */}
-                          {suggestion.config?.specialties && suggestion.config.specialties.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                              {suggestion.config.specialties.slice(0, 4).map((specialty, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-full border border-gray-300 hover:from-gray-200 hover:to-gray-300 transition-all duration-200"
-                                >
-                                  #{specialty}
-                                </span>
-                              ))}
-                              {suggestion.config.specialties.length > 4 && (
-                                <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-gray-100 to-gray-200 text-gray-500 rounded-full border border-gray-300">
-                                  +{suggestion.config.specialties.length - 4} more
-                                </span>
-                              )}
                             </div>
                           )}
                         </div>
@@ -872,21 +923,14 @@ export default function AgentsPage() {
           </div>
 
           <DialogFooter className="flex gap-2 sm:flex-row">
-            <Button
-              onClick={handleCancelCreate}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
             {!showSuggestions && (
               <Button
                 onClick={handleGetSuggestions}
                 variant="default"
-                className="w-full sm:w-auto"
+                className="w-full "
                 disabled={loadingSuggestions || !userInput.trim()}
               >
-                {loadingSuggestions ? 'Getting Suggestions...' : 'Get Suggestions'}
+                {loadingSuggestions ? 'Getting started...' : 'Start training'}
               </Button>
             )}
             {/* <Button
@@ -897,8 +941,6 @@ export default function AgentsPage() {
             >
               {creating ? 'Creating...' : 'Create Custom Agent'}
             </Button> */}
-
-
           </DialogFooter>
         </DialogContent>
       </Dialog>
