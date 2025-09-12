@@ -28,6 +28,7 @@ from .methods import (
     LoggingMixin,
     MemoryMixin,
     ReasonMixin,
+    SolvingMixin,
 )
 from .utils import AgentCallbackMixin
 
@@ -54,6 +55,7 @@ class AgentInstance(
     MemoryMixin,
     ReasonMixin,
     ConverseMixin,
+    SolvingMixin,
 ):
     """Agent struct instance with built-in agent capabilities.
 
@@ -316,7 +318,7 @@ class AgentInstance(
 
     def llm(self, request: str | dict | BaseRequest, sandbox_context: SandboxContext | None = None, **kwargs) -> Any:
         """Call the LLM with a request."""
-        return super().llm(request, sandbox_context, **kwargs)
+        return self.llm_sync(request, sandbox_context, **kwargs)
 
     def converse(self, io: IOAdapter = CLIAdapter(), sandbox_context: SandboxContext | None = None) -> Any:
         """Start a conversation loop with the agent."""

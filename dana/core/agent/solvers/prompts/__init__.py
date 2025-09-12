@@ -17,9 +17,6 @@ from .planner_executor import (
     get_planner_prompt,
     get_executor_prompt,
 )
-from .domain_support import (
-    get_diagnostic_workflow_prompt,
-)
 
 __all__ = [
     # Reactive support prompts
@@ -31,6 +28,4 @@ __all__ = [
     # Planner executor prompts
     "get_planner_prompt",
     "get_executor_prompt",
-    # Domain support prompts
-    "get_diagnostic_workflow_prompt",
 ]
