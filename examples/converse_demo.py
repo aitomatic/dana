@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
 from dana.core.agent.methods.converse import CLIAdapter
-from dana.core.agent.solvers.domain_support import create_llm_powered_support_components
 
 
 def create_example_agent() -> AgentInstance:
@@ -62,25 +61,19 @@ def custom_solver(message: str, artifacts=None, sandbox_context=None, **kwargs) 
         return f"I heard you say: '{message}'. How can I help you with that?"
 
 
-def domain_support_solver(message: str, artifacts=None, sandbox_context=None, **kwargs) -> str:
-    """Custom solver that provides domain-specific support components."""
+def simple_solver(message: str, artifacts=None, sandbox_context=None, **kwargs) -> str:
+    """Simple solver that uses the agent's built-in capabilities."""
     # Get the agent instance from the artifacts or kwargs
     agent = kwargs.get("agent")
     if not agent:
         return "Error: No agent instance available"
 
-    # Create LLM-powered support components
-    support_components = create_llm_powered_support_components()
-
-    # Call the agent's solve_sync with the domain components
+    # Use the agent's built-in solve_sync method directly
     try:
         result = agent.solve_sync(
             problem_or_workflow=message,
             artifacts=artifacts,
             sandbox_context=sandbox_context,
-            signature_matcher=support_components["signature_matcher"],
-            workflow_catalog=support_components["workflow_catalog"],
-            resource_index=support_components["resource_index"],
             **kwargs,
         )
 
@@ -92,28 +85,14 @@ def domain_support_solver(message: str, artifacts=None, sandbox_context=None, **
             if result.get("type") == "ask":
                 return result.get("message", "I need more information to help you.")
             elif result.get("type") == "answer":
-                # Format the structured response nicely
-                diagnosis = result.get("diagnosis", "Issue identified")
-                checklist = result.get("checklist", [])
-                solution = result.get("solution", "")
-
-                response = f"🔧 {diagnosis}\n\n"
-                if checklist:
-                    response += "📋 Diagnostic Checklist:\n"
-                    for i, item in enumerate(checklist, 1):
-                        response += f"  {i}. {item}\n"
-
-                if solution:
-                    response += f"\n💡 Solution: {solution}\n"
-
-                return response
+                return result.get("deliverable", str(result))
             else:
                 return str(result)
         else:
             return str(result)
 
     except Exception as e:
-        return f"Error in domain support solver: {e}"
+        return f"Error in simple solver: {str(e)}"
 
 
 def main():
@@ -133,13 +112,13 @@ def main():
     # Create CLI adapter
     cli_adapter = CLIAdapter()
 
-    print("=== Demo with Domain Support Solver ===")
-    print("Using a domain-specific technical support solver with proper components...\n")
+    print("=== Demo with Simple Solver ===")
+    print("Using a simple solver with agent's built-in capabilities...\n")
 
     try:
-        # Use domain support solver with agent instance
+        # Use simple solver with agent instance
         def solver_with_agent(message, artifacts=None, sandbox_context=None, **kwargs):
-            return domain_support_solver(message, artifacts, sandbox_context, agent=agent, **kwargs)
+            return simple_solver(message, artifacts, sandbox_context, agent=agent, **kwargs)
 
         result = agent.converse_sync(cli_adapter, solve_fn=solver_with_agent)
         print(f"\nConversation ended: {result}")
