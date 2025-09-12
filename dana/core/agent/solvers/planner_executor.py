@@ -7,10 +7,16 @@ from .base import BaseSolver
 from .prompts import (
     get_planner_prompt,
     get_executor_prompt,
+    get_planner_system_prompt,
+    get_executor_system_prompt,
+    get_recursion_limit_message,
+    get_math_guidance_message,
+    get_math_fallback_message,
 )
 
 if TYPE_CHECKING:
     from dana.core.agent.agent_instance import AgentInstance
+
 
 class PlannerExecutorSolver(BaseSolver):
     """
@@ -30,6 +36,7 @@ class PlannerExecutorSolver(BaseSolver):
                                       and .expand_step(step_text, entities)->WorkflowInstance|None
       - resource_index:   object with .pack(entities)->dict (docs/kb/specs)
     """
+
     def __init__(self, agent: "AgentInstance"):
         super().__init__(agent)
 
@@ -110,7 +117,7 @@ class PlannerExecutorSolver(BaseSolver):
                 goal=str(problem_or_workflow),
                 plan=[],
                 results=[],
-                deliverable=f"Recursion limit reached for: {problem_or_workflow}",
+                deliverable=get_recursion_limit_message(str(problem_or_workflow)),
                 steps=0,
             )
         st["recursion_depth"] = recursion_depth + 1
@@ -273,91 +280,29 @@ class PlannerExecutorSolver(BaseSolver):
         if self.llm_resource is not None:
             return self._llm_draft_plan(goal, max_steps, self.llm_resource)
 
-        elif sandbox_context is not None:
-            try:
-                # Try to get LLM resource from sandbox context
-                llm_resource = sandbox_context.get_resource("system_llm")
-                if llm_resource is not None:
-                    return self._llm_draft_plan(goal, max_steps, llm_resource)
-            except KeyError:
-                pass
-
         # No fallback - raise error to see what's wrong
         raise RuntimeError(f"No LLM resource available for planning. Goal: {goal}")
 
     def _llm_draft_plan(self, goal: str, max_steps: int, llm_resource: Any = None) -> list[str]:
-        """Generate plan using LLM - NO FALLBACKS to see errors clearly."""
+        """Generate plan using LLM with conversation context and prompt_engineer support."""
         self._log_solver_phase("LLM-PLAN", f"Generating plan for: '{goal}'", "🤖")
 
         if llm_resource is None:
+            llm_resource = self.llm_resource
+        if llm_resource is None:
             raise RuntimeError(f"No LLM resource provided for planning. Goal: {goal}")
 
-        # Get conversation context from timeline
-        conversation_context = self._get_conversation_context(max_turns=3)
-
         # Use the extracted prompt template
-        prompt = get_planner_prompt(goal, max_steps) + f"\n{conversation_context}\n\nFormat: Return only the steps, one per line, without numbering or bullets."
+        prompt = get_planner_prompt(goal, max_steps) + "\n\nFormat: Return only the steps, one per line, without numbering or bullets."
+
+        # Use base class method for LLM interaction with conversation context and prompt_engineer
+        system_prompt = get_planner_system_prompt()
 
         try:
-            # Create request directly with the provided LLM resource
-            from dana.common.types import BaseRequest
+            response_text = self._query_llm_with_prteng(prompt=prompt, system_prompt=system_prompt, max_turns=3)
 
-            request = BaseRequest(
-                arguments={
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are an AI planning assistant. Create step-by-step plans to achieve goals. Be specific and actionable."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
-                }
-            )
-
-            response = llm_resource.query_sync(request)
-
-            if response is None:
+            if response_text is None:
                 raise RuntimeError(f"LLM query failed for goal: {goal}")
-
-
-            # Extract text from response
-            if hasattr(response, 'text'):
-                response_text = response.text
-            elif hasattr(response, 'content'):
-                # Handle BaseResponse with content field
-                content = response.content
-                if isinstance(content, dict):
-                    # Handle OpenAI-style response format
-                    if 'choices' in content and len(content['choices']) > 0:
-                        choice = content['choices'][0]
-                        if 'message' in choice and 'content' in choice['message']:
-                            response_text = choice['message']['content']
-                        else:
-                            response_text = str(choice)
-                    else:
-                        response_text = str(content)
-                else:
-                    response_text = str(content)
-            elif isinstance(response, str):
-                response_text = response
-            elif isinstance(response, dict):
-                # Handle dictionary response - look for common text fields
-                if 'text' in response:
-                    response_text = response['text']
-                elif 'content' in response:
-                    response_text = response['content']
-                elif 'response' in response:
-                    response_text = response['response']
-                elif 'message' in response:
-                    response_text = response['message']
-                else:
-                    # If it's a dict but no obvious text field, convert to string
-                    response_text = str(response)
-            else:
-                response_text = str(response)
 
         except Exception as e:
             raise RuntimeError(f"LLM query failed for goal: {goal}. Error: {str(e)}")
@@ -448,72 +393,27 @@ class PlannerExecutorSolver(BaseSolver):
         return plan
 
     def _exec_action(self, action: str, sandbox_context: SandboxContext | None, dry_run: bool) -> dict[str, Any]:
-        """Execute an action using LLM - NO FALLBACKS to see errors clearly."""
+        """Execute an action using LLM with conversation context and prompt_engineer support."""
         self._log_solver_phase("LLM-ACTION", f"Executing action: '{action}'", "🤖")
         if dry_run:
             return {"status": "ok (dry-run)", "action": action, "message": "Action would be executed in real mode"}
 
         # Use LLM to execute the action
-        llm_resource = None
-        if sandbox_context is not None:
-            try:
-                llm_resource = sandbox_context.get_resource("system_llm")
-            except KeyError:
-                pass
-
+        llm_resource = self.llm_resource
         if llm_resource is None:
             raise RuntimeError(f"No LLM resource available for action execution. Action: {action}")
 
-        # Get conversation context from timeline
-        conversation_context = self._get_conversation_context(max_turns=5)
-
-        # Use the extracted prompt template
-        prompt = get_executor_prompt(action, conversation_context)
+        # Use the extracted prompt template (conversation context will be handled by base class method)
+        prompt = get_executor_prompt(action)
 
         try:
-            # Create request directly with the provided LLM resource
-            from dana.common.types import BaseRequest
+            # Use base class method for LLM interaction with conversation context and prompt_engineer
+            system_prompt = get_executor_system_prompt()
 
-            request = BaseRequest(
-                arguments={
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are an AI assistant that executes actions and provides helpful responses. Be direct and helpful."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
-                }
-            )
+            response_text = self._query_llm_with_prteng(prompt=prompt, system_prompt=system_prompt, max_turns=5)
 
-            response = llm_resource.query_sync(request)
-
-            if response is None:
+            if response_text is None:
                 raise RuntimeError(f"LLM query failed for action: {action}")
-
-            # Extract text from response (same logic as in _llm_draft_plan)
-            if hasattr(response, 'content'):
-                content = response.content
-                if isinstance(content, dict):
-                    if 'choices' in content and len(content['choices']) > 0:
-                        choice = content['choices'][0]
-                        if 'message' in choice and 'content' in choice['message']:
-                            response_text = choice['message']['content']
-                        else:
-                            response_text = str(choice)
-                    else:
-                        response_text = str(content)
-                else:
-                    response_text = str(content)
-            elif hasattr(response, 'text'):
-                response_text = response.text
-            elif isinstance(response, str):
-                response_text = response
-            else:
-                response_text = str(response)
 
             self._log_solver_phase("LLM-ACTION", f"LLM response: {response_text[:100]}...", "🤖")
             return {"status": "ok", "action": action, "message": response_text}
@@ -551,14 +451,14 @@ class PlannerExecutorSolver(BaseSolver):
             return {
                 "status": "ok",
                 "action": action,
-                "message": f"I can see you're asking about a math problem: '{action}'. I can help with basic arithmetic (addition, subtraction, multiplication, division). Could you rephrase the problem in a simpler format? For example: 'What is 5 + 3?' or 'Calculate 10 * 7'.",
+                "message": get_math_guidance_message(action),
             }
 
         except Exception:
             return {
                 "status": "ok",
                 "action": action,
-                "message": f"I can see you're asking about a math problem: '{action}'. I can help with basic arithmetic. Could you rephrase it in a simpler format? For example: 'What is 5 + 3?' or 'Calculate 10 * 7'.",
+                "message": get_math_fallback_message(action),
             }
 
     def _try_execute_action_patterns(self, action: str, sandbox_context: SandboxContext) -> dict[str, Any] | None:
@@ -610,8 +510,8 @@ class PlannerExecutorSolver(BaseSolver):
         summary_parts = [f"# {goal.title()}\n"]
 
         # Add overview
-        summary_parts.append("## Overview")
-        summary_parts.append(f"I've created a comprehensive plan with {len(plan)} steps to help you {goal.lower()}.\n")
+        summary_parts.append(f"""## Overview
+I've created a comprehensive plan with {len(plan)} steps to help you {goal.lower()}.\n""")
 
         # Add each step with its result
         summary_parts.append("## Detailed Plan")
@@ -629,12 +529,12 @@ class PlannerExecutorSolver(BaseSolver):
                 summary_parts.append("✅ Completed\n")
 
         # Add next steps
-        summary_parts.append("## Next Steps")
-        summary_parts.append("Review this plan and let me know if you'd like me to:")
-        summary_parts.append("- Modify any specific steps")
-        summary_parts.append("- Add more details to particular areas")
-        summary_parts.append("- Help you execute any of these steps")
-        summary_parts.append("- Create a more detailed itinerary")
+        summary_parts.append("""## Next Steps
+Review this plan and let me know if you'd like me to:
+- Modify any specific steps
+- Add more details to particular areas
+- Help you execute any of these steps
+- Create a more detailed itinerary""")
 
         return "\n".join(summary_parts)
 
@@ -642,12 +542,7 @@ class PlannerExecutorSolver(BaseSolver):
         total = len(plan)
         ok = sum(1 for r in results if str(r.get("status", "")).startswith("ok"))
         failed = sum(1 for r in results if str(r.get("status", "")).startswith("error"))
-        mode = "DRY RUN" if dry_run else "EXECUTED"
-        return (
-            f"{mode} summary for: {goal}\n"
-            f"- Steps: {total}, Completed: {ok}, Failed: {failed}\n"
-            f"- See results for per-step outputs. Refine plan or export deliverable next."
-        )
+        return f"Execution complete: {ok}/{total} actions succeeded, {failed} failed. Goal: {goal} (dry_run={dry_run})"
 
 
 # ---------------------------

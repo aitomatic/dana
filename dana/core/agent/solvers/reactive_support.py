@@ -14,6 +14,7 @@ from .prompts import (
 if TYPE_CHECKING:
     from dana.core.agent.agent_instance import AgentInstance
 
+
 class ReactiveSupportSolver(BaseSolver):
     """
     Conversational, case-based troubleshooting mixin.
@@ -32,7 +33,7 @@ class ReactiveSupportSolver(BaseSolver):
       - resource_index:    object with .pack(entities)->dict (docs/kb/specs)
     """
 
-    def __init__(self, agent: "AgentInstance"):
+    def __init__(self, agent: AgentInstance):
         super().__init__(agent)
 
     def solve_sync(
@@ -324,10 +325,10 @@ class ReactiveSupportSolver(BaseSolver):
             prompt = get_reactive_support_prompt_general(message)
 
         # Use the base class method that includes conversation context
-        return self._generate_llm_response_with_context(
-            prompt=prompt,
-            system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT
-        ) or "I'm here to help! Could you provide more details about what you'd like me to assist you with?"
+        return (
+            self._query_llm_with_prteng(prompt=prompt, system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT)
+            or "I'm here to help! Could you provide more details about what you'd like me to assist you with?"
+        )
 
     def _infer_missing(self, required_list: list[str], message: str, artifacts: dict[str, Any]) -> list[str]:
         """
