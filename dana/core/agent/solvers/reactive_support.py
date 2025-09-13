@@ -141,7 +141,7 @@ class ReactiveSupportSolver(BaseSolver):
                                     solution=solution,
                                     score=float(sig_score),
                                 )
-                                return self._format_support_response(response_data)
+                                return response_data
                             except Exception as e:
                                 print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
                                 # Fall back to regular signature response
@@ -208,7 +208,7 @@ class ReactiveSupportSolver(BaseSolver):
                             solution=solution,
                             score=float(score),
                         )
-                        return self._format_support_response(response_data)
+                        return response_data
                     except Exception as e:
                         print(f"⚠️ [REACTIVE-SUPPORT] LLM workflow failed: {e}")
                         # Fall back to regular workflow execution
@@ -234,7 +234,7 @@ class ReactiveSupportSolver(BaseSolver):
                 checklist=self._checklist_from_result(result, artifacts.get("_resources", {})),
                 score=float(score),
             )
-            return self._format_support_response(response_data)
+            return response_data
 
         # 6) Artifact sufficiency check → ASK if missing (but be more helpful)
         print("🔧 [REACTIVE-SUPPORT] Checking artifact sufficiency...")
@@ -277,7 +277,16 @@ class ReactiveSupportSolver(BaseSolver):
             if llm_response:
                 print(f"🔧 [REACTIVE-SUPPORT] LLM response generated: {llm_response[:100]}...")
                 st.update({"phase": "delivered", "llm_response": llm_response})
-                return llm_response  # Return the LLM response directly as a string
+
+                # Create a proper dict response
+                response_data = self._create_answer_response(
+                    "support",
+                    artifacts,
+                    "llm_analysis",
+                    diagnosis=llm_response,
+                    checklist=[],
+                )
+                return response_data
             else:
                 print("🔧 [REACTIVE-SUPPORT] No LLM response received")
         except Exception as e:
@@ -296,7 +305,7 @@ class ReactiveSupportSolver(BaseSolver):
             diagnosis=preliminary.get("summary", "Preliminary diagnosis"),
             checklist=checklist,
         )
-        return self._format_support_response(response_data)
+        return response_data
 
     # ---------------------------
     # Helpers

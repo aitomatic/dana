@@ -30,7 +30,7 @@ class TestAgent:
         agent.get_metrics.return_value = {
             "tokens_per_sec": 0.0,
             "elapsed_time": 0.0,
-            "current_step": "idle",
+            "current_step": "initialized",
             "is_running": False,
             "last_tool": "",
             "progress": 0.0,
@@ -44,7 +44,7 @@ class TestAgent:
         metrics = mock_agent.get_metrics()
         assert metrics["tokens_per_sec"] == 0.0
         assert metrics["elapsed_time"] == 0.0
-        assert metrics["current_step"] == "idle"
+        assert metrics["current_step"] == "initialized"
         assert metrics["is_running"] is False
 
     def test_agent_metrics_update(self, mock_agent):
@@ -80,7 +80,7 @@ class TestDanaSandbox:
         """Provide a mock agent."""
         agent = AsyncMock(spec=AgentInstance)
         agent.name = "test_agent"
-        agent.get_metrics.return_value = {"tokens_per_sec": 0.0, "elapsed_time": 0.0, "current_step": "idle", "is_running": False}
+        agent.get_metrics.return_value = {"tokens_per_sec": 0.0, "elapsed_time": 0.0, "current_step": "initialized", "is_running": False}
         return agent
 
     def test_add_agent_directly(self, sandbox, mock_agent):

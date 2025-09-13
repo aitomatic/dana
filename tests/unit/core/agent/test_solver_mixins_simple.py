@@ -13,8 +13,30 @@ from dana.core.agent.solvers.planner_executor import PlannerExecutorSolver
 from dana.core.agent.solvers.reactive_support import ReactiveSupportSolver
 
 
+def create_mock_agent():
+    """Create a mock agent for testing."""
+    agent = Mock()
+
+    # Create a proper LLM resource mock
+    llm_resource = Mock()
+    llm_resource.query_sync.return_value = Mock(text='{"action": "test", "result": "success"}')
+    agent.llm_resource = llm_resource
+
+    # Mock prompt engineer
+    agent._prompt_engineer = Mock()
+    agent._prompt_engineer.generate.return_value = Mock(system_message="Test system prompt", user_message="Test user prompt")
+
+    return agent
+
+
 class ConcreteSolverMixin(BaseSolver):
     """Concrete implementation of BaseSolverMixin for testing."""
+
+    def __init__(self, agent=None):
+        """Initialize with optional agent parameter."""
+        if agent is None:
+            agent = Mock()
+        super().__init__(agent)
 
     def solve_sync(self, problem_or_workflow, artifacts=None, sandbox_context=None, **kwargs):
         """Concrete implementation of solve_sync."""
@@ -26,16 +48,16 @@ class TestBaseSolverMixinSimple:
 
     def test_base_solver_mixin_initialization(self):
         """Test that BaseSolverMixin initializes correctly."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
-        assert hasattr(mixin, "context_engineer")
+        assert hasattr(mixin, "agent")
         assert hasattr(mixin, "llm_resource")
-        assert mixin._context_engineer is None
-        assert mixin._llm_resource is None
+        assert mixin.agent is not None
+        assert mixin.llm_resource is not None
 
     def test_inject_dependencies(self):
         """Test dependency injection functionality."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
         # Test with no dependencies
         wc, ri, sig = mixin._inject_dependencies()
@@ -55,7 +77,7 @@ class TestBaseSolverMixinSimple:
 
     def test_initialize_solver_state(self):
         """Test solver state initialization."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
         artifacts = {}
         state = mixin._initialize_solver_state(artifacts, "_test_state")
@@ -66,7 +88,7 @@ class TestBaseSolverMixinSimple:
 
     def test_extract_entities(self):
         """Test entity extraction from artifacts."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
         artifacts = {"_entities": {"user": "test", "domain": "testing"}}
         entities = mixin._extract_entities(artifacts)
@@ -80,13 +102,14 @@ class TestBaseSolverMixinSimple:
 
     def test_create_ask_response(self):
         """Test ask response creation."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
-        response = mixin._create_ask_response("Test message")
+        response = mixin._create_ask_response("Test message", mixin="test_mixin")
 
         assert response["type"] == "ask"
         assert response["message"] == "Test message"
-        assert response["telemetry"]["mixin"] == "test_mixin"
+        # Telemetry field was removed from the API
+        assert response["mixin"] == "test_mixin"
 
         # Test with missing items
         response = mixin._create_ask_response("Test message", missing=["item1", "item2"])
@@ -94,15 +117,15 @@ class TestBaseSolverMixinSimple:
 
     def test_create_answer_response(self):
         """Test answer response creation."""
-        mixin = ConcreteSolverMixin()
+        mixin = ConcreteSolverMixin(create_mock_agent())
 
         artifacts = {"test": "data"}
-        response = mixin._create_answer_response("test_mode", artifacts, "test_selection", extra="value")
+        response = mixin._create_answer_response("test_mode", artifacts, "test_selection", mixin="test_mixin", extra="value")
 
         assert response["type"] == "answer"
         assert response["mode"] == "test_mode"
-        assert response["telemetry"]["mixin"] == "test_mixin"
-        assert response["telemetry"]["selected"] == "test_selection"
+        # Telemetry field was removed from the API
+        assert response["mixin"] == "test_mixin"
         assert response["artifacts"] == artifacts
         assert response["extra"] == "value"
 
@@ -112,14 +135,15 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_planner_executor_initialization(self):
         """Test that PlannerExecutorSolverMixin initializes correctly."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
-        assert hasattr(mixin, "context_engineer")
+        # context_engineer is no longer a direct attribute of solvers
+        assert hasattr(mixin, "agent")
         assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_empty_goal(self):
         """Test solving with an empty goal string."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
         result = mixin.solve_sync("")
 
@@ -128,7 +152,7 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_draft_plan_heuristic(self):
         """Test heuristic plan drafting."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
         # Test with a simple goal
         steps = mixin._heuristic_draft_plan("test goal", max_steps=3)
@@ -139,7 +163,7 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_structure_plan(self):
         """Test plan structuring."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
         steps = ["analyze the problem", "implement solution", "test the result"]
         structured = mixin._structure_plan(steps)
@@ -151,20 +175,21 @@ class TestPlannerExecutorSolverMixinSimple:
 
     def test_exec_action_dry_run(self):
         """Test action execution in dry run mode."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
         # Test dry run
         result = mixin._exec_action("test action", None, dry_run=True)
         assert result["status"] == "ok (dry-run)"
         assert "would be executed" in result["message"]
 
-        # Test with no sandbox context - should raise error
-        with pytest.raises(RuntimeError, match="No LLM resource available for action execution"):
-            mixin._exec_action("test action", None, dry_run=False)
+        # Test with no sandbox context - should work with mocked LLM
+        result = mixin._exec_action("test action", None, dry_run=False)
+        assert result["status"] == "ok"
+        assert "action" in result
 
     def test_exec_action_with_patterns(self):
         """Test action execution with pattern recognition."""
-        mixin = PlannerExecutorSolver()
+        mixin = PlannerExecutorSolver(create_mock_agent())
 
         # Create a mock sandbox context with LLM resource
         mock_context = Mock()
@@ -192,14 +217,15 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_reactive_support_initialization(self):
         """Test that ReactiveSupportSolverMixin initializes correctly."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
-        assert hasattr(mixin, "context_engineer")
+        # context_engineer is no longer a direct attribute of solvers
+        assert hasattr(mixin, "agent")
         assert hasattr(mixin, "llm_resource")
 
     def test_solve_sync_with_empty_message(self):
         """Test solving with an empty message."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         result = mixin.solve_sync("")
 
@@ -208,7 +234,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_preliminary_analysis(self):
         """Test preliminary analysis functionality."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         # Test critical severity
         analysis = mixin._preliminary_analysis("system crash data loss", {})
@@ -234,7 +260,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_infer_missing(self):
         """Test missing artifact inference."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         # Test with no artifacts
         missing = mixin._infer_missing(["logs", "config"], "test message", {})
@@ -253,7 +279,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_draft_checklist(self):
         """Test checklist drafting."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         preliminary = {"category": "performance", "severity": "high"}
         checklist = mixin._draft_checklist("performance issue", {}, {}, preliminary)
@@ -265,7 +291,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_canonical_key(self):
         """Test canonical key generation."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         assert mixin._canonical_key("log snippet") == "logs"
         assert mixin._canonical_key("config block") == "config"
@@ -275,7 +301,7 @@ class TestReactiveSupportSolverMixinSimple:
 
     def test_ref_titles(self):
         """Test reference title extraction."""
-        mixin = ReactiveSupportSolver()
+        mixin = ReactiveSupportSolver(create_mock_agent())
 
         refs = [{"title": "Test Doc", "id": "doc1"}, {"name": "Another Doc", "id": "doc2"}, "Simple String", {"id": "doc3"}]
 

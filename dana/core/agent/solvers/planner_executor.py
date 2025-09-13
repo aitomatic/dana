@@ -70,7 +70,7 @@ class PlannerExecutorSolver(BaseSolver):
 
         print("🎲 STRATEGY SELECTION - Auto-selecting strategy for problem")
         workflow = WorkflowInstance.create_with_strategy(
-            problem=problem, strategy_type="auto", agent_instance=self, artifacts=artifacts, sandbox_context=sandbox_context, **kwargs
+            problem=problem, strategy_type="auto", agent_instance=self.agent, artifacts=artifacts, sandbox_context=sandbox_context, **kwargs
         )
         print(f"✅ WORKFLOW CREATED - {type(workflow).__name__}")
 

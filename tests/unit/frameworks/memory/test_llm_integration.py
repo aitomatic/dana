@@ -140,9 +140,11 @@ class TestLLMIntegration(unittest.TestCase):
         """Test fallback behavior when no LLM resource is available."""
         # Mock the sandbox context to return no LLM resources
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
-            # Also mock the agent's own LLM resource to return None
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            # Mock the agent's LLM resource to be None
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
+                # Manually set the LLM resource to None
+                agent._llm_resource = None
 
                 # Use sync method to avoid promise handling
                 response = agent.chat_sync("Hello", sandbox_context=self.sandbox_context)
