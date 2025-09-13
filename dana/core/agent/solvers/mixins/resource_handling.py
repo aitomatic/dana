@@ -60,9 +60,9 @@ class ResourceHandlingMixin:
                 continue
 
             # Parse arguments
+            args_clean = args.strip("\"'")  # Initialize outside try block
             try:
                 # Simple argument parsing - remove quotes and handle basic types
-                args_clean = args.strip("\"'")
                 if args_clean.lower() in ["true", "false"]:
                     parsed_args = args_clean.lower() == "true"
                 elif args_clean.isdigit():
@@ -169,8 +169,8 @@ class ResourceHandlingMixin:
                     continue
 
                 # Parse arguments
+                args_clean = args.strip("\"'")  # Initialize outside try block
                 try:
-                    args_clean = args.strip("\"'")
                     if args_clean.lower() in ["true", "false"]:
                         parsed_args = args_clean.lower() == "true"
                     elif args_clean.isdigit():

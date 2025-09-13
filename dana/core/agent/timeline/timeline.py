@@ -8,8 +8,7 @@ with type-based persistence and async loading.
 
 import json
 import threading
-import uuid
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -37,10 +36,10 @@ class Timeline:
 
         # Default persistence configuration
         self.persistence_config = {
-            "conversation": True,    # Always persist conversations
-            "action": True,          # Persist actions for audit
-            "learning": False,       # Don't persist learning events by default
-            "custom": False          # Don't persist custom events by default
+            "conversation": True,  # Always persist conversations
+            "action": True,  # Persist actions for audit
+            "learning": False,  # Don't persist learning events by default
+            "custom": False,  # Don't persist custom events by default
         }
         if persistence_config:
             self.persistence_config.update(persistence_config)
@@ -100,7 +99,9 @@ class Timeline:
     # Event Addition Methods
     # ============================================================================
 
-    def add_conversation_turn(self, user_input: str, agent_response: str, turn_number: int, metadata: dict[str, Any] | None = None) -> ConversationTurn:
+    def add_conversation_turn(
+        self, user_input: str, agent_response: str, turn_number: int, metadata: dict[str, Any] | None = None
+    ) -> ConversationTurn:
         """Add conversation turn and persist immediately.
 
         Args:
@@ -112,7 +113,7 @@ class Timeline:
         Returns:
             The created ConversationTurn event
         """
-        turn = ConversationTurn(user_input, agent_response, turn_number, metadata)
+        turn = ConversationTurn(user_input, agent_response, turn_number, metadata or {})
         self.conversation_events.append(turn)
 
         if self.persistence_config.get("conversation", True):
@@ -120,7 +121,16 @@ class Timeline:
 
         return turn
 
-    def add_action(self, action_type: str, action_name: str, depth: int, execution_time: float = 0.0, result: Any = None, error_message: str = None, metadata: dict[str, Any] | None = None) -> AgentAction:
+    def add_action(
+        self,
+        action_type: str,
+        action_name: str,
+        depth: int,
+        execution_time: float = 0.0,
+        result: Any = None,
+        error_message: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> AgentAction:
         """Add action event and persist immediately.
 
         Args:
@@ -135,7 +145,7 @@ class Timeline:
         Returns:
             The created AgentAction event
         """
-        action = AgentAction(action_type, action_name, depth, execution_time, result, error_message, metadata)
+        action = AgentAction(action_type, action_name, depth, execution_time, result, error_message or "", metadata or {})
         self.action_events.append(action)
 
         if self.persistence_config.get("action", True):
@@ -143,7 +153,9 @@ class Timeline:
 
         return action
 
-    def add_learning_event(self, learning_type: str, learning_data: dict[str, Any], confidence: float = 1.0, metadata: dict[str, Any] | None = None) -> LearningEvent:
+    def add_learning_event(
+        self, learning_type: str, learning_data: dict[str, Any], confidence: float = 1.0, metadata: dict[str, Any] | None = None
+    ) -> LearningEvent:
         """Add learning event and persist immediately.
 
         Args:
@@ -155,7 +167,7 @@ class Timeline:
         Returns:
             The created LearningEvent
         """
-        learning = LearningEvent(learning_type, learning_data, confidence, metadata)
+        learning = LearningEvent(learning_type, learning_data, confidence, metadata or {})
         self.learning_events.append(learning)
 
         if self.persistence_config.get("learning", False):
@@ -174,10 +186,23 @@ class Timeline:
         Returns:
             The created custom TimelineEvent
         """
-        # Create a generic TimelineEvent for custom events
-        event = TimelineEvent(metadata=metadata)
-        event._event_type = event_type
-        event._data = data
+
+        # Create a concrete custom event class
+        class CustomEvent(TimelineEvent):
+            def __init__(self, event_type: str, data: dict[str, Any], metadata: dict[str, Any]):
+                super().__init__(references=metadata)
+                self._event_type = event_type
+                self._data = data
+
+            @property
+            def event_type(self) -> str:
+                return self._event_type
+
+            @property
+            def data(self) -> dict[str, Any]:
+                return self._data
+
+        event = CustomEvent(event_type, data, metadata or {})
         self.custom_events.append(event)
 
         if self.persistence_config.get("custom", False):
@@ -203,9 +228,9 @@ class Timeline:
         all_events.extend(self.learning_events)
         all_events.extend(self.custom_events)
 
-        return sorted(all_events, key=lambda e: e.timestamp)
+        return iter(sorted(all_events, key=lambda e: e.timestamp))
 
-    def get_events_by_type(self, event_type: str) -> list[TimelineEvent]:
+    def get_events_by_type(self, event_type: str) -> Sequence[TimelineEvent]:
         """Get events of specific type.
 
         Args:
@@ -295,13 +320,15 @@ class Timeline:
 
         for turn in self.conversation_events:
             if query_lower in turn.user_input.lower() or query_lower in turn.agent_response.lower():
-                matches.append({
-                    "user_input": turn.user_input,
-                    "agent_response": turn.agent_response,
-                    "turn_number": turn.turn_number,
-                    "timestamp": turn.timestamp.isoformat(),
-                    "metadata": turn.metadata or {},
-                })
+                matches.append(
+                    {
+                        "user_input": turn.user_input,
+                        "agent_response": turn.agent_response,
+                        "turn_number": turn.turn_number,
+                        "timestamp": turn.timestamp.isoformat(),
+                        "metadata": turn.metadata or {},
+                    }
+                )
 
         # Return most recent matches first
         return matches[-max_results:] if matches else []
@@ -329,10 +356,7 @@ class Timeline:
             Number of events
         """
         self._wait_for_loading()
-        return (len(self.conversation_events) +
-                len(self.action_events) +
-                len(self.learning_events) +
-                len(self.custom_events))
+        return len(self.conversation_events) + len(self.action_events) + len(self.learning_events) + len(self.custom_events)
 
     def is_empty(self) -> bool:
         """Check if the timeline has any events.
@@ -341,10 +365,12 @@ class Timeline:
             True if timeline is empty, False otherwise
         """
         self._wait_for_loading()
-        return (len(self.conversation_events) == 0 and
-                len(self.action_events) == 0 and
-                len(self.learning_events) == 0 and
-                len(self.custom_events) == 0)
+        return (
+            len(self.conversation_events) == 0
+            and len(self.action_events) == 0
+            and len(self.learning_events) == 0
+            and len(self.custom_events) == 0
+        )
 
     def clear(self) -> None:
         """Remove all events from the timeline."""
@@ -367,13 +393,7 @@ class Timeline:
         self._wait_for_loading()
 
         if self.is_empty():
-            return {
-                "total_events": 0,
-                "event_types": {},
-                "time_span": None,
-                "first_event": None,
-                "last_event": None
-            }
+            return {"total_events": 0, "event_types": {}, "time_span": None, "first_event": None, "last_event": None}
 
         all_events = list(self.get_all_events())
 
@@ -444,7 +464,7 @@ class Timeline:
         data = {
             "events": [self._event_to_dict(event) for event in events],
             "last_updated": datetime.now(UTC).isoformat(),
-            "event_count": len(events)
+            "event_count": len(events),
         }
 
         # Atomic write
@@ -483,38 +503,46 @@ class Timeline:
         }
 
         if isinstance(event, ConversationTurn):
-            base_data.update({
-                "event_type": "conversation_turn",
-                "user_input": event.user_input,
-                "agent_response": event.agent_response,
-                "turn_number": event.turn_number,
-                "metadata": event.metadata or {},
-            })
+            base_data.update(
+                {
+                    "event_type": "conversation_turn",
+                    "user_input": event.user_input,
+                    "agent_response": event.agent_response,
+                    "turn_number": event.turn_number,
+                    "metadata": event.metadata or {},
+                }
+            )
         elif isinstance(event, AgentAction):
-            base_data.update({
-                "event_type": "agent_action",
-                "action_type": event.action_type,
-                "action_name": event.action_name,
-                "execution_time": event.execution_time,
-                "result": event.result,
-                "error_message": event.error_message,
-                "metadata": event.metadata or {},
-            })
+            base_data.update(
+                {
+                    "event_type": "agent_action",
+                    "action_type": event.action_type,
+                    "action_name": event.action_name,
+                    "execution_time": event.execution_time,
+                    "result": event.result,
+                    "error_message": event.error_message,
+                    "metadata": event.metadata or {},
+                }
+            )
         elif isinstance(event, LearningEvent):
-            base_data.update({
-                "event_type": "learning_event",
-                "learning_type": event.learning_type,
-                "learning_data": event.learning_data,
-                "confidence": event.confidence,
-                "metadata": event.metadata or {},
-            })
+            base_data.update(
+                {
+                    "event_type": "learning_event",
+                    "learning_type": event.learning_type,
+                    "learning_data": event.learning_data,
+                    "confidence": event.confidence,
+                    "metadata": event.metadata or {},
+                }
+            )
         else:
             # Custom event
-            base_data.update({
-                "event_type": getattr(event, "_event_type", "custom"),
-                "data": getattr(event, "_data", {}),
-                "metadata": event.metadata or {},
-            })
+            base_data.update(
+                {
+                    "event_type": getattr(event, "_event_type", "custom"),
+                    "data": getattr(event, "_data", {}),
+                    "metadata": event.metadata or {},
+                }
+            )
 
         return base_data
 
@@ -540,7 +568,7 @@ class Timeline:
                     depth=event_data["depth"],
                     execution_time=event_data.get("execution_time", 0.0),
                     result=event_data.get("result"),
-                    error_message=event_data.get("error_message"),
+                    error_message=event_data.get("error_message", ""),
                     metadata=event_data.get("metadata", {}),
                 )
                 # Set timestamp after creation
@@ -558,10 +586,26 @@ class Timeline:
                 return learning
             else:
                 # Custom event
-                event = TimelineEvent(timestamp=timestamp, metadata=event_data.get("metadata", {}))
-                event._event_type = event_data.get("event_type", "custom")
-                event._data = event_data.get("data", {})
-                return event
+                class CustomEvent(TimelineEvent):
+                    def __init__(self, event_type: str, data: dict[str, Any], timestamp: datetime, references: dict[str, Any]):
+                        super().__init__(timestamp=timestamp, references=references)
+                        self._event_type = event_type
+                        self._data = data
+
+                    @property
+                    def event_type(self) -> str:
+                        return self._event_type
+
+                    @property
+                    def data(self) -> dict[str, Any]:
+                        return self._data
+
+                return CustomEvent(
+                    event_type=event_data.get("event_type", "custom"),
+                    data=event_data.get("data", {}),
+                    timestamp=timestamp,
+                    references=event_data.get("metadata", {}),
+                )
 
         except (KeyError, ValueError) as e:
             print(f"Warning: Failed to deserialize event: {e}")
