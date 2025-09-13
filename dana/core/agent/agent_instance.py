@@ -566,6 +566,32 @@ class AgentInstance(
             self._triage_solver = TriageSolver(self)
             print(f"Solvers initialized for {self.name}")
 
+    def get_solver_dependencies(self, solver_name: str | None = None) -> dict[str, Any]:
+        """Get dependency summary from a specific solver or all solvers.
+
+        Args:
+            solver_name: Name of specific solver to check, or None for all solvers
+
+        Returns:
+            Dictionary with dependency summaries
+        """
+        dependencies = {}
+
+        if solver_name:
+            # Get specific solver
+            solver = getattr(self, f"_{solver_name}_solver", None)
+            if solver and hasattr(solver, "get_dependency_summary"):
+                dependencies[solver_name] = solver.get_dependency_summary()
+        else:
+            # Get all solvers
+            solver_names = ["planner_executor", "reactive_support", "simple_helpful", "triage"]
+            for name in solver_names:
+                solver = getattr(self, f"_{name}_solver", None)
+                if solver and hasattr(solver, "get_dependency_summary"):
+                    dependencies[name] = solver.get_dependency_summary()
+
+        return dependencies
+
     def _cleanup_agent_resources(self):
         """Cleanup all agent resources that need explicit cleanup."""
         try:

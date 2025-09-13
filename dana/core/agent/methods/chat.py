@@ -218,7 +218,7 @@ class ChatMixin:
         elif "help" in message_lower or "what can you do" in message_lower:
             fallback_response["content"] = FallbackResponses.get_help(self.agent_type.name)
             fallback_response["response_type"] = "help"
-            fallback_response["capabilities"] = ["chat", "memory", "llm_integration"]
+            fallback_response["available_resources"] = ["chat", "memory", "llm_integration"]
 
         # Default response
         else:
