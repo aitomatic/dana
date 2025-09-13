@@ -1,15 +1,15 @@
-"""Instant expert agent leveraging Dana's standard library's `ExpertAgent` blueprint and `knows` expertise packs."""
+"""Instant expert agent leveraging Dana's standard library's `ExpertAgent` blueprint and `domain_packs` expertise modules."""
 
 
 # import expert agent blueprint from `blueprints` stdlib
 from blueprints.expert_agent import ExpertAgent
 
-# import relevant expertise module(s) from `knows` stdlib
-from domain_packs import financial_analysis
+# import relevant expertise module(s) from `domain_packs` stdlib
+from domain_packs import financial_statements_analysis
 
 
 # instantiate expert agent with relevant expertise module(s)
-JeanHu = ExpertAgent(expertise=[financial_analysis])
+JeanHu = ExpertAgent(expertise=[financial_statements_analysis])
 
 
 # instantiate resource(s)
