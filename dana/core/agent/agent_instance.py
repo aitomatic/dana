@@ -258,6 +258,17 @@ class AgentInstance(
         print("⚠️ [TRIAGE] Unknown input type, using simple_helpful solver")
         return self._simple_helpful_solver.solve_sync(str(problem_or_workflow), artifacts or {}, sandbox_context, **kwargs)
 
+    def plan_sync(
+        self,
+        problem_or_workflow: str | WorkflowInstance,
+        artifacts: dict[str, Any] | None = None,
+        sandbox_context: SandboxContext | None = None,
+        **kwargs,
+    ) -> WorkflowInstance | None:
+        """Synchronous agent plan method."""
+        assert self._planner_executor_solver is not None
+        return self._planner_executor_solver.plan_sync(problem_or_workflow, artifacts or {}, sandbox_context, **kwargs)
+
     # ============================================================================
     # COMMUNICATION METHODS
     # ============================================================================

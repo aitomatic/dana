@@ -98,15 +98,13 @@ class ChatMixin:
         """Implementation of chat functionality. Returns the response string directly."""
         # Build conversation context from centralized state
         try:
-            conversation_context = self.state.timeline.get_conversation_turns(
-                max_turns=max_context_turns
-            )
+            conversation_context = self.state.timeline.get_conversation_turns(max_turns=max_context_turns)
         except Exception:
             # Fallback if centralized state fails
             conversation_context = ""
 
-        # Try to get LLM resource - prioritize agent's own LLM resource
-        llm_resource = self.llm_resource
+        # Try to get LLM resource - prioritize sandbox context, then agent's own LLM resource
+        llm_resource = self._get_llm_resource(sandbox_context)
 
         if llm_resource:
             try:

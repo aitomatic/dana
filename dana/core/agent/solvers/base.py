@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+from dana.core.resource.builtins.llm_resource_type import LLMResourceType
 from dana.core.workflow.workflow_system import WorkflowInstance
 from dana.registry import WorkflowRegistry, ResourceRegistry
 
@@ -98,7 +99,7 @@ class BaseSolver(ABC):
             if agent_llm is not None and isinstance(agent_llm, LLMResourceInstance):
                 self._llm_resource = agent_llm
             else:
-                self._llm_resource = LLMResourceInstance.create_default_instance()
+                self._llm_resource = LLMResourceType.create_default_instance()
 
         return self._llm_resource
 
@@ -164,8 +165,18 @@ class BaseSolver(ABC):
     def _inject_dependencies(self, **kwargs: Any) -> tuple[WorkflowRegistry | None, ResourceRegistry | None, SignatureMatcher | None]:
         """Inject dependencies from kwargs or fall back to instance attributes."""
         # Use __dict__ to avoid triggering __getattr__ recursion
-        workflow_registry = kwargs.get("workflow_registry") or self.__dict__.get("workflow_registry", None)
-        resource_registry = kwargs.get("resource_registry") or self.__dict__.get("resource_registry", None)
+        workflow_registry = (
+            kwargs.get("workflow_registry")
+            or kwargs.get("workflow_catalog")
+            or self.__dict__.get("workflow_registry", None)
+            or self.__dict__.get("workflow_catalog", None)
+        )
+        resource_registry = (
+            kwargs.get("resource_registry")
+            or kwargs.get("resource_index")
+            or self.__dict__.get("resource_registry", None)
+            or self.__dict__.get("resource_index", None)
+        )
         signature_matcher = kwargs.get("signature_matcher") or self.__dict__.get("signature_matcher", None)
         return workflow_registry, resource_registry, signature_matcher
 

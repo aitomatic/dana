@@ -58,6 +58,7 @@ class AssignmentHandler(Loggable):
         """
         self._assignment_count += 1
 
+        value = None  # Initialize value to avoid UnboundLocalError
         try:
             # Handle type hints efficiently
             target_type = self._process_type_hint(node, context)
@@ -90,7 +91,7 @@ class AssignmentHandler(Loggable):
             # Promises need to preserve context for when they resolve
             from dana.core.concurrency.eager_promise import EagerPromise
 
-            if not isinstance(value, EagerPromise):
+            if value is not None and not isinstance(value, EagerPromise):
                 context.set("system:__current_assignment_type", None)
 
     def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:

@@ -54,7 +54,7 @@ class TestAgent:
         metrics = agent.get_metrics()
         assert metrics["tokens_per_sec"] == 0.0
         assert metrics["elapsed_time"] == 0.0
-        assert metrics["current_step"] == "idle"
+        assert metrics["current_step"] == "initialized"
         assert metrics["is_running"] is False
 
     def test_update_metric(self):
