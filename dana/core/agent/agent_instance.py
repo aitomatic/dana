@@ -12,7 +12,6 @@ from dana.common.types import BaseRequest
 from dana.core.builtins.struct_system import StructInstance
 from dana.frameworks.corral import CORRALEngineer
 from dana.frameworks.prteng import PromptEngineer
-from dana.frameworks.ctxeng import ContextEngineer
 
 # Removed direct import of LegacyLLMResource - now using resource type system
 from dana.core.concurrency.promise_factory import PromiseFactory
@@ -531,10 +530,10 @@ class AgentInstance(
             # Initialize solvers
             self._initialize_solvers()
 
-            # Initializing engineering resources
+            # Initializing engineering resources (context_engineer uses lazy initialization)
             self._corral_engineer = CORRALEngineer()
             self._prompt_engineer = PromptEngineer()
-            self._context_engineer = ContextEngineer()
+            # Note: context_engineer is initialized lazily via the property
 
             # Update metrics to indicate agent is ready
             self.update_metric("is_running", False)
