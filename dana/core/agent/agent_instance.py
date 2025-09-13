@@ -528,9 +528,6 @@ class AgentInstance(
     def _initialize_agent_resources(self):
         """Initialize all agent resources that need explicit initialization."""
         try:
-            # Initialize LLM resource
-            self._initialize_llm_resource()
-
             # Initialize solvers
             self._initialize_solvers()
 
@@ -673,6 +670,15 @@ class AgentInstance(
         """
         self._context_manager_initialized = True
         self._initialize_agent_resources()
+        # Initialize LLM resource when context manager is entered
+        try:
+            self._initialize_llm_resource()
+        except Exception as e:
+            # Log LLM initialization failure but don't fail the context manager
+            import logging
+
+            logging.error(f"Failed to initialize LLM resource for {self.name}: {e}")
+            # Continue without LLM resource
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:

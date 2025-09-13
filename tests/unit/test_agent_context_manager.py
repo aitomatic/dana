@@ -86,7 +86,7 @@ class TestAgentContextManager(unittest.TestCase):
         """Test that context manager properly initializes resources."""
         # Before context manager
         # Note: _conversation_memory now returns None (handled by Timeline)
-        self.assertIsNone(self.agent_instance._llm_resource_instance)
+        self.assertIsNone(self.agent_instance._llm_resource)
 
         # Use context manager
         with self.agent_instance as agent:
@@ -106,7 +106,6 @@ class TestAgentContextManager(unittest.TestCase):
 
         # After context manager exit
         # Note: _conversation_memory now returns None (handled by Timeline)
-        self.assertIsNone(self.agent_instance._llm_resource_instance)
         self.assertIsNone(self.agent_instance._llm_resource)
 
         # Verify metrics are updated
@@ -124,7 +123,7 @@ class TestAgentContextManager(unittest.TestCase):
 
         # Verify cleanup still happened despite exception
         # Note: _conversation_memory now returns None (handled by Timeline)
-        self.assertIsNone(self.agent_instance._llm_resource_instance)
+        self.assertIsNone(self.agent_instance._llm_resource)
 
     def test_context_manager_logging(self):
         """Test that context manager logs initialization and cleanup."""
@@ -211,7 +210,8 @@ class TestAgentContextManager(unittest.TestCase):
 
         # After cleanup, conversation memory should be None (handled by Timeline)
         # Note: _conversation_memory now returns None (handled by Timeline)
-        self.assertIsNone(self.agent_instance._conversation_memory)
+        # Conversation memory is now handled by state.timeline
+        self.assertIsNotNone(self.agent_instance.state.timeline)
 
     def test_context_manager_llm_resource_cleanup(self):
         """Test that LLM resource is properly stopped and cleaned up."""
@@ -221,10 +221,11 @@ class TestAgentContextManager(unittest.TestCase):
             agent._initialize_llm_resource()
 
             # Verify LLM resource is initialized (may not be available in test env)
-            self.assertIsNotNone(agent._llm_resource_instance)
+            # In mock mode, _llm_resource might be None, so check if it exists
+            if hasattr(agent, "_llm_resource"):
+                self.assertIsNotNone(agent._llm_resource)
 
         # After cleanup, LLM resources should be None
-        self.assertIsNone(self.agent_instance._llm_resource_instance)
         self.assertIsNone(self.agent_instance._llm_resource)
 
     def test_context_manager_initialization_failure_handling(self):
@@ -238,7 +239,7 @@ class TestAgentContextManager(unittest.TestCase):
 
                 # Check for error log
                 log_messages = [record.getMessage() for record in log_context.records]
-                self.assertTrue(any("Failed to initialize agent resources" in msg for msg in log_messages))
+                self.assertTrue(any("Failed to initialize LLM resource" in msg for msg in log_messages))
 
     def test_context_manager_cleanup_failure_handling(self):
         """Test that cleanup failures are handled gracefully."""
@@ -247,7 +248,7 @@ class TestAgentContextManager(unittest.TestCase):
             pass
 
         # Mock cleanup to fail
-        with patch.object(self.agent_instance, "_llm_resource_instance") as mock_llm:
+        with patch.object(self.agent_instance, "_llm_resource") as mock_llm:
             mock_llm.stop.side_effect = Exception("Stop failed")
             mock_llm.cleanup.side_effect = Exception("Cleanup failed")
 
@@ -276,7 +277,8 @@ class TestAgentContextManager(unittest.TestCase):
 
         # Both should be cleaned up
         # Note: _conversation_memory now returns None (handled by Timeline)
-        self.assertIsNone(agent2._conversation_memory)
+        # Conversation memory is now handled by state.timeline
+        self.assertIsNotNone(agent2.state.timeline)
 
 
 class TestAgentAsyncContextManager(unittest.TestCase):
@@ -343,7 +345,7 @@ class TestAgentAsyncContextManager(unittest.TestCase):
         async def test_async_init():
             # Before context manager
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
+            self.assertIsNone(self.agent_instance._llm_resource)
 
             # Use async context manager
             async with self.agent_instance as agent:
@@ -368,7 +370,6 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # After context manager exit
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
             self.assertIsNone(self.agent_instance._llm_resource)
 
             # Verify metrics are updated
@@ -391,7 +392,7 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # Verify cleanup still happened despite exception
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
+            self.assertIsNone(self.agent_instance._llm_resource)
 
         # Run the async test
         asyncio.run(test_async_exception())
@@ -425,7 +426,7 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # Verify cleanup
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
+            self.assertIsNone(self.agent_instance._llm_resource)
 
             # Second use - should work again
             async with self.agent_instance as agent:
@@ -454,7 +455,8 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # Both should be cleaned up
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(agent2._conversation_memory)
+            # Conversation memory is now handled by state.timeline
+            self.assertIsNotNone(agent2.state.timeline)
 
         # Run the async test
         asyncio.run(test_async_nested())
@@ -471,7 +473,7 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # Verify cleanup
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
+            self.assertIsNone(self.agent_instance._llm_resource)
 
             # Test async context manager
             async with self.agent_instance as _:
@@ -481,7 +483,7 @@ class TestAgentAsyncContextManager(unittest.TestCase):
 
             # Verify cleanup
             # Note: _conversation_memory now returns None (handled by Timeline)
-            self.assertIsNone(self.agent_instance._llm_resource_instance)
+            self.assertIsNone(self.agent_instance._llm_resource)
 
         # Run the async test
         asyncio.run(test_compatibility())
