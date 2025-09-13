@@ -59,11 +59,11 @@ class TestBaseSolverMixinSimple:
         """Test dependency injection functionality."""
         mixin = ConcreteSolverMixin(create_mock_agent())
 
-        # Test with no dependencies
+        # Test with no dependencies - should fall back to global registries
         wc, ri, sig = mixin._inject_dependencies()
-        assert wc is None
-        assert ri is None
-        assert sig is None
+        assert wc is not None  # Should fall back to global workflow registry
+        assert ri is not None  # Should fall back to global resource registry
+        assert sig is None  # Signature matcher should still be None
 
         # Test with provided dependencies
         mock_wc = Mock()

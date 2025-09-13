@@ -163,7 +163,7 @@ class BaseSolver(ABC):
     # Common dependency injection
     # ---------------------------
     def _inject_dependencies(self, **kwargs: Any) -> tuple[WorkflowRegistry | None, ResourceRegistry | None, SignatureMatcher | None]:
-        """Inject dependencies from kwargs or fall back to instance attributes."""
+        """Inject dependencies from kwargs or fall back to instance attributes, then global registry."""
         # Use __dict__ to avoid triggering __getattr__ recursion
         workflow_registry = (
             kwargs.get("workflow_registry")
@@ -178,7 +178,105 @@ class BaseSolver(ABC):
             or self.__dict__.get("resource_index", None)
         )
         signature_matcher = kwargs.get("signature_matcher") or self.__dict__.get("signature_matcher", None)
+
+        # Fall back to global registries if not provided
+        if workflow_registry is None:
+            from dana.registry import GLOBAL_REGISTRY
+
+            workflow_registry = GLOBAL_REGISTRY.workflows
+        if resource_registry is None:
+            from dana.registry import GLOBAL_REGISTRY
+
+            resource_registry = GLOBAL_REGISTRY.resources
+
+        # Debug reporting: Show available resources and workflows
+        self._debug_report_available_dependencies(workflow_registry, resource_registry)
+
         return workflow_registry, resource_registry, signature_matcher
+
+    def _debug_report_available_dependencies(self, workflow_registry: Any, resource_registry: Any) -> None:
+        """Debug reporting for available resources and workflows.
+
+        Args:
+            workflow_registry: The workflow registry instance
+            resource_registry: The resource registry instance
+        """
+        try:
+            # Report available resources
+            if resource_registry and hasattr(resource_registry, "get_available_resources"):
+                resources = resource_registry.get_available_resources()
+                resource_names = list(resources.keys()) if resources else []
+                print(f"🔧 [SOLVER-DEBUG] Available Resources ({len(resource_names)}): {resource_names}")
+
+                # Show resource details if available
+                for name, resource in resources.items():
+                    resource_type = getattr(resource, "kind", "unknown")
+                    resource_status = getattr(resource, "status", "unknown")
+                    print(f"   📦 {name}: {resource_type} ({resource_status})")
+            else:
+                print("🔧 [SOLVER-DEBUG] No resource registry available")
+
+            # Report available workflows
+            if workflow_registry and hasattr(workflow_registry, "get_available_workflows"):
+                workflows = workflow_registry.get_available_workflows()
+                workflow_names = list(workflows.keys()) if workflows else []
+                print(f"🔧 [SOLVER-DEBUG] Available Workflows ({len(workflow_names)}): {workflow_names}")
+
+                # Show workflow details if available
+                for name, workflow in workflows.items():
+                    workflow_type = getattr(workflow, "workflow_type", "unknown")
+                    workflow_status = getattr(workflow, "status", "unknown")
+                    print(f"   🔄 {name}: {workflow_type} ({workflow_status})")
+            else:
+                print("🔧 [SOLVER-DEBUG] No workflow registry available")
+
+        except Exception as e:
+            print(f"🔧 [SOLVER-DEBUG] Error reporting dependencies: {e}")
+
+    def get_dependency_summary(self) -> dict[str, Any]:
+        """Get a summary of available dependencies for this solver.
+
+        Returns:
+            Dictionary with summary of available resources and workflows
+        """
+        try:
+            # Get dependencies through injection
+            wc, ri, _ = self._inject_dependencies()
+
+            summary = {"resources": {"count": 0, "names": [], "details": {}}, "workflows": {"count": 0, "names": [], "details": {}}}
+
+            # Get resource summary
+            if ri and hasattr(ri, "get_available_resources"):
+                resources = ri.get_available_resources()
+                summary["resources"]["count"] = len(resources)
+                summary["resources"]["names"] = list(resources.keys())
+                for name, resource in resources.items():
+                    summary["resources"]["details"][name] = {
+                        "type": getattr(resource, "kind", "unknown"),
+                        "status": getattr(resource, "status", "unknown"),
+                        "instance_id": getattr(resource, "instance_id", "unknown"),
+                    }
+
+            # Get workflow summary
+            if wc and hasattr(wc, "get_available_workflows"):
+                workflows = wc.get_available_workflows()
+                summary["workflows"]["count"] = len(workflows)
+                summary["workflows"]["names"] = list(workflows.keys())
+                for name, workflow in workflows.items():
+                    summary["workflows"]["details"][name] = {
+                        "type": getattr(workflow, "workflow_type", "unknown"),
+                        "status": getattr(workflow, "status", "unknown"),
+                        "instance_id": getattr(workflow, "instance_id", "unknown"),
+                    }
+
+            return summary
+
+        except Exception as e:
+            return {
+                "error": f"Failed to get dependency summary: {e}",
+                "resources": {"count": 0, "names": [], "details": {}},
+                "workflows": {"count": 0, "names": [], "details": {}},
+            }
 
     # ---------------------------
     # Common workflow execution patterns

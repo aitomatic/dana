@@ -4,7 +4,7 @@ Tests for the new centralized AgentState architecture.
 
 from datetime import datetime
 
-from dana.core.agent import AgentState, ProblemContext, AgentMind, CapabilityRegistry
+from dana.core.agent import AgentState, ProblemContext, AgentMind
 from dana.core.agent.context import ExecutionContext
 from dana.core.agent.timeline import Timeline
 
@@ -21,7 +21,6 @@ class TestAgentState:
         assert isinstance(state.mind, AgentMind)
         assert isinstance(state.timeline, Timeline)
         assert isinstance(state.execution, ExecutionContext)
-        assert isinstance(state.capabilities, CapabilityRegistry)
 
         # Test metadata
         assert state.session_id is None
@@ -42,6 +41,7 @@ class TestAgentState:
     def test_start_new_conversation_turn(self):
         """Test starting new conversation turn."""
         import uuid
+
         # Create timeline with unique agent ID to avoid loading existing events
         timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
         state = AgentState()
@@ -142,27 +142,6 @@ class TestAgentState:
         assert "test_key" in working_context
         assert working_context["test_key"] == "test_value"
 
-    def test_capabilities_integration(self):
-        """Test integration with CapabilityRegistry."""
-        state = AgentState()
-
-        # Should start empty
-        assert state.capabilities.get_available_strategies() == []
-        assert state.capabilities.get_available_tools() == []
-
-        # Add capabilities
-        from dana.core.agent.capabilities import Strategy, Tool
-
-        strategy = Strategy(name="test_strategy", description="Test strategy", type="test")
-        tool = Tool(name="test_tool", description="Test tool")
-
-        state.capabilities.register_strategy(strategy)
-        state.capabilities.register_tool(tool)
-
-        # Should be available
-        assert "test_strategy" in state.capabilities.get_available_strategies()
-        assert "test_tool" in state.capabilities.get_available_tools()
-
     def test_execution_context_integration(self):
         """Test integration with ExecutionContext."""
         state = AgentState()
@@ -183,6 +162,7 @@ class TestAgentState:
     def test_timeline_integration(self):
         """Test integration with Timeline."""
         import uuid
+
         # Create timeline with unique agent ID to avoid loading existing events
         timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
         state = AgentState()

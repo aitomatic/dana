@@ -1,0 +1,53 @@
+# Browser Resource Demo
+# This demonstrates how to use the browser resource to fetch web content
+
+# Create a browser resource
+browser = BrowserResource()
+
+# Test basic functionality
+print("Testing browser resource...")
+
+# Query a simple API endpoint
+result = browser.query("https://httpbin.org/get")
+print("Query result:")
+print("  URL:", result.url)
+print("  Success:", result.success)
+print("  Content Length:", result.content_length)
+print("  Content Type:", result.content_type)
+
+# If it's JSON, show the parsed data
+if result.is_json and result.parsed_json:
+    print("  Parsed JSON:")
+    print("    Headers:", result.parsed_json.headers)
+    print("    Origin:", result.parsed_json.origin)
+
+# Test with an HTML page
+html_result = browser.query("https://httpbin.org/html")
+print("\nHTML Query result:")
+print("  URL:", html_result.url)
+print("  Success:", html_result.success)
+print("  Is HTML:", html_result.is_html)
+print("  Content Length:", html_result.content_length)
+
+# Test error handling with invalid URL
+try:
+    error_result = browser.query("not-a-valid-url")
+except ValueError as e:
+    print("\nError handling works:")
+    print("  Error:", e)
+
+# Show browser capabilities
+capabilities = browser.get_capabilities()
+print("\nBrowser Capabilities:")
+print("  Can Browse:", capabilities.can_browse)
+print("  Supports HTTPS:", capabilities.supports_https)
+print("  Timeout:", capabilities.timeout_seconds, "seconds")
+print("  User Agent:", capabilities.user_agent)
+
+# Health check
+health = browser.health_check()
+print("\nHealth Check:")
+print("  Status:", health.status)
+print("  Last Check:", health.last_check)
+
+print("\n✅ Browser resource demo completed!")

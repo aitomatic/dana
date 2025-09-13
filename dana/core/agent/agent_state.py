@@ -9,7 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from .capabilities import CapabilityRegistry
+# Deprecated: CapabilityRegistry replaced with direct resource/workflow access
+# from .capabilities import CapabilityRegistry
 from .context import ExecutionContext, ProblemContext
 from .mind import AgentMind
 from .timeline import Timeline
@@ -41,8 +42,9 @@ class AgentState:
     execution: ExecutionContext = field(default_factory=ExecutionContext)
     """Runtime execution state and resource management."""
 
-    capabilities: CapabilityRegistry = field(default_factory=CapabilityRegistry)
-    """Registry of available tools, strategies, and skills."""
+    # Deprecated: Capabilities replaced with direct resource/workflow access
+    # capabilities: CapabilityRegistry = field(default_factory=CapabilityRegistry)
+    # """Registry of available tools, strategies, and skills."""
 
     # Metadata
     session_id: str | None = None
@@ -113,11 +115,13 @@ class AgentState:
                 # Fallback to timeline events
                 context["recent_events"] = self.timeline.events[-n_events:] if self.timeline.events else []
 
-        # Capabilities context
-        if self.capabilities:
-            context["available_strategies"] = self.capabilities.get_available_strategies()
-            context["available_tools"] = self.capabilities.get_available_tools()
-            context["available_actions"] = self.capabilities.get_available_actions()
+        # Resources and workflows context (replacing capabilities)
+        # Note: Resources and workflows are now accessed through solvers via dependency injection
+        context["available_resources"] = []  # Will be populated by solvers
+        context["available_workflows"] = []  # Will be populated by solvers
+        context["available_actions"] = []  # Will be populated by solvers
+        context["available_strategies"] = []  # Will be populated by solvers
+        context["available_tools"] = []  # Will be populated by solvers
 
         # Execution context
         if self.execution:
@@ -146,9 +150,9 @@ class AgentState:
         if self.problem_context:
             resources["problem_context"] = self.problem_context
 
-        if self.capabilities:
-            resources["workflow_registry"] = self.capabilities
-            resources["capabilities"] = self.capabilities
+        # Capabilities for ContextEngine compatibility
+        # Note: This is a placeholder for backward compatibility
+        resources["capabilities"] = {}  # Empty for now, will be populated by solvers
 
         # Mind resources
         if self.mind:
@@ -246,14 +250,14 @@ class AgentState:
                 environment_info={},
             )
 
-        # Extract resource context
-        if self.capabilities:
-            context_data.resources = ResourceContextData(
-                available_resources=list(self.capabilities.get_available_tools().keys()),
-                resource_limits=self.execution.resource_limits.to_dict() if self.execution else {},
-                resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
-                resource_errors=[],
-            )
+        # Extract resource context (replacing capabilities)
+        # Note: Resources are now accessed through solvers via dependency injection
+        context_data.resources = ResourceContextData(
+            available_resources=[],  # Will be populated by solvers
+            resource_limits=self.execution.resource_limits.to_dict() if self.execution else {},
+            resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
+            resource_errors=[],
+        )
 
         return context_data
 
@@ -303,8 +307,8 @@ class AgentState:
             "recursion_depth": self.execution.recursion_depth if self.execution else 0,
             "timeline_events_count": self.timeline.get_event_count() if self.timeline else 0,
             "can_proceed": self.execution.can_proceed() if self.execution else True,
-            "available_strategies": len(self.capabilities.get_available_strategies()) if self.capabilities else 0,
-            "available_tools": len(self.capabilities.get_available_tools()) if self.capabilities else 0,
+            "available_resources": 0,  # Will be populated by solvers
+            "available_workflows": 0,  # Will be populated by solvers
             "memory_status": self.mind.memory.get_status() if self.mind and self.mind.memory else {},
             "last_updated": self.last_updated.isoformat(),
         }

@@ -30,6 +30,7 @@ class TestAgentChat(unittest.TestCase):
                 agent_name = getattr(agent_self.agent_type, "name", "agent")
                 # Create a unique agent_id to avoid conflicts
                 import uuid
+
                 unique_id = f"{agent_name}_{uuid.uuid4().hex[:8]}"
 
                 # Create timeline with temp directory
@@ -116,7 +117,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
                 # Wait for timeline loading to complete
@@ -191,7 +192,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
                 response = agent.chat_sync("Hello", sandbox_context=self.sandbox_context)
@@ -205,7 +206,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # First agent instance
                 agent1 = self.create_test_agent("Agent1")
                 response1 = agent1.chat_sync("My name is Alice", sandbox_context=self.sandbox_context)
@@ -237,7 +238,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # Create two different agent types
                 agent1 = self.create_test_agent("Agent1", {"role": "support"})
                 agent2 = self.create_test_agent("Agent2", {"role": "sales"})
@@ -258,7 +259,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent("TestAgentStats")
 
                 # Initial stats should show no messages
@@ -281,7 +282,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent("TestAgentClear")
 
                 # Send a message to initialize memory
@@ -309,7 +310,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # Create agent with custom fields
                 agent = self.create_test_agent("CustomAgent", {"personality": "friendly", "expertise": "programming"})
 
@@ -327,7 +328,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
                 # Test chat with additional context
@@ -342,13 +343,14 @@ class TestAgentChat(unittest.TestCase):
         """Test that conversation context is limited by max_context_turns."""
         # Skip this test in CI environments due to race condition issues
         import os
+
         if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") or os.environ.get("JENKINS_URL"):
             self.skipTest("Skipping test_max_context_turns in CI environment due to race condition issues")
 
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent("TestAgentMaxTurns")
 
                 # Send multiple messages to test context limiting
@@ -388,7 +390,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
                 # Test various messages
@@ -411,7 +413,7 @@ class TestAgentChat(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 agent = self.create_test_agent()
 
                 # Timeline should be available through centralized state
@@ -443,7 +445,7 @@ class TestAgentChatIntegration(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # Create two different agents
                 support_agent_type = AgentType(
                     name="SupportAgent",
@@ -489,7 +491,7 @@ class TestAgentChatIntegration(unittest.TestCase):
         # Mock the sandbox context to return no LLM resources to force fallback behavior
         with patch.object(self.sandbox_context, "get_resources", return_value={}):
             # Also mock the agent's own LLM resource to return None (no LLM available)
-            with patch.object(AgentInstance, "get_llm_resource", return_value=None):
+            with patch.object(AgentInstance, "_get_llm_resource", return_value=None):
                 # Create a specialized agent
                 agent_type = AgentType(
                     name="SupportAgent",

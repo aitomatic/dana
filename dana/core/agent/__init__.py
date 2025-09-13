@@ -10,7 +10,6 @@ from .agent_type import AgentType
 from .agent_state import AgentState
 from .context import ProblemContext, ExecutionContext
 from .mind import AgentMind
-from .capabilities import CapabilityRegistry
 from .utils import (
     create_agent_instance,
     has_dana_method,
@@ -27,8 +26,7 @@ __all__ = [
     "ProblemContext",
     "ExecutionContext",
     "AgentMind",
-    "CapabilityRegistry",
-    # Registry functions
+    # Utils
     "create_agent_instance",
     "lookup_dana_method",
     "register_dana_method",
