@@ -1,7 +1,4 @@
-from typing import cast
-
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
 
 class ReasonMixin:
@@ -31,6 +28,7 @@ class ReasonMixin:
             if system_message:
                 options["system_message"] = system_message
 
+            sandbox_context = sandbox_context or SandboxContext()
             py_reason_result = py_reason(
                 sandbox_context,
                 premise,
