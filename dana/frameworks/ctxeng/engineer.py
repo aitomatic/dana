@@ -164,20 +164,56 @@ class ContextEngineer:
         if workflow_registry:
             workflow_score, workflow, workflow_metadata = workflow_registry.match_workflow_for_llm(query, {})
             if workflow and workflow_metadata:
-                context.update({
-                    "workflow_current_workflow": workflow_metadata.get("name", ""),
-                    "workflow_workflow_state": workflow_metadata.get("status", ""),
-                    "workflow_metadata": workflow_metadata,
-                })
+                context.update(
+                    {
+                        "workflow_current_workflow": workflow_metadata.get("name", ""),
+                        "workflow_workflow_state": workflow_metadata.get("status", ""),
+                        "workflow_metadata": workflow_metadata,
+                    }
+                )
 
         # Add resource context if registry is available
         if resource_registry:
+            # Get all available resources for tool-calling
+            try:
+                resources = resource_registry.get_available_resources()
+                available_resources = list(resources.keys())
+
+                # Get resource details for tool-calling
+                resource_details = {}
+                for name, resource in resources.items():
+                    resource_details[name] = {
+                        "name": name,
+                        "kind": getattr(resource, "kind", "unknown"),
+                        "description": getattr(resource, "description", "No description available"),
+                        "capabilities": getattr(resource, "get_capabilities", lambda: {})(),
+                        "methods": ["query"] if hasattr(resource, "query") else [],
+                    }
+
+                context.update(
+                    {
+                        "available_resources": available_resources,
+                        "resource_details": resource_details,
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Could not get resources from registry: {e}")
+                context.update(
+                    {
+                        "available_resources": [],
+                        "resource_details": {},
+                    }
+                )
+
+            # Also try the existing matching logic for backward compatibility
             resource_score, resource, resource_metadata = resource_registry.match_resource_for_llm(query, {})
             if resource and resource_metadata:
-                context.update({
-                    "available_resources": [resource_metadata.get("name", "")],
-                    "resource_metadata": resource_metadata,
-                })
+                context.update(
+                    {
+                        "matched_resource": resource_metadata.get("name", ""),
+                        "resource_metadata": resource_metadata,
+                    }
+                )
 
             # Pack resources for context
             packed_resources = resource_registry.pack_resources_for_llm({})

@@ -275,6 +275,7 @@ class ReactiveSupportSolver(BaseSolver):
             llm_response = self._query_llm_with_prteng(prompt=prompt, system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT, max_turns=1)
 
             if llm_response:
+                # Resource execution is now handled iteratively within _query_llm_with_prteng
                 print(f"🔧 [REACTIVE-SUPPORT] LLM response generated: {llm_response[:100]}...")
                 st.update({"phase": "delivered", "llm_response": llm_response})
 
@@ -324,10 +325,13 @@ class ReactiveSupportSolver(BaseSolver):
             prompt = get_reactive_support_prompt_general(message)
 
         # Use the base class method that includes conversation context
-        return (
-            self._query_llm_with_prteng(prompt=prompt, system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT)
-            or "I'm here to help! Could you provide more details about what you'd like me to assist you with?"
-        )
+        llm_response = self._query_llm_with_prteng(prompt=prompt, system_prompt=REACTIVE_SUPPORT_SYSTEM_PROMPT)
+
+        if llm_response:
+            # Resource execution is now handled iteratively within _query_llm_with_prteng
+            return llm_response
+
+        return "I'm here to help! Could you provide more details about what you'd like me to assist you with?"
 
     def _infer_missing(self, required_list: list[str], message: str, artifacts: dict[str, Any]) -> list[str]:
         """

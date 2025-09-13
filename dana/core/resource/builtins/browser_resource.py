@@ -152,7 +152,7 @@ class BrowserResourceInstance(ResourceInstance):
         Returns:
             List of command arguments for subprocess
         """
-        cmd = ["curl", "-s", "-L"]  # Silent mode, follow redirects
+        cmd = ["curl", "-s", "-L", "--compressed"]  # Silent mode, follow redirects, handle compression
 
         # Add user agent
         cmd.extend(["-A", self.user_agent])

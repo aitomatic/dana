@@ -15,6 +15,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dana.core.agent.agent_instance import AgentInstance
 from dana.core.agent.agent_type import AgentType
 from dana.core.agent.methods.converse import CLIAdapter
+from dana.core.resource.builtins.browser_resource import create_browser_resource
+from dana.registry import GLOBAL_REGISTRY
 
 
 def create_example_agent() -> AgentInstance:
@@ -101,19 +103,60 @@ def main():
     print("This demo shows how to use the ConverseMixin for conversation loops.")
     print("Type 'quit' or press Ctrl+C to exit.\n")
 
+    # Create and register BrowserResource
+    print("Creating and registering BrowserResource...")
+    browser_resource = create_browser_resource()
+    browser_resource.name = "web_browser"
+
+    # Register the browser resource with the global registry
+    GLOBAL_REGISTRY.resources.track_resource(browser_resource, name="web_browser")
+    print(f"✅ BrowserResource registered: {browser_resource.name}")
+
+    # Test the browser resource
+    print("\nTesting browser resource...")
+    try:
+        test_result = browser_resource.query("https://httpbin.org/get")
+        print(f"✅ Browser test successful: {test_result['success']}")
+        print(f"   Content type: {test_result['content_type']}")
+        print(f"   Content length: {test_result['content_length']}")
+    except Exception as e:
+        print(f"❌ Browser test failed: {e}")
+
     # Create agent instance
     agent = create_example_agent()
 
     # Initialize LLM resource for the agent
-    print("Initializing LLM resource...")
+    print("\nInitializing LLM resource...")
     agent._initialize_llm_resource()
     print(f"LLM resource initialized: {agent._llm_resource}")
+
+    # Check what resources the agent can see
+    print("\nChecking agent's view of available resources...")
+    try:
+        dependencies = agent.get_solver_dependencies()
+        print("Agent solver dependencies:")
+        for solver_name, deps in dependencies.items():
+            print(f"  {solver_name}:")
+            print(f"    Resources: {deps['resources']['count']} ({deps['resources']['names']})")
+            print(f"    Workflows: {deps['workflows']['count']} ({deps['workflows']['names']})")
+    except Exception as e:
+        print(f"Error checking dependencies: {e}")
 
     # Create CLI adapter
     cli_adapter = CLIAdapter()
 
     print("=== Demo with Simple Solver ===")
     print("Using a simple solver with agent's built-in capabilities...\n")
+
+    # Test a message that will trigger solver execution and debug reporting
+    print("Testing solver execution with debug reporting...")
+    try:
+        test_message = "Hello, can you help me browse a website?"
+        print(f"Sending test message: '{test_message}'")
+        result = agent.solve_sync(test_message)
+        print(f"Agent response: {result}")
+    except Exception as e:
+        print(f"Error in test solve: {e}")
 
     try:
         # Use simple solver with agent instance
