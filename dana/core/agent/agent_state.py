@@ -253,7 +253,7 @@ class AgentState:
         # Extract resource context (replacing capabilities)
         # Note: Resources are now accessed through solvers via dependency injection
         context_data.resources = ResourceContextData(
-            available_resources=[],  # Will be populated by solvers
+            available_resources=[],  # Will be populated by context engineer
             resource_limits=self.execution.resource_limits.to_dict() if self.execution else {},
             resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
             resource_errors=[],

@@ -305,6 +305,8 @@ class PlannerExecutorSolver(BaseSolver):
             if response_text is None:
                 raise RuntimeError(f"LLM query failed for goal: {goal}")
 
+            # Resource execution is now handled iteratively within _query_llm_with_prteng
+
         except Exception as e:
             raise RuntimeError(f"LLM query failed for goal: {goal}. Error: {str(e)}")
 
@@ -426,6 +428,8 @@ class PlannerExecutorSolver(BaseSolver):
 
             if response_text is None:
                 raise RuntimeError(f"LLM query failed for action: {action}")
+
+            # Resource execution is now handled iteratively within _query_llm_with_prteng
 
             # Try to parse JSON response
             try:

@@ -142,8 +142,13 @@ class SimpleHelpfulSolver(BaseSolver):
             # Use the problem directly as prompt for general queries
             prompt = problem
 
+        # System prompt will be enhanced with resources and conversation context automatically in base class
+        system_prompt = SIMPLE_HELPFUL_SYSTEM_PROMPT
+
         print("🔧 Calling _generate_llm_response_with_context...")
-        result = self._query_llm_with_prteng(prompt=prompt, system_prompt=SIMPLE_HELPFUL_SYSTEM_PROMPT)
+        result = self._query_llm_with_prteng(prompt=prompt, system_prompt=system_prompt)
+
+        # Resource execution is now handled iteratively within _query_llm_with_prteng
 
         print(f"📊 LLM result: {type(result).__name__ if result else 'None'}")
         if result:
@@ -155,12 +160,34 @@ class SimpleHelpfulSolver(BaseSolver):
         """Classify the type of query to use appropriate prompt."""
         problem_lower = problem.lower()
 
+        # Content extraction indicators (should use question prompt for better resource usage)
+        if any(
+            word in problem_lower
+            for word in [
+                "give me",
+                "get me",
+                "show me",
+                "find me",
+                "extract",
+                "headlines",
+                "news",
+                "data",
+                "information",
+                "search",
+                "google",
+                "look up",
+                "check",
+                "browse",
+            ]
+        ):
+            return "question"
+
         # Question indicators
         if any(word in problem_lower for word in ["what", "how", "why", "when", "where", "who", "which", "?"]):
             return "question"
 
         # Help request indicators
-        if any(word in problem_lower for word in ["help", "assist", "guide", "show me", "how do i", "can you help"]):
+        if any(word in problem_lower for word in ["help", "assist", "guide", "how do i", "can you help"]):
             return "help"
 
         # Explanation indicators
