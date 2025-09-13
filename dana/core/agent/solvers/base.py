@@ -90,7 +90,7 @@ class BaseSolver(ABC, ResourceHandlingMixin):
         super().__init__(*args, **kwargs)
         self.agent = agent
         self._llm_resource = None
-        self.llm_resource = self.agent.llm_resource
+        # Don't access agent.llm_resource during initialization to avoid early LLM resource creation
 
     @property
     def llm_resource(self) -> "LLMResourceInstance":
