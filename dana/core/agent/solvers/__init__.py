@@ -1,6 +1,6 @@
 """Solver mixins for agent problem-solving capabilities."""
 
-from .base import BaseSolver, SignatureMatcher
+from .base import BaseSolver, SignatureMatcher, SolverResponse
 from dana.registry import WorkflowRegistry, ResourceRegistry
 from .planner_executor import PlannerExecutorSolver
 from .reactive_support import ReactiveSupportSolver
@@ -12,6 +12,7 @@ __all__ = [
     "WorkflowRegistry",
     "ResourceRegistry",
     "SignatureMatcher",
+    "SolverResponse",
     "PlannerExecutorSolver",
     "ReactiveSupportSolver",
     "SimpleHelpfulSolver",
