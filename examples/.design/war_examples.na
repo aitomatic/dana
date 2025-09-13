@@ -25,7 +25,7 @@ print(Helen.solve(PROBLEM, resources=[resource_amd_annual_report]))
 
 # --- Session 4: Agent + Resource + Workflow ---
 # Add a Workflow: codify expert steps for structured results.
-from domain_packs.financial_analysis import workflow_calc_quick_ratio
+from domain_packs.financial_statements_analysis import workflow_calc_quick_ratio
 
 print(Helen.solve(
     PROBLEM,

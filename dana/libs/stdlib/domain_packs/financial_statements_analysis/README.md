@@ -26,7 +26,7 @@ This directory contains a comprehensive suite of Dana (`.na`) code examples and 
 ## How to Use
 
 - Review the test script (`tests.na`) for examples of how to invoke each workflow.
-- **Try the Workflows**: Run `use_fin_analysis_workflows.na` (located in the parent directory) to see the financial analysis workflows in action. This script treats `financial_analysis/` as an importable package and demonstrates capital intensity and liquidity assessments across multiple companies.
+- **Try the Workflows**: Run `use_fin_analysis_workflows.na` (located in the parent directory) to see the financial analysis workflows in action. This script treats `financial_statements_analysis/` as an importable package and demonstrates capital intensity and liquidity assessments across multiple companies.
 - The modules are designed to be composable: you can import and combine them to build custom financial analysis pipelines using Dana's workflow composition syntax.
 - Utilities in `utils/` help with querying and formatting data for use in the workflows.
 - **Workflow Examples**: See how functions are composed using `[get_rev, get_cogs] | calc_margin_ratio` for parallel data extraction followed by calculation.
