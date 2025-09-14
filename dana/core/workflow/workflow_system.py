@@ -47,50 +47,39 @@ class WorkflowType(StructType):
         }
 
     @classmethod
-    def create_for_problem(cls, problem: str, strategy_name: str = "Agent", custom_fields: dict[str, str] | None = None) -> "WorkflowType":
+    def create_for_problem(cls, problem: str, custom_fields: dict[str, str] | None = None) -> "WorkflowType":
         """Create a workflow type for a specific problem.
 
         Args:
             problem: The problem statement
-            strategy_name: Name of the strategy creating the workflow (e.g., "Agent", "Recursive", "Iterative")
             custom_fields: Optional custom fields to add to the workflow type
 
         Returns:
             WorkflowType instance configured for the problem
         """
         # Generate unique name based on problem hash
-        name = f"{strategy_name}Workflow_{hash(problem) % 10000}"
+        name = f"Workflow_{hash(problem) % 10000}"
 
         # Default custom fields for agent workflows
-        if custom_fields is None and strategy_name == "Agent":
+        if custom_fields is None:
             custom_fields = {"problem_statement": "str", "objective": "str", "problem_context": "Any", "action_history": "Any"}
-        elif custom_fields is None:
-            custom_fields = {}
 
         # Create field order and defaults
         field_order = list(custom_fields.keys())
-        field_defaults = (
-            {
-                "problem_statement": problem,
-                "objective": "Solve the problem",
-                "problem_context": None,
-                "action_history": None,
-            }
-            if strategy_name == "Agent"
-            else {}
-        )
+        field_defaults = {
+            "problem_statement": problem,
+            "objective": "Solve the problem",
+            "problem_context": None,
+            "action_history": None,
+        }
 
         # Create field comments
-        field_comments = (
-            {
-                "problem_statement": "The problem to solve",
-                "objective": "The objective of the workflow",
-                "problem_context": "Problem-specific context",
-                "action_history": "Global action history",
-            }
-            if strategy_name == "Agent"
-            else {}
-        )
+        field_comments = {
+            "problem_statement": "The problem to solve",
+            "objective": "The objective of the workflow",
+            "problem_context": "Problem-specific context",
+            "action_history": "Global action history",
+        }
 
         return cls(
             name=name,
@@ -98,7 +87,7 @@ class WorkflowType(StructType):
             field_order=field_order,
             field_comments=field_comments,
             field_defaults=field_defaults,
-            docstring=f"{strategy_name} workflow for solving: {problem}",
+            docstring=f"Workflow for solving: {problem}",
         )
 
     def __init__(
@@ -346,7 +335,7 @@ class WorkflowInstance(StructInstance):
 
         # Create workflow instance
         workflow = cls(
-            struct_type=WorkflowType.create_for_problem(problem, "Agent"),
+            struct_type=WorkflowType.create_for_problem(problem),
             values={
                 "problem_statement": problem,
                 "objective": problem_context.objective,
@@ -355,65 +344,6 @@ class WorkflowInstance(StructInstance):
             },
             parent_workflow=None,
         )
-
-        return workflow
-
-    @classmethod
-    def create_with_strategy(
-        cls,
-        problem: str,
-        strategy_type: str = "auto",
-        agent_instance=None,
-        artifacts: dict[str, Any] | None = None,
-        sandbox_context=None,
-        **kwargs,
-    ) -> "WorkflowInstance":
-        """Create a workflow using a specific strategy or auto-selection.
-
-        Args:
-            problem: The problem statement to solve
-            strategy_type: Strategy to use ("auto", "iterative", "recursive")
-            agent_instance: AgentInstance (required for strategy execution)
-            artifacts: Optional artifacts for the workflow
-            sandbox_context: Optional sandbox context for execution
-            **kwargs: Additional parameters including 'objective'
-
-        Returns:
-            A new WorkflowInstance created using the specified strategy
-        """
-        from dana.core.agent.context import ProblemContext
-        from dana.core.agent.strategy import BaseStrategy
-
-        if not agent_instance:
-            raise ValueError("agent_instance is required for strategy-based workflow creation")
-
-        # Create problem context with conversation context from centralized state
-        conversation_context = agent_instance.state.timeline.get_conversation_turns()
-
-        problem_context = ProblemContext(
-            problem_statement=problem, objective=kwargs.get("objective", f"Solve: {problem}"), original_problem=problem, depth=0
-        )
-
-        # Add conversation history to constraints if available
-        if conversation_context:
-            problem_context.constraints["conversation_history"] = conversation_context
-
-        # Select strategy
-        if strategy_type == "auto":
-            strategy = BaseStrategy.select_best_strategy(problem, problem_context)
-        elif strategy_type == "iterative":
-            from dana.core.agent.strategy.iterative.iterative_strategy import IterativeStrategy
-
-            strategy = IterativeStrategy()
-        elif strategy_type == "recursive":
-            from dana.core.agent.strategy.recursive.recursive_strategy import RecursiveStrategy
-
-            strategy = RecursiveStrategy()
-        else:
-            raise ValueError(f"Unknown strategy type: {strategy_type}")
-
-        # Create workflow using strategy
-        workflow = strategy.create_workflow(problem, problem_context, agent_instance, sandbox_context=sandbox_context)
 
         return workflow
 
