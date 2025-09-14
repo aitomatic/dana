@@ -143,11 +143,7 @@ def execute_file(file_path, debug=False, script_args=None):
 
     # Run the source code with custom search paths
     result = DanaSandbox.execute_string_once(
-<<<<<<< HEAD
         source_code=source_code_with_main, filename=str(file_path_obj), debug_mode=debug, module_search_paths=[str(file_path_obj.parent.resolve())]
-=======
-        source_code=source_code, filename=str(file_path), debug_mode=debug, module_search_paths=[str(file_path.parent.resolve())]
->>>>>>> 35136cbd (Add RESTful API support for Dana agent deployment)
     )
 
     if result.success:
