@@ -95,7 +95,7 @@ def create_mcp_server_for_file(na_file_path):
         def solve(query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = agent_instance.solve(sandbox_context=context, problem_or_workflow=query)
+                result = agent_instance.solve( problem_or_workflow=query, sandbox_context=context)
                 print(f"🔍 Solve query: {query}")
                 print(f"🔍 Solve result: {result}")
                 return str(result)
@@ -106,7 +106,7 @@ def create_mcp_server_for_file(na_file_path):
         def reason(query: str) -> str:
             """Execute the agent's reason function with the user query."""
             try:
-                result = agent_instance.reason(sandbox_context=context, premise=query)
+                result = agent_instance.reason(premise=query, sandbox_context=context)
                 print(f"🔍 Reason query: {query}")
                 print(f"🔍 Reason result: {result}")
                 return str(result)
@@ -117,7 +117,7 @@ def create_mcp_server_for_file(na_file_path):
         def chat(query: str) -> str:
             """Execute the agent's chat function with the user query."""
             try:
-                result = agent_instance.chat(context=context, message=query)
+                result = agent_instance.chat(message=query, sandbox_context=context)
                 print(f"🔍 Chat query: {query}")
                 print(f"🔍 Chat result: {result}")
                 return str(result)

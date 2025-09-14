@@ -98,7 +98,7 @@ def make_agent_class(agent_name: str, agent_instance):
         def solve_query(self, query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = self.agent_instance.solve(sandbox_context=context, problem_or_workflow=query)
+                result = self.agent_instance.solve(problem_or_workflow=query, sandbox_context=context)
                 print(f"🔍 Solve query: {query}")
                 print(f"🔍 Solve result: {result}")
                 return str(result)
@@ -113,7 +113,7 @@ def make_agent_class(agent_name: str, agent_instance):
         def reason_query(self, query: str) -> str:
             """Execute the agent's reason function with the user query."""
             try:
-                result = self.agent_instance.reason(sandbox_context=context, premise=query)
+                result = self.agent_instance.reason(premise=query, sandbox_context=context)
                 print(f"🔍 Reason query: {query}")
                 print(f"🔍 Reason result: {result}")
                 return str(result)
@@ -128,7 +128,7 @@ def make_agent_class(agent_name: str, agent_instance):
         def chat_query(self, query: str) -> str:
             """Execute the agent's chat function with the user query."""
             try:
-                result = self.agent_instance.chat(context=context, message=query)
+                result = self.agent_instance.chat(message=query, sandbox_context=context)
                 print(f"🔍 Chat query: {query}")
                 print(f"🔍 Chat result: {result}")
                 return str(result)

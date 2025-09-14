@@ -140,7 +140,7 @@ def create_fastapi_app(na_file_path: str, host: str = "0.0.0.0", port: int = 800
         async def solve_problem(request: AgentRequest):
             """Execute the agent's solve function with the user query."""
             try:
-                result = agent_instance.solve(sandbox_context=context, problem_or_workflow=request.query)
+                result = agent_instance.solve(problem_or_workflow=request.query, sandbox_context=context)
                 return AgentResponse(result=str(result), agent_name=agent_name, method="solve")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error executing solve: {str(e)}")
@@ -149,7 +149,7 @@ def create_fastapi_app(na_file_path: str, host: str = "0.0.0.0", port: int = 800
         async def reason_about(request: AgentRequest):
             """Execute the agent's reason function with the user query."""
             try:
-                result = agent_instance.reason(sandbox_context=context, premise=request.query)
+                result = agent_instance.reason(premise=request.query, sandbox_context=context)
                 return AgentResponse(result=str(result), agent_name=agent_name, method="reason")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error executing reason: {str(e)}")
@@ -158,7 +158,7 @@ def create_fastapi_app(na_file_path: str, host: str = "0.0.0.0", port: int = 800
         async def chat_with(request: AgentRequest):
             """Execute the agent's chat function with the user query."""
             try:
-                result = agent_instance.chat(context=context, message=request.query)
+                result = agent_instance.chat(message=request.query, sandbox_context=context)
                 return AgentResponse(result=str(result), agent_name=agent_name, method="chat")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error executing chat: {str(e)}")
