@@ -58,7 +58,7 @@ class WorkflowType(StructType):
             WorkflowType instance configured for the problem
         """
         # Generate unique name based on problem hash
-        name = f"Workflow_{hash(problem) % 10000}"
+        name = f"AgentWorkflow_{hash(problem) % 10000}"
 
         # Default custom fields for agent workflows
         if custom_fields is None:
