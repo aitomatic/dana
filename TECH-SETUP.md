@@ -32,7 +32,12 @@ The executable `python3` must be in your system's search path and callable from 
 
 - Make Python-installed scripts be in your search path `PATH` by adding the following to your user environment variable `Path`: `C:\Users\<Your Windows Username>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts` _(substitute `PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0` with the the Python installation directory in your `C:\Users\<Your Windows Username>\AppData\Local\Packages\`)_
 
-- Additionally, developers using Windows typically need to enable long file paths (over 256 characters) in their system settings. [This is one typical guide for enabling long file paths on Windows](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html).
+- Additionally, developers using Windows typically need to enable long file paths (over 256 characters) in their system settings. Below are several good guides for enabling long file paths on Windows:
+  - [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html)
+    - [Japanese](https://www.autodesk.com/jp/support/technical/article/caas/sfdcarticles/sfdcarticles/JPN/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html)
+  - [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11)
+
+  Reboot computer after enabling long paths.
 
 ### `dana` Library Installation
 
@@ -75,7 +80,17 @@ Type `llm('Hello, Dana!')` to verify that the LLM backend is properly configured
 
 Complete the steps in the [Typical Developer Setup](#typical-developer-setup) section.
 
-Additionally, install `uv` by running `pip install uv`.
+### `uv` Tool Installation
+
+Install `uv` by running `pip install uv`.
+
+### Git Configuration
+
+Install Git and make sure the executable `git` is in your system's search path and callable from your command-line terminal.
+
+On Windows, enable long paths for Git by running `git config --global core.longpaths true`.
+
+### Dana Repo Clone & Installation
 
 Clone the Dana repo down to your machine using `git clone https://github.com/aitomatic/dana` or `git clone git@github.com:aitomatic/dana`.
 
