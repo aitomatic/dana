@@ -58,16 +58,18 @@ class ProgramExecutor(BaseExecutor):
             The result of the last statement executed
         """
         result = None
-        for statement in node.statements:
+        for i, statement in enumerate(node.statements):
             # Handle lists of statements (e.g., from export_stmt)
             if isinstance(statement, list):
-                for sub_statement in statement:
-                    result = self.parent.execute(sub_statement, context)
+                for j, sub_statement in enumerate(statement):
+                    # Track individual sub-statements
+                    result = self.parent.execute_with_tracking(sub_statement, context, f"statement {i+1}.{j+1}")
                     # Store the result in the context
                     if result is not None:
                         context.set("system:__last_value", result)
             else:
-                result = self.parent.execute(statement, context)
+                # Track individual statements
+                result = self.parent.execute_with_tracking(statement, context, f"statement {i+1}")
                 # Store the result in the context
                 if result is not None:
                     context.set("system:__last_value", result)
