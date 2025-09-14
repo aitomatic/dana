@@ -34,16 +34,25 @@ Usage:
       [--protocol mcp|a2a|restful]  Protocol to use (default: restful)
       [--host HOST]            Host to bind the server (default: 0.0.0.0)
       [--port PORT]            Port to bind the server (default: 8000)
+  dana studio                  Start the Dana Studio
+      [--host HOST]            Host to bind the server (default: 127.0.0.1)
+      [--port PORT]            Port to bind the server (default: 8080)
+      [--reload]               Enable auto-reload for development
+      [--log-level LEVEL]      Log level (default: info)
+  dana repl                    Start the Dana Interactive REPL
+  dana tui                     Start the Dana Terminal User Interface
   dana -h, --help              Show help message
+  dana --version               Show version information
   dana --debug                 Enable debug logging
   dana --no-color              Disable colored output
   dana --force-color           Force colored output
 
 Examples:
-  dana deploy agent1.na
-  dana deploy agent1.na --protocol mcp
-  dana deploy agent1.na --protocol restful --host 0.0.0.0 --port 9000
-
+  dana script.na               Execute a Dana script
+  dana deploy agent.na         Deploy an agent
+  dana deploy agent.na --protocol mcp --port 9000
+  dana studio --port 9000      Start studio on port 9000
+  dana repl                    Start interactive REPL
 """
 
 import argparse
@@ -87,13 +96,34 @@ def show_help():
     print(f"  {colors.accent('dana')}                   Start the Dana Terminal User Interface")
     print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
     print(f"  {colors.accent('dana [file.na] [args]')}  Execute a DANA file with arguments (key=value)")
+    print("")
+    print(f"{colors.bold('Commands:')}")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
+    print(f"    {colors.accent('--protocol mcp|a2a|restful')}   Protocol to use (default: restful)")
+    print(f"    {colors.accent('--host HOST')}          Host to bind the server (default: 0.0.0.0)")
+    print(f"    {colors.accent('--port PORT')}          Port to bind the server (default: 8000)")
+    print("")
+    print(f"  {colors.accent('dana studio')}            Start the Dana Studio")
+    print(f"    {colors.accent('--host HOST')}          Host to bind the server (default: 127.0.0.1)")
+    print(f"    {colors.accent('--port PORT')}          Port to bind the server (default: 8080)")
+    print(f"    {colors.accent('--reload')}             Enable auto-reload for development")
+    print(f"    {colors.accent('--log-level LEVEL')}    Log level (default: info)")
+    print("")
     print(f"  {colors.accent('dana repl')}              Start the Dana Interactive REPL")
     print(f"  {colors.accent('dana tui')}               Start the Dana Terminal User Interface")
+    print("")
+    print(f"{colors.bold('Options:')}")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
-    print(f"  {colors.accent('dana studio')}            Start the Dana Studio")
+    print(f"  {colors.accent('dana --no-color')}        Disable colored output")
+    print(f"  {colors.accent('dana --force-color')}     Force colored output")
+    print("")
+    print(f"{colors.bold('Examples:')}")
+    print(f"  {colors.accent('dana script.na')}         Execute a Dana script")
+    print(f"  {colors.accent('dana script.na key=value')}  Execute with arguments")
+    print(f"  {colors.accent('dana deploy agent.na')}   Deploy an agent")
+    print(f"  {colors.accent('dana studio --port 9000')}  Start studio on port 9000")
     print("")
     print(f"{colors.bold('Requirements:')}")
     print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
@@ -102,7 +132,6 @@ def show_help():
     print(f"  {colors.accent('Format:')} key=value key2='quoted value' key3=@file.json")
     print(f"  {colors.accent('Files:')} Use @ prefix to load file contents (JSON, YAML, CSV, text)")
     print(f"  {colors.accent('Function:')} Arguments are passed to __main__() function if present")
-    print("")
     print("")
 
 
