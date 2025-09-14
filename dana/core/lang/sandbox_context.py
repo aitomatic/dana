@@ -48,12 +48,13 @@ class ExecutionStatus(Enum):
 class SandboxContext(Loggable):
     """Manages the scoped state during Dana program execution."""
 
-    def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None):
+    def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None, track_execution: bool = True):
         """Initialize the runtime context.
 
         Args:
             parent: Optional parent context to inherit shared scopes from
             manager: Optional context manager
+            track_execution: Whether to enable execution tracking for error reporting
         """
         self._parent = parent
         self._manager = manager
@@ -71,6 +72,9 @@ class SandboxContext(Loggable):
         # Initialize PromiseLimiter for safe concurrent execution
         self._promise_limiter = get_global_promise_limiter()
 
+        # Execution tracking configuration
+        self.track_execution = track_execution
+
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -86,6 +90,8 @@ class SandboxContext(Loggable):
         if parent:
             for scope in RuntimeScopes.GLOBALS:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
+            # Inherit execution tracking configuration from parent
+            self.track_execution = parent.track_execution
 
     @property
     def parent_context(self) -> Optional["SandboxContext"]:
