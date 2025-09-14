@@ -39,7 +39,7 @@ The executable `python3` must be in your system's search path and callable from 
 
   Reboot computer after enabling long paths.
 
-### `dana` Library Installation
+### Dana Library Installation
 
 With Python installed per the above requirements, install Dana by __`pip install dana`__.
 
@@ -49,7 +49,7 @@ In your user home directory (`~/`), create a sub-directory `.dana/`.
 
 Make a copy of the default Dana `.env` environment variables file template at https://github.com/aitomatic/dana/blob/main/.env.example and save it as `.env` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
 
-Customize the `dana_config.json` and `.env` files with your preferred model providers and credentials.
+Customize the `.env` file with your preferred model providers and credentials.
 
 ### IDE Dana Extension Installation
 
