@@ -1,93 +1,196 @@
 # Dana Technical Setup Guide
 
-## Typical Developer Setup
+This guide will help you set up Dana for development and contribution.
 
-### Python & Related Prerequisites
+## 🚀 Quick Start (Typical Developer)
 
-Dana requires Python __3.12__ or __3.13__.
+### Prerequisites
 
-The executable `python3` must be in your system's search path and callable from your command-line terminal.
+- **Python**: Version 3.12 or 3.13 required
+- **Command Line**: `python3` must be accessible from your terminal
 
-#### Python Installation Recommendations for Linux
+## 📦 Python Installation by Platform
 
-- Install Python 3.12 or 3.13 through your Linux package manager
+#### 🐧 Linux
 
-- Make Python-installed scripts be in your search path `PATH` by adding the following to your `.bashrc` file: `export PATH=$PATH:/usr/.local/bin` _(or another location than `/usr/.local/bin` where your Python-installed scripts are placed)_
+1. **Install Python**: Use your package manager to install Python 3.12 or 3.13
+2. **Update PATH**: Add to your `~/.bashrc`:
+   ```bash
+   export PATH=$PATH:/usr/.local/bin
+   ```
+   *(Adjust path if your Python scripts are installed elsewhere)*
 
-#### Recommendations for Mac
+#### 🍎 macOS
 
-- Install Homebrew by running command on [brew.sh](https://brew.sh)
+1. **Install Homebrew**: Visit [brew.sh](https://brew.sh) and follow installation instructions
+2. **Verify Homebrew**: Ensure `brew` is in your PATH (follow post-installation instructions)
+3. **Install Python**: 
+   ```bash
+   brew install python
+   ```
+4. **Verify Installation**:
+   ```bash
+   which python3
+   ```
+5. **Update PATH**: Add to your `~/.zprofile`:
+   ```bash
+   export PATH=$PATH:~/Library/Python/3.13/bin
+   ```
+   *(Replace `3.13` with your installed Python version)*
 
-- Make sure `brew` is in your `PATH` by running commands recommended at the end of the Homebrew installation
+#### 🪟 Windows
 
-- Install Python 3.12 or 3.13 by running `brew install bython`
+1. **Install Python**: Download Python 3.12 or 3.13 from [Microsoft Store](https://apps.microsoft.com/store/detail/python-313/9NRWMJP3717K) or [python.org](https://python.org)
 
-  - verify that the `python3` executable is in your `PATH` and is this Homebrew-installed Python by running `which python3`
+2. **Update PATH**: Add Python scripts to your user environment variable `Path`:
+   ```
+   C:\Users\<Your Username>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_<hash>\LocalCache\local-packages\Python313\Scripts
+   ```
+   *(Replace the hash and version number with your actual installation path)*
 
-  - make Python-installed scripts be in your search path `PATH` by adding the following to your `~/.zprofile` file: `export PATH=$PATH:~/Library/Python/3.13/bin` _(substitute `3.13` with the version of Python you installed)_
+3. **Enable Long Paths** (Important for development):
+   - Follow guides: [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html) | [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11)
+   - **Reboot** after enabling long paths
 
-#### Python Installation Recommendations for Windows
+## 📚 Install Dana
 
-- Install Python 3.12 or 3.13 from Microsoft Store
+Before installing Dana, it's recommended to use a Python virtual environment to avoid conflicts with other packages.
 
-- Make Python-installed scripts be in your search path `PATH` by adding the following to your user environment variable `Path`: `C:\Users\<Your Windows Username>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts` _(substitute `PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0` with the the Python installation directory in your `C:\Users\<Your Windows Username>\AppData\Local\Packages\`)_
+1. **Create a virtual environment** (if you haven't already):
 
-- Additionally, developers using Windows typically need to enable long file paths (over 256 characters) in their system settings. Below are several good guides for enabling long file paths on Windows:
-  - [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html)
-    - [Japanese](https://www.autodesk.com/jp/support/technical/article/caas/sfdcarticles/sfdcarticles/JPN/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html)
-  - [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11)
+   ```bash
+   python3 -m venv .venv
+   ```
 
-  Reboot computer after enabling long paths.
+2. **Activate the virtual environment**:
 
-### Dana Library Installation
+   ```bash
+   source .venv/bin/activate
+   ```
 
-With Python installed per the above requirements, install Dana by __`pip install dana`__.
+3. **Install Dana inside the virtual environment**:
 
-### LLM Backend Configurations
+   ```bash
+   pip install dana
+   ```
 
-In your user home directory (`~/`), create a sub-directory `.dana/`.
+> 💡 **Tip:** Always activate your virtual environment with `source .venv/bin/activate` before running or installing anything for Dana.
 
-Make a copy of the default Dana `.env` environment variables file template at https://github.com/aitomatic/dana/blob/main/.env.example and save it as `.env` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
+### ⚙️ Environment Variable Setup for Dana
 
-Customize the `.env` file with your preferred model providers and credentials.
+Dana searches for environment files in this priority order:
 
-### IDE Dana Extension Installation
+| Priority | Location | Use Case |
+|----------|----------|----------|
+| 🥇 **Highest** | `./.env` (project root) | Development projects |
+| 🥈 **Medium** | `~/.dana/.env` | User-wide settings |
+| 🥉 **Lowest** | `~/.env` | System-wide settings |
 
-The Dana Language extension is available at https://open-vsx.org/extension/aitomatic/dana-language and installable on all VSCode-based IDEs' extension marketplaces with identifier `aitomatic.dana-language`.
+#### 🔧 Setup Options
 
-In your code project, have a `.vscode/extensions.json` file with the following content:
+**🎯 Option 1: Project-specific (Recommended)**
+```bash
+# In your project directory
+curl -o .env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
+# Edit .env with your API keys
 ```
+
+**👤 Option 2: User-wide**
+```bash
+# Create Dana config directory
+mkdir -p ~/.dana
+# Download template
+curl -o ~/.dana/.env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
+# Edit with your credentials
+```
+
+**🌐 Option 3: System-wide**
+```bash
+# Download to home directory
+curl -o ~/.env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
+# Edit with your credentials
+```
+
+> 💡 **Tip**: Project-specific `.env` files override user/system settings, making them perfect for development.
+
+### ✅ Verify Installation
+
+1. **Start Dana REPL**:
+   ```bash
+   dana repl
+   ```
+
+2. **Test LLM Connection**:
+   ```dana
+   llm('Hello, Dana!')
+   ```
+
+   If successful, you'll see a response from your configured LLM provider.
+
+## 🛠️ Contributor Setup
+
+> **Prerequisites**: Complete the [Quick Start](#-quick-start-typical-developer) section first.
+
+### 📦 Additional Tools
+
+**Install `uv` (Python package manager)**:
+```bash
+pip install uv
+```
+
+**Configure Git**:
+```bash
+# Install Git (if not already installed)
+# Windows: Download from git-scm.com
+# macOS: brew install git
+# Linux: Use your package manager
+
+# Enable long paths on Windows
+git config --global core.longpaths true
+```
+
+### 🚀 Development Environment
+
+1. **Clone the Repository**:
+   ```bash
+   # HTTPS
+   git clone https://github.com/aitomatic/dana.git
+   
+   # SSH (if you have SSH keys set up)
+   git clone git@github.com:aitomatic/dana.git
+   ```
+
+2. **Setup Development Environment**:
+   ```bash
+   cd dana
+   uv sync --extra dev
+   ```
+
+   This creates a virtual environment and installs all development dependencies.
+
+3. **Activate Virtual Environment**:
+   ```bash
+   source .venv/bin/activate  # Linux/macOS
+   # or
+   .venv\Scripts\activate     # Windows
+   ```
+
+🎉 **You're ready to contribute to Dana!**
+
+## 🔌 IDE Extension
+
+**Install Dana Language Extension**:
+- **VSCode**: Search for `aitomatic.dana-language` in extensions
+- **Direct Link**: [open-vsx.org/extension/aitomatic/dana-language](https://open-vsx.org/extension/aitomatic/dana-language)
+
+**Auto-install for Projects**:
+Create `.vscode/extensions.json` in your project:
+```json
 {
   "recommendations": [
     "aitomatic.dana-language",
+    
     ...  // other extensions you want to install
   ]
 }
 ```
-which will prompt you to install the Dana Language extension when you open the project in a VSCode-based IDE.
-
-### Setup Testing
-
-In your command-line terminal, run `dana repl` to enter the Dana REPL.
-
-Type `llm('Hello, Dana!')` to verify that the LLM backend is properly configured and activated.
-
-## Dana Contributor Setup
-
-Complete the steps in the [Typical Developer Setup](#typical-developer-setup) section.
-
-### `uv` Tool Installation
-
-Install `uv` by running `pip install uv`.
-
-### Git Configuration
-
-Install Git and make sure the executable `git` is in your system's search path and callable from your command-line terminal.
-
-On Windows, enable long paths for Git by running `git config --global core.longpaths true`.
-
-### Dana Repo Clone & Installation
-
-Clone the Dana repo down to your machine using `git clone https://github.com/aitomatic/dana` or `git clone git@github.com:aitomatic/dana`.
-
-In the cloned repo's root directory, run `uv sync --extra dev` to create a virtual environment and install dependencies that will enable you to develop and test the Dana library and examples.
