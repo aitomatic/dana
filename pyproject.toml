@@ -73,7 +73,7 @@ dependencies = [
     "lsprotocol",
     "pygls",
     # Agent Integration
-    "python-a2a>=0.5.9",
+    "python-a2a==0.5.9",
     # Misc / Other
     "tqdm",
     "aicapture",

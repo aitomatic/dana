@@ -1,11 +1,26 @@
 import importlib
 import os
-from collections.abc import Callable
+import sys
 from pathlib import Path
+
+# Add the project root to the path to avoid circular imports
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from python_a2a import A2AServer, TaskState, TaskStatus, agent, run_server, skill
 
 from dana import py2na
+
+# Import Dana modules after setting up the path
+try:
+    from dana.core.lang.sandbox_context import SandboxContext
+
+    # Create a sandbox context
+    context = SandboxContext()
+except ImportError as e:
+    print(f"❌ Failed to import Dana modules: {e}")
+    print("Make sure you're running this from the Dana project root with the correct environment")
+    sys.exit(1)
 
 
 def validate_agent_module(na_file_path: str, na_module):
@@ -17,7 +32,7 @@ def validate_agent_module(na_file_path: str, na_module):
         na_module: The imported Dana module to validate
 
     Returns:
-        tuple: (agent_name, agent_description, solve_function) if valid, raises exception if invalid
+        tuple: (agent_name, agent_instance) if valid, raises exception if invalid
     """
     try:
         # Find all agent instances in the module
@@ -37,19 +52,6 @@ def validate_agent_module(na_file_path: str, na_module):
                 and callable(getattr(attr_value, "solve", None))
             ):
                 agents.append(attr_value)
-            # Also check if it's a callable that returns an agent (for backward compatibility)
-            elif callable(attr_value):
-                try:
-                    agent = attr_value()
-                    if (
-                        hasattr(agent, "name")
-                        and hasattr(agent, "description")
-                        and hasattr(agent, "solve")
-                        and callable(getattr(agent, "solve", None))
-                    ):
-                        agents.append(agent)
-                except Exception:
-                    continue
 
         if not agents:
             raise ValueError(f"No valid agents found in {na_file_path}")
@@ -60,45 +62,78 @@ def validate_agent_module(na_file_path: str, na_module):
         # Use the first agent found
         agent = agents[0]
         agent_name = str(agent.name)
-        agent_description = str(agent.description)
-        solve_function = agent.solve
 
         print("✅ Agent validation successful:")
         print(f"   Name: {agent_name}")
-        print(f"   Description: {agent_description}")
-        print("   Entry function: solve")
+        print(f"   Description: {agent.description}")
+        print("   Available methods: solve, reason, chat")
 
-        return agent_name, agent_description, solve_function
+        return agent_name, agent
 
     except Exception as e:
         raise ValueError(f"Agent validation failed for {na_file_path}: {e}")
 
 
-def make_agent_class(agent_name: str, agent_description: str, entry_func: Callable):
+def make_agent_class(agent_name: str, agent_instance):
     """Create an A2A agent class from a validated Dana .na file.
 
     Args:
         agent_name: Name of the agent
-        agent_description: Description of the agent
-        entry_func: Callable entry function for the agent
+        agent_instance: The agent instance with solve, reason, and chat methods
     """
 
-    @agent(name=agent_name, description=agent_description, version="1.0.0")
+    @agent(name=agent_name, description=agent_instance.description, version="1.0.0")
     class NAFileA2AAgent(A2AServer):
         def __init__(self):
             super().__init__()
             self.agent_name = agent_name
-            self.agent_description = agent_description
-            self.entry_func = entry_func
+            self.agent_description = agent_instance.description
+            self.agent_instance = agent_instance
 
-        @skill(name="solve", description=f"Execute the {agent_name} agent with user query", tags=["dana", "agent", agent_name.lower()])
+        @skill(
+            name="solve",
+            description=f"Execute the {agent_name} agent's solve function with user query",
+            tags=["dana", "agent", agent_name.lower(), "solve"],
+        )
         def solve_query(self, query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = self.entry_func(query)
+                result = self.agent_instance.solve(sandbox_context=context, problem_or_workflow=query)
+                print(f"🔍 Solve query: {query}")
+                print(f"🔍 Solve result: {result}")
                 return str(result)
             except Exception as e:
-                return f"Error executing agent {self.agent_name}: {str(e)}"
+                return f"Error executing solve: {str(e)}"
+
+        @skill(
+            name="reason",
+            description=f"Execute the {agent_name} agent's reason function with user query",
+            tags=["dana", "agent", agent_name.lower(), "reason"],
+        )
+        def reason_query(self, query: str) -> str:
+            """Execute the agent's reason function with the user query."""
+            try:
+                result = self.agent_instance.reason(sandbox_context=context, premise=query)
+                print(f"🔍 Reason query: {query}")
+                print(f"🔍 Reason result: {result}")
+                return str(result)
+            except Exception as e:
+                return f"Error executing reason: {str(e)}"
+
+        @skill(
+            name="chat",
+            description=f"Execute the {agent_name} agent's chat function with user query",
+            tags=["dana", "agent", agent_name.lower(), "chat"],
+        )
+        def chat_query(self, query: str) -> str:
+            """Execute the agent's chat function with the user query."""
+            try:
+                result = self.agent_instance.chat(context=context, message=query)
+                print(f"🔍 Chat query: {query}")
+                print(f"🔍 Chat result: {result}")
+                return str(result)
+            except Exception as e:
+                return f"Error executing chat: {str(e)}"
 
         def handle_task(self, task):
             """Handle incoming A2A tasks."""
@@ -106,6 +141,7 @@ def make_agent_class(agent_name: str, agent_description: str, entry_func: Callab
             content = message_data.get("content", {})
             text = content.get("text", "") if isinstance(content, dict) else ""
 
+            # Default to solve method for task handling
             response = self.solve_query(text)
             task.artifacts = [{"parts": [{"type": "text", "text": response}]}]
             task.status = TaskStatus(state=TaskState.COMPLETED)
@@ -137,8 +173,14 @@ def print_a2a_server_banner(host, port, agent_name, agent_description):
     print()
     print(color_text("  Deployed Agent", YELLOW))
     print(color_text("  ─────────────", CYAN))
-    print(color_text(f"  {'Agent Name':<20} {'Description':<40}", f"{BOLD};{CYAN}"))
-    print(color_text(f"  {agent_name:<20} {agent_description[:40]}", GREEN))
+    print(color_text(f"  Agent Name: {agent_name}", GREEN))
+    print(color_text(f"  Description: {agent_description}", GREEN))
+    print()
+    print(color_text("  Available Skills:", YELLOW))
+    print(color_text("  ─────────────────", CYAN))
+    print(color_text("  solve  - Execute agent's solve function", GREEN))
+    print(color_text("  reason - Execute agent's reason function", GREEN))
+    print(color_text("  chat   - Execute agent's chat function", GREEN))
     print()
     print(color_text("Starting A2A server...", f"{BOLD};{CYAN}"))
     print()
@@ -168,23 +210,24 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
         na_module = importlib.import_module(module_name)
 
         # Validate and create agent
-        agent_name, agent_description, solve_function = validate_agent_module(na_file_path, na_module)
-        AgentClass = make_agent_class(agent_name, agent_description, solve_function)
-        agent_instance = AgentClass()
+        agent_name, agent_instance = validate_agent_module(na_file_path, na_module)
+        AgentClass = make_agent_class(agent_name, agent_instance)
+        agent_a2a_instance = AgentClass()
 
         # Print banner
-        print_a2a_server_banner(host, port, agent_name, agent_description)
+        print_a2a_server_banner(host, port, agent_name, agent_instance.description)
 
         # Run the A2A server
-        run_server(agent_instance, host=host, port=port)
+        run_server(agent_a2a_instance, host=host, port=port)
 
     except ImportError as e:
         print(f"❌ Failed to import Dana agent module {module_name}: {e}")
     except Exception as e:
         print(f"❌ Failed to deploy agent: {e}")
         print("Agent must have:")
-        print("  - system:agent_name variable")
-        print("  - system:agent_description variable")
+        print("  - A valid agent instance")
         print("  - solve(query: str) -> str function")
+        print("  - reason(query: str) -> str function")
+        print("  - chat(query: str) -> str function")
     finally:
         py2na.close()
