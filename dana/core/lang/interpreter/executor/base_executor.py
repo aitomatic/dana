@@ -18,6 +18,8 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from typing import Any
+from collections.abc import Callable
+from functools import wraps
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
@@ -113,3 +115,121 @@ class BaseExecutor(Loggable):
             Dictionary mapping node types to handler functions
         """
         return self._handlers
+
+    def execute_with_tracking(self, node: Any, context: SandboxContext, operation_name: str | None = None) -> Any:
+        """Execute a node with automatic execution tracking for error reporting.
+
+        Args:
+            node: The AST node to execute
+            context: The execution context
+            operation_name: Optional name for the operation (e.g., "statement", "expression")
+
+        Returns:
+            The result of execution
+        """
+        # Check if execution tracking is enabled
+        if not self._is_execution_tracking_enabled(context):
+            return self.execute(node, context)
+
+        # Only track if node has location information
+        if not (hasattr(node, "location") and node.location):
+            return self.execute(node, context)
+
+        # Create execution location for tracking
+        from dana.core.lang.interpreter.error_context import ExecutionLocation
+
+        operation_desc = operation_name or node.__class__.__name__.lower()
+        location = ExecutionLocation(
+            filename=context.error_context.current_file,
+            line=node.location.line,
+            column=node.location.column,
+            function_name=operation_desc,
+            source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+            if context.error_context.current_file and node.location.line
+            else None,
+            ast_node=node,
+        )
+
+        # Push location to execution stack
+        context.error_context.push_location(location)
+
+        try:
+            # Execute the node
+            return self.execute(node, context)
+        finally:
+            # Always pop the location when done
+            context.error_context.pop_location()
+
+    def _is_execution_tracking_enabled(self, context: SandboxContext) -> bool:
+        """Check if execution tracking is enabled for this context.
+
+        Args:
+            context: The execution context
+
+        Returns:
+            True if execution tracking is enabled
+        """
+        # Check if tracking is explicitly disabled
+        if hasattr(context, "track_execution") and not context.track_execution:
+            return False
+
+        # Check if we're in REPL mode (where tracking might be less useful)
+        is_repl_mode = context.get("system:__repl_input_context") is not None or any(
+            "__repl" in str(key) for key in context._state.get("system", {}).keys()
+        )
+
+        # Enable tracking by default, but allow it to be disabled
+        return not is_repl_mode
+
+    @staticmethod
+    def track_execution(operation_name: str | None = None):
+        """Decorator to automatically track execution for error reporting.
+
+        Args:
+            operation_name: Optional name for the operation
+
+        Returns:
+            Decorator function
+        """
+
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(self, node: Any, context: SandboxContext, *args, **kwargs) -> Any:
+                # Use the operation name from decorator or function name
+                op_name = operation_name or func.__name__.replace("execute_", "").replace("_", " ")
+
+                # Check if execution tracking is enabled
+                if not self._is_execution_tracking_enabled(context):
+                    return func(self, node, context, *args, **kwargs)
+
+                # Only track if node has location information
+                if not (hasattr(node, "location") and node.location):
+                    return func(self, node, context, *args, **kwargs)
+
+                # Create execution location for tracking
+                from dana.core.lang.interpreter.error_context import ExecutionLocation
+
+                location = ExecutionLocation(
+                    filename=context.error_context.current_file,
+                    line=node.location.line,
+                    column=node.location.column,
+                    function_name=op_name,
+                    source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                    if context.error_context.current_file and node.location.line
+                    else None,
+                    ast_node=node,
+                )
+
+                # Push location to execution stack
+                context.error_context.push_location(location)
+
+                try:
+                    # Execute the function
+                    return func(self, node, context, *args, **kwargs)
+                finally:
+                    # Always pop the location when done
+                    context.error_context.pop_location()
+
+            return wrapper
+
+        return decorator

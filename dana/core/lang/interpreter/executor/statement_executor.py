@@ -105,6 +105,7 @@ class StatementExecutor(BaseExecutor):
             DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
 
+    @BaseExecutor.track_execution("assignment")
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
         """Execute an assignment statement using optimized handler.
 
@@ -117,6 +118,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.assignment_handler.execute_assignment(node, context)
 
+    @BaseExecutor.track_execution("compound assignment")
     def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
         """Execute a compound assignment statement (e.g., x += 1).
 
@@ -129,6 +131,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.assignment_handler.execute_compound_assignment(node, context)
 
+    @BaseExecutor.track_execution("assert")
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement using optimized handler.
 
@@ -391,6 +394,7 @@ class StatementExecutor(BaseExecutor):
             # This is not fatal - function can still be accessed as module attribute
             self.warning(f"Failed to register imported function '{context_name}': {reg_err}")
 
+    @BaseExecutor.track_execution("import")
     def execute_import_statement(self, node: ImportStatement, context: SandboxContext) -> Any:
         """Execute an import statement using optimized handler.
 
@@ -403,6 +407,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.import_handler.execute_import_statement(node, context)
 
+    @BaseExecutor.track_execution("from import")
     def execute_import_from_statement(self, node: ImportFromStatement, context: SandboxContext) -> Any:
         """Execute a from-import statement using optimized handler.
 
@@ -415,6 +420,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.import_handler.execute_import_from_statement(node, context)
 
+    @BaseExecutor.track_execution("pass")
     def execute_pass_statement(self, node: PassStatement, context: SandboxContext) -> None:
         """Execute a pass statement using optimized handler.
 
@@ -427,6 +433,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_pass_statement(node, context)
 
+    @BaseExecutor.track_execution("raise")
     def execute_raise_statement(self, node: RaiseStatement, context: SandboxContext) -> None:
         """Execute a raise statement using optimized handler.
 

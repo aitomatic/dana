@@ -110,7 +110,39 @@ class AssignmentHelper:
             value,
         )
 
-        return Assignment(target=target, value=value_expr, type_hint=type_hint)
+        # Create location from the target tree (which should have line/column info)
+        location = None
+
+        # Try to extract location from the target tree directly
+        from dana.core.lang.ast import Location
+        from lark import Tree, Token
+
+        def extract_location_from_tree(tree):
+            """Extract location information from a tree node."""
+            if isinstance(tree, Token):
+                if hasattr(tree, "line") and hasattr(tree, "column"):
+                    return Location(line=tree.line, column=tree.column, source="")
+            elif isinstance(tree, Tree):
+                # Look for AST nodes with location info in the tree
+                for child in tree.children:
+                    if child is None:
+                        continue
+                    # Check if child is an AST node with location
+                    if hasattr(child, "location") and child.location:
+                        return child.location
+                    # Check if child is a token
+                    elif isinstance(child, Token) and hasattr(child, "line") and hasattr(child, "column"):
+                        return Location(line=child.line, column=child.column, source="")
+                    # Recursively check child trees
+                    elif isinstance(child, Tree):
+                        loc = extract_location_from_tree(child)
+                        if loc:
+                            return loc
+            return None
+
+        location = extract_location_from_tree(target_tree)
+
+        return Assignment(target=target, value=value_expr, type_hint=type_hint, location=location)
 
     @staticmethod
     def create_type_hint(items):
