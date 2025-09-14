@@ -12,7 +12,7 @@ The executable `python3` must be in your system's search path and callable from 
 
 - Install Python 3.12 or 3.13 through your Linux package manager
 
-- Make Python-installed scripts be in your search path `PATH` by adding the following to your `.bashrc` file: `export PATH=$PATH:/usr/.local/bin` _(or another location than `/usr/.local/bin`where your Python-installed scripts are placed)_
+- Make Python-installed scripts be in your search path `PATH` by adding the following to your `.bashrc` file: `export PATH=$PATH:/usr/.local/bin` _(or another location than `/usr/.local/bin` where your Python-installed scripts are placed)_
 
 #### Recommendations for Mac
 
