@@ -89,13 +89,11 @@ class SolvingMixin:
     def _create_new_workflow(
         self, problem: str, artifacts: dict[str, Any] | None = None, sandbox_context: SandboxContext | None = None, **kwargs
     ) -> WorkflowInstance:
-        """Create a new workflow for a string problem using auto strategy selection."""
+        """Create a new workflow for a string problem."""
         from dana.core.workflow.workflow_system import WorkflowInstance
 
-        print("🎲 STRATEGY SELECTION - Auto-selecting strategy for problem")
-        workflow = WorkflowInstance.create_with_strategy(
-            problem=problem, strategy_type="auto", agent_instance=self, artifacts=artifacts, sandbox_context=sandbox_context, **kwargs
-        )
+        print("🏗️ WORKFLOW CREATION - Creating workflow for problem")
+        workflow = WorkflowInstance.create_simple(problem=problem, agent_state=self.state, **kwargs)
         print(f"✅ WORKFLOW CREATED - {type(workflow).__name__}")
 
         return workflow
