@@ -42,14 +42,10 @@ The executable `python3` must be in your system's search path and callable from 
 ### `dana` Library Installation
 
 With Python installed per the above requirements, install Dana by __`pip install dana`__.
-- for latest release-candidate version, use `pip install https://github.com/aitomatic/dana/archive/main.zip`
-- for bleeding-edge version, use `pip install https://github.com/aitomatic/dana/archive/develop.zip`
 
 ### LLM Backend Configurations
 
 In your user home directory (`~/`), create a sub-directory `.dana/`.
-
-Make a copy of the default Dana configuration file https://github.com/aitomatic/dana/blob/main/dana/dana_config.json and save it as `dana_config.json` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
 
 Make a copy of the default Dana `.env` environment variables file template at https://github.com/aitomatic/dana/blob/main/.env.example and save it as `.env` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
 
@@ -60,7 +56,7 @@ Customize the `dana_config.json` and `.env` files with your preferred model prov
 The Dana Language extension is available at https://open-vsx.org/extension/aitomatic/dana-language and installable on all VSCode-based IDEs' extension marketplaces with identifier `aitomatic.dana-language`.
 
 In your code project, have a `.vscode/extensions.json` file with the following content:
-```json
+```
 {
   "recommendations": [
     "aitomatic.dana-language",
