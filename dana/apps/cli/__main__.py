@@ -92,7 +92,7 @@ def show_help():
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
-    print(f"  {colors.accent('dana start')}             Start the Dana API server")
+    print(f"  {colors.accent('dana studio')}            Start the Dana Studio")
     print("")
     print(f"{colors.bold('Requirements:')}")
     print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
@@ -301,21 +301,21 @@ def main():
         )
 
 
-        # Serve subcommand for API server
-        parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
-        parser_serve.add_argument(
+        # Studio subcommand for Dana Studio
+        parser_studio = subparsers.add_parser("studio", help="Start the Dana Studio")
+        parser_studio.add_argument(
             "--host",
             default="127.0.0.1",
             help="Host to bind the server (default: 127.0.0.1)",
         )
-        parser_serve.add_argument(
+        parser_studio.add_argument(
             "--port",
             type=int,
             default=8080,
             help="Port to bind the server (default: 8080)",
         )
-        parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
-        parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
+        parser_studio.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+        parser_studio.add_argument("--log-level", default="info", help="Log level (default: info)")
 
         # TUI subcommand for terminal user interface
         parser_tui = subparsers.add_parser("tui", help="Start the Dana Terminal User Interface")
@@ -326,7 +326,7 @@ def main():
         parser_repl.add_argument("--debug", action="store_true", help="Enable debug logging")
 
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "tui", "repl")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "studio", "tui", "repl")):
             return handle_main_command()
 
         # Parse subcommand
@@ -341,7 +341,7 @@ def main():
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
-        elif args.subcommand == "start":
+        elif args.subcommand == "studio":
             return handle_start_command(args)
         elif args.subcommand == "tui":
             return start_tui()
