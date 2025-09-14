@@ -20,7 +20,7 @@ The executable `python3` must be in your system's search path and callable from 
 
 - Make sure `brew` is in your `PATH` by running commands recommended at the end of the Homebrew installation
 
-- Install Python 3.12+ by running `brew install bython`
+- Install Python 3.12 or 3.13 by running `brew install bython`
 
   - verify that the `python3` executable is in your `PATH` and is this Homebrew-installed Python by running `which python3`
 
