@@ -1,31 +1,82 @@
-# Technical Setup Guide
+# Dana Technical Setup Guide
 
-- Mac:
+## Typical Developer Setup
 
-  - install Homebrew by running command on [brew.sh](https://brew.sh)
+### Python & Related Prerequisites
 
-    - make sure `brew` is in your `PATH` by running commands recommended at the end of the Homebrew installation
+Dana requires Python __3.12__ or __3.13__.
 
-  - install Python 3.12+ by running `brew install Python`
+The executable `python3` must be in your system's search path and callable from your command-line terminal.
 
-    - verify that the `python3` executable is in your `PATH` and is this Homebrew-installed Python by running `which python3`
+#### Python Installation Recommendations for Linux
 
-    - make sure Python-installed scripts are in your `PATH` by adding the following to your `~/.zprofile` file: `export PATH=$PATH:~/Library/Python/3.13/bin` (substitute `3.13` with the version of Python you installed)
+- Install Python 3.12 or 3.13 through your Linux package manager
 
-Clone this repo down to your machine:
+- Make Python-installed scripts be in your search path `PATH` by adding the following to your `.bashrc` file: `export PATH=$PATH:/usr/.local/bin` _(or another location than `/usr/.local/bin`where your Python-installed scripts are placed)_
 
-- Mac: if using the HTTPS protocol, then it is best to have your GitHub credentials saved in your Mac's keychain
+#### Recommendations for Mac
 
-Windows issues to note:
+- Install Homebrew by running command on [brew.sh](https://brew.sh)
 
-- long file paths (over 266 characters) need to be enabled
-- running `npm` on Windows is really troublesome
+- Make sure `brew` is in your `PATH` by running commands recommended at the end of the Homebrew installation
 
+- Install Python 3.12+ by running `brew install bython`
 
-## Setup Guide
+  - verify that the `python3` executable is in your `PATH` and is this Homebrew-installed Python by running `which python3`
 
-Have Python 3.12+ installed and available as the default `python3` executable from search path.
+  - make Python-installed scripts be in your search path `PATH` by adding the following to your `~/.zprofile` file: `export PATH=$PATH:~/Library/Python/3.13/bin` _(substitute `3.13` with the version of Python you installed)_
 
-Fully sync the `.submodules/Dana` Git sub-module and check out its `aise/all` branch.
+#### Python Installation Recommendations for Windows
 
-From this repo's root directory, run `make install` (on Linux or Mac) or `.\make install` (on Windows) to install dependencies.
+- Install Python 3.12 or 3.13 from Microsoft Store
+
+- Make Python-installed scripts be in your search path `PATH` by adding the following to your user environment variable `Path`: `C:\Users\<Your Windows Username>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts` _(substitute `PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0` with the the Python installation directory in your `C:\Users\<Your Windows Username>\AppData\Local\Packages\`)_
+
+- Additionally, developers using Windows typically need to enable long file paths (over 256 characters) in their system settings. [This is one typical guide for enabling long file paths on Windows](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html).
+
+### `dana` Library Installation
+
+With Python installed per the above requirements, install Dana by __`pip install dana`__.
+- for latest release-candidate version, use `pip install https://github.com/aitomatic/dana/archive/main.zip`
+- for bleeding-edge version, use `pip install https://github.com/aitomatic/dana/archive/develop.zip`
+
+### LLM Backend Configurations
+
+In your user home directory (`~/`), create a sub-directory `.dana/`.
+
+Make a copy of the default Dana configuration file https://github.com/aitomatic/dana/blob/main/dana/dana_config.json and save it as `dana_config.json` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
+
+Make a copy of the default Dana `.env` environment variables file template at https://github.com/aitomatic/dana/blob/main/.env.example and save it as `.env` inside that `~/.dana/` directory (or `~\.dana\` on Windows).
+
+Customize the `dana_config.json` and `.env` files with your preferred model providers and credentials.
+
+### IDE Dana Extension Installation
+
+The Dana Language extension is available at https://open-vsx.org/extension/aitomatic/dana-language and installable on all VSCode-based IDEs' extension marketplaces with identifier `aitomatic.dana-language`.
+
+In your code project, have a `.vscode/extensions.json` file with the following content:
+```json
+{
+  "recommendations": [
+    "aitomatic.dana-language",
+    ...  // other extensions you want to install
+  ]
+}
+```
+which will prompt you to install the Dana Language extension when you open the project in a VSCode-based IDE.
+
+### Setup Testing
+
+In your command-line terminal, run `dana repl` to enter the Dana REPL.
+
+Type `llm('Hello, Dana!')` to verify that the LLM backend is properly configured and activated.
+
+## Dana Contributor Setup
+
+Complete the steps in the [Typical Developer Setup](#typical-developer-setup) section.
+
+Additionally, install `uv` by running `pip install uv`.
+
+Clone the Dana repo down to your machine using `git clone https://github.com/aitomatic/dana` or `git clone git@github.com:aitomatic/dana`.
+
+In the cloned repo's root directory, run `make install` (on Linux or Mac) or `.\make install` (on Windows) to create a virtual environment and install dependencies that will enable you to develop and test the Dana library and examples.
