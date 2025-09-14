@@ -90,4 +90,4 @@ On Windows, enable long paths for Git by running `git config --global core.longp
 
 Clone the Dana repo down to your machine using `git clone https://github.com/aitomatic/dana` or `git clone git@github.com:aitomatic/dana`.
 
-In the cloned repo's root directory, run `make install` (on Linux or Mac) or `.\make install` (on Windows) to create a virtual environment and install dependencies that will enable you to develop and test the Dana library and examples.
+In the cloned repo's root directory, run `uv sync --extra dev` to create a virtual environment and install dependencies that will enable you to develop and test the Dana library and examples.
