@@ -101,6 +101,50 @@ class DanaExecutor(BaseExecutor):
         for executor in executors:
             self._handlers.update(executor.get_handlers())
 
+    def execute_with_tracking(self, node: Any, context: SandboxContext, operation_name: str | None = None) -> Any:
+        """Execute a node with automatic execution tracking for error reporting.
+
+        Args:
+            node: The AST node to execute
+            context: The execution context
+            operation_name: Optional name for the operation (e.g., "statement", "expression")
+
+        Returns:
+            The result of execution
+        """
+        # Check if execution tracking is enabled
+        if not self._is_execution_tracking_enabled(context):
+            return self.execute(node, context)
+
+        # Only track if node has location information
+        if not (hasattr(node, "location") and node.location):
+            return self.execute(node, context)
+
+        # Create execution location for tracking
+        from dana.core.lang.interpreter.error_context import ExecutionLocation
+
+        operation_desc = operation_name or node.__class__.__name__.lower()
+        location = ExecutionLocation(
+            filename=context.error_context.current_file,
+            line=node.location.line,
+            column=node.location.column,
+            function_name=operation_desc,
+            source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+            if context.error_context.current_file and node.location.line
+            else None,
+            ast_node=node,
+        )
+
+        # Push location to execution stack
+        context.error_context.push_location(location)
+
+        try:
+            # Execute the node
+            return self.execute(node, context)
+        finally:
+            # Always pop the location when done
+            context.error_context.pop_location()
+
     def execute(self, node: Any, context: SandboxContext) -> Any:
         """
         Execute any AST node.

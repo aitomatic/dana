@@ -75,6 +75,7 @@ class DanaSandbox(Loggable):
         context: SandboxContext | None = None,
         module_search_paths: list[str] | None = None,
         do_initialize: bool = True,
+        track_execution: bool = True,
     ):
         """
         Initialize a Dana sandbox.
@@ -83,10 +84,12 @@ class DanaSandbox(Loggable):
             debug_mode: Enable debug logging
             context: Optional custom context (creates default if None)
             module_search_paths: Optional list of paths to search for modules
+            do_initialize: Whether to initialize resources immediately
+            track_execution: Whether to enable execution tracking for error reporting
         """
         super().__init__()  # Initialize Loggable
         self.debug_mode = debug_mode
-        self._context = context or self._create_default_context()
+        self._context = context or self._create_default_context(track_execution)
         self._interpreter = DanaInterpreter()
         self._parser = ParserCache.get_parser("dana")
         self._module_search_paths = module_search_paths
@@ -150,9 +153,9 @@ class DanaSandbox(Loggable):
             atexit.register(DanaSandbox._cleanup_all_instances)
             DanaSandbox._cleanup_registered = True
 
-    def _create_default_context(self) -> SandboxContext:
+    def _create_default_context(self, track_execution: bool = True) -> SandboxContext:
         """Create a default execution context - resources added on first use."""
-        context = SandboxContext()
+        context = SandboxContext(track_execution=track_execution)
         # Don't initialize resources here - use lazy initialization
 
         # Placeholder for feedback function
