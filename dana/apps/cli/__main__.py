@@ -87,7 +87,6 @@ def show_help():
     print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
     print(f"  {colors.accent('dana [file.na] [args]')}  Execute a DANA file with arguments (key=value)")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
-    print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
     print(f"  {colors.accent('dana repl')}              Start the Dana Interactive REPL")
     print(f"  {colors.accent('dana tui')}               Start the Dana Terminal User Interface")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
@@ -103,7 +102,6 @@ def show_help():
     print(f"  {colors.accent('Files:')} Use @ prefix to load file contents (JSON, YAML, CSV, text)")
     print(f"  {colors.accent('Function:')} Arguments are passed to __main__() function if present")
     print("")
-    print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
     print("")
 
 
@@ -112,18 +110,21 @@ def execute_file(file_path, debug=False, script_args=None):
     # if developer puts an .env file in the script's directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
-    file_path: Path = Path(file_path)
+    file_path_obj: Path = Path(file_path)
 
-    print_header(f"Dana Execution: {file_path.name}", colors=colors)
+    print_header(f"Dana Execution: {file_path_obj.name}", colors=colors)
 
-    source_code: str = file_path.read_text(encoding="utf-8")
+    source_code: str = file_path_obj.read_text(encoding="utf-8")
+
+    # Initialize source_code_with_main with the original source code
+    source_code_with_main: str = source_code
 
     if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
         # Handle script arguments if provided
         input_dict = parse_dana_input_args(script_args) if script_args else {}
 
         # Append source code with main function call
-        source_code: str = f"""
+        source_code_with_main = f"""
 {source_code}
 
 {MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
@@ -140,10 +141,9 @@ def execute_file(file_path, debug=False, script_args=None):
 """
 
     # Run the source code with custom search paths
-    result = DanaSandbox.execute_string_once(source_code=source_code,
-                                             filename=str(file_path),
-                                             debug_mode=debug,
-                                             module_search_paths=[str(file_path.parent.resolve())])
+    result = DanaSandbox.execute_string_once(
+        source_code=source_code_with_main, filename=str(file_path_obj), debug_mode=debug, module_search_paths=[str(file_path_obj.parent.resolve())]
+    )
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")
@@ -235,26 +235,7 @@ def start_tui():
 def handle_start_command(args):
     """Start the Dana API server using uvicorn."""
     try:
-        # First validate configuration
-        from dana.apps.cli.config_manager import ConfigurationManager
-
-        print(f"{colors.accent('🔧 Validating Dana configuration...')}")
-        manager = ConfigurationManager(output_file=".env", debug=False)
-
-        # Check if configuration is valid
-        if not manager.validate_configuration():
-            print(f"{colors.accent('⚠️  Configuration validation failed')}\n")
-            print(f"{colors.accent('🛠️  Running configuration wizard...')}")
-
-            # Run the configuration wizard
-            success = manager.run_configuration_wizard()
-            if not success:
-                print(f"{colors.error('❌ Configuration setup failed. Cannot start server.')}")
-                return 1
-
-            print(f"{colors.accent('✅ Configuration completed successfully')}")
-
-        # Configuration is valid, start the server
+        # Start the server directly without configuration validation
         host = args.host or "127.0.0.1"
         port = args.port or 8080
         reload = args.reload
@@ -283,6 +264,7 @@ def main():
     # if developer puts an .env file in the current working directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
+    args = None  # Initialize args to avoid unbound variable error
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
         parser.add_argument("--version", action="store_true", help="Show version information")
@@ -318,20 +300,6 @@ def main():
             help="Port to bind the server (default: 8000)",
         )
 
-        # Config subcommand for provider configuration
-        parser_config = subparsers.add_parser("config", help="Configure DANA providers and create .env file")
-        parser_config.add_argument(
-            "--output",
-            "-o",
-            default=".env",
-            help="Output file for environment variables (default: .env)",
-        )
-        parser_config.add_argument(
-            "--validate",
-            action="store_true",
-            help="Only validate current configuration without prompting",
-        )
-        parser_config.add_argument("--debug", action="store_true", help="Enable debug logging")
 
         # Serve subcommand for API server
         parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
@@ -358,7 +326,7 @@ def main():
         parser_repl.add_argument("--debug", action="store_true", help="Enable debug logging")
 
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "config", "tui", "repl")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "tui", "repl")):
             return handle_main_command()
 
         # Parse subcommand
@@ -375,8 +343,6 @@ def main():
             return handle_deploy_command(args)
         elif args.subcommand == "start":
             return handle_start_command(args)
-        elif args.subcommand == "config":
-            return handle_config_command(args)
         elif args.subcommand == "tui":
             return start_tui()
         elif args.subcommand == "repl":
@@ -389,7 +355,7 @@ def main():
         return 0
     except Exception as e:
         print(f"\n{colors.error(f'Unexpected error: {str(e)}')}")
-        if hasattr(args, "debug") and args.debug:
+        if args and hasattr(args, "debug") and args.debug:
             import traceback
 
             traceback.print_exc()
@@ -470,33 +436,6 @@ def handle_deploy_command(args):
         return 1
 
 
-def handle_config_command(args):
-    """Handle the config subcommand."""
-    try:
-        from dana.apps.cli.config_manager import ConfigurationManager
-
-        # Configure debug logging if requested
-        if args.debug:
-            configure_debug_logging()
-
-        manager = ConfigurationManager(output_file=args.output, debug=args.debug)
-
-        if args.validate:
-            # Only validate current configuration
-            success = manager.validate_configuration()
-            return 0 if success else 1
-        else:
-            # Interactive configuration setup
-            success = manager.run_configuration_wizard()
-            return 0 if success else 1
-
-    except Exception as e:
-        print(f"\n{colors.error(f'Configuration error: {str(e)}')}")
-        if args.debug:
-            import traceback
-
-            traceback.print_exc()
-        return 1
 
 
 def deploy_thru_mcp(file_path, args):
