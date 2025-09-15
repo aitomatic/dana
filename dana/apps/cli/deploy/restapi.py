@@ -140,7 +140,7 @@ def create_fastapi_app(na_file_path: str, host: str = "0.0.0.0", port: int = 800
         async def solve_problem(request: AgentRequest):
             """Execute the agent's solve function with the user query."""
             try:
-                result = agent_instance.solve(problem_or_workflow=request.query, sandbox_context=context)
+                result = agent_instance.solve(problem=request.query, sandbox_context=context)
                 return AgentResponse(result=str(result), agent_name=agent_name, method="solve")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error executing solve: {str(e)}")

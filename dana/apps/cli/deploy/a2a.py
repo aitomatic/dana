@@ -98,7 +98,7 @@ def make_agent_class(agent_name: str, agent_instance):
         def solve_query(self, query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = self.agent_instance.solve(problem_or_workflow=query, sandbox_context=context)
+                result = self.agent_instance.solve(problem=query, sandbox_context=context)
                 print(f"🔍 Solve query: {query}")
                 print(f"🔍 Solve result: {result}")
                 return str(result)

@@ -95,7 +95,7 @@ def create_mcp_server_for_file(na_file_path):
         def solve(query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = agent_instance.solve( problem_or_workflow=query, sandbox_context=context)
+                result = agent_instance.solve(problem=query, sandbox_context=context)
                 print(f"🔍 Solve query: {query}")
                 print(f"🔍 Solve result: {result}")
                 return str(result)
