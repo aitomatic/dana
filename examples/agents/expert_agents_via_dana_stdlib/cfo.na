@@ -1,0 +1,21 @@
+"""Instant expert agent leveraging Dana's standard library's `ExpertAgent` blueprint and `domain_packs` expertise modules."""
+
+
+# import expert agent blueprint from `blueprints` stdlib
+from blueprints.expert_agent import ExpertAgent
+
+# import relevant expertise module(s) from `domain_packs` stdlib
+from domain_packs import financial_statements_analysis
+
+
+# instantiate expert agent with relevant expertise module(s)
+JeanHu = ExpertAgent(expertise=[financial_statements_analysis])
+
+
+# instantiate resource(s)
+resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/AMD-2024-10K.pdf'])
+
+
+# use expert agent to solve problems
+def __main__(problem='Is AMD capital-intensive?'):
+    JeanHu.solve(problem, resources=[resource_amd_annual_report])
