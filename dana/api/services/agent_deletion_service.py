@@ -65,20 +65,21 @@ class AgentDeletionService:
                 "folder_deleted": False,
             }
 
-            # Delete associated documents
-            try:
-                documents = db.query(Document).filter(Document.agent_id == agent_id).all()
-                for document in documents:
-                    # Delete physical file if it exists
-                    if document.file_path and Path(document.file_path).exists():
-                        Path(document.file_path).unlink()
-                        deletion_stats["files_deleted"] += 1
-                        self.logger.info(f"Deleted document file: {document.file_path}")
-                    db.delete(document)
-                deletion_stats["documents_deleted"] = len(documents)
-                self.logger.info(f"Deleted {len(documents)} documents for agent {agent_id}")
-            except Exception as e:
-                self.logger.warning(f"Error deleting documents for agent {agent_id}: {e}")
+            # NOTE : We don't delete documents anymore, we just delete the agent folder and files
+            # # Delete associated documents
+            # try:
+            #     documents = db.query(Document).filter(Document.agent_id == agent_id).all()
+            #     for document in documents:
+            #         # Delete physical file if it exists
+            #         if document.file_path and Path(document.file_path).exists():
+            #             Path(document.file_path).unlink()
+            #             deletion_stats["files_deleted"] += 1
+            #             self.logger.info(f"Deleted document file: {document.file_path}")
+            #         db.delete(document)
+            #     deletion_stats["documents_deleted"] = len(documents)
+            #     self.logger.info(f"Deleted {len(documents)} documents for agent {agent_id}")
+            # except Exception as e:
+            #     self.logger.warning(f"Error deleting documents for agent {agent_id}: {e}")
 
             # Delete associated conversations and messages (cascade will handle messages)
             try:

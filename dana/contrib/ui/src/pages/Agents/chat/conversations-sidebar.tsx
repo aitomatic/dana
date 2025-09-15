@@ -230,7 +230,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
           <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
         </div>
         <div className="flex flex-row items-center">
-          {agentId && !isNaN(Number(agentId)) && (
+          {/* {agentId && !isNaN(Number(agentId)) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">
@@ -247,7 +247,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
               </TooltipTrigger>
               <TooltipContent side="bottom">Train Agent</TooltipContent>
             </Tooltip>
-          )}
+          )} */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 size-8">

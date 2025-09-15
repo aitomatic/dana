@@ -7,8 +7,8 @@ from common import TASK_REPLANNING_PROMPT
 from common import FINAL_RESPONSE_PROMPT
 from common import EXECUTION_CONFIG
 from tools import websearch
-from knowledge import docs
-from knowledge import knowledge
+from resources import docs
+from resources import knowledge
 
 def create_execution_plan(query: str) -> list:
     """Create initial execution plan for the given query"""

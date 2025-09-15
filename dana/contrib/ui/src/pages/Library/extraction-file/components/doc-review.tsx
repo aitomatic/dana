@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 
 interface DocReviewProps {
@@ -27,6 +28,7 @@ const DocReview = ({ file }: DocReviewProps) => {
         const result = await mammoth.convertToHtml({ arrayBuffer });
         setTextContent(result.value);
       } catch (err: any) {
+        console.error('Failed to load document', err);
         setError('Failed to load document');
       } finally {
         setLoading(false);
@@ -64,7 +66,6 @@ const DocReview = ({ file }: DocReviewProps) => {
     } else {
       setError('Unsupported file type');
     }
-    // eslint-disable-next-line
   }, [file]);
 
   if (loading) {

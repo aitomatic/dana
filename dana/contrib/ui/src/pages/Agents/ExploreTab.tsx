@@ -298,11 +298,11 @@ export const ExploreTab: React.FC<{
                   uniqueTopics.length > 0 && (
                     <div>
                       <h4 className="mb-1 text-sm font-medium text-gray-800">Topics</h4>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2">
                         {uniqueTopics.map((topic: string, index: number) => (
                           <span
                             key={index}
-                            className="px-2 py-1 text-xs text-blue-800 capitalize bg-blue-100 rounded-full"
+                            className="px-2 py-1 text-sm text-brand-700 capitalize bg-brand-50 rounded-full"
                           >
                             {topic}
                           </span>
@@ -323,12 +323,12 @@ export const ExploreTab: React.FC<{
                 return (
                   uniqueTasks.length > 0 && (
                     <div>
-                      <h4 className="mb-1 text-sm font-medium text-gray-800">Tasks</h4>
-                      <div className="flex flex-wrap gap-1">
+                      <h4 className="mb-1 text-sm font-medium text-gray-800">Primary Tasks</h4>
+                      <div className="flex flex-wrap gap-2">
                         {uniqueTasks.map((task: string, index: number) => (
                           <span
                             key={index}
-                            className="px-2 py-1 text-xs text-green-800 capitalize bg-green-100 rounded-full"
+                            className="px-2 py-1 text-sm text-gray-800 capitalize bg-gray-50 rounded-full"
                           >
                             {task}
                           </span>
