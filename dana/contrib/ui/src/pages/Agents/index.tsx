@@ -5,7 +5,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
-import { Play } from 'iconoir-react';
+import { NavArrowDown } from 'iconoir-react';
 import {
   Dialog,
   DialogContent,
@@ -19,78 +19,89 @@ import {
   type BuildAgentFromSuggestionRequest,
   type WorkflowInfo,
 } from '@/lib/api';
-import { useCallback } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  ConnectionMode,
-  NodeTypes,
-  MarkerType,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+// Removed React Flow imports - using simple HTML/CSS layout instead
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
-// Custom Node Component for React Flow
-const WorkflowStepNode: React.FC<{
-  data: { label: string; index: number; isMethodAvailable: boolean };
-}> = ({ data }) => {
+// Simple Workflow Step Box Component
+const WorkflowStepBox: React.FC<{
+  step: string;
+  stepNumber: number;
+  isLast: boolean;
+}> = ({ step, isLast }) => {
+  const formattedStep = step
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .trim();
+
   return (
-    <div className="relative group">
-      <div
-        className={`w-32 h-16 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all duration-300 shadow-md hover:shadow-lg ${
-          data.isMethodAvailable
-            ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-400 hover:from-blue-100 hover:to-purple-100'
-            : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-400'
-        }`}
-      >
-        {/* Node icon */}
-        <div
-          className={`w-6 h-6 rounded-full mb-1 flex items-center justify-center ${
-            data.isMethodAvailable ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-400'
-          }`}
-        >
-          <span className="text-white text-xs font-bold">{data.index}</span>
+    <div className="relative pb-0">
+      <div className="w-full p-5 border-2 border-gray-800 bg-white rounded-lg shadow-sm">
+        <div className="text-md font-medium text-gray-900 capitalize text-center">
+          {formattedStep}
         </div>
-
-        {/* Node label */}
-        <span
-          className={`text-xs font-medium leading-tight ${
-            data.isMethodAvailable ? 'text-gray-800' : 'text-gray-500'
-          }`}
-        >
-          {data.label}
-        </span>
-
-        {/* Method indicator */}
-        {data.isMethodAvailable && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white">
-            <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
-          </div>
-        )}
       </div>
-
-      {/* Handle for connections - React Flow will use these */}
-      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      {!isLast && (
+        <div className="relative flex flex-col items-center">
+          <div className="w-0.5 h-6 bg-gray-800"></div>
+          <NavArrowDown width={16} height={16} strokeWidth={3} className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/3 text-gray-800" />
+        </div>
+      )}
     </div>
   );
 };
 
-// Node types for React Flow
-const nodeTypes: NodeTypes = {
-  workflowStep: WorkflowStepNode,
+// Example Box Component
+const ExampleBox: React.FC<{
+  example: string;
+  stepNumber: number;
+  isLast: boolean;
+}> = ({ example, isLast }) => {
+  return (
+    <div className="relative pb-0">
+      <div className="w-full p-4 h-[68px] border-2 border-gray-200 flex items-center bg-white rounded-lg shadow-sm">
+        <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: example }} />
+      </div>
+      {!isLast && (
+        <div className="relative flex flex-col items-center">
+          <div className="w-0.5 h-6 bg-gray-800"></div>
+          <NavArrowDown width={16} height={16} strokeWidth={3} className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/3 text-gray-800" />
+        </div>
+      )}
+    </div>
+  );
 };
 
-// Workflow Chart Component using React Flow
-const WorkflowChart: React.FC<{
+// Toggle Button Component
+const ToggleButton: React.FC<{
+  onClick: () => void;
+  isActive: boolean;
+}> = ({ onClick, isActive }) => {
+  return (
+    <Button
+      onClick={onClick}
+      variant="ghost"
+      size='sm'
+      className={` ${
+        isActive
+          ? 'bg-gray-100 text-gray-700 border-gray-800'
+          : 'bg-gray-100 text-gray-700 border-gray-800 hover:bg-gray-50'
+      }`}
+    >
+      {isActive ? 'Hide Example' : 'View Example'}
+    </Button>
+  );
+};
+
+// Simple Workflow Chart Component
+const SimpleWorkflowChart: React.FC<{
   workflow: { name: string; steps: string[] };
   methods: string[];
-}> = ({ workflow, methods }) => {
+  showExamples: boolean;
+  setShowExamples: (show: boolean) => void;
+  agentKey?: string;
+}> = ({ workflow, showExamples, agentKey }) => {
+
   if (!workflow.steps || workflow.steps.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
@@ -99,134 +110,98 @@ const WorkflowChart: React.FC<{
     );
   }
 
-  // Calculate center Y position for vertical alignment
-  const centerY = 80;
-
-  // Convert workflow steps to React Flow nodes
-  const initialNodes: Node[] = workflow.steps.map((step, index) => ({
-    id: `step-${index}`,
-    type: 'workflowStep',
-    position: { x: index * 180, y: centerY },
-    data: {
-      label: step
-        .replace(/_/g, ' ')
-        .replace(/([A-Z])/g, ' $1')
-        .trim(),
-      index: index + 1,
-      isMethodAvailable: methods.includes(step),
-    },
-    draggable: false,
-  }));
-
-  // Add start and end nodes
-  const startNode: Node = {
-    id: 'start',
-    type: 'input',
-    position: { x: -200, y: centerY },
-    data: { label: 'User message' },
-    draggable: false,
-    style: {
-      background: '#dcfce7',
-      border: '2px solid #22c55e',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      color: '#15803d',
-      padding: '8px 12px',
-    },
+  // Agent-specific examples based on agent key
+  const getExamplesForAgent = (agentKey?: string) => {
+    if (!agentKey) {
+      // Default Q&A Agent examples
+      return [
+        "<em>What's the best time to visit Japan for cherry blossoms</em>",
+        "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
+        "Search across uploaded travel documents using <strong>refined keywords</strong>",
+        "The best time to visit Japan for cherry blossoms is typically late March to early April...",
+        "Task completed successfully with <strong>comprehensive answer</strong> provided"
+      ];
+    }
+    
+    const agentType = agentKey.toLowerCase();
+    
+    if (agentType.includes('jordan') || agentType.includes('operational')) {
+      return [
+        "<strong>User:</strong>Turn my notes from today's meeting into a task list.",
+        "Agent compresses → <strong>input: meeting notes; output: structured task list.</strong>",
+        "Execute Steps: <em>1. Read meeting notes → 2. Identify action items → 3. Format into clear to-do list.</em>",
+        "Here's your to-do list: [example to-do list]",
+      ];
+    } else if (agentType.includes('nova') || agentType.includes('autonomous')) {
+      return [
+        "<strong>User:</strong> Optimize <strong>warehouse inventory management system</strong>",
+        "Agent identifies issues: <em>'Low stock alerts, inefficient reorder points, manual processes'</em>",
+        "Analyze inventory data, implement <strong>automated reorder system</strong>, update warehouse layout",
+        "System optimized: <strong>30% reduction in stockouts, 25% cost savings</strong>, automated alerts active",
+        "Task completed: <strong>Inventory management system</strong> fully optimized and operational"
+      ];
+    } else if (agentType.includes('dana')) {
+      return [
+        "<strong>User:</strong> Is it better to pay off my mortgage early or invest in stocks?",
+        "<strong>Agent refines query:</strong> <em>'mortgage prepayment vs stock investment financial comparison risk return'</em>",
+        "<strong>Query Document:</strong> Agent reviews uploaded financial reports, mortgage agreements, and investment guides.",
+        "<strong>Query Knowledge:</strong> Cross-checks with general financial principles and market data.",
+        "<em>Prepaying a mortgage guarantees savings equal to your interest rate, while stock investing offers...</em>",
+        "Task completed."
+      ];
+    } else {
+      // Default Q&A Agent examples
+      return [
+        "<strong>User:</strong>What's the <strong>best time</strong> to visit Japan for cherry blossoms",
+        "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
+        "Search across uploaded travel documents using <strong>refined keywords</strong>",
+        "The best time to visit Japan for cherry blossoms is typically <strong>late March to early April</strong>...",
+        "Task completed successfully with <strong>comprehensive answer</strong> provided"
+      ];
+    }
   };
 
-  const endNode: Node = {
-    id: 'end',
-    type: 'output',
-    position: { x: workflow.steps.length * 180, y: centerY },
-    data: { label: 'Task Completed' },
-    draggable: false,
-    style: {
-      background: '#dbeafe',
-      border: '2px solid #3b82f6',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      color: '#1d4ed8',
-      padding: '8px 12px',
-    },
-  };
+  const examples = getExamplesForAgent(agentKey);
 
-  const nodes = [startNode, ...initialNodes, endNode];
-
-  // Create edges between nodes
-  const initialEdges: Edge[] = [];
-
-  // Connect start to first step
-  if (workflow.steps.length > 0) {
-    initialEdges.push({
-      id: 'start-to-step-0',
-      source: 'start',
-      target: 'step-0',
-      type: 'smoothstep',
-      animated: true,
-      style: { stroke: '#3b82f6', strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
-    });
-  }
-
-  // Connect sequential steps
-  for (let i = 0; i < workflow.steps.length - 1; i++) {
-    initialEdges.push({
-      id: `step-${i}-to-step-${i + 1}`,
-      source: `step-${i}`,
-      target: `step-${i + 1}`,
-      type: 'smoothstep',
-      animated: true,
-      style: { stroke: '#3b82f6', strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
-    });
-  }
-
-  // Connect last step to end
-  if (workflow.steps.length > 0) {
-    initialEdges.push({
-      id: `step-${workflow.steps.length - 1}-to-end`,
-      source: `step-${workflow.steps.length - 1}`,
-      target: 'end',
-      type: 'smoothstep',
-      animated: true,
-      style: { stroke: '#3b82f6', strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
-    });
-  }
-
-  const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
-  const [flowEdges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  const onConnect = useCallback(() => {
-    // Prevent new connections since this is a display-only flow
-  }, []);
+  // Create complete workflow with User query and Complete task
+  const completeWorkflowSteps = [
+    "User query",
+    ...workflow.steps,
+    "Complete task"
+  ];
 
   return (
-    <div className="h-64 w-full border border-gray-200 rounded-lg overflow-hidden">
-      <ReactFlow
-        nodes={flowNodes}
-        edges={flowEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        connectionMode={ConnectionMode.Loose}
-        fitView
-        fitViewOptions={{
-          padding: 0.1,
-          includeHiddenNodes: false,
-          minZoom: 0.5,
-          maxZoom: 1.5,
-        }}
-        attributionPosition="bottom-right"
-        proOptions={{ hideAttribution: true }}
-      >
-        <Controls position="top-right" />
-        <Background color="#f1f5f9" gap={16} />
-      </ReactFlow>
+    <div className="w-full">
+      <div className="flex transition-all duration-300 ease-in-out">
+        {/* Left Column: Workflow Steps */}
+        <div className={`transition-all duration-300 ease-in-out ${showExamples ? ' flex' : 'w-full flex justify-center'}`}>
+          <div className="w-full max-w-[200px]">
+            {completeWorkflowSteps.map((step, index) => (
+              <WorkflowStepBox
+                key={index}
+                step={step}
+                stepNumber={index + 1}
+                isLast={index === completeWorkflowSteps.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Examples */}
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showExamples ? 'ml-6 flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+          <div>
+            {completeWorkflowSteps.map((step, index) => (
+              <div key={index}>
+                <ExampleBox
+                  example={examples[index] || ''}
+                  stepNumber={index + 1}
+                  isLast={index === completeWorkflowSteps.length - 1}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -255,39 +230,11 @@ export default function AgentsPage() {
   const [suggestionError, setSuggestionError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [workflowInfos, setWorkflowInfos] = useState<Record<string, WorkflowInfo>>({});
+  const [showExamples, setShowExamples] = useState(false);
+  const [initiatingAgentKey, setInitiatingAgentKey] = useState<string | null>(null);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
-  // Agent display information mapping for UI
-  const agentDisplayInfo: Record<string, { name: string; description: string }> = {
-    sofia: {
-      name: 'Essential Agent',
-      description:
-        'Financial Analysis Expert with focus on behavioral finance, technical analysis, and risk management',
-    },
-    jordan_belfort: {
-      name: 'Data Analysis',
-      description: 'Operational agent specialized in data processing and analysis workflows',
-    },
-    nova: {
-      name: 'Autonomous',
-      description: 'Self-directed agent capable of independent decision-making and task execution',
-    },
-    // Fallback mappings by name
-    Sofia: {
-      name: 'Q&A Agent',
-      description:
-        'Financial Analysis Expert with focus on behavioral finance, technical analysis, and risk management',
-    },
-    'Jordan Belfort': {
-      name: 'Operational Agent',
-      description: 'Specialized in data processing and analysis workflows',
-    },
-    Nova: {
-      name: 'Autonomous Agent',
-      description: 'Self-directed agent capable of independent decision-making and task execution',
-    },
-  };
 
   // Get activeTab from URL params, default to 'explore'
   const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
@@ -442,8 +389,12 @@ export default function AgentsPage() {
   };
 
   const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
-    setCreating(true);
+    setInitiatingAgentKey(suggestion.key);
     try {
+      // Add 3-5 second delay to show loading indicator
+      const delay = Math.random() * 2000 + 3000; // Random delay between 3-5 seconds
+      await new Promise(resolve => setTimeout(resolve, delay));
+
       const buildRequest: BuildAgentFromSuggestionRequest = {
         prebuilt_key: suggestion.key,
         user_input: userInput,
@@ -457,7 +408,7 @@ export default function AgentsPage() {
     } catch (error) {
       console.error('Error building agent from suggestion:', error);
     } finally {
-      setCreating(false);
+      setInitiatingAgentKey(null);
       setShowCreateAgentPopup(false);
       setUserInput('');
       setSuggestions([]);
@@ -780,6 +731,14 @@ export default function AgentsPage() {
               <textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!loadingSuggestions && userInput.trim()) {
+                      handleGetSuggestions();
+                    }
+                  }
+                }}
                 placeholder="e.g. I want an agent that can help me with financial analysis"
                 className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 rows={4}
@@ -791,7 +750,7 @@ export default function AgentsPage() {
                   <Button
                     onClick={handleGetSuggestions}
                     variant="outline"
-                    size="sm"
+                    size="default"
                     className="text-sm"
                     disabled={loadingSuggestions}
                   >
@@ -801,7 +760,7 @@ export default function AgentsPage() {
                         <span>Regenerating...</span>
                       </div>
                     ) : (
-                      'Regenerate Suggestions'
+                      'Regenerate'
                     )}
                   </Button>
                 </div>
@@ -823,7 +782,7 @@ export default function AgentsPage() {
                     Templates that fit your agent
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Agent template includes pre-built code and workflows to get you started.
+                    Agent template includes pre-built workflows to get you started.
                   </p>
                 </div>
 
@@ -836,6 +795,10 @@ export default function AgentsPage() {
                     const mainWorkflow =
                       workflowInfo.workflows.find((w) => w.name === 'final_workflow') ||
                       workflowInfo.workflows[0];
+
+                    // Dynamic workflow name based on order
+                    const workflowName = `Workflow ${index + 1}`;
+                    const workflowConfidence = suggestion.matching_percentage || 85; // Use backend confidence score
 
                     return (
                       <div
@@ -855,26 +818,14 @@ export default function AgentsPage() {
                               <div className="flex items-center gap-3 mb-2">
                                 <div>
                                   <div>
-                                    <h4 className="font-semibold text-md text-gray-900">
-                                      {(() => {
-                                        console.log('Suggestion debug:', {
-                                          key: suggestion.key,
-                                          name: suggestion.name,
-                                        });
-                                        const agentInfo =
-                                          agentDisplayInfo[suggestion.key] ||
-                                          agentDisplayInfo[suggestion.name];
-                                        return agentInfo?.name || suggestion.name;
-                                      })()}
-                                    </h4>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                      {(() => {
-                                        const agentInfo =
-                                          agentDisplayInfo[suggestion.key] ||
-                                          agentDisplayInfo[suggestion.name];
-                                        return agentInfo?.description || '';
-                                      })()}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-semibold text-md text-gray-900">
+                                        {workflowName}
+                                      </h4>
+                                      <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                                        {workflowConfidence}% match
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -882,14 +833,14 @@ export default function AgentsPage() {
 
                             <Button
                               onClick={() => handleBuildFromSuggestion(suggestion)}
-                              variant="default"
-                              size="lg"
-                              disabled={creating}
+                              variant="secondary"
+                              size="default"
+                              disabled={initiatingAgentKey === suggestion.key}
                             >
-                              {creating ? (
+                              {initiatingAgentKey === suggestion.key ? (
                                 <div className="flex items-center gap-2">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span className="text-sm">Starting...</span>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600"></div>
+                                  <span className="text-sm">Initiating your agent with selected workflow...</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
@@ -902,14 +853,24 @@ export default function AgentsPage() {
                           {/* Workflow Chart Visualization */}
                           {mainWorkflow && mainWorkflow.steps.length > 0 && (
                             <div className=" ">
-                              <h5 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                <span>Workflow Chart</span>
-                              </h5>
+                              <div className="flex justify-between items-center mb-4">
+                                <p className="text-md text-gray-700 flex flex-col ">
+                                  <span className="font-medium">Execute steps</span>
+                                  <p className="text-sm text-gray-500">Steps can be modified later</p>
+                                </p>
+                                <ToggleButton
+                                  onClick={() => setShowExamples(!showExamples)}
+                                  isActive={showExamples}
+                                />
+                              </div>
 
-                              {/* Interactive Workflow Chart */}
-                              <WorkflowChart
+                              {/* Simple Workflow Chart */}
+                              <SimpleWorkflowChart
                                 workflow={mainWorkflow}
                                 methods={workflowInfo.methods}
+                                showExamples={showExamples}
+                                setShowExamples={setShowExamples}
+                                agentKey={suggestion.key}
                               />
                             </div>
                           )}
