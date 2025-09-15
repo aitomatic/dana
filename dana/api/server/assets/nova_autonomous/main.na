@@ -15,5 +15,5 @@ def solve(self: NovaAutonomous, query: str) -> str:
 
 this_agent = NovaAutonomous()
 
-response = this_agent.solve("Plan me a 2 week trip to the US for 2 people")
-print(response)
+# response = this_agent.solve("Plan me a 2 week trip to the US for 2 people")
+# print(response)

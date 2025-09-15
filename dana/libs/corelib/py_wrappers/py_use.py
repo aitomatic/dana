@@ -58,7 +58,7 @@ def py_use(
         use("rag", ["doc1.pdf", "doc2.txt"]) -> creates a RAG resource
     """
     if _name is None:
-        _name = Misc.generate_base64_uuid(length=6)
+        _name = Misc.generate_uuid(length=6)
 
     # Check if resource already exists in context
     try:
@@ -119,6 +119,19 @@ def py_use(
         resource = TabularIndexResource(
             name=_name,
             **tabular_index_params,
+        )
+        Misc.safe_asyncio_run(resource.initialize)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "websearch":
+        from dana.common.sys_resource.web_search.web_search_resource import WebSearchResource
+
+        # Extract tabular_index specific parameters from kwargs
+        service_type = kwargs.get("service_type", "")
+        # Create resource with config dict
+        resource = WebSearchResource(
+            name=_name,
+            service_type=service_type,
         )
         Misc.safe_asyncio_run(resource.initialize)
         context.set_resource(_name, resource)

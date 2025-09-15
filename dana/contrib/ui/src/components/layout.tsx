@@ -97,6 +97,18 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
               )}
               <span className="font-semibold text-md">{getPageTitle()}</span>
             </div>
+            <div className="flex gap-2 items-center">
+              <Button
+                onClick={() => {
+                  navigate(`/agents/${agent_id}`);
+                }}
+                variant="secondary"
+                aria-label="Train mode"
+              >
+                <Settings style={{ width: '16', height: '16' }} />
+                Train mode
+              </Button>
+            </div>
             {isChatPage && agent_id && isNaN(Number(agent_id)) && prebuiltAgent && (
               <div>
                 <Button
