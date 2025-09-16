@@ -35,7 +35,7 @@ print(Helen.solve(
 
 # --- Optional: Web Search (live) ---
 # Add a web search resource for live context.
-resource_aitomatic_websearch = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
+resource_aitomatic_websearch = get_resource('mcp', url='YOUR_MCP_URL')
 
 trend_q = "Based on recent sources, how is AMD’s liquidity trending since the 2022 10-K?"
 print(Helen.solve(trend_q, resources=[resource_aitomatic_websearch, resource_amd_annual_report]))

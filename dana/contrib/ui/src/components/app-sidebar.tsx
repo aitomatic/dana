@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Book, Box3dCenter } from 'iconoir-react';
+import { Book, Box3dCenter, HelpCircle } from 'iconoir-react';
 import { useLocation } from 'react-router-dom';
 
 import { NavMain } from '@/components/nav-main';
@@ -11,7 +11,6 @@ import {
   SidebarRail,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/hooks/use-sidebar';
 
 // Import logo as a module
@@ -43,6 +42,11 @@ const data = {
       title: 'Library',
       url: '/library',
       icon: Book,
+    },
+    {
+      title: 'Documentation',
+      url: '/documentation',
+      icon: HelpCircle,
     },
   ],
 };

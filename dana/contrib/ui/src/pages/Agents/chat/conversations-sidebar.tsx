@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
+import { ChatPlusIn, Menu } from 'iconoir-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
