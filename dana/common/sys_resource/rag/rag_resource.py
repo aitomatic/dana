@@ -87,9 +87,9 @@ class RAGResource(BaseSysResource):
     def _get_danapath(self) -> str:
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
-        danapaths = os.environ.get("DANAPATH")
+        danapaths = os.environ.get("DANAPATH", "")
 
-        danapaths = danapaths.split(":")
+        danapaths = danapaths.split(os.pathsep)
 
         danapath = None
 
