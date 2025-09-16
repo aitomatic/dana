@@ -146,15 +146,12 @@ def execute_file(file_path, debug=False, script_args=None):
 
     source_code: str = file_path_obj.read_text(encoding="utf-8")
 
-    # Initialize source_code_with_main with the original source code
-    source_code_with_main: str = source_code
-
     if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
         # Handle script arguments if provided
         input_dict = parse_dana_input_args(script_args) if script_args else {}
 
         # Append source code with main function call
-        source_code_with_main = f"""
+        source_code: str = f"""
 {source_code}
 
 {MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
@@ -171,9 +168,10 @@ def execute_file(file_path, debug=False, script_args=None):
 """
 
     # Run the source code with custom search paths
-    result = DanaSandbox.execute_string_once(
-        source_code=source_code_with_main, filename=str(file_path_obj), debug_mode=debug, module_search_paths=[str(file_path_obj.parent.resolve())]
-    )
+    result = DanaSandbox.execute_string_once(source_code=source_code,
+                                             filename=str(file_path_obj),
+                                             debug_mode=debug,
+                                             module_search_paths=[str(file_path_obj.parent.resolve())])
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")
