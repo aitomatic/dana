@@ -1,8 +1,8 @@
 from workflows import final_workflow
 from common import RetrievalPackage
 from common import PLAN_PROMPT
-from resources import knowledge
-from resources import doc
+from all_resources import knowledge
+from all_resources import doc
 
 agent_blueprint Sofia:
     name: str = "Sofia"
