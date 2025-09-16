@@ -5,7 +5,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
-import { NavArrowDown } from 'iconoir-react';
+import { NavArrowDown, Plus } from 'iconoir-react';
 import {
   Dialog,
   DialogContent,
@@ -659,6 +659,15 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
+            <Button
+              variant="default"
+              className="w-[168px] px-4 py-1 font-semibold"
+              onClick={handleCreateAgent}
+              disabled={creating}
+            >
+              <Plus style={{ width: '20', height: '20' }} />
+            Train New Agent
+            </Button>
           </div>
         </div>
 
