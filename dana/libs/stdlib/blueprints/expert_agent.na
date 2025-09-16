@@ -18,7 +18,7 @@ agent_blueprint ExpertAgent:
     expertise: list = []
 
 
-def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
+def (dxa: ExpertAgent) solve(problem, resources: list = None, quick: bool = False) -> str:
     """Struct function `solve` dedicated to `ExpertAgent` struct.
 
     ASSUMPTIONS:
@@ -35,7 +35,10 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
         expert_workflow_name_to_module_map: dict[str, Module] = {}
 
         for expertise_module in dxa.expertise:
-            _expert_workflow_names: list[str] = expertise_module.__all__
+            _expert_workflow_names = expertise_module.__all__
+            # TODO: debug why the below alternative with the `list[str]` type hint
+            # sometimes causes bugs
+            # _expert_workflow_names: list[str] = expertise_module.__all__
             expert_workflow_names.extend(_expert_workflow_names)
             for expert_workflow_name in _expert_workflow_names:
                 expert_workflow_name_to_module_map[expert_workflow_name] = expertise_module
@@ -68,33 +71,39 @@ def (dxa: ExpertAgent) solve(problem, resources: list = None) -> str:
 ')
 
             closest_matched_expert_workflow = matched_expertise_module.__dict__[closest_matched_expert_workflow_name]
+
+            # TODO: `resources=resources` argument specification
+            # after nested-workflow-argument passing bug fix
             expert_workflow_result = closest_matched_expert_workflow(resources, task=problem)
 
-            # TODO (after syntax bug fix)
-            # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
-            #     problem=problem,
-            #     expert_workflow_result=expert_workflow_result)
+            if quick:
+                solution = expert_workflow_result
 
-            expert_workflow_solution_prompt: str = f"""
-                Given the following problem:
+            else:
+                # TODO (after syntax bug fix)
+                # expert_workflow_solution_prompt: str = EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE.format(
+                #     problem=problem,
+                #     expert_workflow_result=expert_workflow_result)
+                expert_workflow_solution_prompt: str = f"""
+                    Given the following problem:
 
-                PROBLEM:
-                ```
-                {problem}
-                ```
+                    PROBLEM:
+                    ```
+                    {problem}
+                    ```
 
-                And the following result(s) from an expert workflow:
+                    And the following result(s) from an expert workflow:
 
-                EXPERT WORKFLOW RESULT:
-                ```
-                {expert_workflow_result}
-                ```
+                    EXPERT WORKFLOW RESULT:
+                    ```
+                    {expert_workflow_result}
+                    ```
 
-                Return your best conclusion about / solution to the posed problem.
-                Do explain your reasoning in a structured manner, with key supporting details.
-            """
+                    Return your best conclusion about / solution to the posed problem.
+                    Do explain your reasoning in a structured manner, with key supporting details.
+                """
 
-            solution = llm(expert_workflow_solution_prompt)
+                solution = llm(expert_workflow_solution_prompt)
 
     elif resources:
         solution = reason(problem, resources=resources)

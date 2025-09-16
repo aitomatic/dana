@@ -24,7 +24,7 @@
       "name" : "Debug Dana File",
       "type": "python",
       "request": "launch",
-      "module": "dana.apps.cli",
+      "module": "dana.apps.cli.__main__",
       "args": ["${file}"],
       "console": "integratedTerminal",
       "env" : {
@@ -35,7 +35,7 @@
       "name" : "Debug Dana Backend",
       "type": "python",
       "request": "launch",
-      "module": "dana.core.cli.dana",
+      "module": "dana.apps.cli.__main__",
       "args": ["start"],
       "console": "integratedTerminal",
       "env" : {

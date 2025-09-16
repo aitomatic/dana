@@ -1,21 +1,44 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { LibraryTable } from '@/components/library';
 import { ConfirmDialog } from '@/components/library/confirm-dialog';
+import { LibraryFileSelectionModal } from '@/components/library/library-file-selection-modal';
 import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, SystemRestart, DocMagnifyingGlass, EmptyPage, Upload } from 'iconoir-react';
+import {
+  Search,
+  SystemRestart,
+  DocMagnifyingGlass,
+  EmptyPage,
+  Upload,
+  MultiplePagesPlus,
+} from 'iconoir-react';
 import { apiService } from '@/lib/api';
-import { useDocumentOperations } from '@/hooks/use-api';
 import { useDocumentStore } from '@/stores/document-store';
+import { useAgentStore } from '@/stores/agent-store';
 import { toast } from 'sonner';
 import { PdfViewer } from '@/components/library/pdf-viewer';
+
+/**
+ * DocumentsTab Component
+ *
+ * This component manages documents associated with a specific agent.
+ * It distinguishes between two types of documents:
+ * 1. Documents added from the library (have topic_id) - can only be disassociated, not deleted
+ * 2. Documents uploaded directly to the agent (no topic_id) - can be completely deleted
+ *
+ * When deleting documents:
+ * - Library documents: Removes association with agent, keeps document in library
+ * - Direct uploads: Completely deletes document from system
+ */
 
 // Convert DocumentRead to LibraryItem format
 const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
   const extension = doc.original_filename.split('.').pop() || '';
+
   return {
     id: doc.id.toString(),
     name: doc.original_filename,
@@ -37,13 +60,39 @@ const DocumentsTab: React.FC = () => {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
+  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use document store for state management
   const { documents, isLoading, fetchDocuments } = useDocumentStore();
 
-  // API hooks for operations not in store
-  const { deleteDocument, isDeleting } = useDocumentOperations();
+  // Use agent store to get agent's associated_documents
+  const { selectedAgent, fetchAgent } = useAgentStore();
+
+  // Cleanup function to reset deletion state
+  const resetDeletionState = () => {
+    setShowDeleteConfirm(false);
+    setSelectedItem(null);
+  };
+
+  // Load all documents and filter by agent's associated_documents
+  useEffect(() => {
+    console.log('🔄 DocumentsTab: Fetching all documents');
+    fetchDocuments(); // Fetch all documents, no agent_id filter
+  }, [fetchDocuments]);
+
+  // Refetch documents when component becomes visible (handles navigation back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ DocumentsTab: Component became visible, refetching all documents');
+        fetchDocuments(); // Fetch all documents, no agent_id filter
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fetchDocuments]);
 
   const handleDragDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -57,23 +106,34 @@ const DocumentsTab: React.FC = () => {
     setUploadingFiles(fileNames);
 
     try {
+      // Upload all files first to library, then associate with agent
       for (const file of files) {
-        await apiService.uploadAgentDocument(agent_id, file);
+        // Step 1: Upload to library
+        const uploadedDoc = await apiService.uploadDocumentRaw(file);
+        // Step 2: Associate with agent
+        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
       }
-      await fetchDocuments({ agent_id: parseInt(agent_id) });
+
+      // Wait a moment for backend processing, then refresh documents list
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+
+      toast.success(`Successfully uploaded ${files.length} file(s)`);
     } catch (error) {
-      console.error('Failed to upload files:', error);
+      console.error('Failed to upload or associate files:', error);
+      toast.error('Failed to upload files. Please try again.');
       setUploadingFiles([]);
+      // Still reload documents to show any files that were successfully uploaded before the error
+      await fetchDocuments(); // Fetch all documents
     }
   };
-
-  // Load agent-specific documents using store
-  useEffect(() => {
-    if (agent_id) {
-      fetchDocuments({ agent_id: parseInt(agent_id) });
-    }
-  }, [agent_id, fetchDocuments]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -81,6 +141,44 @@ const DocumentsTab: React.FC = () => {
 
   const handleAddFileClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleAddFromLibrary = () => {
+    setLibraryModalOpen(true);
+  };
+
+  const handleLibraryFileSelection = async (selectedFileIds: string[]) => {
+    if (!agent_id) {
+      toast.error('No agent selected');
+      return;
+    }
+
+    try {
+      const documentIds = selectedFileIds.map((id) => parseInt(id));
+      console.log('🔗 Associating documents:', { agent_id, documentIds });
+
+      const result = await apiService.associateDocumentsWithAgent(agent_id, documentIds);
+      console.log('✅ Association result:', result);
+
+      toast.success(`Successfully added ${selectedFileIds.length} file(s) to agent`);
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+      setLibraryModalOpen(false);
+    } catch (error: any) {
+      console.error('❌ Failed to add files to agent:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        stack: error.stack,
+      });
+      toast.error('Failed to add files to agent');
+    }
   };
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,19 +192,34 @@ const DocumentsTab: React.FC = () => {
     setUploadingFiles(fileNames);
 
     try {
+      // Upload all files first to library, then associate with agent
       for (const file of fileList) {
-        await apiService.uploadAgentDocument(agent_id, file);
+        // Step 1: Upload to library
+        const uploadedDoc = await apiService.uploadDocumentRaw(file);
+        // Step 2: Associate with agent
+        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
         // Remove this file from uploading list as it completes
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
-        // Reload documents immediately after each file upload for better UX
-        await fetchDocuments({ agent_id: parseInt(agent_id) });
       }
+
+      // Wait a moment for backend processing, then refresh documents list
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+
+      toast.success(`Successfully uploaded ${fileList.length} file(s)`);
     } catch (error) {
-      console.error('Failed to upload file:', error);
+      console.error('Failed to upload or associate files:', error);
+      toast.error('Failed to upload files. Please try again.');
       // Clear uploading state on error
       setUploadingFiles([]);
       // Still reload documents to show any files that were successfully uploaded before the error
-      await fetchDocuments({ agent_id: parseInt(agent_id) });
+      await fetchDocuments(); // Fetch all documents
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
       // Ensure all files are cleared from uploading state
@@ -130,21 +243,44 @@ const DocumentsTab: React.FC = () => {
   };
 
   const handleDeleteItem = async (item: LibraryItem) => {
+    // Simple deletion - always disassociate from agent
+    console.log('🗑️ Delete item requested:', {
+      itemId: item.id,
+      itemName: item.name,
+    });
+
     setSelectedItem(item);
     setShowDeleteConfirm(true);
   };
 
+  /**
+   * Handle document removal from agent
+   *
+   * SIMPLIFIED: Always disassociate documents from agents instead of deleting them.
+   * This ensures documents remain in the library and can be re-added to other agents.
+   */
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
 
     try {
       const documentId = parseInt(selectedItem.id);
-      await deleteDocument(documentId);
-      toast.success('Document deleted successfully');
-      await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
+
+      await apiService.disassociateDocumentFromAgent(agent_id!, documentId);
+      toast.success(`"${selectedItem.name}" removed successfully.`);
+
+      console.log('🔄 Refreshing documents after disassociation...');
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+
+      console.log('✅ Document disassociation and refresh completed');
     } catch (error) {
-      console.error('Failed to delete document:', error);
-      toast.error('Failed to delete document');
+      console.error('❌ Failed to remove document from agent:', error);
+      toast.error('Failed to remove document from agent');
     } finally {
       setShowDeleteConfirm(false);
       setSelectedItem(null);
@@ -216,9 +352,25 @@ const DocumentsTab: React.FC = () => {
     );
   };
 
-  // Convert store documents to LibraryItem format and filter by current agent
-  const agentDocuments = documents.filter((doc) => doc.agent_id?.toString() === agent_id);
+  // Filter documents by agent's associated_documents
+  const agentAssociatedDocuments = selectedAgent?.config?.associated_documents || [];
+  const agentDocuments = documents.filter((doc) => agentAssociatedDocuments.includes(doc.id));
   const data = agentDocuments.map(convertDocumentToLibraryItem);
+
+  // Debug logging for document state
+  console.log('📊 DocumentsTab: Current state:', {
+    agent_id,
+    selectedAgentId: selectedAgent?.id,
+    agentAssociatedDocuments,
+    documentsCount: documents.length,
+    agentDocumentsCount: agentDocuments.length,
+    documents: documents.map((d) => ({
+      id: d.id,
+      name: d.original_filename,
+    })),
+    dataCount: data.length,
+    isLoading,
+  });
 
   // Apply search filter
   const filteredData = data.filter((item) =>
@@ -245,6 +397,11 @@ const DocumentsTab: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <div className="text-lg font-semibold text-gray-700">Documents</div>
+          {data.length > 0 && (
+            <div className="text-sm text-gray-500">
+              {data.length} document{data.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           {/* <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0}>
@@ -268,6 +425,14 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
+        <Button
+          onClick={handleAddFromLibrary}
+          disabled={uploadingFiles.length > 0}
+          variant="outline"
+        >
+          <MultiplePagesPlus className="mr-2 w-4 h-4" />
+          Add from Library
+        </Button>
       </div>
       {/* Upload Progress Indicator */}
       {uploadingFiles.length > 0 && (
@@ -308,16 +473,13 @@ const DocumentsTab: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
-        onClose={() => {
-          setShowDeleteConfirm(false);
-          setSelectedItem(null);
-        }}
+        onClose={resetDeletionState}
         onConfirm={handleConfirmDelete}
-        title="Delete Document"
-        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
-        confirmText={isDeleting ? 'Deleting...' : 'Delete'}
+        title="Remove from Agent"
+        description={`Are you sure you want to remove "${selectedItem?.name}" from this agent? The document will remain in the library and can be added to other agents.`}
+        confirmText="Remove from Agent"
         cancelText="Cancel"
-        variant="destructive"
+        variant="default"
       />
 
       {/* PDF Viewer */}
@@ -326,6 +488,14 @@ const DocumentsTab: React.FC = () => {
         onClose={() => setPdfViewerOpen(false)}
         fileUrl={pdfFileUrl || ''}
         fileName={pdfFileName}
+      />
+
+      {/* Library File Selection Modal */}
+      <LibraryFileSelectionModal
+        isOpen={libraryModalOpen}
+        onClose={() => setLibraryModalOpen(false)}
+        onConfirm={handleLibraryFileSelection}
+        currentAgentId={agent_id || ''}
       />
     </div>
   );

@@ -1,5 +1,5 @@
-from knowledge import knowledge
-from knowledge import doc
+from all_resources import knowledge
+from all_resources import doc
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT

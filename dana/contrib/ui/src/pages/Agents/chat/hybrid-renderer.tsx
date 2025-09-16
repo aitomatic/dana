@@ -28,10 +28,12 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
   // Detect if content is from a tool that generates HTML (auto-force HTML mode)
   const isToolGeneratedHTML = (text: string): boolean => {
     // Simple pattern matching for tool-generated content
-    return text.includes('options-container') || 
-           text.includes('option-button') || 
-           text.includes('handleOptionClick') ||
-           text.includes('data-option');
+    return (
+      text.includes('options-container') ||
+      text.includes('option-button') ||
+      text.includes('handleOptionClick') ||
+      text.includes('data-option')
+    );
   };
 
   // Detect if content is primarily HTML (improved detection logic)
@@ -40,22 +42,25 @@ export const HybridRenderer: React.FC<HybridRendererProps> = ({
     const hasButtonTags = /<button[^>]*>/i.test(text);
     const hasOptionsContainer = /<div[^>]*class=['"]?options-container['"]?[^>]*>/i.test(text);
     const hasClickHandlers = /onclick\s*=\s*['"][^'"]*['"]/.test(text);
-    
+
     // If we have button-specific patterns, definitely render as HTML
     if (hasButtonTags || hasOptionsContainer || hasClickHandlers) {
       return true;
     }
-    
+
     // Fallback to improved tag counting
     const htmlTagCount = (text.match(/<[^>]*>/g) || []).length;
-    const markdownCount = (text.match(/[#*`\-_\[\]]/g) || []).length; // Removed () to avoid counting HTML attributes
-    
+    const markdownCount = (text.match(/[#*`\-_[]/g) || []).length; // Removed () to avoid counting HTML attributes
+
     // Lower threshold: if we have multiple HTML tags and they're not significantly outnumbered by markdown
-    return htmlTagCount > 3 && (htmlTagCount >= markdownCount * 0.6);
+    return htmlTagCount > 3 && htmlTagCount >= markdownCount * 0.6;
   };
 
   // Check if content should be rendered as HTML
-  const shouldRenderAsHTML = forceHtml || isToolGeneratedHTML(content) || (containsHTML(content) && isPrimarilyHTML(content));
+  const shouldRenderAsHTML =
+    forceHtml ||
+    isToolGeneratedHTML(content) ||
+    (containsHTML(content) && isPrimarilyHTML(content));
 
   if (shouldRenderAsHTML) {
     return (

@@ -9,17 +9,12 @@ interface UseWebSocketOptions {
 export function useWebSocket(
   url: string,
   onMessage: (msg: string) => void,
-  options: UseWebSocketOptions = {}
+  options: UseWebSocketOptions = {},
 ) {
   const maxRetries = options.maxRetries ?? 5;
   const initialDelay = options.retryDelay ?? 1000;
 
-  const {
-    sendMessage,
-    lastMessage,
-    readyState,
-    getWebSocket
-  } = useWebSocketLib(url, {
+  const { sendMessage, lastMessage, readyState, getWebSocket } = useWebSocketLib(url, {
     onMessage: (event) => {
       onMessage(event.data);
     },
@@ -34,9 +29,12 @@ export function useWebSocket(
     },
   });
 
-  const send = useCallback((msg: string) => {
-    sendMessage(msg);
-  }, [sendMessage]);
+  const send = useCallback(
+    (msg: string) => {
+      sendMessage(msg);
+    },
+    [sendMessage],
+  );
 
   const close = useCallback(() => {
     const ws = getWebSocket();
@@ -45,11 +43,11 @@ export function useWebSocket(
     }
   }, [getWebSocket]);
 
-  return { 
-    send, 
-    close, 
+  return {
+    send,
+    close,
     ws: getWebSocket(),
     readyState,
-    lastMessage
+    lastMessage,
   };
-} 
+}

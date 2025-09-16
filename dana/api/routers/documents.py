@@ -100,6 +100,11 @@ async def list_documents(
     """List documents with optional filtering."""
     try:
         documents = await document_service.list_documents(topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db)
+        for document in documents:
+            if not agent_id:
+                document.agent_id = None # TODO : Temporary remove agent_id for now, FE use agent_id to filter documents that belong to an agent
+            else:
+                document.agent_id = agent_id
         return documents
 
     except Exception as e:

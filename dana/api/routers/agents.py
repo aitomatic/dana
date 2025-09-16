@@ -5,15 +5,17 @@ Thin routing layer that delegates business logic to services.
 
 import asyncio
 import base64
-import json
 import logging
 import os
 import shutil
-import traceback
+
+# import traceback
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+# from typing import List
+import json
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -29,7 +31,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
 from dana.api.core.database import engine, get_db
-from dana.api.core.models import Agent, AgentChatHistory
+from dana.api.core.models import Agent, AgentChatHistory, Document
 from dana.api.core.schemas import (
     AgentCreate,
     AgentGenerationRequest,
@@ -40,7 +42,10 @@ from dana.api.core.schemas import (
     CodeValidationResponse,
     DocumentRead,
 )
+from pydantic import BaseModel
 from dana.api.server.server import ws_manager
+from dana.common.types import BaseRequest
+from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.api.services.agent_deletion_service import AgentDeletionService, get_agent_deletion_service
 from dana.api.services.agent_manager import AgentManager, get_agent_manager
 from dana.api.services.avatar_service import AvatarService
@@ -61,6 +66,235 @@ from dana.api.services.knowledge_status_manager import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+class AssociateDocumentsRequest(BaseModel):
+    document_ids: list[int]
+
+
+class AgentSuggestionRequest(BaseModel):
+    user_message: str
+
+
+class AgentSuggestionResponse(BaseModel):
+    success: bool
+    suggestions: list[dict]
+    message: str
+
+
+class BuildAgentFromSuggestionRequest(BaseModel):
+    prebuilt_key: str
+    user_input: str
+    agent_name: str = "Untitled Agent"
+
+
+class WorkflowInfo(BaseModel):
+    workflows: list[dict]
+    methods: list[str]
+
+
+def _copy_na_files_from_prebuilt(prebuilt_key: str, target_folder: str) -> bool:
+    """Copy only .na files from a prebuilt agent asset folder into the target agent folder, preserving structure.
+
+    Skips any files under a 'knows' directory.
+    """
+    try:
+        source_folder = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key
+        if not source_folder.exists():
+            logger.error(f"Prebuilt agent folder not found for key: {prebuilt_key}")
+            return False
+
+        for root, _dirs, files in os.walk(source_folder):
+            root_path = Path(root)
+            # Skip any subtree that includes a 'knows' directory in its relative path
+            try:
+                rel_root = root_path.relative_to(source_folder)
+                if "knows" in rel_root.parts:
+                    continue
+            except Exception:
+                pass
+
+            for file_name in files:
+                if not file_name.endswith(".na"):
+                    continue
+
+                rel_path = root_path.relative_to(source_folder) / file_name
+                if "knows" in rel_path.parts:
+                    continue
+
+                dest_path = Path(target_folder) / rel_path
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(root_path / file_name, dest_path)
+
+        return True
+    except Exception as e:
+        logger.error(f"Error copying .na files from prebuilt '{prebuilt_key}': {e}")
+        return False
+
+
+def _parse_workflow_content(content: str) -> dict:
+    """Parse workflows.na file content to extract workflow definitions and methods."""
+    try:
+        workflows = []
+        methods = set()
+
+        # Split into lines for analysis
+        lines = content.strip().split("\n")
+        current_workflow = None
+
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            # Extract methods from import statements
+            if line.startswith("from methods import"):
+                method_name = line.split("import", 1)[1].strip()
+                methods.add(method_name)
+
+            # Extract workflow definitions
+            elif "def " in line and "(" in line and ")" in line:
+                # Extract function name
+                func_def = line.split("def ", 1)[1].split("(")[0].strip()
+                current_workflow = {"name": func_def, "steps": []}
+
+                # Extract pipeline steps if using | operator
+                if "=" in line and "|" in line:
+                    pipeline_part = line.split("=", 1)[1].strip()
+                    steps = [step.strip() for step in pipeline_part.split("|")]
+                    current_workflow["steps"] = steps
+
+                workflows.append(current_workflow)
+
+        return {"workflows": workflows, "methods": list(methods)}
+    except Exception as e:
+        logger.error(f"Error parsing workflow content: {e}")
+        return {"workflows": [], "methods": []}
+
+
+def _load_prebuilt_agents() -> list[dict]:
+    """Load available prebuilt agents from assets JSON."""
+    try:
+        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        if not assets_path.exists():
+            logger.warning("prebuilt_agents.json not found")
+            return []
+
+        with open(assets_path, encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            return []
+    except Exception as e:
+        logger.error(f"Error loading prebuilt agents: {e}")
+        return []
+
+
+def _suggest_agents_with_llm(llm: LLMResource, user_message: str, prebuilt_agents: list[dict]) -> list[dict]:
+    """Use LLM to suggest the 2 most relevant agents with matching percentages."""
+    try:
+        if not prebuilt_agents:
+            return []
+
+        # Create agent descriptions for LLM
+        agent_descriptions = []
+        for agent in prebuilt_agents:
+            config = agent.get("config", {})
+            desc = f"""
+Agent: {agent.get('name', 'Unknown')}
+Description: {agent.get('description', '')}
+Domain: {config.get('domain', 'General')}
+Specialties: {', '.join(config.get('specialties', []))}
+Skills: {', '.join(config.get('skills', []))}
+Tasks: {config.get('task', 'General tasks')}
+"""
+            agent_descriptions.append(desc.strip())
+
+        agents_text = "\n\n".join([f"AGENT_{i+1}:\n{desc}" for i, desc in enumerate(agent_descriptions)])
+
+        system_prompt = """You are an AI agent recommendation system. Your task is to analyze a user's request and recommend the 2 most relevant prebuilt agents with matching percentages.
+
+Instructions:
+1. Analyze the user's message to understand what they want to build/achieve
+2. Compare it against the provided prebuilt agents
+3. Return exactly 2 agents that best match the user's needs
+4. For each agent, provide a matching percentage (0-100%) based on how well it fits the user's requirements
+5. Provide a brief explanation of why each agent matches
+
+Return your response in this exact JSON format:
+{
+  "suggestions": [
+    {
+      "agent_index": 0,
+      "agent_name": "Agent Name",
+      "matching_percentage": 85,
+      "explanation": "Brief explanation of why this agent matches"
+    },
+    {
+      "agent_index": 1, 
+      "agent_name": "Agent Name",
+      "matching_percentage": 72,
+      "explanation": "Brief explanation of why this agent matches"
+    }
+  ]
+}
+
+Return ONLY the JSON, no additional text."""
+
+        user_content = f"User Request: {user_message}\n\nAvailable Agents:\n{agents_text}"
+
+        request = BaseRequest(
+            arguments={
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ]
+            }
+        )
+
+        response = llm.query_sync(request)
+        if not getattr(response, "success", False):
+            logger.warning(f"LLM agent suggestion failed: {getattr(response, 'error', 'unknown error')}")
+            return []
+
+        # Handle OpenAI-style response
+        content = response.content
+        if isinstance(content, dict) and "choices" in content:
+            try:
+                content = content["choices"][0]["message"]["content"]
+            except Exception:
+                content = ""
+
+        # Extract text content
+        if isinstance(content, dict) and "content" in content:
+            text = str(content.get("content", "")).strip()
+        else:
+            text = str(content).strip()
+
+        # Parse JSON response
+        try:
+            result = json.loads(text)
+            suggestions = result.get("suggestions", [])
+
+            # Build final response with full agent data
+            final_suggestions = []
+            for suggestion in suggestions[:2]:  # Limit to 2 suggestions
+                agent_index = suggestion.get("agent_index", 0)
+                if 0 <= agent_index < len(prebuilt_agents):
+                    agent = prebuilt_agents[agent_index].copy()
+                    agent["matching_percentage"] = suggestion.get("matching_percentage", 0)
+                    agent["explanation"] = suggestion.get("explanation", "")
+                    final_suggestions.append(agent)
+
+            return final_suggestions
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse LLM JSON response: {e}, content: {text}")
+            return []
+
+    except Exception as e:
+        logger.error(f"Error in LLM agent suggestion: {e}")
+        return []
 
 
 def clear_agent_cache(agent_folder_path: str) -> None:
@@ -472,7 +706,7 @@ def solve(weather_agent : WeatherAgent, problem : str):
 agent GeneratedAgent:
     name : str = "Generated Agent"
     description : str = "A generated agent"
-    
+
 def solve(agent : GeneratedAgent, problem : str):
     return reason(f"Help with: {problem}")"""
 
@@ -658,38 +892,38 @@ async def create_agent(
         db.commit()
         db.refresh(db_agent)
 
-        # Auto-generate basic Dana code and agent folder
-        try:
-            folder_path = await _auto_generate_basic_agent_code(
-                agent_id=db_agent.id,
-                agent_name=agent.name,
-                agent_description=agent.description,
-                agent_config=agent.config or {},
-                agent_manager=agent_manager,
-            )
+        # # Auto-generate basic Dana code and agent folder
+        # try:
+        #     folder_path = await _auto_generate_basic_agent_code(
+        #         agent_id=db_agent.id,
+        #         agent_name=agent.name,
+        #         agent_description=agent.description,
+        #         agent_config=agent.config or {},
+        #         agent_manager=agent_manager,
+        #     )
 
-            # Update agent with folder path
-            if folder_path:
-                # Update config with folder_path
-                updated_config = db_agent.config.copy() if db_agent.config else {}
-                updated_config["folder_path"] = folder_path
+        #     # Update agent with folder path
+        #     if folder_path:
+        #         # Update config with folder_path
+        #         updated_config = db_agent.config.copy() if db_agent.config else {}
+        #         updated_config["folder_path"] = folder_path
 
-                # Update database record
-                db_agent.config = updated_config
-                db_agent.generation_phase = "code_generated"
+        #         # Update database record
+        #         db_agent.config = updated_config
+        #         db_agent.generation_phase = "code_generated"
 
-                # Force update by marking as dirty
-                flag_modified(db_agent, "config")
+        #         # Force update by marking as dirty
+        #         flag_modified(db_agent, "config")
 
-                db.commit()
-                db.refresh(db_agent)
-                logger.info(f"Updated agent {db_agent.id} with folder_path: {folder_path}")
-                logger.info(f"Agent config after update: {db_agent.config}")
+        #         db.commit()
+        #         db.refresh(db_agent)
+        #         logger.info(f"Updated agent {db_agent.id} with folder_path: {folder_path}")
+        #         logger.info(f"Agent config after update: {db_agent.config}")
 
-        except Exception as code_gen_error:
-            logger.error(f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}")
-            logger.error(f"Full traceback: {traceback.format_exc()}")
-            # Don't fail the agent creation if code generation fails
+        # except Exception as code_gen_error:
+        #     Don't fail the agent creation if code generation fails
+        #     logger.error(f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}")
+        #     logger.error(f"Full traceback: {traceback.format_exc()}")
 
         return AgentRead(
             id=db_agent.id,
@@ -997,6 +1231,149 @@ async def upload_agent_document(
         raise
     except Exception as e:
         logger.error(f"Error uploading document to agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/documents/associate")
+async def associate_documents_with_agent(
+    agent_id: int,
+    request_body: AssociateDocumentsRequest,
+    db: Session = Depends(get_db),
+    document_service: DocumentService = Depends(get_document_service),
+):
+    """Associate existing documents with an agent."""
+    try:
+        # Extract document_ids from request body
+        document_ids = request_body.document_ids
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with id {agent_id} not found")
+
+        # Get folder_path from agent config
+        folder_path = agent.config.get("folder_path") if agent.config else None
+
+        if not folder_path:
+            # Generate folder path and save it to config
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+            os.makedirs(folder_path, exist_ok=True)
+
+            # Update config with folder_path
+            updated_config = agent.config.copy() if agent.config else {}
+            updated_config["folder_path"] = folder_path
+            agent.config = updated_config
+
+            # Force update by marking as dirty
+            flag_modified(agent, "config")
+
+            db.commit()
+            db.refresh(agent)
+
+        # Get current associated documents
+        current_associated_documents = set(agent.config.get("associated_documents", []))
+        new_document_ids = set(document_ids)
+
+        # Calculate documents to add and remove
+        documents_to_add = new_document_ids - current_associated_documents
+        documents_to_remove = current_associated_documents - new_document_ids
+
+        if not documents_to_add and not documents_to_remove:
+            return {
+                "success": True,
+                "message": (f"No changes needed - documents {document_ids} are already " f"correctly associated with agent {agent_id}"),
+                "updated_count": 0,
+            }
+
+        # Update the agent's associated documents to match the new set
+        agent.config["associated_documents"] = list(new_document_ids)
+
+        # Force update by marking as dirty
+        flag_modified(agent, "config")
+
+        # Handle document additions
+        new_file_paths = []
+        if documents_to_add:
+            new_file_paths = await document_service.associate_documents_with_agent(agent_id, folder_path, list(documents_to_add), db)
+            print(f"new_file_paths: {new_file_paths}")
+
+        # Handle document removals
+        if documents_to_remove:
+            for doc_id in documents_to_remove:
+                # Remove the file from agent's folder
+                document = db.query(Document).filter(Document.id == doc_id).first()
+                if document and folder_path:
+                    document_fp = document_service.get_agent_associated_fp(folder_path, document.original_filename)
+                    if os.path.exists(document_fp):
+                        os.remove(document_fp)
+
+        # Clear cache to force RAG rebuild
+        if documents_to_add or documents_to_remove:
+            db.commit()
+            clear_agent_cache(folder_path)
+
+        total_changes = len(documents_to_add) + len(documents_to_remove)
+
+        return {
+            "success": True,
+            "message": (
+                f"Successfully updated document associations for agent {agent_id}. "
+                f"Added: {len(documents_to_add)}, Removed: {len(documents_to_remove)}"
+            ),
+            "updated_count": total_changes,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error associating documents with agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{agent_id}/documents/{document_id}/disassociate")
+async def disassociate_document_from_agent(
+    agent_id: int,
+    document_id: int,
+    db: Session = Depends(get_db),
+    document_service: DocumentService = Depends(get_document_service),
+):
+    """Disassociate a document from an agent without deleting the document."""
+    try:
+        # Get the agent to verify it exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with id {agent_id} not found")
+
+        # Get the document to verify it exists and is associated with this agent
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        # Associate documents by placing them inside agent config for now
+        current_associated_documents = agent.config.get("associated_documents", [])
+        agent.config["associated_documents"] = list(set(current_associated_documents) - {document_id})
+
+        # Force update by marking as dirty
+        flag_modified(agent, "config")
+
+        # Remove the association by setting agent_id to None
+        agent_folder_path = agent.config.get("folder_path") if agent.config else None
+        if agent_folder_path:
+            document_fp = document_service.get_agent_associated_fp(agent_folder_path, document.original_filename)
+            if os.path.exists(document_fp):
+                os.remove(document_fp)
+            # Clear cache to force RAG rebuild without the disassociated document
+            clear_agent_cache(agent_folder_path)
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": f"Successfully disassociated document {document_id} from agent {agent_id}",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disassociating document {document_id} from agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1622,4 +1999,178 @@ async def get_agent_avatar(agent_id: int):
         raise
     except Exception as e:
         logger.error(f"Error getting avatar for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/suggest", response_model=AgentSuggestionResponse)
+async def suggest_agents(request: AgentSuggestionRequest):
+    """
+    Suggest the 2 most relevant prebuilt agents based on user message using LLM.
+
+    Args:
+        request: Contains the user message describing what they want to build
+
+    Returns:
+        AgentSuggestionResponse with 2 suggested agents and matching percentages
+    """
+    try:
+        user_message = request.user_message.strip()
+        if not user_message:
+            raise HTTPException(status_code=400, detail="User message cannot be empty")
+
+        logger.info(f"Suggesting agents for user message: {user_message[:100]}...")
+
+        # Load prebuilt agents
+        prebuilt_agents = _load_prebuilt_agents()
+        if not prebuilt_agents:
+            return AgentSuggestionResponse(success=False, suggestions=[], message="No prebuilt agents available")
+
+        # Use LLM to suggest agents
+        llm = LLMResource()
+        suggestions = _suggest_agents_with_llm(llm, user_message, prebuilt_agents)
+
+        if not suggestions:
+            # Fallback: return first 2 agents if LLM fails
+            fallback_suggestions = []
+            for agent in prebuilt_agents[:2]:
+                agent_copy = agent.copy()
+                agent_copy["matching_percentage"] = 50  # Default percentage
+                agent_copy["explanation"] = "Fallback suggestion - please review manually"
+                fallback_suggestions.append(agent_copy)
+
+            return AgentSuggestionResponse(
+                success=True, suggestions=fallback_suggestions, message="Unable to analyze with AI. Here are some general suggestions."
+            )
+
+        return AgentSuggestionResponse(
+            success=True, suggestions=suggestions, message=f"Found {len(suggestions)} relevant agents based on your requirements."
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error suggesting agents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/build-from-suggestion", response_model=AgentRead)
+async def build_agent_from_suggestion(
+    request: BuildAgentFromSuggestionRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Build a new agent by copying only .na files from a suggested prebuilt agent.
+    Creates a new agent with user's custom name and description, but uses prebuilt agent's code.
+
+    Args:
+        request: Contains prebuilt_key, user_input (description), and optional agent_name
+
+    Returns:
+        AgentRead: The newly created agent
+    """
+    try:
+        # Load and validate prebuilt agent
+        prebuilt_agents = _load_prebuilt_agents()
+        prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == request.prebuilt_key), None)
+        if not prebuilt_agent:
+            raise HTTPException(status_code=404, detail=f"Prebuilt agent not found: {request.prebuilt_key}")
+
+        logger.info(f"Building agent from suggestion: {request.prebuilt_key}")
+
+        # Create new agent in database with user's input
+        db_agent = Agent(
+            name=request.agent_name,
+            description=request.user_input,  # Use user's input as description
+            config=prebuilt_agent.get("config", {}),  # Use prebuilt config as base
+        )
+        db.add(db_agent)
+        db.commit()
+        db.refresh(db_agent)
+
+        # Create agent folder structure
+        agents_dir = Path("agents")
+        agents_dir.mkdir(exist_ok=True)
+
+        safe_name = db_agent.name.lower().replace(" ", "_").replace("-", "_")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        folder_name = f"agent_{db_agent.id}_{safe_name}"
+        agent_folder = agents_dir / folder_name
+
+        # Create basic directory structure
+        agent_folder.mkdir(exist_ok=True)
+        docs_folder = agent_folder / "docs"
+        docs_folder.mkdir(exist_ok=True)
+        knows_folder = agent_folder / "knows"
+        knows_folder.mkdir(exist_ok=True)
+
+        # Copy only .na files from prebuilt agent
+        if not _copy_na_files_from_prebuilt(request.prebuilt_key, str(agent_folder)):
+            logger.warning(f"Failed to copy .na files from prebuilt '{request.prebuilt_key}', continuing anyway")
+
+        # Update agent config with folder path
+        updated_config = db_agent.config.copy() if db_agent.config else {}
+        updated_config["folder_path"] = str(agent_folder)
+        db_agent.config = updated_config
+        db_agent.generation_phase = "ready_for_training"  # Different phase since no knowledge files
+
+        flag_modified(db_agent, "config")
+        db.commit()
+        db.refresh(db_agent)
+
+        logger.info(f"Successfully built agent {db_agent.id} from suggestion {request.prebuilt_key}")
+
+        return AgentRead(
+            id=db_agent.id,
+            name=db_agent.name,
+            description=db_agent.description,
+            config=db_agent.config,
+            generation_phase=db_agent.generation_phase,
+            created_at=db_agent.created_at,
+            updated_at=db_agent.updated_at,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error building agent from suggestion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{prebuilt_key}/workflow-info", response_model=WorkflowInfo)
+async def get_prebuilt_agent_workflow_info(prebuilt_key: str):
+    """
+    Get workflow information from a prebuilt agent's workflows.na file.
+
+    Args:
+        prebuilt_key: The key of the prebuilt agent
+
+    Returns:
+        WorkflowInfo: Parsed workflow definitions and methods
+    """
+    try:
+        # Validate prebuilt agent exists
+        prebuilt_agents = _load_prebuilt_agents()
+        prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
+        if not prebuilt_agent:
+            raise HTTPException(status_code=404, detail=f"Prebuilt agent not found: {prebuilt_key}")
+
+        # Try to read workflows.na file
+        workflows_path = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key / "workflows.na"
+
+        if not workflows_path.exists():
+            # Return empty workflow info if file doesn't exist
+            return WorkflowInfo(workflows=[], methods=[])
+
+        # Read and parse workflow content
+        with open(workflows_path, "r", encoding="utf-8") as f:  # noqa
+            content = f.read()
+
+        parsed_data = _parse_workflow_content(content)
+
+        return WorkflowInfo(workflows=parsed_data["workflows"], methods=parsed_data["methods"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting workflow info for {prebuilt_key}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

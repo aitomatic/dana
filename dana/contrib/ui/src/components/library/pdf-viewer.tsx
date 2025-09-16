@@ -10,10 +10,9 @@ import {
 import {
   IconX,
   IconChevronLeft,
-  IconChevronRight,
-  IconZoomIn,
-  IconZoomOut,
+  IconChevronRight
 } from '@tabler/icons-react';
+import { Menu, ZoomIn, ZoomOut } from 'iconoir-react';
 
 // Configure PDF.js worker - use a minimal approach
 const configurePdfWorker = () => {
@@ -103,13 +102,6 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <DialogTitle>{fileName || 'PDF Viewer'}</DialogTitle>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowThumbnails(!showThumbnails)}
-                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                title={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
-              >
-                {showThumbnails ? 'Hide Sidebar' : 'Show Sidebar'}
-              </button>
               <DialogClose asChild>
                 <IconX className="size-10 p-2 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors cursor-pointer" />
               </DialogClose>
@@ -135,13 +127,20 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
             <>
               {/* Thumbnails Sidebar */}
               {showThumbnails && (
-                <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
-                  <div className="px-4 h-12 flex items-center border-b border-gray-200">
+                <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+                  <div className="px-4 h-12 flex items-center justify-between border-b border-gray-200 flex-shrink-0">
                     <h3 className="text-sm font-medium text-gray-700">
                       Pages {documentLoaded ? `(${numPages})` : ''}
                     </h3>
+                    <button
+                      onClick={() => setShowThumbnails(false)}
+                      className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                      title="Hide sidebar"
+                    >
+                      <Menu className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="p-2">
+                  <div className="flex-1 overflow-y-auto max-h-[100vh] p-2">
                     {!documentLoaded ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-sm text-gray-500">Loading pages...</div>
@@ -160,7 +159,7 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
                           <Document file={fileUrl}>
                             <Page
                               pageNumber={index + 1}
-                              width={120}
+                              width={200}
                               className="border border-gray-200 rounded"
                             />
                           </Document>
@@ -175,10 +174,19 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
               )}
 
               {/* Main PDF Viewer */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col ">
                 {/* Toolbar */}
                 <div className="bg-white border-b border-gray-200 h-12 flex items-center justify-between ">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-2">
+                    {!showThumbnails && (
+                      <button
+                        onClick={() => setShowThumbnails(true)}
+                        className="p-2 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-100"
+                        title="Show sidebar"
+                      >
+                        <Menu className="w-5 h-5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => setPageNumber((prev) => Math.max(1, prev - 1))}
                       disabled={pageNumber <= 1}
@@ -187,7 +195,7 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
                     >
                       <IconChevronLeft className="w-5 h-5" />
                     </button>
-                    <span className="text-sm text-gray-700 min-w-[80px] text-center">
+                    <span className="text-sm text-gray-700 text-center">
                       {pageNumber} of {numPages}
                     </span>
                     <button
@@ -207,7 +215,7 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
                       className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed rounded hover:bg-gray-100"
                       title="Zoom out"
                     >
-                      <IconZoomOut className="w-4 h-4" />
+                      <ZoomOut className="w-4 h-4" />
                     </button>
                     <span className="text-sm text-gray-700 min-w-[60px] text-center">
                       {Math.round(scale * 100)}%
@@ -218,7 +226,7 @@ export function PdfViewer({ open, onClose, fileUrl, fileName }: PdfViewerProps) 
                       className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed rounded hover:bg-gray-100"
                       title="Zoom in"
                     >
-                      <IconZoomIn className="w-4 h-4" />
+                      <ZoomIn className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

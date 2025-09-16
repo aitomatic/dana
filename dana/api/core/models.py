@@ -44,7 +44,7 @@ class Document(Base):
     file_size = Column(Integer)
     mime_type = Column(String)
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=True)
-    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True) # TODO : For now a single document can only be associated with a single agent, workaround by using `agent.config["associated_documents"]` to manage association
     # For JSON extraction files: link to the original PDF document
     source_document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))

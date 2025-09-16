@@ -30,7 +30,7 @@ const data = {
     {
       name: 'Aitomatic',
       logo: () => <img src={logo} alt="Aitomatic" className="rounded-md size-8" />,
-      plan: 'Dana Expert Agents',
+      plan: 'Dana Agent Studio',
     },
   ],
   navMain: [
@@ -68,14 +68,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter className="flex p-4 border-t">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-sm text-muted-foreground">
-              {state === 'collapsed' ? `${packageJson.version}` : `Version-${packageJson.version}`}
+      <span className="text-xs text-muted-foreground">
+              {state === 'collapsed' ? `${packageJson.version}` : `Version ${packageJson.version}`}
             </span>
-          </TooltipTrigger>
-          <TooltipContent side="right">Version {packageJson.version}</TooltipContent>
-        </Tooltip>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

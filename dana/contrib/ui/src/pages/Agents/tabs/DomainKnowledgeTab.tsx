@@ -6,7 +6,7 @@ import { useAgentStore } from '@/stores/agent-store';
 const DomainKnowledgeTab: React.FC = () => {
   const { agent_id } = useParams<{ agent_id: string }>();
   const agent = useAgentStore((s) => s.selectedAgent);
-  
+
   // Use agent_id from URL params or fall back to selected agent's id
   const agentId = agent_id || agent?.id;
 
@@ -17,4 +17,4 @@ const DomainKnowledgeTab: React.FC = () => {
   );
 };
 
-export default DomainKnowledgeTab; 
+export default DomainKnowledgeTab;

@@ -109,6 +109,7 @@ def create_app():
     from ..routers.poet import router as poet_router
     from ..routers.smart_chat import router as smart_chat_router
     from ..routers.topics import router as new_topics_router
+    from ..routers.workflow_execution import router as workflow_execution_router
 
     app.include_router(main_router)
 
@@ -129,6 +130,7 @@ def create_app():
         app.include_router(smart_chat_router, prefix="/api")
         print("\033[96mInitializing smart chat router\033[0m")
     app.include_router(extract_documents_router, prefix="/api")
+    app.include_router(workflow_execution_router, prefix="/api")
     app.include_router(ws_router)
 
     # Keep legacy api router for endpoints not yet migrated:

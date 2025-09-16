@@ -1,0 +1,14 @@
+from time.py import time
+
+log_level("info")
+
+def websearch(query: str, search_depth: str, domain: str) -> any:
+    web_search = use("websearch", service_type = "google")
+    return web_search.answer(query, search_depth, domain)
+    
+query = "Who is Doreamon?"
+start_time = time()
+response  = websearch(query = query, search_depth = "extensive", domain = "")
+print(response)
+end_time = time()
+print(f"Processing Time: {end_time - start_time}s")
