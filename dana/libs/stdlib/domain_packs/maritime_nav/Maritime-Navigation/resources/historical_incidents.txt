@@ -1,0 +1,227 @@
+MARITIME HISTORICAL INCIDENTS DATABASE
+======================================
+
+Past Collision Avoidance Scenarios and Outcomes:
+===============================================
+
+HEAD-ON COLLISION AVOIDANCE SCENARIOS:
+======================================
+
+Incident #2024-001: Container Ship vs. Bulk Carrier - Open Sea
+- Scenario: MV Navigator (Container) heading 090° at 20 knots encounters MV CargoStar (Bulk) heading 270° at 18 knots
+- Distance: 3.0 nautical miles
+- Weather: Clear, visibility 8 nm, sea state 2
+- Action Taken: Both vessels altered course 15° to starboard, passed port-to-port at 0.8 nm
+- Outcome: Safe passage, no incidents
+- Key Learning: Early course alteration effective in clear conditions
+- Success Rate: 95% for similar scenarios
+
+Incident #2024-002: Tanker vs. Fishing Vessel - Coastal Waters
+- Scenario: MV TankerPro (Tanker) heading 045° at 16 knots encounters MV FishingBoat (Fishing) heading 225° at 12 knots
+- Distance: 2.5 nautical miles
+- Weather: Moderate, visibility 4 nm, sea state 4
+- Action Taken: Tanker reduced speed to 12 knots, fishing vessel maintained course
+- Outcome: Safe passage at 0.6 nm
+- Key Learning: Speed reduction more effective than course change for large vessels
+- Success Rate: 90% for similar scenarios
+
+CROSSING COLLISION AVOIDANCE SCENARIOS:
+========================================
+
+Incident #2024-003: Container Ship vs. Yacht - Harbor Approach
+- Scenario: MV Navigator (Container) heading 000° at 15 knots encounters MV Yacht (Pleasure) heading 090° at 25 knots
+- Distance: 1.8 nautical miles
+- Weather: Clear, visibility 6 nm, sea state 2
+- Action Taken: Yacht altered course 30° to port, container ship maintained course
+- Outcome: Safe passage at 0.4 nm
+- Key Learning: Smaller vessels should give way to larger commercial vessels
+- Success Rate: 88% for similar scenarios
+
+Incident #2024-004: Bulk Carrier vs. Pilot Boat - Port Entry
+- Scenario: MV CargoStar (Bulk) heading 180° at 12 knots encounters MV PilotBoat (Pilot) heading 270° at 20 knots
+- Distance: 2.0 nautical miles
+- Weather: Good, visibility 5 nm, sea state 3
+- Action Taken: Bulk carrier reduced speed to 8 knots, pilot boat maintained course
+- Outcome: Safe passage at 0.3 nm
+- Key Learning: Pilot vessels have priority, larger vessels should adjust speed
+- Success Rate: 92% for similar scenarios
+
+OVERTAKING COLLISION AVOIDANCE SCENARIOS:
+==========================================
+
+Incident #2024-005: Container Ship Overtaking Bulk Carrier - Strait Passage
+- Scenario: MV Navigator (Container) at 22 knots overtaking MV CargoStar (Bulk) at 16 knots
+- Distance: 1.5 nautical miles
+- Weather: Clear, visibility 10 nm, sea state 2
+- Action Taken: Container ship altered course 20° to port, passed at 0.5 nm
+- Outcome: Safe overtaking, no incidents
+- Key Learning: Overtaking vessel must keep clear, substantial course change required
+- Success Rate: 94% for similar scenarios
+
+Incident #2024-006: Yacht Overtaking Fishing Vessel - Coastal Waters
+- Scenario: MV Yacht (Pleasure) at 28 knots overtaking MV FishingBoat (Fishing) at 10 knots
+- Distance: 1.0 nautical miles
+- Weather: Moderate, visibility 3 nm, sea state 4
+- Action Taken: Yacht reduced speed to 15 knots, altered course 25° to port
+- Outcome: Safe overtaking at 0.3 nm
+- Key Learning: Speed reduction essential in poor visibility conditions
+- Success Rate: 87% for similar scenarios
+
+RESTRICTED VISIBILITY SCENARIOS:
+================================
+
+Incident #2024-007: Container Ship vs. Tanker - Fog Conditions
+- Scenario: MV Navigator (Container) heading 135° at 18 knots encounters MV TankerPro (Tanker) heading 315° at 14 knots
+- Distance: 2.8 nautical miles
+- Weather: Fog, visibility 0.5 nm, sea state 3
+- Action Taken: Both vessels reduced speed to 8 knots, altered course 30° to starboard
+- Outcome: Safe passage at 1.2 nm
+- Key Learning: Both vessels must take action in restricted visibility
+- Success Rate: 85% for similar scenarios
+
+Incident #2024-008: Bulk Carrier vs. Fishing Vessel - Heavy Rain
+- Scenario: MV CargoStar (Bulk) heading 090° at 16 knots encounters MV FishingBoat (Fishing) heading 180° at 8 knots
+- Distance: 2.2 nautical miles
+- Weather: Heavy rain, visibility 1.5 nm, sea state 5
+- Action Taken: Bulk carrier reduced speed to 10 knots, fishing vessel altered course 45° to port
+- Outcome: Safe passage at 0.8 nm
+- Key Learning: Speed reduction critical in poor visibility and rough seas
+- Success Rate: 82% for similar scenarios
+
+HIGH TRAFFIC DENSITY SCENARIOS:
+================================
+
+Incident #2024-009: Multiple Vessels - Strait of Malacca
+- Scenario: MV Navigator, MV CargoStar, MV TankerPro, MV FishingBoat in close proximity
+- Distance: Various, 0.5-2.0 nautical miles
+- Weather: Clear, visibility 8 nm, sea state 2
+- Action Taken: Coordinated course and speed adjustments, communication via VHF
+- Outcome: All vessels passed safely
+- Key Learning: Communication essential in high traffic density
+- Success Rate: 89% for similar scenarios
+
+Incident #2024-010: Port Approach - Singapore Harbor
+- Scenario: Multiple vessels approaching port entrance simultaneously
+- Distance: 0.3-1.5 nautical miles
+- Weather: Good, visibility 6 nm, sea state 2
+- Action Taken: Sequential approach, speed coordination, pilot coordination
+- Outcome: Safe entry for all vessels
+- Key Learning: Sequential operations more effective than parallel approaches
+- Success Rate: 93% for similar scenarios
+
+FAILED COLLISION AVOIDANCE SCENARIOS:
+======================================
+
+Incident #2024-011: Late Course Change - Container Ship vs. Yacht
+- Scenario: MV Navigator (Container) heading 000° at 20 knots encounters MV Yacht (Pleasure) heading 090° at 30 knots
+- Distance: 0.8 nautical miles
+- Weather: Clear, visibility 8 nm, sea state 2
+- Action Taken: Container ship made late course change of 10° to starboard
+- Outcome: Near miss, vessels passed at 0.2 nm
+- Key Learning: Late and small course changes ineffective
+- Failure Rate: 15% for similar scenarios
+
+Incident #2024-012: Speed Not Reduced - Tanker in Fog
+- Scenario: MV TankerPro (Tanker) heading 045° at 16 knots encounters MV FishingBoat (Fishing) heading 225° at 8 knots
+- Distance: 1.5 nautical miles
+- Weather: Fog, visibility 0.8 nm, sea state 3
+- Action Taken: Tanker maintained speed, only altered course 15° to starboard
+- Outcome: Near miss, vessels passed at 0.3 nm
+- Key Learning: Speed reduction essential in restricted visibility
+- Failure Rate: 18% for similar scenarios
+
+SUCCESS PATTERNS BY VESSEL TYPE:
+================================
+
+Container Ships:
+- Success Rate: 92%
+- Preferred Actions: Course changes 20-30°, speed maintenance
+- Best Conditions: Clear visibility, moderate sea state
+- Risk Factors: High speed, large turning radius
+
+Bulk Carriers:
+- Success Rate: 89%
+- Preferred Actions: Speed reduction, moderate course changes
+- Best Conditions: Good visibility, calm to moderate sea state
+- Risk Factors: Poor maneuverability, long stopping distance
+
+Tankers:
+- Success Rate: 87%
+- Preferred Actions: Speed reduction, early course changes
+- Best Conditions: Clear visibility, calm sea state
+- Risk Factors: Very poor maneuverability, very long stopping distance
+
+Fishing Vessels:
+- Success Rate: 94%
+- Preferred Actions: Course changes, speed adjustments
+- Best Conditions: All conditions
+- Risk Factors: Unpredictable movements, fishing gear deployment
+
+Yachts/Pleasure Craft:
+- Success Rate: 91%
+- Preferred Actions: Course changes, speed adjustments
+- Best Conditions: Clear visibility, calm sea state
+- Risk Factors: High speed, operator inexperience
+
+Pilot Vessels:
+- Success Rate: 96%
+- Preferred Actions: Course changes, speed adjustments
+- Best Conditions: All conditions
+- Risk Factors: Minimal, high maneuverability
+
+RECOMMENDED ACTIONS BY SCENARIO TYPE:
+======================================
+
+Head-on Situations:
+- Both vessels alter course 15-30° to starboard
+- Pass port-to-port when safe
+- Maintain speed unless visibility poor
+- Success Rate: 93%
+
+Crossing Situations:
+- Give-way vessel alters course 20-45° away from stand-on vessel
+- Stand-on vessel maintains course and speed
+- Consider speed reduction in poor conditions
+- Success Rate: 90%
+
+Overtaking Situations:
+- Overtaking vessel keeps clear with substantial course change
+- Stand-on vessel maintains course and speed
+- Pass at safe distance (0.3-0.8 nm)
+- Success Rate: 92%
+
+Restricted Visibility:
+- Both vessels reduce speed significantly
+- Both vessels take substantial action
+- Increase passing distance to 1.0+ nm
+- Success Rate: 84%
+
+High Traffic Density:
+- Coordinate actions via VHF communication
+- Sequential rather than parallel operations
+- Increase passing distances
+- Success Rate: 89%
+
+CRITICAL SUCCESS FACTORS:
+=========================
+
+1. **Early Action**: Take action when vessels 2-3 nm apart
+2. **Substantial Changes**: Course changes 15-45°, speed changes 20-40%
+3. **Communication**: Use VHF for coordination when possible
+4. **Monitoring**: Continuous assessment of situation changes
+5. **Regulatory Compliance**: Follow COLREGS rules strictly
+6. **Environmental Awareness**: Consider weather and sea conditions
+7. **Vessel Limitations**: Account for maneuverability and stopping distance
+8. **Contingency Planning**: Prepare for unexpected changes
+
+PREVENTIVE MEASURES:
+====================
+
+1. **Training**: Regular crew training on collision avoidance
+2. **Equipment**: Maintain radar, AIS, and communication systems
+3. **Procedures**: Standard operating procedures for various scenarios
+4. **Monitoring**: Continuous watch keeping and situation assessment
+5. **Communication**: Regular VHF contact with nearby vessels
+6. **Documentation**: Record all collision avoidance actions
+7. **Review**: Regular review of near-miss incidents
+8. **Updates**: Stay current with navigation regulations and best practices

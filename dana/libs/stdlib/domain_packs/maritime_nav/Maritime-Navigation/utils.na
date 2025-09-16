@@ -1,0 +1,200 @@
+"""Utility templates for Maritime Navigation Collision Avoidance system."""
+
+# Step 1: Vessel Identification & Capability Assessment
+STEP1_VESSEL_IDENTIFICATION_TEMPLATE = """
+IDENTIFY AND ASSESS THE CAPABILITIES of both vessels involved in the encounter.
+
+SCENARIO:
+```
+{scenario}
+```
+
+REQUIRED OUTPUT FORMAT:
+1. **Vessel A Specifications**:
+   - Type: [Vessel Type]
+   - Length: [Length in meters]
+   - Beam: [Beam in meters]
+   - Draft: [Draft in meters]
+   - Gross Tonnage: [GT]
+   - Maximum Speed: [Speed in knots]
+   - Maneuverability Rating: [High/Medium/Low]
+
+2. **Vessel B Specifications**:
+   - Type: [Vessel Type]
+   - Length: [Length in meters]
+   - Beam: [Beam in meters]
+   - Draft: [Draft in meters]
+   - Gross Tonnage: [GT]
+   - Maximum Speed: [Speed in knots]
+   - Maneuverability Rating: [High/Medium/Low]
+
+3. **Capability Comparison**:
+   - Which vessel has right of way based on type/size?
+   - Which vessel is more maneuverable?
+   - Which vessel has better stopping/acceleration capabilities?
+
+EXTRACT FROM RESOURCES:
+- Use the vessel registry to find exact specifications
+- Provide specific technical data for each vessel
+- Assess relative capabilities for collision avoidance decisions
+"""
+
+# Step 2: Current Situation Analysis
+STEP2_SITUATION_ANALYSIS_TEMPLATE = """
+Scenario:
+```
+{scenario}
+```
+Output from step 1:
+```
+{context}
+```
+
+Given the scenario, calculate the relative motion.
+"""
+
+STEP2_1_SITUATION_ANALYSIS_TEMPLATE = """
+Use this as data, not the task to do:
+```
+{context}
+```
+Task:
+Extract vessel information from the following scenario text and return ONLY a JSON object with this exact structure:
+
+{{
+    "vessel_a": {{
+        "name": "vessel name",
+        "position": "lat/lon string", 
+        "course": number_in_degrees,
+        "speed": number_in_knots
+    }},
+    "vessel_b": {{
+        "name": "vessel name",
+        "position": "lat/lon string",
+        "course": number_in_degrees, 
+        "speed": number_in_knots
+    }}
+}}
+"""
+
+STEP2_2_SITUATION_ANALYSIS_TEMPLATE = """
+Context: {context}
+
+Calculations results:
+```
+{results}
+```
+
+2. **Collision Risk Assessment**:
+   - Risk Level: [High/Medium/Low]
+   - Risk Factors: [List specific risk factors]
+   - Urgency: [Immediate/Moderate/No urgency]
+
+3. **Initial Observations**:
+   - Are vessels on collision course?
+   - Which vessel has right of way?
+   - What are the immediate concerns?
+
+EXTRACT FROM RESOURCES:
+- Use navigation rules to determine right of way
+- Calculate relative motion parameters
+- Assess immediate collision risk
+"""
+
+# Step 3: Environmental & Regulatory Context Analysis
+STEP3_ENVIRONMENTAL_CONTEXT_TEMPLATE = """
+ANALYZE ENVIRONMENTAL CONDITIONS AND REGULATORY REQUIREMENTS for the collision avoidance scenario.
+
+STEP 2 RESULT:
+```
+{step2_result}
+```
+
+REQUIRED OUTPUT FORMAT:
+1. **Environmental Conditions**:
+   - Weather: [Current weather conditions]
+   - Sea State: [Sea state description]
+   - Visibility: [Visibility in nautical miles]
+   - Wind: [Wind direction and speed]
+   - Current: [Current direction and speed]
+
+2. **Regulatory Context**:
+   - Applicable COLREGS Rules: [Specific rule numbers]
+   - Traffic Separation Schemes: [If applicable]
+   - Local Navigation Rules: [Any local restrictions]
+   - Pilot Requirements: [If pilotage is required]
+
+3. **Operational Constraints**:
+   - Vessel operational limitations
+   - Crew experience and capabilities
+   - Equipment status and reliability
+   - Communication capabilities
+
+EXTRACT FROM RESOURCES:
+- Use environmental data for current conditions
+- Reference COLREGS database for applicable rules
+- Consider operational and regulatory constraints
+"""
+
+# Step 4: Historical Pattern Correlation & Decision Recommendation
+STEP4_DECISION_RECOMMENDATION_TEMPLATE = """
+SEARCH HISTORICAL INCIDENTS DATABASE for similar collision avoidance scenarios and provide specific recommendations.
+
+VESSEL IDENTIFICATION (Step 1):
+```
+{step1_result}
+```
+
+SITUATION ANALYSIS (Step 2):
+```
+{step2_result}
+```
+
+ENVIRONMENTAL CONTEXT (Step 3):
+```
+{step3_result}
+```
+
+Based on this comprehensive analysis and historical patterns, provide SPECIFIC RECOMMENDATIONS for Vessel A:
+
+REQUIRED OUTPUT FORMAT:
+1. **COURSE DECISION**:
+   - **CHANGE COURSE**: [Specific course change recommendation with degrees and direction]
+   - **KEEP COURSE**: [If no change needed, explain why]
+
+2. **SPEED DECISION**:
+   - **CHANGE SPEED**: [Specific speed change recommendation with new speed and reason]
+   - **KEEP SPEED**: [If no change needed, explain why]
+
+3. **Supporting Evidence**:
+   - Historical incidents with similar scenarios
+   - Success rate of recommended approach
+   - Risk mitigation factors
+   - Regulatory compliance verification
+
+4. **Additional Actions**:
+   - Communication requirements
+   - Monitoring and reassessment timing
+   - Contingency plans if situation changes
+
+Look for similar historical incidents with comparable vessel types, relative positions, and environmental conditions.
+Provide evidence-based recommendations with clear, actionable commands.
+"""
+
+# Final Recommendation Template
+FINAL_RECOMMENDATION_TEMPLATE = """# Maritime Navigation Collision Avoidance Analysis
+
+## Vessel Identification & Capability Assessment
+{step1_result}
+
+## Current Situation Analysis
+{step2_result}
+
+## Environmental & Regulatory Context Analysis
+{step3_result}
+
+## Historical Pattern Correlation & Decision Recommendation
+{step4_result}
+
+---
+*Analysis completed using structured 4-level maritime navigation decision support system*"""

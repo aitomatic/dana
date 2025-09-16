@@ -1,0 +1,20 @@
+"""Test Vessel Registry Resource."""
+
+# Test vessel identification capabilities
+def test_vessel_lookup():
+    """Test vessel lookup functionality."""
+    resource = get_resource('rag', sources=['resources/vessel_registry.txt'])
+
+    # Test container ship lookup
+    result = reason("Find specifications for MV Navigator", resources=[resource])
+    print("Container Ship Test Result:", result)
+
+    # Test bulk carrier lookup
+    result = reason("Find specifications for MV CargoStar", resources=[resource])
+    print("Bulk Carrier Test Result:", result)
+
+    return "Vessel registry tests completed"
+
+# Run tests
+if __name__ == "__main__":
+    test_vessel_lookup()

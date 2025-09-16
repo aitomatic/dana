@@ -1,0 +1,22 @@
+"""Vessel Identification Expertise Module."""
+
+__all__ = [
+    'workflow_identify_vessel_capabilities',
+    'workflow_assess_vessel_maneuverability',
+    'workflow_compare_vessel_characteristics',
+]
+
+
+def workflow_identify_vessel_capabilities(resources: list, task: str) -> str:
+    """Identify vessel capabilities and specifications from vessel registry."""
+    return reason(task, resources=resources)
+
+
+def workflow_assess_vessel_maneuverability(resources: list, task: str) -> str:
+    """Assess vessel maneuverability and handling characteristics."""
+    return reason(task, resources=resources)
+
+
+def workflow_compare_vessel_characteristics(resources: list, task: str) -> str:
+    """Compare characteristics between two vessels for collision avoidance analysis."""
+    return reason(task, resources=resources)
