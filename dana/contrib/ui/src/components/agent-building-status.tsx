@@ -13,9 +13,7 @@ export function AgentBuildingStatus() {
   }
 
   return (
-    <div className="p-4 bg-white border border-gray-200 rounded-lg">
-
-
+    <div className="p-4 bg-white rounded-lg border border-gray-200">
       <div className="space-y-2">
         <div>
           <span className="text-sm font-medium text-gray-700">Name:</span>
@@ -43,21 +41,25 @@ export function AgentBuildingStatus() {
 
         <div>
           <span className="text-sm font-medium text-gray-700">Ready for Code Generation:</span>
-          <span className={cn(
-            'ml-2 text-sm',
-            currentAgent.ready_for_code_generation ? 'text-green-600' : 'text-yellow-600'
-          )}>
+          <span
+            className={cn(
+              'ml-2 text-sm',
+              currentAgent.ready_for_code_generation ? 'text-green-600' : 'text-yellow-600',
+            )}
+          >
             {currentAgent.ready_for_code_generation ? 'Yes' : 'No'}
           </span>
         </div>
 
         <div>
           <span className="text-sm font-medium text-gray-700">Conversation Messages:</span>
-          <span className="ml-2 text-sm text-gray-900">{currentAgent.conversation_context.length}</span>
+          <span className="ml-2 text-sm text-gray-900">
+            {currentAgent.conversation_context.length}
+          </span>
         </div>
 
         {(isGenerating || isAnalyzing) && (
-          <div className="mt-3 p-2 bg-blue-50 rounded">
+          <div className="p-2 mt-3 bg-blue-50 rounded">
             <p className="text-sm text-blue-700">
               {isGenerating ? 'Generating agent code...' : 'Analyzing agent description...'}
             </p>
@@ -65,13 +67,13 @@ export function AgentBuildingStatus() {
         )}
 
         {error && (
-          <div className="mt-3 p-2 bg-red-50 rounded">
+          <div className="p-2 mt-3 bg-red-50 rounded">
             <p className="text-sm text-red-700">Error: {error}</p>
           </div>
         )}
 
         {currentAgent.created_at && (
-          <div className="mt-3 pt-2 border-t border-gray-200">
+          <div className="pt-2 mt-3 border-t border-gray-200">
             <p className="text-xs text-gray-500">
               Created: {new Date(currentAgent.created_at).toLocaleString()}
             </p>
@@ -87,4 +89,4 @@ export function AgentBuildingStatus() {
   );
 }
 
-export default AgentBuildingStatus; 
+export default AgentBuildingStatus;

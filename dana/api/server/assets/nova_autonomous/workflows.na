@@ -10,11 +10,11 @@ from methods import generate_final_response
 
 # === Core Pipeline Definitions using Dana's pipe operator ===
 
-# Single step workflow: execute → compress → validate
-def workflow(state) = execute_step | compress_context | validate_completion
+# Single step final_workflow: execute → compress → validate
+def final_workflow(state) = execute_step | compress_context | validate_completion
 
-# Simple execution: initialize → single step workflow
-def simple_execution_pipeline(state) = initialize_simple_query | workflow
+# Simple execution: initialize → single step final_workflow
+def simple_execution_pipeline(state) = initialize_simple_query | final_workflow
 
 # Complex execution: initialize → plan → multi-step execution
 def complex_execution_pipeline(state) = initialize_complex_query | plan_ahead | execute_multi_step
@@ -22,12 +22,12 @@ def complex_execution_pipeline(state) = initialize_complex_query | plan_ahead | 
 # === Main Entry Point ===
 
 # Main query solver: classify → route to appropriate pipeline → generate final response
-def solve_query(state) = classify_complexity | route_to_workflow | generate_final_response
+def solve_query(state) = classify_complexity | route_to_final_workflow | generate_final_response
 
 # === Routing Logic ===
 
-def route_to_workflow(state):
-    """Route state to simple or complex workflow based on classification"""
+def route_to_final_workflow(state):
+    """Route state to simple or complex final_workflow based on classification"""
     if state.complexity and state.complexity["level"] == "SIMPLE":
         return simple_execution_pipeline(state)
     else:
@@ -36,6 +36,6 @@ def route_to_workflow(state):
 # === Alternative Pipeline Compositions ===
 
 # Direct pipelines for specific use cases
-def simple_query_pipeline(state) = classify_complexity | initialize_simple_query | workflow | generate_final_response
+def simple_query_pipeline(state) = classify_complexity | initialize_simple_query | final_workflow | generate_final_response
 
 def complex_query_pipeline(state) = classify_complexity | initialize_complex_query | plan_ahead | execute_multi_step | generate_final_response

@@ -10,6 +10,7 @@ from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrat
 from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
+from llama_index.core.schema import MetadataMode
 
 
 class RAGResource(BaseSysResource):
@@ -165,7 +166,7 @@ class RAGResource(BaseSysResource):
             # Truncate to requested number if no reranking
             results = results[:num_results]
 
-        return "\n\n".join([result.node.get_content() for result in results])
+        return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
 
     async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.

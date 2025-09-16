@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -11,7 +12,6 @@ import {
 import {
   IconSearch,
   IconFilter,
-  IconUpload,
   IconFolderPlus,
   IconRefresh,
   IconArrowLeft,
@@ -50,13 +50,11 @@ export default function LibraryPage() {
 
   const {
     fetchDocuments,
-    uploadDocument,
     updateDocument,
     deleteDocument,
     downloadDocument,
     documents,
     isLoading: documentsLoading,
-    isUploading,
     isUpdating: isUpdatingDocument,
     error: documentsError,
     clearError: clearDocumentsError,
@@ -77,7 +75,6 @@ export default function LibraryPage() {
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'files' | 'folders'>('all');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
@@ -238,19 +235,6 @@ export default function LibraryPage() {
     setShowCreateFolder(false);
   };
 
-  const handleFilesUploaded = async (files: File[]) => {
-    for (const file of files) {
-      await uploadDocument({
-        file,
-        title: file.name,
-        description: `Uploaded: ${file.name}`,
-        topic_id: folderState.currentFolderId
-          ? parseInt(folderState.currentFolderId.replace('topic-', ''))
-          : undefined,
-      });
-    }
-  };
-
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
   };
@@ -263,20 +247,6 @@ export default function LibraryPage() {
     fetchTopics();
     fetchDocuments();
   }, [fetchTopics, fetchDocuments]);
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const fileArray = Array.from(files);
-      await handleFilesUploaded(fileArray);
-      // Reset the input
-      event.target.value = '';
-    }
-  };
 
   const isLoading = topicsLoading || documentsLoading;
   const error = topicsError || documentsError;
@@ -292,8 +262,7 @@ export default function LibraryPage() {
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-              <IconRefresh className="mr-2 w-4 h-4" />
-              Refresh
+              <IconRefresh className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
@@ -303,13 +272,9 @@ export default function LibraryPage() {
               <IconFolderPlus className="mr-2 w-4 h-4" />
               New Topic
             </Button>
-            <Button onClick={openExtractionPopup} variant="outline">
+            <Button onClick={openExtractionPopup} variant="default">
               <IconFileExport className="mr-2 w-4 h-4" />
-              Extract Files
-            </Button>
-            <Button onClick={handleUploadClick} disabled={isUploading}>
-              <IconUpload className="mr-2 w-4 h-4" />
-              Add Documents
+              Deep Extract
             </Button>
           </div>
         </div>
@@ -396,16 +361,6 @@ export default function LibraryPage() {
             allLibraryItems={itemsWithCounts}
           />
         </div>
-
-        {/* Hidden file input for upload */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-          accept="*/*"
-        />
 
         {/* Dialogs */}
         <CreateFolderDialog

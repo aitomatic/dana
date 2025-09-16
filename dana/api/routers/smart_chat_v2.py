@@ -6,9 +6,12 @@ import logging
 from typing import Any, Literal
 from threading import Lock
 from collections import defaultdict
+from pathlib import Path
+import shutil
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from dana.api.core.database import get_db
 from dana.api.core.models import Agent, AgentChatHistory
@@ -30,6 +33,7 @@ import os
 from fastapi import WebSocket, WebSocketDisconnect
 import json
 import asyncio
+from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +102,142 @@ def create_smart_chat_ws_notifier(websocket_id: str | None = None):
     return chat_update_notifier
 
 
+def _agent_has_na_code(folder_path: str) -> bool:
+    """Check whether the agent folder contains any .na code files (recursively)."""
+    try:
+        for _, _dirs, files in os.walk(folder_path):
+            if any(f.endswith(".na") for f in files):
+                return True
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to check agent code presence in {folder_path}: {e}")
+        return False
+
+
+def _list_prebuilt_agents() -> list[dict[str, Any]]:
+    """Load available prebuilt agents from assets JSON."""
+    try:
+        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        if not assets_path.exists():
+            logger.warning("prebuilt_agents.json not found")
+            return []
+        with open(assets_path, encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return [
+                    {
+                        "key": a.get("key"),
+                        "name": a.get("name"),
+                        "description": a.get("description", ""),
+                    }
+                    for a in data
+                    if isinstance(a, dict)
+                ]
+            return []
+    except Exception as e:
+        logger.error(f"Error loading prebuilt agents: {e}")
+        return []
+
+
+def _copy_na_files_from_prebuilt(prebuilt_key: str, target_folder: str) -> bool:
+    """Copy only .na files from a prebuilt agent asset folder into the target agent folder, preserving structure.
+
+    Skips any files under a 'knows' directory.
+    """
+    try:
+        source_folder = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key
+        if not source_folder.exists():
+            logger.error(f"Prebuilt agent folder not found for key: {prebuilt_key}")
+            return False
+        for root, _dirs, files in os.walk(source_folder):
+            root_path = Path(root)
+            # Skip any subtree that includes a 'knows' directory in its relative path
+            try:
+                rel_root = root_path.relative_to(source_folder)
+                if "knows" in rel_root.parts:
+                    continue
+            except Exception:
+                pass
+            for file_name in files:
+                if not file_name.endswith(".na"):
+                    continue
+                rel_path = root_path.relative_to(source_folder) / file_name
+                if "knows" in rel_path.parts:
+                    continue
+                dest_path = Path(target_folder) / rel_path
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(root_path / file_name, dest_path)
+        return True
+    except Exception as e:
+        logger.error(f"Error copying .na files from prebuilt '{prebuilt_key}': {e}")
+        return False
+
+
+def _choose_prebuilt_key_with_llm(llm: LLMResource, user_message: str, prebuilt_options: list[dict[str, Any]]) -> str | None:
+    """Use LLM to choose the best prebuilt key based on the user's message.
+
+    The LLM must return ONLY the key from the provided options, or "none" if not sure.
+    """
+    try:
+        if not prebuilt_options:
+            return None
+
+        options_text = "\n".join(
+            [
+                f"- key: {opt.get('key')} | name: {opt.get('name')} | desc: {opt.get('description','')}"
+                for opt in prebuilt_options
+                if opt.get("key")
+            ]
+        )
+
+        system_prompt = (
+            "You are selecting a prebuilt agent template.\n"
+            "Choose the best matching prebuilt 'key' from the provided list based on the user's message.\n"
+            "Return ONLY the exact key string. If none is appropriate, return 'none'.\n"
+        )
+        assistant_instructions = "Available prebuilt options:\n" + options_text + "\n\n" "Respond with only the key, no extra text."
+
+        request = BaseRequest(
+            arguments={
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "assistant", "content": assistant_instructions},
+                    {"role": "user", "content": user_message},
+                ]
+            }
+        )
+        response = llm.query_sync(request)
+        if not getattr(response, "success", False):
+            logger.warning(f"LLM prebuilt selection failed: {getattr(response, 'error', 'unknown error')}")
+            return None
+        # Handle OpenAI-style object response
+        content = response.content
+        if isinstance(content, dict) and "choices" in content:
+            # Try to extract the message content from OpenAI-style response
+            try:
+                content = content["choices"][0]["message"]["content"]
+            except Exception:
+                content = ""
+        # Extract text content variations (string or dict-like)
+        if isinstance(content, dict) and "content" in content:
+            text = str(content.get("content", "")).strip()
+        else:
+            text = str(content).strip()
+        # Normalize and validate
+        text = text.strip().strip("` ")
+        text = text.splitlines()[0] if "\n" in text else text
+        if text.lower() == "none" or not text:
+            return None
+        valid_keys = {opt.get("key") for opt in prebuilt_options if opt.get("key")}
+        print(f"valid_keys: {valid_keys}")
+        print(f"text: {text}")
+        return text if text in valid_keys else None
+    except Exception as e:
+        logger.error(f"Error choosing prebuilt key via LLM: {e}")
+        print(f"Error choosing prebuilt key via LLM: {e}")
+        return None
+
+
 @router.post("/{agent_id}/smart-chat")
 async def smart_chat_v2(
     agent_id: int,
@@ -118,6 +258,7 @@ async def smart_chat_v2(
     Returns:
         Response with knowledge operation results and conversation
     """
+
     # Concurrency protection: Acquire lock for this agent
     agent_lock = _agent_locks[agent_id]
     if not agent_lock.acquire(blocking=False):
@@ -136,6 +277,41 @@ async def smart_chat_v2(
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
+
+        # Build agent folder paths and ensure structure exists early
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent.id}")
+
+        domain_knowledge_path = os.path.join(folder_path, "domain_knowledge.json")
+        knows_folder = os.path.join(folder_path, "knows")
+        knowledge_status_path = os.path.join(knows_folder, "knowledge_status.json")
+
+        os.makedirs(folder_path, exist_ok=True)
+        os.makedirs(knows_folder, exist_ok=True)
+
+        # Persist folder_path into agent.config if missing or outdated
+        try:
+            current_config = agent.config.copy() if agent.config else {}
+            if current_config.get("folder_path") != folder_path:
+                current_config["folder_path"] = folder_path
+                agent.config = current_config
+                flag_modified(agent, "config")
+                db.commit()
+                db.refresh(agent)
+        except Exception as e:
+            logger.warning(f"Failed to persist folder_path for agent {agent_id}: {e}")
+
+        # If agent has no .na code, either copy from a selected prebuilt or ask user to choose
+        if not _agent_has_na_code(folder_path):
+            # Use LLM to auto-suggest prebuilt based on user message
+            llm = LLMResource()
+            available_prebuilts = _list_prebuilt_agents()
+            suggested_key = _choose_prebuilt_key_with_llm(llm, user_message, available_prebuilts)
+            print(f"suggested_key: {suggested_key}")
+            if suggested_key and _copy_na_files_from_prebuilt(suggested_key, folder_path):
+                print(f"copied prebuilt '{suggested_key}' for agent {agent_id}")
+                logger.info(f"Auto-selected and copied prebuilt '{suggested_key}' for agent {agent_id}")
 
         # --- Save user message to AgentChatHistory ---
         user_history = AgentChatHistory(agent_id=agent_id, sender="user", text=user_message, type="smart_chat")
@@ -159,19 +335,7 @@ async def smart_chat_v2(
         )
 
         # Step 2: Use KnowledgeOpsHandler directly for all requests
-        # Build agent folder paths for KnowledgeOpsHandler
-        folder_path = agent.config.get("folder_path") if agent.config else None
-        if not folder_path:
-            folder_path = os.path.join("agents", f"agent_{agent.id}")
-
-        # Knowledge file paths
-        domain_knowledge_path = os.path.join(folder_path, "domain_knowledge.json")
-        knows_folder = os.path.join(folder_path, "knows")
-        knowledge_status_path = os.path.join(knows_folder, "knowledge_status.json")
-
-        # Ensure directories exist
-        os.makedirs(folder_path, exist_ok=True)
-        os.makedirs(knows_folder, exist_ok=True)
+        # variables folder_path, domain_knowledge_path, knows_folder, knowledge_status_path are already prepared above
 
         # Create LLM resource
         llm = LLMResource()

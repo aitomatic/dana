@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -218,26 +219,22 @@ export const MyAgentTab: React.FC<{
             ))
         ) : (
           <div className="col-span-3">
-            <div className="flex flex-col gap-2 items-center justify-center p-12 rounded-lg">
-              <img 
-                src="/images/empty-agent.svg" 
-                alt="No agents" 
-                className="w-24 h-24 mb-4"
-              />
-              <div className="text-lg text-center font-semibold text-gray-900">
+            <div className="flex flex-col gap-2 justify-center items-center p-12 rounded-lg">
+              <img src="/images/empty-agent.svg" alt="No agents" className="mb-4 w-24 h-24" />
+              <div className="text-lg font-semibold text-center text-gray-900">
                 You haven't created any agents yet.
               </div>
               <div className="text-sm text-gray-700">
-                Train your own agent with support from <b>Dana</b>, our training expert.
+              Train New Agent with support from <b>Dana</b>, our training expert.
               </div>
               <Button
-                variant="default"
+                variant="outline"
                 className="w-[200px] px-4 py-1 mt-2 font-semibold"
                 onClick={handleCreateAgent}
                 disabled={creating}
               >
                 <Plus style={{ width: '20', height: '20' }} />
-                Train Your Own Agent
+              Train New Agent
               </Button>
             </div>
           </div>

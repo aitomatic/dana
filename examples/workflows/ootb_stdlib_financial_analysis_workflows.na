@@ -1,0 +1,20 @@
+"""Calculate & Assess Financial Health Metrics using Dana Workflows."""
+
+from domain_packs.financial_statements_analysis import workflow_assess_cap_intens, workflow_calc_quick_ratio
+
+resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD-2024-10K.pdf'])
+
+cap_intens = workflow_assess_cap_intens([resource_amd_annual_report])
+quick_ratio = workflow_calc_quick_ratio([resource_amd_annual_report])
+
+print(f'
+CAPITAL INTENSITY
+=================
+{cap_intens}
+')
+
+print(f'
+QUICK RATIO
+===========
+{quick_ratio}
+')

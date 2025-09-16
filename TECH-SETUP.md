@@ -24,7 +24,7 @@ This guide will help you set up Dana for development and contribution.
 
 1. **Install Homebrew**: Visit [brew.sh](https://brew.sh) and follow installation instructions
 2. **Verify Homebrew**: Ensure `brew` is in your PATH (follow post-installation instructions)
-3. **Install Python**: 
+3. **Install Python**:
    ```bash
    brew install python
    ```
@@ -155,7 +155,7 @@ git config --global core.longpaths true
    ```bash
    # HTTPS
    git clone https://github.com/aitomatic/dana.git
-   
+
    # SSH (if you have SSH keys set up)
    git clone git@github.com:aitomatic/dana.git
    ```
@@ -189,7 +189,7 @@ Create `.vscode/extensions.json` in your project:
 {
   "recommendations": [
     "aitomatic.dana-language",
-    
+
     ...  // other extensions you want to install
   ]
 }
