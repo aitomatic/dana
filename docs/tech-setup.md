@@ -40,17 +40,19 @@ This guide will help you set up Dana for development and contribution.
 
 #### 🪟 Windows
 
-1. **Install Python**: Download Python 3.12 or 3.13 from [Microsoft Store](https://apps.microsoft.com/store/detail/python-313/9NRWMJP3717K) or [python.org](https://python.org)
+1. **Install Python**:  
+   - **Recommended:** Download Python 3.12 or 3.13 from [python.org](https://python.org).  
+     The python.org installer will automatically update your `PATH` and enable long path support if you check the boxes during installation.  
+     - During setup, make sure to check **"Add Python to PATH"** and **"Enable long path length limit"** (if available).
+   - **Alternative:** If you have issues with the python.org installer, you can also install Python from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-313/9NRWMJP3717K).
 
-2. **Update PATH**: Add Python scripts to your user environment variable `Path`:
+2. **Verify Installation**:  
+   Open a new Command Prompt and run:
    ```
-   C:\Users\<Your Username>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_<hash>\LocalCache\local-packages\Python313\Scripts
+   python --version
    ```
-   *(Replace the hash and version number with your actual installation path)*
 
-3. **Enable Long Paths** (Important for development):
-   - Follow guides: [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html) | [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11)
-   - **Reboot** after enabling long paths
+3. *(If you used the Microsoft Store and encounter issues with long paths or PATH settings, you may need to manually enable long paths and update your environment variables. See these guides: [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html) | [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11). Reboot after enabling long paths.)*
 
 ## 📚 Install Dana
 
