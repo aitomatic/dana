@@ -1,5 +1,5 @@
-from resources import knows
-from resources import docs
+from all_resources import knows
+from all_resources import docs
 from common import QueryPackage
 from datetime.py import datetime
 from common import QUERY_GENERATION_PROMPT, SYSTEM_PROMPT, ANSWER_PROMPT
