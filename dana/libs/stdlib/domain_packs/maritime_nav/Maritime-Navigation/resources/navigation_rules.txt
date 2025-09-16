@@ -1,0 +1,155 @@
+MARITIME NAVIGATION RULES AND CALCULATIONS
+==========================================
+
+Collision Avoidance Rules (COLREGS):
+====================================
+
+Rule 13 - Overtaking:
+- A vessel overtaking another shall keep out of the way
+- Overtaking vessel must pass at a safe distance
+- Stand-on vessel maintains course and speed
+
+Rule 14 - Head-on Situation:
+- Both vessels alter course to starboard
+- Pass port-to-port when safe and practicable
+- Early and substantial action required
+
+Rule 15 - Crossing Situation:
+- Vessel with other on starboard side gives way
+- Stand-on vessel maintains course and speed
+- Give-way vessel takes early and substantial action
+
+Rule 16 - Action by Give-way Vessel:
+- Take early and substantial action to avoid collision
+- Avoid crossing ahead of stand-on vessel
+- Consider maneuverability limitations
+
+Rule 17 - Action by Stand-on Vessel:
+- Maintain course and speed
+- May take action if give-way vessel fails to act
+- Must take action when collision cannot be avoided
+
+Right of Way Hierarchy:
+=======================
+
+1. Vessels not under command
+2. Vessels restricted in ability to maneuver
+3. Vessels constrained by draft
+4. Fishing vessels actively fishing
+5. Sailing vessels
+6. Power-driven vessels
+
+Collision Risk Assessment:
+==========================
+
+High Risk Indicators:
+- CPA < 0.5 nautical miles
+- Time to CPA < 10 minutes
+- Vessels on collision course
+- Poor visibility conditions
+- High relative speeds
+
+Medium Risk Indicators:
+- CPA 0.5 - 1.0 nautical miles
+- Time to CPA 10-20 minutes
+- Vessels on near-collision course
+- Moderate visibility conditions
+- Moderate relative speeds
+
+Low Risk Indicators:
+- CPA > 1.0 nautical miles
+- Time to CPA > 20 minutes
+- Vessels passing safely
+- Good visibility conditions
+- Low relative speeds
+
+Safe Passing Distances:
+=======================
+
+Open Sea:
+- Large vessels: 1.0+ nautical miles
+- Medium vessels: 0.5+ nautical miles
+- Small vessels: 0.3+ nautical miles
+
+Restricted Waters:
+- Large vessels: 0.5+ nautical miles
+- Medium vessels: 0.3+ nautical miles
+- Small vessels: 0.2+ nautical miles
+
+Harbor/Port Areas:
+- All vessels: 0.2+ nautical miles
+- Consider local regulations
+- Account for traffic density
+
+Relative Motion Calculations:
+============================
+
+Distance Calculation:
+- Use GPS coordinates or radar data
+- Calculate straight-line distance
+- Consider chart accuracy and errors
+
+Bearing Calculation:
+- True bearing from Vessel A to Vessel B
+- Account for magnetic variation
+- Use compass or GPS bearing
+
+Relative Speed:
+- Difference between vessel speeds
+- Consider course convergence
+- Calculate closing speed
+
+CPA (Closest Point of Approach):
+- Minimum distance vessels will pass
+- Based on current courses and speeds
+- Time to reach CPA point
+
+Time to CPA:
+- Distance to CPA divided by closing speed
+- Critical for decision-making
+- Minimum safe reaction time: 10 minutes
+
+Maneuvering Recommendations:
+============================
+
+Course Changes:
+- Minimum course change: 15 degrees
+- Preferred course change: 30-45 degrees
+- Make changes early and substantial
+- Consider traffic separation schemes
+
+Speed Changes:
+- Reduce speed to increase time for safe passage
+- Consider vessel maneuverability
+- Maintain safe speed for conditions
+- Account for stopping distance
+
+Communication Requirements:
+==========================
+
+VHF Radio:
+- Channel 16 for distress and safety
+- Channel 13 for bridge-to-bridge
+- Channel 10 for port operations
+- Use proper maritime language
+
+Signals:
+- Sound signals for maneuvering
+- Visual signals for identification
+- Emergency signals for distress
+- Follow international standards
+
+Monitoring and Reassessment:
+============================
+
+Continuous Monitoring:
+- Track relative position changes
+- Monitor course and speed changes
+- Assess effectiveness of actions
+- Prepare contingency plans
+
+Reassessment Timing:
+- Every 2-3 minutes in high-risk situations
+- Every 5-10 minutes in medium-risk situations
+- Every 15-20 minutes in low-risk situations
+- Immediately if situation changes
