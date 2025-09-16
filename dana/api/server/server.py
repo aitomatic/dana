@@ -157,8 +157,17 @@ def create_app():
             from fastapi.responses import JSONResponse
 
             return JSONResponse({"error": "Not found"}, status_code=404)
-        # Serve index.html for all other routes
+
         from fastapi.responses import FileResponse, JSONResponse
+
+        # Return image files directly
+        if full_path.endswith(".png"):
+            img_path = os.path.join(static_dir, full_path)
+            if os.path.exists(img_path):
+                return FileResponse(img_path)
+            return JSONResponse({"error": f"Image {full_path} not found"}, status_code=404)
+
+        # Serve index.html for all other routes
 
         index_path = os.path.join(static_dir, "index.html")
         if os.path.exists(index_path):
