@@ -2,6 +2,6 @@
 
 agent Neo
 
-resource_amd_annual_report = get_resource('rag', sources=['AMD-2024-10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['AMD-2024-10K.pdf'])
 
-Neo.reason("AMD's 2024 revenue", resources=[resource_amd_annual_report])
+Neo.reason("AMD's 2024 revenue", resources=[resource_amd_ar])

@@ -2,10 +2,10 @@
 
 from domain_packs.financial_statements_analysis import workflow_assess_cap_intens, workflow_calc_quick_ratio
 
-resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD-2024-10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['../resources/docs/AMD-2024-10K.pdf'])
 
-cap_intens = workflow_assess_cap_intens([resource_amd_annual_report])
-quick_ratio = workflow_calc_quick_ratio([resource_amd_annual_report])
+cap_intens = workflow_assess_cap_intens([resource_amd_ar])
+quick_ratio = workflow_calc_quick_ratio([resource_amd_ar])
 
 print(f'
 CAPITAL INTENSITY

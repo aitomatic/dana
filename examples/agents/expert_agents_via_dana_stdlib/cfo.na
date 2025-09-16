@@ -13,9 +13,9 @@ JeanHu = ExpertAgent(expertise=[financial_statements_analysis])
 
 
 # instantiate resource(s)
-resource_amd_annual_report = get_resource('rag', sources=['../../resources/docs/AMD-2024-10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['../../resources/docs/AMD-2024-10K.pdf'])
 
 
 # use expert agent to solve problems
 def __main__(problem='Is AMD capital-intensive?'):
-    JeanHu.solve(problem, resources=[resource_amd_annual_report])
+    JeanHu.solve(problem, resources=[resource_amd_ar])
