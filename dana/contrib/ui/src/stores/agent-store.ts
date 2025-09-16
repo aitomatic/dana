@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AgentCreate, AgentFilters, AgentRead, AgentState } from '@/types/agent';
 import { apiService } from '@/lib/api';
+import { analytics } from '@/lib/analytics';
 export type { AgentState } from '@/types/agent';
 
 export const useAgentStore = create<AgentState>((set) => ({
@@ -65,6 +66,14 @@ export const useAgentStore = create<AgentState>((set) => ({
 
     try {
       const newAgent = await apiService.createAgent(agent);
+
+      // Track agent creation
+      analytics.trackEvent({
+        action: 'create_agent',
+        category: 'agent_management',
+        label: newAgent.name,
+      });
+
       set((state) => ({
         agents: [...state.agents, newAgent],
         isCreating: false,
@@ -79,7 +88,6 @@ export const useAgentStore = create<AgentState>((set) => ({
       throw error;
     }
   },
-
 
   updateAgent: async (agentId: number, agent: AgentCreate) => {
     set({ isUpdating: true, error: null });
@@ -107,6 +115,14 @@ export const useAgentStore = create<AgentState>((set) => ({
 
     try {
       await apiService.deleteAgent(agentId);
+
+      // Track agent deletion
+      analytics.trackEvent({
+        action: 'delete_agent',
+        category: 'agent_management',
+        label: agentId.toString(),
+      });
+
       set((state) => ({
         agents: state.agents.filter((a) => a.id !== agentId),
         selectedAgent: state.selectedAgent?.id === agentId ? null : state.selectedAgent,
