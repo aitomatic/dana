@@ -208,17 +208,17 @@ class AgentHandler(Loggable):
             from dana.core.builtin_types.agent_system import AgentInstance, AgentType
             from dana.registry import register_agent_type
 
-            # Create a minimal AgentType with a default 'name' field to satisfy struct requirements
+            # Create a minimal AgentType with default 'name' and 'description' fields
             base_type = AgentType(
                 name=node.alias_name,
-                fields={"name": "str"},
-                field_order=["name"],
-                field_defaults={"name": node.alias_name},
+                fields={"name": "str", "description": "str"},
+                field_order=["name", "description"],
+                field_defaults={"name": node.alias_name, "description": f"A Dana agent named {node.alias_name}"},
                 field_comments={},
             )
             register_agent_type(base_type)
 
-            # Create instance with default name
+            # Create instance with default name and description
             instance = AgentInstance(base_type, {})
 
             # Bind to alias
