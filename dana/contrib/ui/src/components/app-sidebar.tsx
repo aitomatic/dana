@@ -11,7 +11,6 @@ import {
   SidebarRail,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/hooks/use-sidebar';
 
 // Import logo as a module

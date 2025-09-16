@@ -190,7 +190,7 @@ const SimpleWorkflowChart: React.FC<{
         {/* Right Column: Examples */}
         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showExamples ? 'ml-6 flex-1 opacity-100' : 'w-0 opacity-0'}`}>
           <div>
-            {completeWorkflowSteps.map((step, index) => (
+            {completeWorkflowSteps.map((_step, index) => (
               <div key={index}>
                 <ExampleBox
                   example={examples[index] || ''}
@@ -221,7 +221,7 @@ export default function AgentsPage() {
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
-  const [creating, setCreating] = useState(false);
+  const [creating] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCreateAgentPopup, setShowCreateAgentPopup] = useState(false);
   const [userInput, setUserInput] = useState('');
@@ -350,43 +350,43 @@ export default function AgentsPage() {
     }
   };
 
-  const handleCreateAgentFromInput = async () => {
-    setCreating(true);
-    try {
-      // Create agent with user input
-      const newAgent = await apiService.createAgent({
-        name: 'Untitled Agent',
-        description: userInput,
-        config: {},
-      });
-      if (newAgent && newAgent.id) {
-        navigate(`/agents/${newAgent.id}`);
-      }
-    } catch (e) {
-      console.error('Error creating agent:', e);
-      // Optionally show error toast
-    } finally {
-      setCreating(false);
-      setShowCreateAgentPopup(false);
-      setUserInput('');
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
+  // const handleCreateAgentFromInput = async () => {
+  //   setCreating(true);
+  //   try {
+  //     // Create agent with user input
+  //     const newAgent = await apiService.createAgent({
+  //       name: 'Untitled Agent',
+  //       description: userInput,
+  //       config: {},
+  //     });
+  //     if (newAgent && newAgent.id) {
+  //       navigate(`/agents/${newAgent.id}`);
+  //     }
+  //   } catch (e) {
+  //     console.error('Error creating agent:', e);
+  //     // Optionally show error toast
+  //   } finally {
+  //     setCreating(false);
+  //     setShowCreateAgentPopup(false);
+  //     setUserInput('');
+  //     setSuggestions([]);
+  //     setShowSuggestions(false);
+  //   }
+  // };
 
-  const handleCancelCreate = () => {
-    setShowCreateAgentPopup(false);
-    setUserInput('');
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setSuggestionError('');
-  };
+  // const handleCancelCreate = () => {
+  //   setShowCreateAgentPopup(false);
+  //   setUserInput('');
+  //   setSuggestions([]);
+  //   setShowSuggestions(false);
+  //   setSuggestionError('');
+  // };
 
-  const handleTryAgain = () => {
-    setShowSuggestions(false);
-    setSuggestions([]);
-    setSuggestionError('');
-  };
+  // const handleTryAgain = () => {
+  //   setShowSuggestions(false);
+  //   setSuggestions([]);
+  //   setSuggestionError('');
+  // };
 
   const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
     setInitiatingAgentKey(suggestion.key);
