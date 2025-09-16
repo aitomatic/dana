@@ -52,7 +52,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
           <Brain className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-gray-600'}`} />
         </div>
       ),
-      'Knowledge Base': (
+      'Resources': (
         <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-full">
           <OpenBook className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-green-600'}`} />
         </div>
