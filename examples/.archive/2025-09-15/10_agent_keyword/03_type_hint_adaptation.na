@@ -1,0 +1,166 @@
+# Dana Agent Keyword - Type Hint Adaptation Example
+# This example demonstrates how agents adapt responses based on type hints
+
+log("🚀 Dana Agent Keyword - Type Hint Adaptation Example")
+log("=" * 50)
+
+# ============================================================================
+# 1. AGENT DEFINITION
+# ============================================================================
+
+log("\n📋 1. Agent Definition")
+log("-" * 30)
+
+# Define an agent with built-in intelligence
+agent DataAnalyst:
+    domain: str = "manufacturing"
+    expertise_level: str = "senior"
+    analysis_type: str = "statistical"
+
+log("✅ Agent type 'DataAnalyst' defined")
+
+# ============================================================================
+# 2. DEFAULT RESPONSE BEHAVIOR
+# ============================================================================
+
+log("\n🔄 2. Default Response Behavior")
+log("-" * 30)
+
+# Create agent instance
+analyst = DataAnalyst(
+    domain="semiconductor",
+    expertise_level="expert",
+    analysis_type="predictive"
+)
+
+log(f"✅ Created analyst: {analyst}")
+
+# Default plan() behavior (returns list)
+log("\n📋 Testing default plan() behavior:")
+default_plan = analyst.plan("Analyze production yield data for Q1 2024")
+
+log(f"📝 Default Plan Result: {default_plan}")
+log(f"📊 Default Plan Type: {type(default_plan)}")
+
+# Default solve() behavior (returns dict)
+log("\n🔍 Testing default solve() behavior:")
+default_solve = analyst.solve("Declining yield trend in etching process")
+
+log(f"💡 Default Solve Result: {default_solve}")
+log(f"📊 Default Solve Type: {type(default_solve)}")
+
+# ============================================================================
+# 3. EXPLICIT TYPE HINTS - LIST RESPONSES
+# ============================================================================
+
+log("\n📋 3. Explicit Type Hints - List Responses")
+log("-" * 30)
+
+# Explicit list type hint for plan()
+log("\n📋 Testing plan() with explicit list type hint:")
+plan_steps: list = analyst.plan("Optimize manufacturing process parameters")
+
+log(f"📝 List Plan Result: {plan_steps}")
+log(f"📊 List Plan Type: {type(plan_steps)}")
+
+# Explicit list type hint for solve()
+log("\n🔍 Testing solve() with explicit list type hint:")
+solve_steps: list = analyst.solve("Root cause analysis for equipment failures")
+
+log(f"💡 List Solve Result: {solve_steps}")
+log(f"📊 List Solve Type: {type(solve_steps)}")
+
+# ============================================================================
+# 4. EXPLICIT TYPE HINTS - DICT RESPONSES
+# ============================================================================
+
+log("\n📊 4. Explicit Type Hints - Dict Responses")
+log("-" * 30)
+
+# Explicit dict type hint for plan()
+log("\n📋 Testing plan() with explicit dict type hint:")
+plan_dict: dict = analyst.plan("Comprehensive data analysis workflow")
+
+log(f"📝 Dict Plan Result: {plan_dict}")
+log(f"📊 Dict Plan Type: {type(plan_dict)}")
+
+# Explicit dict type hint for solve()
+log("\n🔍 Testing solve() with explicit dict type hint:")
+solve_dict: dict = analyst.solve("Statistical process control implementation")
+
+log(f"💡 Dict Solve Result: {solve_dict}")
+log(f"📊 Dict Solve Type: {type(solve_dict)}")
+
+# ============================================================================
+# 5. TYPE HINT DETECTION AND ADAPTATION
+# ============================================================================
+
+log("\n🎯 5. Type Hint Detection and Adaptation")
+log("-" * 30)
+
+# Test different variable assignments to see type adaptation
+log("\n🔄 Testing type adaptation through assignment:")
+
+# Assignment to list variable
+log("\n📋 Assignment to list variable:")
+list_result = analyst.plan("Simple analysis task")
+log(f"📝 List Assignment Result: {list_result}")
+log(f"📊 List Assignment Type: {type(list_result)}")
+
+# Assignment to dict variable
+log("\n📋 Assignment to dict variable:")
+dict_result = analyst.plan("Detailed analysis task")
+log(f"📝 Dict Assignment Result: {dict_result}")
+log(f"📊 Dict Assignment Type: {type(dict_result)}")
+
+# ============================================================================
+# 6. TYPE HINT BEST PRACTICES
+# ============================================================================
+
+log("\n💡 6. Type Hint Best Practices")
+log("-" * 30)
+
+log("""
+✅ Best Practices for Type Hints with Agents:
+
+1. **Explicit Type Hints**: Use when you need specific format
+   ✅ plan_steps: list = agent.plan("task")
+   ✅ analysis: dict = agent.solve("problem")
+
+2. **Consistent Naming**: Use descriptive variable names
+   ✅ plan_steps: list = agent.plan("task")
+   ✅ plan_details: dict = agent.plan("task")
+
+3. **Type Safety**: Leverage Dana's type system
+   ✅ detailed_analysis: dict[str, list[str]] = agent.plan("task")
+
+4. **Adaptive Responses**: Use when format doesn't matter
+   ✅ result = agent.plan("task")  # Agent chooses best format
+""")
+
+# ============================================================================
+# 7. SUMMARY
+# ============================================================================
+
+log("\n🎯 7. Summary")
+log("-" * 30)
+
+log("""
+✅ What we've learned:
+- Default response behavior (list for plan, dict for solve)
+- Explicit type hint adaptation
+- Type hint detection and adaptation
+- Best practices for type hints
+
+🚀 Key Benefits:
+- Flexible response formats based on needs
+- Type safety with Dana's type system
+- Context-aware intelligence
+- Consistent API with adaptive behavior
+
+🚀 Next steps:
+- Learn memory systems (04_memory_systems.na)
+""")
+
+log("\n🎉 Type Hint Adaptation Example Complete!")
+log("Agents now adapt their responses based on your type hints!") 

@@ -1,0 +1,67 @@
+# Dana Multi-Agent Collaboration Demo - Simple Version
+# Basic demonstration of Dana's multi-agent system
+
+print("=== Simple Multi-Agent Demo ===")
+
+# Set up web search resource
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+
+# Create A2A agents
+weather_agent = agent(url="http://localhost:5001")
+trip_agent = agent(url="http://localhost:5002")
+ticket_agent = agent(url="http://localhost:5003")
+
+print("Created A2A agents")
+
+# Import and create module agents (now from same directory)
+import weather_expert
+import travel_planner
+
+weather_module_agent = weather_expert  # call exported functions directly
+travel_module_agent = travel_planner   # call exported functions directly
+
+print("Created module agents")
+
+# Create agent pool with both A2A and module agents
+pool = agent_pool(agents=[weather_agent, trip_agent, ticket_agent, weather_module_agent, travel_module_agent])
+print("Created mixed agent pool")
+
+# Test 1: Basic A2A agent usage
+print("\n=== Test 1: A2A Agent Usage ===")
+weather_result = weather_agent.solve("What's the weather in Tokyo?")
+print(f"A2A Weather: {weather_result}")
+
+# Test 2: Basic module usage (direct function call)
+print("\n=== Test 2: Module Agent Usage ===")
+module_weather_result = weather_module_agent.solve("What's the weather in Paris?")
+print(f"Module Weather: {module_weather_result}")
+
+# Test 3: Agent pool selection (mixed agents)
+print("\n=== Test 3: Mixed Agent Pool Selection ===")
+selected_agent = pool.select_agent("Plan a trip to Paris")
+result = selected_agent.solve("Plan a 3-day trip to Paris")
+print(f"Trip planning: {result}")
+
+# Test 4: Reason function with A2A agents
+print("\n=== Test 4: Reason Function with A2A Agents ===")
+reason_result = reason("What's the weather like in London?", agents=[weather_agent])
+print(f"Reason A2A result: {reason_result}")
+
+# Test 5: Reason function with module modules
+print("\n=== Test 5: Reason Function with Module Agents ===")
+module_reason_result = reason("Plan a weekend trip to Rome", agents=[travel_module_agent])
+print(f"Reason module result: {module_reason_result}")
+
+# Test 6: Reason function with mixed agent pool
+print("\n=== Test 6: Reason Function with Mixed Pool ===")
+pool_result = reason("Plan a trip considering weather", agents=pool)
+print(f"Mixed pool result: {pool_result}")
+
+# Test 7: Resource filtering with module agents
+print("\n=== Test 7: Resource Filtering with Module Agents ===")
+filtered_result = reason("Find weather information online", agents=[weather_module_agent], resources=["websearch"])
+print(f"Filtered module result: {filtered_result}")
+
+print("\n=== Demo Complete ===")
+print("Multi-agent system working successfully!")
+print("Demonstrated both A2A and module agents working together!") 

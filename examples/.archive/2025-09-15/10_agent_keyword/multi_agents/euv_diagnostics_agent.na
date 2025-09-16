@@ -1,0 +1,17 @@
+sensor = use("mcp", url="http://localhost:8880/sensors")
+kb = use("rag", sources=["knowledge_base/euv_diagnostics_agent.json"])
+
+agent EUVAgent:
+    name : str = "EUV Diagnostics Agent"
+    description : str = "Expert agent in EUV Lithography System Diagnostics"
+    resources : list = [sensor, kb]
+
+
+def solve(euv_agent : EUVAgent, problem : str) -> str:
+    print("CALL EUV DIAGNOSTICS AGENT")
+    answer : str = reason(f"Your goal is to solve this problem {problem}. Think step by step until you are sure with the answer.", resources=euv_agent.resources)
+    return answer
+
+agent1 = EUVAgent()
+
+# print(agent1.solve("Do you know about EUV lithography trouble shooting process using your document?"))

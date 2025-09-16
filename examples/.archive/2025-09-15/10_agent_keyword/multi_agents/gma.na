@@ -1,0 +1,35 @@
+from euv_diagnostics_agent import EUVAgent
+from plasma_etch_agent import PlasmaEtchAgent
+from vacuum_system_agent import VacuumSystemAgent
+
+euv_agent = EUVAgent()
+plasma_etch_agent = PlasmaEtchAgent()
+vacuum_system_agent = VacuumSystemAgent()
+
+
+agent GMA:
+    name : str = "General Purpose Agent"
+    description : str = "General purpose agent"
+    agents : list = [euv_agent, plasma_etch_agent, vacuum_system_agent]
+
+
+def solve(gma : GMA, problem : str) -> str:
+    pool = agent_pool(agents=gma.agents)
+    available_agents = pool.get_agent_cards()
+    print(available_agents)
+    steps : list = gma.plan(f"Create a plan to solve the problem: {problem} using these agents: {available_agents}. Maximum 5 steps")
+    # return steps
+    context = []
+    for step in steps:
+        print("="*100)
+        print(step)
+        answer : str = reason(f"Your goal is to solve this problem {problem}. This is the current step : {step}. Execute the step and return everything that can help solve the problem.", agents=gma.agents)
+        print(answer)
+        context.append(answer)
+        print("="*100)
+    final_answer : str = reason(f"Your goal is to solve this problem {problem}. This is the context that can help solve the problem: {context}. Return the final answer with comprehensive details and logical reasoning.", resources=[])
+    return final_answer
+
+
+gma = GMA()
+print(gma.solve("The vacuum system is not working"))

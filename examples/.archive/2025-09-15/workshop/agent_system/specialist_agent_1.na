@@ -1,0 +1,24 @@
+"""Specialist Agent #1."""
+from datetime.py import date
+
+# Agent resources
+weather_info = use("mcp", url="http://127.0.0.1:8000/mcp")
+
+# Agent Card declaration
+
+agent WeatherAgent:
+    name : str = "Weather Reporter/Forecaster"
+    description : str = "Agent providing current & forecast weather information"
+    resources : list = [weather_info]
+
+
+
+# Agent's problem solver
+def solve(weather_agent : WeatherAgent, problem : str):
+    return reason(f"{problem} Be aware that today is {date.today()}", resources=weather_agent.resources)
+
+# # quick test:
+# weather_agent = WeatherAgent()
+# print(weather_agent.solve("How is Tokyo's weather this weekend?"))
+# #OR
+# print(solve(weather_agent, "How is Tokyo's weather this weekend?"))

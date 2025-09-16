@@ -1,0 +1,53 @@
+# Example: Using the set_model function to view and set models in Dana
+# This demonstrates the concise format that only shows available models
+
+log("Starting set_model example")
+
+# === VIEW CURRENT MODEL AND AVAILABLE OPTIONS ===
+log("1. Viewing current model and available options:")
+current_model = set_model()  # No parameters - displays concise information
+log(f"Current model returned: {current_model}")
+
+# === SET MODELS WITH FAULT-TOLERANT NAMES ===
+log("2. Setting models with fault-tolerant names:")
+
+# Using partial names - these will be fuzzy matched
+log("Setting model with 'gpt-4' (partial name)...")
+model = set_model("gpt-4")
+log(f"Model set to: {model}")
+
+# Test the model
+response = reason("What is 2+2?")
+log(f"Response from {model}: {response}")
+
+# Using provider name - matches best model for that provider
+log("Setting model with 'claude' (provider name)...")
+model = set_model("claude")
+log(f"Model set to: {model}")
+
+response = reason("What is the capital of France?")
+log(f"Response from {model}: {response}")
+
+# Using case-insensitive matching
+log("Setting model with 'GEMINI' (case insensitive)...")
+model = set_model("GEMINI")
+log(f"Model set to: {model}")
+
+response = reason("Explain machine learning in one sentence.")
+log(f"Response from {model}: {response}")
+
+# === VIEWING MODELS AGAIN ===
+log("3. Viewing models again to see current selection:")
+current_model = set_model()  # Shows updated current model with checkmark
+
+log("set_model example completed successfully!")
+
+log("Key benefits of the set_model function:")
+log("  • Concise output - only shows models you can actually use")
+log("  • Only displays models with available API keys")
+log("  • Clear indication of current model with checkmark")
+log("  • Simple examples for common usage patterns")
+log("  • Fast and focused - no unnecessary information")
+
+# Note: Only models with API keys in your environment will be shown:
+# OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, DEEPSEEK_API_KEY, etc. 

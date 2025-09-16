@@ -1,0 +1,222 @@
+# Polymorphic Functions - Dana's Alternative to Inheritance
+# =========================================================
+# PURPOSE: Show how polymorphic functions replace inheritance patterns
+# AUDIENCE: Developers familiar with Python inheritance and polymorphism
+# LEARNING: Function overloading, struct composition, polymorphic behavior
+# =========================================================
+
+log("=== Polymorphic Functions Example ===")
+
+# MULTIPLE STRUCT TYPES (Instead of inheritance hierarchy)
+# =======================================================
+# In Python, you might use inheritance:
+# class Shape:
+#     def area(self): pass
+# class Rectangle(Shape):
+#     def area(self): return self.width * self.height
+# class Circle(Shape):  
+#     def area(self): return 3.14159 * self.radius ** 2
+
+# In Dana, define separate structs and polymorphic functions:
+
+struct Rectangle:
+    width: float
+    height: float
+    color: str
+
+struct Circle:
+    radius: float
+    color: str
+
+struct Triangle:
+    base: float
+    height: float
+    color: str
+
+# POLYMORPHIC FUNCTIONS (Same name, different parameter types)
+# ===========================================================
+# Dana supports function overloading based on parameter types
+
+def area(rect: Rectangle) -> float:
+    """Calculate area of a rectangle"""
+    return rect.width * rect.height
+
+def area(circle: Circle) -> float:
+    """Calculate area of a circle"""
+    return 3.14159 * circle.radius * circle.radius
+
+def area(triangle: Triangle) -> float:
+    """Calculate area of a triangle"""
+    return 0.5 * triangle.base * triangle.height
+
+# More polymorphic functions for different operations
+def perimeter(rect: Rectangle) -> float:
+    """Calculate perimeter of rectangle"""
+    return 2 * (rect.width + rect.height)
+
+def perimeter(circle: Circle) -> float:
+    """Calculate perimeter of circle"""
+    return 2 * 3.14159 * circle.radius
+
+def perimeter(triangle: Triangle) -> float:
+    """Calculate perimeter of triangle (assuming equilateral for simplicity)"""
+    # Simplified - in reality you'd need all three sides
+    return 3 * triangle.base
+
+def describe(rect: Rectangle) -> str:
+    """Describe a rectangle"""
+    return f"Rectangle: {rect.width}x{rect.height}, color: {rect.color}"
+
+def describe(circle: Circle) -> str:
+    """Describe a circle"""
+    return f"Circle: radius {circle.radius}, color: {circle.color}"
+
+def describe(triangle: Triangle) -> str:
+    """Describe a triangle"""
+    return f"Triangle: base {triangle.base}, height {triangle.height}, color: {triangle.color}"
+
+# CONSTRUCTOR FUNCTIONS
+# ====================
+def create_rectangle(width: float, height: float, color: str = "blue") -> Rectangle:
+    """Create a rectangle with validation"""
+    if width <= 0 or height <= 0:
+        log(f"Invalid dimensions: {width}x{height}", "error")
+        return Rectangle(width=1.0, height=1.0, color=color)
+    return Rectangle(width=width, height=height, color=color)
+
+def create_circle(radius: float, color: str = "red") -> Circle:
+    """Create a circle with validation"""
+    if radius <= 0:
+        log(f"Invalid radius: {radius}", "error")
+        return Circle(radius=1.0, color=color)
+    return Circle(radius=radius, color=color)
+
+def create_triangle(base: float, height: float, color: str = "green") -> Triangle:
+    """Create a triangle with validation"""
+    if base <= 0 or height <= 0:
+        log(f"Invalid triangle dimensions: base {base}, height {height}", "error")
+        return Triangle(base=1.0, height=1.0, color=color)
+    return Triangle(base=base, height=height, color=color)
+
+# USAGE EXAMPLES
+# ==============
+log("Creating shapes using different struct types...")
+
+# Create different shapes
+rect = create_rectangle(4.0, 6.0, "blue")
+circle = create_circle(3.0, "red")
+triangle = create_triangle(5.0, 8.0, "green")
+
+log(f"Created: {describe(rect)}")
+log(f"Created: {describe(circle)}")
+log(f"Created: {describe(triangle)}")
+
+# Polymorphic function calls - same function name, different behavior
+log("\n=== Polymorphic Area Calculations ===")
+log(f"Rectangle area: {area(rect)}")
+log(f"Circle area: {area(circle)}")
+log(f"Triangle area: {area(triangle)}")
+
+log("\n=== Polymorphic Perimeter Calculations ===")
+log(f"Rectangle perimeter: {perimeter(rect)}")
+log(f"Circle perimeter: {perimeter(circle)}")
+log(f"Triangle perimeter: {perimeter(triangle)}")
+
+# GENERIC FUNCTIONS THAT WORK WITH ANY SHAPE
+# ==========================================
+# You can't directly put different types in a list, but you can process them generically
+
+def compare_areas(shape1_area: float, shape2_area: float, name1: str, name2: str) -> str:
+    """Compare areas of two shapes"""
+    if shape1_area > shape2_area:
+        return f"{name1} is larger than {name2}"
+    elif shape1_area < shape2_area:
+        return f"{name2} is larger than {name1}"
+    else:
+        return f"{name1} and {name2} have equal areas"
+
+# Compare different shapes
+rect_area = area(rect)
+circle_area = area(circle)
+triangle_area = area(triangle)
+
+log("\n=== Shape Comparisons ===")
+log(compare_areas(rect_area, circle_area, "Rectangle", "Circle"))
+log(compare_areas(circle_area, triangle_area, "Circle", "Triangle"))
+log(compare_areas(rect_area, triangle_area, "Rectangle", "Triangle"))
+
+# COMPOSITION PATTERN (Instead of inheritance)
+# ============================================
+# Instead of inheriting from a base class, compose complex behavior
+
+struct ColoredShape:
+    shape_type: str
+    area_value: float
+    perimeter_value: float
+    color: str
+    description: str
+
+def shape_to_colored_shape(rect: Rectangle) -> ColoredShape:
+    """Convert rectangle to generic colored shape"""
+    return ColoredShape(
+        shape_type="Rectangle",
+        area_value=area(rect),
+        perimeter_value=perimeter(rect),
+        color=rect.color,
+        description=describe(rect)
+    )
+
+def shape_to_colored_shape(circle: Circle) -> ColoredShape:
+    """Convert circle to generic colored shape"""
+    return ColoredShape(
+        shape_type="Circle",
+        area_value=area(circle),
+        perimeter_value=perimeter(circle),
+        color=circle.color,
+        description=describe(circle)
+    )
+
+def shape_to_colored_shape(triangle: Triangle) -> ColoredShape:
+    """Convert triangle to generic colored shape"""
+    return ColoredShape(
+        shape_type="Triangle",
+        area_value=area(triangle),
+        perimeter_value=perimeter(triangle),
+        color=triangle.color,
+        description=describe(triangle)
+    )
+
+# Create generic representations
+log("\n=== Composition Pattern ===")
+generic_rect = shape_to_colored_shape(rect)
+generic_circle = shape_to_colored_shape(circle)
+generic_triangle = shape_to_colored_shape(triangle)
+
+log(f"Generic Rectangle: {generic_rect.description}, Area: {generic_rect.area_value}")
+log(f"Generic Circle: {generic_circle.description}, Area: {generic_circle.area_value}")
+log(f"Generic Triangle: {generic_triangle.description}, Area: {generic_triangle.area_value}")
+
+# KEY ADVANTAGES OF DANA'S APPROACH:
+# ==================================
+log("\n=== Dana vs Python Inheritance ===")
+log("✅ Explicit: Function behavior is clear from function name and parameters")
+log("✅ Flexible: Add new functions without modifying existing structs")
+log("✅ Composable: Mix and match functions as needed")
+log("✅ Type-safe: Compiler ensures correct function is called for each type")
+log("✅ No hidden complexity: No inheritance chains or method resolution order")
+log("✅ Testable: Each function can be tested independently")
+
+# COMPARISON:
+# ==========
+# Python Inheritance:
+#   class Rectangle(Shape):
+#       def area(self): return self.width * self.height
+#   rect = Rectangle(4, 6)
+#   area = rect.area()
+#
+# Dana Polymorphic Functions:
+#   def area(rect: Rectangle) -> float: return rect.width * rect.height
+#   rect = Rectangle(width=4, height=6)
+#   area_value = area(rect)
+
+log("=== Polymorphic Functions Example Complete ===")

@@ -1,0 +1,362 @@
+# Structs in Pipelines - Data Transformation Workflows
+# ====================================================
+# PURPOSE: Show how structs work with Dana's pipeline system
+# AUDIENCE: Developers who want to build data processing workflows
+# LEARNING: Pipeline composition, struct transformation, functional programming patterns
+# ====================================================
+
+log("=== Structs in Pipelines Example ===")
+
+# STRUCT DEFINITIONS FOR DATA PIPELINE
+# ====================================
+# Model a data processing workflow: Raw data → Validated → Processed → Formatted
+
+struct RawDataRecord:
+    id: str
+    name: str
+    email: str
+    age_str: str
+    salary_str: str
+    department: str
+    join_date: str
+    status: str
+
+struct ValidatedRecord:
+    id: str
+    name: str
+    email: str
+    age: int
+    salary: float
+    department: str
+    join_date: str
+    status: str
+    is_valid: bool
+    validation_errors: list
+
+struct ProcessedRecord:
+    id: str
+    name: str
+    email: str
+    age: int
+    salary: float
+    department: str
+    join_date: str
+    status: str
+    seniority_level: str
+    annual_bonus: float
+    retirement_eligible: bool
+
+struct FormattedOutput:
+    employee_id: str
+    display_name: str
+    contact_info: str
+    compensation_summary: str
+    career_info: str
+    status_info: str
+
+# PIPELINE FUNCTIONS FOR STRUCT TRANSFORMATION
+# ============================================
+# Each function takes one struct type and returns another
+
+def validate_raw_data(raw: RawDataRecord) -> ValidatedRecord:
+    """Validate and convert raw data to structured format"""
+    errors = []
+    is_valid = true
+    
+    # Convert age
+    age = 0
+    try:
+        age = int(raw.age_str)
+        if age < 16 or age > 80:
+            errors.append("Age out of valid range")
+            is_valid = false
+    except:
+        errors.append("Invalid age format")
+        is_valid = false
+    
+    # Convert salary
+    salary = 0.0
+    try:
+        salary = float(raw.salary_str)
+        if salary < 0:
+            errors.append("Negative salary not allowed")
+            is_valid = false
+    except:
+        errors.append("Invalid salary format")
+        is_valid = false
+    
+    # Validate email
+    if "@" not in raw.email or "." not in raw.email:
+        errors.append("Invalid email format")
+        is_valid = false
+    
+    # Validate required fields
+    if not raw.name or not raw.department:
+        errors.append("Missing required fields")
+        is_valid = false
+    
+    return ValidatedRecord(
+        id=raw.id,
+        name=raw.name,
+        email=raw.email,
+        age=age,
+        salary=salary,
+        department=raw.department,
+        join_date=raw.join_date,
+        status=raw.status,
+        is_valid=is_valid,
+        validation_errors=errors
+    )
+
+def enrich_validated_data(validated: ValidatedRecord) -> ProcessedRecord:
+    """Add calculated fields and business logic"""
+    # Determine seniority level based on age and salary
+    seniority = "Junior"
+    if validated.age >= 30 and validated.salary >= 80000:
+        seniority = "Senior"
+    elif validated.age >= 25 and validated.salary >= 60000:
+        seniority = "Mid-level"
+    
+    # Calculate annual bonus (10% of salary for senior, 5% for others)
+    bonus = validated.salary * 0.05
+    if seniority == "Senior":
+        bonus = validated.salary * 0.10
+    
+    # Check retirement eligibility (age 55+ or 30+ years experience)
+    retirement_eligible = validated.age >= 55
+    
+    return ProcessedRecord(
+        id=validated.id,
+        name=validated.name,
+        email=validated.email,
+        age=validated.age,
+        salary=validated.salary,
+        department=validated.department,
+        join_date=validated.join_date,
+        status=validated.status,
+        seniority_level=seniority,
+        annual_bonus=bonus,
+        retirement_eligible=retirement_eligible
+    )
+
+def format_for_output(processed: ProcessedRecord) -> FormattedOutput:
+    """Format processed data for final output"""
+    # Create formatted display name
+    display_name = f"{processed.name} ({processed.seniority_level})"
+    
+    # Create contact info
+    contact_info = f"{processed.email} | Dept: {processed.department}"
+    
+    # Create compensation summary
+    total_comp = processed.salary + processed.annual_bonus
+    compensation_summary = f"Salary: ${processed.salary:,.0f} + Bonus: ${processed.annual_bonus:,.0f} = Total: ${total_comp:,.0f}"
+    
+    # Create career info
+    retirement_status = "Eligible" if processed.retirement_eligible else "Not Eligible"
+    career_info = f"Level: {processed.seniority_level} | Retirement: {retirement_status}"
+    
+    # Create status info
+    status_info = f"Status: {processed.status} | Join Date: {processed.join_date}"
+    
+    return FormattedOutput(
+        employee_id=processed.id,
+        display_name=display_name,
+        contact_info=contact_info,
+        compensation_summary=compensation_summary,
+        career_info=career_info,
+        status_info=status_info
+    )
+
+# ADDITIONAL PIPELINE FUNCTIONS
+# =============================
+
+def filter_valid_records(validated: ValidatedRecord) -> ValidatedRecord:
+    """Pass through only valid records (for pipeline filtering)"""
+    if not validated.is_valid:
+        log(f"Filtering out invalid record: {validated.id} - {validated.validation_errors}")
+        return null  # This would be filtered out in a real pipeline
+    return validated
+
+def apply_department_bonus(processed: ProcessedRecord) -> ProcessedRecord:
+    """Apply department-specific bonus adjustments"""
+    dept_multipliers = {
+        "Engineering": 1.2,
+        "Sales": 1.15,
+        "Management": 1.25,
+        "Support": 1.0
+    }
+    
+    multiplier = dept_multipliers.get(processed.department, 1.0)
+    processed.annual_bonus = processed.annual_bonus * multiplier
+    
+    return processed
+
+def add_performance_rating(processed: ProcessedRecord) -> ProcessedRecord:
+    """Add simulated performance rating based on seniority and department"""
+    # Simplified performance calculation
+    base_rating = 3.0  # out of 5
+    
+    if processed.seniority_level == "Senior":
+        base_rating = 4.0
+    elif processed.seniority_level == "Mid-level":
+        base_rating = 3.5
+    
+    # Department bonus
+    if processed.department == "Engineering":
+        base_rating = base_rating + 0.2
+    elif processed.department == "Sales":
+        base_rating = base_rating + 0.1
+    
+    # Cap at 5.0
+    if base_rating > 5.0:
+        base_rating = 5.0
+    
+    # Note: We can't easily add new fields to existing structs in Dana
+    # In a real system, you'd define a new struct type
+    log(f"Performance rating for {processed.name}: {base_rating}/5.0")
+    
+    return processed
+
+# PIPELINE COMPOSITION EXAMPLES
+# =============================
+
+# Define reusable pipeline components
+basic_processing_pipeline = validate_raw_data | enrich_validated_data | format_for_output
+enhanced_processing_pipeline = validate_raw_data | filter_valid_records | enrich_validated_data | apply_department_bonus | add_performance_rating | format_for_output
+
+# Alternative: Individual step composition
+def create_validation_pipeline():
+    return validate_raw_data | filter_valid_records
+
+def create_enrichment_pipeline():
+    return enrich_validated_data | apply_department_bonus | add_performance_rating
+
+def create_formatting_pipeline():
+    return format_for_output
+
+# USAGE EXAMPLES
+# ==============
+log("Processing employee data through pipelines...")
+
+# Sample raw data
+raw_employee_1 = RawDataRecord(
+    id="EMP001",
+    name="Alice Johnson",
+    email="alice@company.com",
+    age_str="28",
+    salary_str="95000",
+    department="Engineering",
+    join_date="2020-01-15",
+    status="Active"
+)
+
+raw_employee_2 = RawDataRecord(
+    id="EMP002",
+    name="Bob Smith",
+    email="bob@company.com",
+    age_str="35",
+    salary_str="110000",
+    department="Management",
+    join_date="2018-03-10",
+    status="Active"
+)
+
+raw_employee_3 = RawDataRecord(
+    id="EMP003",
+    name="Charlie Brown",
+    email="invalid-email",  # Invalid email to demonstrate validation
+    age_str="abc",          # Invalid age to demonstrate validation
+    salary_str="75000",
+    department="Design",
+    join_date="2021-06-20",
+    status="Active"
+)
+
+# Process through basic pipeline
+log("\n=== Basic Pipeline Processing ===")
+formatted_alice = raw_employee_1 | basic_processing_pipeline
+formatted_bob = raw_employee_2 | basic_processing_pipeline
+
+log(f"Alice: {formatted_alice.display_name}")
+log(f"  {formatted_alice.contact_info}")
+log(f"  {formatted_alice.compensation_summary}")
+log(f"  {formatted_alice.career_info}")
+
+log(f"\nBob: {formatted_bob.display_name}")
+log(f"  {formatted_bob.contact_info}")
+log(f"  {formatted_bob.compensation_summary}")
+log(f"  {formatted_bob.career_info}")
+
+# Demonstrate validation failure
+log("\n=== Validation Example ===")
+validated_charlie = raw_employee_3 | validate_raw_data
+log(f"Charlie validation result: Valid = {validated_charlie.is_valid}")
+log(f"Charlie validation errors: {validated_charlie.validation_errors}")
+
+# Process multiple records (simulated batch processing)
+log("\n=== Batch Processing Simulation ===")
+raw_employees = [raw_employee_1, raw_employee_2]
+
+for raw_emp in raw_employees:
+    formatted = raw_emp | enhanced_processing_pipeline
+    if formatted != null:  # In case of filtering
+        log(f"Processed: {formatted.display_name} - {formatted.compensation_summary}")
+
+# PIPELINE COMPOSITION PATTERNS
+# =============================
+log("\n=== Pipeline Composition Patterns ===")
+
+# Pattern 1: Linear pipeline
+result1 = raw_employee_1 | validate_raw_data | enrich_validated_data | format_for_output
+log(f"Linear pipeline result: {result1.display_name}")
+
+# Pattern 2: Reusable sub-pipelines
+validation_pipe = create_validation_pipeline()
+enrichment_pipe = create_enrichment_pipeline()
+formatting_pipe = create_formatting_pipeline()
+
+# Chain sub-pipelines
+result2 = raw_employee_2 | validation_pipe | enrichment_pipe | formatting_pipe
+log(f"Composed sub-pipeline result: {result2.display_name}")
+
+# Pattern 3: Conditional processing
+def conditional_processing_pipeline(raw: RawDataRecord) -> FormattedOutput:
+    """Example of conditional pipeline logic"""
+    validated = raw | validate_raw_data
+    
+    if validated.is_valid:
+        processed = validated | enrich_validated_data | apply_department_bonus
+        return processed | format_for_output
+    else:
+        # Create error output
+        return FormattedOutput(
+            employee_id=raw.id,
+            display_name=f"INVALID: {raw.name}",
+            contact_info="Contact info unavailable",
+            compensation_summary="Compensation calculation failed",
+            career_info="Career info unavailable",
+            status_info=f"Validation failed: {validated.validation_errors}"
+        )
+
+result3 = raw_employee_3 | conditional_processing_pipeline
+log(f"Conditional pipeline result: {result3.display_name}")
+log(f"Status: {result3.status_info}")
+
+# KEY ADVANTAGES OF STRUCT PIPELINES:
+# ==================================
+log("\n=== Advantages of Struct Pipelines ===")
+log("✅ Type Safety: Each pipeline stage has defined input/output types")
+log("✅ Composability: Build complex workflows from simple functions")
+log("✅ Readability: Data flow is explicit and easy to follow")
+log("✅ Reusability: Pipeline components can be mixed and matched")
+log("✅ Testability: Each pipeline stage can be tested independently")
+log("✅ Modularity: Easy to add, remove, or modify pipeline stages")
+
+# COMPARISON WITH TRADITIONAL APPROACHES:
+# ======================================
+log("\n=== Pipeline vs Traditional Processing ===")
+log("Traditional: validate(enrich(format(raw_data)))")
+log("Dana Pipeline: raw_data | validate | enrich | format")
+log("✅ Dana pipelines are more readable and composable")
+
+log("=== Structs in Pipelines Example Complete ===")

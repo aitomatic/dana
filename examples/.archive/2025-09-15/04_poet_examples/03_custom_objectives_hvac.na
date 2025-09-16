@@ -1,0 +1,157 @@
+# Custom Objectives in POET - HVAC Example
+# =======================================
+# INDUSTRY: Building Management, Smart Buildings
+# USE CASE: User-Configurable Multi-Objective HVAC Control
+# POET FEATURES: Custom objective functions, constraint specification, trade-off configuration
+# LEARNING: How to specify formal learning objectives in Dana code
+# =======================================
+
+log("🎯 Custom POET Objectives Example - HVAC Multi-Objective Control")
+
+# USER-SPECIFIABLE OBJECTIVES IN DANA CODE
+# =========================================
+# Users can now specify formal learning objectives directly in Dana!
+
+# Example 1: Energy-Focused HVAC (Data Center)
+# ===========================================
+@poet(
+    domain="building_management",
+    enable_training=true,
+    learning_algorithm="statistical",
+    # USER-SPECIFIED OBJECTIVES
+    objectives={
+        "energy_priority": 0.9,           # 90% energy, 10% comfort
+        "optimization_method": "constraint_satisfaction",
+        "max_operating_cost": 75.0,       # Max $75/hour
+        "min_comfort": 0.6,               # 60% minimum comfort (relaxed for data center)
+        "critical_safety": 0.98           # 98% safety minimum
+    }
+)
+def datacenter_hvac_control(zone_id: str, target_temp: float, current_temp: float, server_load: float) -> dict:
+    """
+    Data center HVAC - prioritize energy efficiency over comfort.
+    
+    POET automatically applies user-specified objectives:
+    - 90% weight on energy efficiency
+    - Relaxed comfort requirements (60% minimum)
+    - Strict cost controls ($75/hour maximum)
+    - Critical safety constraints (98% minimum)
+    """
+    
+    # Simple core logic - POET handles complex optimization
+    if server_load > 0.8:
+        # High server load - prioritize cooling
+        return {"action": "cool", "intensity": "high", "target": target_temp - 2}
+    elif abs(target_temp - current_temp) > 3:
+        # Large temperature difference
+        return {"action": "adjust", "intensity": "normal", "target": target_temp}
+    else:
+        # Maintain current temperature
+        return {"action": "maintain", "intensity": "low", "target": current_temp}
+
+# Example 2: Comfort-Focused HVAC (Hospital)
+# ==========================================
+@poet(
+    domain="building_management", 
+    enable_training=true,
+    learning_algorithm="statistical",
+    # USER-SPECIFIED OBJECTIVES  
+    objectives={
+        "energy_priority": 0.2,           # 20% energy, 80% comfort
+        "optimization_method": "constraint_satisfaction",
+        "max_operating_cost": 150.0,      # Higher cost allowed for comfort
+        "min_comfort": 0.85,              # 85% minimum comfort (strict for hospital)
+        "critical_safety": 0.99,          # 99% safety minimum (medical environment)
+        "max_temp_variation": 1.0         # Max 1°F temperature variation
+    }
+)
+def hospital_hvac_control(zone_id: str, target_temp: float, current_temp: float, patient_acuity: str) -> dict:
+    """
+    Hospital HVAC - prioritize patient comfort over energy savings.
+    
+    POET automatically applies user-specified objectives:
+    - 80% weight on comfort optimization
+    - Higher cost tolerance ($150/hour)
+    - Strict comfort requirements (85% minimum)
+    - Critical safety for medical environment (99%)
+    - Tight temperature control (±1°F variation)
+    """
+    
+    # Core logic adjusted for patient needs
+    if patient_acuity == "critical":
+        # Critical patients need precise temperature
+        return {"action": "precise_control", "intensity": "high", "target": target_temp, "tolerance": 0.5}
+    elif abs(target_temp - current_temp) > 1:
+        # Quick response for patient comfort
+        return {"action": "adjust", "intensity": "high", "target": target_temp}
+    else:
+        # Maintain precise comfort
+        return {"action": "maintain", "intensity": "normal", "target": target_temp}
+
+# Example 3: Balanced HVAC (Office Building)
+# ==========================================
+@poet(
+    domain="building_management",
+    enable_training=true,
+    learning_algorithm="statistical", 
+    # USER-SPECIFIED OBJECTIVES
+    objectives={
+        "energy_priority": 0.6,           # 60% energy, 40% comfort (balanced)
+        "optimization_method": "constraint_satisfaction",
+        "max_operating_cost": 100.0,      # Standard cost limit
+        "min_comfort": 0.75,              # 75% minimum comfort (standard office)
+        "critical_safety": 0.95,          # 95% safety minimum
+        "occupancy_adaptation": true      # Adapt based on occupancy patterns
+    }
+)
+def office_hvac_control(zone_id: str, target_temp: float, current_temp: float, occupancy: int) -> dict:
+    """
+    Office HVAC - balanced energy and comfort optimization.
+    
+    POET automatically applies user-specified objectives:
+    - Balanced 60/40 energy/comfort trade-off
+    - Standard cost controls ($100/hour)
+    - Reasonable comfort (75% minimum)
+    - Standard safety requirements (95%)
+    - Smart occupancy-based adaptation
+    """
+    
+    if occupancy == 0:
+        # Unoccupied - save energy
+        return {"action": "setback", "intensity": "low", "target": target_temp - 3}
+    elif occupancy > 20:
+        # High occupancy - prioritize comfort 
+        return {"action": "comfort_mode", "intensity": "high", "target": target_temp}
+    else:
+        # Normal operation
+        return {"action": "standard", "intensity": "normal", "target": target_temp}
+
+# Testing Different Objective Configurations
+# ==========================================
+
+# Test data center configuration (energy-focused)
+log("🔋 Testing Data Center HVAC (Energy-Focused)")
+datacenter_result = datacenter_hvac_control("DC_ZONE_1", 68.0, 72.0, 0.9)
+log(f"Data Center Result: {datacenter_result}")
+
+# Test hospital configuration (comfort-focused) 
+log("🏥 Testing Hospital HVAC (Comfort-Focused)")
+hospital_result = hospital_hvac_control("ICU_ZONE_A", 72.0, 74.0, "critical")
+log(f"Hospital Result: {hospital_result}")
+
+# Test office configuration (balanced)
+log("🏢 Testing Office HVAC (Balanced)")
+office_result = office_hvac_control("OFFICE_3A", 72.0, 70.0, 15)
+log(f"Office Result: {office_result}")
+
+log("✅ Custom Objectives Example Complete!")
+log("")
+log("🎯 Key Features Demonstrated:")
+log("  ✓ User-specifiable objective priorities in Dana code")
+log("  ✓ Domain-specific optimization configuration")
+log("  ✓ Constraint specification and enforcement")
+log("  ✓ Multi-objective trade-off customization")
+log("  ✓ Formal learning theory integration")
+log("")
+log("💡 Users can now specify exactly how POET should optimize their functions!")
+log("   No more black-box learning - full control over objectives and constraints.") 

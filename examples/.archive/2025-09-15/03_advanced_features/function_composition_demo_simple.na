@@ -1,0 +1,66 @@
+# Simple Function Composition Demo in Dana
+
+print("Dana Pipe Operator Demo")
+
+
+def add_ten(x):
+    return x + 10
+
+
+def double(x):
+    return x * 2
+
+
+def triple(x):
+    return x * 3
+
+
+def add_hundred(x):
+    return x + 100
+
+
+print("Testing pipe operations step by step:")
+
+print("Step 1: 5 | add_ten")
+step1 = 5 | add_ten
+print(step1)
+
+print("Step 2: step1 | double")
+step2 = step1 | double
+print(step2)
+
+print("Step 3: step2 | triple")
+step3 = step2 | triple
+print(step3)
+
+print("\nTesting shorter chains:")
+
+print("Two-function chain: 7 | add_ten | double")
+result1 = 7 | add_ten | double
+print(result1)
+
+print("Single operation: 10 | add_hundred")
+result2 = 10 | add_hundred
+print(result2)
+
+print("\nTesting data pipeline with complex operations:")
+
+
+def square(x):
+    return x * x
+
+
+def halve(x):
+    return x / 2
+
+
+print("Complex pipeline: 8 | square | halve | add_ten")
+complex_result = 8 | square | halve | add_ten
+print(complex_result)
+
+print("\nDemo complete! Pipe operator working for data pipelines.")
+print("Key features demonstrated:")
+print("• Data flowing through pipe operations")
+print("• Left-associative evaluation")
+print("• Multiple mathematical transformations")
+print("• Step-by-step and chained operations")

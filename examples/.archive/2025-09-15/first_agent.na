@@ -1,0 +1,6 @@
+# Minimal first agent for v0.5 Quickstart
+agent FirstAgent:
+    model = "local"
+    # Replace with a simple behavior once validated against v0.5 artifacts
+
+
