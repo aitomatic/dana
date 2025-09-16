@@ -1,6 +1,0 @@
-sse_mcp = use("mcp", url="http://localhost:8080/sse")
-http_mcp = use("mcp", url="http://localhost:8080/sse")
-
-print(sse_mcp.list_openai_functions())
-
-print(http_mcp.list_openai_functions())

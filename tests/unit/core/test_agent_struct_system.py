@@ -32,7 +32,7 @@ class TestAgentStructType(unittest.TestCase):
         self.assertEqual(agent_type.name, "TestAgent")
         # AgentType automatically adds a 'state' field, so we expect it in addition to the provided fields
         expected_fields = {"state": "str", **fields}
-        expected_field_order = ["state"] + field_order
+        expected_field_order = ["description", "state"] + field_order
         expected_defaults = {"state": "CREATED", **field_defaults}
 
         self.assertEqual(agent_type.fields, expected_fields)

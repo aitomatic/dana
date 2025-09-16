@@ -8,7 +8,7 @@ agent_blueprint Sofia:
     name: str = "Sofia"
     description: str = "Agent with divide and conquer strategy to solve complex problems"
 
-def solve(self : Sofia, query: str) -> str:
+def (self : Sofia) solve(query: str) -> str:
     steps : list = reason(PLAN_PROMPT.format(problem=query), resources=[knowledge], temperature=0.1)
     context = ""
     for step in steps:
@@ -26,3 +26,6 @@ def solve(self : Sofia, query: str) -> str:
     return reason(final_prompt, temperature=0.1)
 
 this_agent = Sofia()
+
+def _main_(query: str) -> str:
+    return this_agent.solve(query)

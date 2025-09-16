@@ -15,11 +15,8 @@ from typing import BinaryIO
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
 from dana.common.sys_resource.rag.rag_resource import RAGResource
-from sqlalchemy.orm.attributes import flag_modified
 
 logger = logging.getLogger(__name__)
-
-
 
 
 class DocumentService:
@@ -469,35 +466,33 @@ class DocumentService:
     async def _cleanup_agent_associations(self, document_id: int, db_session) -> list[int]:
         """
         Remove document association from all agents.
-        
+
         Args:
             document_id: The document ID to remove from associations
             db_session: Database session
-            
+
         Returns:
             List of agent IDs that were affected
         """
         try:
             from dana.api.core.models import Agent
             from sqlalchemy.orm.attributes import flag_modified
-            
+
             affected_agents = []
             agents = db_session.query(Agent).all()
-            
+
             for agent in agents:
                 if agent.config and "associated_documents" in agent.config:
                     associated_docs = agent.config["associated_documents"]
                     if document_id in associated_docs:
                         # Remove from agent's associated documents
-                        agent.config["associated_documents"] = [
-                            doc_id for doc_id in associated_docs if doc_id != document_id
-                        ]
+                        agent.config["associated_documents"] = [doc_id for doc_id in associated_docs if doc_id != document_id]
                         flag_modified(agent, "config")
                         affected_agents.append(agent.id)
                         logger.info(f"Removed document {document_id} from agent {agent.id} associations")
-            
+
             return affected_agents
-            
+
         except Exception as e:
             logger.error(f"Error cleaning up agent associations for document {document_id}: {e}")
             raise
@@ -505,7 +500,7 @@ class DocumentService:
     async def _cleanup_agent_folder_files(self, document, affected_agent_ids: list[int], db_session):
         """
         Clean up files that were copied to agent folders.
-        
+
         Args:
             document: The document object being deleted
             affected_agent_ids: List of agent IDs that had this document associated
@@ -514,36 +509,33 @@ class DocumentService:
         try:
             from dana.api.core.models import Agent
             from dana.api.routers.agents import clear_agent_cache
-            
+
             for agent_id in affected_agent_ids:
                 agent = db_session.query(Agent).filter(Agent.id == agent_id).first()
                 if not agent or not agent.config:
                     continue
-                
+
                 agent_folder_path = agent.config.get("folder_path")
                 if not agent_folder_path:
                     continue
-                
+
                 # Remove the copied document file from agent folder
-                document_fp = self.get_agent_associated_fp(
-                    agent_folder_path, 
-                    document.original_filename
-                )
-                
+                document_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+
                 if os.path.exists(document_fp):
                     try:
                         os.remove(document_fp)
                         logger.info(f"Removed document from agent folder: {document_fp}")
                     except Exception as file_error:
                         logger.warning(f"Could not remove document from agent folder {document_fp}: {file_error}")
-                
+
                 # Clear RAG cache for this agent
                 try:
                     clear_agent_cache(agent_folder_path)
                     logger.info(f"Cleared RAG cache for agent {agent_id}")
                 except Exception as cache_error:
                     logger.warning(f"Could not clear RAG cache for agent {agent_id}: {cache_error}")
-                    
+
         except Exception as e:
             logger.error(f"Error cleaning up agent folder files for document {document.id}: {e}")
             raise
@@ -551,39 +543,37 @@ class DocumentService:
     async def disassociate_document_from_all_agents(self, document_id: int, db_session) -> list[int]:
         """
         Remove document association from all agents without deleting the document.
-        
+
         Args:
             document_id: The document ID to disassociate
             db_session: Database session
-            
+
         Returns:
             List of agent IDs that were affected
         """
         try:
             from dana.api.core.models import Agent
             from sqlalchemy.orm.attributes import flag_modified
-            
+
             affected_agents = []
             agents = db_session.query(Agent).all()
-            
+
             for agent in agents:
                 if agent.config and "associated_documents" in agent.config:
                     associated_docs = agent.config["associated_documents"]
                     if document_id in associated_docs:
                         # Remove from agent's associated documents
-                        agent.config["associated_documents"] = [
-                            doc_id for doc_id in associated_docs if doc_id != document_id
-                        ]
+                        agent.config["associated_documents"] = [doc_id for doc_id in associated_docs if doc_id != document_id]
                         flag_modified(agent, "config")
                         affected_agents.append(agent.id)
                         logger.info(f"Disassociated document {document_id} from agent {agent.id}")
-            
+
             if affected_agents:
                 db_session.commit()
                 logger.info(f"Disassociated document {document_id} from {len(affected_agents)} agents")
-            
+
             return affected_agents
-            
+
         except Exception as e:
             logger.error(f"Error disassociating document {document_id} from all agents: {e}")
             raise
@@ -591,28 +581,28 @@ class DocumentService:
     async def get_agents_with_document(self, document_id: int, db_session) -> list[int]:
         """
         Get all agent IDs that have a specific document associated.
-        
+
         Args:
             document_id: The document ID to check
             db_session: Database session
-            
+
         Returns:
             List of agent IDs that have this document associated
         """
         try:
             from dana.api.core.models import Agent
-            
+
             agents_with_document = []
             agents = db_session.query(Agent).all()
-            
+
             for agent in agents:
                 if agent.config and "associated_documents" in agent.config:
                     associated_docs = agent.config["associated_documents"]
                     if document_id in associated_docs:
                         agents_with_document.append(agent.id)
-            
+
             return agents_with_document
-            
+
         except Exception as e:
             logger.error(f"Error getting agents with document {document_id}: {e}")
             raise
@@ -626,29 +616,32 @@ class DocumentService:
             documents = db_session.query(Document).filter(Document.id.in_(document_ids)).all()
             existing_ids = {doc.id for doc in documents}
             missing_ids = set(document_ids) - existing_ids
-            
+
             if missing_ids:
                 raise ValueError(f"Documents not found: {missing_ids}")
-            
+
             new_destination_fps = []
             for document in documents:
                 document.agent_id = agent_id
                 extraction_files = document.extraction_files
-                final_md = ""
-                for extraction_file in extraction_files:
-                    extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
-                    with open(extract_fp, "r") as f:
-                        extract_data = json.load(f)
-                    for extraction_doc in extract_data["documents"]:
-                        final_md += extraction_doc["text"]
-                        final_md += "\n\n"
-                final_md = final_md.strip()
-                if final_md:
-                    destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
-                    with open(destination_fp, "w") as f:
-                        f.write(final_md)
-                    new_destination_fps.append(destination_fp)
-                    
+                if extraction_files:
+                    final_md = ""
+                    for extraction_file in extraction_files:
+                        extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
+                        with open(extract_fp) as f:
+                            extract_data = json.load(f)
+                        for extraction_doc in extract_data["documents"]:
+                            final_md += extraction_doc["text"]
+                            final_md += "\n\n"
+                    final_md = final_md.strip()
+                    if final_md:
+                        destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                        with open(destination_fp, "w") as f:
+                            f.write(final_md)
+                        new_destination_fps.append(destination_fp)
+                else:
+                    logger.warning(f"Document {document.id} {document.original_filename} failed to associated with agent {agent_id}")
+
             if len(new_destination_fps) > 0:
                 db_session.commit()
 

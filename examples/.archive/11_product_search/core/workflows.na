@@ -1,6 +1,0 @@
-from core.methods import enhance_query, search_products, rank_results
-
-def product_search_workflow(query, product_data):
-    enhance_query_results = enhance_query(query)
-    matched_products = search_products(enhance_query_results, product_data)
-    return rank_results(query, matched_products)

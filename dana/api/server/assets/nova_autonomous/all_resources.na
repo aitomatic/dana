@@ -12,7 +12,7 @@ for comprehensive answers that combine user-specific context with domain experti
 
 # Primary document source for user-uploaded files
 docs = use("rag", sources=["./docs"], 
-    description="User uploaded documents and files for analysis. Use medium `num_results`: 5 < `num_results` < 12")
+    description="User uploaded documents and files for analysis. Use medium `num_results`: 5 < `num_results` < 12", reranking=True)
 
 # Knowledge base for agent domain expertise  
 knowledge = use("rag", sources=["./knows"], 

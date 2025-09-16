@@ -7,12 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
-
+from datetime import datetime
 from dana.api.core.database import get_db
 from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRequest
 from dana.api.services.document_service import get_document_service, DocumentService
 from dana.api.services.extraction_service import get_extraction_service, ExtractionService
 from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
+from dana.api.routers.extract_documents import deep_extract
+from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,24 @@ async def upload_document(
         if build_index and agent_id:
             logger.info(f"RAG index building started for agent {agent_id}")
 
+        result: ExtractionResponse = await deep_extract(
+            DeepExtractionRequest(document_id=document.id, use_deep_extraction=False, config={}), db=db
+        )
+        pages = result.file_object.pages
+        await save_extraction_data(
+            ExtractionDataRequest(
+                original_filename=document.original_filename,
+                source_document_id=document.id,
+                extraction_results={
+                    "original_filename": document.original_filename,
+                    "extraction_date": datetime.now().isoformat(),  # Should be "2025-09-16T10:41:01.407Z"
+                    "total_pages": result.file_object.total_pages,
+                    "documents": [{"text": page.page_content, "page_number": page.page_number} for page in pages],
+                },
+            ),
+            db=db,
+            extraction_service=get_extraction_service(),
+        )
         return document
 
     except Exception as e:
@@ -102,7 +122,9 @@ async def list_documents(
         documents = await document_service.list_documents(topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db)
         for document in documents:
             if not agent_id:
-                document.agent_id = None # TODO : Temporary remove agent_id for now, FE use agent_id to filter documents that belong to an agent
+                document.agent_id = (
+                    None  # TODO : Temporary remove agent_id for now, FE use agent_id to filter documents that belong to an agent
+                )
             else:
                 document.agent_id = agent_id
         return documents
