@@ -28,6 +28,7 @@ class RAGResource(BaseSysResource):
         debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,
+        num_results: int = 15,
     ):
         super().__init__(name, description)
         self.post_init(
@@ -41,6 +42,7 @@ class RAGResource(BaseSysResource):
             reranking=reranking,
             initial_multiplier=initial_multiplier,
         )
+        self.num_results = num_results
 
     def post_init(
         self,
@@ -135,18 +137,29 @@ class RAGResource(BaseSysResource):
             Misc.safe_asyncio_run(self.initialize)
         return self._filenames
 
+    @property
+    def is_available(self) -> bool:
+        if not self._is_ready:
+            Misc.safe_asyncio_run(self.initialize)
+        return any([fn != "system" for fn in self.filenames])
+
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""
         await super().initialize()
         self._orchestrator._preprocess(self.sources, self.force_reload)
         self._is_ready = True
-        self._filenames = self._orchestrator._retriever.get_all_filenames()
+        self._filenames = [] if self._orchestrator._retriever is None else self._orchestrator._retriever.get_all_filenames()
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str:
         """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
+
+        if not self.is_available:
+            return "No relevant documents found"
+
+        num_results = min(num_results, self.num_results)
 
         if self.debug:
             print(f"Querying {num_results} results from {self.name} RAG with query: {query}")
@@ -301,3 +314,9 @@ Response (JSON array only):"""
             if self.debug:
                 print(f"Failed to parse reranking response: {e}")
             return []
+
+
+if __name__ == "__main__":
+    rag = RAGResource(sources=["agents/agent_1_nova/knows"])
+    print(rag.is_available)
+    print(rag.filenames)

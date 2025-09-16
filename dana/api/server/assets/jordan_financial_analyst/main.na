@@ -9,10 +9,10 @@ agent_blueprint Jordan:
     description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
     max_iteration: int = 10
 
-def solve(self : Jordan, query: str) -> str:
+def (self : Jordan) solve(query: str) -> str:
     complexity = classify_complexity(query)
     # print(complexity)
-    if complexity["level"] == "SIMPLE":
+    if complexity["level"] != "COMPLEX":
         data = State(original_problem=query, current_step=query, steps=[])
         data = final_workflow(data)
     else:

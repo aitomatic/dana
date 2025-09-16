@@ -1,6 +1,0 @@
-from resources import RagResource, query, initialize
-
-rag = RagResource(sources=["/Users/lam/Desktop/repos/opendxa/docs"])
-rag.initialize()
-
-print(rag.query("What is Dana"))
