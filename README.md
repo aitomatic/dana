@@ -24,7 +24,7 @@ Dana gives you the missing foundation:
 
 ---
 
-## Install  
+## Install and launch Dana Agent Studio 
 
 ```bash
 pip install dana
