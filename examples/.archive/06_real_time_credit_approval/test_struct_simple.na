@@ -1,4 +1,0 @@
-struct TestStruct:
-    name: str = "Test"
-
-print("Struct created successfully")
