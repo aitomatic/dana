@@ -1,1 +1,0 @@
-rag_resource = use("rag", sources=["../../../docs/for-contributors", "../../../docs/for-engineers"])
