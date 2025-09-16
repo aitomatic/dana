@@ -1,8 +1,24 @@
 import importlib
 import os
+import sys
 from pathlib import Path
 
+# Add the project root to the path to avoid circular imports
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 from dana import py2na
+
+# Import Dana modules after setting up the path
+try:
+    from dana.core.lang.sandbox_context import SandboxContext
+
+    # Create a sandbox context
+    context = SandboxContext()
+except ImportError as e:
+    print(f"❌ Failed to import Dana modules: {e}")
+    print("Make sure you're running this from the Dana project root with the correct environment")
+    sys.exit(1)
 
 
 def validate_agent_module(na_file_path: str, na_module):
@@ -14,32 +30,43 @@ def validate_agent_module(na_file_path: str, na_module):
         na_module: The imported Dana module to validate
 
     Returns:
-        tuple: (agent_name, agent_description, solve_function) if valid, raises exception if invalid
+        tuple: (agent_name, agent_instance) if valid, raises exception if invalid
     """
     try:
-        # Validate required components
-        if not hasattr(na_module, "agent_name"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_name' variable")
+        # Find all agent instances in the module
+        agents = []
+        for attr in dir(na_module):
+            attr_value = getattr(na_module, attr)
 
-        if not hasattr(na_module, "agent_description"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_description' variable")
+            # Skip built-in agents and system attributes
+            if attr.startswith("_") or attr in ["BasicAgent", "DanaAgent"]:
+                continue
 
-        if not hasattr(na_module, "solve"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'solve(query: str) -> str' function")
+            # Check if it's an agent instance (has name, description, and solve method)
+            if (
+                hasattr(attr_value, "name")
+                and hasattr(attr_value, "description")
+                and hasattr(attr_value, "solve")
+                and callable(getattr(attr_value, "solve", None))
+            ):
+                agents.append(attr_value)
 
-        if not callable(na_module.solve):
-            raise ValueError(f"Agent file {na_file_path} 'solve' is not a callable function")
+        if not agents:
+            raise ValueError(f"No valid agents found in {na_file_path}")
 
-        agent_name = str(na_module.agent_name)
-        agent_description = str(na_module.agent_description)
-        solve_function = na_module.solve
+        if len(agents) > 1:
+            raise ValueError(f"Multiple agents found in {na_file_path}, only one agent is allowed")
+
+        # Use the first agent found
+        agent = agents[0]
+        agent_name = str(agent.name)
 
         print("✅ Agent validation successful:")
         print(f"   Name: {agent_name}")
-        print(f"   Description: {agent_description}")
-        print("   Entry function: solve")
+        print(f"   Description: {agent.description}")
+        print("   Available methods: solve, reason, chat")
 
-        return agent_name, agent_description, solve_function
+        return agent_name, agent
 
     except Exception as e:
         raise ValueError(f"Agent validation failed for {na_file_path}: {e}")
@@ -58,22 +85,46 @@ def create_mcp_server_for_file(na_file_path):
         module_name = Path(na_file_path).stem
         na_module = importlib.import_module(module_name)
 
-        # Validate and get agent components
-        agent_name, agent_description, solve_function = validate_agent_module(na_file_path, na_module)
+        # Validate and get agent
+        agent_name, agent_instance = validate_agent_module(na_file_path, na_module)
 
         # Create MCP server with agent name
         mcp = FastMCP(name=agent_name, stateless_http=True)
 
-        @mcp.tool(description=f"{agent_description}")
+        @mcp.tool(description="Execute the agent's solve function with the user query")
         def solve(query: str) -> str:
             """Execute the agent's solve function with the user query."""
             try:
-                result = solve_function(query)
+                result = agent_instance.solve(problem=query, sandbox_context=context)
+                print(f"🔍 Solve query: {query}")
+                print(f"🔍 Solve result: {result}")
                 return str(result)
             except Exception as e:
-                return f"Error executing agent {agent_name}: {str(e)}"
+                return f"Error executing solve: {str(e)}"
 
-        return mcp, agent_name, agent_description
+        @mcp.tool(description="Execute the agent's reason function with the user query")
+        def reason(query: str) -> str:
+            """Execute the agent's reason function with the user query."""
+            try:
+                result = agent_instance.reason(premise=query, sandbox_context=context)
+                print(f"🔍 Reason query: {query}")
+                print(f"🔍 Reason result: {result}")
+                return str(result)
+            except Exception as e:
+                return f"Error executing reason: {str(e)}"
+
+        @mcp.tool(description="Execute the agent's chat function with the user query")
+        def chat(query: str) -> str:
+            """Execute the agent's chat function with the user query."""
+            try:
+                result = agent_instance.chat(message=query, sandbox_context=context)
+                print(f"🔍 Chat query: {query}")
+                print(f"🔍 Chat result: {result}")
+                return str(result)
+            except Exception as e:
+                return f"Error executing chat: {str(e)}"
+
+        return mcp, agent_name, agent_instance.description
 
     except ImportError as e:
         raise ValueError(f"Failed to import Dana agent module {module_name}: {e}")
@@ -98,10 +149,19 @@ def print_mcp_server_banner(host, port, agent_name):
     print(color_text(" Host: ", CYAN) + color_text(f"{host}", BOLD))
     print(color_text(" Port: ", CYAN) + color_text(f"{port}", BOLD))
     print()
-    print(color_text("  Agent Endpoint", YELLOW))
+    print(color_text("  Deployed Agent", YELLOW))
     print(color_text("  ─────────────", CYAN))
-    print(color_text(f"  {'Agent Name':<20} {'Endpoint Path':<30}", f"{BOLD};{CYAN}"))
-    print(color_text(f"  {agent_name:<20} /{agent_name.lower()}/mcp", GREEN))
+    print(color_text(f"  Agent Name: {agent_name}", GREEN))
+    print()
+    print(color_text("  Available Tools:", YELLOW))
+    print(color_text("  ───────────────", CYAN))
+    print(color_text("  solve  - Execute agent's solve function", GREEN))
+    print(color_text("  reason - Execute agent's reason function", GREEN))
+    print(color_text("  chat   - Execute agent's chat function", GREEN))
+    print()
+    print(color_text("  Endpoint Path:", YELLOW))
+    print(color_text("  ──────────────", CYAN))
+    print(color_text(f"  /{agent_name.lower()}/mcp", GREEN))
     print()
     print(color_text("Starting MCP server...", f"{BOLD};{CYAN}"))
     print()
@@ -133,9 +193,10 @@ def deploy_dana_agents_thru_mcp(na_file_path, host, port):
     except ValueError as e:
         print(f"❌ Failed to create MCP server: {e}")
         print("Agent must have:")
-        print("  - system:agent_name variable")
-        print("  - system:agent_description variable")
+        print("  - A valid agent instance")
         print("  - solve(query: str) -> str function")
+        print("  - reason(query: str) -> str function")
+        print("  - chat(query: str) -> str function")
         return
 
     @contextlib.asynccontextmanager
@@ -150,5 +211,7 @@ def deploy_dana_agents_thru_mcp(na_file_path, host, port):
 
     try:
         uvicorn.run(app, host=host, port=port)
+    except Exception as e:
+        print(f"❌ Failed to deploy agent: {e}")
     finally:
         py2na.close()

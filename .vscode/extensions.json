@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "aitomatic.dana-language",
     "ms-python.python",
     "charliermarsh.ruff",
     "davidanson.vscode-markdownlint",
