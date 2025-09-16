@@ -18,7 +18,7 @@ print(Helen.reason("How do analysts measure liquidity?"))
 
 # --- Session 3: Agent + Resource ---
 # Add a Resource: AMD’s 10-K.
-resource_amd_ar = get_resource('rag', sources=['../resources/docs/AMD-2024-10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['../resources/docs/AMD-AR.pdf'])
 
 PROBLEM = "Does AMD have enough liquid assets to cover short-term liabilities?"
 print(Helen.solve(PROBLEM, resources=[resource_amd_ar]))

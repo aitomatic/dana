@@ -21,7 +21,7 @@ Gains real access to domain expertise, data, and tools
 ======================================================
 """)
 
-resource_amd_ar = get_resource("rag", sources=["../../resources/docs/AMD-2024-10K.pdf"])
+resource_amd_ar = get_resource("rag", sources=["../../resources/docs/AMD-AR.pdf"])
 
 print(Neo.solve("Is AMD capital-intensive?", resources=[resource_amd_ar]))
 
