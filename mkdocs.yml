@@ -10,14 +10,17 @@ theme:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - Install: install.md
+  - Tech Setup: tech-setup.md
   - Cookbook:
-    - Multi-Agent Chat: cookbook/multi-agent-chat.md
-    - Data Pipeline: cookbook/data-pipeline.md
-    - API Orchestration: cookbook/api-orchestration.md
-    - Error Recovery: cookbook/error-recovery.md
+    - Workflows — Multi-Agent Chat: cookbook/workflows_multi_agent_chat.md
+    - Workflows — Data Pipeline: cookbook/workflows_data_pipeline.md
+    - Workflows — API Orchestration: cookbook/workflows_api_orchestration.md
+    - Workflows — Error Recovery: cookbook/workflows_error_recovery.md
   - Concepts: core-concepts.md
   - Primers: primers/agent.md
 
 exclude_docs: |
   .ai-only/
   .archive/
+  tmp/

@@ -1,3 +1,18 @@
+## Docs AI-only Guardrails
+
+This folder contains contributor guidelines and templates for automated documentation updates. Do not link from active docs.
+
+### Guardrails
+- Use only approved public artifacts for validation: GitHub `v0.5`, PyPI `dana==0.5`.
+- No duplication of runnable examples inside docs; use top-level `examples/`.
+- Archive outdated content under `docs/.archive/YYYY-MM-DD/` with `reason.md` and `migration.md`.
+- Exclude `.ai-only/`, `.archive/`, and `tmp/` from site build.
+
+### Validation Stubs
+- Quickstart must reach a working agent in < 5 minutes.
+- Verify `dana studio` launches.
+- Run canonical examples and capture expected outputs.
+
 # Dana Documentation System Prompt
 
 ## Context
