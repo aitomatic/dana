@@ -364,11 +364,21 @@ class AgentInstance(StructInstance):
         keeping the definition close to where they're used.
         """
         return {
+            "name": {
+                "type": "str",
+                "default": "unnamed_agent",
+                "comment": "Name of the agent",
+            },
+            "description": {
+                "type": "str",
+                "default": "A Dana agent",
+                "comment": "Description of the agent's purpose and capabilities",
+            },
             "state": {
                 "type": "str",
                 "default": "CREATED",
                 "comment": "Current state of the agent",
-            }
+            },
         }
 
     @property
