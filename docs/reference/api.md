@@ -8,7 +8,7 @@ Public surface validated against GitHub `v0.5` and PyPI `dana==0.5`.
 #### CLI
 - `dana --version`
 - `dana run <path-to-file.na>`
-  - Example: `dana run examples/first_agent.na`
+  - Example: `dana run examples/agents/agent_with_resources_and_workflows/agent_with_resources.na`
 - `dana studio`
 
 #### Environment

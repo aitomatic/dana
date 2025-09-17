@@ -159,7 +159,7 @@ class RAGResource(BaseSysResource):
         if not self.is_available:
             return "No relevant documents found"
 
-        num_results = min(num_results, self.num_results)
+        num_results = max(num_results, self.num_results)
 
         if self.debug:
             print(f"Querying {num_results} results from {self.name} RAG with query: {query}")

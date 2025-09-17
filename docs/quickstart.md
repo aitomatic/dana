@@ -19,7 +19,7 @@ You should see a version like `Dana 0.5` or higher.
 ## 2) Run your first agent
 
 ```bash
-dana run examples/first_agent.na
+dana run examples/agents/agent_with_resources_and_workflows/agent_with_resources.na
 ```
 
 <Expected>

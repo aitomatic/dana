@@ -1,23 +1,22 @@
 import React from 'react';
 import OverviewTab from './tabs/OverviewTab';
 import KnowledgeBaseTab from './tabs/KnowledgeBaseTab';
-import ToolsTab from './tabs/ToolsTab';
 import CodeTab from './tabs/CodeTab';
+import WorkflowsTab from './tabs/WorkflowsTab';
 import { ChatPane } from './ChatPane';
-import { Code2, List, BookOpen } from 'lucide-react';
-import { Tools } from 'iconoir-react';
+import { Code2, List, BookOpen, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 import { useUIStore } from '@/stores/ui-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 
-const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
+const TABS = ['Overview', 'Resources', 'Workflows', 'Code'];
 
 const TAB_ICONS = {
   Overview: <List className="w-4 h-4" />,
-  'Knowledge Base': <BookOpen className="w-4 h-4" />,
-  Tools: <Tools className="w-4 h-4" />,
+  Resources: <BookOpen className="w-4 h-4" />,
+  Workflows: <Network className="w-4 h-4" />,
   Code: <Code2 className="w-4 h-4" />,
 };
 
@@ -104,8 +103,8 @@ export const AgentDetailTabs: React.FC<{
         </div>
         {/* Tab content */}
         {currentActiveTab === 'Overview' && <OverviewTab navigate={navigate} />}
-        {currentActiveTab === 'Knowledge Base' && <KnowledgeBaseTab />}
-        {currentActiveTab === 'Tools' && <ToolsTab />}
+        {currentActiveTab === 'Resources' && <KnowledgeBaseTab />}
+        {currentActiveTab === 'Workflows' && <WorkflowsTab />}
         {currentActiveTab === 'Code' && <CodeTab />}
         {children}
       </div>

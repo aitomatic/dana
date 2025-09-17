@@ -17,12 +17,6 @@ This directory contains a comprehensive suite of Dana (`.na`) code examples and 
   - These modules use the core statement extractors to compute ratios according to standard financial formulas.
   - **Workflow Composition**: The modules demonstrate Dana's workflow composition syntax using pipe (`|`) and parallel execution (`[]`) operators for building complex financial analysis pipelines.
 
-- **Test and Example Scripts**
-  - `tests.na`:
-    Main test harness for running and validating the extraction and calculation functions across the modules.
-  - `docs/`:
-    Contains sample financial statement documents (e.g., `AMD_2022_10K.pdf`, `VERIZON_2022_10K.pdf`, `CVSHEALTH_2022_10K.pdf`) used as data sources for the tests.
-
 ## How to Use
 
 - Review the test script (`tests.na`) for examples of how to invoke each workflow.

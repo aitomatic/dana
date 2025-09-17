@@ -44,7 +44,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_quick_asset(resources: list, task: str = None) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
@@ -63,7 +63,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_quick_asset_2y(resources: list, task: str = None) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
 
 
@@ -82,7 +82,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_quick_asset_3y(resources: list, task: str = None) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
 
 
@@ -102,7 +102,7 @@ From there, assess liquidity health:
 - otherwise, liquidity is not very healthy
 
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_quick_ratio(resources: list, task: str = None) -> float = [workflow_calc_quick_asset, get_curr_liab] | _quick_ratio
 
 
@@ -117,7 +117,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_net_work_cap(resources: list, task: str = None) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
 
 
@@ -132,7 +132,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_work_cap_ratio(resources: list, task: str = None) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
 
 
@@ -150,7 +150,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_op_cf_ratio(resources: list, task: str = None) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
 
 
@@ -169,7 +169,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_fcf(resources: list, task: str = None) -> float = [get_op_cf, get_capex] | _fcf
 
 
@@ -187,7 +187,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_fcf_conv_ratio(resources: list, task: str = None) -> float = [workflow_calc_fcf, get_net_income] | _fcf_conv_ratio
 
 
@@ -205,7 +205,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_dio(resources: list, task: str = None) -> float = [get_inventory_2y, get_cogs] | _dio
 
 
@@ -223,7 +223,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_dso(resources: list, task: str = None) -> float = [get_recvable_2y, get_rev] | _dso
 
 
@@ -242,7 +242,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_dpo(resources: list, task: str = None) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
 
 
@@ -261,5 +261,5 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-# TODO: parenthesized workflow def
+
 def workflow_calc_ccc(resources: list, task: str = None) -> float = [workflow_calc_dio, workflow_calc_dso, workflow_calc_dpo] | _ccc

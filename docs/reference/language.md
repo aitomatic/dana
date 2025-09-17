@@ -6,9 +6,9 @@
 Complete syntax and semantics overview of Dana.
 
 See runnable examples:
-- Agents: `examples/first_agent.na`
-- Resources: `examples/resources_file_io.na`, `examples/resources_docs.na`
-- Workflows: `examples/workflows_data_pipeline.na`
+- Agents: `examples/agents/agent_with_resources_and_workflows/agent_with_resources.na`
+- Resources: `examples/resources/docs/docs_resource.na`, `examples/resources/web_search/web_search_resource.na`
+- Workflows: `examples/workflows/workflow_syntax_sequential.na`
 
 Sections to maintain:
 - Lexical structure
