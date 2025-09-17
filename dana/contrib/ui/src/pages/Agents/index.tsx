@@ -650,7 +650,7 @@ export default function AgentsPage() {
           </div>
           <Button
             onClick={handleCreateAgent}
-            className="w-[168px] px-4 py-1 font-semibold"
+            className="w-[152px] px-4 py-1 font-semibold"
           >
             <Plus style={{ width: '20', height: '20' }} />
             Create Agent
