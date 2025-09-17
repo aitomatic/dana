@@ -32,7 +32,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
                         name="user_message",
                         type="string",
                         description="A comprehensive message that acknowledges the user's request, explains the approach, and sets context for the knowledge structure proposal",
-                        example="I understand you want to add comprehensive knowledge about cryptocurrency to Sofia's expertise. Based on your request, I'll create a structured breakdown covering all essential areas.",
+                        example="I understand you want to add comprehensive knowledge about cryptocurrency to agent's expertise. Based on your request, I'll create a structured breakdown covering all essential areas.",
                     ),
                     BaseArgument(
                         name="topic",
