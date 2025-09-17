@@ -207,10 +207,7 @@ Generate the refined structure:"""
         response_parts.append("")  # Empty line for spacing
 
         # Add next steps and guidelines
-        response_parts.append("""💡 **Next Steps:**
-- Review the proposed structure above carefully
-- Identify any areas you'd like to modify, expand, or remove  
-- Once satisfied, we'll add this structure to your knowledge tree
+        response_parts.append("""**Do you want to modify this structure, or should I add it to domain knowledge?**
 """)
 
         # Join all parts with proper spacing
