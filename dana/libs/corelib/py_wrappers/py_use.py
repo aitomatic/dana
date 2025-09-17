@@ -123,5 +123,18 @@ def py_use(
         Misc.safe_asyncio_run(resource.initialize)
         context.set_resource(_name, resource)
         return resource
+    elif function_name.lower() == "websearch":
+        from dana.common.sys_resource.web_search.web_search_resource import WebSearchResource
+
+        # Extract tabular_index specific parameters from kwargs
+        service_type = kwargs.get("service_type", "")
+        # Create resource with config dict
+        resource = WebSearchResource(
+            name=_name,
+            service_type=service_type,
+        )
+        Misc.safe_asyncio_run(resource.initialize)
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")

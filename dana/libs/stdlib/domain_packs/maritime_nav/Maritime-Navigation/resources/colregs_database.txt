@@ -1,0 +1,220 @@
+INTERNATIONAL COLLISION REGULATIONS (COLREGS) DATABASE
+======================================================
+
+Part B - Steering and Sailing Rules:
+====================================
+
+Section I - Conduct of Vessels in Any Condition of Visibility:
+==============================================================
+
+Rule 4 - Application:
+- Rules apply in all conditions of visibility
+- Both clear and restricted visibility
+- Day and night conditions
+
+Rule 5 - Look-out:
+- Maintain proper look-out by sight and hearing
+- Use all available means appropriate
+- Assess risk of collision
+
+Rule 6 - Safe Speed:
+- Maintain safe speed for prevailing conditions
+- Consider visibility, traffic density, maneuverability
+- Account for stopping distance and turning ability
+
+Rule 7 - Risk of Collision:
+- Use all available means to assess risk
+- Consider relative bearing changes
+- Monitor distance between vessels
+
+Rule 8 - Action to Avoid Collision:
+- Take early and substantial action
+- Avoid small course and speed changes
+- Make action clear to other vessel
+
+Rule 9 - Narrow Channels:
+- Keep to starboard side of channel
+- Avoid crossing if impeding other vessels
+- Small vessels and fishing vessels keep clear
+
+Rule 10 - Traffic Separation Schemes:
+- Follow established traffic lanes
+- Cross lanes at right angles
+- Avoid anchoring in traffic lanes
+
+Section II - Conduct of Vessels in Sight of One Another:
+========================================================
+
+Rule 11 - Application:
+- Rules apply when vessels in sight
+- Both vessels can see each other
+- Visual observation possible
+
+Rule 12 - Sailing Vessels:
+- Port tack gives way to starboard tack
+- Windward vessel gives way to leeward
+- Overtaking vessel keeps clear
+
+Rule 13 - Overtaking:
+- Any vessel overtaking keeps clear
+- Overtaking vessel maintains course and speed
+- Stand-on vessel maintains course and speed
+
+Rule 14 - Head-on Situation:
+- Both vessels alter course to starboard
+- Pass port-to-port when safe
+- Early and substantial action required
+
+Rule 15 - Crossing Situation:
+- Vessel with other on starboard gives way
+- Stand-on vessel maintains course and speed
+- Give-way vessel takes early action
+
+Rule 16 - Action by Give-way Vessel:
+- Take early and substantial action
+- Avoid crossing ahead of stand-on vessel
+- Consider maneuverability limitations
+
+Rule 17 - Action by Stand-on Vessel:
+- Maintain course and speed
+- May take action if give-way fails
+- Must act when collision cannot be avoided
+
+Rule 18 - Responsibilities Between Vessels:
+- Power-driven vessels give way to:
+  * Vessels not under command
+  * Vessels restricted in ability to maneuver
+  * Vessels constrained by draft
+  * Fishing vessels actively fishing
+  * Sailing vessels
+- Sailing vessels give way to:
+  * Vessels not under command
+  * Vessels restricted in ability to maneuver
+  * Vessels constrained by draft
+  * Fishing vessels actively fishing
+
+Section III - Conduct of Vessels in Restricted Visibility:
+=========================================================
+
+Rule 19 - Conduct in Restricted Visibility:
+- Proceed at safe speed for conditions
+- Have engines ready for immediate maneuver
+- Take action to avoid collision
+- Consider radar limitations
+
+Rule 20 - Application:
+- Rules apply in restricted visibility
+- Both vessels must take action
+- No stand-on vessel in fog
+
+Rule 21 - Definitions:
+- Vessel not under command: unable to maneuver
+- Vessel restricted in ability to maneuver: limited maneuverability
+- Vessel constrained by draft: limited by depth
+
+Rule 22 - Visibility of Lights:
+- Lights must be visible at required distances
+- Consider atmospheric conditions
+- Account for background lighting
+
+Rule 23 - Power-driven Vessels Underway:
+- Show masthead light forward
+- Show second masthead light (if over 50m)
+- Show sidelights and stern light
+
+Rule 24 - Towing and Pushing:
+- Show appropriate towing lights
+- Indicate length of tow
+- Maintain safe speed
+
+Rule 25 - Sailing Vessels Underway:
+- Show sidelights and stern light
+- May show additional lights
+- Consider wind direction
+
+Rule 26 - Fishing Vessels:
+- Show fishing lights when fishing
+- Indicate fishing gear deployed
+- Maintain safe speed
+
+Rule 27 - Vessels Not Under Command:
+- Show red lights in vertical line
+- Indicate inability to maneuver
+- Other vessels must keep clear
+
+Rule 28 - Vessels Restricted in Ability to Maneuver:
+- Show appropriate restricted lights
+- Indicate nature of restriction
+- Consider other vessels' actions
+
+Rule 29 - Pilot Vessels:
+- Show pilot lights when on duty
+- Indicate pilot service
+- Maintain safe speed
+
+Rule 30 - Anchored Vessels:
+- Show anchor lights when anchored
+- Indicate anchor position
+- Consider swing radius
+
+Sound and Light Signals:
+========================
+
+Maneuvering Signals:
+- One short blast: Altering course to starboard
+- Two short blasts: Altering course to port
+- Three short blasts: Operating astern propulsion
+- Five short blasts: Doubt about other vessel's intentions
+
+Warning Signals:
+- One prolonged blast: Warning signal
+- Two prolonged blasts: Departure signal
+- Three prolonged blasts: Arrival signal
+
+Distress Signals:
+- SOS: International distress signal
+- Mayday: Voice distress call
+- Pan-pan: Urgency call
+- Securite: Safety call
+
+Emergency Procedures:
+====================
+
+Vessel Not Under Command:
+- Display appropriate lights
+- Sound appropriate signals
+- Take immediate action to restore control
+- Communicate with other vessels
+
+Vessel Restricted in Ability to Maneuver:
+- Display appropriate lights
+- Sound appropriate signals
+- Indicate nature of restriction
+- Consider other vessels' actions
+
+Vessel Constrained by Draft:
+- Display appropriate lights
+- Sound appropriate signals
+- Indicate draft limitations
+- Consider depth restrictions
+
+Communication Requirements:
+==========================
+
+VHF Radio:
+- Channel 16: International distress and safety
+- Channel 13: Bridge-to-bridge communications
+- Channel 10: Port operations
+- Use proper maritime language
+
+Visual Signals:
+- Day shapes for various conditions
+- Flag signals for communication
+- Light signals for maneuvering
+- Follow international standards
+
+Emergency Communications:
+- Distress calls take priority
+- Use standard distress procedures
+- Maintain communication until resolved
+- Follow SAR coordination procedures

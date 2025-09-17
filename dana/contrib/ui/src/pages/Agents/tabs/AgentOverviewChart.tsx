@@ -61,9 +61,9 @@ function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' |
         x: nodeWithPosition.x - width / 2 - 150, // Position left of center
         y: nodeWithPosition.y - height / 2 - 60, // Move closer to Agent
       };
-    } else if (node.id === 'tools') {
+    } else if (node.id === 'workflows') {
       node.position = {
-        x: nodeWithPosition.x - width / 2 + 150, // Position right of center
+        x: nodeWithPosition.x - width / 2 + 150, // Position right of center (swapped with tools)
         y: nodeWithPosition.y - height / 2 - 60, // Move closer to Agent
       };
     } else {
@@ -200,12 +200,12 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       position: { x: 0, y: 0 },
     });
 
-    // Knowledge Base node
+    // Resources node
     flowNodes.push({
       id: 'knowledge-base',
       type: 'agentChart',
       data: {
-        label: 'Knowledge Base',
+        label: 'Resources',
         status: isKnowledgeBaseLoading ? 'loading' : 'active',
       },
       position: { x: 0, y: 0 },
@@ -279,9 +279,9 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
     });
 
     flowEdges.push({
-      id: 'e-agent-tools',
+      id: 'e-agent-workflows',
       source: 'agent',
-      target: 'tools',
+      target: 'workflows',
       markerEnd: { type: MarkerType.ArrowClosed },
       style: { stroke: '#6b7280', strokeWidth: 2 },
     });
@@ -303,9 +303,9 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
     });
 
     flowEdges.push({
-      id: 'e-knowledge-base-workflows',
+      id: 'e-knowledge-base-tools',
       source: 'knowledge-base',
-      target: 'workflows',
+      target: 'tools',
       markerEnd: { type: MarkerType.ArrowClosed },
       style: { stroke: '#6b7280', strokeWidth: 1 },
     });

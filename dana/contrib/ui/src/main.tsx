@@ -6,8 +6,13 @@ import { Layout } from './components/layout';
 import AgentsPage from './pages/Agents';
 import AgentDetailPage from './pages/Agents/detail';
 import LibraryPage from './pages/Library';
+import DocumentationPage from './pages/Documentation';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
+import { analytics } from './lib/analytics';
+
+// Initialize Google Analytics
+analytics.initialize();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -19,19 +24,17 @@ createRoot(document.getElementById('root')!).render(
         duration={4000}
         toastOptions={{
           style: {
-            background: '#ffffff',
-            color: '#374151',
             border: '1px solid #e5e7eb',
             borderRadius: '8px',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
             fontSize: '14px',
             fontWeight: '500',
           },
-          // @ts-ignore
+          // @ts-expect-error - Sonner toast options
           success: {
             style: {
-              background: '#f0fdf4',
-              color: '#166534',
+              background: '#c8e3d0',
+              color: '#1fad49',
               border: '1px solid #bbf7d0',
             },
             iconTheme: {
@@ -121,6 +124,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <Layout>
               <LibraryPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/documentation"
+          element={
+            <Layout>
+              <DocumentationPage />
             </Layout>
           }
         />

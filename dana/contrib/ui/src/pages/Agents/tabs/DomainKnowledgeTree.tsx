@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge, ReactFlowInstance } from 'reactflow';
@@ -629,7 +630,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
       // Find the status entry that matches this node's path
       // First try exact match
-      let match = statusData.topics.find((topic) => topic.path === nodePath);
+      const match = statusData.topics.find((topic) => topic.path === nodePath);
       if (match) {
         console.log('✅ Found exact match for:', nodePath);
         return match;
@@ -1196,8 +1197,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                     </button>
                   )}
                 </div>
-
-
               </div>
 
               {/* Right side - Total count and Tree Controls */}
@@ -1214,14 +1213,14 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   // Calculate if we should show "Expand All" or "Collapse All"
                   // If we have more than just the root expanded, show "Collapse All"
                   const shouldShowCollapse = expandedNodes.size > 1;
-                  
+
                   return (
                     <button
                       onClick={shouldShowCollapse ? handleCollapseAll : handleExpandAll}
                       disabled={!domainTree}
-                      className="flex items-center gap-1 px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex gap-1 items-center px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ transition: TRANSITION_ALL }}
-                      title={shouldShowCollapse ? "Collapse All" : "Expand All"}
+                      title={shouldShowCollapse ? 'Collapse All' : 'Expand All'}
                     >
                       {/* Icon for visual indication */}
                       {shouldShowCollapse ? (
@@ -1229,7 +1228,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                       ) : (
                         <Expand className="w-4 h-4" />
                       )}
-                      {shouldShowCollapse ? "Collapse All" : "Expand All"}
+                      {shouldShowCollapse ? 'Collapse All' : 'Expand All'}
                     </button>
                   );
                 })()}

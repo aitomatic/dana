@@ -6,7 +6,7 @@ import ConversationsSidebar from './conversations-sidebar';
 import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
 import { TooltipTrigger } from '@/components/ui/tooltip';
 import { TooltipPortal } from '@radix-ui/react-tooltip';
-import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
+import { ChatPlusIn, Menu } from 'iconoir-react';
 
 const SIDEBAR_COLLAPSED_KEY = 'agent-sidebar-collapsed';
 
@@ -99,12 +99,12 @@ const AgentChat = () => {
 
                 <>
                   <div className="w-[70%] h-[1px] border-b border-gray-200 dark:border-gray-300" />
-                  <Tooltip>
+                  {/* <Tooltip>
                     <TooltipTrigger>
                       <div
                         className="flex items-center justify-center w-[40px] h-[40px] cursor-pointer"
                         role="button"
-                        aria-label="Train agent"
+                        aria-label="Train mode"
                         data-testid="manage-agent-button"
                       >
                         <Settings
@@ -118,8 +118,8 @@ const AgentChat = () => {
                         />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Train agent</TooltipContent>
-                  </Tooltip>
+                    <TooltipContent side="right">Train mode</TooltipContent>
+                  </Tooltip> */}
                 </>
               </div>
             )}

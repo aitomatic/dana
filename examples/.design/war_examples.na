@@ -18,27 +18,27 @@ print(Helen.reason("How do analysts measure liquidity?"))
 
 # --- Session 3: Agent + Resource ---
 # Add a Resource: AMD’s 10-K.
-resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD_2022_10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['../resources/docs/AMD-AR.pdf'])
 
 PROBLEM = "Does AMD have enough liquid assets to cover short-term liabilities?"
-print(Helen.solve(PROBLEM, resources=[resource_amd_annual_report]))
+print(Helen.solve(PROBLEM, resources=[resource_amd_ar]))
 
 # --- Session 4: Agent + Resource + Workflow ---
 # Add a Workflow: codify expert steps for structured results.
-from domain_packs.financial_analysis import workflow_calc_quick_ratio
+from domain_packs.financial_statements_analysis import workflow_calc_quick_ratio
 
 print(Helen.solve(
     PROBLEM,
-    resources=[resource_amd_annual_report],
+    resources=[resource_amd_ar],
     workflows=[workflow_calc_quick_ratio]
 ))
 
 # --- Optional: Web Search (live) ---
 # Add a web search resource for live context.
-resource_aitomatic_websearch = get_resource('mcp', url='https://demo.mcp.aitomatic.com/websearch_v2')
+resource_aitomatic_websearch = get_resource('mcp', url='YOUR_MCP_URL')
 
 trend_q = "Based on recent sources, how is AMD’s liquidity trending since the 2022 10-K?"
-print(Helen.solve(trend_q, resources=[resource_aitomatic_websearch, resource_amd_annual_report]))
+print(Helen.solve(trend_q, resources=[resource_aitomatic_websearch, resource_amd_ar]))
 
 # --- Recap ---
 

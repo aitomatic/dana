@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // React and React Router
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ import { useChatStore } from '@/stores/chat-store';
 
 // Hooks
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 // Components
 import LogViewer from '@/components/LogViewer';
@@ -37,6 +39,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [currentStep, setCurrentStep] = useState<string>('');
   const [showLogs, setShowLogs] = useState(false);
   const [hideLogs, setHideLogs] = useState(false);
+
+  // Analytics
+  const { trackChatMessage } = useDanaAnalytics();
 
   // Generate unique WebSocket ID for this chat session
   const [websocketId] = useState(
@@ -124,6 +129,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
             const action = stepObject.action || stepObject.description || stepObject.name || '';
             setCurrentStep(action);
           } catch (error) {
+            console.error('Error parsing step value:', error);
             // If parsing fails, use the raw value
             setCurrentStep(stepValue);
           }
@@ -198,6 +204,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     }
 
     try {
+      // Track user message
+      trackChatMessage(agentId.toString(), 'user');
+
       clearError();
       clearLogUpdates(); // Clear previous logs when starting new request
       setHideLogs(false); // Show logs section when starting new request
@@ -303,7 +312,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
               >
                 <div
                   className={cn(
-                    'grid grid-rows-[1fr_max-content_max-content] justify-between w-full h-full',
+                    'grid justify-between w-full h-full grid-rows-[1fr_max-content_max-content]',
                     isSidebarCollapsed ? 'pr-6 pl-10' : 'px-4',
                     'max-w-[760px] 3xl:max-w-[1200px]',
                     'opacity-100',
@@ -312,7 +321,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="overflow-y-auto flex-1 items-center pt-2 pb-4 custom-scrollbar fade-in"
+                    className="overflow-y-auto items-center pt-2 pb-4 custom-scrollbar fade-in w-full min-w-[760px] 3xl:min-w-[1200px]"
                   >
                     <ChatSession
                       messages={messages}
@@ -325,16 +334,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   {(isSending || logUpdates.length > 0) && !hideLogs && (
                     <div className="border-t pb-6 border-gray-200 dark:border-gray-700 w-full max-w-[760px] 3xl:max-w-[1200px]">
                       {/* Toggle Button */}
-                      <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex justify-between items-center px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                         <div
-                          className="flex items-center gap-2 cursor-pointer flex-1"
+                          className="flex flex-1 gap-2 items-center cursor-pointer"
                           onClick={() => setShowLogs(!showLogs)}
                         >
                           <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                             Backend Logs
                           </span>
                           {isSending && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex gap-1 items-center">
                               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                               <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
                             </div>
@@ -358,7 +367,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                               setHideLogs(true);
                               setShowLogs(false);
                             }}
-                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                            className="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                             title="Hide logs"
                           >
                             <X className="w-3 h-3 text-gray-400 dark:text-gray-500" />

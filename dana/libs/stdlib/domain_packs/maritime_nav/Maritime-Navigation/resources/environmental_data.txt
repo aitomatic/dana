@@ -1,0 +1,230 @@
+MARITIME ENVIRONMENTAL CONDITIONS DATABASE
+==========================================
+
+Weather Conditions:
+==================
+
+Clear Weather:
+- Visibility: 10+ nautical miles
+- Wind: 0-10 knots
+- Sea State: Calm to slight (0-2)
+- Risk Level: Low
+- Navigation Impact: Minimal
+
+Moderate Weather:
+- Visibility: 5-10 nautical miles
+- Wind: 10-20 knots
+- Sea State: Slight to moderate (2-4)
+- Risk Level: Medium
+- Navigation Impact: Moderate
+
+Poor Weather:
+- Visibility: 2-5 nautical miles
+- Wind: 20-30 knots
+- Sea State: Moderate to rough (4-6)
+- Risk Level: High
+- Navigation Impact: Significant
+
+Severe Weather:
+- Visibility: <2 nautical miles
+- Wind: 30+ knots
+- Sea State: Rough to high (6+)
+- Risk Level: Very High
+- Navigation Impact: Severe
+
+Sea State Classifications:
+=========================
+
+Sea State 0 (Calm):
+- Wave Height: 0 meters
+- Description: Mirror-like surface
+- Navigation Impact: None
+
+Sea State 1-2 (Slight):
+- Wave Height: 0.1-0.5 meters
+- Description: Small wavelets, ripples
+- Navigation Impact: Minimal
+
+Sea State 3-4 (Moderate):
+- Wave Height: 0.5-2.5 meters
+- Description: Small waves, whitecaps
+- Navigation Impact: Moderate
+
+Sea State 5-6 (Rough):
+- Wave Height: 2.5-6.0 meters
+- Description: Large waves, foam crests
+- Navigation Impact: Significant
+
+Sea State 7+ (High):
+- Wave Height: 6.0+ meters
+- Description: Very large waves, spray
+- Navigation Impact: Severe
+
+Visibility Conditions:
+======================
+
+Excellent Visibility (>10 nm):
+- Conditions: Clear skies, good lighting
+- Risk Level: Low
+- Collision Avoidance: Standard procedures
+
+Good Visibility (5-10 nm):
+- Conditions: Light haze, good lighting
+- Risk Level: Low
+- Collision Avoidance: Standard procedures
+
+Moderate Visibility (2-5 nm):
+- Conditions: Moderate haze, reduced lighting
+- Risk Level: Medium
+- Collision Avoidance: Enhanced monitoring
+
+Poor Visibility (1-2 nm):
+- Conditions: Heavy haze, fog, poor lighting
+- Risk Level: High
+- Collision Avoidance: Reduced speed, increased monitoring
+
+Very Poor Visibility (<1 nm):
+- Conditions: Dense fog, heavy rain, darkness
+- Risk Level: Very High
+- Collision Avoidance: Minimum safe speed, maximum monitoring
+
+Wind Conditions:
+================
+
+Light Winds (0-10 knots):
+- Sea State: Calm to slight
+- Navigation Impact: Minimal
+- Risk Level: Low
+
+Moderate Winds (10-20 knots):
+- Sea State: Slight to moderate
+- Navigation Impact: Moderate
+- Risk Level: Medium
+
+Strong Winds (20-30 knots):
+- Sea State: Moderate to rough
+- Navigation Impact: Significant
+- Risk Level: High
+
+Gale Force Winds (30-40 knots):
+- Sea State: Rough to high
+- Navigation Impact: Severe
+- Risk Level: Very High
+
+Storm Force Winds (40+ knots):
+- Sea State: High to phenomenal
+- Navigation Impact: Extreme
+- Risk Level: Extreme
+
+Current Conditions:
+==================
+
+Tidal Currents:
+- Speed: 0.5-5.0 knots
+- Direction: Changes with tide cycle
+- Navigation Impact: Course and speed adjustments
+- Risk Level: Low to Medium
+
+Ocean Currents:
+- Speed: 0.1-3.0 knots
+- Direction: Generally consistent
+- Navigation Impact: Long-term course adjustments
+- Risk Level: Low
+
+Rip Currents:
+- Speed: 2.0-8.0 knots
+- Direction: Variable
+- Navigation Impact: Local course adjustments
+- Risk Level: Medium to High
+
+Seasonal Variations:
+====================
+
+Summer Conditions:
+- Weather: Generally stable
+- Visibility: Good to excellent
+- Sea State: Calm to moderate
+- Risk Level: Low to Medium
+
+Winter Conditions:
+- Weather: More variable
+- Visibility: Moderate to poor
+- Sea State: Moderate to rough
+- Risk Level: Medium to High
+
+Monsoon Season:
+- Weather: Highly variable
+- Visibility: Poor to very poor
+- Sea State: Rough to high
+- Risk Level: High to Very High
+
+Hurricane/Typhoon Season:
+- Weather: Extreme conditions
+- Visibility: Very poor
+- Sea State: High to phenomenal
+- Risk Level: Extreme
+
+Geographic Considerations:
+=========================
+
+Open Ocean:
+- Weather: More predictable
+- Sea State: Generally moderate
+- Risk Level: Low to Medium
+
+Coastal Waters:
+- Weather: More variable
+- Sea State: Affected by land
+- Risk Level: Medium
+
+Harbor/Port Areas:
+- Weather: Sheltered
+- Sea State: Generally calm
+- Risk Level: Low
+- Traffic Density: High
+
+Strait/Channel Areas:
+- Weather: Variable
+- Sea State: Affected by geography
+- Risk Level: Medium to High
+- Traffic Density: High
+
+Risk Assessment Matrix:
+======================
+
+Low Risk (Green):
+- Visibility: >5 nm
+- Sea State: 0-3
+- Wind: <15 knots
+- Action: Standard procedures
+
+Medium Risk (Yellow):
+- Visibility: 2-5 nm
+- Sea State: 3-5
+- Wind: 15-25 knots
+- Action: Enhanced monitoring
+
+High Risk (Red):
+- Visibility: <2 nm
+- Sea State: 5+
+- Wind: 25+ knots
+- Action: Reduced speed, maximum monitoring
+
+Operational Recommendations:
+===========================
+
+Low Risk Conditions:
+- Maintain normal speed
+- Standard collision avoidance procedures
+- Regular monitoring intervals
+
+Medium Risk Conditions:
+- Consider speed reduction
+- Enhanced collision avoidance procedures
+- Increased monitoring frequency
+
+High Risk Conditions:
+- Reduce to safe speed
+- Maximum collision avoidance procedures
+- Continuous monitoring
+- Consider anchoring if necessary
