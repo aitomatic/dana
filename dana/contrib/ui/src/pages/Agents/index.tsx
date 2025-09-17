@@ -639,21 +639,22 @@ export default function AgentsPage() {
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
         {/* Dana Agent Maker Feature */}
-        <div className="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Dana Agent Maker</h2>
-              <p className="text-gray-600">
-                Define your requirements and receive workflow solutions.
-              </p>
+        <div className="flex items-center justify-between p-8 mb-8 bg-gray-50 rounded-lg">
+          <div className="flex flex-col gap-2">
+            <div className="text-lg font-semibold text-gray-900">
+              Dana Agent Maker
             </div>
-            <Button
-              onClick={handleCreateAgent}
-              className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-md font-medium"
-            >
-              Create Agent
-            </Button>
+            <div className="text-sm text-gray-700">
+              Define your requirements and receive workflow solutions.
+            </div>
           </div>
+          <Button
+            onClick={handleCreateAgent}
+            className="w-[168px] px-4 py-1 font-semibold"
+          >
+            <Plus style={{ width: '20', height: '20' }} />
+            Create Agent
+          </Button>
         </div>
 
         {/* Search and Navigation */}

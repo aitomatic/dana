@@ -237,7 +237,7 @@ export const ExploreTab: React.FC<{
           disabled={creating}
         >
           <Plus style={{ width: '20', height: '20' }} />
-        Train New Agent
+        Create New Agent
         </Button>
       </div>
 
