@@ -62,17 +62,19 @@ Full release notes → [v0.5 Release](docs/releases/v0.5.md)
 
 2. **Add Resources**  
    ```dana
-   financials = use("docs", sources=["10-K.pdf", "Q2.xlsx"])
+   resource_financial_docs = get_resources("rag", sources=["10-K.pdf", "Q2.xlsx"])
    ```  
 
-3. **Design a Workflow**  
+3. **Follow an Expert Workflow**  
    ```dana
-   def analyze(data): return data
-   def score(data): return data  
-   def recommend(data): return data
+   def analyze(...): return ...
+   def score(...): return ...  
+   def recommend(...): return ...
    
-   risk_check = analyze | score | recommend
-   result = RiskAdvisor.solve("Portfolio analysis", with=risk_check)
+   def wf_risk_check(resources) = analyze | score | recommend
+
+   result = RiskAdvisor.solve("Identify liquidity risks", resources=[resource_financial_docs], workflows=[wf_risk_check])
+   
    print(result)
    ```  
 
