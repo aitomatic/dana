@@ -24,11 +24,19 @@ Dana gives you the missing foundation:
 
 ---
 
-## Install and launch Dana Agent Studio 
+## Install and launch Dana 
+
+💡 **Tip:** Always activate your virtual environment before running or installing anything for Dana.
 
 ```bash
+# Activate your virtual environment (recommended)
+source venv/bin/activate  # On macOS/Linux
+# or
+venv\Scripts\activate     # On Windows
+
 pip install dana
-dana studio
+dana studio #Launch Dana Agent Studio
+dana repl #Launch Dana Repl
 ```
 
 - For detailed setup (Python versions, OS quirks, IDE integration), see [Install Guide](docs/install.md).  
