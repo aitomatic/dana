@@ -638,6 +638,24 @@ export default function AgentsPage() {
 
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
+        {/* Dana Agent Maker Feature */}
+        <div className="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Dana Agent Maker</h2>
+              <p className="text-gray-600">
+                Define your requirements and receive workflow solutions.
+              </p>
+            </div>
+            <Button
+              onClick={handleCreateAgent}
+              className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-md font-medium"
+            >
+              Create Agent
+            </Button>
+          </div>
+        </div>
+
         {/* Search and Navigation */}
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
@@ -667,15 +685,6 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
-            <Button
-              variant="default"
-              className="w-[168px] px-4 py-1 font-semibold"
-              onClick={handleCreateAgent}
-              disabled={creating}
-            >
-              <Plus style={{ width: '20', height: '20' }} />
-              Train New Agent
-            </Button>
           </div>
         </div>
 
@@ -737,13 +746,13 @@ export default function AgentsPage() {
           className={`${showSuggestions && suggestions.length > 0 ? 'sm:max-w-[1000px]' : 'sm:max-w-xl'} max-h-[80vh] overflow-y-auto`}
         >
           <DialogHeader>
-            <DialogTitle>Train Your Own Agent</DialogTitle>
+            <DialogTitle>Dana Agent Maker</DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col gap-2 w-full">
               <label className="block mb-4 font-medium text-gray-700 text-md">
-                What your agent will do?
+                Define your requirements
               </label>
               <textarea
                 value={userInput}
@@ -912,7 +921,7 @@ export default function AgentsPage() {
                 className="w-full"
                 disabled={loadingSuggestions || !userInput.trim()}
               >
-                {loadingSuggestions ? 'Getting started...' : 'Start training'}
+                {loadingSuggestions ? 'Generating agent...' : 'Generate Agent'}
               </Button>
             )}
             {/* <Button
