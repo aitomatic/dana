@@ -3,6 +3,5 @@ Knowledge sources for this agent. The following files are available in the ./doc
 - (No files currently listed. Add files to ./docs to make them available.)
 """
 
-raw_docs = use("rag", sources=["./docs"], description="Company financial statement. Use medium `num_results` : 5 < `num_results` < 12")
-docs = use("finance_rag", rag_resource=raw_docs)
-knows = use("rag", sources=["./knows"], description="Financial statement analysis knowledge. Use small `num_results`=1", force_reload=False)
+docs = use("rag", sources=["./docs"], description="Company financial statement. Use medium `num_results` : 5 < `num_results` < 12", reranking=True)
+knows = use("rag", sources=["./knows"], description="Financial statement analysis knowledge. Use small `num_results`=1", force_reload=False, reranking=True)
