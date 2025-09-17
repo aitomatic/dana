@@ -483,41 +483,23 @@ const WorkflowsTab: React.FC = () => {
     <div className="px-6 pb-6">
       {/* Workflow Execution Dashboard */}
       <div className="mb-6">
-        <h2 className="mb-4 text-2xl font-bold text-gray-900">🔄 Workflow Execution Dashboard</h2>
+        <div className="flex gap-3 items-center m-4">
+          <h2 className="text-2xl font-bold text-gray-900">Workflow</h2>
+          <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+            BETA FEATURE
+          </span>
+        </div>
 
         {/* AI Engineer Test Configuration */}
-        <div className="p-6 mb-6 bg-gradient-to-br via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
+        <div className="p-6 mb-6 bg-white via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-3">
-              <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-              </div>
               <div>
-                <h3 className="text-xl font-semibold text-slate-800">🧪 AI Engineer Test Suite</h3>
+                <h3 className="text-xl font-semibold text-slate-800">AI Engineer Test Suite</h3>
                 <p className="text-sm text-slate-600">
                   Configure test parameters for workflow validation
                 </p>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-                Agent {agentId}
-              </span>
-              <span className="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
-                Runtime: Dana
-              </span>
             </div>
           </div>
 
@@ -647,21 +629,21 @@ const WorkflowsTab: React.FC = () => {
                 <div className="space-y-2">
                   <button
                     onClick={() => setCustomTestQuery('Test edge case with empty input')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-emerald-700 bg-emerald-50 rounded-md transition-colors hover:bg-emerald-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-emerald-100"
                   >
-                    🧪 Edge Case Test
+                    Edge Case Test
                   </button>
                   <button
                     onClick={() => setCustomTestQuery('Performance test with complex query')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-blue-700 bg-blue-50 rounded-md transition-colors hover:bg-blue-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-blue-100"
                   >
-                    ⚡ Performance Test
+                    Performance Test
                   </button>
                   <button
                     onClick={() => setCustomTestQuery('Integration test with external data')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-purple-700 bg-purple-50 rounded-md transition-colors hover:bg-purple-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-purple-100"
                   >
-                    🔗 Integration Test
+                    Integration Test
                   </button>
                 </div>
               </div>
