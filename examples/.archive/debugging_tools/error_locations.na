@@ -1,0 +1,14 @@
+# Initialize private scope
+private.initialized = True  # Now supporting Python-style booleans
+
+# Example 1: Division by zero
+# private.result = 10 / 0
+
+# Example 2: Undefined variable (after private scope is initialized)
+# private.result = private.undefined_var
+
+# Example 3: Invalid operator (string multiplication)
+# private.result = "hello" * "world"
+
+# Example 4: Nested error
+private.result = (10 / 0) + 5

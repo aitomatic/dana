@@ -1,0 +1,174 @@
+# Financial Services Risk Assessment with POET
+# ===========================================
+# INDUSTRY: Banking, Credit, Investment
+# USE CASE: Credit Risk Assessment with Automatic Enterprise Enhancement
+# POET FEATURES: Domain intelligence, compliance automation, audit trails
+# LEARNING: How POET transforms simple business logic into enterprise-grade systems
+# ===========================================
+
+log("💰 Financial Services POET Example - Credit Risk Assessment")
+
+# SIMPLE BUSINESS FUNCTION (what engineers write)
+# ==============================================
+@poet(domain="financial_services", retries=3, enable_training=true)
+def assess_credit_risk(credit_score: int, annual_income: float, debt_to_income_ratio: float, employment_years: float) -> str:
+    """
+    Simple credit risk assessment - core business logic only.
+    
+    POET automatically adds:
+    - Input normalization (handles "$50K", "excellent", "25%", etc.)
+    - Regulatory compliance validation (FCRA, ECOA)
+    - Audit trail generation
+    - Error handling and retries
+    - Domain-specific data validation
+    """
+    
+    # SIMPLE core business logic (what the engineer focuses on)
+    if credit_score >= 750 and debt_to_income_ratio <= 0.3:
+        return "approved"
+    elif credit_score >= 650 and debt_to_income_ratio <= 0.45:
+        return "conditional"
+    else:
+        return "declined"
+
+# BATCH PROCESSING FUNCTION (also simple)
+# ======================================
+@poet(domain="financial_services", timeout=60.0, retries=2)
+def batch_assess_applications(applications: list) -> dict:
+    """
+    Simple batch processing - POET adds optimization.
+    
+    POET automatically adds:
+    - Batch throughput optimization
+    - Consistent data normalization across batch
+    - Aggregate compliance reporting
+    - Performance monitoring
+    """
+    
+    results = []
+    approved_count = 0
+    
+    for app in applications:
+        decision = assess_credit_risk(
+            app["credit_score"],
+            app["annual_income"], 
+            app["debt_to_income_ratio"],
+            app["employment_years"]
+        )
+        
+        results.append({
+            "id": app["id"],
+            "decision": decision
+        })
+        
+        if decision == "approved":
+            approved_count += 1
+    
+    return {
+        "results": results,
+        "approval_rate": approved_count
+    }
+
+# FRAUD DETECTION FUNCTION (simple pattern matching)
+# =================================================
+@poet(domain="financial_services", timeout=15.0)
+def detect_fraud_risk(credit_score: int, stated_income: float, employment_years: float) -> bool:
+    """
+    Simple fraud detection patterns.
+    
+    POET automatically adds:
+    - Advanced pattern recognition
+    - Historical fraud pattern analysis  
+    - Compliance with fraud detection regulations
+    - Audit documentation
+    """
+    
+    # Simple fraud indicators
+    if stated_income > employment_years * 50000:  # Unrealistic income growth
+        return true
+    
+    if credit_score < 600 and stated_income > 150000:  # Income/credit mismatch
+        return true
+        
+    return false
+
+# USAGE EXAMPLES AND DEMONSTRATIONS
+# =================================
+log("\n=== Testing POET Financial Services Examples ===")
+
+# Example 1: Simple credit assessment (POET handles data normalization)
+log("\n--- Basic Credit Assessment (with POET enhancement) ---")
+
+# POET automatically normalizes these inputs through financial_services domain plugin:
+result1 = assess_credit_risk(
+    750,           # Standard credit score
+    75000.0,       # Annual income
+    0.25,          # Debt ratio as decimal
+    5.0            # Employment years
+)
+log(f"Standard inputs → Decision: {result1}")
+
+# POET automatically normalizes these varied input formats:
+result2 = assess_credit_risk(
+    "excellent",   # POET converts to ~780
+    "$50K",        # POET converts to 50000.0
+    "30%",         # POET converts to 0.30
+    "2.5 years"    # POET converts to 2.5
+)
+log(f"Mixed format inputs → Decision: {result2}")
+
+# Example 2: Batch processing
+log("\n--- Batch Processing (with POET optimization) ---")
+sample_applications = [
+    {"id": "APP001", "credit_score": 720, "annual_income": 65000, "debt_to_income_ratio": 0.28, "employment_years": 3},
+    {"id": "APP002", "credit_score": "good", "annual_income": "80K", "debt_to_income_ratio": "35%", "employment_years": 7},
+    {"id": "APP003", "credit_score": 580, "annual_income": 35000, "debt_to_income_ratio": 0.55, "employment_years": 1}
+]
+
+batch_result = batch_assess_applications(sample_applications)
+log(f"Batch Results: {len(batch_result['results'])} processed")
+log(f"Approval Rate: {batch_result['approval_rate']:.1%}")
+
+# Example 3: Fraud detection
+log("\n--- Fraud Detection (with POET pattern analysis) ---")
+fraud_result1 = detect_fraud_risk(580, 200000, 2)  # High income, low experience, poor credit
+log(f"Suspicious case → Fraud detected: {fraud_result1}")
+
+fraud_result2 = detect_fraud_risk(720, 75000, 8)   # Reasonable profile
+log(f"Normal case → Fraud detected: {fraud_result2}")
+
+# COMPARISON: Before vs After POET
+# ===============================
+log("\n=== POET Enhancement Demonstration ===")
+
+# What engineer writes (simple):
+def basic_credit_assessment(score: int, income: float, debt_ratio: float) -> str:
+    if score >= 700 and debt_ratio <= 0.3:
+        return "approved"
+    else:
+        return "declined"
+
+# What POET automatically provides:
+log("✅ Engineer writes: ~10 lines of simple business logic")
+log("✅ POET automatically adds:")
+log("  - Input normalization: Handles '$50K', 'excellent', '25%' formats")
+log("  - Data validation: Ensures credit scores 300-850, income >= 0")
+log("  - Compliance: FCRA/ECOA regulatory validation")
+log("  - Audit trails: Automatic decision logging") 
+log("  - Error handling: Automatic retries with exponential backoff")
+log("  - Performance monitoring: Execution time and success rate tracking")
+log("  - Domain intelligence: Financial services best practices")
+
+# POET Benefits Demonstrated
+# ==========================
+log("\n=== POET Financial Services Benefits ===")
+log("🏗️  Architecture: Simple functions + Domain intelligence")
+log("📊 Data Handling: Automatic normalization of varied input formats")
+log("⚖️  Compliance: Built-in FCRA/ECOA regulatory validation")
+log("🔍 Audit Trails: Automatic decision logging for regulatory review")
+log("🔄 Reliability: Automatic retries and error recovery")
+log("📈 Performance: Execution monitoring and optimization")
+log("🧠 Learning: Parameter optimization based on success patterns")
+log("🚀 Productivity: 90% less code for enterprise-grade functionality")
+
+log("🎉 Financial Services POET Example Complete!")

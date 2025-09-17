@@ -1,0 +1,74 @@
+# Function Composition Demo in Dana
+# This demonstrates the pipe operator for data processing and function composition
+
+print("Dana Function Composition Demo")
+print("================================")
+
+
+def add_ten(x):
+    return x + 10
+
+
+def double(x):
+    return x * 2
+
+
+def stringify(x):
+    return "Result: " + str(x)
+
+
+print("\n1. Direct Data Pipeline")
+print("-----------------------")
+
+# Direct data pipeline - immediate execution
+result1 = 5 | add_ten | double | stringify
+print("5 | add_ten | double | stringify = " + str(result1))
+
+result2 = 3 | add_ten | double | stringify
+print("3 | add_ten | double | stringify = " + str(result2))
+
+print("\n2. Step-by-step Pipeline")
+print("------------------------")
+
+# Show step-by-step execution
+step1 = 7 | add_ten
+print("7 | add_ten = " + str(step1))
+
+step2 = step1 | double
+print(str(step1) + " | double = " + str(step2))
+
+step3 = step2 | stringify
+print(str(step2) + " | stringify = " + str(step3))
+
+print("\n3. Complex Data Processing")
+print("--------------------------")
+
+
+def create_person(name):
+    return {"name": name, "age": 0, "skills": []}
+
+
+def set_age_25(person):
+    person_copy = person.copy()
+    person_copy["age"] = 25
+    return person_copy
+
+
+def add_coding_skills(person):
+    person_copy = person.copy()
+    person_copy["skills"] = person["skills"] + ["Python", "Dana"]
+    return person_copy
+
+
+# Process person data through pipeline
+alice = "Alice" | create_person | set_age_25 | add_coding_skills
+print("Alice processed: " + str(alice))
+
+bob = "Bob" | create_person | set_age_25 | add_coding_skills
+print("Bob processed: " + str(bob))
+
+print("\nDemo Complete! The pipe operator works for:")
+print("• Direct data processing pipelines")
+print("• Step-by-step transformations")
+print("• Complex data structure processing")
+print("• Left-associative evaluation")

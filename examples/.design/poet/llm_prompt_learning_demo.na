@@ -1,0 +1,57 @@
+# LLM Prompt Learning Demo
+# 
+# This example demonstrates POET's enhanced LLM optimization with prompt learning.
+# It shows how POET automatically improves prompts based on execution feedback.
+
+# @poet(domain="enhanced_llm_optimization", enable_training=True, learning_algorithm="statistical")
+def analyze_financial_risk(credit_score: int, income: float, debt_ratio: float) -> str:
+    # Simple prompt that POET will learn to optimize
+    prompt = f"Analyze financial risk for credit score {credit_score}, income ${income}, debt ratio {debt_ratio}"
+    return reason(prompt)
+
+# @poet(domain="enhanced_llm_optimization", enable_training=True)
+def generate_investment_advice(risk_tolerance: str, investment_amount: float, time_horizon: int) -> str:
+    # POET will learn to enhance this prompt with domain context
+    prompt = f"Provide investment advice for {risk_tolerance} risk tolerance, ${investment_amount}, {time_horizon} years"
+    return reason(prompt)
+
+# @poet(domain="enhanced_llm_optimization", enable_training=True)
+def summarize_financial_document(document_text: str, focus_areas: str) -> str:
+    # POET will learn optimal prompt structure for document analysis
+    prompt = f"Summarize this financial document focusing on {focus_areas}: {document_text}"
+    return reason(prompt)
+
+# Demo usage - POET learns from each execution
+log("🎯 Testing Financial Risk Analysis with Prompt Learning")
+
+# These calls will help POET learn optimal prompts
+risk1 = analyze_financial_risk(750, 80000.0, 0.25)
+log(f"Risk Analysis 1: {risk1}")
+
+risk2 = analyze_financial_risk(650, 50000.0, 0.45)
+log(f"Risk Analysis 2: {risk2}")
+
+risk3 = analyze_financial_risk(820, 120000.0, 0.15)
+log(f"Risk Analysis 3: {risk3}")
+
+log("\n📈 Testing Investment Advice with Learning")
+
+advice1 = generate_investment_advice("conservative", 50000.0, 10)
+log(f"Investment Advice 1: {advice1}")
+
+advice2 = generate_investment_advice("aggressive", 25000.0, 20)
+log(f"Investment Advice 2: {advice2}")
+
+log("\n📄 Testing Document Summarization")
+
+sample_doc = "Q3 earnings report shows revenue of $2.1M, up 15% YoY. Net profit margin improved to 8.2%. Key risks include supply chain disruptions and increased competition."
+
+summary = summarize_financial_document(sample_doc, "profitability and risks")
+log(f"Document Summary: {summary}")
+
+log("\n🧠 POET Prompt Learning Features:")
+log("- Automatically analyzes prompt effectiveness")
+log("- Learns optimal prompt structure for each function")
+log("- Adapts to domain-specific requirements")
+log("- Improves response quality over time")
+log("- Provides learning recommendations")

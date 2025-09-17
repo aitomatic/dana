@@ -1,0 +1,34 @@
+# Temperature Monitoring Demo
+# This program demonstrates basic DANA functionality by monitoring a simulated temperature sensor
+
+# Set initial temperature (simulated sensor reading)
+private.sensor.temperature = 95
+
+# Initialize status variable
+private.status = "UNKNOWN"
+
+# Log the current temperature
+log(f"Current temperature: {private.sensor.temperature}°F")
+
+# Check if temperature is too high
+private.threshold_high = 100
+private.threshold_critical = 120
+
+if private.sensor.temperature > private.threshold_high:
+    # Log a warning
+    log.warn("WARNING: Temperature is too high!")
+
+    # Set status based on severity
+    if private.sensor.temperature > private.threshold_critical:
+        private.status = "CRITICAL"
+        log.error("CRITICAL: Temperature is critically high!")
+    else:
+        private.status = "WARNING"
+        log.warn("Warning: Temperature is elevated")
+else:
+    # Normal temperature
+    private.status = "NORMAL"
+    log.info("Temperature is within normal range")
+
+# Record the result
+log(f"Final temperature status: {private.status}")

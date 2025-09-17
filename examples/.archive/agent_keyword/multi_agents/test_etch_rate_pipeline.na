@@ -1,0 +1,32 @@
+# Test the new smart etch rate troubleshooting pipeline
+import plasma_etch_agent
+
+# Test case 1: Unstable etch rate problem (should trigger smart pipeline)
+print("=== TEST 1: Unstable Etch Rate Problem ===")
+problem1 = "The etch rate is unstable and varying by more than 10% between wafers. We need to identify the root cause and fix it."
+result1 = plasma_etch_agent.solve(problem1)
+print("RESULT 1:", result1)
+
+print("\n" + "="*80 + "\n")
+
+# Test case 2: Gas flow related problem (should trigger smart pipeline)
+print("=== TEST 2: Gas Flow Related Problem ===")
+problem2 = "There are issues with gas flow rates affecting the etch uniformity across the wafer."
+result2 = plasma_etch_agent.solve(problem2)
+print("RESULT 2:", result2)
+
+print("\n" + "="*80 + "\n")
+
+# Test case 3: Chamber contamination problem (should trigger smart pipeline)
+print("=== TEST 3: Chamber Contamination Problem ===")
+problem3 = "Chamber wall deposits are causing etch rate variations and particle contamination."
+result3 = plasma_etch_agent.solve(problem3)
+print("RESULT 3:", result3)
+
+print("\n" + "="*80 + "\n")
+
+# Test case 4: Regular problem (should use standard approach)
+print("=== TEST 4: Regular Plasma Etch Problem ===")
+problem4 = "There's excessive particle contamination in the chamber after etching."
+result4 = plasma_etch_agent.solve(problem4)
+print("RESULT 4:", result4) 

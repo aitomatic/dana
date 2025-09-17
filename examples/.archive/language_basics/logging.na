@@ -1,0 +1,19 @@
+# Example: Logging
+# Demonstrates the use of the log() statement.
+
+log("Starting program execution.")
+
+# Perform some assignments
+private.status.phase = "Initialization"
+private.config.enabled = 1
+
+log("Configuration loaded.")
+
+# Update status
+private.status.phase = "Running"
+private.temp.value = 99
+
+log("Processing complete.")
+
+# Final log message
+log("Exiting program.")

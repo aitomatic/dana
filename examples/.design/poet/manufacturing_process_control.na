@@ -1,0 +1,656 @@
+# Manufacturing Process Control with POET  
+# =======================================
+# INDUSTRY: Semiconductor Manufacturing
+# USE CASE: RIE (Reactive Ion Etching) Process Control and Optimization
+# POET FEATURES: Yield optimization, equipment safety, process validation
+# LEARNING: How POET adds manufacturing domain intelligence
+# =======================================
+
+log("🏭 Manufacturing POET Example - Semiconductor Process Control")
+
+# BASIC PROCESS CONTROL WITHOUT POET (for comparison)
+# ==================================================
+def basic_etch_control(temperature: float, pressure: float, flow_rate: float) -> dict:
+    """Basic etching process control without POET enhancement"""
+    if 180 <= temperature <= 220 and 50 <= pressure <= 100 and 80 <= flow_rate <= 120:
+        return {"status": "within_spec", "adjustments": []}
+    else:
+        return {"status": "out_of_spec", "adjustments": ["manual_review_required"]}
+
+# POET-ENHANCED PROCESS CONTROL WITH MANUFACTURING DOMAIN INTELLIGENCE
+# ====================================================================
+@poet(
+    domain="manufacturing",
+    timeout=25.0,
+    retries=3,
+    enable_training=true,
+    learning_algorithm="statistical",
+    collect_metrics=true,
+    yield_optimization=true,
+    equipment_protection=true,
+    safety_interlocks=true
+)
+def control_rie_etching_process(
+    batch_id: str,
+    recipe_name: str,
+    chamber_temperature: float,
+    chamber_pressure: float,
+    gas_flow_rates: dict,
+    rf_power: float,
+    etch_time: float,
+    substrate_type: str,
+    target_etch_depth: float,
+    equipment_status: dict
+) -> dict:
+    """
+    POET-enhanced RIE etching process control with manufacturing intelligence.
+    
+    POET automatically adds:
+    - Yield optimization algorithms
+    - Equipment safety interlocks
+    - Process validation and SPC (Statistical Process Control)
+    - Predictive maintenance integration
+    - Real-time defect detection
+    - Recipe optimization based on historical data
+    """
+    
+    log(f"Controlling RIE etching for batch {batch_id}, recipe: {recipe_name}")
+    log(f"Parameters: T={chamber_temperature}°C, P={chamber_pressure}mTorr, RF={rf_power}W")
+    
+    # Initialize process control metrics
+    process_score = 100
+    yield_prediction = 95  # Start with expected yield
+    safety_violations = []
+    process_adjustments = []
+    equipment_warnings = []
+    
+    # Recipe-specific parameter ranges (manufacturing domain knowledge)
+    recipe_specs = {
+        "silicon_oxide_etch": {
+            "temperature": {"min": 180, "max": 220, "optimal": 200},
+            "pressure": {"min": 50, "max": 100, "optimal": 75},
+            "cf4_flow": {"min": 80, "max": 120, "optimal": 100},
+            "o2_flow": {"min": 10, "max": 30, "optimal": 20},
+            "rf_power": {"min": 800, "max": 1200, "optimal": 1000},
+            "etch_rate": {"min": 150, "max": 250, "target": 200}  # nm/min
+        },
+        "silicon_nitride_etch": {
+            "temperature": {"min": 160, "max": 200, "optimal": 180},
+            "pressure": {"min": 30, "max": 80, "optimal": 50},
+            "cf4_flow": {"min": 60, "max": 100, "optimal": 80},
+            "chf3_flow": {"min": 40, "max": 80, "optimal": 60},
+            "rf_power": {"min": 600, "max": 1000, "optimal": 800},
+            "etch_rate": {"min": 80, "max": 150, "target": 120}  # nm/min
+        },
+        "polysilicon_etch": {
+            "temperature": {"min": 200, "max": 250, "optimal": 225},
+            "pressure": {"min": 80, "max": 150, "optimal": 120},
+            "cl2_flow": {"min": 100, "max": 180, "optimal": 140},
+            "hbr_flow": {"min": 40, "max": 80, "optimal": 60},
+            "rf_power": {"min": 1000, "max": 1500, "optimal": 1250},
+            "etch_rate": {"min": 200, "max": 350, "target": 280}  # nm/min
+        }
+    }
+    
+    # Get recipe specifications
+    recipe_spec = recipe_specs.get(recipe_name, recipe_specs["silicon_oxide_etch"])
+    
+    # SAFETY INTERLOCKS (Critical for equipment and operator safety)
+    # ============================================================
+    
+    # Temperature safety check
+    if chamber_temperature > 300:
+        safety_violations.append("temperature_overheat_critical")
+        process_score = 0
+        log(f"CRITICAL: Temperature {chamber_temperature}°C exceeds safe limit", "error")
+    elif chamber_temperature > recipe_spec["temperature"]["max"] + 20:
+        safety_violations.append("temperature_overheat_warning")
+        process_score -= 30
+        process_adjustments.append("reduce_temperature_immediately")
+    
+    # Pressure safety check
+    if chamber_pressure > 200:
+        safety_violations.append("pressure_overpressure_critical")
+        process_score = 0
+        log(f"CRITICAL: Pressure {chamber_pressure}mTorr exceeds safe limit", "error")
+    elif chamber_pressure < 10:
+        safety_violations.append("pressure_undervacuum_warning")
+        process_score -= 20
+        process_adjustments.append("check_vacuum_system")
+    
+    # RF power safety check
+    if rf_power > 2000:
+        safety_violations.append("rf_power_excessive_critical")
+        process_score = 0
+        log(f"CRITICAL: RF power {rf_power}W exceeds safe limit", "error")
+    
+    # Gas flow safety checks
+    total_flow = sum(gas_flow_rates.values())
+    if total_flow > 500:
+        safety_violations.append("gas_flow_excessive")
+        process_score -= 25
+        process_adjustments.append("reduce_total_gas_flow")
+    
+    # PROCESS OPTIMIZATION AND CONTROL
+    # ================================
+    
+    # Temperature control assessment
+    temp_spec = recipe_spec["temperature"]
+    if temp_spec["min"] <= chamber_temperature <= temp_spec["max"]:
+        temp_score = 100 - abs(chamber_temperature - temp_spec["optimal"]) * 2
+        if chamber_temperature == temp_spec["optimal"]:
+            temp_score = 100
+    else:
+        temp_score = max(0, 80 - abs(chamber_temperature - temp_spec["optimal"]) * 3)
+        if chamber_temperature < temp_spec["min"]:
+            process_adjustments.append(f"increase_temperature_to_{temp_spec['optimal']}")
+            yield_prediction -= 5
+        else:
+            process_adjustments.append(f"decrease_temperature_to_{temp_spec['optimal']}")
+            yield_prediction -= 8
+    
+    # Pressure control assessment
+    pressure_spec = recipe_spec["pressure"]
+    if pressure_spec["min"] <= chamber_pressure <= pressure_spec["max"]:
+        pressure_score = 100 - abs(chamber_pressure - pressure_spec["optimal"]) * 1.5
+    else:
+        pressure_score = max(0, 70 - abs(chamber_pressure - pressure_spec["optimal"]) * 2)
+        if chamber_pressure < pressure_spec["min"]:
+            process_adjustments.append(f"increase_pressure_to_{pressure_spec['optimal']}")
+            yield_prediction -= 3
+        else:
+            process_adjustments.append(f"decrease_pressure_to_{pressure_spec['optimal']}")
+            yield_prediction -= 6
+    
+    # Gas flow optimization
+    gas_flow_score = 100
+    for gas_type, flow_rate in gas_flow_rates.items():
+        spec_key = f"{gas_type}_flow"
+        if spec_key in recipe_spec:
+            gas_spec = recipe_spec[spec_key]
+            if not (gas_spec["min"] <= flow_rate <= gas_spec["max"]):
+                gas_flow_score -= 15
+                process_adjustments.append(f"adjust_{gas_type}_flow_to_{gas_spec['optimal']}")
+                yield_prediction -= 2
+    
+    # RF power optimization
+    rf_spec = recipe_spec["rf_power"]
+    if rf_spec["min"] <= rf_power <= rf_spec["max"]:
+        rf_score = 100 - abs(rf_power - rf_spec["optimal"]) * 0.1
+    else:
+        rf_score = max(0, 60 - abs(rf_power - rf_spec["optimal"]) * 0.15)
+        process_adjustments.append(f"adjust_rf_power_to_{rf_spec['optimal']}")
+        yield_prediction -= 4
+    
+    # EQUIPMENT HEALTH MONITORING
+    # ===========================
+    
+    equipment_health_score = 100
+    
+    # Chamber condition checks
+    if equipment_status.get("chamber_cycles", 0) > 10000:
+        equipment_warnings.append("chamber_cleaning_due")
+        equipment_health_score -= 10
+        yield_prediction -= 2
+    
+    # Pump performance check
+    if equipment_status.get("pump_efficiency", 100) < 85:
+        equipment_warnings.append("pump_performance_degraded")
+        equipment_health_score -= 15
+        process_adjustments.append("schedule_pump_maintenance")
+        yield_prediction -= 3
+    
+    # Electrode condition check
+    if equipment_status.get("electrode_erosion_mm", 0) > 2.0:
+        equipment_warnings.append("electrode_replacement_needed")
+        equipment_health_score -= 20
+        yield_prediction -= 5
+    
+    # Gas line contamination check
+    if equipment_status.get("gas_purity_percent", 99.9) < 99.5:
+        equipment_warnings.append("gas_line_contamination")
+        equipment_health_score -= 12
+        process_adjustments.append("purge_gas_lines")
+        yield_prediction -= 4
+    
+    # PROCESS PREDICTION AND OPTIMIZATION
+    # ===================================
+    
+    # Estimate etch rate based on parameters
+    base_etch_rate = recipe_spec["etch_rate"]["target"]
+    
+    # Temperature effect on etch rate
+    temp_factor = 1.0 + (chamber_temperature - recipe_spec["temperature"]["optimal"]) * 0.02
+    
+    # Pressure effect on etch rate
+    pressure_factor = 1.0 + (chamber_pressure - recipe_spec["pressure"]["optimal"]) * 0.01
+    
+    # RF power effect on etch rate
+    rf_factor = 1.0 + (rf_power - recipe_spec["rf_power"]["optimal"]) * 0.0003
+    
+    predicted_etch_rate = base_etch_rate * temp_factor * pressure_factor * rf_factor
+    
+    # Calculate estimated process time to reach target depth
+    estimated_time = target_etch_depth / predicted_etch_rate if predicted_etch_rate > 0 else float('inf')
+    
+    # Uniformity prediction (affected by process parameter stability)
+    uniformity_score = min(temp_score, pressure_score, gas_flow_score, rf_score)
+    predicted_uniformity = max(85, uniformity_score * 0.15 + 85)  # % uniformity across wafer
+    
+    # OVERALL PROCESS ASSESSMENT
+    # =========================
+    
+    process_score = min(temp_score, pressure_score, gas_flow_score, rf_score, equipment_health_score)
+    
+    # Adjust yield prediction based on overall process health
+    if process_score >= 95:
+        yield_prediction = min(98, yield_prediction)
+    elif process_score >= 85:
+        yield_prediction -= 2
+    elif process_score >= 70:
+        yield_prediction -= 5
+    else:
+        yield_prediction -= 10
+    
+    # Process capability assessment
+    if len(safety_violations) > 0:
+        process_capability = "unsafe"
+        recommendation = "stop_process_immediately"
+    elif process_score >= 90 and len(equipment_warnings) == 0:
+        process_capability = "excellent"
+        recommendation = "continue_process"
+    elif process_score >= 75:
+        process_capability = "acceptable"
+        recommendation = "continue_with_monitoring"
+    elif process_score >= 60:
+        process_capability = "marginal"
+        recommendation = "apply_corrections_and_monitor"
+    else:
+        process_capability = "poor"
+        recommendation = "abort_and_investigate"
+    
+    return {
+        "batch_id": batch_id,
+        "recipe_name": recipe_name,
+        "process_assessment": {
+            "overall_score": process_score,
+            "process_capability": process_capability,
+            "recommendation": recommendation,
+            "yield_prediction_percent": yield_prediction,
+            "predicted_uniformity_percent": predicted_uniformity
+        },
+        "parameter_scores": {
+            "temperature_score": temp_score,
+            "pressure_score": pressure_score,
+            "gas_flow_score": gas_flow_score,
+            "rf_power_score": rf_score,
+            "equipment_health_score": equipment_health_score
+        },
+        "process_predictions": {
+            "predicted_etch_rate_nm_per_min": predicted_etch_rate,
+            "estimated_completion_time_min": estimated_time,
+            "target_etch_depth_nm": target_etch_depth
+        },
+        "safety_status": {
+            "safety_violations": safety_violations,
+            "safety_level": "critical" if any("critical" in v for v in safety_violations) else "warning" if safety_violations else "safe"
+        },
+        "equipment_status": {
+            "equipment_warnings": equipment_warnings,
+            "maintenance_required": len(equipment_warnings) > 2
+        },
+        "process_adjustments": process_adjustments,
+        "timestamp": get_current_timestamp()
+    }
+
+# BATCH YIELD OPTIMIZATION WITH LEARNING
+# ======================================
+@poet(
+    domain="manufacturing",
+    timeout=45.0,
+    retries=2,
+    enable_training=true,
+    learning_algorithm="statistical",
+    batch_optimization=true,
+    spc_monitoring=true
+)
+def optimize_batch_yield(
+    batch_info: dict,
+    wafer_results: list,
+    process_history: list
+) -> dict:
+    """
+    POET-enhanced batch yield optimization with statistical process control.
+    
+    POET automatically adds:
+    - Statistical Process Control (SPC) monitoring
+    - Yield correlation analysis
+    - Recipe optimization recommendations
+    - Defect pattern recognition
+    - Process drift detection
+    """
+    
+    log(f"Optimizing yield for batch {batch_info['batch_id']}")
+    
+    batch_yield = 0
+    defect_analysis = {"total_defects": 0, "defect_types": {}}
+    process_stability = {"mean_shift": false, "trend_detected": false}
+    optimization_recommendations = []
+    
+    # Analyze individual wafer results
+    successful_wafers = 0
+    total_wafers = len(wafer_results)
+    etch_depth_measurements = []
+    uniformity_measurements = []
+    
+    for wafer in wafer_results:
+        if wafer.get("pass", false):
+            successful_wafers += 1
+        
+        # Collect measurements for SPC analysis
+        if "etch_depth_nm" in wafer:
+            etch_depth_measurements.append(wafer["etch_depth_nm"])
+        
+        if "uniformity_percent" in wafer:
+            uniformity_measurements.append(wafer["uniformity_percent"])
+        
+        # Analyze defects
+        for defect in wafer.get("defects", []):
+            defect_type = defect.get("type", "unknown")
+            defect_analysis["defect_types"][defect_type] = defect_analysis["defect_types"].get(defect_type, 0) + 1
+            defect_analysis["total_defects"] += 1
+    
+    # Calculate batch yield
+    batch_yield = (successful_wafers / total_wafers) * 100 if total_wafers > 0 else 0
+    
+    # Statistical Process Control Analysis
+    if len(etch_depth_measurements) >= 5:
+        mean_depth = sum(etch_depth_measurements) / len(etch_depth_measurements)
+        depth_variance = sum((x - mean_depth) ** 2 for x in etch_depth_measurements) / len(etch_depth_measurements)
+        depth_std = depth_variance ** 0.5
+        
+        # Check for process capability
+        target_depth = batch_info.get("target_etch_depth", mean_depth)
+        cpk = min(
+            (target_depth + 3 * depth_std - mean_depth) / (3 * depth_std),
+            (mean_depth - (target_depth - 3 * depth_std)) / (3 * depth_std)
+        ) if depth_std > 0 else 0
+        
+        if cpk < 1.0:
+            optimization_recommendations.append("improve_process_capability_cpk_below_1.0")
+        elif cpk < 1.33:
+            optimization_recommendations.append("monitor_process_capability_cpk_marginal")
+    
+    # Defect pattern analysis
+    critical_defect_types = ["particle_contamination", "etch_non_uniformity", "micromasking"]
+    for defect_type in critical_defect_types:
+        if defect_analysis["defect_types"].get(defect_type, 0) > total_wafers * 0.1:
+            optimization_recommendations.append(f"investigate_{defect_type}_root_cause")
+    
+    # Historical trend analysis (using POET learning)
+    if len(process_history) >= 10:
+        recent_yields = [batch.get("yield", 0) for batch in process_history[-10:]]
+        yield_trend = sum(recent_yields[-5:]) / 5 - sum(recent_yields[:5]) / 5
+        
+        if yield_trend < -2:
+            process_stability["trend_detected"] = true
+            optimization_recommendations.append("investigate_yield_decline_trend")
+    
+    # AI-powered root cause analysis
+    ai_analysis = reason(
+        f"Analyze semiconductor manufacturing batch results: "
+        f"Yield: {batch_yield:.1f}%, Total Defects: {defect_analysis['total_defects']}, "
+        f"Main Defect Types: {list(defect_analysis['defect_types'].keys())}, "
+        f"Recipe: {batch_info.get('recipe_name', 'unknown')}. "
+        f"Identify potential root causes and optimization opportunities."
+    )
+    
+    # Generate optimization strategy
+    optimization_strategy = "maintain_current_process"
+    if batch_yield < 80:
+        optimization_strategy = "urgent_process_review"
+    elif batch_yield < 90:
+        optimization_strategy = "process_improvement_needed"
+    elif batch_yield < 95:
+        optimization_strategy = "minor_optimizations"
+    
+    return {
+        "batch_summary": {
+            "batch_id": batch_info["batch_id"],
+            "total_wafers": total_wafers,
+            "successful_wafers": successful_wafers,
+            "batch_yield_percent": batch_yield,
+            "optimization_strategy": optimization_strategy
+        },
+        "quality_metrics": {
+            "mean_etch_depth_nm": sum(etch_depth_measurements) / len(etch_depth_measurements) if etch_depth_measurements else 0,
+            "etch_depth_std_nm": (sum((x - (sum(etch_depth_measurements) / len(etch_depth_measurements))) ** 2 for x in etch_depth_measurements) / len(etch_depth_measurements)) ** 0.5 if len(etch_depth_measurements) > 1 else 0,
+            "mean_uniformity_percent": sum(uniformity_measurements) / len(uniformity_measurements) if uniformity_measurements else 0,
+            "process_capability_cpk": cpk if 'cpk' in locals() else "insufficient_data"
+        },
+        "defect_analysis": defect_analysis,
+        "process_stability": process_stability,
+        "optimization_recommendations": optimization_recommendations,
+        "ai_root_cause_analysis": ai_analysis,
+        "analysis_timestamp": get_current_timestamp()
+    }
+
+# PREDICTIVE MAINTENANCE WITH EQUIPMENT MONITORING
+# ===============================================
+@poet(
+    domain="manufacturing",
+    timeout=30.0,
+    retries=3,
+    enable_training=true,
+    ai_reasoning=true,
+    predictive_maintenance=true,
+    equipment_optimization=true
+)
+def predict_equipment_maintenance(
+    equipment_id: str,
+    sensor_data: dict,
+    usage_history: dict,
+    maintenance_log: list
+) -> dict:
+    """
+    POET-enhanced predictive maintenance for semiconductor equipment.
+    
+    POET automatically adds:
+    - Machine learning-based failure prediction
+    - Optimal maintenance scheduling
+    - Cost-benefit analysis for maintenance timing
+    - Equipment performance optimization
+    - Spare parts inventory planning
+    """
+    
+    log(f"Analyzing maintenance needs for equipment {equipment_id}")
+    
+    maintenance_urgency = "normal"
+    predicted_failures = []
+    maintenance_recommendations = []
+    cost_impact = {"immediate": 0, "deferred": 0}
+    
+    # Analyze sensor trends
+    chamber_temp_trend = sensor_data.get("temperature_trend", "stable")
+    vibration_level = sensor_data.get("vibration_rms", 0)
+    pump_current = sensor_data.get("pump_current_amps", 0)
+    gas_flow_stability = sensor_data.get("flow_stability_percent", 100)
+    
+    # Usage-based predictions
+    total_cycles = usage_history.get("total_cycles", 0)
+    hours_since_maintenance = usage_history.get("hours_since_pm", 0)
+    process_intensity = usage_history.get("avg_rf_power_kw", 0)
+    
+    # Component life predictions
+    predicted_life_remaining = {}
+    
+    # Chamber electrode prediction
+    electrode_cycles = total_cycles % 15000  # Typical electrode life
+    if electrode_cycles > 12000:
+        predicted_failures.append("electrode_replacement_needed")
+        maintenance_urgency = "soon"
+        predicted_life_remaining["electrode"] = f"{15000 - electrode_cycles} cycles"
+        cost_impact["immediate"] += 5000  # $ for electrode replacement
+    
+    # Pump maintenance prediction
+    if hours_since_maintenance > 8000:
+        predicted_failures.append("pump_overhaul_due")
+        maintenance_urgency = "urgent" if hours_since_maintenance > 10000 else "soon"
+        predicted_life_remaining["pump"] = f"{12000 - hours_since_maintenance} hours"
+        cost_impact["immediate"] += 15000  # $ for pump overhaul
+    
+    # Gas delivery system check
+    if gas_flow_stability < 95:
+        predicted_failures.append("gas_system_calibration_needed")
+        maintenance_recommendations.append("schedule_gas_system_calibration")
+        cost_impact["immediate"] += 2000  # $ for calibration
+    
+    # Vibration analysis for mechanical issues
+    if vibration_level > 8:  # mm/s
+        predicted_failures.append("mechanical_alignment_issue")
+        maintenance_urgency = "urgent"
+        cost_impact["deferred"] += 25000  # $ for major mechanical repair
+    
+    # AI-powered failure prediction
+    ai_maintenance_analysis = reason(
+        f"Analyze semiconductor equipment maintenance data: "
+        f"Equipment ID: {equipment_id}, Total Cycles: {total_cycles}, "
+        f"Hours Since PM: {hours_since_maintenance}, Vibration: {vibration_level}mm/s, "
+        f"Temperature Trend: {chamber_temp_trend}, Flow Stability: {gas_flow_stability}%. "
+        f"Predict failure modes and optimal maintenance timing."
+    )
+    
+    # Maintenance scheduling optimization
+    optimal_maintenance_window = "next_scheduled_downtime"
+    if maintenance_urgency == "urgent":
+        optimal_maintenance_window = "immediate"
+    elif maintenance_urgency == "soon":
+        optimal_maintenance_window = "within_2_weeks"
+    
+    # Cost-benefit analysis
+    production_loss_per_hour = 50000  # $ estimated revenue loss per hour downtime
+    
+    if maintenance_urgency == "urgent":
+        # Immediate maintenance vs. risk of unplanned downtime
+        unplanned_downtime_risk = 0.3  # 30% chance of failure
+        expected_unplanned_cost = unplanned_downtime_risk * production_loss_per_hour * 24  # 24h unplanned downtime
+        planned_downtime_cost = production_loss_per_hour * 8  # 8h planned maintenance
+        
+        cost_impact["maintenance_savings"] = expected_unplanned_cost - planned_downtime_cost
+    
+    return {
+        "equipment_id": equipment_id,
+        "maintenance_assessment": {
+            "urgency_level": maintenance_urgency,
+            "optimal_maintenance_window": optimal_maintenance_window,
+            "predicted_failures": predicted_failures,
+            "maintenance_recommendations": maintenance_recommendations
+        },
+        "component_health": {
+            "predicted_life_remaining": predicted_life_remaining,
+            "critical_components": [comp for comp, life in predicted_life_remaining.items() if "hours" in life and int(life.split()[0]) < 1000]
+        },
+        "cost_analysis": {
+            "immediate_maintenance_cost": cost_impact["immediate"],
+            "deferred_maintenance_risk_cost": cost_impact["deferred"],
+            "estimated_savings_from_planned_maintenance": cost_impact.get("maintenance_savings", 0)
+        },
+        "ai_maintenance_analysis": ai_maintenance_analysis,
+        "sensor_summary": {
+            "temperature_trend": chamber_temp_trend,
+            "vibration_status": "normal" if vibration_level <= 5 else "elevated" if vibration_level <= 8 else "concerning",
+            "pump_status": "normal" if pump_current <= 15 else "high_current",
+            "gas_flow_status": "stable" if gas_flow_stability >= 98 else "variable"
+        },
+        "analysis_timestamp": get_current_timestamp()
+    }
+
+# USAGE EXAMPLES AND DEMONSTRATIONS
+# =================================
+log("\n=== Testing POET Manufacturing Examples ===")
+
+# Example 1: RIE process control
+log("\n--- RIE Etching Process Control ---")
+process_result = control_rie_etching_process(
+    batch_id="BATCH_2024_0156",
+    recipe_name="silicon_oxide_etch",
+    chamber_temperature=205.0,
+    chamber_pressure=78.0,
+    gas_flow_rates={"cf4": 95, "o2": 18},
+    rf_power=980.0,
+    etch_time=12.5,
+    substrate_type="silicon",
+    target_etch_depth=1500.0,
+    equipment_status={
+        "chamber_cycles": 8500,
+        "pump_efficiency": 88,
+        "electrode_erosion_mm": 1.8,
+        "gas_purity_percent": 99.7
+    }
+)
+
+log(f"Process Capability: {process_result['process_assessment']['process_capability']}")
+log(f"Overall Score: {process_result['process_assessment']['overall_score']}")
+log(f"Yield Prediction: {process_result['process_assessment']['yield_prediction_percent']}%")
+log(f"Safety Level: {process_result['safety_status']['safety_level']}")
+log(f"Process Adjustments: {process_result['process_adjustments']}")
+
+# Example 2: Batch yield optimization
+log("\n--- Batch Yield Optimization ---")
+sample_wafer_results = [
+    {"pass": true, "etch_depth_nm": 1485, "uniformity_percent": 96, "defects": []},
+    {"pass": true, "etch_depth_nm": 1510, "uniformity_percent": 94, "defects": [{"type": "particle_contamination"}]},
+    {"pass": false, "etch_depth_nm": 1380, "uniformity_percent": 89, "defects": [{"type": "etch_non_uniformity"}, {"type": "micromasking"}]},
+    {"pass": true, "etch_depth_nm": 1495, "uniformity_percent": 97, "defects": []},
+    {"pass": true, "etch_depth_nm": 1520, "uniformity_percent": 95, "defects": []}
+]
+
+yield_result = optimize_batch_yield(
+    batch_info={"batch_id": "BATCH_2024_0156", "recipe_name": "silicon_oxide_etch", "target_etch_depth": 1500},
+    wafer_results=sample_wafer_results,
+    process_history=[]
+)
+
+log(f"Batch Yield: {yield_result['batch_summary']['batch_yield_percent']:.1f}%")
+log(f"Optimization Strategy: {yield_result['batch_summary']['optimization_strategy']}")
+log(f"Mean Etch Depth: {yield_result['quality_metrics']['mean_etch_depth_nm']:.1f}nm")
+log(f"Total Defects: {yield_result['defect_analysis']['total_defects']}")
+log(f"Optimization Recommendations: {yield_result['optimization_recommendations']}")
+
+# Example 3: Predictive maintenance
+log("\n--- Predictive Equipment Maintenance ---")
+maintenance_result = predict_equipment_maintenance(
+    equipment_id="RIE_CHAMBER_01",
+    sensor_data={
+        "temperature_trend": "increasing",
+        "vibration_rms": 6.5,
+        "pump_current_amps": 16.2,
+        "flow_stability_percent": 97.5
+    },
+    usage_history={
+        "total_cycles": 13500,
+        "hours_since_pm": 9200,
+        "avg_rf_power_kw": 1.1
+    },
+    maintenance_log=[]
+)
+
+log(f"Maintenance Urgency: {maintenance_result['maintenance_assessment']['urgency_level']}")
+log(f"Predicted Failures: {maintenance_result['maintenance_assessment']['predicted_failures']}")
+log(f"Optimal Window: {maintenance_result['maintenance_assessment']['optimal_maintenance_window']}")
+log(f"Immediate Cost: ${maintenance_result['cost_analysis']['immediate_maintenance_cost']}")
+log(f"Critical Components: {maintenance_result['component_health']['critical_components']}")
+
+# POET BENEFITS DEMONSTRATED
+# ==========================
+log("\n=== POET Manufacturing Benefits ===")
+log("✅ Yield Optimization: Automatic recipe optimization and SPC monitoring")
+log("✅ Equipment Safety: Real-time safety interlocks and protection systems")
+log("✅ Process Control: Statistical process control and capability analysis")
+log("✅ Predictive Maintenance: AI-powered failure prediction and cost optimization")
+log("✅ Quality Assurance: Defect pattern recognition and root cause analysis")
+log("✅ Equipment Protection: Thermal, pressure, and power safety systems")
+log("✅ Production Optimization: Batch scheduling and throughput optimization")
+log("✅ Cost Management: Maintenance timing and spare parts optimization")
+
+log("🎉 Manufacturing POET Example Complete!")
