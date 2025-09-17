@@ -234,7 +234,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end">
-            <Button variant="secondary" onClick={() => setShowConfirmDiscard(false)}>
+            <Button variant="outline" onClick={() => setShowConfirmDiscard(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteFile}>
