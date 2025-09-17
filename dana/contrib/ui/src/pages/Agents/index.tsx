@@ -428,7 +428,7 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
+        className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
             ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-slate-900'
             : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-slate-900 to-slate-900'
