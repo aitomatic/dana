@@ -151,7 +151,7 @@ def execute_file(file_path, debug=False, script_args=None):
         input_dict = parse_dana_input_args(script_args) if script_args else {}
 
         # Append source code with main function call
-        source_code: str = f"""
+        modified_source_code: str = f"""
 {source_code}
 
 {MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
@@ -168,7 +168,7 @@ def execute_file(file_path, debug=False, script_args=None):
 """
 
     # Run the source code with custom search paths
-    result = DanaSandbox.execute_string_once(source_code=source_code,
+    result = DanaSandbox.execute_string_once(source_code=modified_source_code,
                                              filename=str(file_path_obj),
                                              debug_mode=debug,
                                              module_search_paths=[str(file_path_obj.parent.resolve())])
@@ -260,9 +260,70 @@ def start_tui():
         sys.exit(1)
 
 
+def build_frontend():
+    """Build the frontend by running npm install and npm run build."""
+    import subprocess
+    import os
+    
+    try:
+        # Get the project root directory
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+        frontend_dir = os.path.join(project_root, "dana", "contrib", "ui")
+        
+        # Check if frontend directory exists
+        if not os.path.exists(frontend_dir):
+            print(f"{colors.error(f'❌ Frontend directory not found: {frontend_dir}')}")
+            return False
+        
+        # Change to frontend directory and run npm install
+        print(f"📦 Installing dependencies in {frontend_dir}...")
+        subprocess.run(
+            ["npm", "install"],
+            cwd=frontend_dir,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print(f"{colors.accent('✅ Dependencies installed successfully')}")
+        
+        # Run npm run build
+        print("🔨 Building frontend...")
+        subprocess.run(
+            ["npm", "run", "build"],
+            cwd=frontend_dir,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print(f"{colors.accent('✅ Frontend built successfully')}")
+        
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print(f"{colors.error('❌ Frontend build failed:')}")
+        if e.stdout:
+            print(f"STDOUT: {e.stdout}")
+        if e.stderr:
+            print(f"STDERR: {e.stderr}")
+        return False
+    except FileNotFoundError:
+        print(f"{colors.error('❌ npm command not found. Please ensure Node.js and npm are installed.')}")
+        return False
+    except Exception as e:
+        print(f"{colors.error(f'❌ Unexpected error during frontend build: {str(e)}')}")
+        return False
+
+
 def handle_start_command(args):
     """Start the Dana API server using uvicorn."""
     try:
+        # Build frontend before starting server
+        print("\n🔨 Building frontend...")
+        frontend_build_success = build_frontend()
+        if not frontend_build_success:
+            print(f"{colors.error('❌ Frontend build failed. Server startup aborted.')}")
+            return 1
+        
         # Start the server directly without configuration validation
         host = args.host or "127.0.0.1"
         port = args.port or 8080
