@@ -601,9 +601,7 @@ export default function AgentsPage() {
         {/* Enhanced Floating Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
-            <div className="absolute bottom-20 left-20 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-40 left-40 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
+
           </>
         )}
 
