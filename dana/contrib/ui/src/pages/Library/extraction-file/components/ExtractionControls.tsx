@@ -27,14 +27,14 @@ export const ExtractionControls = ({
     return (
       <div className="flex gap-2 items-center">
         <Button
-          variant="secondary"
+          variant="outline"
           size="sm"
           className="text-gray-700"
           onClick={onDeepExtractWithoutPrompt}
           disabled={isDeepExtracting}
           leftSection={isDeepExtracting && <SystemRestart className="animate-spin size-4" />}
         >
-          {isDeepExtracting ? 'Extracting...' : 'Deep Extract'}
+          {isDeepExtracting ? 'Extracting...' : 'Deep Extract: Off'}
         </Button>
         {!isDeepExtracting &&
           (isEditing ? (
@@ -43,7 +43,7 @@ export const ExtractionControls = ({
             </Button>
           ) : (
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               className="text-gray-700"
               leftSection={<EditPencil />}
@@ -63,7 +63,7 @@ export const ExtractionControls = ({
           leftSection={isDeepExtracting && <SystemRestart className="animate-spin size-4" />}
           disabled={isDeepExtracting}
           onClick={onDeepExtractWithPrompt}
-          variant="secondary"
+          variant="outline"
           size="sm"
           className="text-gray-700"
         >

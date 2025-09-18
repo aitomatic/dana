@@ -232,12 +232,12 @@ export const ExploreTab: React.FC<{
         </div>
         <Button
           variant="default"
-          className="w-[168px] px-4 py-1 mt-2 font-semibold"
+          className="w-[152px] px-2 py-1 mt-2 font-semibold"
           onClick={handleCreateAgent}
           disabled={creating}
         >
           <Plus style={{ width: '20', height: '20' }} />
-        Train New Agent
+        Create Agent
         </Button>
       </div>
 

@@ -1,199 +1,283 @@
 # Dana Technical Setup Guide
 
-This guide will help you set up Dana for development and contribution.
+Use this guide to set up your development environment for running and contributing to Dana
 
-## 🚀 Quick Start
+## Navigation
+- [Quick Start](#quick-start)
+- [Python Installation](#python-installation)
+  - [Linux](#linux)
+  - [macOS](#macos)
+  - [Windows](#windows)
+- [Create and Activate a Virtual Environment](#create-and-activate-a-virtual-environment)
+- [Configure API Keys](#configure-api-keys)
+- [Install Dana](#install-dana)
+- [Troubleshooting](#troubleshooting)
+- [Contributor Setup (Optional)](#contributor-setup-optional)
+- [IDE Extension](#ide-extension)
+
+---
+
+## Quick Start
 
 ### Prerequisites
-
-- **Python**: Version 3.12 or 3.13 required
-- **Command Line**: `python3` must be accessible from your terminal
-
-## 📦 Python Installation by Platform
-
-#### 🐧 Linux
-
-1. **Install Python**: Use your package manager to install Python 3.12 or 3.13
-2. **Update PATH**: Add to your `~/.bashrc`:
-   ```bash
-   export PATH=$PATH:/usr/.local/bin
-   ```
-   *(Adjust path if your Python scripts are installed elsewhere)*
-
-#### 🍎 macOS
-
-1. **Install Homebrew**: Visit [brew.sh](https://brew.sh) and follow installation instructions
-2. **Verify Homebrew**: Ensure `brew` is in your PATH (follow post-installation instructions)
-3. **Install Python**: 
-   ```bash
-   brew install python
-   ```
-4. **Verify Installation**:
-   ```bash
-   which python3
-   ```
-5. **Update PATH**: Add to your `~/.zprofile`:
-   ```bash
-   export PATH=$PATH:~/Library/Python/3.13/bin
-   ```
-   *(Replace `3.13` with your installed Python version)*
-
-#### 🪟 Windows
-
-1. **Install Python**:  
-   - **Recommended:** Download Python 3.12 or 3.13 from [python.org](https://python.org).  
-     The python.org installer will automatically update your `PATH` and enable long path support if you check the boxes during installation.  
-     - During setup, make sure to check **"Add Python to PATH"** and **"Enable long path length limit"** (if available).
-   - **Alternative:** If you have issues with the python.org installer, you can also install Python from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-313/9NRWMJP3717K).
-
-2. **Verify Installation**:  
-   Open a new Command Prompt and run:
-   ```
-   python --version
-   ```
-
-3. *(If you used the Microsoft Store and encounter issues with long paths or PATH settings, you may need to manually enable long paths and update your environment variables. See these guides: [Autodesk](https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/The-Windows-10-default-path-length-limitation-MAX-PATH-is-256-characters.html) | [Geek Rewind](https://geekrewind.com/how-to-enable-win32-long-paths-in-windows-11). Reboot after enabling long paths.)*
-
-## 📚 Install Dana
-
-Before installing Dana, it's recommended to use a Python virtual environment to avoid conflicts with other packages.
-
-1. **Create a virtual environment** (if you haven't already):
-
-   ```bash
-   python3 -m venv .venv
-   ```
-
-2. **Activate the virtual environment**:
-
-   ```bash
-   source .venv/bin/activate
-   ```
-
-3. **Install Dana inside the virtual environment**:
-
-   ```bash
-   pip install dana
-   ```
-
-> 💡 **Tip:** Always activate your virtual environment with `source .venv/bin/activate` before running or installing anything for Dana.
-
-### ⚙️ Environment Variable Setup for Dana
-
-Dana searches for environment files in this priority order:
-
-| Priority | Location | Use Case |
-|----------|----------|----------|
-| 🥇 **Highest** | `./.env` (project root) | Development projects |
-| 🥈 **Medium** | `~/.dana/.env` | User-wide settings |
-| 🥉 **Lowest** | `~/.env` | System-wide settings |
-
-#### 🔧 Setup Options
-
-**🎯 Option 1: Project-specific (Recommended)**
+- Python **3.12 or above**
 ```bash
-# In your project directory
-curl -o .env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
-# Edit .env with your API keys
+python3 # Linux/macOS
 ```
-
-**👤 Option 2: User-wide**
 ```bash
-# Create Dana config directory
-mkdir -p ~/.dana
-# Download template
-curl -o ~/.dana/.env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
-# Edit with your credentials
+python # Windows  
 ```
+**For contributors:**  
+- Git  
+- Node.js **18+** (only if building/modifying Agent Studio UI; install via nvm or from `https://nodejs.org`)  
+- GNU Make (optional; you can run npm/uv commands directly)  
 
-**🌐 Option 3: System-wide**
+---
+
+## Python Installation
+
+### Linux
+
+**Option 1: Ubuntu/Debian (recommended)**
 ```bash
-# Download to home directory
-curl -o ~/.env https://raw.githubusercontent.com/aitomatic/dana/main/.env.example
-# Edit with your credentials
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.12 python3.12-venv python3.12-pip
 ```
-
-> 💡 **Tip**: Project-specific `.env` files override user/system settings, making them perfect for development.
-
-### ✅ Verify Installation
-
-1. **Start Dana REPL**:
-   ```bash
-   dana repl
-   ```
-
-2. **Test LLM Connection**:
-   ```dana
-   llm('Hello, Dana!')
-   ```
-
-   If successful, you'll see a response from your configured LLM provider.
-
-## 🛠️ Contributor Setup
-
-> **Prerequisites**: Complete the [Quick Start](#-quick-start-typical-developer) section first.
-
-### 📦 Additional Tools
-
-**Install `uv` (Python package manager)**:
+Verify:
 ```bash
-pip install uv
+python3.12 --version
 ```
 
-**Configure Git**:
+**Option 2: All distros (advanced, pyenv)**
 ```bash
-# Install Git (if not already installed)
-# Windows: Download from git-scm.com
-# macOS: brew install git
-# Linux: Use your package manager
+git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 
-# Enable long paths on Windows
-git config --global core.longpaths true
+# Add to ~/.bashrc (or ~/.zshrc)
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# Restart shell, then install Python
+pyenv install 3.12.0
+pyenv global 3.12.0
+```
+Verify:
+```bash
+python3 --version
 ```
 
-### 🚀 Development Environment
-
-1. **Clone the Repository**:
-   ```bash
-   # HTTPS
-   git clone https://github.com/aitomatic/dana.git
-   
-   # SSH (if you have SSH keys set up)
-   git clone git@github.com:aitomatic/dana.git
-   ```
-
-2. **Setup Development Environment**:
-   ```bash
-   cd dana
-   uv sync --extra dev
-   ```
-
-   This creates a virtual environment and installs all development dependencies.
-
-3. **Activate Virtual Environment**:
-   ```bash
-   source .venv/bin/activate  # Linux/macOS
-   # or
-   .venv\Scripts\activate     # Windows
-   ```
-
-🎉 **You're ready to contribute to Dana!**
-
-## 🔌 IDE Extension
-
-**Install Dana Language Extension**:
-- **VSCode**: Search for `aitomatic.dana-language` in extensions
-- **Direct Link**: [open-vsx.org/extension/aitomatic/dana-language](https://open-vsx.org/extension/aitomatic/dana-language)
-
-**Auto-install for Projects**:
-Create `.vscode/extensions.json` in your project:
-```json
-{
-  "recommendations": [
-    "aitomatic.dana-language",
-    
-    ...  // other extensions you want to install
-  ]
-}
+**Optional PATH for --user installs**
+```bash
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
+---
+
+### macOS
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Apple Silicon
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# For Intel Macs, replace /opt/homebrew with /usr/local
+brew install python@3.13
+```
+Verify:
+```bash
+python3 --version
+```
+
+**Optional PATH for --user installs**
+```bash
+echo 'export PATH="$(python3 -m site --user-base)/bin:$PATH"' >> ~/.zprofile
+```
+
+---
+
+### Windows
+
+1. Install Python from [python.org](https://www.python.org/downloads/).  
+   - Check **Add Python to PATH**  
+   - Check **Disable path length limit**  
+
+2. Verify:
+```powershell
+python --version
+```
+
+3. Virtual environment activation:
+```powershell
+# PowerShell
+.\.venv\Scripts\Activate.ps1
+# If blocked:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+```cmd
+:: Command Prompt
+.venv\Scripts\activate.bat
+```
+
+**Alternative (if multiple Python installs):**
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+---
+
+## Create and Activate a Virtual Environment
+
+From your project directory:
+```bash
+python3 -m venv .venv        # Linux/macOS
+python -m venv .venv         # Windows
+```
+
+Activate it (in every new shell):
+```bash
+# Linux/macOS
+source .venv/bin/activate
+
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+# Windows Command Prompt
+.\.venv\Scripts\activate.bat
+```
+
+Verify:
+```bash
+which python   # Linux/macOS
+where python   # Windows
+```
+
+---
+
+## Configure API Keys
+
+Dana requires an API key for a model provider.
+
+Use the starter file at the repo root: `.env.template` (same as `.env.example`).
+
+```bash
+cp .env.template .env
+```
+
+Edit `.env` and uncomment **one** provider:
+- OpenAI → `OPENAI_API_KEY=...`
+- Azure OpenAI → `AZURE_OPENAI_API_KEY=...` (+ related vars)
+- Anthropic Claude → `ANTHROPIC_API_KEY=...`
+- Local models (Ollama, vLLM) → `LOCAL_API_KEY`, `LOCAL_BASE_URL`, `LOCAL_MODEL_NAME`
+
+Dana looks for `.env` in this order:
+1. `./.env` (project root) — recommended
+2. `~/.dana/.env`
+3. `~/.env`
+
+---
+
+## Install Dana
+
+### Quick install (users)
+```bash
+python -m pip install --upgrade pip
+pip install dana
+```
+
+Verify:
+```bash
+# CLI
+dana --version              # macOS/Linux
+python -m dana --version    # Cross-platform
+
+# Python one-liner
+python -c "import dana; print(dana.__version__)"
+
+# Via package manager
+pip show dana | grep Version         # macOS/Linux
+pip show dana | Select-String Version  # Windows PowerShell
+```
+Optional REPL smoke test:
+```bash
+dana repl
+```
+At the prompt, type:
+```dana
+help()
+```
+
+### Development install (contributors)
+```bash
+git clone https://github.com/aitomatic/dana.git
+cd dana
+uv sync --extra dev
+
+# Build Dana Agent Studio (frontend) — required to serve the local UI or when modifying UI
+make build-frontend
+
+# Serve UI + API locally at http://127.0.0.1:12345
+make local-server
+# or
+uv run python -m dana.api.server
+```
+
+Verify:
+```bash
+# Check Dana version
+uv run dana --version
+
+# Confirm Agent Studio launches in browser
+open http://127.0.0.1:12345    # macOS
+xdg-open http://127.0.0.1:12345  # Linux
+# Windows: manually open browser at http://127.0.0.1:12345
+```
+
+**Notes for contributors:**  
+- Repo clones must build the frontend at least once with `make build-frontend`.  
+- If you modify UI code, rebuild (`make build-frontend`) or run dev mode (`npm run dev` in `dana/contrib/ui`).  
+- For editing `.na` files, install the [Dana VS Code extension](#ide-extension).
+
+---
+
+## Troubleshooting
+
+- Dana not found: activate the virtual environment.  
+- Wrong Python version: `python3 --version` should be 3.12 or above.  
+- API key errors: check `.env` exists with a valid key.  
+- Windows PowerShell: if activation fails, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`.  
+- UI build: check Node.js 18+ (`node -v`) and GNU Make (`make -v`); rebuild with `make build-frontend`.  
+
+---
+
+## Contributor Setup (Optional)
+
+Install uv:
+- macOS: `brew install uv`
+- Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Windows: `winget install astral-sh.uv`
+
+Check:
+```bash
+uv --version
+```
+
+Git config:
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+---
+
+## IDE Extension
+
+We recommend the Dana Language Extension for VS Code:
+- Syntax highlighting for `.na` files  
+- Code snippets and REPL integration  
+- Easier agent workflow editing  
+
+Search **“Dana”** in the VS Code Extensions Marketplace, or install from Open VSX (`aitomatic.dana-language`).

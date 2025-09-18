@@ -1,0 +1,232 @@
+{
+    "root": {
+        "id": "81be54c0-c2e5-5790-8978-619825aa0263",
+        "topic": "Finance",
+        "children": [
+            {
+                "id": "864688fd-11f8-4b60-aeb9-a19919796b9a",
+                "topic": "Financial Analysis",
+                "children": [
+                    {
+                        "id": "f39959f4-5b50-4fff-b3e8-38dd2cb688f4",
+                        "topic": "Financial Statement Analysis",
+                        "children": [
+                            {
+                                "id": "895279bd-7474-4ee5-93cd-47079f0cce91",
+                                "topic": "Understanding and Interpreting the Income Statement",
+                                "children": []
+                            },
+                            {
+                                "id": "dc25318a-5f87-4aec-a6ee-a08380beb84a",
+                                "topic": "Analyzing the Balance Sheet for Financial Health",
+                                "children": []
+                            },
+                            {
+                                "id": "09c6dcb3-e169-4d5c-989e-04a8e2edb202",
+                                "topic": "Evaluating the Statement of Cash Flows",
+                                "children": []
+                            },
+                            {
+                                "id": "bca0ccd7-82cd-41fd-87f9-895fe288d215",
+                                "topic": "Identifying and Adjusting for Non-Recurring Items",
+                                "children": []
+                            },
+                            {
+                                "id": "6188e0f1-34b6-4112-a8a6-922cafd2d940",
+                                "topic": "Detecting Earnings Management and Accounting Red Flags",
+                                "children": []
+                            },
+                            {
+                                "id": "ea3ab99d-2d50-48c0-8ea0-96b3273c794b",
+                                "topic": "Integrating Financial Statements for Holistic Analysis",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "af2bf2f1-a794-4c43-b539-db1717f23936",
+                        "topic": "Ratio and Quantitative Analysis",
+                        "children": [
+                            {
+                                "id": "652fc6f8-5b87-4e4e-97f4-266de55bae26",
+                                "topic": "Calculating and Interpreting Liquidity Ratios",
+                                "children": []
+                            },
+                            {
+                                "id": "60e9e1d3-1cd5-4773-807d-878ceb3ad0d6",
+                                "topic": "Profitability Ratios: Analysis and Benchmarking",
+                                "children": []
+                            },
+                            {
+                                "id": "cb8e7b3a-fb64-4349-8330-cab2d374ffe5",
+                                "topic": "Leverage and Solvency Ratios: Assessing Financial Risk",
+                                "children": []
+                            },
+                            {
+                                "id": "56a18aca-fe54-4da9-9b4b-542b4fe30891",
+                                "topic": "Activity and Efficiency Ratios for Operational Insights",
+                                "children": []
+                            },
+                            {
+                                "id": "4e21e805-af66-4061-b1c6-f81bb76a1332",
+                                "topic": "Market Valuation Ratios and Investment Decision-Making",
+                                "children": []
+                            },
+                            {
+                                "id": "bd2b763d-049d-4900-9df4-3f276c085fc2",
+                                "topic": "Trend, Common-Size, and Comparative Analysis Techniques",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "1706b28e-c046-4618-8865-4082345047af",
+                        "topic": "Cash Flow and Forecasting Techniques",
+                        "children": [
+                            {
+                                "id": "cb3351d9-eb42-4e70-a467-08888b0d3355",
+                                "topic": "Direct vs. Indirect Cash Flow Methods",
+                                "children": []
+                            },
+                            {
+                                "id": "794f5c81-9a89-4ba6-8a69-2f5362183f71",
+                                "topic": "Free Cash Flow Calculation and Interpretation",
+                                "children": []
+                            },
+                            {
+                                "id": "154418cf-fbae-4899-8473-f9e2929d2afb",
+                                "topic": "Cash Flow Forecasting Models and Assumptions",
+                                "children": []
+                            },
+                            {
+                                "id": "18c1c1c4-27da-40f1-8ebb-16a8aed82d7c",
+                                "topic": "Linking Cash Flow to Valuation and Investment Decisions",
+                                "children": []
+                            },
+                            {
+                                "id": "59f30836-a41c-4b88-954f-eb8eeb444793",
+                                "topic": "Stress Testing and Scenario Analysis for Cash Flows",
+                                "children": []
+                            },
+                            {
+                                "id": "6960ec61-b3c0-41fe-ab35-a76c4bfb6052",
+                                "topic": "Identifying Cash Flow Manipulation and Quality Issues",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "2c9c994e-ac5c-4b38-86a0-2a5e8f3d9e71",
+                        "topic": "Accounting Standards and Policy Analysis",
+                        "children": [
+                            {
+                                "id": "578c6397-88f6-45bf-a0d7-8d271a75d859",
+                                "topic": "IFRS vs. US GAAP: Key Differences and Implications",
+                                "children": []
+                            },
+                            {
+                                "id": "88ddfd28-2cd9-4f1f-872c-5404b1a4b4a6",
+                                "topic": "Revenue Recognition Principles and Impact on Analysis",
+                                "children": []
+                            },
+                            {
+                                "id": "04d51105-e596-47d0-8110-3d70a35a2a8b",
+                                "topic": "Asset Valuation: Depreciation, Amortization, and Impairment",
+                                "children": []
+                            },
+                            {
+                                "id": "686e824e-b5c3-4754-bc18-3595a2ebe7fb",
+                                "topic": "Accounting for Leases, Pensions, and Off-Balance Sheet Items",
+                                "children": []
+                            },
+                            {
+                                "id": "b3bcd335-7cfc-4bf1-9932-3e748b300374",
+                                "topic": "Impact of Accounting Choices on Financial Ratios",
+                                "children": []
+                            },
+                            {
+                                "id": "10a6a8bd-5d18-4239-a6dc-c53cdf6da138",
+                                "topic": "Evaluating Changes in Accounting Policies and Estimates",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "1205ff21-7e31-43a9-82a7-bdb9640bf6f8",
+                        "topic": "Advanced Financial Analysis Techniques",
+                        "children": [
+                            {
+                                "id": "a554ba26-ea2b-4f0a-93f7-23967aa299cf",
+                                "topic": "DuPont Analysis and Decomposition of ROE",
+                                "children": []
+                            },
+                            {
+                                "id": "0b4fe0b4-0294-4062-9a74-56951d1365de",
+                                "topic": "Credit Analysis and Default Risk Assessment",
+                                "children": []
+                            },
+                            {
+                                "id": "9b7a483f-5f52-40b9-82fd-0d57372ff177",
+                                "topic": "Financial Modeling for Scenario and Sensitivity Analysis",
+                                "children": []
+                            },
+                            {
+                                "id": "505abdc5-3da3-4427-ab07-f485870718b3",
+                                "topic": "Behavioral Finance Applications in Financial Analysis",
+                                "children": []
+                            },
+                            {
+                                "id": "ece8569c-8cfe-4e4a-98a0-a0903f0fbcec",
+                                "topic": "Technical Analysis: Chart Patterns and Indicators",
+                                "children": []
+                            },
+                            {
+                                "id": "02104ce6-0298-4d4c-820e-1c02f16cfef8",
+                                "topic": "Integrating Quantitative and Qualitative Factors in Valuation",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "f343906e-e90a-4438-a6df-23ae53509660",
+                        "topic": "Risk Management and Decision-Making",
+                        "children": [
+                            {
+                                "id": "6b26eaaa-6f5d-47d8-854a-b5ab2432e93a",
+                                "topic": "Identifying and Measuring Financial Risks (Market, Credit, Liquidity)",
+                                "children": []
+                            },
+                            {
+                                "id": "152614eb-fca1-4e0b-876b-4fea26895624",
+                                "topic": "Value at Risk (VaR) and Other Risk Metrics",
+                                "children": []
+                            },
+                            {
+                                "id": "c3542494-0f9f-422e-8deb-ff4f1ea2e974",
+                                "topic": "Portfolio Risk Analysis and Diversification Strategies",
+                                "children": []
+                            },
+                            {
+                                "id": "865a90e4-dc1a-4726-a6c7-0ed12120436f",
+                                "topic": "Behavioral Biases in Financial Decision-Making",
+                                "children": []
+                            },
+                            {
+                                "id": "8b1c0a62-42c8-4ac7-8374-399bc37eb413",
+                                "topic": "Stress Testing and Backtesting Financial Models",
+                                "children": []
+                            },
+                            {
+                                "id": "9e50bfb3-37ca-4aa1-a611-99d0abc3e839",
+                                "topic": "Risk-Adjusted Performance Measurement (Sharpe, Treynor, Sortino Ratios)",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "last_updated": "2025-09-17T03:46:04.342695Z",
+    "version": 3
+}

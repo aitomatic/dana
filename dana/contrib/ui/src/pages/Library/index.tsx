@@ -317,7 +317,7 @@ export default function LibraryPage() {
           <div className="relative flex-1 max-w-sm">
             <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
             <Input
-              placeholder="Search topics and documents..."
+              placeholder="Search"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
