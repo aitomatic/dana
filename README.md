@@ -46,7 +46,7 @@ dana studio # Launch Dana Agent Studio
 dana repl # Launch Dana Repl
 ```
 
-- For detailed setup (Python versions, OS quirks, IDE integration), see [Tech Setup](docs/tech-setup.md).  
+- For detailed setup (Python versions, OS quirks, IDE integration), see [Tech Setup](https://github.com/aitomatic/dana/blob/release/docs/tech-setup.md).  
 
 ---
 
@@ -118,5 +118,5 @@ Full release notes → [v0.5 Release](https://github.com/aitomatic/dana/blob/rel
 
 ## License  
 
-Dana is released under the [MIT License](LICENSE.md).  
+Dana is released under the [MIT License](https://github.com/aitomatic/dana/blob/release/LICENSE.md).  
 © 2025 Aitomatic, Inc.  
