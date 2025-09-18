@@ -5,10 +5,6 @@ on:
     branches: ["**"]
   pull_request:
   workflow_dispatch:
-  # Optional:
-  # merge_group:
-  # push:
-  #   tags: ["*"]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,12 +17,6 @@ jobs:
   test:
     name: tests • py${{ matrix.python }} • ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    env:
-      PYTHONUTF8: "1"
-      PYTHONIOENCODING: "utf-8"
-      LANG: "C.UTF-8"
-      LC_ALL: "C.UTF-8"
     strategy:
       fail-fast: false
       matrix:
@@ -37,8 +27,10 @@ jobs:
       run:
         shell: bash
 
+    env:
+      PYTHONUTF8: "1"
+
     steps:
-      # Enable long paths on Windows BEFORE checkout
       - name: Enable Windows long paths
         if: runner.os == 'Windows'
         run: git config --global core.longpaths true || true
@@ -46,7 +38,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          eol: lf
+
+      - name: Windows uv settings
+        if: runner.os == 'Windows'
+        run: |
+          echo "UV_LINK_MODE=copy" >> $GITHUB_ENV
+          echo "TMP=${{ runner.temp }}" >> $GITHUB_ENV
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
@@ -63,21 +60,6 @@ jobs:
           python -V
           uv --version
 
-      - name: Diagnose Windows encoding
-        if: runner.os == 'Windows'
-        run: |
-          python - <<'PY'
-          import sys, locale, os
-          print("stdout_encoding=", sys.stdout.encoding)
-          print("fs_encoding=", sys.getfilesystemencoding())
-          print("preferred_encoding=", locale.getpreferredencoding(False))
-          print("PYTHONUTF8=", os.environ.get("PYTHONUTF8"))
-          print("PYTHONIOENCODING=", os.environ.get("PYTHONIOENCODING"))
-          print("LANG=", os.environ.get("LANG"))
-          print("LC_ALL=", os.environ.get("LC_ALL"))
-          print("Emoji smoke: ✅🙂")
-          PY
-
       - name: Install dependencies
         run: uv sync --extra dev --python ${{ matrix.python }}
 
@@ -85,18 +67,10 @@ jobs:
         env:
           DANA_MOCK_LLM: "true"
           DANA_USE_REAL_LLM: "false"
-        run: uv run -m pytest -q --maxfail=1
-
-  gate:
-    name: all-platforms passed
-    runs-on: ubuntu-latest
-    needs: [test]
-    if: ${{ always() }}
-    steps:
-      - name: Fail if any dependency failed
+          PYTHONIOENCODING: "utf-8"
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Some matrix runs failed."
-            exit 1
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            uv run python -X utf8 -m pytest -q --maxfail=1
+          else
+            uv run -m pytest -q --maxfail=1
           fi
-          echo "All matrix runs succeeded."
