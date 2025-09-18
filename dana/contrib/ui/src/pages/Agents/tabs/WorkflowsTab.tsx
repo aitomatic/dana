@@ -486,12 +486,12 @@ const WorkflowsTab: React.FC = () => {
         <div className="flex gap-3 items-center m-4">
           <h2 className="text-2xl font-bold text-gray-900">Workflow</h2>
           <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
-            BETA FEATURE
+            Coming Soon
           </span>
         </div>
 
         {/* AI Engineer Test Configuration */}
-        <div className="p-6 mb-6 bg-white via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
+        <div className="p-6 mb-6 hidden  via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-3">
               <div>
@@ -653,7 +653,7 @@ const WorkflowsTab: React.FC = () => {
       </div>
 
       {/* Execution Overview */}
-      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+      <div className="grid hidden grid-cols-1 gap-4 mb-6 md:grid-cols-4">
         <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -743,7 +743,7 @@ const WorkflowsTab: React.FC = () => {
             <div
               key={workflow.name}
               className={cn(
-                'p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1',
+                'p-6 bg-gradient-to-br  to-gray-50 rounded-xl border border-gray-200  duration-300 transform ',
                 isExecuting ? 'ring-2 ring-blue-500' : '',
               )}
             >
@@ -751,7 +751,7 @@ const WorkflowsTab: React.FC = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="mb-2 text-xl font-bold text-gray-900">{workflow.name}</h3>
-                  <div className="inline-block px-3 py-2 bg-white rounded-lg border border-gray-100">
+                  <div className="inline-block px-3 py-2 rounded-lg border border-gray-100">
                     <span className="text-sm text-gray-600">{workflow.description}</span>
                   </div>
                 </div>
@@ -761,9 +761,7 @@ const WorkflowsTab: React.FC = () => {
                   className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getExecutionStatusColor(execution?.status || ExecutionStatus.IDLE)}`}
                 >
                   {getExecutionStatusIcon(execution?.status || ExecutionStatus.IDLE)}
-                  <span className="ml-2 capitalize">
-                    {execution?.status || ExecutionStatus.IDLE}
-                  </span>
+            
                 </div>
               </div>
 
@@ -1006,7 +1004,7 @@ const WorkflowsTab: React.FC = () => {
               </div>
 
               {/* Execution Controls */}
-              <div className="flex space-x-3">
+              <div className="flex hidden space-x-3">
                 {!execution ||
                 execution.status === ExecutionStatus.IDLE ||
                 execution.status === ExecutionStatus.COMPLETED ||
@@ -1327,7 +1325,7 @@ const WorkflowsTab: React.FC = () => {
                           {execution.stepResults.map((stepResult, index) => (
                             <div
                               key={index}
-                              className="p-3 rounded-lg border border-gray-200 transition-shadow hover:shadow-md"
+                              className="p-3 rounded-lg border border-gray-200 "
                             >
                               {/* Step Header */}
                               <div className="flex justify-between items-center mb-3">
@@ -1506,7 +1504,7 @@ const WorkflowsTab: React.FC = () => {
               <div className="flex justify-end mt-6 space-x-3">
                 <button
                   onClick={() => setSelectedWorkflow(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Close
                 </button>

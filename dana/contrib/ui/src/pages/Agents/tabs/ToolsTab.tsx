@@ -42,29 +42,11 @@ const mockTools = [
     icon: <IconCloud className="w-6 h-6 text-purple-500" />,
   },
   {
-    id: 6,
-    name: 'Big Query',
-    description: 'Connect to Google Patents to retrieve Patent document',
-    icon: <IconCloud className="w-6 h-6 text-purple-500" />,
-  },
-  {
-    id: 7,
-    name: 'Scheduling events',
-    description: 'Connect to Google Patents to retrieve Patent document',
-    icon: <IconListCheck className="w-6 h-6 text-green-500" />,
-  },
-  {
     id: 8,
     name: 'Scheduling events',
     description: 'Connect to Google Patents to retrieve Patent document',
     icon: <IconListCheck className="w-6 h-6 text-green-500" />,
-  },
-  {
-    id: 9,
-    name: 'Scheduling events',
-    description: 'Connect to Google Patents to retrieve Patent document',
-    icon: <IconListCheck className="w-6 h-6 text-green-500" />,
-  },
+  }
 ];
 
 const ToolsTab: React.FC = () => {
@@ -105,7 +87,7 @@ const ToolsTab: React.FC = () => {
         {filteredTools.map((tool) => (
           <div
             key={tool.id}
-            className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow min-h-[140px]"
+            className="bg-gray-50 border border-gray-200 rounded-xl p-6 flex flex-col min-h-[140px]"
           >
             <div className="flex flex-col mb-4">
               <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
