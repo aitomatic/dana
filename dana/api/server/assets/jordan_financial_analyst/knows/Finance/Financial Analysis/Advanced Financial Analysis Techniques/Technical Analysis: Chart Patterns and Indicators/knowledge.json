@@ -1,0 +1,680 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Advanced Financial Analysis Techniques",
+        "Technical Analysis: Chart Patterns and Indicators"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What are the main types of chart patterns used in technical analysis?\n*Question 2* : How do you identify a trend using price charts?\n*Question 3* : What data sources are required to begin technical chart analysis?\n*Question 4* : What are the first steps to set up a chart for technical analysis?\n*Question 5* : How can you distinguish between reversal and continuation patterns in the early stages of analysis?",
+            "facts": [
+                {
+                    "content": "\n- The main chart patterns are classified as reversal patterns (e.g., Head and Shoulders, Double Top/Bottom) and continuation patterns (e.g., Triangles, Flags, Pennants).\n- Trends are defined by the direction of consecutive highs and lows: uptrend (higher highs, higher lows), downtrend (lower highs, lower lows), sideways trend (roughly equal highs and lows).\n- Minimum required data for technical charting: open, high, low, close (OHLC) prices and volume; more advanced analysis may use tick data or intraday intervals.\n- The first steps in technical chart analysis: select appropriate timeframe, load clean OHLCV data, choose chart type (candlestick/bar/line), and determine relevant technical indicators.\n- Reversal patterns typically appear after an extended price move and signal a change in trend direction; continuation patterns occur during a trend and signal potential resumption.\n- Volume is a critical confirmatory factor for validating the significance of both patterns and trends.\n- Regulatory environments (e.g., MiFID II) may require that historical trading data sources be auditable and compliant.\n- Common charting platforms/tools: TradingView, Bloomberg Terminal, MetaTrader, or open-source Python libraries (e.g., matplotlib, plotly, TA-Lib).\n\n",
+                    "references": []
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "\n- Use multiple timeframes to confirm trend direction\u2014short-term noise can mask long-term trends.\n- Strong reversal patterns are often accompanied by volume spikes, indicating increased market participation.\n- Continuation patterns usually form during market consolidation phases with declining volume.\n- Avoid analyzing illiquid assets; low volume can create misleading patterns.\n- Always check for false breakouts\u2014wait for confirmation (e.g., a full candle close outside a pattern).\n- Patterns are more reliable when they align with prevailing market sentiment and macro events.\n- Prioritize clean, reliable data\u2014erroneous values distort patterns and indicator outputs.\n- Early-stage patterns are less reliable; wait for 2\u20133 confirming price points before acting.\n\n",
+                    "references": []
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "Setting Up for Technical Chart Analysis\n  1. Select the asset(s) and exchange(s) to analyze.\n  2. Choose an appropriate timeframe (e.g., daily for swing trading, 5-min for intraday).\n  3. Acquire historical OHLCV data from a reliable source/platform.\n  4. Import data into a charting platform or software.\n  5. Select and apply the desired chart type (candlestick/bar/line).\n  6. Overlay volume and any initial technical indicators (e.g., moving averages).\n  7. Save chart templates for repeat analyses.",
+                    "references": []
+                },
+                {
+                    "content": "Identifying Trends on Price Charts\n  1. Examine the sequence of highs and lows:\n      a. Uptrend: look for higher highs and higher lows.\n      b. Downtrend: look for lower highs and lower lows.\n      c. Sideways/Range: highs and lows remain at similar levels.\n  2. Draw trendlines to visually confirm the trend.\n  3. Cross-check with moving averages (e.g., price above 50-period MA indicates uptrend).\n  4. Confirm with volume\u2014trends are stronger if supported by rising volume.",
+                    "references": []
+                },
+                {
+                    "content": "Distinguishing Reversal vs. Continuation Patterns\n  1. Identify the prevailing trend before the pattern forms.\n  2. Observe the pattern\u2019s shape and symmetry:\n      a. Reversal: Head and Shoulders, Double Top/Bottom, Rounding patterns.\n      b. Continuation: Triangles (ascending/descending/symmetrical), Flags, Pennants, Rectangles.\n  3. Monitor volume:\n      a. Increasing volume at the pattern\u2019s breakout point supports validity.\n      b. Falling volume during pattern formation suggests consolidation (continuation).\n  4. Wait for a confirmed breakout (full candle close outside pattern) before entering trades.\n  5. Set stop-loss orders just outside the pattern to manage risk.\n```",
+                    "references": []
+                },
+                {
+                    "content": "\n- Overview 1: Setting Up for Technical Chart Analysis\n  1. Select the asset(s) and exchange(s) to analyze.\n  2. Choose an appropriate timeframe (e.g., daily for swing trading, 5-min for intraday).\n  3. Acquire historical OHLCV data from a reliable source/platform.\n  4. Import data into a charting platform or software.\n  5. Select and apply the desired chart type (candlestick/bar/line).\n  6. Overlay volume and any initial technical indicators (e.g., moving averages).\n  7. Save chart templates for repeat analyses.\n\n- Overview 2: Identifying Trends on Price Charts\n  1. Examine the sequence of highs and lows:\n      a. Uptrend: look for higher highs and higher lows.\n      b. Downtrend: look for lower highs and lower lows.\n      c. Sideways/Range: highs and lows remain at similar levels.\n  2. Draw trendlines to visually confirm the trend.\n  3. Cross-check with moving averages (e.g., price above 50-period MA indicates uptrend).\n  4. Confirm with volume\u2014trends are stronger if supported by rising volume.\n\n- Overview 3: Distinguishing Reversal vs. Continuation Patterns\n  1. Identify the prevailing trend before the pattern forms.\n  2. Observe the pattern\u2019s shape and symmetry:\n      a. Reversal: Head and Shoulders, Double Top/Bottom, Rounding patterns.\n      b. Continuation: Triangles (ascending/descending/symmetrical), Flags, Pennants, Rectangles.\n  3. Monitor volume:\n      a. Increasing volume at the pattern\u2019s breakout point supports validity.\n      b. Falling volume during pattern formation suggests consolidation (continuation).\n  4. Wait for a confirmed breakout (full candle close outside pattern) before entering trades.\n  5. Set stop-loss orders just outside the pattern to manage risk.\n```",
+                    "references": []
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can behavioral biases impact technical analysis decisions?\n*Question 7* : What are common risk management techniques when trading based on chart patterns?\n*Question 8* : How would you approach analyzing a chart with conflicting indicators in a volatile market?\n*Question 9* : Which technical analysis tools are most effective for making decisions in fast-moving markets?\n*Question 10* : How do you adjust your analysis when new information creates ambiguity or uncertainty in a chart pattern?",
+            "facts": [
+                {
+                    "content": "Illusion of control is a bias where analysts overestimate their ability to control outcomes and may add unnecessary information or complexity to models, which may not increase accuracy and can conceal assumptions or make updating forecasts difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when analysts have unwarranted faith in their abilities, often resulting in forecasts with error rates much higher than their confidence intervals would suggest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is when analysts inadequately incorporate new information, often sticking too closely to prior forecasts (anchoring and adjustment).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias is the tendency to classify new information based on past experiences or known categories, possibly leading to base-rate neglect (ignoring broader class statistics in favor of case-specific data).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to seek and value information that confirms pre-existing beliefs and to ignore contradictory evidence.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those regularly disclosed by the company, focusing on the most important variables, and consulting only with those who have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts, review them regularly, and identify both correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Mitigating actions for overconfidence include widening confidence intervals of forecasts and using scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by regular reviews of forecasts and models by an investment team and by creating flexible models with fewer variables to facilitate changing assumptions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate confirmation bias, seek or read research from analysts with negative opinions and perspectives from colleagues not invested in the security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Neither the \"outside view\" (base rate) nor the \"inside view\" (case-specific) is superior; a superior forecast considers both.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Analysts should record and share their forecasts.\n  2. Regularly review forecasts, identifying both correct and incorrect predictions.\n  3. Use scenario analysis to consider where they could be wrong and by how much.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. When new guidance differs from previous forecasts, assess management\u2019s credibility by examining past performance against management guidance.\n  2. Consider management guidance as a scenario in scenario analysis and examine the investment implications of that scenario.\n  3. Compare the company\u2019s performance and guidance to those of peer companies or industry benchmarks as a check for reasonableness.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : How might confirmation bias specifically influence your interpretation of a chart pattern?\n*Question 12* : Describe a scenario where loss aversion could lead to suboptimal trading decisions in technical analysis.\n*Question 13* : How would you use scenario analysis to assess potential risks before acting on a complex chart pattern?\n*Question 14* : When faced with conflicting signals from multiple indicators, how do you prioritize which analysis method to trust and why?\n*Question 15* : Explain how you would integrate both technical and fundamental analysis to make a decision during high market uncertainty.",
+            "facts": [
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis asks, \u201cWhere could I be wrong and by how much?,\u201d to generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "There is a wide range of free cash flow estimates for 2022E\u20132024E because of a wide range of reasonable inputs for key variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Creating several more scenarios is an important modeling step because the range of outcomes for the most important variable is wider than a single point.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Three important variables in the forecast of free cash flow are organic sales growth in the Cognac segment, EBIT margin, and net working capital as a percentage of sales.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A benefit of the spreadsheet-driven model is that the forecasts can be easily modified to calculate different free cash flow estimates.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis, scenario analysis, and simulation are techniques that can show the range of possible outcomes as specific assumptions are changed.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasting a single scenario would not be appropriate given the high degree of uncertainty and range of potential outcomes for companies in this industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "An analyst who has a positive view on a company might speak only to other analysts who share that view and the company\u2019s management, all of whom will likely tell the analyst what they want to hear and already know.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Two approaches to mitigating confirmation bias in the forecasting process are to speak to or read research from analysts with a negative opinion on the security under scrutiny and to seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To evaluate a forecast, seek more independent sources and balance the biased sources with sources biased in the opposite direction or an analyst who is more skeptical.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Speak to or read research from analysts with a negative opinion on the security under scrutiny.\n  2. Seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Use sensitivity analysis to show the range of possible outcomes as specific assumptions are changed.\n  2. Use scenario analysis to show the changes in key financial quantities that result from given (economic) events.\n  3. If the list of events is mutually exclusive and exhaustive and the events can be assigned probabilities, evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value for various quantities of interest.\n  4. Use simulation (computer-generated sensitivity or scenario analysis) based on probability models for the factors that drive outcomes, assigning probabilities to each event or possible outcome, and run multiple scenarios to determine an expected outcome for that variable.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : How would you incorporate value at risk (VaR) into your technical analysis workflow?\n*Question 17* : Describe how Monte Carlo simulations can be used to evaluate the potential outcomes of a trade based on a chart pattern.\n*Question 18* : In a rapidly changing market, how do you decide when to rely more on quantitative methods versus technical chart signals?\n*Question 19* : Explain how you would integrate behavioral insights into a quantitative risk management strategy in a high-stakes trading situation.\n*Question 20* : When faced with a novel market event, how do you adapt your analysis process and select appropriate tools or methods?",
+            "facts": [
+                {
+                    "content": "Value at risk (VaR) is used as a way to estimate the amount of potential loss based on simulations that incorporate historical pricing information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors and can be effective indicators of trends in intra-company risk taking; due to differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup and HSBC estimate VaR using a 99% confidence level, a one-day holding period, and two prior years of pricing data (for HSBC) on foreign exchange rates, interest rates, equity prices, commodity prices, and associated volatilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR is a single-day measure of market shocks that can affect a company; it is useful for measuring the effects of very short-term shocks, but does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Trading revenue per unit of risk can be represented by the ratio of annual trading revenue to average daily trading value at risk (VaR) and represents a measure of reward-to-risk.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Covariance adjustment reflects the fact that the risks within each and across risk types are not perfectly correlated and, consequently, the total VaR on a given day will be lower than the sum of the VaRs relating to each individual risk type.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event. If the list of events is mutually exclusive and exhaustive and the events can be assigned probabilities, the analyst can evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value for various quantities of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "VaR statistics can be effective indicators of trends in intra-company risk taking.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although total trading and credit portfolio VaR may increase at year end, the magnitude is often less than 1% of net income from continuing operations, and even more minor compared to equity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Market dislocations can linger for days, weeks, and even longer; although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Assign probabilities to each event or possible outcome for the factors that drive outcomes.\n  2. Run multiple scenarios using the probability factors assigned to the possible values of a variable.\n  3. Determine an expected outcome for that variable based on the simulation.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 21* : What ethical dilemmas might arise when presenting technical analysis results to clients or stakeholders?\n*Question 22* : Describe an end-to-end analysis process for evaluating a potential trade, from data collection to final recommendation.\n*Question 23* : How would you use a specific data analytics platform or programming language (e.g., Python, R) to enhance your chart pattern analysis?\n*Question 24* : In a cross-functional team, how do you ensure your technical analysis findings are effectively communicated to non-financial stakeholders?\n*Question 25* : Explain how you would use data visualization tools to create actionable insights from complex technical analysis for decision-makers.",
+            "facts": [
+                {
+                    "content": "The steps in a financial statement analysis process typically include: articulating the purpose and context of the analysis, collecting input data, processing data, analyzing/interpreting the data, developing and communicating conclusions and recommendations, and follow-up.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts often need to communicate the findings of their analysis in a written report, which should communicate how conclusions were reached and why recommendations were made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A report might present the purpose, relevant aspects of the business context (including economic environment, financial infrastructure, legal and regulatory environment), evaluation of corporate governance and management strategy, assessment of financial and operational data, and conclusions and recommendations including limitations and risks.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Graphs facilitate comparison of performance and financial structure over time, provide a visual overview of changes and trends, and can be used to communicate the conclusions from financial analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Choosing the appropriate graph to communicate the most significant conclusions of a financial analysis is a skill; pie graphs are most useful for composition, line graphs for changes over time, and stacked column graphs for composition and amounts over time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial analysis is used by analysts to make decisions and recommendations such as whether to invest in a company\u2019s debt or equity securities and at what price.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial analysis starts with the information found in a company\u2019s financial reports, which are supplemented by industry and company research.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial analysis includes structuring and scaling data to facilitate comparisons by calculating percentages, changes, and ratios. Answers to analytical questions often rely not just on numerical results but also on the analyst\u2019s interpretation of the numerical results to support a conclusion or recommendation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "For some analytical tasks, institutional norms may guide the purpose, approach, procedures, or sources of information for the analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Rather than try to apply every possible technique and tool to every situation, it is essential for the investor to consider and identify the proper type of analysis to apply in a given situation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Mitigating forecast error and overconfidence can be achieved by scenario analysis, i.e., generating different forecast scenarios to account for a range of reasonable inputs for key variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Superior forecasts consider both the base rate (industry or sector averages) and company-specific factors, determining which differences are relevant and their implications.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When comparing financial statement trends, look for discrepancies such as inventory and receivables growing faster than revenue, which can indicate operational or accounting issues.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Articulate the purpose and context of the analysis.\n  2. Collect input data (e.g., financial statements, industry/economic data, discussions with management and stakeholders, site visits).\n  3. Process the data (e.g., adjust financial statements, create common-size statements, calculate ratios and graphs, develop forecasts).\n  4. Analyze and interpret the processed data (e.g., compare with benchmarks, identify causes of performance, assess strategy).\n  5. Develop and communicate conclusions and recommendations (e.g., analysis report, answer initial questions, provide recommendations and highlight risks).\n  6. Follow-up by periodically updating reports and recommendations as new information becomes available or as circumstances change.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Prepare a written report presenting the purpose of the analysis (unless readily apparent).\n  2. Include relevant aspects of the business context (economic environment, infrastructure, legal/regulatory environment).\n  3. Evaluate corporate governance and management strategy, including competitive advantages.\n  4. Assess financial and operational data, including key assumptions in the analysis.\n  5. Provide conclusions and recommendations, noting limitations and risks.\n  6. Enhance conclusions and recommendations by using several years of data and analytic techniques appropriate to the purpose.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Construct a financial statement model with base case forecasts for key variables.\n  2. Create alternative scenarios by altering key variables to reflect a range of reasonable outcomes.\n  3. Use scenario analysis to assess the potential range of results and mitigate overconfidence and illusion of control biases.\n  4. Compare scenario results to industry peers and historical data to check for reasonableness.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

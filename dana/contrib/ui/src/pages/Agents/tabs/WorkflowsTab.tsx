@@ -483,41 +483,23 @@ const WorkflowsTab: React.FC = () => {
     <div className="px-6 pb-6">
       {/* Workflow Execution Dashboard */}
       <div className="mb-6">
-        <h2 className="mb-4 text-2xl font-bold text-gray-900">🔄 Workflow Execution Dashboard</h2>
+        <div className="flex gap-3 items-center m-4">
+          <h2 className="text-2xl font-bold text-gray-900">Workflow</h2>
+          <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+            Coming Soon
+          </span>
+        </div>
 
         {/* AI Engineer Test Configuration */}
-        <div className="p-6 mb-6 bg-gradient-to-br via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
+        <div className="p-6 mb-6 hidden  via-blue-50 to-indigo-50 rounded-xl border shadow-sm from-slate-50 border-slate-200">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-3">
-              <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-              </div>
               <div>
-                <h3 className="text-xl font-semibold text-slate-800">🧪 AI Engineer Test Suite</h3>
+                <h3 className="text-xl font-semibold text-slate-800">AI Engineer Test Suite</h3>
                 <p className="text-sm text-slate-600">
                   Configure test parameters for workflow validation
                 </p>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-                Agent {agentId}
-              </span>
-              <span className="px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
-                Runtime: Dana
-              </span>
             </div>
           </div>
 
@@ -647,21 +629,21 @@ const WorkflowsTab: React.FC = () => {
                 <div className="space-y-2">
                   <button
                     onClick={() => setCustomTestQuery('Test edge case with empty input')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-emerald-700 bg-emerald-50 rounded-md transition-colors hover:bg-emerald-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-emerald-100"
                   >
-                    🧪 Edge Case Test
+                    Edge Case Test
                   </button>
                   <button
                     onClick={() => setCustomTestQuery('Performance test with complex query')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-blue-700 bg-blue-50 rounded-md transition-colors hover:bg-blue-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-blue-100"
                   >
-                    ⚡ Performance Test
+                    Performance Test
                   </button>
                   <button
                     onClick={() => setCustomTestQuery('Integration test with external data')}
-                    className="px-3 py-2 w-full text-xs font-medium text-left text-purple-700 bg-purple-50 rounded-md transition-colors hover:bg-purple-100"
+                    className="px-3 py-2 w-full text-xs font-medium text-left text-gray-600 bg-gray-50 rounded-md transition-colors hover:bg-purple-100"
                   >
-                    🔗 Integration Test
+                    Integration Test
                   </button>
                 </div>
               </div>
@@ -671,7 +653,7 @@ const WorkflowsTab: React.FC = () => {
       </div>
 
       {/* Execution Overview */}
-      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+      <div className="grid hidden grid-cols-1 gap-4 mb-6 md:grid-cols-4">
         <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -761,7 +743,7 @@ const WorkflowsTab: React.FC = () => {
             <div
               key={workflow.name}
               className={cn(
-                'p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1',
+                'p-6 bg-gradient-to-br  to-gray-50 rounded-xl border border-gray-200  duration-300 transform ',
                 isExecuting ? 'ring-2 ring-blue-500' : '',
               )}
             >
@@ -769,7 +751,7 @@ const WorkflowsTab: React.FC = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="mb-2 text-xl font-bold text-gray-900">{workflow.name}</h3>
-                  <div className="inline-block px-3 py-2 bg-white rounded-lg border border-gray-100">
+                  <div className="inline-block px-3 py-2 rounded-lg border border-gray-100">
                     <span className="text-sm text-gray-600">{workflow.description}</span>
                   </div>
                 </div>
@@ -779,9 +761,7 @@ const WorkflowsTab: React.FC = () => {
                   className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getExecutionStatusColor(execution?.status || ExecutionStatus.IDLE)}`}
                 >
                   {getExecutionStatusIcon(execution?.status || ExecutionStatus.IDLE)}
-                  <span className="ml-2 capitalize">
-                    {execution?.status || ExecutionStatus.IDLE}
-                  </span>
+            
                 </div>
               </div>
 
@@ -956,7 +936,7 @@ const WorkflowsTab: React.FC = () => {
                           </div>
 
                           {/* Step Content */}
-                          <div className="flex-1 px-5 py-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform hover:shadow-lg hover:-translate-y-1">
+                          <div className="flex-1 px-5 py-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform">
                             <div className="flex justify-between items-center mb-2">
                               <span className="font-mono text-sm font-medium text-gray-800">
                                 {step}
@@ -1024,7 +1004,7 @@ const WorkflowsTab: React.FC = () => {
               </div>
 
               {/* Execution Controls */}
-              <div className="flex space-x-3">
+              <div className="flex hidden space-x-3">
                 {!execution ||
                 execution.status === ExecutionStatus.IDLE ||
                 execution.status === ExecutionStatus.COMPLETED ||
@@ -1345,7 +1325,7 @@ const WorkflowsTab: React.FC = () => {
                           {execution.stepResults.map((stepResult, index) => (
                             <div
                               key={index}
-                              className="p-3 rounded-lg border border-gray-200 transition-shadow hover:shadow-md"
+                              className="p-3 rounded-lg border border-gray-200 "
                             >
                               {/* Step Header */}
                               <div className="flex justify-between items-center mb-3">
@@ -1524,7 +1504,7 @@ const WorkflowsTab: React.FC = () => {
               <div className="flex justify-end mt-6 space-x-3">
                 <button
                   onClick={() => setSelectedWorkflow(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Close
                 </button>

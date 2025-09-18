@@ -428,19 +428,19 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
+        className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
-            : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
+            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-slate-900'
+            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-slate-900 to-slate-900'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-72 h-72 bg-purple-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-72 h-72 bg-yellow-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+              <div className="absolute top-0 left-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
+              <div className="absolute top-0 right-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
             </div>
 
             {/* Grid Pattern Overlay */}
@@ -461,7 +461,7 @@ export default function AgentsPage() {
             }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400">
+              <span className="text-transparent bg-clip-text bg-white">
                 Dana
               </span>
             </h1>
@@ -477,7 +477,7 @@ export default function AgentsPage() {
             }`}
           >
             The complete platform for{' '}
-            <span className="font-semibold text-purple-300">building, training, and deploying</span>{' '}
+            <span className="font-semibold text-brand-200">building, training, and deploying</span>{' '}
             Dana Expert Agents
           </p>
 
@@ -489,7 +489,7 @@ export default function AgentsPage() {
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl shadow-lg">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -513,11 +513,11 @@ export default function AgentsPage() {
             {/* Experience Learner - Coming Soon */}
             <div className="relative p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/5 border-white/10 hover:scale-105">
               <div className="absolute top-4 right-4">
-                <span className="px-2 py-1 text-xs font-semibold text-yellow-300 rounded-full border bg-yellow-500/20 border-yellow-400/40">
+                <span className="px-2 py-1 text-xs font-semibold text-white rounded-full border bg-white-500/20 border-white-400/40">
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-pink-400 to-yellow-400 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -541,11 +541,11 @@ export default function AgentsPage() {
             {/* App Generators - Coming Soon */}
             <div className="relative p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/5 border-white/10 hover:scale-105">
               <div className="absolute top-4 right-4">
-                <span className="px-2 py-1 text-xs font-semibold text-yellow-300 rounded-full border bg-yellow-500/20 border-yellow-400/40">
+                <span className="px-2 py-1 text-xs font-semibold text-white rounded-full border bg-white-500/20 border-white-400/40">
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-yellow-400 to-purple-400 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -601,9 +601,7 @@ export default function AgentsPage() {
         {/* Enhanced Floating Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
-            <div className="absolute bottom-20 left-20 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-40 left-40 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
+
           </>
         )}
 
@@ -616,7 +614,7 @@ export default function AgentsPage() {
           <div className="flex flex-col gap-4 items-center">
             {/* Main Title with Gradient Highlight */}
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              <span className="text-transparent bg-clip-text bg-white">
                 Dana Agent Studio
               </span>
             </h1>
@@ -638,6 +636,25 @@ export default function AgentsPage() {
 
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
+        {/* Dana Agent Maker Feature */}
+        <div className="flex items-center justify-between p-8 mb-8 bg-gray-50 rounded-lg">
+          <div className="flex flex-col gap-2">
+            <div className="text-lg font-semibold text-gray-900">
+              Dana Agent Maker
+            </div>
+            <div className="text-sm text-gray-700">
+              Define your requirements and receive workflow solutions.
+            </div>
+          </div>
+          <Button
+            onClick={handleCreateAgent}
+            className="w-[152px] px-4 py-1 font-semibold"
+          >
+            <Plus style={{ width: '20', height: '20' }} />
+            Create Agent
+          </Button>
+        </div>
+
         {/* Search and Navigation */}
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
@@ -667,15 +684,6 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
-            <Button
-              variant="default"
-              className="w-[168px] px-4 py-1 font-semibold"
-              onClick={handleCreateAgent}
-              disabled={creating}
-            >
-              <Plus style={{ width: '20', height: '20' }} />
-              Train New Agent
-            </Button>
           </div>
         </div>
 
@@ -737,13 +745,13 @@ export default function AgentsPage() {
           className={`${showSuggestions && suggestions.length > 0 ? 'sm:max-w-[1000px]' : 'sm:max-w-xl'} max-h-[80vh] overflow-y-auto`}
         >
           <DialogHeader>
-            <DialogTitle>Train Your Own Agent</DialogTitle>
+            <DialogTitle>Dana Agent Maker</DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col gap-2 w-full">
               <label className="block mb-4 font-medium text-gray-700 text-md">
-                What your agent will do?
+                Define your requirements
               </label>
               <textarea
                 value={userInput}
@@ -912,7 +920,7 @@ export default function AgentsPage() {
                 className="w-full"
                 disabled={loadingSuggestions || !userInput.trim()}
               >
-                {loadingSuggestions ? 'Getting started...' : 'Start training'}
+                {loadingSuggestions ? 'Generating agent...' : 'Generate Agent'}
               </Button>
             )}
             {/* <Button

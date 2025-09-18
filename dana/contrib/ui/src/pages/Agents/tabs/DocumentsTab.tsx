@@ -415,7 +415,7 @@ const DocumentsTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex space-between w-full items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
           <Input
@@ -425,6 +425,10 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
+        <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0} variant="outline">
+          <DocMagnifyingGlass className="mr-2 w-4 h-4" />
+          Browse Files
+        </Button>
         <Button
           onClick={handleAddFromLibrary}
           disabled={uploadingFiles.length > 0}

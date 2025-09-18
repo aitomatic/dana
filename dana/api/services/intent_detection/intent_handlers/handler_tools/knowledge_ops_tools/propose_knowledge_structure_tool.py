@@ -32,7 +32,7 @@ class ProposeKnowledgeStructureTool(BaseTool):
                         name="user_message",
                         type="string",
                         description="A comprehensive message that acknowledges the user's request, explains the approach, and sets context for the knowledge structure proposal",
-                        example="I understand you want to add comprehensive knowledge about cryptocurrency to Sofia's expertise. Based on your request, I'll create a structured breakdown covering all essential areas.",
+                        example="I understand you want to add comprehensive knowledge about cryptocurrency to agent's expertise. Based on your request, I'll create a structured breakdown covering all essential areas.",
                     ),
                     BaseArgument(
                         name="topic",
@@ -207,10 +207,7 @@ Generate the refined structure:"""
         response_parts.append("")  # Empty line for spacing
 
         # Add next steps and guidelines
-        response_parts.append("""💡 **Next Steps:**
-- Review the proposed structure above carefully
-- Identify any areas you'd like to modify, expand, or remove  
-- Once satisfied, we'll add this structure to your knowledge tree
+        response_parts.append("""**Do you want to modify this structure, or should I add it to domain knowledge?**
 """)
 
         # Join all parts with proper spacing

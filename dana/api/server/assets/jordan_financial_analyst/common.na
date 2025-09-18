@@ -1,11 +1,11 @@
 struct State:
-    original_problem : str
-    steps : list = []
-    context : str = ""
-    current_step : str = ""
-    count : int = 0
-    has_data : bool = False
-    has_new_context : bool = False
+  original_problem : str
+  steps : list = []
+  context : str = ""
+  current_step : str = ""
+  count : int = 0
+  has_data : bool = False
+  has_new_context : bool = False
 
 STEP_BREAK = """
 ---
@@ -24,10 +24,10 @@ COMPRESSION_PROMPT = """
 
 1. **Preserve All Key Metrics**: Every calculated value, ratio, and financial figure must be retained
 2. **CRITICAL - Preserve Complete Financial Statement Tables**: 
-   - ALL Balance Sheet data with COMPLETE rows and columns exactly as extracted
-   - ALL Cash Flow Statement data with COMPLETE sections exactly as extracted  
-   - ALL P&L/Income Statement data with COMPLETE line items exactly as extracted
-   - Preserve EXACT table structure, headers, and formatting from original documents
+ - ALL Balance Sheet data with COMPLETE rows and columns exactly as extracted
+ - ALL Cash Flow Statement data with COMPLETE sections exactly as extracted  
+ - ALL P&L/Income Statement data with COMPLETE line items exactly as extracted
+ - Preserve EXACT table structure, headers, and formatting from original documents
 3. **Preserve Raw Data Integrity**: Keep complete financial statement tables with ALL period labels and original data structure
 4. **NEVER Summarize Financial Tables**: Financial statement tables must be preserved in their complete, original form
 5. **Eliminate Only Redundant Text**: Remove repeated explanations and verbose descriptions, NOT financial data
@@ -226,9 +226,9 @@ For EACH quarter:
 **STEP 3: ANALYZE TRENDS AND RESULTS**
 - [ ] Identify liquidity trend across quarters (improving, stable, deteriorating)
 - [ ] Apply decision rules to LATEST quarter:
-  - Current Ratio > 2.0 → Strong liquidity
-  - Current Ratio 1.0-2.0 → Adequate liquidity
-  - Current Ratio < 1.0 → Liquidity concern
+- Current Ratio > 2.0 → Strong liquidity
+- Current Ratio 1.0-2.0 → Adequate liquidity
+- Current Ratio < 1.0 → Liquidity concern
 - [ ] Note any significant quarter-over-quarter changes
 
 ---
@@ -282,11 +282,11 @@ Question: What is the company's revenue growth rate?
 
 **STEP 1: EXTRACT COMPLETE TIME SERIES**
 - [ ] Revenue for ALL available quarters with explicit labels:
-  - Q1 2024: $1.2M
-  - Q2 2024: $1.5M
-  - Q3 2024: $1.8M
-  - Q4 2024: $2.1M
-  - (Continue for all available periods)
+- Q1 2024: $1.2M
+- Q2 2024: $1.5M
+- Q3 2024: $1.8M
+- Q4 2024: $2.1M
+- (Continue for all available periods)
 
 ---
 
@@ -682,6 +682,9 @@ FOCUSED_PLANNING_PROMPT = """
 **QUESTION COMPLEXITY**: {complexity_level} ({max_steps})
 **QUESTION TYPE**: {question_type}
 
+**EXISTING KNOWLEDGES**
+{knowledge}
+
 **STRICT TEMPLATE TO FOLLOW**:
 {template}
 
@@ -698,19 +701,61 @@ Create your plan now:
 
 # Simplified final answer prompt
 FINAL_ANSWER_PROMPT = """
-Provide a clear, direct answer to the financial question using the completed analysis.
+You are Jordan, CFA, a senior financial-statement analyst with 15+ years of buy-side experience.
 
-**ORIGINAL QUESTION**: {question}
+**Objective**  
+Use the pre-computed analysis (“analyzed_context”) to answer the stakeholder’s question precisely and professionally.
 
-**COMPLETED ANALYSIS**: {context}
+**Inputs**  
+1. **question** – The stakeholder’s specific inquiry. Example:  
+ • “Why did operating cash flow decline despite higher net income?”  
+2. **analyzed_context** – A structured summary of the company’s latest three-year financial performance, ratios, trends, and any notable disclosures.  
+ • Format: Markdown or JSON with clearly labeled sections (e.g., Profitability, Liquidity, Cash-Flow Quality, Red Flags).
 
-**ANSWER REQUIREMENTS**:
-- Start with direct answer using specific numbers
-- Include 2-3 key supporting data points  
-- Note any significant data limitations
-- If user specified a format preference in their question, use that instead
+**Guidelines**  
+1. **Interpretation & Relevance**  
+ • Identify which parts of *analyzed_context* directly address the *question*.  
+ • If essential data is missing, state the limitation up front; do not invent numbers.
 
-Keep it focused and factual.
+2. **Answer Construction**  
+ a. **Executive Summary** (≤120 words) – Direct conclusion to the question.  
+ b. **Supporting Analysis** – Cite the most relevant metrics (include calculations in parentheses the first time).  
+ c. **Implications & Risks** – Note any red-flag items or uncertainties.  
+ d. **Next Steps** (bullets) – Suggest further analysis or management queries.
 
-Generate the final answer now.
+3. **Tone & Style**  
+ Professional, concise, evidence-based. Use plain language and exact figures (e.g., “Operating margin widened to **17.2%** from 14.8%”). Refer to sections of *analyzed_context* (“see Liquidity - Exhibit B”).
+
+4. **Output Format**  
+```
+**Executive Summary**
+\[Plain-language answer]
+
+**Key Evidence**
+
+| Metric | FY-3 | FY-2 | FY-1 | Comment |
+| ------ | ---: | ---: | ---: | ------- |
+| …      |      |      |      |         |
+
+**Implications & Risks**
+• …
+• …
+
+**Recommended Next Steps**
+• …
+
+```
+
+**Constraints**  
+- Draw exclusively from *analyzed_context* unless the question explicitly requests projections.  
+- Cite numbers exactly as given; use %% placeholders if figures are missing.  
+- Keep total length ≤450 words.
+
+Begin when *question* and *analyzed_context* are provided.
+
+**Question** 
+{question}
+
+**Analyzed Context** 
+{context}
 """
