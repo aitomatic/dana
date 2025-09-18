@@ -261,12 +261,28 @@ def start_tui():
 
 
 def build_frontend():
-    """Build the frontend by running npm install and npm run build."""
+    """Build the frontend by running npm install and npm run build.
+    
+    This function detects whether we're running from a pip installation
+    (where frontend is pre-built) or a development installation (where
+    we need to build it).
+    """
     import subprocess
     import os
     
     try:
-        # Get the project root directory
+        # Check if we're running from a pip installation
+        # Pip installations are located in site-packages, not in the current directory
+        import dana
+        is_pip_installation = 'site-packages' in dana.__file__
+        
+        if is_pip_installation:
+            # Running from pip installation - frontend is already built
+            print(f"{colors.accent('✅ Using pre-built frontend from pip installation')}")
+            return True
+        
+        # Development installation - need to build frontend
+        # Get the project root directory (where we are now)
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
         frontend_dir = os.path.join(project_root, "dana", "contrib", "ui")
         
