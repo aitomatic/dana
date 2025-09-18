@@ -12,13 +12,14 @@ import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const TABS = ['Overview', 'Resources', 'Workflows', 'Code'];
+const TABS = ['Overview', 'Resources', 'Workflows', 'Code', 'Deployment'];
 
 const TAB_ICONS = {
   Overview: <List className="w-4 h-4" />,
   Resources: <BookOpen className="w-4 h-4" />,
   Workflows: <Network className="w-4 h-4" />,
   Code: <Code2 className="w-4 h-4" />,
+  Deployment: <Rocket className="w-4 h-4" />,
 };
 
 // Placeholder component for deployment status
