@@ -232,7 +232,7 @@ Return your response in this exact JSON format:
       "explanation": "Brief explanation of why this agent matches"
     },
     {
-      "agent_index": 1, 
+      "agent_index": 1,
       "agent_name": "Agent Name",
       "matching_percentage": 72,
       "explanation": "Brief explanation of why this agent matches"
@@ -1156,9 +1156,10 @@ async def create_agent_from_prebuilt(
         except Exception as e:
             logger.error(f"Error updating knowledge status for prebuilt agent: {e}")
 
-        # Update config with folder_path
+        # Update config with folder_path and status
         updated_config = db_agent.config.copy() if db_agent.config else {}
         updated_config["folder_path"] = str(agent_folder)
+        updated_config["status"] = "success"
         db_agent.config = updated_config
         db_agent.generation_phase = "code_generated"
         flag_modified(db_agent, "config")
@@ -2115,7 +2116,7 @@ async def build_agent_from_suggestion(
         template_config = {k: v for k, v in db_agent.config.items() if k in ["domain", "specialties", "skills", "task", "role"]}
         prompt = f"""
 User request: {request.user_input}
-template config: 
+template config:
 ```json
 {template_config}
 ```
