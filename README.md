@@ -46,7 +46,7 @@ dana studio # Launch Dana Agent Studio
 dana repl # Launch Dana Repl
 ```
 
-- For detailed setup (Python versions, OS quirks, IDE integration), see [Tech Setup](https://github.com/aitomatic/dana/blob/release/docs/tech-setup.md).  
+- For detailed setup (Python versions, OS quirks, IDE integration), see [Tech Setup](https://github.com/aitomatic/dana/blob/release/docs/tech-setup.md).
 
 ---
 
@@ -60,7 +60,7 @@ A Python-like `.na` language with a built-in runtime that provides agentic behav
 
 What this means for you: You can build and iterate on expert agents faster, with less setup and more confidence they’ll run reliably in production.
 
-Full release notes → [v0.5 Release](https://github.com/aitomatic/dana/blob/releases/docs/releases/v0.5.md)  
+Full release notes → [v0.5 Release](https://github.com/aitomatic/dana/blob/release/docs/releases/v0.5.md).
 
 ---
 
@@ -101,9 +101,9 @@ Full release notes → [v0.5 Release](https://github.com/aitomatic/dana/blob/rel
 
 ## Learn More  
 
-- [Core Concepts](https://github.com/aitomatic/dana/blob/releases/docs/core-concepts.md) → Agents, Resources, Workflows, Studio.  
-- [Reference](https://github.com/aitomatic/dana/blob/releases/docs/reference/language.md) → Language syntax and semantics.  
-- [Primers](https://github.com/aitomatic/dana/blob/releases/docs/primers/README.md) → Deep dives into Dana language design.  
+- [Core Concepts](https://github.com/aitomatic/dana/blob/release/docs/core-concepts.md) → Agents, Resources, Workflows, Studio.
+- [Reference](https://github.com/aitomatic/dana/blob/release/docs/reference/language.md) → Language syntax and semantics.
+- [Primers](https://github.com/aitomatic/dana/tree/release/docs/primers) → Deep dives into Dana language design.
 
 ---
 
