@@ -22,6 +22,11 @@ jobs:
     name: tests • py${{ matrix.python }} • ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+      LANG: "C.UTF-8"
+      LC_ALL: "C.UTF-8"
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +46,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          eol: lf
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
@@ -56,6 +62,21 @@ jobs:
         run: |
           python -V
           uv --version
+
+      - name: Diagnose Windows encoding
+        if: runner.os == 'Windows'
+        run: |
+          python - <<'PY'
+          import sys, locale, os
+          print("stdout_encoding=", sys.stdout.encoding)
+          print("fs_encoding=", sys.getfilesystemencoding())
+          print("preferred_encoding=", locale.getpreferredencoding(False))
+          print("PYTHONUTF8=", os.environ.get("PYTHONUTF8"))
+          print("PYTHONIOENCODING=", os.environ.get("PYTHONIOENCODING"))
+          print("LANG=", os.environ.get("LANG"))
+          print("LC_ALL=", os.environ.get("LC_ALL"))
+          print("Emoji smoke: ✅🙂")
+          PY
 
       - name: Install dependencies
         run: uv sync --extra dev --python ${{ matrix.python }}
