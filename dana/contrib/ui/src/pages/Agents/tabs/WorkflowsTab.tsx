@@ -757,12 +757,7 @@ const WorkflowsTab: React.FC = () => {
                 </div>
 
                 {/* Execution Status Badge */}
-                <div
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getExecutionStatusColor(execution?.status || ExecutionStatus.IDLE)}`}
-                >
-                  {getExecutionStatusIcon(execution?.status || ExecutionStatus.IDLE)}
-            
-                </div>
+
               </div>
 
               {/* Execution Progress */}
@@ -936,7 +931,7 @@ const WorkflowsTab: React.FC = () => {
                           </div>
 
                           {/* Step Content */}
-                          <div className="flex-1 px-5 py-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform hover:shadow-lg hover:-translate-y-1">
+                          <div className="flex-1 px-5 py-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm transition-all duration-300 transform">
                             <div className="flex justify-between items-center mb-2">
                               <span className="font-mono text-sm font-medium text-gray-800">
                                 {step}
