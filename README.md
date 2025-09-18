@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
+  <img src="https://github.com/aitomatic/dana/blob/release/docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
 </div>
 
 # Dana: The World’s First Agentic OS
@@ -60,7 +60,7 @@ A Python-like `.na` language with a built-in runtime that provides agentic behav
 
 What this means for you: You can build and iterate on expert agents faster, with less setup and more confidence they’ll run reliably in production.
 
-Full release notes → [v0.5 Release](docs/releases/v0.5.md)  
+Full release notes → [v0.5 Release](https://github.com/aitomatic/dana/blob/releases/docs/releases/v0.5.md)  
 
 ---
 
@@ -101,9 +101,9 @@ Full release notes → [v0.5 Release](docs/releases/v0.5.md)
 
 ## Learn More  
 
-- [Core Concepts](docs/core-concepts.md) → Agents, Resources, Workflows, Studio.  
-- [Reference](docs/reference/language.md) → Language syntax and semantics.  
-- [Primers](docs/primers/README.md) → Deep dives into Dana language design.  
+- [Core Concepts](https://github.com/aitomatic/dana/blob/releases/docs/core-concepts.md) → Agents, Resources, Workflows, Studio.  
+- [Reference](https://github.com/aitomatic/dana/blob/releases/docs/reference/language.md) → Language syntax and semantics.  
+- [Primers](https://github.com/aitomatic/dana/blob/releases/docs/primers/README.md) → Deep dives into Dana language design.  
 
 ---
 
