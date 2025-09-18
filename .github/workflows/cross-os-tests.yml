@@ -1,0 +1,81 @@
+name: Cross-OS Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+  # Optional:
+  # merge_group:
+  # push:
+  #   tags: ["*"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests • py${{ matrix.python }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.12", "3.13"]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Enable long paths on Windows BEFORE checkout
+      - name: Enable Windows long paths
+        if: runner.os == 'Windows'
+        run: git config --global core.longpaths true || true
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          enable-cache: true
+
+      - name: Show versions
+        run: |
+          python -V
+          uv --version
+
+      - name: Install dependencies
+        run: uv sync --extra dev --python ${{ matrix.python }}
+
+      - name: Run tests
+        env:
+          DANA_MOCK_LLM: "true"
+          DANA_USE_REAL_LLM: "false"
+        run: uv run -m pytest -q --maxfail=1
+
+  gate:
+    name: all-platforms passed
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: ${{ always() }}
+    steps:
+      - name: Fail if any dependency failed
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Some matrix runs failed."
+            exit 1
+          fi
+          echo "All matrix runs succeeded."
