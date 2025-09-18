@@ -2,9 +2,12 @@
   <img src="docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
 </div>
 
-# Dana: The World’s First Agentic OS  
+# Dana: The World’s First Agentic OS
 
-## Out-of-the-box Expert Agent Development. From idea to deployment. Deterministic and grounded in your domain knowledge.
+## Build deterministic expert agent easily with Dana.
+ 
+
+### A complete Expert Agent Development Toolkit: Agentic out of the box. Grounded in domain expertise.
 
 ---
 
@@ -15,16 +18,20 @@ Most frameworks make you choose:
 - **Too generic** → LLM wrappers that fail in production.  
 - **Too much glue** → orchestration code everywhere.  
 
-Dana gives you the missing foundation:  
-- **Deterministic** → reproducible results you can trust.  
-- **Contextual** → memory and knowledge grounding built in.  
-- **Concurrent** → parallel by default, no async headaches.  
-- **Composed** → workflows as first-class, not bolted on.  
-- **Local-first** → runs entirely on your laptop, private and fast.  
+Dana gives you the missing foundation:
+
+- **Deterministic** → flexible on input, consistent on output — reliable results every run.  
+- **Contextual** → built-in memory and knowledge grounding let agents recall, adapt, and reason with domain expertise.  
+- **Concurrent by default** → non-blocking execution; agents run tasks in parallel without threads or async code.  
+- **Composable workflows** → chain simple steps into complex, reproducible processes that capture expert know-how.  
+- **Local** → runs on your laptop or secure environments, ensuring privacy, speed, and mission-critical deployment.  
+- **Robust** → fault-tolerant by design, agents recover gracefully from errors and edge cases.  
+- **Adaptive** → agents learn from feedback and evolving conditions, improving performance over time.
+  
 
 ---
 
-## Install and launch Dana 
+## Install and Launch Dana 
 
 💡 **Tip:** Always activate your virtual environment before running or installing anything for Dana.
 
@@ -35,19 +42,23 @@ source venv/bin/activate  # On macOS/Linux
 venv\Scripts\activate     # On Windows
 
 pip install dana
-dana studio #Launch Dana Agent Studio
-dana repl #Launch Dana Repl
+dana studio # Launch Dana Agent Studio
+dana repl # Launch Dana Repl
 ```
 
-- For detailed setup (Python versions, OS quirks, IDE integration), see [Install Guide](docs/install.md).  
-- To build from source or set up development, see [Tech Setup](docs/tech-setup.md).  
+- For detailed setup (Python versions, OS quirks, IDE integration), see [Tech Setup](docs/tech-setup.md).  
 
 ---
 
 ## What’s Included in v0.5  
 
-- **Dana Agent Studio** → Browser app (`dana studio`) to create, test, and deploy agents with visual workflows and a chat UI.  
-- **Dana Agent-Native Programming Language** → Python-like `.na` language with built-in runtime for deterministic, concurrent, knowledge-grounded agents.  
+### Agent Studio
+Turn a problem statement into a draft expert agent with three parts — agent, resources, workflows. Studio generates a best-match workflow and lets you extend it with resources (documents, generated knowledge, web search) or edit workflows directly.
+
+### Agent-Native Programming Language
+A Python-like `.na` language with a built-in runtime that provides agentic behaviors out of the box — concurrency, knowledge grounding, and deterministic execution — so you don’t have to wire these up yourself.
+
+What this means for you: You can build and iterate on expert agents faster, with less setup and more confidence they’ll run reliably in production.
 
 Full release notes → [v0.5 Release](docs/releases/v0.5.md)  
 
@@ -84,26 +95,24 @@ Full release notes → [v0.5 Release](docs/releases/v0.5.md)
    dana deploy my_agent.na    # Deploy as REST API
    ```  
 
-For a full walkthrough → [Quickstart Guide](docs/quickstart.md)  
+ 
 
 ---
 
 ## Learn More  
 
 - [Core Concepts](docs/core-concepts.md) → Agents, Resources, Workflows, Studio.  
-- [Cookbook](docs/cookbook/README.md) → Recipes for workflows, pipelines, error recovery, multi-agent chat.  
 - [Reference](docs/reference/language.md) → Language syntax and semantics.  
-- [Primers](docs/primers/README.md) → Optional deep dives into language design.  
+- [Primers](docs/primers/README.md) → Deep dives into Dana language design.  
 
 ---
 
 ## Community  
-
-- 💬 [Discussions](https://github.com/aitomatic/dana/discussions)  
 - 🐞 [Issues](https://github.com/aitomatic/dana/issues)  
-- 🎙️ [Discord](https://discord.gg/dana)  
+- 💬 [Discuss on Discord](https://discord.gg/dana)  
 
-Enterprise support → [sales@aitomatic.com](mailto:sales@aitomatic.com)  
+## Enterprise support
+- [Contact Aitomatic Sales](mailto:sales@aitomatic.com)  
 
 ---
 

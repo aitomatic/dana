@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import FileIcon from '@/components/file-icon';
-import { IconLoader2, IconUpload } from '@tabler/icons-react';
+import { IconLoader2 } from '@tabler/icons-react';
 import { Check } from 'iconoir-react';
 import { ExtractedFile } from './extracted-file';
 import { cn } from '@/lib/utils';
@@ -68,9 +68,9 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     });
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  // const handleUploadClick = () => {
+  //   fileInputRef.current?.click();
+  // };
 
   const handleSaveAndFinish = async () => {
     await saveAndFinish();
@@ -234,7 +234,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end">
-            <Button variant="secondary" onClick={() => setShowConfirmDiscard(false)}>
+            <Button variant="outline" onClick={() => setShowConfirmDiscard(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteFile}>

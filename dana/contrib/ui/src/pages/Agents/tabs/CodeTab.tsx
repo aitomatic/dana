@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AgentEditor } from '@/components/agent-editor';
-import { IconFileText, IconRefresh } from '@tabler/icons-react';
+import { IconFileText, IconRefresh, IconCheck } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
 import { useAgentStore } from '@/stores/agent-store';
 
@@ -20,6 +20,9 @@ const CodeTab: React.FC = () => {
   const [files, setFiles] = useState<AgentFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [saveSuccessTimeout, setSaveSuccessTimeout] = useState<number | null>(null);
+  const [showBadgeTimeout, setShowBadgeTimeout] = useState<number | null>(null);
 
   const selectedFile = files.find((f) => f.id === selectedFileId) || files[0];
 
@@ -27,6 +30,18 @@ const CodeTab: React.FC = () => {
   useEffect(() => {
     loadAgentFiles();
   }, [selectedAgent]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveSuccessTimeout) {
+        clearTimeout(saveSuccessTimeout);
+      }
+      if (showBadgeTimeout) {
+        clearTimeout(showBadgeTimeout);
+      }
+    };
+  }, [saveSuccessTimeout, showBadgeTimeout]);
 
   const loadAgentFiles = async () => {
     if (!selectedAgent?.id) return;
@@ -99,6 +114,28 @@ const CodeTab: React.FC = () => {
     // Save to backend
     try {
       await apiService.updateAgentFileContent(selectedAgent.id, file.path, value);
+      
+      // Clear any existing timeouts
+      if (saveSuccessTimeout) {
+        clearTimeout(saveSuccessTimeout);
+      }
+      if (showBadgeTimeout) {
+        clearTimeout(showBadgeTimeout);
+      }
+      
+      // Show success badge after 500ms delay
+      const showTimeout = setTimeout(() => {
+        setShowSaveSuccess(true);
+        
+        // Auto-hide the badge after 4 seconds
+        const hideTimeout = setTimeout(() => {
+          setShowSaveSuccess(false);
+        }, 4000);
+        
+        setSaveSuccessTimeout(hideTimeout);
+      }, 500);
+      
+      setShowBadgeTimeout(showTimeout);
     } catch (err) {
       console.error('Failed to save file:', err);
       // Optionally show an error toast
@@ -184,6 +221,12 @@ const CodeTab: React.FC = () => {
           <span className="text-md font-medium text-gray-900">
             {selectedFile?.name || 'No file selected'}
           </span>
+          {showSaveSuccess && (
+            <div className="flex items-center gap-1 px-2 py-1 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-full animate-in fade-in-0 slide-in-from-right-2 duration-200">
+              <IconCheck className="w-3 h-3" />
+              Changes saved
+            </div>
+          )}
         </div>
         <div className="flex-1 min-h-0">
           {selectedFile ? (

@@ -161,7 +161,14 @@ def create_app():
         from fastapi.responses import FileResponse, JSONResponse
 
         # Return image files directly
-        if full_path.endswith(".png"):
+        if (
+            full_path.endswith(".png")
+            or full_path.endswith(".jpg")
+            or full_path.endswith(".jpeg")
+            or full_path.endswith(".gif")
+            or full_path.endswith(".svg")
+            or full_path.endswith(".ico")
+        ):
             img_path = os.path.join(static_dir, full_path)
             if os.path.exists(img_path):
                 return FileResponse(img_path)
