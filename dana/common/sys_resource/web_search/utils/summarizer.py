@@ -4,6 +4,7 @@ import logging
 
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.types import BaseRequest
+from dana.common.utils.misc import Misc
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class ContentSummarizer:
 
         Args:
             content: Text content to index
+            top_k: Number of top relevant chunks to retrieve
         """
         self.content = content
         self.retriever = None
@@ -145,19 +147,7 @@ class ContentSummarizer:
             response = await self._llm_resource.query(request)
 
             if response.success and response.content:
-                # Extract content from LegacyLLMResource response format
-                content = response.content
-                if isinstance(content, dict):
-                    # Handle LegacyLLMResource response structure
-                    choices = content.get("choices", [])
-                    if choices and len(choices) > 0:
-                        message = choices[0].get("message", {})
-                        summary = message.get("content", "")
-                    else:
-                        # Fallback to other content keys
-                        summary = content.get("content") or content.get("response") or str(content)
-                else:
-                    summary = str(content)
+                summary = Misc.get_response_content(response)
 
                 logger.debug(f"Generated summary for query '{query}': {len(summary)} chars")
                 return summary

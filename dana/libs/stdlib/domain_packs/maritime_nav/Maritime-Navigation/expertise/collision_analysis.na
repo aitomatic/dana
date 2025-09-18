@@ -1,0 +1,253 @@
+"""Collision Analysis Expertise Module."""
+
+import math.py
+
+__all__ = [
+    'workflow_analyze_collision_risk',
+    'workflow_calculate_relative_motion',
+    'workflow_recommend_collision_avoidance',
+]
+
+from utils import STEP2_1_SITUATION_ANALYSIS_TEMPLATE, STEP2_2_SITUATION_ANALYSIS_TEMPLATE
+def parse_position(position_str: str) -> tuple:
+    """Parse position string like '01°15.0'N, 103°45.0'E' to decimal degrees."""
+    parts = position_str.replace(' ', '').split(',')
+    if len(parts) != 2:
+        return (0.0, 0.0)
+    
+    lat_str = parts[0]
+    lon_str = parts[1]
+    
+    # Parse latitude
+    lat_deg = 0.0
+    if '°' in lat_str and 'N' in lat_str:
+        deg_part = lat_str.split('°')[0]
+        min_part = lat_str.split('°')[1].split('N')[0].replace("'", "")
+        lat_deg = float(deg_part) + float(min_part) / 60.0
+    elif '°' in lat_str and 'S' in lat_str:
+        deg_part = lat_str.split('°')[0]
+        min_part = lat_str.split('°')[1].split('S')[0].replace("'", "")
+        lat_deg = -(float(deg_part) + float(min_part) / 60.0)
+    
+    # Parse longitude
+    lon_deg = 0.0
+    if '°' in lon_str and 'E' in lon_str:
+        deg_part = lon_str.split('°')[0]
+        min_part = lon_str.split('°')[1].split('E')[0].replace("'", "")
+        lon_deg = float(deg_part) + float(min_part) / 60.0
+    elif '°' in lon_str and 'W' in lon_str:
+        deg_part = lon_str.split('°')[0]
+        min_part = lon_str.split('°')[1].split('W')[0].replace("'", "")
+        lon_deg = -(float(deg_part) + float(min_part) / 60.0)
+    
+    return (lat_deg, lon_deg)
+
+
+def calculate_distance_between_vessels(vessel_a_pos: str, vessel_b_pos: str) -> float:
+    """Calculate distance between two vessels using Haversine formula (nautical miles)."""
+    pos_a = parse_position(vessel_a_pos)
+    pos_b = parse_position(vessel_b_pos)
+    
+    lat1 = pos_a[0]
+    lon1 = pos_a[1]
+    lat2 = pos_b[0]
+    lon2 = pos_b[1]
+    
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    earth_radius_nm = 3440.065
+    distance = earth_radius_nm * c
+    return round(distance, 2)
+
+
+def calculate_relative_bearing(vessel_a_pos: str, vessel_b_pos: str, vessel_a_course: float) -> float:
+    """Calculate relative bearing from Vessel A to Vessel B (degrees)."""
+    pos_a = parse_position(vessel_a_pos)
+    pos_b = parse_position(vessel_b_pos)
+    
+    lat1 = pos_a[0]
+    lon1 = pos_a[1]
+    lat2 = pos_b[0]
+    lon2 = pos_b[1]
+    
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    dlon = lon2_rad - lon1_rad
+    y = math.sin(dlon) * math.cos(lat2_rad)
+    x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon)
+    
+    bearing = math.degrees(math.atan2(y, x))
+    bearing = (bearing + 360) % 360
+    return round(bearing, 1)
+
+
+def calculate_relative_speed(vessel_a_speed: float, vessel_a_course: float, 
+                             vessel_b_speed: float, vessel_b_course: float) -> float:
+    """Calculate relative speed between two vessels (knots)."""
+    course_a_rad = math.radians(vessel_a_course)
+    course_b_rad = math.radians(vessel_b_course)
+    
+    v_a_x = vessel_a_speed * math.sin(course_a_rad)
+    v_a_y = vessel_a_speed * math.cos(course_a_rad)
+    v_b_x = vessel_b_speed * math.sin(course_b_rad)
+    v_b_y = vessel_b_speed * math.cos(course_b_rad)
+    
+    v_rel_x = v_b_x - v_a_x
+    v_rel_y = v_b_y - v_a_y
+    
+    relative_speed = math.sqrt(v_rel_x**2 + v_rel_y**2)
+    return round(relative_speed, 1)
+
+
+def calculate_cpa(vessel_a_pos: str, vessel_a_speed: float, vessel_a_course: float,
+                  vessel_b_pos: str, vessel_b_speed: float, vessel_b_course: float) -> float:
+    """Calculate Closest Point of Approach (CPA) in nautical miles."""
+    pos_a = parse_position(vessel_a_pos)
+    pos_b = parse_position(vessel_b_pos)
+    
+    lat1 = pos_a[0]
+    lon1 = pos_a[1]
+    lat2 = pos_b[0]
+    lon2 = pos_b[1]
+    
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    course_a_rad = math.radians(vessel_a_course)
+    course_b_rad = math.radians(vessel_b_course)
+    
+    v_a_x = (vessel_a_speed / 60.0) * math.sin(course_a_rad)
+    v_a_y = (vessel_a_speed / 60.0) * math.cos(course_a_rad)
+    v_b_x = (vessel_b_speed / 60.0) * math.sin(course_b_rad)
+    v_b_y = (vessel_b_speed / 60.0) * math.cos(course_b_rad)
+    
+    v_rel_x = v_b_x - v_a_x
+    v_rel_y = v_b_y - v_a_y
+    
+    earth_radius_nm = 3440.065
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    x_rel = dlon * earth_radius_nm * math.cos((lat1_rad + lat2_rad) / 2)
+    y_rel = dlat * earth_radius_nm
+    
+    if v_rel_x**2 + v_rel_y**2 == 0:
+        cpa = math.sqrt(x_rel**2 + y_rel**2)
+    else:
+        t_cpa = -(x_rel * v_rel_x + y_rel * v_rel_y) / (v_rel_x**2 + v_rel_y**2)
+        if t_cpa < 0:
+            cpa = math.sqrt(x_rel**2 + y_rel**2)
+        else:
+            x_cpa = x_rel + v_rel_x * t_cpa
+            y_cpa = y_rel + v_rel_y * t_cpa
+            cpa = math.sqrt(x_cpa**2 + y_cpa**2)
+    return round(cpa, 2)
+
+
+def calculate_time_to_cpa(vessel_a_pos: str, vessel_a_speed: float, vessel_a_course: float,
+                          vessel_b_pos: str, vessel_b_speed: float, vessel_b_course: float) -> float:
+    """Calculate Time to Closest Point of Approach (minutes)."""
+    pos_a = parse_position(vessel_a_pos)
+    pos_b = parse_position(vessel_b_pos)
+    
+    lat1 = pos_a[0]
+    lon1 = pos_a[1]
+    lat2 = pos_b[0]
+    lon2 = pos_b[1]
+    
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    course_a_rad = math.radians(vessel_a_course)
+    course_b_rad = math.radians(vessel_b_course)
+    
+    v_a_x = (vessel_a_speed / 60.0) * math.sin(course_a_rad)
+    v_a_y = (vessel_a_speed / 60.0) * math.cos(course_a_rad)
+    v_b_x = (vessel_b_speed / 60.0) * math.sin(course_b_rad)
+    v_b_y = (vessel_b_speed / 60.0) * math.cos(course_b_rad)
+    
+    v_rel_x = v_b_x - v_a_x
+    v_rel_y = v_b_y - v_a_y
+    
+    earth_radius_nm = 3440.065
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    x_rel = dlon * earth_radius_nm * math.cos((lat1_rad + lat2_rad) / 2)
+    y_rel = dlat * earth_radius_nm
+    
+    if v_rel_x**2 + v_rel_y**2 == 0:
+        return float('inf')
+    else:
+        t_cpa = -(x_rel * v_rel_x + y_rel * v_rel_y) / (v_rel_x**2 + v_rel_y**2)
+        if t_cpa < 0:
+            return 0.0
+        else:
+            return round(t_cpa, 1)
+
+
+
+def workflow_analyze_collision_risk(resources: list, task: str) -> str:
+    """Analyze collision risk based on vessel positions, courses, and speeds."""
+    return reason(task, resources=resources)
+
+
+def workflow_calculate_relative_motion(resources: list, task: str) -> str:
+    """Calculate relative motion and closest point of approach between vessels."""
+
+    data: dict = reason(STEP2_1_SITUATION_ANALYSIS_TEMPLATE.format(context=task), resources=resources)
+    
+    # Extract vessel data from the reasoned data
+    try:
+        vessel_a_pos = data.get('vessel_a', {}).get('position', '')
+        vessel_a_speed = float(data.get('vessel_a', {}).get('speed', 0))
+        vessel_a_course = float(data.get('vessel_a', {}).get('course', 0))
+        
+        vessel_b_pos = data.get('vessel_b', {}).get('position', '')
+        vessel_b_speed = float(data.get('vessel_b', {}).get('speed', 0))
+        vessel_b_course = float(data.get('vessel_b', {}).get('course', 0))
+
+        
+        # Calculate relative motion parameters using internal functions
+        distance = calculate_distance_between_vessels(vessel_a_pos, vessel_b_pos)
+        relative_bearing = calculate_relative_bearing(vessel_a_pos, vessel_b_pos, vessel_a_course)
+        relative_speed = calculate_relative_speed(vessel_a_speed, vessel_a_course, vessel_b_speed, vessel_b_course)
+        cpa = calculate_cpa(vessel_a_pos, vessel_a_speed, vessel_a_course, vessel_b_pos, vessel_b_speed, vessel_b_course)
+        time_to_cpa = calculate_time_to_cpa(vessel_a_pos, vessel_a_speed, vessel_a_course, vessel_b_pos, vessel_b_speed, vessel_b_course)
+        
+        # Format the results
+        result = f"""Relative Motion Analysis:
+- Distance between vessels: {distance} nm
+- Relative bearing: {relative_bearing}°
+- Relative speed: {relative_speed} knots
+- Closest Point of Approach (CPA): {cpa} nm
+- Time to CPA: {time_to_cpa} minutes"""
+
+        task = STEP2_2_SITUATION_ANALYSIS_TEMPLATE.format(context=task, results=result)
+
+        return reason(task, resources=resources)
+        
+    except Exception as e:
+        return f"Error calculating relative motion: {str(e)}"
+
+
+def workflow_recommend_collision_avoidance(resources: list, task: str) -> str:
+    """Recommend specific course and speed changes for collision avoidance."""
+    print(task)
+    return reason(task, resources=resources)

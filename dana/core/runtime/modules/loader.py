@@ -811,6 +811,8 @@ class ModuleLoader(Loggable, MetaPathFinder, Loader):
         def lazy_loader():
             return get_submodule()
 
+        lazy_loader.__NAME__ = "__LAZY_MODULE_LOADER__"
+
         # Don't execute immediately during population to avoid circular loops
         # Just make the module available for import by setting it as an attribute
         # but defer actual execution until import time

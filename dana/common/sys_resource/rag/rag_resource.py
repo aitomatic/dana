@@ -29,6 +29,7 @@ class RAGResource(BaseSysResource):
         reranking: bool = False,
         initial_multiplier: int = 2,
         return_raw: bool = False,
+        num_results: int = 15,
     ):
         super().__init__(name, description)
         self.post_init(
@@ -43,6 +44,7 @@ class RAGResource(BaseSysResource):
             initial_multiplier=initial_multiplier,
         )
         self.return_raw = return_raw
+        self.num_results = num_results
 
     def post_init(
         self,
@@ -87,9 +89,9 @@ class RAGResource(BaseSysResource):
     def _get_danapath(self) -> str:
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
-        danapaths = os.environ.get("DANAPATH")
+        danapaths = os.environ.get("DANAPATH", "")
 
-        danapaths = danapaths.split(":")
+        danapaths = danapaths.split(os.pathsep)
 
         danapath = None
 
@@ -137,18 +139,29 @@ class RAGResource(BaseSysResource):
             Misc.safe_asyncio_run(self.initialize)
         return self._filenames
 
+    @property
+    def is_available(self) -> bool:
+        if not self._is_ready:
+            Misc.safe_asyncio_run(self.initialize)
+        return any([fn != "system" for fn in self.filenames])
+
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""
         await super().initialize()
         self._orchestrator._preprocess(self.sources, self.force_reload)
         self._is_ready = True
-        self._filenames = self._orchestrator._retriever.get_all_filenames()
+        self._filenames = [] if self._orchestrator._retriever is None else self._orchestrator._retriever.get_all_filenames()
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str | list:
         """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
+
+        if not self.is_available:
+            return "No relevant documents found"
+
+        num_results = max(num_results, self.num_results)
 
         if self.debug:
             print(f"Querying {num_results} results from {self.name} RAG with query: {query}")
@@ -305,3 +318,12 @@ Response (JSON array only):"""
             if self.debug:
                 print(f"Failed to parse reranking response: {e}")
             return []
+
+
+if __name__ == "__main__":
+    rag = RAGResource(sources=["agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md"], reranking=True, debug=True)
+    import asyncio
+    print(rag.is_available)
+    print(rag.filenames)
+
+    print(len(asyncio.run(rag.query("What is the profit and loss"))))

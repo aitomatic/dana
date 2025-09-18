@@ -1,0 +1,42 @@
+"""LLM prompt templates."""
+
+
+CLOSEST_MATCHED_EXPERT_WORKFLOW_LOOKUP_PROMPT_TEMPLATE: str = """
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following named expert workflows:
+
+NAMED EXPERT WORKFLOWS:
+```
+{expert_workflow_names}
+```
+
+Return the name of the expert workflow that is most relevant to the problem; OR
+if none of such named expert workflows is deemed relevant to the problem, return the string NONE.
+
+!!! RETURN EITHER NONE OR ONLY THE NAME OF THE WORKFLOW AS A PURE STRING, NO OTHER TEXT, NO SURROUNDING QUOTES !!!
+"""
+
+EXPERT_WORKFLOW_SOLUTION_PROMPT_TEMPLATE: str = """
+Given the following problem:
+
+PROBLEM:
+```
+{problem}
+```
+
+And the following result(s) from an expert workflow:
+
+EXPERT WORKFLOW RESULT:
+```
+{expert_workflow_result}
+```
+
+Return your best conclusion about / solution to the posed problem.
+Do explain your reasoning in a structured manner, with key supporting details.
+"""

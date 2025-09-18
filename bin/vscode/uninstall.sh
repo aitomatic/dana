@@ -55,4 +55,4 @@ else
     # The script will still complete.
 fi
 
-echo -e "${BLUE}💡 Note: You may need to restart ${EDITOR_NAME} for changes to take effect${NC}" 
+echo -e "${BLUE}💡 Note: You may need to restart ${EDITOR_NAME} for changes to take effect${NC}"
