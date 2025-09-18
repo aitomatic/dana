@@ -39,6 +39,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure HOME on Windows
+        if: runner.os == 'Windows'
+        run: |
+          echo "HOME=${HOME:-${USERPROFILE:-${HOMEDRIVE}${HOMEPATH}}}" >> $GITHUB_ENV
+          echo "USERPROFILE=${USERPROFILE:-$HOME}" >> $GITHUB_ENV
+
       - name: Windows uv settings
         if: runner.os == 'Windows'
         run: |
