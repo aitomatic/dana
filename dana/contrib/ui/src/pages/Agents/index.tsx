@@ -5,8 +5,215 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
+import { NavArrowDown, Plus } from 'iconoir-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  type AgentSuggestion,
+  type BuildAgentFromSuggestionRequest,
+  type WorkflowInfo,
+} from '@/lib/api';
+// Removed React Flow imports - using simple HTML/CSS layout instead
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
+
+// Simple Workflow Step Box Component
+const WorkflowStepBox: React.FC<{
+  step: string;
+  stepNumber: number;
+  isLast: boolean;
+}> = ({ step, isLast }) => {
+  const formattedStep = step
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .trim();
+
+  return (
+    <div className="relative pb-0">
+      <div className="p-5 w-full bg-white rounded-lg border-2 border-gray-800 shadow-sm">
+        <div className="font-medium text-center text-gray-900 capitalize text-md">
+          {formattedStep}
+        </div>
+      </div>
+      {!isLast && (
+        <div className="flex relative flex-col items-center">
+          <div className="w-0.5 h-6 bg-gray-800"></div>
+          <NavArrowDown
+            width={16}
+            height={16}
+            strokeWidth={3}
+            className="absolute bottom-0 left-1/2 text-gray-800 transform -translate-x-1/2 translate-y-1/3"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Example Box Component
+const ExampleBox: React.FC<{
+  example: string;
+  stepNumber: number;
+  isLast: boolean;
+}> = ({ example, isLast }) => {
+  return (
+    <div className="relative pb-0">
+      <div className="w-full p-4 h-[68px] border-2 border-gray-200 flex items-center bg-white rounded-lg shadow-sm">
+        <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: example }} />
+      </div>
+      {!isLast && (
+        <div className="flex relative flex-col items-center">
+          <div className="w-0.5 h-6 bg-gray-800"></div>
+          <NavArrowDown
+            width={16}
+            height={16}
+            strokeWidth={3}
+            className="absolute bottom-0 left-1/2 text-gray-800 transform -translate-x-1/2 translate-y-1/3"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Toggle Button Component
+const ToggleButton: React.FC<{
+  onClick: () => void;
+  isActive: boolean;
+}> = ({ onClick, isActive }) => {
+  return (
+    <Button
+      onClick={onClick}
+      variant="ghost"
+      size="sm"
+      className={` ${
+        isActive
+          ? 'text-gray-700 bg-gray-100 border-gray-800'
+          : 'text-gray-700 bg-gray-100 border-gray-800 hover:bg-gray-50'
+      }`}
+    >
+      {isActive ? 'Hide Example' : 'View Example'}
+    </Button>
+  );
+};
+
+// Simple Workflow Chart Component
+const SimpleWorkflowChart: React.FC<{
+  workflow: { name: string; steps: string[] };
+  methods: string[];
+  showExamples: boolean;
+  setShowExamples: (show: boolean) => void;
+  agentKey?: string;
+}> = ({ workflow, showExamples, agentKey }) => {
+  if (!workflow.steps || workflow.steps.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-32 text-sm text-gray-500">
+        <span>No workflow steps defined</span>
+      </div>
+    );
+  }
+
+  // Agent-specific examples based on agent key
+  const getExamplesForAgent = (agentKey?: string) => {
+    if (!agentKey) {
+      // Default Q&A Agent examples
+      return [
+        "<em>What's the best time to visit Japan for cherry blossoms</em>",
+        "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
+        'Search across uploaded travel documents using <strong>refined keywords</strong>',
+        'The best time to visit Japan for cherry blossoms is typically late March to early April...',
+        'Task completed successfully with <strong>comprehensive answer</strong> provided',
+      ];
+    }
+
+    const agentType = agentKey.toLowerCase();
+
+    if (agentType.includes('jordan') || agentType.includes('operational')) {
+      return [
+        "<strong>User:</strong>Turn my notes from today's meeting into a task list.",
+        'Agent compresses → <strong>input: meeting notes; output: structured task list.</strong>',
+        'Execute Steps: <em>1. Read meeting notes → 2. Identify action items → 3. Format into clear to-do list.</em>',
+        "Here's your to-do list: [example to-do list]",
+      ];
+    } else if (agentType.includes('nova') || agentType.includes('autonomous')) {
+      return [
+        '<strong>User:</strong> Optimize <strong>warehouse inventory management system</strong>',
+        "Agent identifies issues: <em>'Low stock alerts, inefficient reorder points, manual processes'</em>",
+        'Analyze inventory data, implement <strong>automated reorder system</strong>, update warehouse layout',
+        'System optimized: <strong>30% reduction in stockouts, 25% cost savings</strong>, automated alerts active',
+        'Task completed: <strong>Inventory management system</strong> fully optimized and operational',
+      ];
+    } else if (agentType.includes('dana')) {
+      return [
+        '<strong>User:</strong> Is it better to pay off my mortgage early or invest in stocks?',
+        "<strong>Agent refines query:</strong> <em>'mortgage prepayment vs stock investment financial comparison risk return'</em>",
+        '<strong>Query Document:</strong> Agent reviews uploaded financial reports, mortgage agreements, and investment guides.',
+        '<strong>Query Knowledge:</strong> Cross-checks with general financial principles and market data.',
+        '<em>Prepaying a mortgage guarantees savings equal to your interest rate, while stock investing offers...</em>',
+        'Task completed.',
+      ];
+    } else {
+      // Default Q&A Agent examples
+      return [
+        "<strong>User:</strong>What's the <strong>best time</strong> to visit Japan for cherry blossoms",
+        "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
+        'Search across uploaded travel documents using <strong>refined keywords</strong>',
+        'The best time to visit Japan for cherry blossoms is typically <strong>late March to early April</strong>...',
+        'Task completed successfully with <strong>comprehensive answer</strong> provided',
+      ];
+    }
+  };
+
+  const examples = getExamplesForAgent(agentKey);
+
+  // Create complete workflow with User query and Complete task
+  const completeWorkflowSteps = ['User query', ...workflow.steps, 'Complete task'];
+
+  return (
+    <div className="w-full">
+      <div className="flex transition-all duration-300 ease-in-out">
+        {/* Left Column: Workflow Steps */}
+        <div
+          className={`transition-all duration-300 ease-in-out ${showExamples ? 'flex' : 'flex justify-center w-full'}`}
+        >
+          <div className="w-full max-w-[200px]">
+            {completeWorkflowSteps.map((step, index) => (
+              <WorkflowStepBox
+                key={index}
+                step={step}
+                stepNumber={index + 1}
+                isLast={index === completeWorkflowSteps.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Examples */}
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${showExamples ? 'flex-1 ml-6 opacity-100' : 'w-0 opacity-0'}`}
+        >
+          <div>
+            {completeWorkflowSteps.map((_step, index) => (
+              <div key={index}>
+                <ExampleBox
+                  example={examples[index] || ''}
+                  stepNumber={index + 1}
+                  isLast={index === completeWorkflowSteps.length - 1}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Tab configuration with URL-friendly identifiers
 const TAB_CONFIG = {
@@ -23,8 +230,17 @@ export default function AgentsPage() {
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
-  const [creating, setCreating] = useState(false);
+  const [creating] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [showCreateAgentPopup, setShowCreateAgentPopup] = useState(false);
+  const [userInput, setUserInput] = useState('');
+  const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionError, setSuggestionError] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [workflowInfos, setWorkflowInfos] = useState<Record<string, WorkflowInfo>>({});
+  const [showExamples, setShowExamples] = useState(false);
+  const [initiatingAgentKey, setInitiatingAgentKey] = useState<string | null>(null);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
@@ -104,22 +320,107 @@ export default function AgentsPage() {
   });
 
   const handleCreateAgent = async () => {
-    setCreating(true);
+    setShowCreateAgentPopup(true);
+  };
+
+  const handleGetSuggestions = async () => {
+    if (!userInput.trim()) return;
+
+    setLoadingSuggestions(true);
+    setSuggestionError('');
+
     try {
-      // Minimal default agent payload
-      const newAgent = await apiService.createAgent({
-        name: 'Untitled Agent',
-        description: '',
-        config: {},
-      });
+      const response = await apiService.getAgentSuggestions(userInput.trim());
+      setSuggestions(response.suggestions);
+
+      // Fetch workflow information for each suggestion
+      const workflowData: Record<string, WorkflowInfo> = {};
+      await Promise.all(
+        response.suggestions.map(async (suggestion) => {
+          try {
+            const workflowInfo = await apiService.getPrebuiltAgentWorkflowInfo(suggestion.key);
+            workflowData[suggestion.key] = workflowInfo;
+          } catch (error) {
+            console.error(`Failed to get workflow info for ${suggestion.key}:`, error);
+            // Set empty workflow info as fallback
+            workflowData[suggestion.key] = { workflows: [], methods: [] };
+          }
+        }),
+      );
+
+      setWorkflowInfos(workflowData);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error getting suggestions:', error);
+      setSuggestionError('Failed to get suggestions. Please try again.');
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  // const handleCreateAgentFromInput = async () => {
+  //   setCreating(true);
+  //   try {
+  //     // Create agent with user input
+  //     const newAgent = await apiService.createAgent({
+  //       name: 'Untitled Agent',
+  //       description: userInput,
+  //       config: {},
+  //     });
+  //     if (newAgent && newAgent.id) {
+  //       navigate(`/agents/${newAgent.id}`);
+  //     }
+  //   } catch (e) {
+  //     console.error('Error creating agent:', e);
+  //     // Optionally show error toast
+  //   } finally {
+  //     setCreating(false);
+  //     setShowCreateAgentPopup(false);
+  //     setUserInput('');
+  //     setSuggestions([]);
+  //     setShowSuggestions(false);
+  //   }
+  // };
+
+  // const handleCancelCreate = () => {
+  //   setShowCreateAgentPopup(false);
+  //   setUserInput('');
+  //   setSuggestions([]);
+  //   setShowSuggestions(false);
+  //   setSuggestionError('');
+  // };
+
+  // const handleTryAgain = () => {
+  //   setShowSuggestions(false);
+  //   setSuggestions([]);
+  //   setSuggestionError('');
+  // };
+
+  const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
+    setInitiatingAgentKey(suggestion.key);
+    try {
+      // Add 3-5 second delay to show loading indicator
+      const delay = Math.random() * 2000 + 3000; // Random delay between 3-5 seconds
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      const buildRequest: BuildAgentFromSuggestionRequest = {
+        prebuilt_key: suggestion.key,
+        user_input: userInput,
+        agent_name: `${suggestion.name} Assistant`,
+      };
+
+      const newAgent = await apiService.buildAgentFromSuggestion(buildRequest);
       if (newAgent && newAgent.id) {
         navigate(`/agents/${newAgent.id}`);
       }
-    } catch (e) {
-      console.error('Error creating agent:', e);
-      // Optionally show error toast
+    } catch (error) {
+      console.error('Error building agent from suggestion:', error);
     } finally {
-      setCreating(false);
+      setInitiatingAgentKey(null);
+      setShowCreateAgentPopup(false);
+      setUserInput('');
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
   };
 
@@ -127,7 +428,7 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`relative overflow-hidden transition-all duration-700 ease-out ${
+        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
             ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
             : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
@@ -363,53 +664,42 @@ export default function AgentsPage() {
                     ? setMyAgentSearch(e.target.value)
                     : setExploreSearch(e.target.value)
                 }
-                className="py-3 pr-4 pl-10 w-full text-base text-gray-900 bg-gray-50 rounded-xl border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
+            <Button
+              variant="default"
+              className="w-[168px] px-4 py-1 font-semibold"
+              onClick={handleCreateAgent}
+              disabled={creating}
+            >
+              <Plus style={{ width: '20', height: '20' }} />
+              Train New Agent
+            </Button>
           </div>
         </div>
 
         {/* Enhanced Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
-            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+            className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'Explore'
-                ? 'border-purple-500 text-purple-600 bg-purple-50'
-                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
             }`}
             onClick={() => setActiveTab('explore')}
           >
-            <span className="flex gap-2 items-center">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              Pre-trained Agents
-            </span>
+            <span className="flex gap-2 items-center">Pre-trained Agents</span>
           </button>
           <button
-            className={`py-3 px-6 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'My Agent'
-                ? 'border-purple-500 text-purple-600 bg-purple-50'
-                : 'border-transparent text-gray-500 hover:text-purple-600 hover:bg-purple-50/50'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
             }`}
             onClick={() => setActiveTab('my')}
           >
-            <span className="flex gap-2 items-center">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
-              My Agents
-            </span>
+            <span className="flex gap-2 items-center">My Agents</span>
           </button>
         </div>
 
@@ -440,6 +730,202 @@ export default function AgentsPage() {
           </div>
         )}
       </div>
+
+      {/* Create Agent Popup */}
+      <Dialog open={showCreateAgentPopup} onOpenChange={setShowCreateAgentPopup}>
+        <DialogContent
+          className={`${showSuggestions && suggestions.length > 0 ? 'sm:max-w-[1000px]' : 'sm:max-w-xl'} max-h-[80vh] overflow-y-auto`}
+        >
+          <DialogHeader>
+            <DialogTitle>Train Your Own Agent</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col gap-2 w-full">
+              <label className="block mb-4 font-medium text-gray-700 text-md">
+                What your agent will do?
+              </label>
+              <textarea
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!loadingSuggestions && userInput.trim()) {
+                      handleGetSuggestions();
+                    }
+                  }
+                }}
+                placeholder="e.g. I want an agent that can help me with financial analysis"
+                className="p-3 w-full rounded-lg border border-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                rows={4}
+                autoFocus
+              />
+              {/* Regenerate Button */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="flex">
+                  <Button
+                    onClick={handleGetSuggestions}
+                    variant="outline"
+                    size="default"
+                    className="text-sm"
+                    disabled={loadingSuggestions}
+                  >
+                    {loadingSuggestions ? (
+                      <div className="flex gap-2 items-center">
+                        <div className="w-4 h-4 rounded-full border-b-2 border-gray-600 animate-spin"></div>
+                        <span>Regenerating...</span>
+                      </div>
+                    ) : (
+                      'Regenerate'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Error State */}
+            {suggestionError && (
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-sm text-red-600">{suggestionError}</p>
+              </div>
+            )}
+
+            {/* Suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex flex-col justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Templates that fit your agent
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Agent template includes pre-built workflows to get you started.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {suggestions.map((suggestion, index) => {
+                    const workflowInfo = workflowInfos[suggestion.key] || {
+                      workflows: [],
+                      methods: [],
+                    };
+                    const mainWorkflow =
+                      workflowInfo.workflows.find((w) => w.name === 'final_workflow') ||
+                      workflowInfo.workflows[0];
+
+                    // Dynamic workflow name based on order
+                    const workflowName = `Workflow ${index + 1}`;
+                    const workflowConfidence = suggestion.matching_percentage || 85; // Use backend confidence score
+
+                    return (
+                      <div
+                        key={suggestion.key}
+                        className="overflow-hidden relative p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md"
+                      >
+                        {/* Background Pattern */}
+                        <div className="absolute inset-0 opacity-5">
+                          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full blur-3xl"></div>
+                          <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-pink-400 to-orange-500 rounded-full blur-3xl"></div>
+                        </div>
+
+                        <div className="relative z-10">
+                          {/* Header Section */}
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex-1">
+                              <div className="flex gap-3 items-center mb-2">
+                                <div>
+                                  <div>
+                                    <div className="flex gap-2 items-center">
+                                      <h4 className="font-semibold text-gray-900 text-md">
+                                        {workflowName}
+                                      </h4>
+                                      <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-full">
+                                        {workflowConfidence}% match
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Button
+                              onClick={() => handleBuildFromSuggestion(suggestion)}
+                              variant="secondary"
+                              size="default"
+                              disabled={initiatingAgentKey === suggestion.key}
+                            >
+                              {initiatingAgentKey === suggestion.key ? (
+                                <div className="flex gap-2 items-center">
+                                  <div className="w-4 h-4 rounded-full border-b-2 animate-spin border-brand-600"></div>
+                                  <span className="text-sm">
+                                    Initiating your agent with selected workflow...
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex gap-2 items-center">
+                                  <span className="text-sm font-semibold">Select</span>
+                                </div>
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* Workflow Chart Visualization */}
+                          {mainWorkflow && mainWorkflow.steps.length > 0 && (
+                            <div className="">
+                              <div className="flex justify-between items-center mb-4">
+                                <p className="flex flex-col text-gray-700 text-md">
+                                  <span className="font-medium">Execute steps</span>
+                                  <p className="text-sm text-gray-500">
+                                    Steps can be modified later
+                                  </p>
+                                </p>
+                                <ToggleButton
+                                  onClick={() => setShowExamples(!showExamples)}
+                                  isActive={showExamples}
+                                />
+                              </div>
+
+                              {/* Simple Workflow Chart */}
+                              <SimpleWorkflowChart
+                                workflow={mainWorkflow}
+                                methods={workflowInfo.methods}
+                                showExamples={showExamples}
+                                setShowExamples={setShowExamples}
+                                agentKey={suggestion.key}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:flex-row">
+            {!showSuggestions && (
+              <Button
+                onClick={handleGetSuggestions}
+                variant="default"
+                className="w-full"
+                disabled={loadingSuggestions || !userInput.trim()}
+              >
+                {loadingSuggestions ? 'Getting started...' : 'Start training'}
+              </Button>
+            )}
+            {/* <Button
+              onClick={handleCreateAgentFromInput}
+              variant="outline"
+              className="w-full sm:w-auto"
+              disabled={creating || !userInput.trim()}
+            >
+              {creating ? 'Creating...' : 'Create Custom Agent'}
+            </Button> */}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

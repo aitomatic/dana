@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DANA Command Line Interface - Main Entry Point
+Dana Command Line Interface - Main Entry Point
 
 ARCHITECTURE ROLE:
     This is the PRIMARY ENTRY POINT for all Dana operations, analogous to the 'python' command.
@@ -24,34 +24,44 @@ INTEGRATION:
     - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
     - TUI mode: Imports and delegates to tui_app.main() for interactive experience
 
-This script serves as the main entry point for the DANA language, similar to the python command.
+This script serves as the main entry point for the Dana language, similar to the python command.
 It either starts the TUI when no arguments are provided, or executes a .na file when given.
 
 Usage:
   dana                         Start the Dana Terminal User Interface
-  dana [file.na]               Execute a DANA file
+  dana [file.na]               Execute a Dana file
   dana deploy [file.na]        Deploy a .na file as an agent endpoint
-      [--protocol mcp|a2a]     Protocol to use (default: a2a)
+      [--protocol mcp|a2a|restful]  Protocol to use (default: restful)
       [--host HOST]            Host to bind the server (default: 0.0.0.0)
       [--port PORT]            Port to bind the server (default: 8000)
+  dana studio                  Start the Dana Agent Studio
+      [--host HOST]            Host to bind the server (default: 127.0.0.1)
+      [--port PORT]            Port to bind the server (default: 8080)
+      [--reload]               Enable auto-reload for development
+      [--log-level LEVEL]      Log level (default: info)
+  dana repl                    Start the Dana Interactive REPL
+  dana tui                     Start the Dana Terminal User Interface
   dana -h, --help              Show help message
+  dana --version               Show version information
   dana --debug                 Enable debug logging
   dana --no-color              Disable colored output
   dana --force-color           Force colored output
 
 Examples:
-  dana deploy agent1.na
-  dana deploy agent1.na --protocol mcp
-  dana deploy agent1.na --protocol a2a --host 0.0.0.0 --port 9000
+  dana script.na               Execute a Dana script
+  dana deploy agent.na         Deploy an agent
+  dana deploy agent.na --protocol mcp --port 9000
+  dana studio --port 9000      Start studio on port 9000
+  dana repl                    Start interactive REPL
 """
 
 import argparse
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 import uvicorn
 
@@ -80,20 +90,40 @@ colors = ColorScheme(supports_color())
 
 def show_help():
     """Display help information."""
-    print(f"{colors.header('DANA - Domain-Aware NeuroSymbolic Architecture')}")
+    print(f"{colors.header('Dana - Domain-Aware NeuroSymbolic Architecture')}")
     print("")
     print(f"{colors.bold('Usage:')}")
     print(f"  {colors.accent('dana')}                   Start the Dana Terminal User Interface")
-    print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
-    print(f"  {colors.accent('dana [file.na] [args]')}  Execute a DANA file with arguments (key=value)")
+    print(f"  {colors.accent('dana [file.na]')}         Execute a Dana file")
+    print(f"  {colors.accent('dana [file.na] [args]')}  Execute a Dana file with arguments (key=value)")
+    print("")
+    print(f"{colors.bold('Commands:')}")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
-    print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
+    print(f"    {colors.accent('--protocol mcp|a2a|restful')}   Protocol to use (default: restful)")
+    print(f"    {colors.accent('--host HOST')}          Host to bind the server (default: 0.0.0.0)")
+    print(f"    {colors.accent('--port PORT')}          Port to bind the server (default: 8000)")
+    print("")
+    print(f"  {colors.accent('dana studio')}            Start the Dana Agent Studio")
+    print(f"    {colors.accent('--host HOST')}          Host to bind the server (default: 127.0.0.1)")
+    print(f"    {colors.accent('--port PORT')}          Port to bind the server (default: 8080)")
+    print(f"    {colors.accent('--reload')}             Enable auto-reload for development")
+    print(f"    {colors.accent('--log-level LEVEL')}    Log level (default: info)")
+    print("")
     print(f"  {colors.accent('dana repl')}              Start the Dana Interactive REPL")
     print(f"  {colors.accent('dana tui')}               Start the Dana Terminal User Interface")
+    print("")
+    print(f"{colors.bold('Options:')}")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
-    print(f"  {colors.accent('dana start')}             Start the Dana API server")
+    print(f"  {colors.accent('dana --no-color')}        Disable colored output")
+    print(f"  {colors.accent('dana --force-color')}     Force colored output")
+    print("")
+    print(f"{colors.bold('Examples:')}")
+    print(f"  {colors.accent('dana script.na')}         Execute a Dana script")
+    print(f"  {colors.accent('dana script.na key=value')}  Execute with arguments")
+    print(f"  {colors.accent('dana deploy agent.na')}   Deploy an agent")
+    print(f"  {colors.accent('dana studio --port 9000')}  Start studio on port 9000")
     print("")
     print(f"{colors.bold('Requirements:')}")
     print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
@@ -103,8 +133,6 @@ def show_help():
     print(f"  {colors.accent('Files:')} Use @ prefix to load file contents (JSON, YAML, CSV, text)")
     print(f"  {colors.accent('Function:')} Arguments are passed to __main__() function if present")
     print("")
-    print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
-    print("")
 
 
 def execute_file(file_path, debug=False, script_args=None):
@@ -112,11 +140,11 @@ def execute_file(file_path, debug=False, script_args=None):
     # if developer puts an .env file in the script's directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
-    file_path: Path = Path(file_path)
+    file_path_obj: Path = Path(file_path)
 
-    print_header(f"Dana Execution: {file_path.name}", colors=colors)
+    print_header(f"Dana Execution: {file_path_obj.name}", colors=colors)
 
-    source_code: str = file_path.read_text(encoding="utf-8")
+    source_code: str = file_path_obj.read_text(encoding="utf-8")
 
     if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
         # Handle script arguments if provided
@@ -141,9 +169,9 @@ def execute_file(file_path, debug=False, script_args=None):
 
     # Run the source code with custom search paths
     result = DanaSandbox.execute_string_once(source_code=source_code,
-                                             filename=str(file_path),
+                                             filename=str(file_path_obj),
                                              debug_mode=debug,
-                                             module_search_paths=[str(file_path.parent.resolve())])
+                                             module_search_paths=[str(file_path_obj.parent.resolve())])
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")
@@ -185,7 +213,7 @@ def execute_file(file_path, debug=False, script_args=None):
 
 
 def start_repl():
-    """Start the DANA REPL.
+    """Start the Dana REPL.
 
     ARCHITURAL NOTE: This function delegates to the full-featured interactive REPL application.
     It does NOT implement REPL logic itself - it imports and launches dana_repl_app.py which
@@ -209,7 +237,7 @@ def start_repl():
 
 
 def start_tui():
-    """Start the DANA TUI.
+    """Start the Dana TUI.
 
     ARCHITECTURAL NOTE: This function delegates to the full-featured TUI application.
     It does NOT implement TUI logic itself - it imports and launches tui_app.py which
@@ -235,26 +263,7 @@ def start_tui():
 def handle_start_command(args):
     """Start the Dana API server using uvicorn."""
     try:
-        # First validate configuration
-        from dana.apps.cli.config_manager import ConfigurationManager
-
-        print(f"{colors.accent('🔧 Validating Dana configuration...')}")
-        manager = ConfigurationManager(output_file=".env", debug=False)
-
-        # Check if configuration is valid
-        if not manager.validate_configuration():
-            print(f"{colors.accent('⚠️  Configuration validation failed')}\n")
-            print(f"{colors.accent('🛠️  Running configuration wizard...')}")
-
-            # Run the configuration wizard
-            success = manager.run_configuration_wizard()
-            if not success:
-                print(f"{colors.error('❌ Configuration setup failed. Cannot start server.')}")
-                return 1
-
-            print(f"{colors.accent('✅ Configuration completed successfully')}")
-
-        # Configuration is valid, start the server
+        # Start the server directly without configuration validation
         host = args.host or "127.0.0.1"
         port = args.port or 8080
         reload = args.reload
@@ -279,18 +288,19 @@ def handle_start_command(args):
 
 
 def main():
-    """Main entry point for the DANA CLI."""
+    """Main entry point for the Dana CLI."""
     # if developer puts an .env file in the current working directory, load it
     # Note: Environment loading is now handled automatically by initlib startup
 
+    args = None  # Initialize args to avoid unbound variable error
     try:
-        parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
+        parser = argparse.ArgumentParser(description="Dana Command Line Interface", add_help=False)
         parser.add_argument("--version", action="store_true", help="Show version information")
         subparsers = parser.add_subparsers(dest="subcommand")
 
         # Default/run subcommand (legacy behavior)
         parser_run = subparsers.add_parser("run", add_help=False)
-        parser_run.add_argument("file", nargs="?", help="DANA file to execute (.na)")
+        parser_run.add_argument("file", nargs="?", help="Dana file to execute (.na)")
         parser_run.add_argument("-h", "--help", action="store_true", help="Show help message")
         parser_run.add_argument("--version", action="store_true", help="Show version information")
         parser_run.add_argument("--no-color", action="store_true", help="Disable colored output")
@@ -302,9 +312,9 @@ def main():
         parser_deploy.add_argument("file", help="Single .na file to deploy")
         parser_deploy.add_argument(
             "--protocol",
-            choices=["mcp", "a2a"],
-            default="a2a",
-            help="Protocol to use (default: a2a)",
+            choices=["mcp", "a2a", "restful"],
+            default="restful",
+            help="Protocol to use (default: restful)",
         )
         parser_deploy.add_argument(
             "--host",
@@ -318,36 +328,22 @@ def main():
             help="Port to bind the server (default: 8000)",
         )
 
-        # Config subcommand for provider configuration
-        parser_config = subparsers.add_parser("config", help="Configure DANA providers and create .env file")
-        parser_config.add_argument(
-            "--output",
-            "-o",
-            default=".env",
-            help="Output file for environment variables (default: .env)",
-        )
-        parser_config.add_argument(
-            "--validate",
-            action="store_true",
-            help="Only validate current configuration without prompting",
-        )
-        parser_config.add_argument("--debug", action="store_true", help="Enable debug logging")
 
-        # Serve subcommand for API server
-        parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
-        parser_serve.add_argument(
+        # Studio subcommand for Dana Agent Studio
+        parser_studio = subparsers.add_parser("studio", help="Start the Dana Agent Studio")
+        parser_studio.add_argument(
             "--host",
             default="127.0.0.1",
             help="Host to bind the server (default: 127.0.0.1)",
         )
-        parser_serve.add_argument(
+        parser_studio.add_argument(
             "--port",
             type=int,
             default=8080,
             help="Port to bind the server (default: 8080)",
         )
-        parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
-        parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
+        parser_studio.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+        parser_studio.add_argument("--log-level", default="info", help="Log level (default: info)")
 
         # TUI subcommand for terminal user interface
         parser_tui = subparsers.add_parser("tui", help="Start the Dana Terminal User Interface")
@@ -358,7 +354,7 @@ def main():
         parser_repl.add_argument("--debug", action="store_true", help="Enable debug logging")
 
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "config", "tui", "repl")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "studio", "tui", "repl")):
             return handle_main_command()
 
         # Parse subcommand
@@ -373,10 +369,8 @@ def main():
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
-        elif args.subcommand == "start":
+        elif args.subcommand == "studio":
             return handle_start_command(args)
-        elif args.subcommand == "config":
-            return handle_config_command(args)
         elif args.subcommand == "tui":
             return start_tui()
         elif args.subcommand == "repl":
@@ -389,7 +383,7 @@ def main():
         return 0
     except Exception as e:
         print(f"\n{colors.error(f'Unexpected error: {str(e)}')}")
-        if hasattr(args, "debug") and args.debug:
+        if args and hasattr(args, "debug") and args.debug:
             import traceback
 
             traceback.print_exc()
@@ -397,9 +391,9 @@ def main():
 
 
 def handle_main_command():
-    """Handle main DANA command line behavior (run files or start REPL)."""
-    parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
-    parser.add_argument("file", nargs="?", help="DANA file to execute (.na)")
+    """Handle main Dana command line behavior (run files or start REPL)."""
+    parser = argparse.ArgumentParser(description="Dana Command Line Interface", add_help=False)
+    parser.add_argument("file", nargs="?", help="Dana file to execute (.na)")
     parser.add_argument("-h", "--help", action="store_true", help="Show help message")
     parser.add_argument("--version", action="store_true", help="Show version information")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
@@ -458,8 +452,10 @@ def handle_deploy_command(args):
 
         if args.protocol == "mcp":
             return deploy_thru_mcp(file_path, args)
-        else:
+        elif args.protocol == "a2a":
             return deploy_thru_a2a(file_path, args)
+        else:  # restful
+            return deploy_thru_restful(file_path, args)
 
     except Exception as e:
         print(f"\n{colors.error(f'Deploy command error: {str(e)}')}")
@@ -470,33 +466,6 @@ def handle_deploy_command(args):
         return 1
 
 
-def handle_config_command(args):
-    """Handle the config subcommand."""
-    try:
-        from dana.apps.cli.config_manager import ConfigurationManager
-
-        # Configure debug logging if requested
-        if args.debug:
-            configure_debug_logging()
-
-        manager = ConfigurationManager(output_file=args.output, debug=args.debug)
-
-        if args.validate:
-            # Only validate current configuration
-            success = manager.validate_configuration()
-            return 0 if success else 1
-        else:
-            # Interactive configuration setup
-            success = manager.run_configuration_wizard()
-            return 0 if success else 1
-
-    except Exception as e:
-        print(f"\n{colors.error(f'Configuration error: {str(e)}')}")
-        if args.debug:
-            import traceback
-
-            traceback.print_exc()
-        return 1
 
 
 def deploy_thru_mcp(file_path, args):
@@ -525,6 +494,23 @@ def deploy_thru_a2a(file_path, args):
         return 0
     except Exception as e:
         print(f"\n{colors.error('A2A Server Error:')}")
+        print(f"  {str(e)}")
+        return 1
+
+
+def deploy_thru_restful(file_path, args):
+    """Deploy file using RESTful API protocol."""
+    try:
+        from dana.apps.cli.deploy.restapi import deploy_dana_agent_rest_api
+
+        deploy_dana_agent_rest_api(file_path, args.host, args.port)
+        return 0
+    except ImportError as e:
+        print(f"\n{colors.error('Error: Required packages missing')}")
+        print(f"{colors.bold(f'Please install required packages: {e}')}")
+        return 1
+    except Exception as e:
+        print(f"\n{colors.error('RESTful API Server Error:')}")
         print(f"  {str(e)}")
         return 1
 

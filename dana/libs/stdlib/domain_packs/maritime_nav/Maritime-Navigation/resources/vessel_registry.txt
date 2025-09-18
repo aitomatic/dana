@@ -1,0 +1,117 @@
+MARITIME VESSEL REGISTRY DATABASE
+==================================
+
+Vessel Specifications and Capabilities:
+======================================
+
+MV Navigator (Container Ship):
+- Type: Container Ship
+- Length: 300 meters
+- Beam: 40 meters
+- Draft: 14 meters
+- Gross Tonnage: 45,000 GT
+- Maximum Speed: 22 knots
+- Maneuverability Rating: Medium
+- Stopping Distance: 2.5 nautical miles
+- Turning Radius: 800 meters
+- Right of Way: Stand-on vessel in most situations
+
+MV CargoStar (Bulk Carrier):
+- Type: Bulk Carrier
+- Length: 280 meters
+- Beam: 45 meters
+- Draft: 16 meters
+- Gross Tonnage: 52,000 GT
+- Maximum Speed: 18 knots
+- Maneuverability Rating: Low
+- Stopping Distance: 3.2 nautical miles
+- Turning Radius: 1,200 meters
+- Right of Way: Give-way vessel to smaller vessels
+
+MV TankerPro (Oil Tanker):
+- Type: Oil Tanker
+- Length: 320 meters
+- Beam: 50 meters
+- Draft: 18 meters
+- Gross Tonnage: 65,000 GT
+- Maximum Speed: 16 knots
+- Maneuverability Rating: Low
+- Stopping Distance: 4.0 nautical miles
+- Turning Radius: 1,500 meters
+- Right of Way: Give-way vessel to smaller vessels
+
+MV FishingBoat (Fishing Vessel):
+- Type: Fishing Vessel
+- Length: 25 meters
+- Beam: 8 meters
+- Draft: 3 meters
+- Gross Tonnage: 150 GT
+- Maximum Speed: 12 knots
+- Maneuverability Rating: High
+- Stopping Distance: 0.8 nautical miles
+- Turning Radius: 150 meters
+- Right of Way: Stand-on vessel to larger vessels
+
+MV PilotBoat (Pilot Vessel):
+- Type: Pilot Vessel
+- Length: 20 meters
+- Beam: 6 meters
+- Draft: 2 meters
+- Gross Tonnage: 80 GT
+- Maximum Speed: 25 knots
+- Maneuverability Rating: Very High
+- Stopping Distance: 0.5 nautical miles
+- Turning Radius: 100 meters
+- Right of Way: Stand-on vessel to larger vessels
+
+MV Yacht (Pleasure Craft):
+- Type: Pleasure Craft
+- Length: 15 meters
+- Beam: 4 meters
+- Draft: 1.5 meters
+- Gross Tonnage: 25 GT
+- Maximum Speed: 30 knots
+- Maneuverability Rating: Very High
+- Stopping Distance: 0.3 nautical miles
+- Turning Radius: 80 meters
+- Right of Way: Give-way vessel to commercial vessels
+
+Vessel Classification by Right of Way:
+======================================
+
+Stand-on Vessels (Higher Priority):
+- Fishing vessels actively fishing
+- Vessels not under command
+- Vessels restricted in ability to maneuver
+- Vessels constrained by draft
+- Pilot vessels on duty
+
+Give-way Vessels (Lower Priority):
+- Power-driven vessels
+- Sailing vessels
+- Vessels engaged in fishing (when not actively fishing)
+- Pleasure craft
+
+Maneuverability Ratings:
+========================
+
+Very High:
+- Pilot vessels, pleasure craft, fishing vessels
+- Excellent stopping and turning capabilities
+- Can make rapid course and speed changes
+
+High:
+- Small commercial vessels
+- Good maneuverability in most conditions
+- Reasonable stopping and turning capabilities
+
+Medium:
+- Medium-sized commercial vessels
+- Moderate maneuverability
+- Adequate stopping and turning capabilities
+
+Low:
+- Large commercial vessels (tankers, bulk carriers)
+- Limited maneuverability
+- Long stopping distances and turning radii
+- Require early action for collision avoidance

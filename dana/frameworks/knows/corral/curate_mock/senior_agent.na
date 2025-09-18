@@ -1,6 +1,6 @@
 document_folder = "/Users/lam/Desktop/repos/opendxa/agents/agent_1752760136861_finance_expert_agent/docs"
 
-websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+websearch = use("mcp", url="YOUR_MCP_URL")
 specialized_kb = use("rag", sources=[document_folder])
 
 from datetime.py import datetime

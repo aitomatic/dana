@@ -18,6 +18,7 @@ import {
 } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentStore } from '@/stores/document-store';
+import { useAgentStore } from '@/stores/agent-store';
 import { toast } from 'sonner';
 import { PdfViewer } from '@/components/library/pdf-viewer';
 
@@ -65,18 +66,33 @@ const DocumentsTab: React.FC = () => {
   // Use document store for state management
   const { documents, isLoading, fetchDocuments } = useDocumentStore();
 
+  // Use agent store to get agent's associated_documents
+  const { selectedAgent, fetchAgent } = useAgentStore();
+
   // Cleanup function to reset deletion state
   const resetDeletionState = () => {
     setShowDeleteConfirm(false);
     setSelectedItem(null);
   };
 
-  // Load agent-specific documents using store
+  // Load all documents and filter by agent's associated_documents
   useEffect(() => {
-    if (agent_id) {
-      fetchDocuments({ agent_id: parseInt(agent_id) });
-    }
-  }, [agent_id, fetchDocuments]);
+    console.log('🔄 DocumentsTab: Fetching all documents');
+    fetchDocuments(); // Fetch all documents, no agent_id filter
+  }, [fetchDocuments]);
+
+  // Refetch documents when component becomes visible (handles navigation back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ DocumentsTab: Component became visible, refetching all documents');
+        fetchDocuments(); // Fetch all documents, no agent_id filter
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fetchDocuments]);
 
   const handleDragDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -90,14 +106,32 @@ const DocumentsTab: React.FC = () => {
     setUploadingFiles(fileNames);
 
     try {
+      // Upload all files first to library, then associate with agent
       for (const file of files) {
-        await apiService.uploadAgentDocument(agent_id, file);
+        // Step 1: Upload to library
+        const uploadedDoc = await apiService.uploadDocumentRaw(file);
+        // Step 2: Associate with agent
+        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
       }
-      await fetchDocuments({ agent_id: parseInt(agent_id) });
+
+      // Wait a moment for backend processing, then refresh documents list
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+
+      toast.success(`Successfully uploaded ${files.length} file(s)`);
     } catch (error) {
-      console.error('Failed to upload files:', error);
+      console.error('Failed to upload or associate files:', error);
+      toast.error('Failed to upload files. Please try again.');
       setUploadingFiles([]);
+      // Still reload documents to show any files that were successfully uploaded before the error
+      await fetchDocuments(); // Fetch all documents
     }
   };
 
@@ -127,7 +161,13 @@ const DocumentsTab: React.FC = () => {
       console.log('✅ Association result:', result);
 
       toast.success(`Successfully added ${selectedFileIds.length} file(s) to agent`);
-      await fetchDocuments({ agent_id: parseInt(agent_id) }); // Refresh the documents list
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
       setLibraryModalOpen(false);
     } catch (error: any) {
       console.error('❌ Failed to add files to agent:', error);
@@ -152,19 +192,34 @@ const DocumentsTab: React.FC = () => {
     setUploadingFiles(fileNames);
 
     try {
+      // Upload all files first to library, then associate with agent
       for (const file of fileList) {
-        await apiService.uploadAgentDocument(agent_id, file);
+        // Step 1: Upload to library
+        const uploadedDoc = await apiService.uploadDocumentRaw(file);
+        // Step 2: Associate with agent
+        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
         // Remove this file from uploading list as it completes
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
-        // Reload documents immediately after each file upload for better UX
-        await fetchDocuments({ agent_id: parseInt(agent_id) });
       }
+
+      // Wait a moment for backend processing, then refresh documents list
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
+
+      toast.success(`Successfully uploaded ${fileList.length} file(s)`);
     } catch (error) {
-      console.error('Failed to upload file:', error);
+      console.error('Failed to upload or associate files:', error);
+      toast.error('Failed to upload files. Please try again.');
       // Clear uploading state on error
       setUploadingFiles([]);
       // Still reload documents to show any files that were successfully uploaded before the error
-      await fetchDocuments({ agent_id: parseInt(agent_id) });
+      await fetchDocuments(); // Fetch all documents
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
       // Ensure all files are cleared from uploading state
@@ -214,7 +269,13 @@ const DocumentsTab: React.FC = () => {
       toast.success(`"${selectedItem.name}" removed successfully.`);
 
       console.log('🔄 Refreshing documents after disassociation...');
-      await fetchDocuments({ agent_id: parseInt(agent_id!) }); // Refresh the documents list
+
+      // Refetch agent data to get updated associated_documents
+      if (agent_id) {
+        await fetchAgent(parseInt(agent_id));
+      }
+
+      await fetchDocuments(); // Fetch all documents
 
       console.log('✅ Document disassociation and refresh completed');
     } catch (error) {
@@ -291,9 +352,25 @@ const DocumentsTab: React.FC = () => {
     );
   };
 
-  // Convert store documents to LibraryItem format and filter by current agent
-  const agentDocuments = documents.filter((doc) => doc.agent_id?.toString() === agent_id);
+  // Filter documents by agent's associated_documents
+  const agentAssociatedDocuments = selectedAgent?.config?.associated_documents || [];
+  const agentDocuments = documents.filter((doc) => agentAssociatedDocuments.includes(doc.id));
   const data = agentDocuments.map(convertDocumentToLibraryItem);
+
+  // Debug logging for document state
+  console.log('📊 DocumentsTab: Current state:', {
+    agent_id,
+    selectedAgentId: selectedAgent?.id,
+    agentAssociatedDocuments,
+    documentsCount: documents.length,
+    agentDocumentsCount: agentDocuments.length,
+    documents: documents.map((d) => ({
+      id: d.id,
+      name: d.original_filename,
+    })),
+    dataCount: data.length,
+    isLoading,
+  });
 
   // Apply search filter
   const filteredData = data.filter((item) =>

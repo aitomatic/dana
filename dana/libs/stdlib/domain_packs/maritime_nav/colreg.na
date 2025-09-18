@@ -1,0 +1,5 @@
+"""International Regulations for Preventing Collisions at Sea 1972 (COLREG)."""
+
+
+__all__ = [
+]

@@ -177,8 +177,8 @@ class TestAgentInheritance(unittest.TestCase):
         # Test that agent type has all struct type attributes
         self.assertEqual(agent_type.name, "TestAgent")
         # AgentType automatically adds a 'state' field
-        self.assertEqual(agent_type.fields, {"state": "str", "name": "str"})
-        self.assertEqual(agent_type.field_order, ["state", "name"])
+        self.assertEqual(agent_type.fields, {"state": "str", "name": "str", 'description': 'str'})
+        self.assertEqual(agent_type.field_order, ["description", "state", "name"])
 
         # Test that agent type has additional agent-specific attributes
         self.assertIn("plan", agent_type.agent_methods)

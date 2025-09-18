@@ -1,5 +1,0 @@
-rag = use("rag", sources=["docs/for-engineers", "docs/for-researchers"], force_reload=False)
-
-print(rag.query("What is DANA ?"))
-
-print(reason("What is the syntax for multi-agent collaboration ?"))

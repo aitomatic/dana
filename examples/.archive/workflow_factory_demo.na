@@ -1,0 +1,245 @@
+# Workflow Factory Demonstration
+# Shows how to create WorkflowInstance objects from YAML text
+
+log("🚀 WORKFLOW FACTORY DEMONSTRATION")
+log("=" * 50)
+
+# Example 1: Simple YAML workflow definition
+simple_workflow_yaml = """
+workflow:
+  name: "DataAnalysisWorkflow"
+  description: "Analyze sensor data and detect anomalies"
+  steps:
+    - step: 1
+      action: "validate_data"
+      objective: "Ensure data quality and format"
+    - step: 2
+      action: "analyze_trends"
+      objective: "Identify patterns and trends"
+    - step: 3
+      action: "detect_anomalies"
+      objective: "Find unusual data points"
+    - step: 4
+      action: "generate_report"
+      objective: "Create analysis summary"
+"""
+
+# Example 2: Workflow with custom FSM
+custom_fsm_workflow_yaml = """
+workflow:
+  name: "EquipmentStatusWorkflow"
+  description: "Check equipment status with error handling"
+  steps:
+    - step: 1
+      action: "check_status"
+      objective: "Get current equipment status"
+    - step: 2
+      action: "analyze_health"
+      objective: "Assess equipment health metrics"
+    - step: 3
+      action: "generate_alert"
+      objective: "Create status alert if needed"
+  fsm:
+    type: "branching"
+    states: ["START", "CHECKING", "ANALYZING", "ALERTING", "COMPLETE", "ERROR"]
+    initial_state: "START"
+    transitions:
+      "START:begin": "CHECKING"
+      "CHECKING:success": "ANALYZING"
+      "CHECKING:error": "ERROR"
+      "ANALYZING:success": "ALERTING"
+      "ANALYZING:error": "ERROR"
+      "ALERTING:complete": "COMPLETE"
+      "ERROR:retry": "CHECKING"
+      "ERROR:abort": "COMPLETE"
+"""
+
+# Example 3: Workflow with metadata
+metadata_workflow_yaml = """
+workflow:
+  name: "CustomerOnboardingWorkflow"
+  description: "Automated customer onboarding process"
+  steps:
+    - step: 1
+      action: "validate_customer_data"
+      objective: "Validate customer information"
+      parameters:
+        required_fields: ["name", "email", "phone"]
+    - step: 2
+      action: "create_account"
+      objective: "Create customer account"
+      parameters:
+        account_type: "standard"
+    - step: 3
+      action: "send_welcome_email"
+      objective: "Send welcome email to customer"
+  metadata:
+    version: "1.0"
+    author: "System"
+    tags: ["onboarding", "customer", "automation"]
+"""
+
+# Function to demonstrate workflow creation
+def demonstrate_workflow_factory():
+    """Demonstrate the WorkflowFactory functionality."""
+    
+    # Import the factory
+    from dana.core.workflow.factory import WorkflowFactory
+    
+    # Create factory instance
+    factory = WorkflowFactory()
+    
+    log("\n📋 CREATING WORKFLOWS FROM YAML")
+    log("-" * 40)
+    
+    # Test 1: Simple workflow
+    log("\n1️⃣ Creating simple data analysis workflow...")
+    try:
+        workflow1 = factory.create_from_yaml(simple_workflow_yaml)
+        log(f"✅ Created workflow: {workflow1.name}")
+        log(f"   Steps: {len(workflow1.steps) if hasattr(workflow1, 'steps') else 'N/A'}")
+        log(f"   Status: {workflow1.get_status()}")
+    except Exception as e:
+        log(f"❌ Failed to create workflow 1: {e}")
+    
+    # Test 2: Custom FSM workflow
+    log("\n2️⃣ Creating workflow with custom FSM...")
+    try:
+        workflow2 = factory.create_from_yaml(custom_fsm_workflow_yaml)
+        log(f"✅ Created workflow: {workflow2.name}")
+        log(f"   FSM states: {workflow2.fsm.states if hasattr(workflow2, 'fsm') and workflow2.fsm else 'N/A'}")
+        log(f"   Status: {workflow2.get_status()}")
+    except Exception as e:
+        log(f"❌ Failed to create workflow 2: {e}")
+    
+    # Test 3: Metadata workflow
+    log("\n3️⃣ Creating workflow with metadata...")
+    try:
+        workflow3 = factory.create_from_yaml(metadata_workflow_yaml)
+        log(f"✅ Created workflow: {workflow3.name}")
+        log(f"   Description: {workflow3.struct_type.docstring}")
+        log(f"   Status: {workflow3.get_status()}")
+    except Exception as e:
+        log(f"❌ Failed to create workflow 3: {e}")
+    
+    # Test 4: Simple workflow creation
+    log("\n4️⃣ Creating simple workflow from step names...")
+    try:
+        simple_steps = ["Validate Input", "Process Data", "Generate Output"]
+        simple_workflow = factory.create_simple_workflow(
+            "SimpleProcessingWorkflow",
+            simple_steps,
+            "A simple three-step processing workflow",
+            "Process data in a simple way",
+        )
+        log(f"✅ Created simple workflow: {simple_workflow.name}")
+        log(f"   Steps: {len(simple_steps)}")
+        log(f"   Status: {simple_workflow.get_status()}")
+    except Exception as e:
+        log(f"❌ Failed to create simple workflow: {e}")
+    
+    # Test 5: Validation
+    log("\n5️⃣ Testing workflow validation...")
+    try:
+        is_valid = factory.validate_workflow_text(simple_workflow_yaml)
+        log(f"✅ Simple workflow validation: {is_valid}")
+        
+        invalid_yaml = "invalid: yaml: content"
+        is_invalid = factory.validate_workflow_text(invalid_yaml)
+        log(f"✅ Invalid workflow validation: {is_invalid}")
+    except Exception as e:
+        log(f"❌ Validation test failed: {e}")
+
+# Function to demonstrate workflow execution
+def demonstrate_workflow_execution():
+    """Demonstrate workflow execution."""
+    
+    log("\n🎯 DEMONSTRATING WORKFLOW EXECUTION")
+    log("-" * 40)
+    
+    try:
+        from dana.core.workflow.factory import WorkflowFactory
+        
+        factory = WorkflowFactory()
+        
+        # Create a simple workflow
+        workflow = factory.create_from_yaml(simple_workflow_yaml)
+        
+        # Prepare execution data
+        execution_data = {
+            "problem": "Analyze sensor data for anomalies",
+            "context": {
+                "data_source": "sensors.csv",
+                "time_range": "last_24_hours"
+            },
+            "agent": None  # Would be the agent instance in real usage
+        }
+        
+        log(f"🚀 Executing workflow: {workflow.name}")
+        log(f"   Input data: {execution_data['problem']}")
+        
+        # Execute the workflow
+        result = workflow.execute(execution_data)
+        
+        log(f"✅ Workflow execution completed")
+        log(f"   Result: {result}")
+        log(f"   Final status: {workflow.get_status()}")
+        log(f"   Execution history: {len(workflow.get_execution_history())} steps")
+        
+    except Exception as e:
+        log(f"❌ Workflow execution failed: {e}")
+
+# Function to demonstrate agent integration
+def demonstrate_agent_integration():
+    """Demonstrate how the factory integrates with agent.solve()."""
+    
+    log("\n🤖 DEMONSTRATING AGENT INTEGRATION")
+    log("-" * 40)
+    
+    # This would be the YAML output from agent.reason() when TYPE_WORKFLOW is chosen
+    agent_workflow_output = """
+workflow:
+  name: "ProblemSolvingWorkflow"
+  description: "Workflow generated by agent for problem solving"
+  steps:
+    - step: 1
+      action: "analyze_problem"
+      objective: "Understand the problem requirements"
+    - step: 2
+      action: "gather_data"
+      objective: "Collect necessary data and resources"
+    - step: 3
+      action: "execute_solution"
+      objective: "Implement the solution"
+    - step: 4
+      action: "validate_result"
+      objective: "Verify the solution works correctly"
+"""
+    
+    try:
+        from dana.core.workflow.factory import WorkflowFactory
+        
+        factory = WorkflowFactory()
+        
+        # Simulate what happens in agent.solve() when TYPE_WORKFLOW is detected
+        log("📝 Agent generates workflow YAML...")
+        log("🔧 Factory parses YAML and creates WorkflowInstance...")
+        
+        workflow = factory.create_from_yaml(agent_workflow_output)
+        
+        log(f"✅ Agent successfully created workflow: {workflow.name}")
+        log(f"   Steps: {len(workflow.steps) if hasattr(workflow, 'steps') else 'N/A'}")
+        log(f"   Ready for execution: {workflow.get_status()}")
+        
+    except Exception as e:
+        log(f"❌ Agent integration failed: {e}")
+
+# Run all demonstrations
+log("🚀 Starting Workflow Factory Demonstrations...")
+
+demonstrate_workflow_factory()
+demonstrate_workflow_execution()
+demonstrate_agent_integration()
+
+log("\n🎉 Workflow Factory Demonstration Complete!")
+log("=" * 50)

@@ -1,0 +1,26 @@
+# Advanced Math Problem Test
+
+agent MathAgent
+
+print("🔢 Testing Advanced Math Problems")
+print("=" * 40)
+
+print("\n📊 Test 1: Square root problem")
+print("Result:", MathAgent.solve("4 is the root of what?"))
+
+print("\n📊 Test 2: Square problem")
+print("Result:", MathAgent.solve("What is 5 squared?"))
+
+print("\n📊 Test 3: Cube problem")
+print("Result:", MathAgent.solve("What is 3 cubed?"))
+
+print("\n📊 Test 4: Square root calculation")
+print("Result:", MathAgent.solve("What is the square root of 16?"))
+
+print("\n📊 Test 5: Factorial word problem")
+print("Result:", MathAgent.solve("What is 5 factorial?"))
+
+print("\n📊 Test 6: Mixed operation")
+print("Result:", MathAgent.solve("What is 2 plus 3 squared?"))
+
+print("\n✅ Advanced math tests completed!")

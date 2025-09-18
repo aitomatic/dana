@@ -359,8 +359,14 @@ export function LibraryFileSelectionModal({
 
           {/* Footer Actions */}
           <div className="flex flex-shrink-0 items-center pt-4 mt-auto border-t">
-            <span></span>
-            <div className="flex justify-end space-x-2 w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => window.open('/library', '_blank')}
+              className="mr-auto"
+            >
+              Go to Library
+            </Button>
+            <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>

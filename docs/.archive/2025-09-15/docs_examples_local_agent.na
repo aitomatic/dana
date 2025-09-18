@@ -1,0 +1,7 @@
+# Archived from docs/examples/local_agent.na
+# Local agent example - works without API keys
+agent LocalAgent:
+    model = "local"
+    # To be completed
+
+

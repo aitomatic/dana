@@ -15,14 +15,13 @@ const BotThinking = ({
   const { agent_id } = useParams<{ agent_id: string }>();
 
   // Use dynamic avatar based on agent ID, fallback to provided avatar or default
-  const avatarSrc =
-    avatar || (agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg');
+  const avatarSrc = avatar || (agent_id ? getAgentAvatarSync(agent_id) : getAgentAvatarSync(0));
 
   return (
     <div className="grid grid-cols-[max-content_1fr] items-start w-full gap-2 px-6 py-4">
-      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+      <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
         <img
-          className="w-full h-full object-cover"
+          className="object-cover w-full h-full"
           src={avatarSrc}
           alt="Agent avatar"
           onError={(e) => {
@@ -31,21 +30,21 @@ const BotThinking = ({
             target.style.display = 'none';
             const parent = target.parentElement;
             if (parent) {
-              parent.className = `w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold`;
+              parent.className = `flex justify-center items-center w-8 h-8 text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400 rounded-full`;
               parent.innerHTML = `<span className="text-white">A</span>`;
             }
           }}
         />
       </div>
       <div className="flex gap-2">
-        <div className="flex items-start justify-center">
+        <div className="flex justify-center items-start">
           <IconLoader className="mt-0.5 animate-spin text-brand-700" size={20} />
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-normal text-gray-900 break-words xl:text-base animate-flash">
             {message ?? thinkingMessage ?? 'Thinking...'}
           </span>
-          {currentStep && <span className="text-xs text-gray-600 mt-1 italic">{currentStep}</span>}
+          {currentStep && <span className="mt-1 text-xs italic text-gray-600">{currentStep}</span>}
         </div>
       </div>
     </div>
