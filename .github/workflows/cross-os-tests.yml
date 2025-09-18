@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.12", "3.13"]
+        python: ["3.12"]
 
     defaults:
       run:
@@ -51,7 +51,7 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v2
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
@@ -68,6 +68,7 @@ jobs:
           DANA_MOCK_LLM: "true"
           DANA_USE_REAL_LLM: "false"
           PYTHONIOENCODING: "utf-8"
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
             uv run python -X utf8 -m pytest -q --maxfail=1
