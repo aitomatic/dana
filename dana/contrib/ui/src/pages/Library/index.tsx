@@ -255,11 +255,22 @@ export default function LibraryPage() {
     <div className="flex overflow-hidden flex-col h-[calc(100vh-64px)]">
       <div className="flex flex-col flex-1 p-6 space-y-6 min-h-0">
         {/* Header */}
+        
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Library</h1>
-            <p className="text-gray-600">Manage your topics and documents</p>
+
+        {/* Filters */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 w-[280px]">
+            <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
+            <Input
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
           </div>
+
+        </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
               <IconRefresh className="w-4 h-4" />
@@ -312,40 +323,6 @@ export default function LibraryPage() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1 max-w-sm">
-            <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
-            <Input
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {!folderState.isInFolder && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <IconFilter className="mr-2 w-4 h-4" />
-                  {typeFilter === 'all' ? 'All' : typeFilter === 'files' ? 'Documents' : 'Topics'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleTypeFilterChange('all')}>
-                  All Items
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleTypeFilterChange('files')}>
-                  Documents Only
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleTypeFilterChange('folders')}>
-                  Topics Only
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
 
         {/* Data Table */}
         <div className="overflow-hidden flex-1 min-h-0">
