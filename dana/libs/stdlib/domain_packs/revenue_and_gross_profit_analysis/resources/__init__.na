@@ -1,4 +1,4 @@
-"""Revenue and Gross Profit Analysis Resources."""
+"""Revenue & Gross Profit Analysis Resources."""
 
 
 __all__ = [
