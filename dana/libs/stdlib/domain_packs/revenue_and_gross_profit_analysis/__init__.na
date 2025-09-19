@@ -1,4 +1,4 @@
-"""Revenue and Gross Profit Analysis Domain Expertise Module / Domain Knowledge Pack."""
+"""Revenue & Gross Profit Analysis Domain Expertise Module / Domain Knowledge Pack."""
 
 
 from .resources import *
