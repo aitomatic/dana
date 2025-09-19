@@ -1,0 +1,1140 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Accounting Standards and Policy Analysis",
+        "IFRS vs. US GAAP: Key Differences and Implications"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What are the primary objectives of IFRS and US GAAP accounting standards?\n*Question 2* : How do IFRS and US GAAP differ in their approach to standard-setting and conceptual frameworks?\n*Question 3* : What are the main sources of guidance for accounting policies under IFRS and US GAAP?\n*Question 4* : In what ways can the initial application of IFRS versus US GAAP impact financial statement preparation?\n*Question 5* : What challenges might companies face when transitioning from US GAAP to IFRS for the first time?",
+            "facts": [
+                {
+                    "content": "The IASB and FASB work together to coordinate changes to accounting standards and reduce differences between the standards. While convergence of conceptual frameworks and existing standards was put on hold in the late 2000s, new accounting standards have been mostly or entirely converged, resulting in increasing uniformity over time as major new standards have been adopted (e.g., revenue recognition, leasing, credit losses).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "US GAAP is developed by the Financial Accounting Standards Board (FASB) and is based on rules. IFRS is developed by the International Accounting Standards Board (IASB) and is based on principles.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under US GAAP, inventory valuation methods include FIFO, LIFO, and Weighted Average Method; development cost is treated as an expense; reversal of inventory write-down is prohibited. Under IFRS, inventory valuation methods include FIFO and Weighted Average Method; development cost is capitalized only if certain conditions are satisfied; reversal of inventory write-down is permissible if specified conditions are met.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The characteristics of decision-useful information are identical under IFRS and US GAAP. Relevant information can affect a decision and encompasses materiality. Faithful representation is complete, neutral, and free from error. Enhancing characteristics are comparability, verifiability, timeliness, and understandability.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High-quality financial reports conform to the generally accepted accounting principles (GAAP) of the jurisdiction, such as IFRS, US GAAP, or other home-country GAAP.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "International Financial Reporting Standards are currently developed by the International Accounting Standards Board (IASB). US GAAP are currently developed by the Financial Accounting Standards Board (FASB).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The notes (footnotes) that accompany the financial statements are required and often account for a large percentage of the financial disclosures made in regulatory filings. The notes disclose the basis of preparation for the financial statements and information about the accounting policies, methods, and estimates used to prepare the financial statements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Both IFRS and US GAAP allow some flexibility in choosing among alternative policies and methods when accounting for certain items.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For many companies, the financial notes and supplemental schedules provide explanatory information about every line item (or almost every line item) on the balance sheet and income statement. Note disclosures include information about segment reporting, business acquisitions and disposals, contractual obligations, financial instruments and risks, legal proceedings, related-party transactions, and subsequent events.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The two major accounting standard setters are: 1) the International Accounting Standards Board (IASB) who establishes IFRS and 2) the Financial Accounting Standards Board (FASB) who establishes US GAAP.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The IASB and FASB provide information on their websites regarding new standards and proposals for future changes in standards. Both bodies seek input from the financial analyst community via exposure drafts and comment letters.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Investors require timeliness, transparency, comparability, and consistency in financial reporting. The quality of information depends directly on the principles and standards managers apply when recognizing and measuring the economic activities and events affecting their companies\u2019 operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts need to monitor ongoing developments in financial reporting and assess their implications for security analysis and valuation. Monitoring new products or transactions and actions of standard setters and company disclosures regarding critical accounting policies and estimates is important.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "FASB ASC Topic 320 [Investments\u2013Debt and Equity Securities]; FASB ASC Topic 323 [Investments\u2013Equity Method and Joint Ventures]; FASB ASC Topics 805 [Business Combinations] and 810 [Consolidations] are sources of guidance under US GAAP.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The IASB issued IFRS 9, Financial Instruments; the FASB\u2019s guidance relating to the accounting for investments in financial instruments is contained in ASC 825, Financial Instruments.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Both IFRS and US GAAP specify an impairment analysis protocol for long-lived assets, but IFRS requires impairment if the recoverable amount is less than the carrying amount, while US GAAP requires impairment only when the sum of the undiscounted future cash flows is less than the carrying amount.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "IFRS permits the recognition of recoveries of the recoverable amount in subsequent periods if evidence indicates that the recoverable amount has subsequently increased. US GAAP prohibits the subsequent write-up of an asset after an impairment charge.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "IFRS and US GAAP accounting standards require the use of the acquisition method to account for business combinations. Fair value of the consideration given is the appropriate measurement for identifiable assets and liabilities acquired in the business combination.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Goodwill is the difference between the acquisition value and the fair value of the target\u2019s identifiable net tangible and intangible assets. It is not amortized, but evaluated at least annually for impairment. IFRS uses a one-step approach to determine and measure the impairment loss, whereas US GAAP uses a two-step approach.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the acquiring company acquires less than 100%, non-controlling (minority) shareholders\u2019 interests are reported on the consolidated financial statements. IFRS allows the non-controlling interest to be measured at either its fair value (full goodwill) or at the non-controlling interest\u2019s proportionate share of the acquiree\u2019s identifiable net assets (partial goodwill). US GAAP requires the non-controlling interest to be measured at fair value (full goodwill).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Special purpose (SPEs) and variable interest entities (VIEs) are required to be consolidated by the entity which is expected to absorb the majority of the expected losses or receive the majority of expected residual benefits.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under IFRS, the cost of an acquisition is allocated to the fair value of assets, liabilities, and contingent liabilities. Contingent liabilities are recorded separately as part of the cost allocation process, provided their fair values can be measured reliably. Under US GAAP, contractual contingent assets and liabilities are recognized and recorded at their fair values at the time of acquisition. Non-contractual contingent assets and liabilities must also be recognized and recorded only if it is \"more likely than not\" they meet the definition of an asset or a liability at the acquisition date.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In subsequent periods, contingent liabilities are measured at the higher of the amount initially recognized or the best estimate of the amount required to settle. A contingent asset under US GAAP is measured at the lower of the acquisition date fair value or the best estimate of the future settlement amount.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under both IFRS and US GAAP, contingent consideration is initially measured at fair value and classified as an asset, liability, or equity. Changes in the fair value of liabilities (and assets, in the case of US GAAP) are recognized in the consolidated income statement.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "IFRS and US GAAP recognize in-process research and development acquired in a business combination as a separate intangible asset and measure it at fair value (if it can be measured reliably). In subsequent periods, this research and development is subject to amortization if successfully completed or to impairment if not.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "IFRS and US GAAP do not recognize restructuring costs that are associated with the business combination as part of the cost of the acquisition; they are recognized as an expense in the periods the restructuring costs are incurred.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Because reconciliation disclosures between IFRS and US GAAP are not required, an analyst comparing two companies that use different reporting standards must be aware of areas in which accounting standards have not converged. In many cases, a user of financial statements prepared under different accounting standards does not have enough information to make the specific adjustments required to achieve comparability. Instead, an analyst must maintain caution in interpreting comparative financial measures produced under different accounting standards.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When one company in an industry develops a new product or transaction, other companies in the industry often do the same. Once new products, financial instruments, or structured transactions are identified, it is helpful to gain an understanding of the business purpose. If necessary, an analyst can obtain further information from a company\u2019s management.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. When a new standard is proposed, an exposure draft is made available and users of financial statements can draft comment letters and position papers for submission to the IASB and FASB to evaluate the proposal.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. The notes to financial statements disclose the basis of preparation, accounting policies, methods, and estimates used to prepare the financial statements.\n  2. For many companies, the notes and supplemental schedules provide explanatory information about every line item (or almost every line item) on the balance sheet and income statement.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can behavioral finance theories such as loss aversion and overconfidence bias impact financial analysis and investment decisions?\n*Question 7* : What are the key technical analysis indicators commonly used to assess stock trends, and how should their signals be interpreted?\n*Question 8* : Describe a practical risk management strategy for mitigating currency risk in an international company\u2019s financial statements.\n*Question 9* : Given a scenario where a company's stock price sharply declines despite strong fundamentals, how would you analyze and address potential behavioral biases influencing investor actions?\n*Question 10* : In a case where conflicting technical and fundamental analysis signals are present, how would you prioritize your analysis to provide actionable recommendations?",
+            "facts": [
+                {
+                    "content": "Studies have shown that experts in many fields persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models of financial statements are in no way immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism (anchoring and adjustment), representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information; also referred to as anchoring and adjustment.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications, which can lead to base-rate neglect.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Additional information and complexity in model specification can improve forecasting accuracy, but there are diminishing marginal returns; adding immaterial information will mislead and complex models tend to be overfitted to historical data sets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Speaking with management is valuable given their role and should not be excluded from the research process, but analysts must be aware of management\u2019s inherent bias and seek differing perspectives, especially when examining a company with significant controversy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Given the wide range of outcomes for most financial variables, an analyst will likely find that they have been wrong as much or more often than they have been right. The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One such action is scenario analysis; by asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Because conservatism bias is related to overconfidence and illusion of control, mitigating those biases can also serve to mitigate conservatism.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate confirmation bias, speak to or read research from analysts with a negative opinion on the security under scrutiny and seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Considering both the outside view (base rate) and inside view (situation-specific) makes for a superior forecast; start with the base rate but determine which factors make the target company different from the base rate or class average and what the implications of those differences are.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Create several scenarios for key variables in your financial model to reflect a range of reasonable inputs and outcomes.\n  2. Use scenario analysis to modify forecasts easily and to account for uncertainty by generating different free cash flow or valuation estimates.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. When new management guidance differs significantly from forecasts, assess management\u2019s credibility by examining past performance against prior guidance.\n  2. Consider the new guidance as a scenario in your analysis.\n  3. Evaluate the investment implications of the new scenario before making changes to the model.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. When examining a company with significant controversy, seek differing perspectives beyond management, including those with negative or neutral views.\n  2. Analyze management\u2019s statements for optimism or bias by comparing the frequency of positive and negative language.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : Using a provided dataset of quarterly financial statements, identify and interpret anomalies that may indicate earnings management or policy changes.\n*Question 12* : Given real-time market data in a platform like Bloomberg or FactSet, demonstrate how to apply Bollinger Bands and MACD to forecast short-term price movements.\n*Question 13* : Analyze a scenario where geopolitical uncertainty leads to volatile foreign exchange rates. Propose a multi-step risk management approach using Value-at-Risk (VaR) and hedging instruments.\n*Question 14* : Review investor sentiment data from social media analytics and trading volumes, and assess how behavioral biases might distort market valuations.\n*Question 15* : Faced with ambiguous signals from both technical indicators and macroeconomic data, outline a structured decision-making process for generating investment recommendations.",
+            "facts": [
+                {
+                    "content": "Miland shortened the depreciable lives for capital assets. Revenue growth has been higher than that of industry peers. Discounts to customers and returns from customers have decreased.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Increasing inventory turnover, increasing receivables turnover, and net income greater than cash flow from operations may be warning signs of earnings management.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Higher M-scores in the Beneish model indicate an increased probability of earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Earnings with a larger component of accruals are typically less persistent and of lower quality. Discretionary (abnormal) accruals may indicate manipulated earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Operating income being greater than operating cash flow is a warning sign of potential reporting problems. Net income greater than cash flow from operations could suggest aggressive accrual accounting policies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Construction Supply\u2019s OCF was adequate to cover capital expenditures, dividends, and debt repayments, and it compared closely with reported net income, indicating high-quality cash flow.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Increases in accounts payable and substantial decreases in accounts receivable and inventory are accounting warning signs that management may be overstating cash flow from operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "OCF that has been more volatile than peers and has fallen short of covering capital expenditures, dividends, and debt repayments are warning signs for Dynamic Production.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Outlier discretionary accruals (abnormal accruals) are an indicator of possibly manipulated\u2014and thus low quality\u2014earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A decline in accounts receivable will decrease DSO (Days Sales Outstanding) and increase receivables turnover, possibly giving a false impression of faster turnover.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Managers may have motivation, opportunity, or rationalization to obtain approval for issuing low-quality reports.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A company wishing to increase earnings in the period may accelerate or delay expense recognition or inflate reported revenue.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Stretching the accounts payable credit period can increase cash flow provided by operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Bias in revenue recognition is least likely if reported revenue is just higher than the previous quarter.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Recognition of revenue before goods are shipped or an increase in days sales outstanding compared to competitors may indicate premature revenue recognition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Cash flow to net income ratio decreasing each year may indicate aggressive accrual accounting policies shifting current expenses to later periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Pro forma (non-GAAP) earnings that exclude negative items are a hallmark of aggressive presentation choices.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Cash flow from operations can be enhanced by management\u2019s operating choices, such as stretching accounts payable and possibly classification choices.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Declining receivables turnover could suggest fictitious or prematurely recorded revenues, or an insufficient allowance for doubtful accounts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Declining inventory turnover could suggest obsolescence problems that should be recognized.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Net income greater than cash provided by operations could suggest aggressive accrual accounting policies have shifted current expenses to later periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A growth rate in receivables exceeding the growth rate in revenue is a warning sign of potential overstatement or non-sustainability of operating income.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Increases in operating margins can be a warning sign of potential overstatement or non-sustainability of operating and/or net income.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For established companies, high-quality operating cash flow would typically be positive; be derived from sustainable sources; be adequate to cover capital expenditures, dividends, and debt repayments; and have relatively low volatility compared with industry peers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Compare the company\u2019s financial statements and significant disclosures in the current year with prior years and with those of competitors to identify major differences; investigate whether reasons for changes are apparent.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare the company\u2019s accounting policies and financial ratios with competitors to identify significant differences and their directional effect.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For multinational firms, consider whether inventory, sales, and expenses have been shifted to make it appear that the company is positively exposed to a desirable growth area; segment performance that is strong while consolidated results are static or worsening may be a sign.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Focus on discretionary accruals, particularly outlier discretionary accruals, as indicators of possible earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Use quantitative models such as the Beneish model to assess the likelihood of misreporting, but be aware that their predictive power can decline over time as managers learn to avoid detection.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Learn about management and incentives to misreport (analyze compensation, insider transactions, related-party transactions).\n  3. Identify significant accounting areas where management judgment or unusual accounting rules significantly affect reported performance.\n  4. Compare current and prior year statements and disclosures; compare accounting policies and ratios with competitors.\n  5. Check for warning signs (e.g., declining receivables/inventory turnover, net income greater than cash from operations).\n  6. For multinational/segment firms, check for shifting of inventory/sales/expenses across segments or regions.\n  7. Use appropriate quantitative tools to assess the likelihood of misreporting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Evaluate whether the financial reports are GAAP-compliant and decision-useful.\n  2. Assess whether reported earnings are high quality, provide adequate return, and are sustainable.\n  3. Analyze the effects of changes in accounting standards, methods, or assumptions on financial statements and ratios.\n  4. Examine recurring vs. non-recurring expenses and adjust reported earnings accordingly.\n  5. When relevant, adjust for items reported in other comprehensive income if they are significant to analysis.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : Given a scenario with conflicting earnings forecasts and market rumors, outline a step-by-step approach to validate information and form a balanced investment recommendation.\n*Question 17* : Analyze a case where a multinational faces both regulatory changes and currency volatility. How would you prioritize risks and propose a strategic financial response?\n*Question 18* : Presented with incomplete financial data and time pressure, describe your process for making a defensible recommendation while addressing potential ethical concerns.\n*Question 19* : In a situation where maximizing short-term gains may conflict with long-term stakeholder interests, how would you weigh tradeoffs and justify your decision?\n*Question 20* : Evaluate an ambiguous scenario where quantitative models suggest one strategy, but qualitative factors suggest another. How would you integrate both to reach a justified conclusion?",
+            "facts": [
+                {
+                    "content": "In the context of evaluating the quality of financial reports, an analyst is attempting to answer two basic questions: 1. Are the financial reports GAAP-compliant and decision-useful? 2. Are the results (earnings) of high quality? Do they provide an adequate level of return, and are they sustainable?",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the likelihood of misreporting appears high, an analyst should take special care in analyzing, including qualitatively analyzing, the financial reports of the company.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The analyst starts with a global, summarized view of a company and its attributes and digs below the surface of the financial statements to find economic truths that are not apparent from a superficial review.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The primary reason for performing financial analysis is to help in making an economic decision.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Rather than try to apply every possible technique and tool to every situation, it is essential for the investor to consider and identify the proper type of analysis to apply in a given situation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The two major accounting standard setters are: 1) the International Accounting Standards Board (IASB), which establishes IFRS, and 2) the Financial Accounting Standards Board (FASB), which establishes US GAAP.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "ROIC, defined as net operating profit less adjusted taxes divided by the difference between operating assets and operating liabilities, is an after-tax measure of profitability. High and persistent levels of ROIC are often associated with having a competitive advantage.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Speaking with management is valuable given their role and should not be excluded from the research process, but analysts must be aware of management\u2019s inherent bias and seek differing perspectives, especially when examining a company with significant controversy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts can use a top-down, bottom-up, or hybrid approach to forecasting income and expenses.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Companies are unique, and variation in specific analytical projects will require specific approaches.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An analyst may choose to add steps, emphasize or deemphasize steps, or alter the order of the steps.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is generally advisable to resist the temptation to start calculating ratios without considering what is relevant for the decision at hand.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One action to mitigate overconfidence is scenario analysis: by asking, \u201cWhere could I be wrong and by how much?\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate confirmation bias, speak to or read research from analysts with a negative opinion on the security and seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis shows the range of possible outcomes as specific assumptions are changed.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Learn about management, including incentives to misreport and review of disclosures.\n  3. Identify significant accounting areas, especially those with significant management judgment or unusual rules.\n  4. Make comparisons: \n      - Compare the company\u2019s statements and disclosures with prior years.\n      - Compare accounting policies with competitors.\n      - Use ratio analysis against competitors.\n  5. Check for warning signs of possible issues with the quality of the financial reports (e.g., declining receivables turnover, net income greater than cash provided by operations).\n  6. For multinational firms, consider whether results have been shifted to make exposure to certain segments appear more favorable.\n  7. Use appropriate quantitative tools to assess the likelihood of misreporting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Define the context, purpose, audience, deliverable, time frame, and resources for the analysis.\n  2. Compile the specific questions to be answered by the analysis.\n  3. Collect input data, including company data, industry and economic context, and any additional information required.\n  4. Process the data using appropriate analytical tools (e.g., ratios, common-size statements, forecasts).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Define the purpose and context of the analysis.\n  2. Collect input data.\n  3. Process input data into analytically useful data.\n  4. Analyze/interpret the data.\n  5. Develop and communicate conclusions and recommendations.\n  6. Follow-up with updated reports and recommendations as necessary.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. When management guidance differs significantly from forecasts, first assess management\u2019s credibility by examining performance against past guidance.\n  2. Consider management guidance as a scenario in scenario analysis.\n  3. Compare the company\u2019s guidance and performance to that of other companies in the industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. When a technological development results in a new product that threatens to cannibalize demand for an existing product, use a unit forecast for the new product combined with an expected cannibalization factor to estimate the impact on future demand for the existing product.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

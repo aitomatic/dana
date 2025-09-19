@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Book, Box3dCenter } from 'iconoir-react';
+import { Book, Box3dCenter, HelpCircle } from 'iconoir-react';
 import { useLocation } from 'react-router-dom';
 
 import { NavMain } from '@/components/nav-main';
@@ -11,7 +11,6 @@ import {
   SidebarRail,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/hooks/use-sidebar';
 
 // Import logo as a module
@@ -30,7 +29,7 @@ const data = {
     {
       name: 'Aitomatic',
       logo: () => <img src={logo} alt="Aitomatic" className="rounded-md size-8" />,
-      plan: 'Dana Expert Agents',
+      plan: 'Dana Agent Studio',
     },
   ],
   navMain: [
@@ -43,6 +42,11 @@ const data = {
       title: 'Library',
       url: '/library',
       icon: Book,
+    },
+    {
+      title: 'Documentation',
+      url: '/documentation',
+      icon: HelpCircle,
     },
   ],
 };
@@ -68,14 +72,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter className="flex p-4 border-t">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-sm text-muted-foreground">
-              {state === 'collapsed' ? `${packageJson.version}` : `Version-${packageJson.version}`}
+      <span className="text-xs text-muted-foreground">
+              {state === 'collapsed' ? `${packageJson.version}` : `Version ${packageJson.version}`}
             </span>
-          </TooltipTrigger>
-          <TooltipContent side="right">Version {packageJson.version}</TooltipContent>
-        </Tooltip>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -472,9 +472,15 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
         # Add the response line at the end
         escaped_message = request.message.replace("\\", "\\\\").replace('"', '\\"')
         # NOTE : REMEBER TO PUT escaped_message in triple quotes
-        additional_code = (
-            f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = this_agent.solve(user_query)\nprint(response)\n'
-        )
+        if "_main_" in original_content:
+            additional_code = (
+                f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = _main_(user_query)\nprint(response)\n'
+            )
+        else:
+            additional_code = (
+                f'\n\n# Test execution\nuser_query = """{escaped_message}"""\nresponse = this_agent.solve(user_query)\nprint(response)\n'
+            )
+
         temp_content = original_content + additional_code
 
         # Write to temporary file
@@ -506,7 +512,7 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                 try:
                     # Create sandbox and override print function for streaming
                     sandbox = DanaSandbox(context=sandbox_context)
-                    sandbox._ensure_initialized()  # Make sure function registry is available
+                    # sandbox._ensure_initialized()  # Make sure function registry is available
 
                     # Override both Dana print function and Python stdout for complete coverage
                     # with streaming_print_override(sandbox.function_registry, log_streamer):

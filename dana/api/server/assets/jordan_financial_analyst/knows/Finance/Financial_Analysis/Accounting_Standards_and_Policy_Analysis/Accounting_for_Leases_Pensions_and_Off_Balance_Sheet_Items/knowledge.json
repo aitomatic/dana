@@ -1,0 +1,792 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Accounting Standards and Policy Analysis",
+        "Accounting for Leases, Pensions, and Off-Balance Sheet Items"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What are the key criteria that determine whether a lease is classified as an operating or finance lease under current accounting standards?\n*Question 2* : How are the initial measurement and recognition of lease assets and liabilities performed on the balance sheet?\n*Question 3* : What information is required to properly record the inception of a defined benefit pension plan in the financial statements?\n*Question 4* : Which off-balance sheet items must be disclosed at the initial recognition stage, and why?\n*Question 5* : What are the typical journal entries made at the commencement of a lease agreement?",
+            "facts": [
+                {
+                    "content": "A lease is a finance lease if any of the following five criteria are met (same for IFRS and US GAAP): (1) the lease transfers ownership of the underlying asset to the lessee; (2) the lessee has an option to purchase the underlying asset and is reasonably certain it will do so; (3) the lease term is for a major part of the asset\u2019s useful life; (4) the present value of the sum of the lease payments equals or exceeds substantially all of the fair value of the asset; (5) the underlying asset has no alternative use to the lessor. If none of the criteria are met, the lease is an operating lease.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under IFRS, there is a single accounting model for both finance and operating leases for lessees. At lease inception, the lessee records a lease payable liability and a right-of-use (ROU) asset on its balance sheet, both equal to the present value of future lease payments.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The discount rate used in the present value calculation is either the rate implicit in the lease or an estimated secured borrowing rate.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The lease liability is subsequently reduced by each lease payment using the effective interest method. Each lease payment is composed of interest expense and principal repayment.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The ROU asset is subsequently amortized, often on a straight-line basis, over the lease term.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The lease liability net of principal repayments and the ROU asset net of accumulated amortization are reported on the balance sheet.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under the revised reporting standards under IFRS and US GAAP, a lessee must recognize an asset and a lease liability at inception of each of its leases (with an exception for short-term leases). The lessee reports a right-of-use (ROU) asset and a lease liability, calculated essentially as the present value of fixed lease payments, on its balance sheet.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For a defined benefit pension plan, companies must report the difference between the defined benefit pension obligation and the fair value of pension assets as an asset or liability on the balance sheet. An underfunded defined benefit pension plan is shown as a non-current liability.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Interest expense on the lease liability and the amortization expense related to the ROU asset are reported separately on the income statement.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The principal repayment component of the lease payment is reported as a cash outflow under financing activities on the statement of cash flows, and depending on the lessee\u2019s reporting policies, interest expense is reported under either operating or financing activities on the statement of cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under US GAAP, there are two accounting models for lessees: one for finance leases and another for operating leases. The finance lease accounting model is identical to the lessee accounting model for IFRS. The operating lease accounting model is different.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "At operating lease inception under US GAAP, the lessee records a lease payable liability and a corresponding right-of-use asset on its balance sheet that are subsequently reduced by the principal repayment component of the lease payment and amortization, respectively, in the same manner that an IFRS lessee would.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For an operating lease, the lessee\u2019s ROU asset amortization expense is the lease payment minus the interest expense. The total expense reported on the income statement (interest plus amortization) will equal the lease payment, and the lease liability and the ROU asset will always equal each other.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Interest expense on the lease liability and the amortization expense related to the ROU asset are reported as a single line titled \u201clease expense\u201d as an operating expense on the income statement.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The entire lease payment is reported as a cash outflow under operating activities on the statement of cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For defined benefit pension plans, companies must report the difference between the defined benefit pension obligation and the fair value of pension assets as an asset or liability on the balance sheet.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under IFRS, the change in the net pension asset or liability each period is viewed as having three general components: (1) employees\u2019 service costs, (2) the net interest expense or income accrued on the beginning net pension asset or liability, and (3) remeasurements, with the first two recognized as pension expense on the income statement and the third in other comprehensive income.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Disclosures for defined benefit and defined contribution pension plans are typically included as a note to the financial statements, with disclosures for defined benefit plans being far more extensive.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "IAS 19 requires issuers to disclose, for defined benefit plans: the nature of benefits provided, the regulatory framework, governance, risks, reconciliation of net pension asset or liability, sensitivity analysis, composition of plan assets, and indications of the effect on future cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Both IFRS and US GAAP indicate that the objective of lease disclosure is to provide the user of the financial statement with information to assess the amount, timing and uncertainty of cash flows associated with leases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The non-current portion of the balance sheet will typically contain a \u201cright of use\u201d asset and the non-current (long-term) liabilities section will typically show the lease liability.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Lessee disclosures must include: carrying amount of right of use assets by class, total cash outflow for leases, interest expense on lease liabilities, depreciation charges for right-of-use assets by class, additions to right of use assets, and a maturity analysis of lease liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Lessors must disclose, for finance leases: the amount of selling profit or loss; finance income on the net investment in the lease; and income relating to variable lease payments not included in the measurement of the lease. For operating leases: lease income with separate disclosure for income relating to variable lease payments not based on an index or rate.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "At finance lease inception, the lessor recognizes a lease receivable asset equal to the present value of future lease payments and de-recognizes the leased asset, simultaneously recognizing any difference as a gain or loss.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The discount rate used in the present value calculation is the rate implicit in the lease.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For an operating lease, the lessor keeps the leased asset on its books and recognizes lease revenue on a straight-line basis; interest revenue is not recognized.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For a contract to be a lease or contain a lease, it must (a) identify a specific underlying asset; (b) give the customer the right to obtain largely all of the economic benefits from the asset over the contract term; and (c) give the customer, not the supplier, the ability to direct how and for what objective the underlying asset is used.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Beginning with fiscal year 2019, for leases with a term longer than one year, lessees report a right-to-use asset and a lease liability on the balance sheet for both finance and operating leases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under US GAAP, a lessor\u2019s reported revenues at lease inception will be highest if the lease is classified as a sales-type lease.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under both IFRS and US GAAP, a lessor in an operating lease recognizes lease receipts as income and related costs, including depreciation, as expenses over the lease term.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [],
+            "procedures": [
+                {
+                    "content": "1. At lease inception, calculate the present value of future lease payments using the rate implicit in the lease or an estimated secured borrowing rate.\n  2. Record a lease payable liability and a right-of-use (ROU) asset on the balance sheet, both equal to the present value calculated.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. At the inception of a finance lease, the lessor recognizes a lease receivable asset equal to the present value of future lease payments.\n  2. The lessor de-recognizes the leased asset and recognizes any difference as a gain or loss.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Disclose, in the notes to the financial statements for defined benefit plans: the nature of benefits, regulatory framework, governance, risks, reconciliation of net pension asset or liability, sensitivity analysis, composition of plan assets, and indications on future cash flows.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : What are some common cognitive biases that can affect investment decisions, and how can they be mitigated?\n*Question 7* : How would you interpret a head and shoulders pattern on a stock price chart, and what trading decision might it suggest?\n*Question 8* : Explain how the Relative Strength Index (RSI) and Moving Average Convergence Divergence (MACD) indicators are used to analyze market trends.\n*Question 9* : Given a portfolio with significant exposure to a single sector, what risk management strategies would you recommend to reduce potential losses?\n*Question 10* : Scenario: The market experiences a sudden downturn. Outline the steps you would take to stress test your portfolio and evaluate its resilience.",
+            "facts": [
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications. Base-rate neglect is a common form of representativeness bias in forecasting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis can help mitigate overconfidence bias by generating different forecast scenarios to answer, \u201cWhere could I be wrong and by how much?\u201d",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Considering both the \u201coutside view\u201d (base rates or class averages) and the \u201cinside view\u201d (company-specific factors) together can help mitigate representativeness bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Starting with industry averages in a model but then adjusting for factors that make the target company different from the base rate or class average is a way to improve forecast accuracy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": []
+        },
+        {
+            "question": "*Question 11* : You are given a dataset of daily returns for a portfolio. Describe the steps to calculate Value at Risk (VaR) using the historical simulation method.\n*Question 12* : Scenario: After implementing a new risk management software, you notice discrepancies in stress test results compared to previous manual calculations. How would you investigate and resolve these differences?\n*Question 13* : A client\u2019s investment choices show frequent evidence of confirmation bias. What practical interventions would you recommend to help the client make more objective decisions?\n*Question 14* : Given a candlestick chart showing a doji followed by a bullish engulfing pattern at a support level, what trading signal does this provide and what action might you take?\n*Question 15* : You are presented with conflicting signals from Bollinger Bands (price touching the upper band) and Stochastic Oscillator (indicating oversold). How would you interpret this scenario and what recommendation would you make?",
+            "facts": [
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts must be aware of management\u2019s inherent bias and seek differing perspectives, especially when examining a company with significant controversy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Two approaches to mitigating confirmation bias in the forecasting process are to speak to or read research from analysts with a negative opinion on the security under scrutiny and to seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Speaking with management is valuable given their role and should not be excluded from the research process, but analysts must be aware of management\u2019s inherent bias and seek differing perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Seek perspectives from colleagues who are not economically or psychologically invested in the subject security to mitigate confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Speak to or read research from analysts with a negative opinion on the security under scrutiny to mitigate confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": []
+        },
+        {
+            "question": "*Question 16* : How would you combine technical indicators, fundamental ratios, and investor sentiment to make a buy/sell decision on a stock?\n*Question 17* : Describe how Monte Carlo simulation can be integrated with scenario analysis to assess portfolio risk under varying market conditions.\n*Question 18* : You receive conflicting data: technical analysis suggests a bullish trend, while fundamentals indicate weak performance and negative news affects sentiment. How would you resolve this ambiguity in your investment decision?\n*Question 19* : What features would you prioritize when designing a risk dashboard for ongoing portfolio monitoring, and how would you ensure it addresses both financial and behavioral risks?\n*Question 20* : After implementing ongoing behavioral bias monitoring for a trading team, how would you evaluate its effectiveness and adjust strategies as needed?",
+            "facts": [
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes; each event or possible outcome is assigned a probability.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Anchoring and adjustment refers to an analyst using their prior estimates as an \u201canchor\u201d that is subsequently adjusted, often too little.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Because conservatism bias is related to overconfidence and illusion of control, mitigating those biases can also serve to mitigate conservatism.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications, which can produce an incorrect understanding that biases all future thinking about the information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Base-rate neglect is a common form of representativeness bias in forecasting: the base rate (industry or class average) is neglected in favor of situation- or member-specific information (\"inside view\" vs \"outside view\").",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Neither the outside nor inside view is superior; what makes for a superior forecast is considering both.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although additional information and complexity in model specification can improve forecasting accuracy, there are diminishing marginal returns. The amount of material information available for an investment is finite and adding immaterial information will mislead.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When revising a model in light of new management guidance, management\u2019s credibility should be assessed by examining the company\u2019s performance against management guidance in the past.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Guidance should be considered as a scenario in scenario analysis, and the investment implications of that scenario should be examined.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The performance of, and guidance provided by, other comparable companies should be compared to these figures as a check for reasonableness.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One way of considering both base rates and company specifics is by starting with the base rate but adjusting for factors that make the target company different from the base rate or class average.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Construct a financial statement model for the target company that includes only one set of forecasted numbers (base scenario).\n  2. Create several more scenarios as important modeling steps because the range of outcomes for the most important variable is wider than a single point.\n  3. Modify the forecasts easily to calculate different free cash flow estimates under each scenario.\n  4. Use alternative inputs for key variables (e.g., growth rates, margins, working capital) to reflect different plausible futures.\n  5. Compare the wide range of free cash flow estimates for each scenario to understand the risk/uncertainty.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Assess management guidance by examining the company\u2019s prior performance against past guidance.\n  2. Consider management guidance as a scenario in scenario analysis.\n  3. Examine the investment implications of the scenario where the company achieves management\u2019s guidance.\n  4. Compare the company\u2019s performance and forecasts to those of comparable companies as a check for reasonableness.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

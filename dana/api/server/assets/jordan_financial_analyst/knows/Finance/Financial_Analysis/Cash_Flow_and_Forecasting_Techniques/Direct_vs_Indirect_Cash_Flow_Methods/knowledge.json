@@ -1,0 +1,783 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Cash Flow and Forecasting Techniques",
+        "Direct vs. Indirect Cash Flow Methods"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What are the first steps in preparing a direct cash flow statement?\n*Question 2* : How is raw financial data gathered for the indirect cash flow method?\n*Question 3* : What key information must be collected before starting a cash flow forecast?\n*Question 4* : How do you determine which cash transactions to include in each method?\n*Question 5* : What tools or software can assist with the initial generation of cash flow statements?",
+            "facts": [
+                {
+                    "content": "The direct method discloses operating cash inflows by source (e.g., cash received from customers, cash received from investment income) and operating cash outflows by use (e.g., cash paid to suppliers, cash paid for interest) in the operating activities section of the cash flow statement.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The indirect method reconciles net income to operating cash flow by adjusting net income for all non-cash items and the net changes in working capital accounts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Cash flows from investing activities and from financing activities are both reported using a direct method, regardless of the method used for reporting operating cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The beginning and ending balances of cash are shown on the company\u2019s balance sheets, and the cash flow statement reconciles beginning to ending cash.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The income statement and statement of cash flows provide key linkages between the current assets and current liabilities sections of the balance sheet.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Under the indirect method, net income is adjusted for non-operating activities, non-cash expenses, and changes in operating working capital items.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Additions to net income include non-cash items (depreciation, amortization, depletion, amortization of bond discount), non-operating losses, increase in deferred income tax liability, and decreases in current operating assets or increases in current operating liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Subtractions from net income include non-cash items (e.g., amortization of bond premium), non-operating gains, decrease in deferred income tax liability, increases in current operating assets, and decreases in current operating liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The indirect method reconciles net income to net cash flow by adjusting for non-operating and non-cash items and changes in working capital.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The investing and financing sections of the cash flow statement are identical regardless of whether the direct or indirect method is used for presenting operating cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The analyst should obtain information required to answer the specific questions, including an understanding of the target company\u2019s business model, financial performance, and financial position.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial statement data alone may be adequate in some cases for forecasting, but for deeper analysis, additional information about the economy and industry is necessary.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "With net income, D&A, change in working capital, capex, and debt estimates in place, the cash flow statement is almost automatically generated by linking the relevant lines on a spreadsheet.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "When facing a substantial amount of data, a less experienced analyst may be tempted to start calculating ratios without considering what is relevant; it is generally advisable to resist this temptation and avoid unnecessary efforts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If a direct-format statement is not available, cash flows from operating activities reported under the indirect method can be converted to the direct method using available published data; accuracy depends on the adjustments made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Aggregate all revenue and all expenses from the income statement.\n  2. Remove all non-cash items from aggregated revenues and expenses and break out remaining items into relevant cash flow items.\n  3. Convert accrual amounts to cash flow amounts by adjusting for working capital changes (e.g., changes in accounts receivable, inventory, accounts payable, accrued liabilities, and tax payables).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. To determine cash received from customers, adjust reported revenue by the net change in accounts receivable for the year.\n  2. To determine cash paid to suppliers, adjust cost of goods sold by changes in inventory and accounts payable.\n  3. To determine cash paid to employees, adjust salary and wage expenses by the net change in salary and wages payable for the year.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Disaggregate net income into total revenues and total expenses.\n  2. Remove any non-operating and non-cash items.\n  3. Convert accrual amounts of revenues and expenses to cash flow amounts by adjusting for changes in working capital accounts.\n\nNone found\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can cognitive biases impact financial forecasting and cash flow analysis?\n*Question 7* : Describe a scenario where technical analysis could help identify potential cash flow risks.\n*Question 8* : What risk management strategies would you recommend when preparing a cash flow forecast for a volatile industry?\n*Question 9* : Give an example of how you have used financial data to provide actionable insights to management.\n*Question 10* : Which advanced analytical tools or software can enhance the accuracy of cash flow forecasting, and how?",
+            "facts": [
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities, leading to forecast error rates that are higher than anticipated.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Given the wide range of outcomes for most financial variables, forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Additional information and complexity in model specification can improve forecasting accuracy, but there are diminishing marginal returns, and too much data or complexity can mislead or make updating forecasts difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is when people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Anchoring and adjustment refers to an analyst using their prior estimates as an \"anchor\" that is subsequently adjusted, often inadequately.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at regular intervals and by creating flexible models with fewer variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications, sometimes neglecting base-rate (industry) information in favor of situation-specific information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis shows the range of possible outcomes as specific assumptions are changed.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events; probabilities can be assigned to events to evaluate a range of outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The purpose of ratios is to serve as indicators of important aspects of a company\u2019s performance and value, and industry-specific metrics can be especially important in early-stage or regulated industries.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control, a bias linked to overconfidence, is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A comprehensive financial analysis may include reading and evaluating financial results, making adjustments for comparability, preparing or collecting common-size data and ratios, and analyzing/interpreting the data to support a conclusion or recommendation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Scenario analysis is an important modeling step because the range of outcomes for the most important variables is wider than a single point; generating alternative scenarios helps to address uncertainty.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate conservatism bias, assess management\u2019s credibility by examining the company\u2019s performance against past guidance and consider guidance as a scenario in analysis; compare performance and guidance to industry peers as a reasonableness check.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Superior forecasts consider both the \"outside view\" (base rates/industry averages) and the \"inside view\" (company-specific factors).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasting a single scenario is not appropriate given a high degree of uncertainty and range of potential outcomes in a volatile industry; multiple scenarios should be forecast.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Record and share forecasts.\n  2. Review forecasts regularly, identifying both correct and incorrect forecasts.\n  3. Use scenario analysis to generate different forecast scenarios by asking, \u201cWhere could I be wrong and by how much?\u201d",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Restrict modeling variables to those that are regularly disclosed by the company.\n  2. Focus on the most important or impactful variables.\n  3. Speak only with those who are likely to have unique or significant perspectives.\n  4. Build flexible models with fewer variables to make changing assumptions easier.\n  5. Review forecasts and models by an investment team at a regular interval, such as each quarter.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : Walk through the steps of interpreting a candlestick chart to identify potential cash flow turning points.\n*Question 12* : Describe how you would perform a stress test on a cash flow forecast and interpret the results.\n*Question 13* : In a scenario with conflicting cash flow signals, how would you make a decision under uncertainty?\n*Question 14* : Give an example where integrating behavioral finance insights with quantitative analysis improved a cash flow forecast.\n*Question 15* : How would you use AI or machine learning to enhance the accuracy and visualization of cash flow projections?",
+            "facts": [
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities. Overconfidence arises more frequently when forecasting what others do not expect.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers. Excessive breadth of data and model complexity can also conceal assumptions and make updating forecasts upon the receipt of new information difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Beyond awareness of the bias and the recognition that uncertainty is an inherent characteristic in investments, illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is when people maintain their prior views or forecasts by inadequately incorporating new information. This often happens in forecasting when an analyst does not update their forecasting after receiving conflicting information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis shows the range of possible outcomes as specific assumptions are changed; this could, in turn, influence financing needs or investment in fixed assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "By asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Because conservatism bias is related to overconfidence and illusion of control, mitigating those biases can also serve to mitigate conservatism.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Create a financial statement model that includes only one set of forecasted numbers (one scenario).\n  2. Create several more scenarios as an important modeling step because the range of outcomes for the most important variable is wider than a single point.\n  3. Identify important variables in the cash flow forecast (e.g., organic sales growth in a segment, EBIT margin, net working capital as a percentage of sales).\n  4. Modify the forecasts to calculate different free cash flow estimates for each scenario.\n  5. Compare the range of free cash flow estimates across scenarios to understand the possible range of outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Perform sensitivity analysis by changing specific assumptions to see the range of possible outcomes.\n  2. Use scenario analysis to model changes in key financial quantities that result from given economic events.\n  3. Assign probabilities to events if possible, to evaluate the range of outcomes and statistical measures.\n  4. Use simulation to run multiple scenarios using probability models for the drivers of outcomes.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : Describe a complex cash flow scenario where behavioral biases, technical indicators, and quantitative models provide conflicting recommendations. How would you prioritize actions?\n*Question 17* : How would you explain the results of an advanced AI-driven cash flow forecast to a non-financial stakeholder to support decision-making?\n*Question 18* : In a rapidly changing market, how would you adapt your cash flow forecasting strategy when new, unexpected data challenges your initial assumptions?\n*Question 19* : Give an example of how integrating risk management, technical analysis, and quantitative forecasting could help resolve ambiguity in cash flow projections.\n*Question 20* : What are the practical limitations of using AI or machine learning in cash flow analysis, and how would you mitigate these when communicating recommendations to management?",
+            "facts": [
+                {
+                    "content": "Studies have shown that experts persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models of financial statements are not immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A different name for conservatism bias in this context is anchoring and adjustment, referring to an analyst using their prior estimates as an \u201canchor\u201d that is subsequently adjusted.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications. Base-rate neglect is a common form of representativeness bias in forecasting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A disadvantage of using quantitative models is that their predictive power declines over time because many managers have learned to test the detectability of manipulation tactics by using the model.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quantitative models cannot determine cause and effect between model variables. They are capable only of establishing associations between variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Mitigating actions that widen the confidence interval of forecasts should be taken, such as scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Management guidance should be considered as a scenario in the scenario analysis, and the investment implications of that scenario should be examined; management\u2019s credibility should be assessed by examining the company\u2019s performance against management guidance in the past; guidance from peer companies should be compared as a check for reasonableness.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Neither the outside nor inside view is superior; what makes for a superior forecast is considering both (e.g., start with the base rate and adjust for company-specific factors).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The predictive power of quantitative models can decline over time as managers adapt their behavior to avoid detection.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Restrict modeling variables to those regularly disclosed by the company.\n  2. Focus on the most important or impactful variables.\n  3. Speak only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Review forecasts and models by an investment team at a regular interval, such as each quarter.\n  2. Create flexible models with fewer variables to make changing assumptions easier.\n  3. Assess management\u2019s credibility by examining past performance against management guidance.\n  4. Consider management guidance as a scenario in scenario analysis.\n  5. Compare guidance and performance with those of peer companies.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

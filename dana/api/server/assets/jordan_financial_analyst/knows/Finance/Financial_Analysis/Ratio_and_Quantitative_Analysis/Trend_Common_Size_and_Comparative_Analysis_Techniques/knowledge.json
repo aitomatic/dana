@@ -1,0 +1,1119 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Ratio and Quantitative Analysis",
+        "Trend, Common-Size, and Comparative Analysis Techniques"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What is initial generation in the context of financial statement analysis?\n*Question 2* : Why is initial generation important when starting trend, common-size, or comparative analysis?\n*Question 3* : What basic data or documents are needed to begin initial generation for financial analysis?\n*Question 4* : How do you ensure the accuracy of the information collected during initial generation?\n*Question 5* : What challenges might arise during the initial generation phase, and how can they be addressed?",
+            "facts": [
+                {
+                    "content": "Financial statement analysis begins with articulating the purpose and context of the analysis, followed by collecting data, processing data, analyzing/interpreting data, developing and communicating conclusions and recommendations, and follow-up.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial analysis starts with the information found in a company\u2019s financial reports, including audited financial statements, additional disclosures required by regulatory authorities, and any accompanying (unaudited) commentary by management.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In addition to regulated information from issuers such as financial statements and notes, analysts use a variety of other information sources, including issuer presentations, earnings calls, press releases, management discussions, company websites, industry reports, government/economic indicators, news outlets, social media, proprietary research, and third-party data platforms.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The notes accompanying financial statements are required and often account for a large percentage of financial disclosures, providing essential information for understanding the statements, including accounting policies, methods, estimates, and details about every line item.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is good practice to use the same source for data when comparing different companies or evaluating the historical record of a single company, and analysts should verify the consistency of formulas and data classifications by the data source.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "When facing a substantial amount of data, a less experienced analyst may be tempted to start calculating ratios without considering what is relevant for the decision at hand. It is generally advisable to resist this temptation to avoid unnecessary or pointless efforts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts must be aware that management is biased to their perspective during presentations and earnings calls, and often need to ask questions for the information they want.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts should be mindful of the judgments made by a vendor in data classifications and refer to the source financial statements until they are comfortable that the classifications are appropriate.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Articulate the purpose and context of the analysis, including identifying the purpose, level of detail, available data, influencing factors, and analytical limitations.\n  2. Collect input data, including financial statements, other financial data, questionnaires, industry/economic data, and information from discussions with management, suppliers, customers, and competitors, as well as company site visits.\n  3. Process input data as required into analytically useful data (e.g., adjusted financial statements, common-size statements, ratios, graphs, forecasts).\n  4. Analyze/interpret the data to produce analytical results.\n  5. Develop and communicate conclusions and recommendations (e.g., with an analysis report).\n  6. Follow up by updating reports and recommendations as necessary.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Define the context, including the intended audience, deliverables, time frame, and relevant resources or constraints.\n  2. Compile specific questions to be answered by the analysis.\n  3. Obtain information required to answer the specific questions, including understanding the target company\u2019s business model, financial performance, and financial position, as well as economic and industry conditions.\n  4. For broader analyses, use a top-down approach: understand the macroeconomic environment, analyze industry prospects, and determine company prospects within that context.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can behavioral biases impact the interpretation of trend and comparative analysis results?\n*Question 7* : What technical analysis indicators are commonly used to identify financial trends, and how are they applied?\n*Question 8* : Describe a scenario where risk management practices would alter the conclusion of a financial ratio analysis.\n*Question 9* : Which software tools assist in conducting common-size analysis, and what are their key features?\n*Question 10* : Given a set of financial statements showing declining liquidity ratios, what steps would you take to diagnose the underlying issue?",
+            "facts": [
+                {
+                    "content": "Studies have shown that experts in many fields persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models of financial statements are in no way immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A different name for conservatism bias in this context is anchoring and adjustment, referring to an analyst using their prior estimates as an \u201canchor\u201d that is subsequently adjusted.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Collection of financial data from regulatory filings and calculation of ratios can be automated. The eXtensible Business Reporting Language (XBRL) is a mechanism that attaches \u201csmart tags\u201d to financial information so that software can automatically collect the data and perform desired computations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Many stock exchanges and regulatory agencies around the world now use XBRL for receiving and distributing public financial reports from listed companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts can compare a subject company to similar (peer) companies in vendor databases or use aggregate industry data.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Ratios may be computed using data obtained directly from companies\u2019 financial statements or from a database such as Bloomberg, Compustat, FactSet, or Thomson Reuters.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "These databases are popular because they provide easy access to many years of historical data so that trends over time can be examined.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "They also allow for ratio calculations based on periods other than the company\u2019s fiscal year, such as for the trailing 12 months (TTM) or most recent quarter (MRQ).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts should be aware that the underlying formulas for ratios may differ by vendor. The formula used should be obtained from the vendor, and the analyst should determine whether any adjustments are necessary.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Cross-sectional financial ratio analysis can be limited by differences in accounting methods. In addition, lack of homogeneity of a company\u2019s operating activities can limit comparability. For diversified companies operating in different industries, using industry-specific ratios for different lines of business can provide better comparisons.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Ratio analysis requires a significant amount of judgment.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One key area requiring judgment is understanding the limitations of any ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The current ratio, for example, is only a rough measure of liquidity at a specific point in time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The ratio captures only the amount of current assets, but the components of current assets differ significantly in their nearness to cash (e.g., marketable securities versus inventory).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Another limitation of the current ratio is its sensitivity to end-of-period financing and operating decisions that potentially can affect current asset and current liability amounts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Another overall area requiring judgment is determining whether a ratio for a company is within a reasonable range for an industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Yet another area requiring judgment is evaluating whether a ratio signifies a persistent condition or reflects only a temporary condition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overall, evaluating specific ratios requires an examination of the entire operations of a company, its competitors, and the external economic and industry setting in which it is operating.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Given the wide range of outcomes for most financial variables, an analyst will likely find that they have been wrong as much or more often than they have been right. The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Because conservatism bias is related to overconfidence and illusion of control, mitigating those biases can also serve to mitigate conservatism.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is therefore a good practice to use the same source for data when comparing different companies or when evaluating the historical record of a single company.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts should verify the consistency of formulas and data classifications by the data source.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts should also be mindful of the judgments made by a vendor in data classifications and refer to the source financial statements until they are comfortable that the classifications are appropriate.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Evaluate the specific liquidity ratios (such as current, quick, and cash ratios) over time.\n  2. Consider the composition of current assets and liabilities, noting their nearness to cash and sensitivity to period-end decisions.\n  3. Judge whether observed ratio trends reflect persistent or temporary conditions.\n  4. Examine the entire operations of a company, its competitors, and the external environment to diagnose the underlying issue in declining liquidity ratios.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : How can confirmation bias influence investment decisions during trend analysis, and what steps can be taken to mitigate it?\n*Question 12* : Describe how combining moving averages with RSI or MACD can improve the reliability of trend identification.\n*Question 13* : Given a scenario where financial ratios signal strength, but market sentiment is negative, how would you approach the analysis?\n*Question 14* : What is value-at-risk (VaR), and how can stress-testing be applied to assess portfolio risk under extreme market conditions?\n*Question 15* : Which advanced analytics or visualization tools are used for multi-period comparative analysis, and what are their advantages?",
+            "facts": [
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them. A common manifestation of this bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Regression analysis can help identify relationships (or correlation) between variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Graphs facilitate comparison of performance and financial structure over time, provide a visual overview of changes and trends, and can be used to communicate the conclusions from financial analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Techniques such as sensitivity analysis, scenario analysis, and simulation are used to forecast future financial performance.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Trend analysis can reveal whether a company\u2019s performance and position are weakening or strengthening.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The financial ratios of a company are compared with those of its major competitors (cross-sectional and trend analysis) and to the company\u2019s prior periods (trend analysis).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Trend Analysis, Common-Size Analysis, and Comparative Analysis are techniques used for multi-period analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Preparing or collecting common-size financial statement data (which scale data to directly reflect percentages [e.g., of sales] or changes [e.g., from the prior year]) and financial ratios (which are measures of various aspects of corporate performance based on financial statement elements) can be used to evaluate a company\u2019s relative profitability, liquidity, leverage, efficiency, and valuation in relation to past results or peers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Studies have shown that experts in many fields persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models of financial statements are in no way immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Cross-sectional analysis compares multiple companies at the same point in time or over the same range of time, and trend or time-series analysis compares measures for a single company over a period of time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Common-size analysis involves expressing financial data, including entire financial statements, in relation to a single financial statement item, or base. A vertical common-size balance sheet divides each balance sheet item by the same period\u2019s total assets and expresses the results as percentages. A vertical common-size income statement divides each income statement item by revenue or by total assets. A horizontal common-size balance sheet divides the quantity of each item by a base year quantity of the same item to yield a percentage change in that item from the base year. Trend data generated by a horizontal common-size analysis can be compared across financial statements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Speaking with management is valuable given their role and should not be excluded from the research process, but analysts must be aware of management\u2019s inherent bias and seek differing perspectives, especially when examining a company with significant controversy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Two approaches to mitigating confirmation bias in the forecasting process are to speak to or read research from analysts with a negative opinion on the security under scrutiny and to seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial ratios can be interpreted only in the context of other information. In general, the financial ratios of a company are compared with those of its major competitors (cross-sectional and trend analysis) and to the company\u2019s prior periods (trend analysis). The goal is to understand the underlying causes of divergence between a company\u2019s ratios and those of the industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Choosing the appropriate graph to communicate the most significant conclusions of a financial analysis is a skill. In general, pie graphs are most useful to communicate the composition of a total value (e.g., assets over a limited amount of time, say one or two periods). Line graphs are useful when the focus is on the change in amount for a limited number of items over a relatively longer time period. When the composition and amounts, as well as their change over time, are all important, a stacked column graph can be useful.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Speak to or read research from analysts with a negative opinion on the security under scrutiny.\n  2. Seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Articulate the purpose of the analysis.\n  2. Collect input data (including financial statement data and relevant context).\n  3. Process the data using appropriate analytical tools (e.g., compute ratios, prepare common-size statements, create charts, perform statistical analyses).\n  4. Analyze and interpret the processed data to answer specific questions and support conclusions or recommendations.\n  5. Develop and communicate conclusions and recommendations in an appropriate format.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : What is scenario analysis, and how does it differ from value-at-risk (VaR) in assessing financial risk?\n*Question 17* : How do regulatory risk requirements influence the selection and application of risk management techniques in financial analysis?\n*Question 18* : When financial data presents conflicting signals, what multi-factor approaches can be used to enhance decision-making?\n*Question 19* : How can behavioral and technical analysis be integrated to improve practical investment decisions?\n*Question 20* : In what ways are artificial intelligence and machine learning transforming trend and comparative analysis in finance?",
+            "facts": [
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the list of events is mutually exclusive and exhaustive and the events can be assigned probabilities, the analyst can evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value for various quantities of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is a computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup\u2019s VaR is a single-day measure of market shocks that can affect a company. Market dislocations can linger for days, weeks, and even longer. Although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors. VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "HSBC uses a range of tools to monitor and limit market risk exposures including sensitivity analysis, value at risk and stress testing.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In regulated industries\u2014especially in the financial sector\u2014companies often are required to comply with specific regulatory ratios. For example, the banking sector\u2019s liquidity and cash reserve ratios provide an indication of banking liquidity and reflect monetary and regulatory requirements. Banking capital adequacy requirements attempt to relate banks\u2019 solvency requirements directly to their specific levels of risk exposure.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In general, liquidity measures compare the amount of the company\u2019s more liquid assets, such as cash and marketable securities, to the amount of its near-term liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Regulated industries, especially financial institutions, are subject to heavy regulation of their activities, including minimum capital requirements, minimum liquidity requirements, and stable funding requirements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A widely used approach to analyzing a bank, CAMELS, considers a bank\u2019s Capital adequacy, Asset quality, Management capabilities, Earnings sufficiency, Liquidity position, and Sensitivity to market risk.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Basel III specifies the minimum percentage of its risk-weighted assets that a bank must fund with equity. This requirement of Basel III prevents a bank from assuming so much financial leverage that it is unable to withstand loan losses or asset write-downs.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Required disclosures in banks\u2019 financial statements make it possible to assess various sensitivities. The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors. VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "HSBC estimates its VaR using a 99% confidence level, a one-day holding period, and two prior years of pricing data on foreign exchange rates, interest rates, equity prices, commodity prices, and associated volatilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers. Excessive breadth of data and model complexity can also conceal assumptions and make updating forecasts upon the receipt of new information difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications. New information might resemble or seem representative of familiar elements already classified but can in fact be very different and is better viewed from a different perspective.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Considering both the \u201cinside view\u201d (company-specific factors) and \u201coutside view\u201d (industry or sector averages) can make for a superior forecast.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Creating several scenarios is an important modeling step because the range of outcomes for the most important variable is wider than a single point.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis, value at risk, and stress testing are practical tools used to monitor and limit market risk exposures.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models do not necessarily make forecasts more accurate and may introduce unnecessary complications; it is better to restrict modeling variables to those that are regularly disclosed by the company and focus on the most important or impactful variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Starting with the base rate but determining which factors make the target company different from the base rate or class average, and what the implications of those differences are, can enhance forecasting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Identify key variables in the financial model.\n  2. Modify the forecasts for these variables to create different scenarios (e.g., base case, alternative scenarios with varying growth rates, margins, or working capital assumptions).\n  3. Calculate resulting estimates for each scenario to observe the range of possible outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Assign probabilities to a mutually exclusive and exhaustive list of events.\n  2. Evaluate the range of outcomes for key financial quantities.\n  3. Calculate standard statistical measures (mean, median) for quantities of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Model probability distributions for the factors that drive outcomes.\n  2. Assign probabilities to each event or possible outcome.\n  3. Run multiple scenarios using the assigned probability factors to determine expected outcomes for variables of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Start with industry or sector averages (\u201coutside view\u201d) for key inputs in the model.\n  2. Adjust model variables to account for company-specific factors (\u201cinside view\u201d) such as product mix, geographic composition, or unique risks.\n  3. Compare the company against peer group performance to check for reasonableness.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 21* : What ethical dilemmas might arise when analysts encounter potential conflicts of interest during financial trend analysis?\n*Question 22* : How can quantitative analysis be integrated with qualitative insights to improve the accuracy of financial forecasts?\n*Question 23* : Describe a case where regulatory compliance requirements significantly changed the outcome of a comparative financial analysis.\n*Question 24* : Faced with incomplete financial data and ambiguous market signals, what systematic approach would you use to make an informed recommendation?\n*Question 25* : Given a real-world scenario involving unexpected market volatility, how would you synthesize behavioral biases, technical indicators, and risk management tools to guide decision-making?",
+            "facts": [
+                {
+                    "content": "In the context of evaluating the quality of financial reports, an analyst is attempting to answer two basic questions: 1. Are the financial reports GAAP-compliant and decision-useful? 2. Are the results (earnings) of high quality? Do they provide an adequate level of return, and are they sustainable?",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Companies are unique, and variation in specific analytical projects will require specific approaches.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Behavioral biases that influence analyst forecasts include overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although additional information and complexity in model specification can improve forecasting accuracy, there are diminishing marginal returns. Excessive breadth of data and model complexity can also conceal assumptions and make updating forecasts upon the receipt of new information difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The predictive power of quantitative models, such as the Beneish model, can decline over time because many managers have learned to test the detectability of manipulation tactics by using the model.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Beneish Model: The probability of manipulation (M-score) is estimated using a probit model with variables such as days sales receivable index, gross margin index, asset quality index, sales growth index, depreciation index, sales, general, and administrative expenses index, accruals, and leverage.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Disclosures of the nature and exposure to uncertainty should be made in the MD&A if the effects of subjective estimates and judgments of highly uncertain matters are material to stakeholders.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Managers may be motivated to issue financial reports that are not high quality to mask poor performance, to meet or beat market expectations, to increase stock price temporarily, or to increase management compensation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Aggressive accounting choices aim to enhance the company\u2019s reported performance by inflating the amount of revenues, earnings, or operating cash flow reported in the period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Earnings with a larger component of accruals are typically less persistent and of lower quality. Outlier discretionary accruals are an indicator of possibly manipulated\u2014and thus low quality\u2014earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is generally advisable to resist the temptation to start calculating ratios without considering what is relevant for the decision at hand.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A comprehensive financial analysis may include reading and evaluating financial results, making needed adjustments to facilitate comparison, and preparing or collecting common-size financial statement data and financial ratios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The purpose of analysis is not simply to compile information and do computations, but to integrate these into a cohesive result that addresses not just what happened, but why it happened and whether it created value.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Common-size analysis involves expressing financial data in relation to a single financial statement item, or base, such as dividing each balance sheet item by total assets or income statement items by revenue.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The primary reason for performing financial analysis is to help in making an economic decision. Rather than leave outcomes to chance, a financial decision-maker should use financial analysis to identify and make more visible potential favorable and unfavorable outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis is a mitigating action that widens the confidence interval of forecasts; by asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis shows the range of possible outcomes as specific assumptions are changed; scenario analysis shows the changes in key financial quantities that result from given events; simulation uses probability models for factors that drive outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The answer to a specific question is seldom the numerical answer alone; rather, the answer relies on the analyst\u2019s interpretation of the output, and the use of this interpreted output to support a conclusion or recommendation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Learn about management and evaluate incentives to misreport.\n  3. Identify significant accounting areas, especially those relying on management judgment.\n  4. Make comparisons: (A) Compare current and prior year financial statements and disclosures; (B) Compare accounting policies with competitors; (C) Use ratio analysis to compare performance with competitors.\n  5. Check for warning signs of possible issues with financial report quality.\n  6. For firms with multiple segments, consider whether sales and expenses have been shifted to make the company appear positively exposed to desirable segments.\n  7. Use appropriate quantitative tools to assess the likelihood of misreporting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Define the purpose and context of the analysis.\n  2. Collect data (financial statements, industry/economic data, company research).\n  3. Process data (compute ratios, adjust financials, prepare common-size statements).\n  4. Analyze/interpret the data (use ratios, trends, peer comparisons; interpret in context).\n  5. Develop and communicate conclusions and recommendations (document findings, disclose limitations, present in required format).\n  6. Follow-up (periodic review, update forecasts and recommendations as new information arises).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Gather sufficient evidence regarding operational and financial characteristics.\n  2. Communicate findings, dividing them into support for and causes for concern.\n  3. Make recommendations (e.g., invest, wait, or take another action).\n  4. Re-evaluate holdings periodically, updating findings and recommendations as needed.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

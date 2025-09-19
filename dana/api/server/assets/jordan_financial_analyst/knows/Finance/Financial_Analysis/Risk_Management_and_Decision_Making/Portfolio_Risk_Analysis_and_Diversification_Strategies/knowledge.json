@@ -1,0 +1,706 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Risk Management and Decision-Making",
+        "Portfolio Risk Analysis and Diversification Strategies"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What are the main types of risk faced by investment portfolios?\n*Question 2* : How is portfolio risk typically measured in the initial stages of analysis?\n*Question 3* : What data sources are commonly used to begin portfolio risk assessment?\n*Question 4* : Which key assumptions should be validated before conducting a risk analysis?\n*Question 5* : How do initial diversification strategies impact overall portfolio risk?",
+            "facts": [
+                {
+                    "content": "Another distinctive feature of financial institutions (compared to manufacturing or merchandising companies) is that their productive assets are predominantly financial assets, such as loans and securities, creating greater direct exposures to a variety of risks, such as credit risk, liquidity risk, market risk, and interest rate risk.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Bank assets and liabilities are constantly subject to market risk, which impacts their earnings performance and liquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Covariance adjustment reflects the fact that the risks within each and across risk types are not perfectly correlated and, consequently, the total VaR on a given day will be lower than the sum of the VARs relating to each individual risk type.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Value at risk (VaR) statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Investment diversification begins with an assessment of allocation across asset classes and an evaluation of how the allocation corresponds to the insurer\u2019s liabilities to policyholders.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Asset concentrations by type, maturity, low credit quality, industry, or geographic location or within single issuers can be a concern, particularly to rating agencies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Evidence of the investment liquidity can be found by examining their status in the hierarchy of fair value reporting. Level 1 reported values are based on readily available prices for securities traded in liquid markets and thus indicate the most liquid of securities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Level 2 reported values are based on less liquid conditions: Prices for such securities are not available from a liquid market and may be inferred from similar securities trading in an active market.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Level 3 reported values are based on models and assumptions because there is no active market for the securities, implying illiquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial statements, other financial data, questionnaires, and industry/economic data are sources of information for financial analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Financial statement data alone may be adequate in some cases. For more in-depth questions, additional information would be required, including information on the economy and industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Compared to P&C companies, L&H companies\u2019 relative predictability of claims generally allows them to more often seek the higher returns offered by riskier investments.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Higher-yielding assets, such as equity or real estate investments, experience greater fluctuations in valuation than investments in debt.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The insurance industry has faced investment return challenges from the low-interest rate environment of the last 10 years, making it harder to earn an adequate risk-adjusted return on financial assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The IFRS Practice Statement states specifically that companies should present only the principal risks and not list all possible risks and uncertainties.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is generally advisable to resist the temptation to start calculating ratios without considering what is relevant for the decision at hand.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Articulate the purpose and context of the analysis.\n  2. Collect data.\n  3. Process data.\n  4. Analyze/interpret the data.\n  5. Develop and communicate conclusions and recommendations (e.g., with an analysis report).\n  6. Follow-up.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Define the context and specific questions to be answered by the analysis.\n  2. Obtain relevant information, which may include financial statement data, economic and industry information, and additional data as required.\n  3. Process the data using analytical tools, such as computing ratios, preparing common-size statements, creating charts, or performing statistical analyses (e.g., regressions or Monte Carlo simulations).\n  4. Analyze results and make forecasts or valuations as necessary.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : What behavioral biases most commonly affect portfolio managers\u2019 risk decisions?\n*Question 7* : Which technical analysis indicators are frequently used to identify portfolio risk signals?\n*Question 8* : What features should you evaluate when selecting risk modeling software for portfolio analysis?\n*Question 9* : How would you apply a behavioral finance framework to interpret unusual market movements in a portfolio?\n*Question 10* : Given a scenario where market volatility spikes unexpectedly, what practical steps would you recommend to rebalance and mitigate portfolio risk?",
+            "facts": [
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications, possibly neglecting relevant base rates.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a bias linked to overconfidence.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made. Scenario analysis is a useful action: by asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier. Mitigating overconfidence and illusion of control can also serve to mitigate conservatism.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate confirmation bias, speak to or read research from analysts with a negative opinion on the security under scrutiny and seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A superior forecast considers both the \u201coutside view\u201d (base rate) and the \u201cinside view\u201d (situation-specific), starting with the base rate and adjusting for relevant differences.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. When management guidance differs significantly from a forecast, first assess management\u2019s credibility by examining the company\u2019s performance against past guidance.\n  2. Consider the new guidance as a scenario in scenario analysis.\n  3. Compare the performance and guidance of peer companies as a check for reasonableness.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Construct several forecast scenarios, rather than relying on a single scenario, to reflect a wide range of reasonable inputs for key variables.\n  2. Identify the most important variables in the forecast.\n  3. Modify forecasts to calculate different estimates under each scenario.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : How do advanced risk modeling techniques like Monte Carlo simulation improve portfolio risk assessment compared to traditional methods?\n*Question 12* : Review a real-world case where a portfolio suffered unexpected losses\u2014what risk management failures can you identify?\n*Question 13* : When comparing Value at Risk (VaR) and Conditional Value at Risk (CVaR), what are the key trade-offs in practical portfolio management?\n*Question 14* : Given a scenario with conflicting market indicators and risk signals, how would you prioritize actions to protect portfolio value?\n*Question 15* : In a multi-asset portfolio facing simultaneous geopolitical and credit risks, outline a step-by-step approach to scenario analysis and mitigation.",
+            "facts": [
+                {
+                    "content": "Required disclosures in banks\u2019 financial statements make it possible to assess various sensitivities. The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors. VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period. Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Covariance adjustment reflects the fact that the risks within each and across risk types are not perfectly correlated and, consequently, the total VaR on a given day will be lower than the sum of the VaRs relating to each individual risk type.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The total trading VaR includes mark-to-market and certain fair value option trading positions except for certain hedges. Available-for-sale and accrual exposures are not included.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The specific risk-only component represents the level of equity and fixed income issuer-specific risk embedded in VaR.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The credit portfolio is composed of mark-to-market positions associated with non-trading business units.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup\u2019s VaR is a single-day measure of market shocks that can affect a company. Market dislocations can linger for days, weeks, and even longer. Although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR is a way to estimate the amount of potential loss based on simulations that incorporate historical pricing information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "HSBC estimates its VaR using a 99% confidence level, a one-day holding period, and two prior years of pricing data on foreign exchange rates, interest rates, equity prices, commodity prices, and associated volatilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis shows the range of possible outcomes as specific assumptions are changed; this could, in turn, influence financing needs or investment in fixed assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event. If the list of events is mutually exclusive and exhaustive and the events can be assigned probabilities, the analyst can evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value for various quantities of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "An event affecting more than one factor at a time may have a far greater impact than Citigroup\u2019s estimate, which considers only a single change to either a component of capital or risk-weighted assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis. By asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although additional information and complexity in model specification can improve forecasting accuracy, there are diminishing marginal returns. The amount of material information available for an investment is finite, and adding immaterial information will mislead.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Assign probabilities to each event or possible outcome using probability models for the factors that drive outcomes.\n  2. Run multiple scenarios using the probability factors assigned to the possible values of a variable.\n  3. Determine an expected outcome for that variable using the results of the simulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Identify key variables in the forecast (e.g., organic sales growth, EBIT margin, working capital as a percentage of sales).\n  2. Create several alternative scenarios by varying the most important inputs over a reasonable range.\n  3. Calculate and compare the resulting forecasts under each scenario to observe the range of possible outcomes.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : Which risk modeling tool would you select for analyzing a highly illiquid asset portfolio, and why?\n*Question 17* : What are the potential benefits and limitations of using AI-driven analytics for real-time portfolio risk management?\n*Question 18* : Given a scenario where inflation expectations and market sentiment diverge sharply, outline a multi-step approach to reassess and adjust portfolio risk.\n*Question 19* : In a situation with limited data and high market volatility, how would you balance speed and accuracy when making portfolio risk decisions?\n*Question 20* : Describe a case where technical, behavioral, and macroeconomic signals conflict\u2014how would you prioritize your analysis and justify your recommended actions?",
+            "facts": [
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although additional information and complexity in model specification can improve forecasting accuracy, there are diminishing marginal returns. The amount of material information available for an investment is finite, and adding immaterial information will mislead.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Excessive breadth of data and model complexity can also conceal assumptions and make updating forecasts upon the receipt of new information difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts face significant opportunity costs; additional hours modeling one company could mean that the analyst will examine fewer opportunities in total.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a bias often linked to overconfidence, where analysts overestimate their ability to control outcomes and may take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "By asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Create several forecast scenarios to represent a range of outcomes for the most important variables.\n  2. Modify forecasts for key variables (such as segment growth, margins, working capital) to see the impact on measures like free cash flow.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Restrict modeling variables to those regularly disclosed by the company.\n  2. Focus on the most important or impactful variables.\n  3. Consult only those with unique or significant perspectives.\n  4. Conduct regular investment team reviews of forecasts and models.\n  5. Build flexible models with fewer variables to facilitate updating assumptions.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

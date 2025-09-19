@@ -1,6 +1,9 @@
 import textwrap
 from pydantic import BaseModel, Field
 from abc import abstractmethod, ABC
+from typing import Any
+import re
+from ast import literal_eval
 
 
 class ToolResult(BaseModel):
@@ -75,6 +78,61 @@ Usage:
 
     def as_dict(self) -> dict:
         return {self.tool_information.name: self}
+
+    def get_arguments(self) -> dict[str, tuple[bool, BaseArgument]]:
+        """
+        Get the arguments needed for running the tool.
+        Returns:
+            Dictionary of arguments and whether they are required or not and the argument itself
+            - True: Required
+            - False: Optional
+        Example:
+            {
+                "input": (True, BaseArgument(name="input", type="string", description="The input to the tool"))
+            }
+        """
+        required_args = self.tool_information.input_schema.required
+        return {arg.name: (True if arg.name in required_args else False, arg) for arg in self.tool_information.input_schema.properties}
+
+    def parse_arguments_from_xml_string(self, xml_string: str) -> dict[str, Any]:
+        """
+        Get the arguments from an XML string.
+        Args:
+            xml_string: The XML string to parse
+        Returns:
+            Dictionary of arguments and their values
+        Example:
+            {
+                "input": "value"
+            }
+        """
+        arguments = self.get_arguments()
+        kwargs = {}
+        for arg_name, (required, arg) in arguments.items():
+            arg_string = f"<{arg_name}.*?>(.*?)</{arg_name}>"
+            match = re.search(arg_string, xml_string, re.DOTALL)
+            result = None
+            try:
+                result = match.group(1)
+            except Exception as _:
+                # If the argument is required and not found, raise an error
+                if required:
+                    error_msg = f"Required argument {arg_name} not found in XML string: {xml_string}"
+                    open_tag = f"<{arg_name}>"
+                    close_tag = f"</{arg_name}>"
+                    if open_tag in xml_string:
+                        if close_tag not in xml_string:
+                            error_msg += f". {open_tag} exists but {close_tag} not found"
+                    raise ValueError(error_msg)
+                else:
+                    continue
+            try:
+                if "str" not in arg.type:
+                    result = literal_eval(result)
+            except Exception as _:
+                raise ValueError(f"Failed to parse argument {arg_name} to {arg.type} from XML string: `{xml_string}`")
+            kwargs[arg_name] = result
+        return kwargs
 
 
 if __name__ == "__main__":

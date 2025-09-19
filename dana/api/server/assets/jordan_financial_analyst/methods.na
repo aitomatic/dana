@@ -1,7 +1,6 @@
 from tools import code
-from knowledge import knows
-from knowledge import docs
-from knowledge import raw_docs
+from all_resources import knows
+from all_resources import docs
 from common import State
 from common import COMPRESSION_PROMPT
 from common import PLANNING_SYSTEM_PROMPT
@@ -63,6 +62,11 @@ def plan_ahead(data : State) -> State:
     # Step 2: Classify question type for context
     question_type_prompt = QUESTION_CLASSIFIER.format(question=data.original_problem)
     question_type = reason(question_type_prompt, resources=[], temperature=0)
+
+    if knows.is_available:
+        available_knowledges = knows.query(data.original_problem)
+    else:
+        available_knowledges = ""
     
     # Step 3: Create focused planning prompt with ONLY the relevant template
     focused_plan_prompt = FOCUSED_PLANNING_PROMPT.format(
@@ -71,10 +75,11 @@ def plan_ahead(data : State) -> State:
         max_steps=complexity_info["max_steps"],
         question_type=question_type.strip(),
         template=complexity_info["template"],
-        question=data.original_problem
+        question=data.original_problem,
+        knowledge=available_knowledges
     )
     
-    str_plan = reason(focused_plan_prompt, resources=[knows], temperature=0)
+    str_plan = reason(focused_plan_prompt, temperature=0)
     
     # Step 4: Parse the plan into steps using STEP_BREAK (---)
     steps = str_plan.split(STEP_BREAK)
@@ -101,32 +106,49 @@ def should_execute(data: State) -> bool:
 def execute_step(data : State) -> State:
     if should_execute(data) == True:
         need_to_get_data = should_get_data(data)        
-        
-        # Use regular EXECUTION_PROMPT for calculations and analysis
-        execution_prompt = EXECUTION_PROMPT.format(
-            question=data.original_problem, 
-            tools=TOOLS, 
-            context=data.context, 
-            step=data.current_step, 
-            execution_system_prompt=EXECUTION_SYSTEM_PROMPT
-        )
 
         if need_to_get_data == True:
             if len(data.steps) == 0:
                 # Use DATA_FETCHING_PROMPT for data extraction
-                step_answer = reason(execution_prompt, temperature=0, resources=[raw_docs, knows])
+                context = ""
+                if docs.is_available:
+                    context = docs.query(data.original_problem)
+                if knows.is_available:
+                    context = context + knows.query(data.original_problem)
+                # Use regular EXECUTION_PROMPT for calculations and analysis
+                execution_prompt = EXECUTION_PROMPT.format(
+                    question=data.original_problem, 
+                    tools=TOOLS, 
+                    context=context, 
+                    step=data.current_step, 
+                    execution_system_prompt=EXECUTION_SYSTEM_PROMPT
+                )
+                step_answer = reason(execution_prompt, temperature=0, resources=[])
             else:    
+                context = ""
+                if docs.is_available:
+                    context = docs.query(data.original_problem)
+                if knows.is_available:
+                    context = context + knows.query(data.original_problem)
                 # Only get data 1 time
                 data_prompt = DATA_FETCHING_PROMPT.format(
                     question=data.original_problem, 
                     tools=TOOLS, 
-                    context=data.context, 
+                    context=f"{data.context}\n{context}", 
                     step=data.current_step, 
                     execution_system_prompt=EXECUTION_SYSTEM_PROMPT
                 )
                 step_answer = reason(data_prompt, temperature=0, resources=[docs])
             data.has_data = True
         else:
+            # Use regular EXECUTION_PROMPT for calculations and analysis
+            execution_prompt = EXECUTION_PROMPT.format(
+                question=data.original_problem, 
+                tools=TOOLS, 
+                context=data.context, 
+                step=data.current_step, 
+                execution_system_prompt=EXECUTION_SYSTEM_PROMPT
+            )
             step_answer = reason(execution_prompt, temperature=0, resources=[code])
             
         data.context = f"{data.context}\n{step_answer}"
@@ -147,37 +169,4 @@ def compress_context(data : State) -> State:
             print("="*50)
             data.has_new_context = False
     return data
-
-# def check_temporal_consistency(step_result : str) -> str:
-#     """
-#     Optional function to check for common temporal inconsistencies in step results.
-#     Can be called after execute_step() to validate period usage.
-#     """
-#     import re.py
-    
-#     warnings = []
-    
-#     # Check for numbers without period labels
-#     number_pattern = r'\$[\d,]+[KMB]?(?!\s*(?:Q[1-4]|FY|2024|2023|quarterly|annual))'
-#     unlabeled_numbers = re.findall(number_pattern, step_result)
-#     if unlabeled_numbers:
-#         warnings.append("⚠️ Found financial figures without time period labels")
-    
-#     # Check for mixed quarterly/annual in same calculation
-#     has_quarterly = bool(re.search(r'Q[1-4]|quarterly', step_result, re.IGNORECASE))
-#     has_annual = bool(re.search(r'annual|yearly|FY', step_result, re.IGNORECASE))
-#     if has_quarterly and has_annual:
-#         if "annualized" not in step_result.lower() and "converted" not in step_result.lower():
-#             warnings.append("⚠️ Mixing quarterly and annual figures - ensure proper conversion")
-    
-#     # Check for growth rate confusion
-#     if "growth" in step_result.lower():
-#         if re.search(r'[0-9]+%.*growth', step_result) and not re.search(r'quarterly|annual|monthly', step_result):
-#             warnings.append("⚠️ Growth rate found without time period specification")
-    
-#     if warnings:
-#         warning_text = "\n".join(warnings)
-#         return f"{step_result}\n\n**TEMPORAL CONSISTENCY WARNINGS**:\n{warning_text}"
-    
-#     return step_result
 

@@ -1,0 +1,1022 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Cash Flow and Forecasting Techniques",
+        "Identifying Cash Flow Manipulation and Quality Issues"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What is cash flow manipulation in financial analysis?\n*Question 2* : Why is it important to identify cash flow quality issues early in financial forecasting?\n*Question 3* : What are common methods companies use to manipulate cash flow statements?\n*Question 4* : How can analysts distinguish between genuine cash flow improvements and manipulation?\n*Question 5* : What initial indicators might suggest the presence of cash flow quality issues in a company's financials?",
+            "facts": [
+                {
+                    "content": "Large differences between earnings and OCF or increases in such differences can be an indication of earnings manipulation. The statement of cash flows can be used to highlight areas of potential earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Even though OCF is viewed as being less subject to manipulation than earnings, the importance of OCF may create incentives for managers to manipulate the amounts reported. Therefore, quality issues with cash flow reporting can exist.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One issue that arises with regard to cash flow reporting quality is timing. For example, by selling receivables to a third party and/or by delaying paying its payables, a company can boost OCF.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An increase in such activities would be reflected as a decrease in the company\u2019s days\u2019 sales outstanding and an increase in the company\u2019s days of payables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Another issue that arises with regard to cash flow reporting quality is related to classification of cash flows: Management may try to shift positive cash flow items from investing or financing activities to operating activities to inflate operating cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "By allowing a choice of operating or financing for the placement of interest and dividends received or paid, IAS 7 gives a company\u2019s managers the opportunities to select the presentation that gives the best-looking picture of operating performance.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An issue that arises with regard to cash flow reporting quality is classification shifting: shifting positive cash flow items from investing or financing to inflate operating cash flows. A shift in classification does not change the total amount of cash flow, but it can affect investors\u2019 evaluation of a company\u2019s cash flows and investors\u2019 expectations for future cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Flexibility in classification exists within accounting standards. For example, IFRS permits companies to classify interest paid either as operating or as financing. IFRS also permits companies to classify interest and dividends received as operating or as investing. In contrast, US GAAP requires that interest paid, interest received, and dividends received all be classified as operating cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Management may be motivated to classify activities, such as the sale of long-term assets, as operating activities rather than investing activities. Including them in operating activities overstates the company's ability to generate cash from its operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Management may capitalize rather than expense operating expenditures. As a result, the outflow may be classified as an investing activity rather than an operating activity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overstatement of cash flow from operations can result from managing activities to affect cash flow from operations or misclassifying cash flows to positively affect cash flow from operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Investors and analysts need to be aware that presentation choices permitted in IAS 7, Statement of Cash Flows, offer flexibility in classification of certain items in the cash flow statement. This flexibility can drastically change the results in the operating section of the cash flow statement.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A more dramatic signal of questionable earnings quality is when a company reports positive net income but negative operating cash flows.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The choices management makes to achieve desired results leave a trail, like tracks in sand or snow. The evidence, or warning signs, of information manipulation in financial reports is directly linked to the basic means of manipulation: biased revenue recognition and biased expense recognition. The bias may relate to timing or location of recognition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Net income propels stock prices, but cash flow pays bills. Management can manipulate either one, but sooner or later, net income must be realized in cash if a company is to remain viable. When net income is higher than cash provided by operations, one possibility is that aggressive accrual accounting policies have shifted current expenses to later periods. Increasing earnings in the presence of declining cash generated by operations might signal accounting irregularities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the ratio of cash flow to net income for a company is consistently below 1 or has declined repeatedly over time, this may be a signal of manipulation of information in financial reports through aggressive accrual accounting policies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In general, for established companies, high-quality cash flow would typically have most or all of the following characteristics: Positive OCF, OCF derived from sustainable sources, OCF adequate to cover capital expenditures, dividends, and debt repayments, OCF with relatively low volatility (relative to industry participants).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "From the perspective of cash flow reporting quality, OCF is generally viewed as being less easily manipulated than operating or net income.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Large differences between earnings and OCF or increases in such differences can be an indication of earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Even though OCF is viewed as being less subject to manipulation than earnings, the importance of OCF may create incentives for managers to manipulate the amounts reported. Therefore, quality issues with cash flow reporting can exist.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "An analyst can potentially detect management choices to decrease current assets or increase current liabilities, choices that will increase OCF, by looking at asset utilization (activity) ratios, changes in balance sheet accounts, and disclosures in notes to the financial statements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Studying changes in the working capital can reveal unusual patterns that may indicate manipulation of the cash provided by operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Comparing a company\u2019s cash generation with an industry-wide level or with the cash operating performance of one or more similar competitors can alert investors to possible manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When there is a wide variance between the company\u2019s cash generation performance and that of its benchmarks, investors should seek an explanation and carefully examine the changes in working capital accounts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Warning signs of overstatement or non-sustainability of operating or net income include growth in revenue higher than that of industry or peers, higher growth rate in receivables than revenue, large proportion of revenue in final quarter of year for a non-seasonal business, cash flow from operations much lower than operating income, inconsistency over time in the items included in operating revenues and operating expenses, increases in operating margin, aggressive accounting assumptions, losses in non-operating income or other comprehensive income and gains in operating income or net income, and compensation largely tied to financial results.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Warning signs of overstatement of cash flow from operations include increase in accounts payable and decrease in accounts receivable and inventory, capitalized expenditures in investing activities, sales and leaseback, and increases in bank overdrafts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Increases in accounts payable and substantial decreases in accounts receivable and inventory during the last three years are an accounting warning sign that management may be overstating cash flow from operations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High amounts of accruals are an indicator of possibly manipulated and thus low-quality earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Construct a time series of cash generated by operations divided by net income. If the ratio is consistently below 1.0 or has declined repeatedly, the company\u2019s accrual accounts may have problems.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare a company\u2019s policies on capitalization of costs, depreciation methods and useful lives, and the timing of fourth-quarter surprises to those of its peers for additional warning signs.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A large non-cash gain on derivatives and an increase in days\u2019 sales outstanding are signals of potential cash flow quality issues.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A computer model that screened for companies with operating cash flow persistently lower than earnings would not have identified Satyam as a potential problem because its reported operating cash flow was relatively close to reported profits.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The reported cash flows should be relevant and faithfully represent the economic reality of the company\u2019s activities. For example, classifying a financing inflow as an operating inflow would misrepresent the economic reality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Required disclosures regarding, for example, changes in senior management or inability to make a timely filing of required financial reports can be a warning sign of problems with financial reporting quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The financial press can be a useful source of information about risk when, for example, a financial reporter uncovers financial reporting issues that had not previously been recognized. An analyst should undertake additional investigation of any issue identified.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Examine the composition of the operations section of the cash flow statement.\n  2. Study changes in the working capital for unusual patterns.\n  3. Compare the relationship between cash generated by operations and net income.\n  4. Compare company\u2019s cash generation with industry benchmarks or similar competitors.\n  5. Compare cash generated by operations with debt service, capital expenditures, and dividends.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Review classification choices for cash flow statement items (e.g., interest, dividends, gains/losses, operating/investing/financing).\n  2. Examine financial statement notes and disclosures for changes in classification or accounting policies.\n  3. Analyze working capital accounts and ratios for unusual changes.\n  4. Compare company\u2019s practices to industry norms.\n  5. Investigate disclosures and management discussion for inconsistencies or unexpected items.\n  6. Use both quantitative models and qualitative analysis to assess the likelihood or detectability of manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Examine the company\u2019s accounting policy note for its capitalization policy for long-term assets, including interest costs, and for its handling of other deferred costs.\n  2. Compare the company\u2019s policy with the industry practice.\n  3. Cross-check such a company\u2019s asset turnover and profitability margins with others in its industry.\n  4. Construct a time series of cash generated by operations divided by net income.\n  5. Compare depreciation methods and useful lives with those of peers.\n  6. Watch for fourth-quarter results that do not align with the business\u2019s seasonality.\n  7. Investigate the presence of related-party transactions.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can cognitive biases such as overconfidence or herd behavior influence investor decisions and market trends?\n*Question 7* : What are key chart patterns or indicators used in technical analysis to identify potential trend reversals?\n*Question 8* : Describe a scenario where Value at Risk (VaR) would be used as a risk management tool. What are its limitations?\n*Question 9* : If a company faces unexpected negative cash flow due to market volatility, what risk mitigation strategies could an analyst recommend?\n*Question 10* : Given a real-world example, how would you use both behavioral finance concepts and technical indicators to assess an investment opportunity?",
+            "facts": [
+                {
+                    "content": "Studies have shown that experts in many fields persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models of financial statements are in no way immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence arises more frequently when forecasting what others do not expect (contrarian predictions).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Additional information and complexity in model specification can improve forecasting accuracy, but there are diminishing marginal returns.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Complex models tend to be overfitted to historical data sets which do not prove robust in a range of environments that include never-before-seen outliers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Excessive breadth of data and model complexity can also conceal assumptions and make updating forecasts upon the receipt of new information difficult.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The most common form of conservatism is the reluctance to incorporate new negative information into a forecast; analysts could also fail to adequately incorporate positive information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications. New information might resemble or seem representative of familiar elements already classified, but can in fact be very different and is better viewed from a different perspective.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Base-rate neglect is a common form of representativeness bias in forecasting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Considering the base rate is sometimes known as the \u201coutside view,\u201d while the situation-specific is known as the \u201cinside view.\u201d",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Speaking with management is valuable given their role and should not be excluded from the research process, but analysts must be aware of management\u2019s inherent bias and seek differing perspectives, especially when examining a company with significant controversy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup\u2019s VaR is a single-day measure of market shocks that can affect a company. Market dislocations can linger for days, weeks, and even longer. Although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR is a measure that helps assess the exposure to market risk of a bank\u2019s trading and credit portfolios, but is limited to modeling risk over short timeframes and under normal market conditions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis is a mitigating action for overconfidence bias; by asking \u201cWhere could I be wrong and by how much?\u201d, an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias can be mitigated by reviews of forecasts and models by an investment team at a regular interval, such as each quarter, and by creating flexible models with fewer variables, to make changing assumptions easier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A superior forecast is achieved by considering both the \u201coutside view\u201d (base rates/industry averages) and the \u201cinside view\u201d (company-specific factors), starting with the base rate and then determining which factors make the target company different from the base rate or class average and what the implications of those differences are.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Two approaches to mitigating confirmation bias in the forecasting process are to speak to or read research from analysts with a negative opinion on the security under scrutiny and to seek perspectives from colleagues who are not economically or psychologically invested in the subject security.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": []
+        },
+        {
+            "question": "*Question 11* : What is Monte Carlo simulation, and how can it be applied to forecast a company's future cash flows under uncertainty?\n*Question 12* : How would you design a stress testing scenario to evaluate the impact of an economic downturn on a company's liquidity position?\n*Question 13* : Describe how Prospect Theory might explain differing investor reactions to the same financial news in volatile markets.\n*Question 14* : Given a chart showing both Elliott Wave patterns and MACD signals, how would you synthesize the information to make a short-term trading decision?\n*Question 15* : Present a scenario where rising interest rates, deteriorating cash flow, and market uncertainty intersect. What multi-step approach would you take to assess and mitigate the combined risks?",
+            "facts": [
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities. This can involve several techniques: sensitivity analysis, scenario analysis, and simulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis shows the range of possible outcomes as specific assumptions are changed; this could, in turn, influence financing needs or investment in fixed assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "This type of analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the list of events is mutually exclusive and exhaustive and the events can be assigned probabilities, the analyst can evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value for various quantities of interest.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities. Studies have identified that 90 percent confidence intervals for forecasts, which should leave only 10 percent error rates, turn out to be wrong as much as 40 percent of the time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information. This often happens in forecasting when an analyst does not update their forecasting after receiving conflicting information, such as disappointing earnings results or a competitor action.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Representativeness bias refers to the tendency to classify information based on past experiences and known classifications. Base-rate neglect is a common form of representativeness bias in forecasting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "By asking, \u201cWhere could I be wrong and by how much?\u201d, an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One way to reduce representativeness bias is by starting with the base rate but determining which factors make the target company different from the base rate or class average and what the implications of those differences are, if any.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Use required disclosures in banks\u2019 financial statements to assess various sensitivities.\n  2. Use value at risk (VaR) disclosures to help assess a bank\u2019s exposure to market factors.\n  3. Use Monte Carlo simulation VaR models to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.\n  2. Create several scenarios in financial statement models to widen the range of outcomes for important variables.\n  3. Restrict modeling variables to those regularly disclosed by the company, focus on the most important or impactful variables, and speak only with those who are likely to have unique or significant perspectives to mitigate illusion of control.\n  4. Mitigate conservatism bias by reviews of forecasts and models by an investment team at a regular interval, and by creating flexible models with fewer variables, to make changing assumptions easier.\n  5. Consider management\u2019s credibility by examining the company\u2019s performance against management guidance in the past, and include management guidance as a scenario in scenario analysis.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : Describe a situation where you must use both cash flow analysis and regulatory compliance frameworks to evaluate a company's acquisition target.\n*Question 17* : How would you communicate complex findings about cash flow manipulation, uncovered using both forensic accounting and technical analysis, to non-financial stakeholders?\n*Question 18* : Given an evolving scenario where a company faces allegations of unethical financial reporting, what combination of analytical tools and ethical guidelines would you apply to investigate and report your findings?\n*Question 19* : Explain how you would use Ichimoku Cloud and Fibonacci retracement together in assessing market entry or exit points during periods of high market ambiguity.\n*Question 20* : In a rapidly changing market environment, how would you adapt your risk assessment approach if early indicators from both scenario analysis and sentiment analysis signal conflicting outcomes?",
+            "facts": [
+                {
+                    "content": "The case study demonstrates the use of a financial analysis framework in investment decision making. Although each analysis undertaken may have a different focus, purpose, and context that result in the application of different techniques and tools, the case demonstrates the use of a common financial statement analysis framework.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Measures comparing cash flow with reinvestment, debt, and debt-servicing capacity indicate strength in financial capacity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The company\u2019s current liquidity and cash flows are more than adequate for future operating and investment purposes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Regulated industries\u2014especially in the financial sector\u2014often are required to comply with specific regulatory ratios. For example, the banking sector\u2019s liquidity and cash reserve ratios provide an indication of banking liquidity and reflect monetary and regulatory requirements. Banking capital adequacy requirements attempt to relate banks\u2019 solvency requirements directly to their specific levels of risk exposure.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An audit opinion of a company\u2019s financial reports is most likely intended to ensure that financial information is presented fairly.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In the context of evaluating the quality of financial reports, an analyst is attempting to answer two basic questions: 1. Are the financial reports GAAP-compliant and decision-useful? 2. Are the results (earnings) of high quality? Do they provide an adequate level of return, and are they sustainable?",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quantitative tools have been developed to help in evaluating financial reports. The probability of manipulation (M-score) is estimated using a probit model: M-score = \u22124.84 + 0.920 (DSR) + 0.528 (GMI) + 0.404 (AQI) + 0.892 (SGI) + 0.115 (DEPI) \u2212 0.172 (SGAI) + 4.679 (Accruals) \u2212 0.327 (LEVI).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Higher accruals can indicate earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities. To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made. Given the wide range of outcomes for most financial variables, an analyst will likely find that they have been wrong as much or more often than they have been right.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Creating several more scenarios is an important modeling step because the range of outcomes for the most important variable is wider than a single point.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control. This bias often manifests in analysts\u2019 beliefs that forecasts can be rendered more accurate in two ways: by acquiring more information and opinions from experts and by creating more granular and complex models.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Emphasize the quality measures expressed by the accruals tests and the cash flow support of earnings, with particular regard to return on assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the ratio of cash flow to net income for a company is consistently below 1 or has declined repeatedly over time, this may be a signal of manipulation of information in financial reports through aggressive accrual accounting policies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities. This can involve several techniques: sensitivity analysis, scenario analysis, and simulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Beyond awareness of the bias and the recognition that uncertainty is an inherent characteristic in investments, illusion of control can be mitigated by restricting modeling variables to those that are regularly disclosed by the company, focusing on the most important or impactful variables, and speaking only with those who are likely to have unique or significant perspectives.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Demonstrate the use of a framework for the analysis of financial statements, given a particular problem, question, or purpose (e.g., valuing equity based on comparables, critiquing a credit rating, obtaining a comprehensive picture of financial leverage, evaluating the perspectives given in management\u2019s discussion of financial results).\n  2. As a result of the analyses performed, the analyst gathers sufficient evidence regarding many of a company\u2019s operational and financial characteristics and addresses the concerns initially expressed.\n  3. Develop and communicate conclusions and recommendations (e.g., with an analysis report) divided into support for the investment and causes for concern.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Use appropriate quantitative tools to assess the likelihood of misreporting.\n  2. If the likelihood of misreporting appears high, take special care in analyzing, including qualitatively analyzing, the financial reports of the company.\n\nNone found.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

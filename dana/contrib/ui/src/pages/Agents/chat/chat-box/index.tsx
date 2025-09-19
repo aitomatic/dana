@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useState,
   useCallback,
@@ -6,10 +7,12 @@ import {
   useRef,
   forwardRef,
   useImperativeHandle,
+  useEffect,
 } from 'react';
 import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
+import type { DocumentRead } from '@/types/document';
 
 import ChatInput from './chat-input';
 import SendButton from './send-button';
@@ -49,7 +52,39 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+    const [agentDocuments, setAgentDocuments] = useState<DocumentRead[]>([]);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch agent documents when agentId changes
+    useEffect(() => {
+      const fetchAgentDocuments = async () => {
+        if (!agentId) {
+          setAgentDocuments([]);
+          return;
+        }
+
+        try {
+          const documents = await apiService.getDocuments({ agent_id: Number(agentId) });
+          setAgentDocuments(documents);
+        } catch (error) {
+          console.error('Failed to fetch agent documents:', error);
+          setAgentDocuments([]);
+        }
+      };
+
+      fetchAgentDocuments();
+    }, [agentId]);
+
+    // Convert documents to mention options for ChatInput
+    const documentMentionOptions = useMemo(() => {
+      return agentDocuments.map((doc) => ({
+        id: doc.id.toString(),
+        label: doc.original_filename,
+        value: doc.original_filename,
+        icon: '📄',
+      }));
+    }, [agentDocuments]);
 
     // Expose methods to parent component via ref
     useImperativeHandle(
@@ -288,6 +323,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
                   setMessage={setMessage}
                   placeholder={placeholder}
                   isBotThinking={false}
+                  mentionOptions={documentMentionOptions}
                 />
               </div>
               {ControlsArea}

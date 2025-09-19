@@ -85,9 +85,9 @@ class RefineKnowledgeStructureTool(BaseTool):
             refined_structure = self._apply_structure_modification(current_structure, modification_request, topic)
 
             # Validate the refined structure
-            if not self._validate_structure_format(refined_structure):
-                logger.warning("Refined structure format validation failed, attempting to fix")
-                refined_structure = self._fix_structure_format(refined_structure, topic)
+            # if not self._validate_structure_format(refined_structure):
+            #     logger.warning("Refined structure format validation failed, attempting to fix")
+            #     refined_structure = self._fix_structure_format(refined_structure, topic)
 
             # Format the response for user review
             content = f"""🔄 Refined Knowledge Structure: {topic.title()}

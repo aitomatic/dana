@@ -21,6 +21,7 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     cell: ({ row }) => {
       const item = row.original;
+
       return (
         <div className="grid grid-cols-[max-content_1fr] gap-2">
           <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />
@@ -181,6 +182,10 @@ export const getLibraryColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
+    meta: {
+      style: { maxWidth: '100px', width: '100px' },
+      className: 'max-w-[100px] w-[100px]'
+    },
     cell: ({ row }) => {
       const item = row.original;
       return (
