@@ -1,0 +1,86 @@
+name: Cross-OS Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests • py${{ matrix.python }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          # - windows-latest  # temporarily turning off Windows testing
+        python: ["3.12"]
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Enable Windows long paths
+        if: runner.os == 'Windows'
+        run: git config --global core.longpaths true || true
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure HOME on Windows
+        if: runner.os == 'Windows'
+        run: |
+          echo "HOME=${HOME:-${USERPROFILE:-${HOMEDRIVE}${HOMEPATH}}}" >> $GITHUB_ENV
+          echo "USERPROFILE=${USERPROFILE:-$HOME}" >> $GITHUB_ENV
+
+      - name: Windows uv settings
+        if: runner.os == 'Windows'
+        run: |
+          echo "UV_LINK_MODE=copy" >> $GITHUB_ENV
+          echo "TMP=${{ runner.temp }}" >> $GITHUB_ENV
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Show versions
+        run: |
+          python -V
+          uv --version
+
+      - name: Install dependencies
+        run: uv sync --extra dev --python ${{ matrix.python }}
+
+      - name: Run tests
+        env:
+          DANA_MOCK_LLM: "true"
+          DANA_USE_REAL_LLM: "false"
+          PYTHONIOENCODING: "utf-8"
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            uv run python -X utf8 -m pytest -q --maxfail=1
+          else
+            uv run -m pytest -q --maxfail=1
+          fi
