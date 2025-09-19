@@ -16,6 +16,7 @@ from dana.api.core.schemas import (
     DomainKnowledgeUpdateResponse,
     ChatWithIntentRequest,
     ChatWithIntentResponse,
+    DomainNode,
 )
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.services.intent_detection_service import get_intent_detection_service, IntentDetectionService
@@ -587,8 +588,12 @@ def _load_hierarchical_knowledge_content(topic_path: str, folder_path: str) -> d
 
     Note: The root topic (e.g., 'Fundamental Analysis') is the top-level folder under 'knows/'
     """
-    # Split the topic path into components
-    topic_parts = topic_path.split(" - ")
+
+    def _get_knowledge_file_path(root_dir: str, topic_parts: list[str], knows_path: str) -> str:
+        final_path = os.path.join(knows_path, root_dir, *topic_parts, "knowledge.json")
+        if not os.path.exists(final_path):
+            raise FileNotFoundError(f"Knowledge file not found at {final_path}")
+        return final_path
 
     # Convert each part to folder-safe format
     knows_folder = os.path.join(folder_path, "knows")
@@ -598,10 +603,16 @@ def _load_hierarchical_knowledge_content(topic_path: str, folder_path: str) -> d
     if len(root_know_dir) == 0:
         raise ValueError(f"No knowledge folder found in {knows_folder}")
 
-    final_path = os.path.join(knows_folder, root_know_dir[0], *topic_parts, "knowledge.json")
-
-    if not os.path.exists(final_path):
-        raise FileNotFoundError(f"Knowledge file not found at {final_path}")
+    # Split the topic path into components
+    try:
+        final_path = _get_knowledge_file_path(
+            root_dir=root_know_dir[0],
+            topic_parts=[DomainNode(topic=topic).fd_name for topic in topic_path.split(" - ")],
+            knows_path=knows_folder,
+        )
+    except FileNotFoundError:
+        # Fallback to old behavior which is not standardized the folder structure
+        final_path = _get_knowledge_file_path(root_dir=root_know_dir[0], topic_parts=topic_path.split(" - "), knows_path=knows_folder)
 
     with open(final_path, encoding="utf-8") as f:
         knowledge_data = json.load(f)

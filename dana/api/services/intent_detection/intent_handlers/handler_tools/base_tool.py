@@ -117,7 +117,13 @@ Usage:
             except Exception as _:
                 # If the argument is required and not found, raise an error
                 if required:
-                    raise ValueError(f"Required argument {arg_name} not found in XML string: {xml_string}")
+                    error_msg = f"Required argument {arg_name} not found in XML string: {xml_string}"
+                    open_tag = f"<{arg_name}>"
+                    close_tag = f"</{arg_name}>"
+                    if open_tag in xml_string:
+                        if close_tag not in xml_string:
+                            error_msg += f". {open_tag} exists but {close_tag} not found"
+                    raise ValueError(error_msg)
                 else:
                     continue
             try:

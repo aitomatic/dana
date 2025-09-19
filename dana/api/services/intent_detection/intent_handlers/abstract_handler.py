@@ -41,6 +41,7 @@ Your thinking logic here...
 <tool_name>
   <param1>value</param1>
   ...
+  <paramN>value</paramN>
 </tool_name>""")
 
         first_tag_start = first_tag_match.start()
@@ -85,6 +86,7 @@ Your thinking logic here...
 <tool_name>
   <param1>value</param1>
   ...
+  <paramN>value</paramN>
 </tool_name>""")
 
         # Extract just the tool XML block
@@ -101,6 +103,7 @@ Your thinking logic here...
 <tool_name>
   <param1>value</param1>
   ...
+  <paramN>value</paramN>
 </tool_name>""")
 
         tool_xml = tool_content_match.group(1)
