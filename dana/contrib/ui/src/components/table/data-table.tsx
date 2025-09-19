@@ -66,10 +66,10 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="flex flex-col h-full max-h-full rounded-lg border">
+    <div className="flex flex-col  max-h-full rounded-lg border">
       <div
         className={cn(
-          'flex flex-1 overflow-auto bg-background scrollbar-hide rounded-t-lg min-h-0',
+          'flex flex-1 overflow-auto  scrollbar-hide rounded-t-lg',
           is_border && '',
         )}
       >
@@ -78,8 +78,14 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const columnMeta = header.column.columnDef.meta as any;
                   return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
+                    <TableHead 
+                      key={header.id} 
+                      colSpan={header.colSpan}
+                      className={columnMeta?.className}
+                      style={columnMeta?.style}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -108,11 +114,19 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                   className="group"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} onClick={() => handleRowClick && handleRowClick(row)}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const columnMeta = cell.column.columnDef.meta as any;
+                    return (
+                      <TableCell 
+                        key={cell.id} 
+                        onClick={() => handleRowClick && handleRowClick(row)}
+                        className={columnMeta?.className}
+                        style={columnMeta?.style}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (
@@ -128,9 +142,11 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center p-3 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
-        <DataTablePagination table={table} />
-      </div>
+      {table.getPageCount() > 1 && (
+        <div className="flex items-center p-3 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+          <DataTablePagination table={table} />
+        </div>
+      )}
     </div>
   );
 }
