@@ -36,10 +36,10 @@ class QueryableData(StrEnum):
 
 
 class DFViewsCache(dict):
-    """View cache."""
+    """Data frame views cache."""
 
     def record(self, view_df: DataFrame):
-        """Record the view data frame."""
+        """Record the view data frame in the cache."""
         self[id(view_df)] = view_df
 
 DF_VIEWS_CACHE = DFViewsCache()
@@ -47,7 +47,7 @@ DF_VIEWS_CACHE = DFViewsCache()
 
 @dataclass(init=True, repr=True, eq=True, order=False,
            unsafe_hash=False, frozen=False,
-           match_args=True, kw_only=False,
+           match_args=True, kw_only=True,
            slots=False, weakref_slot=False)
 class SalesVolCostPriceDF:
     """Sales Volume, Cost and Price Data Frame."""
@@ -97,21 +97,20 @@ class SalesVolCostPriceDF:
     def __post_init__(self):
         """Post-initialization: sort index & rearrange columns in logical order.
         And also build the business & geographical hierarchies."""
-        self.df: DataFrame = self.df.sort_index(
-            axis='index',
-            level=None,
-            ascending=True,
-            inplace=False,
-            kind='quicksort',
-            na_position='last',
-            sort_remaining=True,
-            ignore_index=False,
-            key=None)[[self.prev_yr_sales_vol_col,
-                       self.prev_yr_avg_cost_col,
-                       self.prev_yr_avg_price_col,
-                       self.curr_yr_sales_vol_col,
-                       self.curr_yr_avg_cost_col,
-                       self.curr_yr_avg_price_col]]
+        self.df: DataFrame = self.df.sort_index(axis='index',
+                                                level=None,
+                                                ascending=True,
+                                                inplace=False,
+                                                kind='quicksort',
+                                                na_position='last',
+                                                sort_remaining=True,
+                                                ignore_index=False,
+                                                key=None)[[self.prev_yr_sales_vol_col,
+                                                           self.prev_yr_avg_cost_col,
+                                                           self.prev_yr_avg_price_col,
+                                                           self.curr_yr_sales_vol_col,
+                                                           self.curr_yr_avg_cost_col,
+                                                           self.curr_yr_avg_price_col]]
 
         # Initialize relationship dictionaries dynamically
         self._biz_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.biz_hierarchy_indexes) - 1)]
@@ -337,24 +336,24 @@ class SalesVolCostPriceDF:
 
     def _complete_df(self, df: DataFrame, /):
         """Complete data frame with additional columns."""
-        df.loc[:, self.PREV_YR_REV_PCT_COL] = (df[self.PREV_YR_REV_COL] /
-                                               df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_REV_COL].iloc[0])
+        df.loc[:, self.PREV_YR_REV_PCT_COL] = 100 * (df[self.PREV_YR_REV_COL] /
+                                                     df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_REV_COL].iloc[0])
 
         df.loc[:, self.PREV_YR_GROSS_PROFIT_COL] = (df[self.PREV_YR_REV_COL] -
                                                     df[self.PREV_YR_COGS_COL])
-        df.loc[:, self.PREV_YR_GROSS_PROFIT_PCT_COL] = (df[self.PREV_YR_GROSS_PROFIT_COL] /
-                                                        df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_GROSS_PROFIT_COL].iloc[0])
+        df.loc[:, self.PREV_YR_GROSS_PROFIT_PCT_COL] = 100 * (df[self.PREV_YR_GROSS_PROFIT_COL] /
+                                                              df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_GROSS_PROFIT_COL].iloc[0])
 
         df.loc[:, self.PREV_YR_GROSS_MARGIN_COL] = (df[self.PREV_YR_GROSS_PROFIT_COL] /
                                                     df[self.PREV_YR_REV_COL])
 
-        df.loc[:, self.CURR_YR_REV_PCT_COL] = (df[self.CURR_YR_REV_COL] /
-                                               df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_REV_COL].iloc[0])
+        df.loc[:, self.CURR_YR_REV_PCT_COL] = 100 * (df[self.CURR_YR_REV_COL] /
+                                                     df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_REV_COL].iloc[0])
 
         df.loc[:, self.CURR_YR_GROSS_PROFIT_COL] = (df[self.CURR_YR_REV_COL] -
                                                     df[self.CURR_YR_COGS_COL])
-        df.loc[:, self.CURR_YR_GROSS_PROFIT_PCT_COL] = (df[self.CURR_YR_GROSS_PROFIT_COL] /
-                                                        df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_GROSS_PROFIT_COL].iloc[0])
+        df.loc[:, self.CURR_YR_GROSS_PROFIT_PCT_COL] = 100 * (df[self.CURR_YR_GROSS_PROFIT_COL] /
+                                                              df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_GROSS_PROFIT_COL].iloc[0])
 
         df.loc[:, self.CURR_YR_GROSS_MARGIN_COL] = (df[self.CURR_YR_GROSS_PROFIT_COL] /
                                                     df[self.CURR_YR_REV_COL])
@@ -373,7 +372,7 @@ class SalesVolCostPriceDF:
                                                           df[self.PREV_YR_GROSS_MARGIN_COL])
 
     @cache
-    def query_single_data_point(self, what_data: QueryableData, /, *,
+    def query_single_data_point(self, queryable_data: QueryableData, /, *,
                                 prev_yr: bool = False,
                                 biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
                                 **other_biz_and_geo_filters: str) -> int | float:
@@ -384,7 +383,7 @@ class SalesVolCostPriceDF:
 
         total_row: Series = total_row_df.iloc[0]
 
-        match what_data:
+        match queryable_data:
             case QueryableData.SALES_VOL:
                 return total_row[self.prev_yr_sales_vol_col
                                  if prev_yr
@@ -439,7 +438,7 @@ class SalesVolCostPriceDF:
                 return total_row[self.YOY_PCTPT_CHG_GROSS_MARGIN_COL]
 
             case _:
-                raise ValueError(f'Invalid QueryableData: {what_data}')
+                raise ValueError(f'Invalid `QueryableData`: {queryable_data}')
 
     @cache
     def highlight_good_and_bad_performers(self, n: int = 3,
