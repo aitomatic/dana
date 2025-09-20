@@ -4,14 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   IconSearch,
-  IconFilter,
   IconFolderPlus,
   IconRefresh,
   IconArrowLeft,
@@ -74,7 +67,7 @@ export default function LibraryPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'files' | 'folders'>('all');
+  const [typeFilter] = useState<'all' | 'files' | 'folders'>('all');
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
@@ -237,10 +230,6 @@ export default function LibraryPage() {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-  };
-
-  const handleTypeFilterChange = (type: 'all' | 'files' | 'folders') => {
-    setTypeFilter(type);
   };
 
   const handleRefresh = useCallback(() => {
