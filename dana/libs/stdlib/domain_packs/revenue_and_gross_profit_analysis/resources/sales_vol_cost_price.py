@@ -97,6 +97,11 @@ class SalesVolCostPriceDF:
     def __post_init__(self):
         """Post-initialization: sort index & rearrange columns in logical order.
         And also build the business & geographical hierarchies."""
+        # verify index names in precise order
+        assert self.df.index.names == list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes), \
+            ValueError(f"Index names mismatch: {self.df.index.names} != {list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)}")
+
+        # sort index & rearrange columns in logical order
         self.df: DataFrame = self.df.sort_index(axis='index',
                                                 level=None,
                                                 ascending=True,
@@ -112,24 +117,18 @@ class SalesVolCostPriceDF:
                                                            self.curr_yr_avg_cost_col,
                                                            self.curr_yr_avg_price_col]]
 
-        # Initialize relationship dictionaries dynamically
+        # populate hierarchies' relationship dictionaries
+        # by calling `biz_hierarchy` and `geo_hierarchy` once to cache
         self._biz_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.biz_hierarchy_indexes) - 1)]
+        self.biz_hierarchy  # noqa: B018
         self._geo_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.geo_hierarchy_indexes) - 1)]
-
-        self.biz_hierarchy  # call once to cache
-        self.geo_hierarchy  # call once to cache
+        self.geo_hierarchy  # noqa: B018
 
     def __hash__(self) -> int:
-        return hash((self.biz_hierarchy_indexes,
-                     self.geo_hierarchy_indexes,
-
-                     self.prev_yr_sales_vol_col,
-                     self.prev_yr_avg_cost_col,
-                     self.prev_yr_avg_price_col,
-
-                     self.curr_yr_sales_vol_col,
-                     self.curr_yr_avg_cost_col,
-                     self.curr_yr_avg_price_col))
+        """Return hash from key attributes."""
+        return hash((self.biz_hierarchy_indexes, self.geo_hierarchy_indexes,
+                     self.prev_yr_sales_vol_col, self.prev_yr_avg_cost_col, self.prev_yr_avg_price_col,
+                     self.curr_yr_sales_vol_col, self.curr_yr_avg_cost_col, self.curr_yr_avg_price_col))
 
     def _build_hierarchy(self, hierarchy_indexes: tuple[str, ...], relationship_dicts: list[dict[str, str]]) -> dict:
         """Build nested dictionary for any hierarchy dynamically."""
@@ -164,13 +163,16 @@ class SalesVolCostPriceDF:
 
         return hierarchy
 
-    def _sort_hierarchy_leaves(self, hierarchy: dict) -> None:
+    @staticmethod
+    def _sort_hierarchy_leaves(hierarchy: dict | list):
         """Recursively sort leaf lists in hierarchy."""
-        for value in hierarchy.values():
-            if isinstance(value, list):
-                value.sort()
-            elif isinstance(value, dict):
-                self._sort_hierarchy_leaves(value)
+        if isinstance(hierarchy, dict):
+            for value in hierarchy.values():
+                if isinstance(value, dict | list):
+                    SalesVolCostPriceDF._sort_hierarchy_leaves(value)
+
+        elif isinstance(hierarchy, list):
+            hierarchy.sort()
 
     def _build_hierarchy_tuple(self, hierarchy_indexes: tuple[str, ...], relationship_dicts: list[dict[str, str]], filters: dict[str, str | None]) -> tuple[str, ...]:
         """Build tuple for any hierarchy dynamically."""
@@ -244,32 +246,23 @@ class SalesVolCostPriceDF:
              biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
              **other_biz_and_geo_filters: str) -> DataFrame:
         """View data with optional business & geographical filters."""
-        # filter data
-        indexes: list[str] = list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)
-
-        # Merge filters from both sources
-        all_biz_and_geo_filters = {}
+        # merge filters
+        all_biz_and_geo_filters: dict[str, str] = other_biz_and_geo_filters
         if biz_and_geo_filters:
-            all_biz_and_geo_filters.update(dict(biz_and_geo_filters))
-        all_biz_and_geo_filters.update(other_biz_and_geo_filters)
+            all_biz_and_geo_filters.update(biz_and_geo_filters)
 
-        filters: dict[str, str | None] = {}
-        for name in self.biz_hierarchy_indexes:
-            filters[name] = all_biz_and_geo_filters.get(name)
-        for name in self.geo_hierarchy_indexes:
-            filters[name] = all_biz_and_geo_filters.get(name)
+        bool_mask: Series | None = None
 
-        indexer = self.df.index
-        mask = None
-        for lvl_name in indexes:
-            value = filters[lvl_name]
-            if value is not None and value != self._ALL_FILTER_VALUE:
-                cond = (indexer.get_level_values(lvl_name) == value)
-                mask = cond if mask is None else (mask & cond)
-        if mask is None:
-            view_df: DataFrame = self.df
-        else:
-            view_df: DataFrame = self.df[mask]
+        for index_name in (self.biz_hierarchy_indexes + self.geo_hierarchy_indexes):
+            if (index_filter_value := all_biz_and_geo_filters.get(index_name)):
+                cond: Series = (self.df.index.get_level_values(level=index_name) == index_filter_value)
+
+                if bool_mask is None:
+                    bool_mask = cond
+                else:
+                    bool_mask &= cond
+
+        view_df: DataFrame = self.df if bool_mask is None else self.df[bool_mask]
 
         # calculate COGS & Revenue columns
         view_df.loc[:, self.PREV_YR_COGS_COL] = (view_df[self.prev_yr_sales_vol_col] *
@@ -286,10 +279,10 @@ class SalesVolCostPriceDF:
         total_row_df: DataFrame = DataFrame(
             data=[self._calc_sales_vol_cogs_cost_rev_price_cols(view_df)],
             index=MultiIndex.from_tuples(
-                tuples=[self.biz_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name)
-                                                    for name in self.biz_hierarchy_indexes}) +
-                        self.geo_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name)
-                                                    for name in self.geo_hierarchy_indexes})],
+                tuples=[self.biz_hierarchy_tuple(filters=tuple((index_name, all_biz_and_geo_filters.get(index_name))
+                                                               for index_name in self.biz_hierarchy_indexes)),
+                        self.geo_hierarchy_tuple(filters=tuple((index_name, all_biz_and_geo_filters.get(index_name))
+                                                               for index_name in self.geo_hierarchy_indexes))],
                 sortorder=None, names=view_df.index.names),
             columns=view_df.columns,
             dtype=None, copy=None)
@@ -498,8 +491,7 @@ class SalesVolCostPriceDF:
                                                     axis='index',
                                                     join='outer',
                                                     ignore_index=False,
-                                                    keys=[self._TOTAL_ROW_TYPE,
-                                                          summary_by_dimension_row_type],
+                                                    keys=[self._TOTAL_ROW_TYPE, summary_by_dimension_row_type],
                                                     levels=None,
                                                     names=[self._ROW_TYPE_INDEX_NAME] + list(total_row_df.index.names),
                                                     verify_integrity=True,
@@ -514,8 +506,8 @@ class SalesVolCostPriceDF:
 
                 # Precompute grouped label prefix and dimension position
                 label_prefix: str = summary_by_dimension_row_type
-                indexes_for_dim: list[str] = list(summary_view_df_without_total_row.index.names)
-                grouped_dim_pos: int = indexes_for_dim.index(grouped_df_index_name)
+                index_names_for_dim: list[str] = list(summary_view_df_without_total_row.index.names)
+                grouped_dim_pos: int = index_names_for_dim.index(grouped_df_index_name)
 
                 # highest and lowest revenue amount contributors (current year)
                 highlight_rows.extend(self._get_highest_and_lowest_rev_contributors(
