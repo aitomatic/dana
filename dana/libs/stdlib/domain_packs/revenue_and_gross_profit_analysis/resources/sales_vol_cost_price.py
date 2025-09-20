@@ -194,7 +194,7 @@ class SalesVolCostPriceDF:
         return self._build_hierarchy(self.biz_hierarchy_indexes, self._biz_relationship_dicts)
 
     @cache
-    def business_hierarchy_tuple(self, **filters: str | None) -> tuple[str, ...]:
+    def biz_hierarchy_tuple(self, filters: tuple[tuple[str, str], ...], **other_filters: str) -> tuple[str, ...]:
         """Build tuple for business hierarchy dynamically based on biz_hierarchy_indexes."""
         return self._build_hierarchy_tuple(self.biz_hierarchy_indexes, self._biz_relationship_dicts, filters)
 
@@ -216,7 +216,7 @@ class SalesVolCostPriceDF:
         return self._build_hierarchy(self.geo_hierarchy_indexes, self._geo_relationship_dicts)
 
     @cache
-    def geographical_hierarchy_tuple(self, **filters: str | None) -> tuple[str, ...]:
+    def geo_hierarchy_tuple(self, filters: tuple[tuple[str, str], ...], **other_filters: str) -> tuple[str, ...]:
         """Build tuple for geographical hierarchy dynamically based on geo_hierarchy_indexes."""
         return self._build_hierarchy_tuple(self.geo_hierarchy_indexes, self._geo_relationship_dicts, filters)
 
@@ -240,7 +240,9 @@ class SalesVolCostPriceDF:
         raise ValueError(f"Level name '{level_name}' not found in hierarchy levels: {all_level_names}")
 
     @cache
-    def view(self, biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None, **other_biz_and_geo_filters: str) -> DataFrame:
+    def view(self,
+             biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
+             **other_biz_and_geo_filters: str) -> DataFrame:
         """View data with optional business & geographical filters."""
         # filter data
         indexes: list[str] = list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)
@@ -284,8 +286,10 @@ class SalesVolCostPriceDF:
         total_row_df: DataFrame = DataFrame(
             data=[self._calc_sales_vol_cogs_cost_rev_price_cols(view_df)],
             index=MultiIndex.from_tuples(
-                tuples=[self.business_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name) for name in self.biz_hierarchy_indexes}) +
-                        self.geographical_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name) for name in self.geo_hierarchy_indexes})],
+                tuples=[self.biz_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name)
+                                                    for name in self.biz_hierarchy_indexes}) +
+                        self.geo_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name)
+                                                    for name in self.geo_hierarchy_indexes})],
                 sortorder=None, names=view_df.index.names),
             columns=view_df.columns,
             dtype=None, copy=None)
@@ -376,7 +380,7 @@ class SalesVolCostPriceDF:
                                 prev_yr: bool = False,
                                 biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
                                 **other_biz_and_geo_filters: str) -> int | float:
-        """Query a single financial data point."""
+        """Query a single data point."""
         total_row_df: Series = self.view(biz_and_geo_filters=biz_and_geo_filters,
                                          **other_biz_and_geo_filters).loc[self._TOTAL_ROW_TYPE]
         DF_VIEWS_CACHE.record(total_row_df)
@@ -449,8 +453,8 @@ class SalesVolCostPriceDF:
         view_df: DataFrame = self.view(biz_and_geo_filters=biz_and_geo_filters, **other_biz_and_geo_filters)
 
         total_row_df: DataFrame = view_df.loc[self._TOTAL_ROW_TYPE]
-        total_row_indexes: list[str] = total_row_df.index.names
-        total_row_index_values: tuple[str, str, str, str, str, str, str, str] = total_row_df.index[0]
+        total_row_index_names: list[str] = total_row_df.index.names
+        total_row_index_values: tuple[str, ...] = total_row_df.index[0]
 
         detail_df: DataFrame = view_df.loc[self._DETAIL_ROW_TYPE]
 
@@ -482,7 +486,7 @@ class SalesVolCostPriceDF:
                                    if total_row_index_name == grouped_df_index_name
                                    else total_row_index_value)
                                   for total_row_index_name, total_row_index_value
-                                  in zip(total_row_indexes, total_row_index_values, strict=True))
+                                  in zip(total_row_index_names, total_row_index_values, strict=True))
                             for grouped_df_index_value in grouped_df.index],
                     sortorder=None,
                     names=total_row_df.index.names)
@@ -557,7 +561,7 @@ class SalesVolCostPriceDF:
                                                 dtype=None, copy=None)
 
             # set the index names properly
-            highlight_df.index.names = [self._ROW_TYPE_INDEX_NAME] + total_row_indexes
+            highlight_df.index.names = [self._ROW_TYPE_INDEX_NAME] + total_row_index_names
 
             # combine total row with highlight rows (both now have same structure)
             result_df: DataFrame = concat(objs=[view_df.iloc[[0]],  # preserve RowType index
