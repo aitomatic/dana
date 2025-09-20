@@ -16,7 +16,7 @@ __all__: tuple[str] = ('QueryableData', 'DF_VIEWS_CACHE', 'SalesVolCostPriceDF')
 class QueryableData(StrEnum):
     """Queryable Data Content about Sales Volumes, Costs, Prices & metrics derivable from them."""
 
-    UNIT_VOL: str = 'unit-vol'
+    SALES_VOL: str = 'sales-vol'
 
     AVG_UNIT_COST: str = 'avg-unit-cost'
     COGS: str = 'cogs'
@@ -27,7 +27,7 @@ class QueryableData(StrEnum):
     GROSS_PROFIT: str = 'gross-profit'
     GROSS_MARGIN: str = 'gross-margin'
 
-    YOY_PCT_CHG_UNIT_VOL: str = 'yoy-pct-chg-unit-vol'
+    YOY_PCT_CHG_SALES_VOL: str = 'yoy-pct-chg-sales-vol'
     YOY_PCT_CHG_AVG_UNIT_COST: str = 'yoy-pct-chg-avg-unit-cost'
     YOY_PCT_CHG_AVG_UNIT_PRICE: str = 'yoy-pct-chg-avg-unit-price'
     YOY_ABS_CHG_REV: str = 'yoy-abs-chg-rev'
@@ -57,11 +57,11 @@ class SalesVolCostPriceDF:
     biz_hierarchy_indexes: tuple[str]
     geo_hierarchy_indexes: tuple[str]
 
-    prev_yr_unit_vol_col: str
+    prev_yr_sales_vol_col: str
     prev_yr_avg_unit_cost_col: str
     prev_yr_avg_unit_price_col: str
 
-    curr_yr_unit_vol_col: str
+    curr_yr_sales_vol_col: str
     curr_yr_avg_unit_cost_col: str
     curr_yr_avg_unit_price_col: str
 
@@ -81,7 +81,7 @@ class SalesVolCostPriceDF:
     CURR_YR_REV_PCT_COL: ClassVar[str] = 'CurrYr_RevPct'
     CURR_YR_GROSS_PROFIT_PCT_COL: ClassVar[str] = 'CurrYr_GrossProfitPct'
 
-    YOY_PCT_CHG_UNIT_VOL_COL: ClassVar[str] = 'YoY_PctChg_UnitVol'
+    YOY_PCT_CHG_SALES_VOL_COL: ClassVar[str] = 'YoY_PctChg_SalesVol'
     YOY_PCT_CHG_AVG_UNIT_COST_COL: ClassVar[str] = 'YoY_PctChg_AvgUnitCost'
     YOY_PCT_CHG_AVG_UNIT_PRICE_COL: ClassVar[str] = 'YoY_PctChg_AvgUnitPrice'
     YOY_ABS_CHG_REV_COL: ClassVar[str] = 'YoY_AbsChg_Rev'
@@ -106,10 +106,10 @@ class SalesVolCostPriceDF:
             na_position='last',
             sort_remaining=True,
             ignore_index=False,
-            key=None)[[self.prev_yr_unit_vol_col,
+            key=None)[[self.prev_yr_sales_vol_col,
                        self.prev_yr_avg_unit_cost_col,
                        self.prev_yr_avg_unit_price_col,
-                       self.curr_yr_unit_vol_col,
+                       self.curr_yr_sales_vol_col,
                        self.curr_yr_avg_unit_cost_col,
                        self.curr_yr_avg_unit_price_col]]
 
@@ -124,11 +124,11 @@ class SalesVolCostPriceDF:
         return hash((self.biz_hierarchy_indexes,
                      self.geo_hierarchy_indexes,
 
-                     self.prev_yr_unit_vol_col,
+                     self.prev_yr_sales_vol_col,
                      self.prev_yr_avg_unit_cost_col,
                      self.prev_yr_avg_unit_price_col,
 
-                     self.curr_yr_unit_vol_col,
+                     self.curr_yr_sales_vol_col,
                      self.curr_yr_avg_unit_cost_col,
                      self.curr_yr_avg_unit_price_col))
 
@@ -241,16 +241,22 @@ class SalesVolCostPriceDF:
         raise ValueError(f"Level name '{level_name}' not found in hierarchy levels: {all_level_names}")
 
     @cache
-    def view(self, **biz_or_geo_filters: str) -> DataFrame:
+    def view(self, biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None, **other_biz_and_geo_filters: str) -> DataFrame:
         """View data with optional business & geographical filters."""
         # filter data
         indexes: list[str] = list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)
 
+        # Merge filters from both sources
+        all_biz_and_geo_filters = {}
+        if biz_and_geo_filters:
+            all_biz_and_geo_filters.update(dict(biz_and_geo_filters))
+        all_biz_and_geo_filters.update(other_biz_and_geo_filters)
+
         filters: dict[str, str | None] = {}
         for name in self.biz_hierarchy_indexes:
-            filters[name] = biz_or_geo_filters.get(name)
+            filters[name] = all_biz_and_geo_filters.get(name)
         for name in self.geo_hierarchy_indexes:
-            filters[name] = biz_or_geo_filters.get(name)
+            filters[name] = all_biz_and_geo_filters.get(name)
 
         indexer = self.df.index
         mask = None
@@ -265,22 +271,22 @@ class SalesVolCostPriceDF:
             view_df: DataFrame = self.df[mask]
 
         # calculate COGS & Revenue columns
-        view_df.loc[:, self.PREV_YR_COGS_COL] = (view_df[self.prev_yr_unit_vol_col] *
-                                                      view_df[self.prev_yr_avg_unit_cost_col])
-        view_df.loc[:, self.PREV_YR_REV_COL] = (view_df[self.prev_yr_unit_vol_col] *
-                                                     view_df[self.prev_yr_avg_unit_price_col])
+        view_df.loc[:, self.PREV_YR_COGS_COL] = (view_df[self.prev_yr_sales_vol_col] *
+                                                 view_df[self.prev_yr_avg_unit_cost_col])
+        view_df.loc[:, self.PREV_YR_REV_COL] = (view_df[self.prev_yr_sales_vol_col] *
+                                                view_df[self.prev_yr_avg_unit_price_col])
 
-        view_df.loc[:, self.CURR_YR_COGS_COL] = (view_df[self.curr_yr_unit_vol_col] *
-                                                      view_df[self.curr_yr_avg_unit_cost_col])
-        view_df.loc[:, self.CURR_YR_REV_COL] = (view_df[self.curr_yr_unit_vol_col] *
-                                                     view_df[self.curr_yr_avg_unit_price_col])
+        view_df.loc[:, self.CURR_YR_COGS_COL] = (view_df[self.curr_yr_sales_vol_col] *
+                                                 view_df[self.curr_yr_avg_unit_cost_col])
+        view_df.loc[:, self.CURR_YR_REV_COL] = (view_df[self.curr_yr_sales_vol_col] *
+                                                view_df[self.curr_yr_avg_unit_price_col])
 
         # Create total row data frame with summary values
         total_row_df: DataFrame = DataFrame(
-            data=[self._calc_unit_vol_cogs_cost_rev_price_cols(view_df)],
+            data=[self._calc_sales_vol_cogs_cost_rev_price_cols(view_df)],
             index=MultiIndex.from_tuples(
-                tuples=[self.business_hierarchy_tuple(**{name: biz_or_geo_filters.get(name) for name in self.biz_hierarchy_indexes}) +
-                        self.geographical_hierarchy_tuple(**{name: biz_or_geo_filters.get(name) for name in self.geo_hierarchy_indexes})],
+                tuples=[self.business_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name) for name in self.biz_hierarchy_indexes}) +
+                        self.geographical_hierarchy_tuple(**{name: all_biz_and_geo_filters.get(name) for name in self.geo_hierarchy_indexes})],
                 sortorder=None, names=view_df.index.names),
             columns=view_df.columns,
             dtype=None, copy=None)
@@ -301,27 +307,27 @@ class SalesVolCostPriceDF:
 
         return view_df
 
-    def _calc_unit_vol_cogs_cost_rev_price_cols(self, df: DataFrame, /) -> Series:
+    def _calc_sales_vol_cogs_cost_rev_price_cols(self, df: DataFrame, /) -> Series:
         """Calculate COGS, Average Cost per Unit, Revenue, and Average Price per Unit columns."""
-        prev_yr_unit_vol: int = df[self.prev_yr_unit_vol_col].sum()
+        prev_yr_sales_vol: int = df[self.prev_yr_sales_vol_col].sum()
         prev_yr_cogs: float = df[self.PREV_YR_COGS_COL].sum()
-        prev_yr_avg_unit_cost: float = prev_yr_cogs / prev_yr_unit_vol
+        prev_yr_avg_unit_cost: float = prev_yr_cogs / prev_yr_sales_vol
         prev_yr_rev: float = df[self.PREV_YR_REV_COL].sum()
-        prev_yr_avg_unit_price: float = prev_yr_rev / prev_yr_unit_vol
+        prev_yr_avg_unit_price: float = prev_yr_rev / prev_yr_sales_vol
 
-        curr_yr_unit_vol: int = df[self.curr_yr_unit_vol_col].sum()
+        curr_yr_sales_vol: int = df[self.curr_yr_sales_vol_col].sum()
         curr_yr_cogs: float = df[self.CURR_YR_COGS_COL].sum()
-        curr_yr_avg_unit_cost: float = curr_yr_cogs / curr_yr_unit_vol
+        curr_yr_avg_unit_cost: float = curr_yr_cogs / curr_yr_sales_vol
         curr_yr_rev: float = df[self.CURR_YR_REV_COL].sum()
-        curr_yr_avg_unit_price: float = curr_yr_rev / curr_yr_unit_vol
+        curr_yr_avg_unit_price: float = curr_yr_rev / curr_yr_sales_vol
 
-        return Series(data={self.prev_yr_unit_vol_col: prev_yr_unit_vol,
+        return Series(data={self.prev_yr_sales_vol_col: prev_yr_sales_vol,
                             self.prev_yr_avg_unit_cost_col: prev_yr_avg_unit_cost,
                             self.PREV_YR_COGS_COL: prev_yr_cogs,
                             self.prev_yr_avg_unit_price_col: prev_yr_avg_unit_price,
                             self.PREV_YR_REV_COL: prev_yr_rev,
 
-                            self.curr_yr_unit_vol_col: curr_yr_unit_vol,
+                            self.curr_yr_sales_vol_col: curr_yr_sales_vol,
                             self.curr_yr_avg_unit_cost_col: curr_yr_avg_unit_cost,
                             self.CURR_YR_COGS_COL: curr_yr_cogs,
                             self.curr_yr_avg_unit_price_col: curr_yr_avg_unit_price,
@@ -332,54 +338,57 @@ class SalesVolCostPriceDF:
     def _complete_df(self, df: DataFrame, /):
         """Complete data frame with additional columns."""
         df.loc[:, self.PREV_YR_REV_PCT_COL] = (df[self.PREV_YR_REV_COL] /
-                                                    df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_REV_COL].iloc[0])
+                                               df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_REV_COL].iloc[0])
 
         df.loc[:, self.PREV_YR_GROSS_PROFIT_COL] = (df[self.PREV_YR_REV_COL] -
-                                                         df[self.PREV_YR_COGS_COL])
+                                                    df[self.PREV_YR_COGS_COL])
         df.loc[:, self.PREV_YR_GROSS_PROFIT_PCT_COL] = (df[self.PREV_YR_GROSS_PROFIT_COL] /
-                                                             df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_GROSS_PROFIT_COL].iloc[0])
+                                                        df.loc[self._TOTAL_ROW_TYPE][self.PREV_YR_GROSS_PROFIT_COL].iloc[0])
 
         df.loc[:, self.PREV_YR_GROSS_MARGIN_COL] = (df[self.PREV_YR_GROSS_PROFIT_COL] /
-                                                         df[self.PREV_YR_REV_COL])
+                                                    df[self.PREV_YR_REV_COL])
 
         df.loc[:, self.CURR_YR_REV_PCT_COL] = (df[self.CURR_YR_REV_COL] /
-                                                    df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_REV_COL].iloc[0])
+                                               df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_REV_COL].iloc[0])
 
         df.loc[:, self.CURR_YR_GROSS_PROFIT_COL] = (df[self.CURR_YR_REV_COL] -
-                                                         df[self.CURR_YR_COGS_COL])
+                                                    df[self.CURR_YR_COGS_COL])
         df.loc[:, self.CURR_YR_GROSS_PROFIT_PCT_COL] = (df[self.CURR_YR_GROSS_PROFIT_COL] /
-                                                             df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_GROSS_PROFIT_COL].iloc[0])
+                                                        df.loc[self._TOTAL_ROW_TYPE][self.CURR_YR_GROSS_PROFIT_COL].iloc[0])
 
         df.loc[:, self.CURR_YR_GROSS_MARGIN_COL] = (df[self.CURR_YR_GROSS_PROFIT_COL] /
-                                                         df[self.CURR_YR_REV_COL])
+                                                    df[self.CURR_YR_REV_COL])
 
-        df.loc[:, self.YOY_PCT_CHG_UNIT_VOL_COL] = (df[self.curr_yr_unit_vol_col] /
-                                                          df[self.prev_yr_unit_vol_col]) - 1
+        df.loc[:, self.YOY_PCT_CHG_SALES_VOL_COL] = (df[self.curr_yr_sales_vol_col] /
+                                                     df[self.prev_yr_sales_vol_col]) - 1
         df.loc[:, self.YOY_PCT_CHG_AVG_UNIT_COST_COL] = (df[self.curr_yr_avg_unit_cost_col] /
-                                                               df[self.prev_yr_avg_unit_cost_col]) - 1
+                                                         df[self.prev_yr_avg_unit_cost_col]) - 1
         df.loc[:, self.YOY_PCT_CHG_AVG_UNIT_PRICE_COL] = (df[self.curr_yr_avg_unit_price_col] /
-                                                                df[self.prev_yr_avg_unit_price_col]) - 1
+                                                          df[self.prev_yr_avg_unit_price_col]) - 1
         df.loc[:, self.YOY_ABS_CHG_REV_COL] = (df[self.CURR_YR_REV_COL] -
-                                                    df[self.PREV_YR_REV_COL])
+                                               df[self.PREV_YR_REV_COL])
         df.loc[:, self.YOY_PCT_CHG_REV_COL] = (df[self.CURR_YR_REV_COL] /
-                                                    df[self.PREV_YR_REV_COL]) - 1
+                                               df[self.PREV_YR_REV_COL]) - 1
         df.loc[:, self.YOY_PCTPT_CHG_GROSS_MARGIN_COL] = (df[self.CURR_YR_GROSS_MARGIN_COL] -
-                                                               df[self.PREV_YR_GROSS_MARGIN_COL])
+                                                          df[self.PREV_YR_GROSS_MARGIN_COL])
 
     @cache
     def query_single_data_point(self, what_data: QueryableData, /, *,
-                                prev_yr: bool = False, **kwargs) -> int | float:
+                                prev_yr: bool = False,
+                                biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
+                                **other_biz_and_geo_filters: str) -> int | float:
         """Query a single financial data point."""
-        total_row_df: Series = self.view(**kwargs).loc[self._TOTAL_ROW_TYPE]
+        total_row_df: Series = self.view(biz_and_geo_filters=biz_and_geo_filters,
+                                         **other_biz_and_geo_filters).loc[self._TOTAL_ROW_TYPE]
         DF_VIEWS_CACHE.record(total_row_df)
 
         total_row: Series = total_row_df.iloc[0]
 
         match what_data:
-            case QueryableData.UNIT_VOL:
-                return total_row[self.prev_yr_unit_vol_col
+            case QueryableData.SALES_VOL:
+                return total_row[self.prev_yr_sales_vol_col
                                  if prev_yr
-                                 else self.curr_yr_unit_vol_col]
+                                 else self.curr_yr_sales_vol_col]
 
             case QueryableData.AVG_UNIT_COST:
                 return total_row[self.prev_yr_avg_unit_cost_col
@@ -411,8 +420,8 @@ class SalesVolCostPriceDF:
                                  if prev_yr
                                  else self.CURR_YR_GROSS_MARGIN_COL]
 
-            case QueryableData.YOY_PCT_CHG_UNIT_VOL:
-                return total_row[self.YOY_PCT_CHG_UNIT_VOL_COL]
+            case QueryableData.YOY_PCT_CHG_SALES_VOL:
+                return total_row[self.YOY_PCT_CHG_SALES_VOL_COL]
 
             case QueryableData.YOY_PCT_CHG_AVG_UNIT_COST:
                 return total_row[self.YOY_PCT_CHG_AVG_UNIT_COST_COL]
@@ -433,10 +442,12 @@ class SalesVolCostPriceDF:
                 raise ValueError(f'Invalid QueryableData: {what_data}')
 
     @cache
-    def highlight_good_and_bad_performers(self, n: int = 3, **kwargs) -> DataFrame:
+    def highlight_good_and_bad_performers(self, n: int = 3,
+                                          biz_and_geo_filters: tuple[tuple[str, str], ...] | None = None,
+                                          **other_biz_and_geo_filters: str) -> DataFrame:
         """Highlight `n` best and `n` worst financial performers per dimension applicable for drill-down analyses."""
         # get filtered view and its total row and detail rows
-        view_df: DataFrame = self.view(**kwargs)
+        view_df: DataFrame = self.view(biz_and_geo_filters=biz_and_geo_filters, **other_biz_and_geo_filters)
 
         total_row_df: DataFrame = view_df.loc[self._TOTAL_ROW_TYPE]
         total_row_indexes: list[str] = total_row_df.index.names
@@ -450,7 +461,7 @@ class SalesVolCostPriceDF:
         # identify dimensions for drill-down analyses
         dimensions_for_drilldown: Iterable[str] = (index_name
                                                    for index_name, index_filter_value
-                                                   in zip(total_row_df.index.names, total_row_df.index[0])
+                                                   in zip(total_row_df.index.names, total_row_df.index[0], strict=True)
                                                    if index_filter_value == self._ALL_FILTER_VALUE)
 
         for dimension in dimensions_for_drilldown:
@@ -460,7 +471,7 @@ class SalesVolCostPriceDF:
                 as_index=True,
                 sort=False,
                 group_keys=True,
-                dropna=True).apply(func=self._calc_unit_vol_cogs_cost_rev_price_columns,
+                dropna=True).apply(func=self._calc_sales_vol_cogs_cost_rev_price_cols,
                                    include_groups=True)
 
             if (n_for_dimension := min(n, len(grouped_df) // 2)):  # if worth drilling down
@@ -472,7 +483,7 @@ class SalesVolCostPriceDF:
                                    if total_row_index_name == grouped_df_index_name
                                    else total_row_index_value)
                                   for total_row_index_name, total_row_index_value
-                                  in zip(total_row_indexes, total_row_index_values))
+                                  in zip(total_row_indexes, total_row_index_values, strict=True))
                             for grouped_df_index_value in grouped_df.index],
                     sortorder=None,
                     names=total_row_df.index.names)

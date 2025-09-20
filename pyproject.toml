@@ -258,6 +258,7 @@ select = [
 ignore = [
     "B008",   # Function call in default argument
     "B010",   # setattr in class body
+    "B019",   # use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
     "B024",   # Abstract base class without abstract methods (design pattern choice)
     "B904",   # raise ... from ...
     "E203",   # Whitespace before ':' (conflicts with Black)
