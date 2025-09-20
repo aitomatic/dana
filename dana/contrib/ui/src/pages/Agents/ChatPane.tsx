@@ -69,6 +69,7 @@ interface ChatPaneProps {
   agentName?: string;
   onClose: () => void;
   isVisible: boolean;
+  selectedAgent?: any; // Agent object from the store
 }
 
 // Resize handle component for ChatPane
@@ -152,7 +153,7 @@ const ChatResizeHandle: React.FC<{
   );
 };
 
-export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose, isVisible }) => {
+export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose, isVisible, selectedAgent }) => {
   const { agent_id } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -672,7 +673,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
           <div className="flex gap-3 items-center">
             <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
               <img
-                src={getAgentAvatarSync(agent_id || '0')}
+                src={getAgentAvatarSync(selectedAgent?.id || 0)}
                 alt={`${agentName} avatar`}
                 className="object-cover w-full h-full"
                 onError={(e) => {

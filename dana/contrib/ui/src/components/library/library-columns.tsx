@@ -182,6 +182,10 @@ export const getLibraryColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
+    meta: {
+      style: { maxWidth: '100px', width: '100px' },
+      className: 'max-w-[100px] w-[100px]'
+    },
     cell: ({ row }) => {
       const item = row.original;
       return (

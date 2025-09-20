@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/aitomatic/dana/blob/release/docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
+  <img src="https://raw.githubusercontent.com/aitomatic/dana/release/docs/.archive/0804/images/dana-logo.jpg" alt="Dana Logo" width="80">
 </div>
 
 # Dana: The World’s First Agentic OS
