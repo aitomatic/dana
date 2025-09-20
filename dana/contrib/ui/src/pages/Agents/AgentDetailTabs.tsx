@@ -1090,6 +1090,7 @@ export const AgentDetailTabs: React.FC<{
           agentName={selectedAgent?.name || 'Agent'}
           isVisible={isChatSidebarOpen}
           onClose={() => closeChatSidebar()}
+          selectedAgent={selectedAgent}
         />
       )}
     </div>
