@@ -387,4 +387,3 @@ prepend_sys_path = [
 # type = "exec"
 # executable = "ruff"
 # options = "check --fix REVISION_SCRIPT_FILENAME"
-
