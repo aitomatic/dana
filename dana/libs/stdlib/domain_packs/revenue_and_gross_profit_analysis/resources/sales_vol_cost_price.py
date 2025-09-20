@@ -35,14 +35,14 @@ class QueryableData(StrEnum):
     YOY_PCTPT_CHG_GROSS_MARGIN: str = 'yoy-pctpt-chg-gross-margin'
 
 
-class DFViewsCache(dict):
+class _DFViewsCache(dict):
     """Data frame views cache."""
 
     def record(self, view_df: DataFrame):
         """Record the view data frame in the cache."""
         self[id(view_df)] = view_df
 
-DF_VIEWS_CACHE = DFViewsCache()
+DF_VIEWS_CACHE = _DFViewsCache()
 
 
 @dataclass(init=True, repr=True, eq=True, order=False,
