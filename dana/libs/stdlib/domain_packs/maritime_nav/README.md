@@ -1,5 +1,9 @@
 # Maritime Navigation Domain Pack
 
+> __AUTHORS__
+> William Nguyen (william@aitomatic.com)
+> Vinh Luong (vinh@aitomatic.com)
+
 A comprehensive Dana domain pack for maritime navigation, collision avoidance, and vessel management using expert agent systems and COLREGS compliance.
 
 ## Overview
