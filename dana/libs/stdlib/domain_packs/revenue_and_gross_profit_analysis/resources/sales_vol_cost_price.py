@@ -122,13 +122,13 @@ class SalesVolCostPriceDF:
         self._n_biz_hierarchical_indexes: int = len(self.biz_hierarchical_indexes)
         self._biz_hierarchical_index_start: int = 0
         self._biz_hierarchical_index_end: int = self._n_biz_hierarchical_indexes
-        self._biz_hierarchical_parent_dicts: list[dict[str, str | None]] = self._n_biz_hierarchical_indexes * [{}]
+        self._biz_hierarchical_parent_dicts: list[dict[str, str | None]] = [{} for _ in range(self._n_biz_hierarchical_indexes)]
         self.biz_hierarchy  # noqa: B018
 
         self._n_geo_hierarchical_indexes: int = len(self.geo_hierarchical_indexes)
         self._geo_hierarchical_index_start: int = self._biz_hierarchical_index_end
         self._geo_hierarchical_index_end: int = self._geo_hierarchical_index_start + self._n_geo_hierarchical_indexes
-        self._geo_hierarchical_parent_dicts: list[dict[str, str | None]] = self._n_geo_hierarchical_indexes * [{}]
+        self._geo_hierarchical_parent_dicts: list[dict[str, str | None]] = [{} for _ in range(self._n_geo_hierarchical_indexes)]
         self.geo_hierarchy  # noqa: B018
 
     def __hash__(self) -> int:
@@ -215,11 +215,11 @@ class SalesVolCostPriceDF:
         result: list[str] = []
 
         # process from most specific to least specific level
-        for i, index_level_name, hierarchical_parent_dict in zip(
+        for i, hierarchical_index_level_name, hierarchical_parent_dict in zip(
                 reversed(range(len(hierarchical_index_level_names))),
                 reversed(hierarchical_index_level_names),
                 reversed(hierarchical_parent_dicts), strict=True):
-            if (index_filter_value := filters.get(index_level_name)) and (index_filter_value != self._ALL_FILTER_VALUE):
+            if (index_filter_value := filters.get(hierarchical_index_level_name)) and (index_filter_value != self._ALL_FILTER_VALUE):
                 result.insert(0, index_filter_value)
 
                 if i:
