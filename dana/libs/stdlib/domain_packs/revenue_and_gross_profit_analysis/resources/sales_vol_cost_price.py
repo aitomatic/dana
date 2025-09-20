@@ -18,18 +18,18 @@ class QueryableData(StrEnum):
 
     SALES_VOL: str = 'sales-vol'
 
-    AVG_UNIT_COST: str = 'avg-unit-cost'
+    AVG_COST: str = 'avg-cost'
     COGS: str = 'cogs'
 
-    AVG_UNIT_PRICE: str = 'avg-unit-price'
+    AVG_PRICE: str = 'avg-price'
     REV: str = 'rev'
 
     GROSS_PROFIT: str = 'gross-profit'
     GROSS_MARGIN: str = 'gross-margin'
 
     YOY_PCT_CHG_SALES_VOL: str = 'yoy-pct-chg-sales-vol'
-    YOY_PCT_CHG_AVG_UNIT_COST: str = 'yoy-pct-chg-avg-unit-cost'
-    YOY_PCT_CHG_AVG_UNIT_PRICE: str = 'yoy-pct-chg-avg-unit-price'
+    YOY_PCT_CHG_AVG_COST: str = 'yoy-pct-chg-avg-cost'
+    YOY_PCT_CHG_AVG_PRICE: str = 'yoy-pct-chg-avg-price'
     YOY_ABS_CHG_REV: str = 'yoy-abs-chg-rev'
     YOY_PCT_CHG_REV: str = 'yoy-pct-chg-rev'
     YOY_PCTPT_CHG_GROSS_MARGIN: str = 'yoy-pctpt-chg-gross-margin'
@@ -58,12 +58,12 @@ class SalesVolCostPriceDF:
     geo_hierarchy_indexes: tuple[str]
 
     prev_yr_sales_vol_col: str
-    prev_yr_avg_unit_cost_col: str
-    prev_yr_avg_unit_price_col: str
+    prev_yr_avg_cost_col: str
+    prev_yr_avg_price_col: str
 
     curr_yr_sales_vol_col: str
-    curr_yr_avg_unit_cost_col: str
-    curr_yr_avg_unit_price_col: str
+    curr_yr_avg_cost_col: str
+    curr_yr_avg_price_col: str
 
     PREV_YR_COGS_COL: ClassVar[str] = 'PrevYr_COGS'
     PREV_YR_REV_COL: ClassVar[str] = 'PrevYr_Rev'
@@ -82,8 +82,8 @@ class SalesVolCostPriceDF:
     CURR_YR_GROSS_PROFIT_PCT_COL: ClassVar[str] = 'CurrYr_GrossProfitPct'
 
     YOY_PCT_CHG_SALES_VOL_COL: ClassVar[str] = 'YoY_PctChg_SalesVol'
-    YOY_PCT_CHG_AVG_UNIT_COST_COL: ClassVar[str] = 'YoY_PctChg_AvgUnitCost'
-    YOY_PCT_CHG_AVG_UNIT_PRICE_COL: ClassVar[str] = 'YoY_PctChg_AvgUnitPrice'
+    YOY_PCT_CHG_AVG_COST_COL: ClassVar[str] = 'YoY_PctChg_AvgCost'
+    YOY_PCT_CHG_AVG_PRICE_COL: ClassVar[str] = 'YoY_PctChg_AvgPrice'
     YOY_ABS_CHG_REV_COL: ClassVar[str] = 'YoY_AbsChg_Rev'
     YOY_PCT_CHG_REV_COL: ClassVar[str] = 'YoY_PctChg_Rev'
     YOY_PCTPT_CHG_GROSS_MARGIN_COL: ClassVar[str] = 'YoY_PctPtChg_GrossMargin'
@@ -107,11 +107,11 @@ class SalesVolCostPriceDF:
             sort_remaining=True,
             ignore_index=False,
             key=None)[[self.prev_yr_sales_vol_col,
-                       self.prev_yr_avg_unit_cost_col,
-                       self.prev_yr_avg_unit_price_col,
+                       self.prev_yr_avg_cost_col,
+                       self.prev_yr_avg_price_col,
                        self.curr_yr_sales_vol_col,
-                       self.curr_yr_avg_unit_cost_col,
-                       self.curr_yr_avg_unit_price_col]]
+                       self.curr_yr_avg_cost_col,
+                       self.curr_yr_avg_price_col]]
 
         # Initialize relationship dictionaries dynamically
         self._biz_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.biz_hierarchy_indexes) - 1)]
@@ -125,12 +125,12 @@ class SalesVolCostPriceDF:
                      self.geo_hierarchy_indexes,
 
                      self.prev_yr_sales_vol_col,
-                     self.prev_yr_avg_unit_cost_col,
-                     self.prev_yr_avg_unit_price_col,
+                     self.prev_yr_avg_cost_col,
+                     self.prev_yr_avg_price_col,
 
                      self.curr_yr_sales_vol_col,
-                     self.curr_yr_avg_unit_cost_col,
-                     self.curr_yr_avg_unit_price_col))
+                     self.curr_yr_avg_cost_col,
+                     self.curr_yr_avg_price_col))
 
     def _build_hierarchy(self, hierarchy_indexes: tuple[str, ...], relationship_dicts: list[dict[str, str]]) -> dict:
         """Build nested dictionary for any hierarchy dynamically."""
@@ -272,14 +272,14 @@ class SalesVolCostPriceDF:
 
         # calculate COGS & Revenue columns
         view_df.loc[:, self.PREV_YR_COGS_COL] = (view_df[self.prev_yr_sales_vol_col] *
-                                                 view_df[self.prev_yr_avg_unit_cost_col])
+                                                 view_df[self.prev_yr_avg_cost_col])
         view_df.loc[:, self.PREV_YR_REV_COL] = (view_df[self.prev_yr_sales_vol_col] *
-                                                view_df[self.prev_yr_avg_unit_price_col])
+                                                view_df[self.prev_yr_avg_price_col])
 
         view_df.loc[:, self.CURR_YR_COGS_COL] = (view_df[self.curr_yr_sales_vol_col] *
-                                                 view_df[self.curr_yr_avg_unit_cost_col])
+                                                 view_df[self.curr_yr_avg_cost_col])
         view_df.loc[:, self.CURR_YR_REV_COL] = (view_df[self.curr_yr_sales_vol_col] *
-                                                view_df[self.curr_yr_avg_unit_price_col])
+                                                view_df[self.curr_yr_avg_price_col])
 
         # Create total row data frame with summary values
         total_row_df: DataFrame = DataFrame(
@@ -311,26 +311,26 @@ class SalesVolCostPriceDF:
         """Calculate COGS, Average Cost per Unit, Revenue, and Average Price per Unit columns."""
         prev_yr_sales_vol: int = df[self.prev_yr_sales_vol_col].sum()
         prev_yr_cogs: float = df[self.PREV_YR_COGS_COL].sum()
-        prev_yr_avg_unit_cost: float = prev_yr_cogs / prev_yr_sales_vol
+        prev_yr_avg_cost: float = prev_yr_cogs / prev_yr_sales_vol
         prev_yr_rev: float = df[self.PREV_YR_REV_COL].sum()
-        prev_yr_avg_unit_price: float = prev_yr_rev / prev_yr_sales_vol
+        prev_yr_avg_price: float = prev_yr_rev / prev_yr_sales_vol
 
         curr_yr_sales_vol: int = df[self.curr_yr_sales_vol_col].sum()
         curr_yr_cogs: float = df[self.CURR_YR_COGS_COL].sum()
-        curr_yr_avg_unit_cost: float = curr_yr_cogs / curr_yr_sales_vol
+        curr_yr_avg_cost: float = curr_yr_cogs / curr_yr_sales_vol
         curr_yr_rev: float = df[self.CURR_YR_REV_COL].sum()
-        curr_yr_avg_unit_price: float = curr_yr_rev / curr_yr_sales_vol
+        curr_yr_avg_price: float = curr_yr_rev / curr_yr_sales_vol
 
         return Series(data={self.prev_yr_sales_vol_col: prev_yr_sales_vol,
-                            self.prev_yr_avg_unit_cost_col: prev_yr_avg_unit_cost,
+                            self.prev_yr_avg_cost_col: prev_yr_avg_cost,
                             self.PREV_YR_COGS_COL: prev_yr_cogs,
-                            self.prev_yr_avg_unit_price_col: prev_yr_avg_unit_price,
+                            self.prev_yr_avg_price_col: prev_yr_avg_price,
                             self.PREV_YR_REV_COL: prev_yr_rev,
 
                             self.curr_yr_sales_vol_col: curr_yr_sales_vol,
-                            self.curr_yr_avg_unit_cost_col: curr_yr_avg_unit_cost,
+                            self.curr_yr_avg_cost_col: curr_yr_avg_cost,
                             self.CURR_YR_COGS_COL: curr_yr_cogs,
-                            self.curr_yr_avg_unit_price_col: curr_yr_avg_unit_price,
+                            self.curr_yr_avg_price_col: curr_yr_avg_price,
                             self.CURR_YR_REV_COL: curr_yr_rev},
 
                       index=None, dtype=None, name=None, copy=None)
@@ -359,16 +359,16 @@ class SalesVolCostPriceDF:
         df.loc[:, self.CURR_YR_GROSS_MARGIN_COL] = (df[self.CURR_YR_GROSS_PROFIT_COL] /
                                                     df[self.CURR_YR_REV_COL])
 
-        df.loc[:, self.YOY_PCT_CHG_SALES_VOL_COL] = (df[self.curr_yr_sales_vol_col] /
-                                                     df[self.prev_yr_sales_vol_col]) - 1
-        df.loc[:, self.YOY_PCT_CHG_AVG_UNIT_COST_COL] = (df[self.curr_yr_avg_unit_cost_col] /
-                                                         df[self.prev_yr_avg_unit_cost_col]) - 1
-        df.loc[:, self.YOY_PCT_CHG_AVG_UNIT_PRICE_COL] = (df[self.curr_yr_avg_unit_price_col] /
-                                                          df[self.prev_yr_avg_unit_price_col]) - 1
+        df.loc[:, self.YOY_PCT_CHG_SALES_VOL_COL] = 100 * ((df[self.curr_yr_sales_vol_col] /
+                                                            df[self.prev_yr_sales_vol_col]) - 1)
+        df.loc[:, self.YOY_PCT_CHG_AVG_COST_COL] = 100 * ((df[self.curr_yr_avg_cost_col] /
+                                                           df[self.prev_yr_avg_cost_col]) - 1)
+        df.loc[:, self.YOY_PCT_CHG_AVG_PRICE_COL] = 100 * ((df[self.curr_yr_avg_price_col] /
+                                                            df[self.prev_yr_avg_price_col]) - 1)
         df.loc[:, self.YOY_ABS_CHG_REV_COL] = (df[self.CURR_YR_REV_COL] -
                                                df[self.PREV_YR_REV_COL])
-        df.loc[:, self.YOY_PCT_CHG_REV_COL] = (df[self.CURR_YR_REV_COL] /
-                                               df[self.PREV_YR_REV_COL]) - 1
+        df.loc[:, self.YOY_PCT_CHG_REV_COL] = 100 * ((df[self.CURR_YR_REV_COL] /
+                                                      df[self.PREV_YR_REV_COL]) - 1)
         df.loc[:, self.YOY_PCTPT_CHG_GROSS_MARGIN_COL] = (df[self.CURR_YR_GROSS_MARGIN_COL] -
                                                           df[self.PREV_YR_GROSS_MARGIN_COL])
 
@@ -390,20 +390,20 @@ class SalesVolCostPriceDF:
                                  if prev_yr
                                  else self.curr_yr_sales_vol_col]
 
-            case QueryableData.AVG_UNIT_COST:
-                return total_row[self.prev_yr_avg_unit_cost_col
+            case QueryableData.AVG_COST:
+                return total_row[self.prev_yr_avg_cost_col
                                  if prev_yr
-                                 else self.curr_yr_avg_unit_cost_col]
+                                 else self.curr_yr_avg_cost_col]
 
             case QueryableData.COGS:
                 return total_row[self.PREV_YR_COGS_COL
                                  if prev_yr
                                  else self.CURR_YR_COGS_COL]
 
-            case QueryableData.AVG_UNIT_PRICE:
-                return total_row[self.prev_yr_avg_unit_price_col
+            case QueryableData.AVG_PRICE:
+                return total_row[self.prev_yr_avg_price_col
                                  if prev_yr
-                                 else self.curr_yr_avg_unit_price_col]
+                                 else self.curr_yr_avg_price_col]
 
             case QueryableData.REV:
                 return total_row[self.PREV_YR_REV_COL
@@ -423,11 +423,11 @@ class SalesVolCostPriceDF:
             case QueryableData.YOY_PCT_CHG_SALES_VOL:
                 return total_row[self.YOY_PCT_CHG_SALES_VOL_COL]
 
-            case QueryableData.YOY_PCT_CHG_AVG_UNIT_COST:
-                return total_row[self.YOY_PCT_CHG_AVG_UNIT_COST_COL]
+            case QueryableData.YOY_PCT_CHG_AVG_COST:
+                return total_row[self.YOY_PCT_CHG_AVG_COST_COL]
 
-            case QueryableData.YOY_PCT_CHG_AVG_UNIT_PRICE:
-                return total_row[self.YOY_PCT_CHG_AVG_UNIT_PRICE_COL]
+            case QueryableData.YOY_PCT_CHG_AVG_PRICE:
+                return total_row[self.YOY_PCT_CHG_AVG_PRICE_COL]
 
             case QueryableData.YOY_ABS_CHG_REV:
                 return total_row[self.YOY_ABS_CHG_REV_COL]
