@@ -54,8 +54,8 @@ class SalesVolCostPriceDF:
 
     df: DataFrame
 
-    biz_hierarchy_indexes: tuple[str]
-    geo_hierarchy_indexes: tuple[str]
+    biz_hierarchical_indexes: tuple[str]
+    geo_hierarchical_indexes: tuple[str]
 
     prev_yr_sales_vol_col: str
     prev_yr_avg_cost_col: str
@@ -98,8 +98,8 @@ class SalesVolCostPriceDF:
         """Post-initialization: sort index & rearrange columns in logical order.
         And also build the business & geographical hierarchies."""
         # verify index names in precise order
-        assert self.df.index.names == list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes), \
-            ValueError(f"Index names mismatch: {self.df.index.names} != {list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)}")
+        assert self.df.index.names == (index_level_names := list(self.biz_hierarchical_indexes) + list(self.geo_hierarchical_indexes)), \
+            ValueError(f"Index names mismatch: {self.df.index.names} != {index_level_names}")
 
         # sort index & rearrange columns in logical order
         self.df: DataFrame = self.df.sort_index(axis='index',
@@ -117,48 +117,81 @@ class SalesVolCostPriceDF:
                                                            self.curr_yr_avg_cost_col,
                                                            self.curr_yr_avg_price_col]]
 
-        # populate hierarchies' relationship dictionaries
+        # populate hierarchical parent dictionaries
         # by calling `biz_hierarchy` and `geo_hierarchy` once to cache
-        self._biz_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.biz_hierarchy_indexes) - 1)]
+        self._n_biz_hierarchical_indexes: int = len(self.biz_hierarchical_indexes)
+        self._biz_hierarchical_index_start: int = 0
+        self._biz_hierarchical_index_end: int = self._n_biz_hierarchical_indexes
+        self._biz_hierarchical_parent_dicts: list[dict[str, str | None]] = self._n_biz_hierarchical_indexes * [{}]
         self.biz_hierarchy  # noqa: B018
-        self._geo_relationship_dicts: list[dict[str, str]] = [{} for _ in range(len(self.geo_hierarchy_indexes) - 1)]
+
+        self._n_geo_hierarchical_indexes: int = len(self.geo_hierarchical_indexes)
+        self._geo_hierarchical_index_start: int = self._biz_hierarchical_index_end
+        self._geo_hierarchical_index_end: int = self._geo_hierarchical_index_start + self._n_geo_hierarchical_indexes
+        self._geo_hierarchical_parent_dicts: list[dict[str, str | None]] = self._n_geo_hierarchical_indexes * [{}]
         self.geo_hierarchy  # noqa: B018
 
     def __hash__(self) -> int:
         """Return hash from key attributes."""
-        return hash((self.biz_hierarchy_indexes, self.geo_hierarchy_indexes,
+        return hash((self.biz_hierarchical_indexes, self.geo_hierarchical_indexes,
                      self.prev_yr_sales_vol_col, self.prev_yr_avg_cost_col, self.prev_yr_avg_price_col,
                      self.curr_yr_sales_vol_col, self.curr_yr_avg_cost_col, self.curr_yr_avg_price_col))
 
-    def _build_hierarchy(self, hierarchy_indexes: tuple[str, ...], relationship_dicts: list[dict[str, str]]) -> dict:
+    def _build_hierarchy(self,
+                         hierarchical_index_level_names: tuple[str, ...],
+                         hierarchical_parent_dicts: list[dict[str, str]]) -> dict[str, dict | list[str]] | list[str] | None:
         """Build nested dictionary for any hierarchy dynamically."""
-        hierarchy: dict = {}
+        # get index start and end
+        if hierarchical_index_level_names == self.biz_hierarchical_indexes:
+            if not (n_indexes := self._n_biz_hierarchical_indexes):
+                return
 
+            index_start: int = self._biz_hierarchical_index_start
+            index_end: int = self._biz_hierarchical_index_end
+
+        else:
+            assert hierarchical_index_level_names == self.geo_hierarchical_indexes
+
+            if not (n_indexes := self._n_geo_hierarchical_indexes):
+                return
+
+            index_start: int = self._geo_hierarchical_index_start
+            index_end: int = self._geo_hierarchical_index_end
+
+        if n_indexes > 1:
+            hierarchy: dict[str, dict | list[str]] = {}
+        else:
+            hierarchy: list[str] = []
+
+        # build hierarchy
         for idx in self.df.index:
-            # Get the relevant levels for this hierarchy
-            if hierarchy_indexes == self.biz_hierarchy_indexes:
-                levels = idx[:len(hierarchy_indexes)]
-            else:  # geo hierarchy
-                geo_start = len(self.biz_hierarchy_indexes)
-                geo_end = geo_start + len(hierarchy_indexes)
-                levels = idx[geo_start:geo_end]
+            # get the relevant levels for this hierarchy
+            index_levels: tuple[str, ...] = idx[index_start:index_end]
 
-            # Build nested structure dynamically
-            current_level = hierarchy
-            for i, level_value in enumerate(levels):
-                if level_value not in current_level:
-                    if i == len(levels) - 1:  # Last level - store as list
-                        current_level[level_value] = []
-                    else:  # Intermediate level - store as dict
-                        current_level[level_value] = {}
-                        # Store parent-child relationship
-                        if i < len(relationship_dicts):
-                            parent_value = levels[i - 1] if i > 0 else None
-                            relationship_dicts[i][level_value] = parent_value
+            # build nested structure dynamically
+            current_level: dict[str, dict | list[str]] | list[str] = hierarchy
 
-                current_level = current_level[level_value]
+            for i, index_level_value in enumerate(index_levels):
+                if index_level_value not in current_level:
+                    if i:
+                        hierarchical_parent_index_level_value: str = index_levels[i - 1]
+                    else:
+                        hierarchical_parent_index_level_value = None
+                    hierarchical_parent_dicts[i][index_level_value] = hierarchical_parent_index_level_value
 
-        # Sort the leaf lists
+                    if i < n_indexes - 2:
+                        current_level[index_level_value] = {}
+
+                    elif i == n_indexes - 2:
+                        current_level[index_level_value] = []
+
+                    else:
+                        current_level.append(index_level_value)
+
+                if i < n_indexes - 1:
+                    current_level: dict[str, dict | list[str]] | list[str] = current_level[index_level_value]
+
+        # sort the leaf lists
         self._sort_hierarchy_leaves(hierarchy)
 
         return hierarchy
@@ -174,17 +207,24 @@ class SalesVolCostPriceDF:
         elif isinstance(hierarchy, list):
             hierarchy.sort()
 
-    def _build_hierarchy_tuple(self, hierarchy_indexes: tuple[str, ...], relationship_dicts: list[dict[str, str]], filters: dict[str, str | None]) -> tuple[str, ...]:
+    def _build_hierarchy_tuple(self,
+                               hierarchical_index_level_names: tuple[str, ...],
+                               hierarchical_parent_dicts: list[dict[str, str | None]],
+                               filters: dict[str, str]) -> tuple[str, ...]:
         """Build tuple for any hierarchy dynamically."""
-        result = []
+        result: list[str] = []
 
-        # Process from most specific to least specific level
-        for i in range(len(hierarchy_indexes) - 1, -1, -1):
-            level_name = hierarchy_indexes[i]
-            value = filters.get(level_name)
+        # process from most specific to least specific level
+        for i, index_level_name, hierarchical_parent_dict in zip(
+                reversed(range(len(hierarchical_index_level_names))),
+                reversed(hierarchical_index_level_names),
+                reversed(hierarchical_parent_dicts), strict=True):
+            if (index_filter_value := filters.get(index_level_name)) and (index_filter_value != self._ALL_FILTER_VALUE):
+                result.insert(0, index_filter_value)
 
-            if value and value != self._ALL_FILTER_VALUE:
-                result.insert(0, value)
+                if i:
+                    filters[hierarchical_index_level_names[i - 1]] = hierarchical_parent_dict[index_filter_value]
+
             else:
                 result.insert(0, self._ALL_FILTER_VALUE)
 
@@ -193,53 +233,37 @@ class SalesVolCostPriceDF:
     @cached_property
     def biz_hierarchy(self) -> dict:
         """Build nested dictionary for business hierarchy dynamically."""
-        return self._build_hierarchy(self.biz_hierarchy_indexes, self._biz_relationship_dicts)
+        return self._build_hierarchy(hierarchical_index_level_names=self.biz_hierarchical_indexes,
+                                     hierarchical_parent_dicts=self._biz_hierarchical_parent_dicts)
 
-    @cache
-    def biz_hierarchy_tuple(self, filters: tuple[tuple[str, str], ...], **other_filters: str) -> tuple[str, ...]:
-        """Build tuple for business hierarchy dynamically based on biz_hierarchy_indexes."""
-        return self._build_hierarchy_tuple(self.biz_hierarchy_indexes, self._biz_relationship_dicts, filters)
-
-    def get_biz_level_names(self, level_index: int) -> set[str]:
-        """Get unique names for a specific business hierarchy level."""
-        if 0 <= level_index < len(self.biz_hierarchy_indexes):
-            return set(self.df.index.get_level_values(self.biz_hierarchy_indexes[level_index]))
-        raise IndexError(f"Business level index {level_index} out of range [0, {len(self.biz_hierarchy_indexes)})")
-
-    def get_biz_level_names_by_name(self, level_name: str) -> set[str]:
-        """Get unique names for a business hierarchy level by its name."""
-        if level_name in self.biz_hierarchy_indexes:
-            return set(self.df.index.get_level_values(level_name))
-        raise ValueError(f"Business level name '{level_name}' not found in {self.biz_hierarchy_indexes}")
+    def _biz_hierarchy_tuple(self, filters: dict[str, str]) -> tuple[str, ...]:
+        """Build tuple for business hierarchy dynamically based on biz_hierarchical_indexes."""
+        return self._build_hierarchy_tuple(hierarchical_index_level_names=self.biz_hierarchical_indexes,
+                                           hierarchical_parent_dicts=self._biz_hierarchical_parent_dicts,
+                                           filters=filters)
 
     @cached_property
     def geo_hierarchy(self) -> dict:
         """Build nested dictionary for geographical hierarchy dynamically."""
-        return self._build_hierarchy(self.geo_hierarchy_indexes, self._geo_relationship_dicts)
+        return self._build_hierarchy(hierarchical_index_level_names=self.geo_hierarchical_indexes,
+                                     hierarchical_parent_dicts=self._geo_hierarchical_parent_dicts)
+
+    def _geo_hierarchy_tuple(self, filters: dict[str, str]) -> tuple[str, ...]:
+        """Build tuple for geographical hierarchy dynamically based on geo_hierarchical_indexes."""
+        return self._build_hierarchy_tuple(hierarchical_index_level_names=self.geo_hierarchical_indexes,
+                                           hierarchical_parent_dicts=self._geo_hierarchical_parent_dicts,
+                                           filters=filters)
 
     @cache
-    def geo_hierarchy_tuple(self, filters: tuple[tuple[str, str], ...], **other_filters: str) -> tuple[str, ...]:
-        """Build tuple for geographical hierarchy dynamically based on geo_hierarchy_indexes."""
-        return self._build_hierarchy_tuple(self.geo_hierarchy_indexes, self._geo_relationship_dicts, filters)
-
-    def get_geo_level_names(self, level_index: int) -> set[str]:
-        """Get unique names for a specific geographical hierarchy level."""
-        if 0 <= level_index < len(self.geo_hierarchy_indexes):
-            return set(self.df.index.get_level_values(self.geo_hierarchy_indexes[level_index]))
-        raise IndexError(f"Geographical level index {level_index} out of range [0, {len(self.geo_hierarchy_indexes)})")
-
-    def get_geo_level_names_by_name(self, level_name: str) -> set[str]:
-        """Get unique names for a geographical hierarchy level by its name."""
-        if level_name in self.geo_hierarchy_indexes:
-            return set(self.df.index.get_level_values(level_name))
-        raise ValueError(f"Geographical level name '{level_name}' not found in {self.geo_hierarchy_indexes}")
-
-    def get_level_names(self, level_name: str) -> set[str]:
+    def get_index_level_values(self, index_level_name: str, /) -> set[str]:
         """Get unique names for any hierarchy level by its name."""
-        all_level_names = list(self.biz_hierarchy_indexes) + list(self.geo_hierarchy_indexes)
-        if level_name in all_level_names:
-            return set(self.df.index.get_level_values(level_name))
-        raise ValueError(f"Level name '{level_name}' not found in hierarchy levels: {all_level_names}")
+        if index_level_name in self.biz_hierarchical_indexes:
+            return set(self._biz_hierarchical_parent_dicts[self.biz_hierarchical_indexes.index(index_level_name)])
+
+        if index_level_name in self.geo_hierarchical_indexes:
+            return set(self._geo_hierarchical_parent_dicts[self.geo_hierarchical_indexes.index(index_level_name)])
+
+        raise ValueError(f'Index level name "{index_level_name}" not found in hierarchy levels')
 
     @cache
     def view(self,
@@ -253,9 +277,9 @@ class SalesVolCostPriceDF:
 
         bool_mask: Series | None = None
 
-        for index_name in (self.biz_hierarchy_indexes + self.geo_hierarchy_indexes):
-            if (index_filter_value := all_biz_and_geo_filters.get(index_name)):
-                cond: Series = (self.df.index.get_level_values(level=index_name) == index_filter_value)
+        for index_level_name in set(self.biz_hierarchical_indexes + self.geo_hierarchical_indexes).intersection(all_biz_and_geo_filters):
+            if (index_filter_value := all_biz_and_geo_filters[index_level_name]):
+                cond: Series = (self.df.index.get_level_values(level=index_level_name) == index_filter_value)
 
                 if bool_mask is None:
                     bool_mask = cond
@@ -279,10 +303,12 @@ class SalesVolCostPriceDF:
         total_row_df: DataFrame = DataFrame(
             data=[self._calc_sales_vol_cogs_cost_rev_price_cols(view_df)],
             index=MultiIndex.from_tuples(
-                tuples=[self.biz_hierarchy_tuple(filters=tuple((index_name, all_biz_and_geo_filters.get(index_name))
-                                                               for index_name in self.biz_hierarchy_indexes)),
-                        self.geo_hierarchy_tuple(filters=tuple((index_name, all_biz_and_geo_filters.get(index_name))
-                                                               for index_name in self.geo_hierarchy_indexes))],
+                tuples=[
+                    self._biz_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
+                                                       for index_name in set(self.biz_hierarchical_indexes).intersection(all_biz_and_geo_filters)}),
+                    self._geo_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
+                                                       for index_name in set(self.geo_hierarchical_indexes).intersection(all_biz_and_geo_filters)}),
+                ],
                 sortorder=None, names=view_df.index.names),
             columns=view_df.columns,
             dtype=None, copy=None)
