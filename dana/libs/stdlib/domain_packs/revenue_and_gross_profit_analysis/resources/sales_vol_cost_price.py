@@ -255,13 +255,13 @@ class SalesVolCostPriceDF:
                                            filters=filters)
 
     @cache
-    def get_index_level_values(self, index_level_name: str, /) -> set[str]:
+    def get_index_level_values(self, index_level_name: str, /) -> list[str]:
         """Get unique names for any hierarchy level by its name."""
         if index_level_name in self.biz_hierarchical_indexes:
-            return set(self._biz_hierarchical_parent_dicts[self.biz_hierarchical_indexes.index(index_level_name)])
+            return sorted(self._biz_hierarchical_parent_dicts[self.biz_hierarchical_indexes.index(index_level_name)])
 
         if index_level_name in self.geo_hierarchical_indexes:
-            return set(self._geo_hierarchical_parent_dicts[self.geo_hierarchical_indexes.index(index_level_name)])
+            return sorted(self._geo_hierarchical_parent_dicts[self.geo_hierarchical_indexes.index(index_level_name)])
 
         raise ValueError(f'Index level name "{index_level_name}" not found in hierarchy levels')
 
@@ -303,12 +303,10 @@ class SalesVolCostPriceDF:
         total_row_df: DataFrame = DataFrame(
             data=[self._calc_sales_vol_cogs_cost_rev_price_cols(view_df)],
             index=MultiIndex.from_tuples(
-                tuples=[
-                    self._biz_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
-                                                       for index_name in set(self.biz_hierarchical_indexes).intersection(all_biz_and_geo_filters)}),
-                    self._geo_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
-                                                       for index_name in set(self.geo_hierarchical_indexes).intersection(all_biz_and_geo_filters)}),
-                ],
+                tuples=[self._biz_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
+                                                           for index_name in set(self.biz_hierarchical_indexes).intersection(all_biz_and_geo_filters)}) +
+                        self._geo_hierarchy_tuple(filters={index_name: all_biz_and_geo_filters[index_name]
+                                                           for index_name in set(self.geo_hierarchical_indexes).intersection(all_biz_and_geo_filters)})],
                 sortorder=None, names=view_df.index.names),
             columns=view_df.columns,
             dtype=None, copy=None)
