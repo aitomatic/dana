@@ -15,8 +15,19 @@ from fastapi.staticfiles import StaticFiles
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
+from alembic.config import Config
+from alembic import command
+from pathlib import Path
+from ..core.database import Base, engine, SQLALCHEMY_DATABASE_URL
 
-from ..core.database import Base, engine
+
+def run_migrations():
+    package_dir = Path(__file__).parent.parent
+    script_location = package_dir / "alembic"
+    alembic_cfg = Config()
+    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
+    alembic_cfg.set_main_option("script_location", str(script_location))
+    command.upgrade(alembic_cfg, "head")
 
 
 # --- WebSocket manager for knowledge status updates ---
@@ -66,13 +77,15 @@ async def knowledge_status_ws(websocket: WebSocket):
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown events"""
     # Startup
-    from ..core.migrations import run_migrations
+    # from ..core.migrations import run_migrations
 
-    # Create base tables first
-    Base.metadata.create_all(bind=engine)
-
-    # Run any pending migrations
-    run_migrations()
+    try:
+        # Run any pending migrations
+        run_migrations()
+    except Exception as e:
+        print(f"Warning: Failed to run migrations: {e}. Creating base tables instead.")
+        # Create base tables first
+        Base.metadata.create_all(bind=engine)
 
     yield
 
