@@ -142,6 +142,7 @@ dependencies = [
     "twine>=6.1.0",
     "ruff>=0.13.0",
     "alembic>=1.16.5",
+    "docx2txt>=0.9",
 ]
 
 # Command-line entry points
