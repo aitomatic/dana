@@ -138,15 +138,17 @@ class TestConfigLoader(unittest.TestCase):
         lib_config_path = loader.config_dir / loader.DEFAULT_CONFIG_FILENAME
         assert lib_config_path.exists(), "Library should have default config"
 
-        # Mock CWD to not have config file
+        # Mock CWD to not have config file and mock home directory
         with tempfile.TemporaryDirectory() as temp_dir:
-            with patch("pathlib.Path.cwd", return_value=Path(temp_dir)):
-                with patch.dict(os.environ, {}, clear=True):
-                    result = loader.get_default_config()
-                    assert isinstance(result, dict), "Should load from library default"
-                    # Verify it has expected structure (based on current config)
-                    assert "llm" in result, "Default config should have llm section"
-                    assert "preferred_models" in result["llm"], "Default config should have preferred_models under llm"
+            temp_path = Path(temp_dir)
+            with patch("pathlib.Path.cwd", return_value=temp_path):
+                with patch("pathlib.Path.home", return_value=temp_path):
+                    with patch.dict(os.environ, {}, clear=True):
+                        result = loader.get_default_config()
+                        assert isinstance(result, dict), "Should load from library default"
+                        # Verify it has expected structure (based on current config)
+                        assert "llm" in result, "Default config should have llm section"
+                        assert "preferred_models" in result["llm"], "Default config should have preferred_models under llm"
 
     def test_get_default_config_no_file_found(self):
         """Test error when no config file found anywhere (corrupted installation)."""
@@ -186,10 +188,25 @@ class TestConfigLoader(unittest.TestCase):
 
             # User config should take precedence over library default
             with patch("pathlib.Path.cwd", return_value=temp_path):
-                with patch.dict(os.environ, {}, clear=True):
-                    result = loader.get_default_config()
-                    assert result == user_config, "User config should override library default"
-                    assert result["user_override"] is True, "Should contain user-specific config"
+                with patch("pathlib.Path.home", return_value=temp_path):
+                    with patch.dict(os.environ, {}, clear=True):
+                        result = loader.get_default_config()
+                        assert result == user_config, "User config should override library default"
+                        assert result["user_override"] is True, "Should contain user-specific config"
+
+    def test_home_directory_error_handling(self):
+        """Test that config loader handles home directory errors gracefully."""
+        loader = ConfigLoader()
+
+        # Mock Path.home() to raise RuntimeError (simulating CI environment)
+        with patch("pathlib.Path.home", side_effect=RuntimeError("Could not determine home directory")):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                with patch("pathlib.Path.cwd", return_value=Path(temp_dir)):
+                    with patch.dict(os.environ, {}, clear=True):
+                        # Should still work by falling back to library config
+                        result = loader.get_default_config()
+                        assert isinstance(result, dict), "Should load from library default when home directory fails"
+                        assert "llm" in result, "Default config should have llm section"
 
 
 if __name__ == "__main__":
