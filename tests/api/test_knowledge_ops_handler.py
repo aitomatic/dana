@@ -31,7 +31,12 @@ class TestKnowledgeOpsHandlerParseXmlToolCall:
     def setup_method(self):
         """Set up test fixtures before each test method."""
         # Create a mock handler with some test tools
-        self.handler = KnowledgeOpsHandler(domain_knowledge_path="/tmp/test_domain_knowledge.json", domain="Test Domain", role="Test Role")
+        import os
+        import tempfile
+        # Use a cross-platform temporary file path for the domain knowledge file
+        temp_dir = tempfile.gettempdir()
+        domain_knowledge_path = os.path.join(temp_dir, "test_domain_knowledge.json")
+        self.handler = KnowledgeOpsHandler(domain_knowledge_path=domain_knowledge_path, domain="Test Domain", role="Test Role")
 
         # Mock the tools dictionary with test tools
         self.handler.tools = {

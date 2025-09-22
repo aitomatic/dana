@@ -65,6 +65,7 @@ class TestRAGResource:
             sources = ["test.txt"]
             resource = RAGResource(sources=sources)
             resource._is_ready = True
+            resource._filenames = ["test.txt"]  # Mock filenames to make is_available return True
 
             # Mock orchestrator response
             mock_node = Mock(spec=NodeWithScore)
@@ -79,7 +80,7 @@ class TestRAGResource:
 
             # RAGResource returns a string, not a list
             assert result == "Test content"
-            mock_orchestrator.retrieve.assert_called_once_with("test query", 10)
+            mock_orchestrator.retrieve.assert_called_once_with("test query", 15)
         else:
             # If no API keys, expect EmbeddingError during initialization
             with pytest.raises(EmbeddingError):
