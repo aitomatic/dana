@@ -109,4 +109,7 @@ def test_error_with_path_types():
 
     # Test with Path object
     error2 = ModuleError("Test", file_path=Path(test_path))
-    assert test_path in str(error2)
+    # When Path object is converted to string, it normalizes path separators
+    # So we need to check for the normalized path instead
+    normalized_path = str(Path(test_path))
+    assert normalized_path in str(error2)
