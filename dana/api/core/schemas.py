@@ -17,6 +17,17 @@ class AgentCreate(AgentBase):
     pass
 
 
+class AgentPersona(BaseModel):
+    domain: str
+    role: str
+    task: str
+
+
+class AgentUpdate(BaseModel):
+    name: str | None = None
+    config: AgentPersona | None = None
+
+
 class AgentDeployRequest(BaseModel):
     """Request schema for agent deployment endpoint"""
 
