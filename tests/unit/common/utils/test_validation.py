@@ -157,7 +157,9 @@ class TestValidationUtilities:
             
         with pytest.raises(ValidationError) as exc_info:
             ValidationUtilities.validate_path(non_existing_path, must_exist=True, field_name="test_field")
-        assert f"Path '{non_existing_path}' does not exist" in str(exc_info.value)
+        # The Path object normalizes separators, so we need to check for the normalized version
+        normalized_path = str(Path(non_existing_path))
+        assert f"Path '{normalized_path}' does not exist" in str(exc_info.value)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
