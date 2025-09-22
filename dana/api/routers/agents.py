@@ -42,6 +42,7 @@ from dana.api.core.schemas import (
     CodeValidationRequest,
     CodeValidationResponse,
     DocumentRead,
+    AgentUpdate,
 )
 from pydantic import BaseModel
 from dana.api.server.server import ws_manager
@@ -942,17 +943,22 @@ async def create_agent(
 
 
 @router.put("/{agent_id}", response_model=AgentRead)
-async def update_agent(agent_id: int, agent: AgentCreate, db: Session = Depends(get_db)):
+async def update_agent(agent_id: int, agent: AgentUpdate, db: Session = Depends(get_db)):
     """Update an agent."""
     try:
         db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not db_agent:
             raise HTTPException(status_code=404, detail="Agent not found")
 
-        db_agent.name = agent.name
-        db_agent.description = agent.description
-        db_agent.config = agent.config
+        if agent.name:
+            db_agent.name = agent.name
+        if agent.config:
+            if db_agent.config:
+                db_agent.config.update(agent.config)
+            else:
+                db_agent.config = agent.config
 
+        flag_modified(db_agent, "config")
         db.commit()
         db.refresh(db_agent)
 
