@@ -1,5 +1,6 @@
 """Tests for Dana module system error types."""
 
+import os
 from pathlib import Path
 
 from dana.core.runtime.modules.errors import (
@@ -18,20 +19,31 @@ from dana.core.runtime.modules.errors import (
 
 def test_module_error():
     """Test base ModuleError."""
+    # Use cross-OS compatible path
+    if os.name == 'nt':  # Windows
+        test_path = "C:/path/to/module.na"
+    else:  # Unix-like systems
+        test_path = "/path/to/module.na"
+        
     error = ModuleError(
-        message="Test error", module_name="test_module", file_path="/path/to/module.na", line_number=42, source_line="def test_function():"
+        message="Test error", module_name="test_module", file_path=test_path, line_number=42, source_line="def test_function():"
     )
 
     assert "Test error" in str(error)
     assert "test_module" in str(error)
-    assert "/path/to/module.na" in str(error)
+    assert test_path in str(error)
     assert "Line 42" in str(error)
     assert "def test_function():" in str(error)
 
 
 def test_module_not_found_error():
     """Test ModuleNotFoundError."""
-    paths = ["/path1", "/path2"]
+    # Use cross-OS compatible paths
+    if os.name == 'nt':  # Windows
+        paths = ["C:/path1", "C:/path2"]
+    else:  # Unix-like systems
+        paths = ["/path1", "/path2"]
+        
     error = ModuleNotFoundError(name="missing_module", searched_paths=paths)
 
     assert "missing_module" in str(error)
@@ -85,10 +97,16 @@ def test_error_with_partial_info():
 
 def test_error_with_path_types():
     """Test ModuleError with different path types."""
+    # Use cross-OS compatible path
+    if os.name == 'nt':  # Windows
+        test_path = "C:/path/to/module.na"
+    else:  # Unix-like systems
+        test_path = "/path/to/module.na"
+        
     # Test with string path
-    error1 = ModuleError("Test", file_path="/path/to/module.na")
-    assert "/path/to/module.na" in str(error1)
+    error1 = ModuleError("Test", file_path=test_path)
+    assert test_path in str(error1)
 
     # Test with Path object
-    error2 = ModuleError("Test", file_path=Path("/path/to/module.na"))
-    assert "/path/to/module.na" in str(error2)
+    error2 = ModuleError("Test", file_path=Path(test_path))
+    assert test_path in str(error2)

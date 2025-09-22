@@ -60,7 +60,11 @@ class TestConfigLoader(unittest.TestCase):
     def test_load_config_from_path_nonexistent_file(self):
         """Test error handling when config file doesn't exist."""
         loader = ConfigLoader()
-        nonexistent_path = Path("/this/path/does/not/exist.json")
+        # Use cross-OS compatible path
+        if os.name == 'nt':  # Windows
+            nonexistent_path = Path("C:/this/path/does/not/exist.json")
+        else:  # Unix-like systems
+            nonexistent_path = Path("/this/path/does/not/exist.json")
 
         with pytest.raises(ConfigurationError, match="Config path does not point to a valid file"):
             loader._load_config_from_path(nonexistent_path)
@@ -168,7 +172,13 @@ class TestConfigLoader(unittest.TestCase):
         """Test error handling for invalid DANA_CONFIG path."""
         loader = ConfigLoader()
 
-        with patch.dict(os.environ, {"DANA_CONFIG": "/invalid/path/config.json"}):
+        # Use cross-OS compatible path
+        if os.name == 'nt':  # Windows
+            invalid_path = "C:/invalid/path/config.json"
+        else:  # Unix-like systems
+            invalid_path = "/invalid/path/config.json"
+            
+        with patch.dict(os.environ, {"DANA_CONFIG": invalid_path}):
             with pytest.raises(ConfigurationError, match="Failed to load config from DANA_CONFIG"):
                 loader.get_default_config()
 
