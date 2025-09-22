@@ -684,3 +684,11 @@ class WorkflowExecutionControlResponse(BaseModel):
     error: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgePackResponse(BaseModel):
+    id: int
+    folder_path: str
+    kp_metadata: dict = {}
+    created_at: datetime
+    updated_at: datetime

@@ -23,6 +23,7 @@ class Agent(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     documents = relationship("Document", back_populates="agent")
+    kp_agent_rs = relationship("KnowledgeAgentRelationship", back_populates="agent")
 
 
 class Topic(Base):
@@ -91,3 +92,24 @@ class AgentChatHistory(Base):
     text = Column(Text, nullable=False)
     type = Column(String, nullable=False, default="chat_with_dana_build")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+
+
+class KnowledgePack(Base):
+    __tablename__ = "knowledge_packs"
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    kp_metadata = Column("metadata", JSON, default={})
+    folder_path = Column(String, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    kp_agent_rs = relationship("KnowledgeAgentRelationship", back_populates="knowledge_pack")
+
+
+class KnowledgeAgentRelationship(Base):
+    __tablename__ = "knowledge_agent_relationships"
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    knowledge_pack_id = Column(Integer, ForeignKey("knowledge_packs.id"), nullable=False, index=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    knowledge_pack = relationship("KnowledgePack", back_populates="kp_agent_rs")
+    agent = relationship("Agent", back_populates="kp_agent_rs")
