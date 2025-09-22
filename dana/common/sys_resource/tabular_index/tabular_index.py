@@ -51,7 +51,11 @@ class TabularIndex:
         """Initialize tabular index following ADR-001 architecture."""
         logger.info("Initializing TabularIndex...")
 
-        if self._should_rebuild():
+        if self.config.query_only:
+            # logger.info("Query-only mode: validating existing data")
+            # self._validate_query_only_preconditions()
+            self.index = await self._load_existing_index()
+        elif self._should_rebuild():
             logger.info("Index rebuild required")
             self._validate_rebuild_preconditions()
             self.index = await self._rebuild_index()
@@ -67,6 +71,11 @@ class TabularIndex:
         Returns:
             True if rebuild is needed, False if existing index can be used
         """
+        # Query-only mode: never rebuild, always use existing data
+        if self.config.query_only:
+            logger.info("Query-only mode: using existing vector store")
+            return False
+
         # Core ADR-001 decision logic:
         # IF force_reload = True: → Rebuild
         # ELSE IF vector_store_exists() AND has_data(): → Use existing
@@ -121,6 +130,47 @@ class TabularIndex:
 
         logger.debug("Rebuild preconditions validated successfully")
 
+    def _validate_query_only_preconditions(self) -> None:
+        """Validate preconditions for query-only mode.
+
+        Raises:
+            ValueError: If configuration is invalid for query-only mode
+            FileNotFoundError: If vector store doesn't exist or has no data
+        """
+        logger.debug("Validating query-only mode preconditions...")
+
+        # Validate embedding model is available (needed for query encoding)
+        if self.embedding_model is None:
+            raise ValueError("Embedding model is required for query-only mode")
+
+        # Validate vector store provider is configured
+        if self.provider is None:
+            raise ValueError("Vector store provider is required for query-only mode")
+
+        # Check vector store exists and is accessible
+        if not self._vector_store_exists():
+            raise FileNotFoundError(
+                f"Vector store does not exist for table '{self.config.table_name}'. "
+                "Query-only mode requires existing data. Either:\n"
+                "1. Set query_only=False to ingest data first, or\n"
+                "2. Ensure the vector store exists with data"
+            )
+
+        # Check vector store has data
+        if not self._vector_store_has_data():
+            raise FileNotFoundError(
+                f"Vector store exists but contains no data for table '{self.config.table_name}'. "
+                "Query-only mode requires existing data. Either:\n"
+                "1. Set query_only=False to ingest data first, or\n"
+                "2. Ensure the vector store contains embeddings"
+            )
+
+        # Log statistics about existing data
+        row_count = self._get_vector_store_row_count()
+        logger.info(f"Query-only mode validated: found {row_count} existing embeddings")
+
+        logger.debug("Query-only mode preconditions validated successfully")
+
     async def _rebuild_index(self) -> VectorStoreIndex:
         """Rebuild index from scratch (ADR-001 rebuild path).
 
@@ -145,12 +195,14 @@ class TabularIndex:
 
         try:
             # Create index from existing vector store without adding documents
-            storage_context = StorageContext.from_defaults(vector_store=self.provider.vector_store)
+            # Always get fresh vector store to handle event loop changes
+            fresh_vector_store = self.provider.vector_store
+            storage_context = StorageContext.from_defaults(vector_store=fresh_vector_store)
             index = VectorStoreIndex([], storage_context=storage_context, embed_model=self.embedding_model)
 
             # Log statistics about loaded index
-            row_count = self._get_vector_store_row_count()
-            logger.info(f"Successfully loaded existing index with {row_count} embeddings")
+            # row_count = self._get_vector_store_row_count()
+            # logger.info(f"Successfully loaded existing index with {row_count} embeddings")
 
             return index
 
@@ -204,7 +256,20 @@ class TabularIndex:
             await self.initialize()
 
         print(f"Retrieving {num_results} results for query: '{query}'")
-        nodes = await self.index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
+
+        # For PGVector, get a fresh index to handle event loop changes
+        if hasattr(self.provider, "__class__") and "PGVector" in self.provider.__class__.__name__:
+            # Get fresh vector store for this query
+            fresh_vector_store = self.provider.vector_store
+            from llama_index.core import StorageContext, VectorStoreIndex
+
+            storage_context = StorageContext.from_defaults(vector_store=fresh_vector_store)
+            fresh_index = VectorStoreIndex([], storage_context=storage_context, embed_model=self.embedding_model)
+            nodes = await fresh_index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
+        else:
+            # For other providers, use cached index
+            nodes = await self.index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
+
         return [{"text": node.text, "metadata": node.metadata} for node in nodes]
 
     async def single_search(
@@ -303,8 +368,11 @@ class TabularIndex:
             Loaded pandas DataFrame
 
         Raises:
-            ValueError: If unsupported file type
+            ValueError: If unsupported file type or source not configured
         """
+        if self.config.query_only or not self.config.source:
+            raise ValueError("Cannot load dataframe in query-only mode or when source is not configured")
+
         source_path = self.config.source
 
         if source_path.endswith(".parquet"):
@@ -328,6 +396,9 @@ class TabularIndex:
 
         for _, row in df.iterrows():
             # Create embedding text using configured constructor
+            if self.config.query_only or not self.config.embedding_field_constructor:
+                raise ValueError("Cannot create documents in query-only mode or when embedding_field_constructor is not configured")
+
             row_dict = row.to_dict()
             embedding_text = self.config.embedding_field_constructor(row_dict)
 

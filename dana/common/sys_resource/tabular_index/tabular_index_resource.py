@@ -37,13 +37,14 @@ class TabularIndexResource(BaseSysResource):
     def __init__(
         self,
         # Tabular data configuration
-        source: str,
-        embedding_field_constructor: Callable[[dict], str],
+        source: str | None = None,
+        embedding_field_constructor: Callable[[dict], str] | None = None,
         table_name: str = "my_tabular_index",
         metadata_constructor: Callable[[dict], dict] | None = None,
         excluded_embed_metadata_keys: list[str] | None = None,
         cache_dir: str = ".cache/tabular_index",
         force_reload: bool = False,
+        query_only: bool = False,
         # Optional embedding override
         embedding_config: dict[str, Any] | None = None,
         # Optional vector store configuration
@@ -73,6 +74,7 @@ class TabularIndexResource(BaseSysResource):
                 excluded_embed_metadata_keys=excluded_embed_metadata_keys or [],
                 cache_dir=cache_dir,
                 force_reload=force_reload,
+                query_only=query_only,
             )
 
             self._embedding_config = self._create_embedding_config(embedding_config)
@@ -92,13 +94,14 @@ class TabularIndexResource(BaseSysResource):
 
     def _create_tabular_config(
         self,
-        source: str,
-        embedding_field_constructor: Callable[[dict], str],
+        source: str | None,
+        embedding_field_constructor: Callable[[dict], str] | None,
         table_name: str,
         metadata_constructor: Callable[[dict], dict] | None,
         excluded_embed_metadata_keys: list[str],
         cache_dir: str,
         force_reload: bool,
+        query_only: bool,
     ) -> TabularConfig:
         """Create tabular configuration with validation.
 
@@ -117,6 +120,7 @@ class TabularIndexResource(BaseSysResource):
                 excluded_embed_metadata_keys=excluded_embed_metadata_keys,
                 cache_dir=cache_dir,
                 force_reload=force_reload,
+                query_only=query_only,
             )
         except Exception as e:
             raise ValueError(f"Invalid tabular configuration: {e}") from e
