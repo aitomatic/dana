@@ -9,7 +9,7 @@ class TestComponentImports:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear module registry to ensure test isolation
-        from dana.__init__.init_modules import reset_module_system, initialize_module_system
+        from dana.__init__.init_modules import reset_module_system
 
         reset_module_system()
 
@@ -19,10 +19,7 @@ class TestComponentImports:
 
         # Set up DANAPATH to include test_modules
         self.original_danapath = os.environ.get("DANAPATH", "")
-        os.environ["DANAPATH"] = f"{test_modules_path}:{self.original_danapath}"
-
-        # Reinitialize the module system with the updated DANAPATH
-        initialize_module_system()
+        os.environ["DANAPATH"] = f"{test_modules_path}{os.pathsep}{self.original_danapath}"
 
         self.sandbox = DanaSandbox()
 
