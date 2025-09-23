@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text, Boolean
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -63,25 +63,53 @@ class Document(Base):
 
 
 class Conversation(Base):
-    __tablename__ = "conversations"
+    __tablename__ = "conversations_v2"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     title = Column(String, nullable=False)
-    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True, index=True)
+    kp_id = Column(Integer, ForeignKey("knowledge_packs.id"), nullable=True, index=True)
+    code_gen_id = Column(Integer, ForeignKey("agents.id"), nullable=True, index=True)  # Conversation for code generation
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
-    agent = relationship("Agent")
+    agent = relationship("Agent", foreign_keys=[agent_id])
+    code_gen_agent = relationship("Agent", foreign_keys=[code_gen_id])
 
 
 class Message(Base):
-    __tablename__ = "messages"
+    __tablename__ = "messages_v2"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations_v2.id"), nullable=False, index=True)
     sender = Column(String, nullable=False)
     content = Column(Text, nullable=False)
+    require_user = Column(Boolean, nullable=True, default=False)
+    treat_as_tool = Column(Boolean, nullable=True, default=False)
+    msg_metadata = Column("metadata", JSON, nullable=True, default={})
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     conversation = relationship("Conversation", back_populates="messages")
+
+
+# class ConversationDeprecated(Base):
+#     __tablename__ = "conversations"
+#     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+#     title = Column(String, nullable=False)
+#     agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
+#     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+#     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+#     messages = relationship("MessageDeprecated", back_populates="conversation", cascade="all, delete-orphan")
+#     agent = relationship("Agent")
+
+
+# class MessageDeprecated(Base):
+#     __tablename__ = "messages"
+#     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+#     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False, index=True)
+#     sender = Column(String, nullable=False)
+#     content = Column(Text, nullable=False)
+#     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+#     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+#     conversation = relationship("ConversationDeprecated", back_populates="messages")
 
 
 class AgentChatHistory(Base):
@@ -98,10 +126,12 @@ class KnowledgePack(Base):
     __tablename__ = "knowledge_packs"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     kp_metadata = Column("metadata", JSON, default={})
-    folder_path = Column(String, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     kp_agent_rs = relationship("KnowledgeAgentRelationship", back_populates="knowledge_pack")
+    source_kp_id = Column(Integer, ForeignKey("knowledge_packs.id"), nullable=True, index=True)
+    source_kp = relationship("KnowledgePack", remote_side=[id], foreign_keys=[source_kp_id], back_populates="child_kps")
+    child_kps = relationship("KnowledgePack", foreign_keys=[source_kp_id], back_populates="source_kp")
 
 
 class KnowledgeAgentRelationship(Base):

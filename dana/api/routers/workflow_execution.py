@@ -6,7 +6,7 @@ workflow execution with real-time status updates.
 """
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 import json
 import asyncio
@@ -17,7 +17,7 @@ from dana.api.core.schemas import (
     WorkflowExecutionResponse,
     WorkflowExecutionStatus,
     WorkflowExecutionControl,
-    WorkflowExecutionControlResponse
+    WorkflowExecutionControlResponse,
 )
 from dana.api.services.workflow_execution_service import get_workflow_execution_service
 
@@ -32,12 +32,12 @@ async def start_workflow_execution(request: WorkflowExecutionRequest):
     try:
         service = get_workflow_execution_service()
         response = service.start_execution(request)
-        
+
         if not response.success:
             raise HTTPException(status_code=400, detail=response.error)
-        
+
         return response
-        
+
     except Exception as e:
         logger.error(f"Failed to start workflow execution: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to start workflow execution: {str(e)}")
@@ -49,12 +49,12 @@ async def get_execution_status(execution_id: str):
     try:
         service = get_workflow_execution_service()
         status = service.get_execution_status(execution_id)
-        
+
         if not status:
             raise HTTPException(status_code=404, detail="Execution not found")
-        
+
         return status
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -68,12 +68,12 @@ async def control_execution(control: WorkflowExecutionControl):
     try:
         service = get_workflow_execution_service()
         response = service.control_execution(control)
-        
+
         if not response.success:
             raise HTTPException(status_code=400, detail=response.error)
-        
+
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -84,10 +84,10 @@ async def control_execution(control: WorkflowExecutionControl):
 @router.get("/stream/{execution_id}")
 async def stream_execution_updates(execution_id: str):
     """Stream real-time execution updates using Server-Sent Events."""
-    
+
     async def generate_updates() -> AsyncGenerator[str, None]:
         service = get_workflow_execution_service()
-        
+
         try:
             while True:
                 # Get current status
@@ -95,21 +95,21 @@ async def stream_execution_updates(execution_id: str):
                 if not status:
                     yield f"data: {json.dumps({'error': 'Execution not found'})}\n\n"
                     break
-                
+
                 # Send status update
                 yield f"data: {json.dumps(status.model_dump())}\n\n"
-                
+
                 # Check if execution is complete
                 if status.status in ["completed", "failed", "cancelled"]:
                     break
-                
+
                 # Wait before next update
                 await asyncio.sleep(1)
-                
+
         except Exception as e:
             logger.error(f"Error streaming execution updates: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
-    
+
     return StreamingResponse(
         generate_updates(),
         media_type="text/plain",
@@ -117,7 +117,7 @@ async def stream_execution_updates(execution_id: str):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
-        }
+        },
     )
 
 
@@ -125,17 +125,19 @@ async def stream_execution_updates(execution_id: str):
 async def get_active_executions():
     """Get list of all active workflow executions."""
     try:
-        service = get_workflow_execution_service()
-        
+        # NOTE : TEMPORARY COMMENTED OUT NEXT LINE
+        # service = get_workflow_execution_service()
+        # END NOTE
+
         # Get all executions from the service
         # This would need to be exposed in the service
         active_executions = []
-        
+
         # For now, return empty list
         # TODO: Implement get_all_executions method in service
-        
+
         return {"executions": active_executions}
-        
+
     except Exception as e:
         logger.error(f"Failed to get active executions: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get active executions: {str(e)}")

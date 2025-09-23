@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Union, Annotated
 import re
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, BeforeValidator, AfterValidator
+from enum import Enum
+
+
+class SenderRole(Enum):
+    USER = "user"
+    AGENT = "agent"
+    ASSISTANT = "assistant"  # Maintain backward compatibility because we have both agent and assistant
+    BOT = "bot"
 
 
 class AgentBase(BaseModel):
@@ -17,7 +25,8 @@ class AgentCreate(AgentBase):
     pass
 
 
-class AgentPersona(BaseModel):
+class Specialization(BaseModel):
+    # Decide specialization in a specific domain
     domain: str
     role: str
     task: str
@@ -25,7 +34,7 @@ class AgentPersona(BaseModel):
 
 class AgentUpdate(BaseModel):
     name: str | None = None
-    config: AgentPersona | None = None
+    config: Specialization | None = None
 
 
 class AgentDeployRequest(BaseModel):
@@ -136,7 +145,8 @@ class RunNAFileResponse(BaseModel):
 
 class ConversationBase(BaseModel):
     title: str
-    agent_id: int
+    agent_id: int | None = None
+    kp_id: int | None = None
 
 
 class ConversationCreate(ConversationBase):
@@ -152,8 +162,13 @@ class ConversationRead(ConversationBase):
 
 
 class MessageBase(BaseModel):
-    sender: str
+    sender: SenderRole = Field(default=SenderRole.USER)
     content: str
+    require_user: bool = False
+    treat_as_tool: bool = False
+    metadata: dict = {}
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class MessageCreate(MessageBase):
@@ -217,10 +232,12 @@ class ChatResponse(BaseModel):
 class MessageData(BaseModel):
     """Schema for a single message in conversation"""
 
-    role: str  # 'user' or 'assistant'
+    role: SenderRole  # 'user' or 'assistant'
     content: str
     require_user: bool = False
     treat_as_tool: bool = False
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class AgentGenerationRequest(BaseModel):
@@ -686,9 +703,36 @@ class WorkflowExecutionControlResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class KnowledgePackResponse(BaseModel):
+class KnowledgePackOutput(BaseModel):
     id: int
-    folder_path: str
+    folder_path: Annotated[str, BeforeValidator(lambda v: str(v))]
     kp_metadata: dict = {}
     created_at: datetime
     updated_at: datetime
+
+    def get_spec(self) -> Specialization:
+        return Specialization(
+            domain=self.kp_metadata.get("domain", "General"),
+            role=self.kp_metadata.get("role", "Domain Expert"),
+            task=self.kp_metadata.get("task", "Answer Questions"),
+        )
+
+
+class KnowledgePackCreateRequest(BaseModel):
+    kp_metadata: Annotated[Specialization | dict, AfterValidator(lambda v: v.model_dump() if isinstance(v, BaseModel) else v)]
+
+
+class KnowledgePackUpdateRequest(KnowledgePackCreateRequest):
+    kp_id: int
+
+
+class KnowledgePackUpdateResponse(DomainKnowledgeUpdateResponse):
+    pass
+
+
+class KnowledgePackSmartChatResponse(BaseModel):
+    success: bool
+    is_tree_modified: bool = False
+    agent_response: str
+    internal_conversation: list[MessageData] = []
+    error: str | None = None
