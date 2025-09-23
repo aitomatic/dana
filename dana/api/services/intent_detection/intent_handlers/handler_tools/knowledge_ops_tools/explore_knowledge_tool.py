@@ -164,13 +164,13 @@ Ready to proceed with knowledge operations despite exploration error."""
 
         # Build final content
         display_depth = actual_depth if "actual_depth" in locals() else max_depth
-        header = f"""🌳 Knowledge Exploration
+        header = f"""## 🌳 Knowledge Exploration
 
-📂 Query: {query or "all areas"}
-📊 Depth: {display_depth} levels ({context_info})
-🔢 Total areas found: {total_nodes}
+**📂 Query:** {query or "all areas"}  
+**📊 Depth:** {display_depth} levels ({context_info})  
+**🔢 Total areas found:** {total_nodes}
 
-📋 Available Knowledge Areas:"""
+### 📋 Available Knowledge Areas"""
 
         # Build smart footer with recommendations
         footer = self._build_smart_footer(
@@ -241,7 +241,7 @@ Ready to proceed with knowledge operations despite exploration error."""
             path_to_match = self._find_path_to_node(self.tree_structure.root, match)
             if path_to_match and len(path_to_match) > 1:
                 path_str = " → ".join(path_to_match)
-                content_lines.append(f"📍 Path: {path_str}")
+                content_lines.append(f"**📍 Path:** {path_str}")
 
             # Show the match and its children up to max_depth
             match_content = self._format_node_tree(match, max_depth, show_root=True)
@@ -257,8 +257,7 @@ Ready to proceed with knowledge operations despite exploration error."""
         if level >= max_depth:
             return ""
 
-        # Format current node
-        indent = "  " * level
+        # Format current node with proper markdown list syntax
         if level == 0 and show_root:
             emoji = "🌳"
         elif level == 0 or level == 1:
@@ -270,7 +269,12 @@ Ready to proceed with knowledge operations despite exploration error."""
 
         # Add generation status indicator for each topic
         status_indicator = self._get_status_indicator(node.topic)
-        lines = [f"{indent}{emoji} {node.topic}{status_indicator}"]
+        
+        # Use markdown list syntax with proper indentation
+        indent = "  " * level  # 2 spaces per level for markdown lists
+        list_marker = "- " if level == 0 else "  - " if level == 1 else "    - " if level == 2 else "      - "
+        
+        lines = [f"{indent}{list_marker}{emoji} {node.topic}{status_indicator}"]
 
         # Add children info if they exist but we're not showing them due to depth limit
         if node.children and level == max_depth - 1:

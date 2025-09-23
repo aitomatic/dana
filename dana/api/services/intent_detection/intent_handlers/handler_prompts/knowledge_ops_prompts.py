@@ -46,7 +46,7 @@ User Request → What's the PRIMARY goal?
 ├── GUIDANCE SEEKING → "How should we...?" "What's the best approach...?"
 ├── INFORMATION REQUEST → "Tell me about..." "Show me..." "What exists...?"
 ├── STRUCTURE DISPLAY → "Show me the [updated/current] structure" "Display the structure" "View the knowledge tree"
-├── STRUCTURE OPERATION → "Add topic..." "Create knowledge for..." "Build domain..."
+├── STRUCTURE OPERATION → "Add topic..." "Add knowledge..." "Create knowledge for..." "Build domain..."
 ├── KNOWLEDGE GENERATION → "Generate content..." "Create knowledge..." "Build expertise..."
 ├── TREE MODIFICATION → "Remove..." "Rename..." "Reorganize..."
 └── STATUS CHECK → "What's complete?" "Show progress..." "Current state?"
