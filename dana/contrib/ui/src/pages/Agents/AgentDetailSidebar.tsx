@@ -654,6 +654,9 @@ To get started, let's define its foundation:
         text: response.follow_up_message || response.agent_response || response.message || '...',
       });
 
+      // Collapse the thinking component after response is generated
+      setIsHistoryExpanded(false);
+
       // Refresh agent data silently if the smart chat updated agent properties
       if (
         response.success &&
@@ -676,6 +679,26 @@ To get started, let's define its foundation:
         }
       }
 
+      // Universal knowledge update detection (fallback method)
+      const hasKnowledgeUpdate = 
+        response.updated_domain_tree ||
+        response.status === 'knowledge_status_update' ||
+        response.updates_applied?.some((update: string) => 
+          update.includes('knowledge') || 
+          update.includes('tree') ||
+          update.includes('domain')
+        ) ||
+        response.processor === 'knowledge_ops_handler' ||
+        response.detected_intent === 'knowledge_ops';
+
+      if (hasKnowledgeUpdate) {
+        console.log('[AgentDetailSidebar] Knowledge update detected in response (fallback method)');
+        
+        // Trigger knowledge store refresh
+        const knowledgeStore = useKnowledgeStore.getState();
+        knowledgeStore.fetchKnowledgeData(agent_id, true);
+      }
+
       // If the response indicates a knowledge status update, trigger centralized store refresh
       if (response.status === 'knowledge_status_update' || response.updated_domain_tree) {
         // Use our centralized knowledge store for domain knowledge updates
@@ -694,6 +717,9 @@ To get started, let's define its foundation:
       }
 
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
+      
+      // Collapse the thinking component even on error
+      setIsHistoryExpanded(false);
     } finally {
       setLoading(false);
     }

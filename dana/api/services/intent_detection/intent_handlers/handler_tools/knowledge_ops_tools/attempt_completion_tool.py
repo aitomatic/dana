@@ -24,7 +24,7 @@ class AttemptCompletionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="REQUIRED when presenting next steps or choices.  List of max 2 options for next steps. Use when presenting choices to the user after completing a task or when asking for next actions. Each option must be a complete user response that makes sense when sent as the next message.",
+                        description="REQUIRED when presenting next steps or choices.  Provide 1 option for next step. Use when presenting choices to the user after completing a task or when asking for next actions. Option must be a complete user response that makes sense when sent as the next message.",
                         example='["Add this structure to domain knowledge"]',
                     ),
                 ],
@@ -47,7 +47,7 @@ class AttemptCompletionTool(BaseTool):
         response_parts.append("<div class='options-container'>")
         for i, option in enumerate(options, 1):
             # Create clickable button-style options (onclick handled by React)
-            response_parts.append(f"<button class='option-button' data-option='{i}'>{i}. {option}</button>")
+            response_parts.append(f"<button class='option-button' data-option='{i}'>{option}</button>")
         response_parts.append("</div>")
         response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
         response_parts.append("")  # Empty line for spacing
