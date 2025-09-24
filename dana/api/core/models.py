@@ -143,3 +143,15 @@ class KnowledgeAgentRelationship(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     knowledge_pack = relationship("KnowledgePack", back_populates="kp_agent_rs")
     agent = relationship("Agent", back_populates="kp_agent_rs")
+
+
+class BackGroundTask(Base):
+    __tablename__ = "background_tasks"
+    # ONLY SUPPORT A SET OF PREDEFINED TASKS
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    type = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="pending")
+    data = Column(JSON, nullable=False, default={})
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

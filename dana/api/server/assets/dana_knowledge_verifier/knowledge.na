@@ -1,0 +1,7 @@
+"""
+Knowledge sources for this agent. The following files are available in the ./docs folder:
+- (No files currently listed. Add files to ./docs to make them available.)
+"""
+
+docs = use("rag", sources=["./docs"], debug=True, reranking=True)
+knows = use("rag", sources=["./knows"], debug=True, reranking=True)

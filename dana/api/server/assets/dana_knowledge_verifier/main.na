@@ -1,0 +1,18 @@
+from workflows import final_workflow
+from common import QueryPackage
+
+# ENABLE OR DISABLE THIS TO TEST AGENT WITH/WITHOUT KNOWLEDGES
+USE_KNOWLEDGE= True
+
+agent_blueprint Dana:
+    name: str = "Dana"
+    description: str = "Knowledge Testing Agent"
+    max_iteration: int = 10
+
+def solve(self : Dana, query: str) -> str:
+    package = QueryPackage(query=query, use_knows=USE_KNOWLEDGE)
+    return final_workflow(package)
+
+this_agent = Dana()
+
+# print(this_agent.solve("Tell me about : hygiene protocols and manage cleaninless of the tank"))

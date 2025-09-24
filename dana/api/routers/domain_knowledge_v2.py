@@ -20,9 +20,12 @@ from dana.api.core.schemas import (
     KnowledgePackSmartChatResponse,
     PaginatedKnowledgePackResponse,
 )
+from uuid import uuid4
 from dana.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo, get_conversation_repo, AbstractConversationRepo
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
-from dana.api.routers.ws.domain_knowledge_ws import create_domain_knowledge_ws_notifier
+from dana.api.routers.ws.domain_knowledge_ws import create_domain_knowledge_ws_notifier, domain_knowledge_ws_notifier
+from fastapi import WebSocket, WebSocketDisconnect
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -170,3 +173,28 @@ async def smart_chat(
         internal_conversation=internal_conversation[-len(new_messages) :],
         error=result.get("error", None),
     )
+
+
+@router.websocket("/ws/{knowledge_id}")
+async def send_chat_update_msg(knowledge_id: str, websocket: WebSocket):
+    session_id = str(uuid4())
+    await domain_knowledge_ws_notifier.connect(knowledge_id, session_id, websocket)
+    try:
+        while True:
+            # Keep the connection alive and listen for client messages
+            data = await websocket.receive_text()
+            # Echo back for debugging (optional)
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "type": "echo",
+                        "message": f"Connected to variable updates for ID: {knowledge_id}",
+                        "data": data,
+                    }
+                )
+            )
+    except WebSocketDisconnect:
+        domain_knowledge_ws_notifier.disconnect(knowledge_id, session_id)
+    except Exception as e:
+        logger.error(f"WebSocket error for {knowledge_id}: {e}")
+        domain_knowledge_ws_notifier.disconnect(knowledge_id, session_id)

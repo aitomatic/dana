@@ -10,7 +10,8 @@ from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
+from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class GenerateKnowledgeTool(BaseTool):
         domain: str = "General",
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
-        notifier: Callable[[str, str, str, float | None], None] | None = None,
+        notifier: Coroutine[Any, Any, Callable[[str, str, str, float | None], None]] | None = None,
         agent_id: str | None = None,
     ):
         self.knowledge_status_path = knowledge_status_path
@@ -471,3 +472,67 @@ Return as JSON:
 
         # Join all parts with proper spacing
         return "\n".join(response_parts)
+
+
+if __name__ == "__main__":
+    import json
+
+    with open("/Users/lam/Desktop/another_opendxa/agents/agent_11_jordan_belfort/domain_knowledge.json") as f:
+        tree_structure = json.load(f)
+
+    tasks = tasks = [
+        # Storage Systems & Technologies
+        "Design and manage silo storage for bulk sugar",
+        "Oversee warehouse storage for bagged sugar",
+        "Implement bulk storage solutions depending on capacity needs",
+        "Regulate temperature in sugar storage facilities",
+        "Control humidity levels to prevent sugar caking",
+        "Maintain proper ventilation systems for sugar storage areas",
+        "Operate and maintain conveyors for sugar handling",
+        "Operate and maintain elevators for sugar transfer",
+        "Operate and maintain pneumatic systems for sugar transport",
+        "Implement pest control programs in storage and handling areas",
+        "Install foreign body detection systems for sugar quality assurance",
+        "Develop and enforce cleaning protocols for storage and handling facilities",
+        # Process Optimization & Efficiency
+        "Conduct material flow mapping of sugar movement",
+        "Identify bottlenecks in sugar storage and handling processes",
+        "Integrate SCADA systems for process monitoring and control",
+        "Deploy sensors and instrumentation for real-time monitoring",
+        "Monitor energy consumption in sugar handling and storage",
+        "Implement efficiency improvements in conveying and storage systems",
+        "Reduce waste such as spillage, contamination, and product loss",
+        "Promote continuous improvement initiatives in sugar handling",
+        # Quality Assurance & Compliance
+        "Apply standardized sampling methods for sugar quality testing",
+        "Perform moisture content testing to prevent caking and spoilage",
+        "Carry out granule size analysis to ensure consistency",
+        "Ensure compliance with food safety standards",
+        "Maintain adherence to British and EU sugar storage regulations",
+        "Implement batch tracking systems for sugar traceability",
+        "Maintain documentation practices for audits and quality checks",
+        # Health, Safety & Environmental Management
+        "Identify hazards such as dust explosion risks and slip hazards",
+        "Develop and implement safe operating procedures",
+        "Plan and conduct emergency response drills",
+        "Implement dust control measures such as filters and scrubbers",
+        "Manage waste disposal from sugar dust and rejected product",
+        "Conduct staff training programs on sugar handling and safety",
+    ]
+
+    tree_structure = DomainKnowledgeTree.model_validate(tree_structure)
+    tool = GenerateKnowledgeTool(
+        knowledge_status_path="/Users/lam/Desktop/another_opendxa/agents/agent_11_jordan_belfort/domain_knowledge_status.json",
+        domain="Sugar Manufacturing",
+        role="Process Engineer",
+        storage_path="/Users/lam/Desktop/another_opendxa/agents/agent_11_jordan_belfort/knows",
+        tasks=tasks,
+        tree_structure=tree_structure,
+    )
+    print(
+        tool._execute(
+            user_message="Generate knowledge for all topics in the tree structure",
+            counts="5 facts, 2 procedures, 3 heuristics",
+            context="Focus on practical applications and real-world scenarios",
+        )
+    )

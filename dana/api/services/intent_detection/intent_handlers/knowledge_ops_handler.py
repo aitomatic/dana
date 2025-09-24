@@ -8,12 +8,12 @@ from typing import Any
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools import (
     AskQuestionTool,
     ExploreKnowledgeTool,
-    GenerateKnowledgeTool,
     ModifyTreeTool,
     AttemptCompletionTool,
     ProposeKnowledgeStructureTool,
     RefineKnowledgeStructureTool,
     PreviewKnowledgeTopicTool,
+    GenerateKnowledgeFromDocTool,
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 import logging
@@ -55,6 +55,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         self.knowledge_status_path = knowledge_status_path or os.path.join(str(base_path), "knowledge_status.json")
         # Derive storage path from domain_knowledge_path parent directory
         self.storage_path = os.path.join(str(base_path), "knows")
+        self.document_path = os.path.join(str(base_path), "docs")
         self.domain = domain
         self.role = role
         self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
@@ -96,8 +97,7 @@ class KnowledgeOpsHandler(AbstractHandler):
 
         # Generation tool (unified) with persistence
         self.tools.update(
-            GenerateKnowledgeTool(
-                llm=self.llm,
+            GenerateKnowledgeFromDocTool(
                 knowledge_status_path=self.knowledge_status_path,
                 storage_path=self.storage_path,
                 tree_structure=self.tree_structure,
@@ -105,6 +105,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 role=self.role,
                 tasks=self.tasks,
                 notifier=self.notifier,
+                document_path=self.document_path,
             ).as_dict()
         )
 
