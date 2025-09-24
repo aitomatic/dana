@@ -18,6 +18,7 @@ from dana.api.core.schemas import (
     MessageData,
     IntentDetectionRequest,
     KnowledgePackSmartChatResponse,
+    PaginatedKnowledgePackResponse,
 )
 from dana.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo, get_conversation_repo, AbstractConversationRepo
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
@@ -41,6 +42,19 @@ async def get_knowledge_pack(
     except Exception as e:
         logger.error(f"Error getting knowledge pack {knowledge_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/", response_model=PaginatedKnowledgePackResponse)
+async def list_knowledge_packs(
+    limit: int = 100,
+    offset: int = 0,
+    repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    List all knowledge packs with optional filtering.
+    """
+    return await repo.list_kp(limit=limit, offset=offset, db=db)
 
 
 @router.post("/create", response_model=KnowledgePackOutput)

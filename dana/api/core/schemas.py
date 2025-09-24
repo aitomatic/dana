@@ -718,6 +718,26 @@ class KnowledgePackOutput(BaseModel):
         )
 
 
+class PaginationInfo(BaseModel):
+    """Pagination metadata for list endpoints"""
+
+    page: int
+    per_page: int
+    total: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+    next_page: int | None
+    previous_page: int | None
+
+
+class PaginatedKnowledgePackResponse(BaseModel):
+    """Paginated response for knowledge pack listings"""
+
+    data: list[KnowledgePackOutput]
+    pagination: PaginationInfo
+
+
 class KnowledgePackCreateRequest(BaseModel):
     kp_metadata: Annotated[Specialization | dict, AfterValidator(lambda v: v.model_dump() if isinstance(v, BaseModel) else v)]
 

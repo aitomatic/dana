@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from dana.api.core.models import KnowledgePack
-from dana.api.core.schemas import KnowledgePackOutput, DomainKnowledgeTree, DomainNode
+from dana.api.core.schemas import KnowledgePackOutput, DomainKnowledgeTree, DomainNode, PaginatedKnowledgePackResponse, PaginationInfo
 from pathlib import Path
 from threading import Lock
 from collections import defaultdict
@@ -26,6 +26,11 @@ class AbstractDomainKnowledgeRepo(ABC):
     @classmethod
     @abstractmethod
     async def get_kp_tree(cls, kp_id: int, **kwargs) -> DomainKnowledgeTree:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def list_kp(cls, limit: int = 100, offset: int = 0, **kwargs) -> PaginatedKnowledgePackResponse:
         pass
 
     @classmethod
@@ -88,6 +93,37 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
             folder = cls.get_knowledge_pack_folder(kp_id)
             domain_tree_path = folder / "domain_knowledge.json"
             return DomainKnowledgeTree.model_validate_json(domain_tree_path.read_text())
+
+    @classmethod
+    async def list_kp(cls, limit: int = 100, offset: int = 0, **kwargs) -> PaginatedKnowledgePackResponse:
+        db = cls._get_db(**kwargs)
+
+        # Get total count for pagination metadata
+        total = db.query(KnowledgePack).count()
+
+        # Get paginated results
+        kps = db.query(KnowledgePack).offset(offset).limit(limit).all()
+
+        # Calculate pagination metadata
+        current_page = (offset // limit) + 1 if limit > 0 else 1
+        total_pages = max(1, (total + limit - 1) // limit) if limit > 0 else 1  # Ceiling division, minimum 1
+
+        # Create pagination info
+        pagination_info = PaginationInfo(
+            page=current_page,
+            per_page=limit,
+            total=total,
+            total_pages=total_pages,
+            has_next=current_page < total_pages,
+            has_previous=current_page > 1,
+            next_page=current_page + 1 if current_page < total_pages else None,
+            previous_page=current_page - 1 if current_page > 1 else None,
+        )
+
+        # Format the knowledge pack responses
+        data = [cls._format_kp_response(kp) for kp in kps]
+
+        return PaginatedKnowledgePackResponse(data=data, pagination=pagination_info)
 
     @classmethod
     async def get_kp(cls, kp_id: int, **kwargs) -> KnowledgePackOutput | None:
