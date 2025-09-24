@@ -9,15 +9,16 @@ logger = logging.getLogger(__name__)
 
 class DomainKnowledgeWSNotifier:
     def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}
+        self.active_connections: dict[str, dict[str, WebSocket]] = {}
 
-    async def connect(self, websocket_id: str, websocket: WebSocket):
+    async def connect(self, websocket_id: str, session_id: str, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections[websocket_id] = websocket
+        self.active_connections.setdefault(websocket_id, {})[session_id] = websocket
 
-    def disconnect(self, websocket_id: str):
+    def disconnect(self, websocket_id: str, session_id: str):
         if websocket_id in self.active_connections:
-            del self.active_connections[websocket_id]
+            if session_id in self.active_connections[websocket_id]:
+                del self.active_connections[websocket_id][session_id]
 
     async def send_chat_update_msg(
         self,
@@ -31,23 +32,23 @@ class DomainKnowledgeWSNotifier:
         if not isinstance(websocket_id, str):
             websocket_id = str(websocket_id)
         if websocket_id in self.active_connections:
-            websocket = self.active_connections[websocket_id]
-            try:
-                message_dict = {
-                    "type": "domain_knowledge_update",
-                    "message": {
-                        "tool_name": tool_name,
-                        "content": message,
-                        "status": status,
-                        "progression": progression,
-                    },
-                    "timestamp": asyncio.get_event_loop().time(),
-                }
-                await websocket.send_text(json.dumps(message_dict))
-            except Exception as e:
-                logger.error(f"Failed to send chat update message via WebSocket: {e}")
-                # Remove disconnected WebSocket
-                self.disconnect(websocket_id)
+            for session_id, websocket in self.active_connections[websocket_id].items():
+                try:
+                    message_dict = {
+                        "type": "domain_knowledge_update",
+                        "message": {
+                            "tool_name": tool_name,
+                            "content": message,
+                            "status": status,
+                            "progression": progression,
+                        },
+                        "timestamp": asyncio.get_event_loop().time(),
+                    }
+                    await websocket.send_text(json.dumps(message_dict))
+                except Exception as e:
+                    logger.error(f"Failed to send chat update message via WebSocket: {e}")
+                    # Remove disconnected WebSocket
+                    self.disconnect(websocket_id, session_id)
 
 
 domain_knowledge_ws_notifier = DomainKnowledgeWSNotifier()

@@ -55,9 +55,7 @@ def streaming_print_override(
         # Restore original print function
         try:
             if original_print:
-                registry.register(
-                    name="print", func=original_print, overwrite=True, trusted_for_context=True
-                )
+                registry.register(name="print", func=original_print, overwrite=True, trusted_for_context=True)
         except Exception:
             print("H")
 

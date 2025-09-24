@@ -203,16 +203,16 @@ def _suggest_agents_with_llm(llm: LLMResource, user_message: str, prebuilt_agent
         for agent in prebuilt_agents:
             config = agent.get("config", {})
             desc = f"""
-Agent: {agent.get('name', 'Unknown')}
-Description: {agent.get('description', '')}
-Domain: {config.get('domain', 'General')}
-Specialties: {', '.join(config.get('specialties', []))}
-Skills: {', '.join(config.get('skills', []))}
-Tasks: {config.get('task', 'General tasks')}
+Agent: {agent.get("name", "Unknown")}
+Description: {agent.get("description", "")}
+Domain: {config.get("domain", "General")}
+Specialties: {", ".join(config.get("specialties", []))}
+Skills: {", ".join(config.get("skills", []))}
+Tasks: {config.get("task", "General tasks")}
 """
             agent_descriptions.append(desc.strip())
 
-        agents_text = "\n\n".join([f"AGENT_{i+1}:\n{desc}" for i, desc in enumerate(agent_descriptions)])
+        agents_text = "\n\n".join([f"AGENT_{i + 1}:\n{desc}" for i, desc in enumerate(agent_descriptions)])
 
         system_prompt = """You are an AI agent recommendation system. Your task is to analyze a user's request and recommend the 2 most relevant prebuilt agents with matching percentages.
 
@@ -1287,7 +1287,7 @@ async def associate_documents_with_agent(
         if not documents_to_add and not documents_to_remove:
             return {
                 "success": True,
-                "message": (f"No changes needed - documents {document_ids} are already " f"correctly associated with agent {agent_id}"),
+                "message": (f"No changes needed - documents {document_ids} are already correctly associated with agent {agent_id}"),
                 "updated_count": 0,
             }
 

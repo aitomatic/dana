@@ -184,7 +184,7 @@ def _choose_prebuilt_key_with_llm(llm: LLMResource, user_message: str, prebuilt_
 
         options_text = "\n".join(
             [
-                f"- key: {opt.get('key')} | name: {opt.get('name')} | desc: {opt.get('description','')}"
+                f"- key: {opt.get('key')} | name: {opt.get('name')} | desc: {opt.get('description', '')}"
                 for opt in prebuilt_options
                 if opt.get("key")
             ]
@@ -195,7 +195,7 @@ def _choose_prebuilt_key_with_llm(llm: LLMResource, user_message: str, prebuilt_
             "Choose the best matching prebuilt 'key' from the provided list based on the user's message.\n"
             "Return ONLY the exact key string. If none is appropriate, return 'none'.\n"
         )
-        assistant_instructions = "Available prebuilt options:\n" + options_text + "\n\n" "Respond with only the key, no extra text."
+        assistant_instructions = "Available prebuilt options:\n" + options_text + "\n\nRespond with only the key, no extra text."
 
         request = BaseRequest(
             arguments={

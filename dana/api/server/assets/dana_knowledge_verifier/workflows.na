@@ -1,0 +1,3 @@
+from methods import refine_query, query_document, query_knowledge, final_answer
+
+def final_workflow(data) = refine_query | query_document | query_knowledge | final_answer

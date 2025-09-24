@@ -197,7 +197,6 @@ Apply the requested modification and return ONLY the complete modified structure
 
             # Look for section to remove
             skip_section = False
-            section_to_remove = None
 
             # Try to identify what to remove from the request
             for line in lines:
@@ -205,7 +204,6 @@ Apply the requested modification and return ONLY the complete modified structure
                     section_name = line.strip().replace("📁", "").strip()
                     if any(term in section_name.lower() for term in request_lower.split() if len(term) > 3):
                         skip_section = True
-                        section_to_remove = section_name
                         continue
                     else:
                         skip_section = False
