@@ -21,13 +21,20 @@ def test_loader_find_spec(loader, sample_module, search_paths):
 
 def test_loader_create_module(loader):
     """Test creating a module from a spec."""
-    spec = ModuleSpec(name="test_module", loader=loader, origin="/path/to/module.na")
+    # Use cross-OS compatible path
+    import os
+    if os.name == 'nt':  # Windows
+        test_path = "C:/path/to/module.na"
+    else:  # Unix-like systems
+        test_path = "/path/to/module.na"
+        
+    spec = ModuleSpec(name="test_module", loader=loader, origin=test_path)
 
     module = loader.create_module(spec)
 
     assert isinstance(module, Module)
     assert module.__name__ == "test_module"
-    assert module.__file__ == "/path/to/module.na"
+    assert module.__file__ == test_path
     assert module.__spec__ is spec
 
 

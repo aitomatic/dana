@@ -2,6 +2,7 @@
 PostgreSQL with pgvector extension provider implementation.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -23,9 +24,94 @@ class PGVectorProvider(BaseVectorStoreProvider):
         Args:
             vector_store: PGVectorStore instance
         """
+        # Don't call super().__init__ yet, we need to set up our attributes first
+        # Store the original vector store
+        self._original_vector_store = vector_store
+        # Store config for recreating vector store when event loop changes
+        self._config = None
+        self._embed_dim = None
+        self._current_loop_id = None
+        # Extract config from the original vector store
+        self._extract_config_from_vector_store(vector_store)
+        # Now call super init which will set self.vector_store
         super().__init__(vector_store)
-        # Store the PGVectorStore for type-specific operations
-        self.vector_store = vector_store
+
+    def _extract_config_from_vector_store(self, vector_store):
+        """Extract configuration from the vector store for recreation."""
+        try:
+            # Extract basic config from the vector store attributes
+            self._embed_dim = vector_store.embed_dim
+
+            # Parse connection string to get connection details
+            from urllib.parse import urlparse
+
+            conn_str = vector_store.connection_string
+            # Parse postgresql://user:password@host:port/database
+            parsed = urlparse(conn_str)
+
+            self._recreate_params = {
+                "host": parsed.hostname or "localhost",
+                "port": str(parsed.port or 5432),
+                "database": parsed.path.lstrip("/") if parsed.path else "vector_db",
+                "user": parsed.username or "postgres",
+                "password": parsed.password or "",
+                "schema_name": vector_store.schema_name,
+                "table_name": vector_store.table_name,
+                "embed_dim": vector_store.embed_dim,
+                "use_halfvec": vector_store.use_halfvec,
+                "hnsw_kwargs": vector_store.hnsw_kwargs,
+                "hybrid_search": vector_store.hybrid_search,
+            }
+
+            logger.debug(f"Extracted config: user={self._recreate_params['user']}, host={self._recreate_params['host']}")
+
+        except Exception as e:
+            logger.warning(f"Could not extract config from vector store: {e}")
+            self._recreate_params = None
+
+    def _get_vector_store_with_loop_check(self):
+        """Get vector store, recreating if event loop changed."""
+        try:
+            current_loop = asyncio.get_running_loop()
+            current_loop_id = id(current_loop)
+        except RuntimeError:
+            # No event loop running, use original vector store
+            return getattr(self, "_vector_store", self._original_vector_store)
+
+        # If event loop changed and we have recreation params, create new vector store
+        if self._current_loop_id != current_loop_id and self._recreate_params is not None:
+            logger.debug(f"Event loop changed ({self._current_loop_id} -> {current_loop_id}), recreating vector store")
+            try:
+                from llama_index.vector_stores.postgres import PGVectorStore
+
+                new_vector_store = PGVectorStore.from_params(**self._recreate_params)
+                # Update the stored vector store
+                self._vector_store = new_vector_store
+                self._original_vector_store = new_vector_store
+                self._current_loop_id = current_loop_id
+
+                return new_vector_store
+            except Exception as e:
+                logger.warning(f"Failed to recreate vector store for new event loop: {e}")
+                # Fall back to original vector store
+                return getattr(self, "_vector_store", self._original_vector_store)
+
+        self._current_loop_id = current_loop_id
+        return getattr(self, "_vector_store", self._original_vector_store)
+
+    @property
+    def vector_store(self):
+        """Property to get vector store with event loop checking."""
+        # If we have a stored vector store and need to check loops
+        if hasattr(self, "_recreate_params"):
+            return self._get_vector_store_with_loop_check()
+        # Otherwise return the base vector store (during initialization)
+        return getattr(self, "_vector_store", self._original_vector_store)
+
+    @vector_store.setter
+    def vector_store(self, value):
+        """Setter for vector store property."""
+        self._vector_store = value
 
     @staticmethod
     def create(config: PGVectorConfig, embed_dim: int) -> VectorStore:
@@ -47,7 +133,7 @@ class PGVectorProvider(BaseVectorStoreProvider):
             raise ImportError("PGVectorStore is not installed. Please install it with `pip install llama-index-vector-stores-postgres`")
 
         logger.info(f"Initializing PGVector store for database: {config.database}")
-        logger.debug(f"HNSW config: m={config.hnsw.m}, ef_construction={config.hnsw.ef_construction}")
+        logger.info(f"HNSW config: m={config.hnsw.m}, ef_construction={config.hnsw.ef_construction}")
 
         return PGVectorStore.from_params(
             host=config.host,

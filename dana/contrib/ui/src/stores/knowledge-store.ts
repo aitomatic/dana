@@ -19,10 +19,14 @@ interface KnowledgeState {
   websocket: WebSocket | null;
   lastFetchTime: number;
 
+  // Tree update callback
+  onTreeUpdate?: (agentId: string | number) => void;
+
   // Actions
   fetchKnowledgeData: (agentId: string | number, force?: boolean) => Promise<void>;
   clearKnowledgeData: () => void;
   setCurrentAgent: (agentId: string | number | null) => void;
+  setTreeUpdateCallback: (callback: (agentId: string | number) => void) => void;
   connectWebSocket: (agentId: string | number) => void;
   disconnectWebSocket: () => void;
 }
@@ -39,6 +43,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   currentAgentId: null,
   websocket: null,
   lastFetchTime: 0,
+  onTreeUpdate: undefined,
 
   fetchKnowledgeData: async (agentId: string | number, force = false) => {
     const state = get();
@@ -76,6 +81,13 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       });
 
       console.log('[KnowledgeStore] Successfully fetched knowledge data');
+
+      // Trigger tree update callback if available
+      const currentState = get();
+      if (currentState.onTreeUpdate) {
+        console.log('[KnowledgeStore] Triggering tree update callback for agent:', agentId);
+        currentState.onTreeUpdate(agentId);
+      }
     } catch (error) {
       console.error('[KnowledgeStore] Error fetching knowledge data:', error);
       set({
@@ -116,6 +128,11 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
         get().connectWebSocket(agentId);
       }
     }
+  },
+
+  setTreeUpdateCallback: (callback: (agentId: string | number) => void) => {
+    console.log('[KnowledgeStore] Setting tree update callback');
+    set({ onTreeUpdate: callback });
   },
 
   connectWebSocket: (agentId: string | number) => {

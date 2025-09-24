@@ -89,7 +89,7 @@ export const getSelectionColumns = (
             ? filteredItems.every((item: LibraryItem) => selectedIds.includes(item.id))
               ? true
               : filteredItems.some((item: LibraryItem) => selectedIds.includes(item.id))
-                ? 'indeterminate'
+                ? undefined
                 : false
             : false
         }
@@ -130,7 +130,7 @@ export const getSelectionColumns = (
             <div onClick={(e) => e.stopPropagation()}>
               <Checkbox
                 checked={
-                  allTopicFilesSelected ? true : someTopicFilesSelected ? 'indeterminate' : false
+                  allTopicFilesSelected ? true : someTopicFilesSelected ? undefined : false
                 }
                 onCheckedChange={(checked) => {
                   if (checked) {
