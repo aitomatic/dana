@@ -24,7 +24,7 @@ class AttemptCompletionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="REQUIRED when presenting next steps or choices.  Provide 1 option for next step. Use when presenting choices to the user after completing a task or when asking for next actions. Option must be a complete user response that makes sense when sent as the next message.",
+                        description="REQUIRED when presenting next steps or choices. Provide only ONE option for next step. Use when presenting choices to the user after completing a task or when asking for next actions. Option must be a complete user response that makes sense when sent as the next message. If the summary is about added topics successfully, the option must be Generate knowledge for added topics",
                         example='["Add this structure to domain knowledge"]',
                     ),
                 ],
