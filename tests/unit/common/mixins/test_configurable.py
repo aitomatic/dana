@@ -1,5 +1,6 @@
 """Tests for the Configurable mixin."""
 
+import os
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
@@ -56,7 +57,10 @@ class TestConfigurable:
         assert path.parent.name == "yaml"
 
         # Test with absolute path
-        abs_path = Path("/absolute/path/config.yaml")
+        if os.name == 'nt':  # Windows
+            abs_path = Path("C:/absolute/path/config.yaml")
+        else:  # Unix-like systems
+            abs_path = Path("/absolute/path/config.yaml")
         path = TestConfig.get_config_path(abs_path)
         assert path == abs_path
 
@@ -164,3 +168,41 @@ class TestConfigurable:
         config_dict = {"setting1": "value1"}
         obj = TestConfig.from_dict(config_dict)
         assert obj.config == config_dict
+
+    def test_cross_os_path_handling(self):
+        """Test cross-OS path handling with dot notation."""
+
+        class TestConfig(Configurable):
+            pass
+
+        # Test that path handling works correctly across different OS
+        # Test with a simple filename that should get .yaml extension
+        path = TestConfig.get_config_path("testfile")
+        assert path.name == "testfile.yaml"
+        assert path.parent.name == "yaml"
+        
+        # Test with explicit extension
+        path_with_ext = TestConfig.get_config_path("testfile.yaml")
+        assert path_with_ext.name == "testfile.yaml"
+        
+        # Test that the path construction is cross-OS compatible
+        # The path should be properly constructed regardless of OS
+        path_str = str(path)
+        assert "testfile" in path_str
+        assert path_str.endswith(".yaml")
+
+    def test_absolute_path_cross_os(self):
+        """Test absolute path handling across different operating systems."""
+
+        class TestConfig(Configurable):
+            pass
+
+        # Test that absolute paths work correctly on different OS
+        if os.name == 'nt':  # Windows
+            abs_path = Path("C:/test/config.yaml")
+        else:  # Unix-like systems
+            abs_path = Path("/test/config.yaml")
+            
+        result_path = TestConfig.get_config_path(abs_path)
+        assert result_path == abs_path
+        assert result_path.is_absolute()

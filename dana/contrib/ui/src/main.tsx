@@ -7,6 +7,7 @@ import AgentsPage from './pages/Agents';
 import AgentDetailPage from './pages/Agents/detail';
 import LibraryPage from './pages/Library';
 import DocumentationPage from './pages/Documentation';
+import StyleGuidePage from './pages/StyleGuide';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
 import { analytics } from './lib/analytics';
@@ -132,6 +133,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <Layout>
               <DocumentationPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/style-guide"
+          element={
+            <Layout hideLayout={true}>
+              <StyleGuidePage />
             </Layout>
           }
         />

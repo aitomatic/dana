@@ -26,8 +26,8 @@ describe('Separator', () => {
     expect(separator).toHaveClass('custom-separator');
   });
 
-  it('renders decorative separator', () => {
-    render(<Separator decorative data-testid="separator" />);
+  it('renders separator with default props', () => {
+    render(<Separator data-testid="separator" />);
     const separator = screen.getByTestId('separator');
     expect(separator).toBeInTheDocument();
   });

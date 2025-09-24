@@ -430,8 +430,8 @@ export default function AgentsPage() {
       <div
         className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-slate-900'
-            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-slate-900 to-slate-900'
+            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-blue-900'
+            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-blue-900 to-blue-900'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
@@ -489,7 +489,7 @@ export default function AgentsPage() {
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -517,7 +517,7 @@ export default function AgentsPage() {
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -545,7 +545,7 @@ export default function AgentsPage() {
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
