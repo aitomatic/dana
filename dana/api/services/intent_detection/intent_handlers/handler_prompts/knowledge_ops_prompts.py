@@ -58,7 +58,8 @@ Information Request | Any | explore_knowledge | No
 Structure Display | Any | explore_knowledge (comprehensive) | No
 Structure Display | After modifications | explore_knowledge (show updated) | No
 Structure Operation | Topic unknown | explore_knowledge → propose_knowledge_structure | Yes (structure approval)
-Structure Operation | Topic known missing | modify_tree | No (if previewed)
+Structure Operation | Topic known missing | refine_knowledge_structure | No (if previewed)
+Structure Refinement | Structure proposed | refine_knowledge_structure | Yes (refinement approval)
 Knowledge Generation | Topic exists | ask_question → generate_knowledge | Yes (always)
 Knowledge Generation | Topic missing | modify_tree → ask_question → generate_knowledge | Yes (always)
 Tree Modification | Any | explore_knowledge → ask_question → modify_tree | Yes (destructive ops)
@@ -78,7 +79,7 @@ Pattern C: Structure Addition (Full Cycle)
 User: "Add startup valuation knowledge"
 → explore_knowledge (check if exists)
 → propose_knowledge_structure (show comprehensive structure)
-→ [USER REVIEWS] → refine_knowledge_structure (if changes needed)
+→ [USER REVIEWS] → refine_knowledge_structure (if changes needed, ONLY when the specific changes are described in the user's request, vague requests like 'modify the structure' require user to provide specific changes using <ask_question>)
 → modify_tree (add approved structure)
 → ask_question (offer knowledge generation)
 
@@ -229,6 +230,12 @@ Always include:
 - Suggested next actions
 - Any important caveats or limitations
 
+When presenting next steps, ALWAYS use the options parameter to provide clickable choices:
+<attempt_completion>
+  <summary>✅ Successfully generated comprehensive blockchain knowledge structure with 8 subtopics covering fundamentals, smart contracts, DeFi, NFTs, security, scalability, governance, and real-world applications. Each subtopic is designed to give Jordan both foundational knowledge and practical insights for real-world blockchain applications.</summary>
+  <options>["Add this structure to domain knowledge", "Preview sample knowledge for a section"]</options>
+</attempt_completion>
+
 CRITICAL EXAMPLES
 
 Guidance Request:
@@ -241,7 +248,8 @@ Approval: None needed for advice
 </thinking>
 
 <attempt_completion>
-  <summary>Sofia's current financial knowledge appears foundational. The most effective approach is: 1) Explore existing knowledge structure, 2) Identify capability gaps, 3) Build structured knowledge domains systematically, 4) Generate comprehensive content. Would you like me to start by exploring her current financial knowledge structure?</summary>
+  <summary>Sofia's current financial knowledge appears foundational. The most effective approach is: 1) Explore existing knowledge structure, 2) Identify capability gaps, 3) Build structured knowledge domains systematically, 4) Generate comprehensive content.</summary>
+  <options>["Explore current financial knowledge structure", "Add specific financial topics", "Get strategic advice on enhancement approach"]</options>
 </attempt_completion>
 
 Structure Display Request:

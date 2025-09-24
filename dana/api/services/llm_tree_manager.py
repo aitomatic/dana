@@ -624,10 +624,10 @@ If moving existing topics, use:
 
         # Work on a copy of the tree
         tree_dict = current_tree.model_dump()
-        print(f"🌳 Original tree dict: {tree_dict}")
+        print(f"Original tree dict: {tree_dict}")
 
         root_node = self._build_node_from_dict(tree_dict["root"])
-        print(f"🌱 Root node created: {root_node.topic} with {len(root_node.children)} children")
+        print(f"Root node created: {root_node.topic} with {len(root_node.children)} children")
 
         changes_applied_count = 0
 

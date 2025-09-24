@@ -55,17 +55,17 @@ class ExploreKnowledgeTool(BaseTool):
             # Handle empty tree case
             if not self.tree_structure or not self.tree_structure.root:
                 content = (
-                    """🌳 Knowledge Exploration
+                    """Knowledge Exploration
 
-📂 Current Status: Empty knowledge tree
-🔍 Query: """
+Current Status: Empty knowledge tree
+Query: """
                     + (query or "all areas")
                     + f"""
-📊 Depth: {max_depth} levels
+Depth: {max_depth} levels
 
-⚠️ No knowledge areas found. The knowledge tree is empty.
+No knowledge areas found. The knowledge tree is empty.
 
-💡 Suggestions:
+Suggestions:
 - Use modify_tree with 'init' operation to create initial knowledge structure
 - Add knowledge areas relevant to your domain expertise
 
@@ -81,14 +81,14 @@ Ready to initialize knowledge structure when needed."""
         except Exception as e:
             logger.error(f"Failed to explore knowledge: {e}")
             # Fallback exploration
-            content = f"""🌳 Knowledge Exploration (Error Recovery)
+            content = f"""Knowledge Exploration (Error Recovery)
 
-📂 Query: {query or "all areas"}
-❌ Error: {str(e)}
+Query: {query or "all areas"}
+Error: {str(e)}
 
-📋 Basic Structure Available:
-🌳 Root domain available for knowledge generation
-💡 Suggestion: Use modify_tree to initialize or expand knowledge structure
+Basic Structure Available:
+Root domain available for knowledge generation
+Suggestion: Use modify_tree to initialize or expand knowledge structure
 
 Ready to proceed with knowledge operations despite exploration error."""
 
@@ -123,11 +123,11 @@ Ready to proceed with knowledge operations despite exploration error."""
                     total_nodes = len(partial_matches)
                     context_info = f"Partial matches for '{query}'"
                 else:
-                    return f"""🌳 Knowledge Exploration
+                    return f""" Knowledge Exploration
 
-📂 Query: {query}
-📊 Depth: {max_depth} levels
-🔢 Total areas found: 0
+Query: {query}
+Depth: {max_depth} levels
+Total areas found: 0
 
 ❌ No knowledge areas found matching '{query}'.
 
@@ -164,13 +164,13 @@ Ready to proceed with knowledge operations despite exploration error."""
 
         # Build final content
         display_depth = actual_depth if "actual_depth" in locals() else max_depth
-        header = f"""## 🌳 Knowledge Exploration
+        header = f"""##Knowledge Exploration
 
-**📂 Query:** {query or "all areas"}  
-**📊 Depth:** {display_depth} levels ({context_info})  
-**🔢 Total areas found:** {total_nodes}
+**Query:** {query or "all areas"}  
+**Depth:** {display_depth} levels ({context_info})  
+**Total areas found:** {total_nodes}
 
-### 📋 Available Knowledge Areas"""
+###Available Knowledge Areas"""
 
         # Build smart footer with recommendations
         footer = self._build_smart_footer(
@@ -258,15 +258,15 @@ Ready to proceed with knowledge operations despite exploration error."""
             return ""
 
         # Format current node with proper markdown list syntax
-        if level == 0 and show_root:
-            emoji = "🌳"
-        elif level == 0 or level == 1:
-            emoji = "📁"
-        elif level == 2:
-            emoji = "📄"
-        else:
-            emoji = "•"
-
+        # if level == 0 and show_root:
+        #     emoji = "🌳"
+        # elif level == 0 or level == 1:
+        #     emoji = "📁"
+        # elif level == 2:
+        #     emoji = "📄"
+        # else:
+        #     emoji = "•"
+        emoji = "•"
         # Add generation status indicator for each topic
         status_indicator = self._get_status_indicator(node.topic)
         
