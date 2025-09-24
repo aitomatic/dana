@@ -227,8 +227,7 @@ Generate the refined structure:"""
         
         # Add clickable options
         response_parts.append("<div class='options-container'>")
-        response_parts.append("<button class='option-button' data-option='1'>1. Add this structure to domain knowledge</button>")
-        response_parts.append("<button class='option-button' data-option='2'>2. Explain this structure in detail</button>")
+        response_parts.append("<button class='option-button' data-option='1'>Add this structure to domain knowledge</button>")
         response_parts.append("</div>")
         response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
         response_parts.append("")  # Empty line for spacing

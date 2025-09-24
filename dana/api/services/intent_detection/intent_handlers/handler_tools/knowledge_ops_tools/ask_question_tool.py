@@ -47,8 +47,8 @@ class AskQuestionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="2 actionable choices that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
-                        example='["Create comprehensive loan knowledge structure", "Add basic loan topics to existing analysis", "Get strategic advice on loan capabilities"]'
+                        description="1 actionable choice (exactly 1 choice) that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
+                        example='["Create comprehensive loan knowledge structure", "Add basic loan topics to existing analysis", "Generate knowledge for all financial topics"]'
                     ),
                     BaseArgument(
                         name="workflow_phase",
@@ -106,7 +106,7 @@ class AskQuestionTool(BaseTool):
             response_parts.append("<div class='options-container'>")
             for i, option in enumerate(options, 1):
                 # Create clickable button-style options (onclick handled by React)
-                response_parts.append(f"<button class='option-button' data-option='{i}'>{i}. {option}</button>")
+                response_parts.append(f"<button class='option-button' data-option='{i}'>{option}</button>")
             response_parts.append("</div>")
             response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
             response_parts.append("")  # Empty line for spacing
