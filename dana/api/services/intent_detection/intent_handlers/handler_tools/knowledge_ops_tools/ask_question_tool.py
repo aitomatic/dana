@@ -23,7 +23,7 @@ class AskQuestionTool(BaseTool):
                     BaseArgument(
                         name="user_message",
                         type="string",
-                        description="A comprehensive message that acknowledges the user's original request, explains your findings in the context of their goals, and addresses their specific concerns or needs. This should make the user feel heard and informed about how your discoveries relate to what they're trying to accomplish.",
+                        description="A comprehensive message that acknowledges the user's original request, explains your findings in the context of their goals, and addresses their specific concerns or needs. This should make the user feel heard and informed about how your discoveries relate to what they're trying to accomplish. Avoid referring to outputs that are not available, e.g. 'Here is the current structure' but the structure is not available.",
                         example="I can see you need your agent to help with small business loan decisions. I explored her financial knowledge and found strong expertise in investment analysis and market evaluation, but she currently lacks specific small business lending knowledge that would be essential for making loan recommendations.",
                     ),
                     BaseArgument(
@@ -47,8 +47,8 @@ class AskQuestionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="Array of 1-2 specific, actionable options that directly address the user's situation. Avoid withrawn options like 'Cancel/No' options. Each option should be a clear choice that moves toward their goal. Avoid generic Yes/No options - instead use descriptive actions like 'Create comprehensive loan knowledge structure', 'Add basic loan topics only', 'Explore existing knowledge first'. Options should be mutually exclusive and cover the most logical paths forward.",
-                        example='["Create comprehensive small business loan knowledge structure", "Add basic loan evaluation topics to existing financial analysis", "Show me current financial knowledge of the agent first", "Get strategic advice on loan advisory capabilities"]',
+                        description="1 actionable choice (exactly 1 choice) that directly answer the question. Each option must be a complete user response that makes sense when sent as the next message. Use descriptive phrases, not generic yes/no responses. Omit if the question requires open-ended user input.",
+                        example='["Create comprehensive loan knowledge structure", "Add basic loan topics to existing analysis", "Generate knowledge for all financial topics"]'
                     ),
                     BaseArgument(
                         name="workflow_phase",
@@ -106,8 +106,9 @@ class AskQuestionTool(BaseTool):
             response_parts.append("<div class='options-container'>")
             for i, option in enumerate(options, 1):
                 # Create clickable button-style options (onclick handled by React)
-                response_parts.append(f"<button class='option-button' data-option='{i}'>{i}. {option}</button>")
+                response_parts.append(f"<button class='option-button' data-option='{i}'>{option}</button>")
             response_parts.append("</div>")
+            response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
             response_parts.append("")  # Empty line for spacing
         # Join all parts with proper spacing
         return "\n".join(response_parts)

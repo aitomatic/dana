@@ -163,6 +163,23 @@ class DomainKnowledgeService(Loggable):
             db.commit()
 
             self.info(f"Saved domain knowledge for agent {agent_id} to {file_path} (version {tree.version})")
+            
+            # Send universal notification
+            try:
+                from dana.api.services.universal_knowledge_update_notifier import universal_knowledge_notifier
+                await universal_knowledge_notifier.notify_tree_modified(
+                    agent_id=agent_id,
+                    operation="domain_service_save",
+                    details={
+                        "file_path": str(file_path),
+                        "version": tree.version,
+                        "folder_path": folder_path
+                    }
+                )
+                logger.info(f"[DomainKnowledgeService] Sent universal notification for agent {agent_id}")
+            except Exception as e:
+                logger.error(f"[DomainKnowledgeService] Failed to send universal notification: {e}")
+            
             return True
 
         except Exception as e:

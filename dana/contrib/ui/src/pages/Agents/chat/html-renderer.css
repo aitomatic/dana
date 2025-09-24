@@ -161,29 +161,29 @@
 /* Option Button Styling */
 .options-container {
   display: flex;
-  flex-direction: column;
-
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
 }
 
 .option-button {
-  display: block;
-  width: 100%;
-  padding: 8px 8px;
-  border: none;
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
+  background: white;
 
 }
-.option-button:not(:last-child) {
-  border-bottom: 1px solid #e4e7ec;
-}
 .option-button:hover {
+  background-color: #f3f4f6;
   transform: translateY(-1px);
-  /* box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15); */
-  background: linear-gradient(135deg, #f9fafb 0%, #f9fafb 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .option-button:active {
