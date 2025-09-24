@@ -656,21 +656,21 @@ Return as JSON with this exact structure:
 - Update your path to start with the correct root node"""
         elif error_type == "cannot_remove_root":
             content += """
-- Root nodes cannot be removed
-- Consider using modify operation instead to change the root
-- Or restructure the tree by creating a new tree with the desired root"""
+- Using modify operation to change the root node autonomously. Do it without asking user for input."""
         elif error_type == "ambiguous_placement":
-            current_root = failed_result.get("current_root", "unknown")
-            attempted_path = failed_result.get("attempted_path", [])
-            suggestion = failed_result.get("suggestion", "")
-            content += f"""
-- Your path starts with '{attempted_path[0] if attempted_path else "unknown"}' but the tree root is '{current_root}'
-- This could mean you want to:
-  1. Add '{attempted_path[0] if attempted_path else "unknown"}' as a child of '{current_root}' 
-  2. Or you meant to start the path from the existing root
-- {suggestion}
-- Use explore_knowledge to see the current tree structure
-- Then specify the complete path from the root node"""
+            # current_root = failed_result.get("current_root", "unknown")
+            # attempted_path = failed_result.get("attempted_path", [])
+            # suggestion = failed_result.get("suggestion", "")
+            content += """
+- Using modify operation to change the root node autonomously. Do it without asking user for input."""
+#             content += f"""
+# - Your path starts with '{attempted_path[0] if attempted_path else "unknown"}' but the tree root is '{current_root}'
+# - This could mean you want to:
+#   1. Add '{attempted_path[0] if attempted_path else "unknown"}' as a child of '{current_root}' 
+#   2. Or you meant to start the path from the existing root
+# - {suggestion}
+# - Use explore_knowledge to see the current tree structure
+# - Then specify the complete path from the root node"""
         else:
             content += """
 - Use explore_knowledge to understand the current tree structure
@@ -768,6 +768,9 @@ Return as JSON with this exact structure:
                 ko_utils.save_tree(updated_tree, self.domain_knowledge_path)
                 self.tree_structure = updated_tree  # Update local reference
                 logger.info(f"Tree structure saved to {self.domain_knowledge_path}")
+                
+                # Send universal notification
+                self._notify_tree_update("init", {"tree_path": self.domain_knowledge_path})
             except Exception as e:
                 logger.error(f"Failed to save tree structure: {e}")
 
@@ -785,6 +788,9 @@ Return as JSON with this exact structure:
                 # Save updated tree
                 ko_utils.save_tree(self.tree_structure, self.domain_knowledge_path)
                 logger.info(f"Tree changes saved after {operation} operation on {tree_path}")
+                
+                # Send universal notification
+                self._notify_tree_update(operation, {"tree_path": tree_path})
             except Exception as e:
                 logger.error(f"Failed to save tree changes: {e}")
 
@@ -928,3 +934,33 @@ Return as JSON with this exact structure:
 
         # Join all parts with proper spacing
         return "\n".join(response_parts)
+
+    def _notify_tree_update(self, operation: str, details: dict) -> None:
+        """Send universal notification about tree updates."""
+        try:
+            from dana.api.services.universal_knowledge_update_notifier import universal_knowledge_notifier
+            from dana.common.utils.misc import Misc
+            
+            # Extract agent_id from domain_knowledge_path if available
+            agent_id = None
+            if self.domain_knowledge_path:
+                # Extract agent_id from path like "agents/agent_123/knows/domain_knowledge.json"
+                import re
+                match = re.search(r'agent_(\d+)', self.domain_knowledge_path)
+                if match:
+                    agent_id = match.group(1)
+            
+            if agent_id:
+                # Send notification asynchronously
+                Misc.safe_asyncio_run(
+                    universal_knowledge_notifier.notify_tree_modified,
+                    agent_id,
+                    operation,
+                    details
+                )
+                logger.info(f"[ModifyTreeTool] Sent universal notification for agent {agent_id}, operation: {operation}")
+            else:
+                logger.warning("[ModifyTreeTool] Could not determine agent_id for notification")
+                
+        except Exception as e:
+            logger.error(f"[ModifyTreeTool] Failed to send universal notification: {e}")
