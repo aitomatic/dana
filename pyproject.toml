@@ -143,6 +143,7 @@ dependencies = [
     "ruff>=0.13.0",
     "alembic>=1.16.5",
     "docx2txt>=0.9",
+    "broadcaster==0.3.1",
 ]
 
 # Command-line entry points

@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from dana.api.client import APIClient
+from dana.api.core.bc_engine import broadcast_engine
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
 from alembic.config import Config
@@ -78,10 +79,10 @@ async def knowledge_status_ws(websocket: WebSocket):
 async def universal_knowledge_updates_ws(websocket: WebSocket, agent_id: str):
     """WebSocket endpoint for universal knowledge update notifications."""
     from ..services.universal_knowledge_update_notifier import universal_knowledge_notifier
-    
+
     # Generate unique WebSocket ID
     websocket_id = f"agent_{agent_id}_{datetime.now().timestamp()}"
-    
+
     await universal_knowledge_notifier.connect(websocket_id, websocket, agent_id)
     try:
         while True:
@@ -106,10 +107,11 @@ async def lifespan(app: FastAPI):
         # Create base tables first
         Base.metadata.create_all(bind=engine)
 
+    await broadcast_engine.connect()
     yield
 
     # Shutdown (if needed in the future)
-    pass
+    await broadcast_engine.disconnect()
 
 
 def create_app():
@@ -127,56 +129,18 @@ def create_app():
 
     # Include routers under /api
     # New consolidated routers (preferred)
-    from ..routers.agent_test import router as agent_test_router
-    from ..routers.agents import router as agents_router
-
-    # Legacy routers (for endpoints not yet migrated)
-    from ..routers.api import router as api_router
-    from ..routers.chat import router as new_chat_router
-    from ..routers.conversations import router as new_conversations_router
-    from ..routers.documents import router as new_documents_router
-    from ..routers.domain_knowledge import router as domain_knowledge_router
-    from ..routers.extract_documents import router as extract_documents_router
+    from ..routers.v1 import router as v1_router
     from ..routers.main import router as main_router
     from ..routers.poet import router as poet_router
-    from ..routers.smart_chat import router as smart_chat_router
-    from ..routers.topics import router as new_topics_router
-    from ..routers.workflow_execution import router as workflow_execution_router
-    from ..routers.domain_knowledge_v2 import router as domain_knowledge_v2_router
+    from ..routers.v2 import router as v2_router
 
     app.include_router(main_router)
 
     # Use new consolidated routers
-    app.include_router(agents_router, prefix="/api")
-    app.include_router(new_chat_router, prefix="/api")
-    app.include_router(new_conversations_router, prefix="/api")
-    app.include_router(new_documents_router, prefix="/api")
-    app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
-    app.include_router(domain_knowledge_router, prefix="/api")
-    if os.getenv("USE_SMART_CHAT_V2", "true").lower() == "true":
-        from ..routers.smart_chat_v2 import router as smart_chat_v2_router
-
-        app.include_router(smart_chat_v2_router, prefix="/api")
-        print("\033[92mInitializing smart chat v2 router\033[0m")
-    else:
-        app.include_router(smart_chat_router, prefix="/api")
-        print("\033[96mInitializing smart chat router\033[0m")
-    app.include_router(extract_documents_router, prefix="/api")
-    app.include_router(workflow_execution_router, prefix="/api")
-    app.include_router(domain_knowledge_v2_router, prefix="/api")
     app.include_router(ws_router)
-
-    # Keep legacy api router for endpoints not yet migrated:
-    # - /run-na-file - Run Dana files
-    # - /write-files - Write multi-file projects to disk
-    # - /write-files-temp - Write multi-file projects to temp directory
-    # - /validate-multi-file - Validate multi-file project structure
-    # - /open-agent-folder - Open agent folder in file explorer
-    # - /task-status/{task_id} - Get background task status
-    # - /deep-train - Perform deep training on agents
-    app.include_router(api_router, prefix="/api/legacy")
-    app.include_router(agent_test_router, prefix="/api")
+    app.include_router(v2_router, prefix="/api/v2")
+    app.include_router(v1_router, prefix="/api")
 
     # Serve static files (React build)
     static_dir = os.path.join(os.path.dirname(__file__), "static")

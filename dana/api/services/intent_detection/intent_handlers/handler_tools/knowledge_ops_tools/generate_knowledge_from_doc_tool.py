@@ -224,9 +224,7 @@ class GenerateKnowledgeTool(BaseTool):
 
                 # Stream progress update
                 if self.notifier:
-                    await self.notifier(
-                        "generate_knowledge", f"📝 Processing {i + 1}/{len(all_leaf_paths)}: {leaf_topic}", "in_progress", progress
-                    )
+                    await self.notifier("generate_knowledge", f"📝 Processing {i + 1}/{len( )}: {leaf_topic}", "in_progress", progress)
 
                 # Initialize status manager for the current path if it hasn't been done yet
                 await self._initialize_path_in_status_manager(path)

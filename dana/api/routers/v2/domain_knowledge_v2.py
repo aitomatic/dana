@@ -23,9 +23,9 @@ from dana.api.core.schemas import (
 from uuid import uuid4
 from dana.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo, get_conversation_repo, AbstractConversationRepo
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
-from dana.api.routers.ws.domain_knowledge_ws import create_domain_knowledge_ws_notifier, domain_knowledge_ws_notifier
-from fastapi import WebSocket, WebSocketDisconnect
-import json
+from .ws.domain_knowledge_ws import create_domain_knowledge_ws_notifier, domain_knowledge_ws_notifier
+from fastapi import WebSocket
+from fastapi.concurrency import run_until_first_complete
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ async def create_knowledge_pack(
     Initialize a knowledge pack.
     """
     try:
-        metadata = request.kp_metadata
+        metadata = request.kp_metadata.model_dump()
         kp = await repo.create_kp(kp_metadata=metadata, db=db)
         return kp
     except Exception as e:
@@ -88,7 +88,7 @@ async def update_knowledge_pack(
     Initialize a knowledge pack.
     """
     try:
-        metadata = request.kp_metadata
+        metadata = request.kp_metadata.model_dump()
         return await repo.update_kp(kp_id=request.kp_id, kp_metadata=metadata, db=db)
     except ValueError as e:
         logger.error(f"Bad request error updating knowledge pack: {e}")
@@ -179,22 +179,11 @@ async def smart_chat(
 async def send_chat_update_msg(knowledge_id: str, websocket: WebSocket):
     session_id = str(uuid4())
     await domain_knowledge_ws_notifier.connect(knowledge_id, session_id, websocket)
-    try:
-        while True:
-            # Keep the connection alive and listen for client messages
-            data = await websocket.receive_text()
-            # Echo back for debugging (optional)
-            await websocket.send_text(
-                json.dumps(
-                    {
-                        "type": "echo",
-                        "message": f"Connected to variable updates for ID: {knowledge_id}",
-                        "data": data,
-                    }
-                )
-            )
-    except WebSocketDisconnect:
-        domain_knowledge_ws_notifier.disconnect(knowledge_id, session_id)
-    except Exception as e:
-        logger.error(f"WebSocket error for {knowledge_id}: {e}")
-        domain_knowledge_ws_notifier.disconnect(knowledge_id, session_id)
+    await run_until_first_complete(
+        (domain_knowledge_ws_notifier.run_ws_loop_forever, {"websocket": websocket, "websocket_id": knowledge_id}),
+    )
+
+
+@router.get("/test-ws/{knowledge_id}")
+async def test_ws(knowledge_id: str, message: str):
+    await domain_knowledge_ws_notifier.send_update_msg(knowledge_id, message)

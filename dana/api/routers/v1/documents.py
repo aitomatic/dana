@@ -13,7 +13,7 @@ from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRe
 from dana.api.services.document_service import get_document_service, DocumentService
 from dana.api.services.extraction_service import get_extraction_service, ExtractionService
 from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
-from dana.api.routers.extract_documents import deep_extract
+from dana.api.routers.v1.extract_documents import deep_extract
 from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 
 logger = logging.getLogger(__name__)

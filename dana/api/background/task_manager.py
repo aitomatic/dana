@@ -38,5 +38,7 @@ class TaskManager:
                 tree_structure=task["data"]["tree_structure"],
                 domain=task["data"]["domain"],
                 role=task["data"]["role"],
+                tasks=task["data"]["tasks"],
             )
-            await knowledge_gen_tool.execute(task["data"]["user_message"], task["data"]["counts"], task["data"]["context"])
+            kwargs_names = knowledge_gen_tool.get_arguments()
+            await knowledge_gen_tool.execute(**{task["data"].get(kwargs_name) for kwargs_name in kwargs_names})

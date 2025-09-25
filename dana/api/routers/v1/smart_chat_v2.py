@@ -23,7 +23,7 @@ from dana.api.services.domain_knowledge_service import (
     get_domain_knowledge_service,
     DomainKnowledgeService,
 )
-from dana.api.routers.agents import clear_agent_cache
+from dana.api.routers.v1.agents import clear_agent_cache
 
 # Use KnowledgeOpsHandler directly
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
@@ -430,18 +430,15 @@ async def smart_chat_v2(
         # Only include updated_domain_tree if tree was modified
         if updated_domain_tree:
             response["updated_domain_tree"] = updated_domain_tree.model_dump()
-            
+
             # Send universal notification for tree updates
             try:
                 from dana.api.services.universal_knowledge_update_notifier import universal_knowledge_notifier
+
                 await universal_knowledge_notifier.notify_tree_modified(
                     agent_id=agent_id,
                     operation="smart_chat_update",
-                    details={
-                        "status": result.get("status"),
-                        "processor": "knowledge_ops_handler",
-                        "agent_id": agent_id
-                    }
+                    details={"status": result.get("status"), "processor": "knowledge_ops_handler", "agent_id": agent_id},
                 )
                 logger.info(f"[SmartChatV2] Sent universal notification for agent {agent_id}")
             except Exception as e:

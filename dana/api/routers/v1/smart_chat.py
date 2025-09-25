@@ -27,7 +27,7 @@ from dana.api.services.intent_detection_service import (
 )
 from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeManager
 from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
-from dana.api.routers.agents import clear_agent_cache
+from dana.api.routers.v1.agents import clear_agent_cache
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.api.services.auto_knowledge_generator import get_auto_knowledge_generator
