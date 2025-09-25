@@ -11,7 +11,7 @@ class AttemptCompletionTool(BaseTool):
     def __init__(self):
         tool_info = BaseToolInformation(
             name="attempt_completion",
-            description="Present information to the user. Use for: 1) Final results after workflow completion, 2) Direct answers to agent information requests ('Tell me about Sofia'), 3) System capability questions ('What can you help me with?'), 4) Out-of-scope request redirection. DO NOT use for knowledge structure questions - use explore_knowledge instead. ALWAYS provide options parameter when presenting next steps or choices to the user.",
+            description="Present information to the user. Use for: 1) Final results after workflow completion, 2) Direct answers to agent information requests ('Tell me about Sofia'), 3) System capability questions ('What can you help me with?'), 4) Out-of-scope request redirection. DO NOT use for knowledge structure questions - use explore_knowledge instead. Optionally provide one option for next step if it is relevant, but if there is option provided, ALWAYS use options parameter and ONLY provided one option.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
@@ -24,7 +24,7 @@ class AttemptCompletionTool(BaseTool):
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="REQUIRED when presenting next steps or choices. Provide only ONE option for next step. Use when presenting choices to the user after completing a task or when asking for next actions. Option must be a complete user response that makes sense when sent as the next message. If the summary is about added topics successfully, the option must be Generate knowledge for added topics",
+                        description="Provide option if there is one relevant next step or choice. Provide only ONE option. Use when presenting option to the user after completing a task or when asking for next action. Option must be a complete user response that makes sense when sent as the next message. If the summary is about added topics successfully, the option must be Generate knowledge for added topics",
                         example='["Add this structure to domain knowledge"]',
                     ),
                 ],

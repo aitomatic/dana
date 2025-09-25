@@ -13,6 +13,7 @@ import logging
 import os
 import shutil
 import json
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,14 @@ class ModifyTreeTool(BaseTool):
         domain: str = "General",
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
+        notifier: Callable[[str, str, str, float | None], None] | None = None,
     ):
         self.domain = domain
         self.role = role
         self.tasks = tasks or []
         self.storage_path = storage_path
         self.knowledge_status_path = knowledge_status_path
+        self.notifier = notifier
 
         tool_info = BaseToolInformation(
             name="modify_tree",
@@ -101,6 +104,8 @@ class ModifyTreeTool(BaseTool):
             else:
                 content = f"❌ Invalid operation '{operation}'. Supported: init, bulk"
                 content = self._build_structured_response(user_message, operation, content)
+            if self.notifier:
+                await self.notifier("modify_tree", f"Tree is modified", "in_progress", 0.0)
 
             return ToolResult(name="modify_tree", result=content, require_user=False)
 
@@ -623,7 +628,7 @@ Return as JSON with this exact structure:
         # Get successful operations before the failure
         successful_ops = [r for r in all_results[:-1] if r["success"]]
 
-        content = f"""❌ Tree Operation Failed
+        content = f"""Tree Operation Failed
 
 🚫 **Operation {operation_number} Failed**: {operation.title()} operation on "{path}"
 📋 **Error**: {error_msg}
@@ -791,6 +796,16 @@ Return as JSON with this exact structure:
                 
                 # Send universal notification
                 self._notify_tree_update(operation, {"tree_path": tree_path})
+                
+                # Send finish notification for frontend auto-switch
+                if self.notifier:
+                    Misc.safe_asyncio_run(
+                        self.notifier,
+                        "modify_tree",
+                        f"Tree modification completed: {operation}",
+                        "finish",
+                        1.0
+                    )
             except Exception as e:
                 logger.error(f"Failed to save tree changes: {e}")
 
@@ -936,31 +951,5 @@ Return as JSON with this exact structure:
         return "\n".join(response_parts)
 
     def _notify_tree_update(self, operation: str, details: dict) -> None:
-        """Send universal notification about tree updates."""
-        try:
-            from dana.api.services.universal_knowledge_update_notifier import universal_knowledge_notifier
-            from dana.common.utils.misc import Misc
-            
-            # Extract agent_id from domain_knowledge_path if available
-            agent_id = None
-            if self.domain_knowledge_path:
-                # Extract agent_id from path like "agents/agent_123/knows/domain_knowledge.json"
-                import re
-                match = re.search(r'agent_(\d+)', self.domain_knowledge_path)
-                if match:
-                    agent_id = match.group(1)
-            
-            if agent_id:
-                # Send notification asynchronously
-                Misc.safe_asyncio_run(
-                    universal_knowledge_notifier.notify_tree_modified,
-                    agent_id,
-                    operation,
-                    details
-                )
-                logger.info(f"[ModifyTreeTool] Sent universal notification for agent {agent_id}, operation: {operation}")
-            else:
-                logger.warning("[ModifyTreeTool] Could not determine agent_id for notification")
-                
-        except Exception as e:
-            logger.error(f"[ModifyTreeTool] Failed to send universal notification: {e}")
+        """Send notification about tree updates."""
+        logger.info(f"[ModifyTreeTool] Tree update completed - operation: {operation}")
