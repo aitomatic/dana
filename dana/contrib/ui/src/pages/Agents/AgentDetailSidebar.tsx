@@ -423,6 +423,20 @@ To get started, let's define its foundation:
       return [...prev, newStatusMessage];
     });
 
+    // Automatically expand the thinking component when processing status updates are received
+    setIsHistoryExpanded(true);
+
+    // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
+    if ((message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') && message.status === 'finish') {
+      console.log('[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab');
+      
+      // Use the existing knowledge store callback system for auto-switching
+      const knowledgeStore = useKnowledgeStore.getState();
+      if (knowledgeStore.onTreeUpdate && agent_id) {
+        knowledgeStore.onTreeUpdate(agent_id);
+      }
+    }
+
     // Don't clear processing status - keep it in history
     // Only remove very old messages (older than 1 hour) to prevent memory issues
     setTimeout(
@@ -435,7 +449,7 @@ To get started, let's define its foundation:
       },
       60 * 60 * 1000,
     );
-  }, []);
+  }, [agent_id]);
 
   const { connectionState } = useSmartChatWebSocket({
     agentId: agent_id || '',
@@ -641,6 +655,9 @@ To get started, let's define its foundation:
       addMessage(thinkingMsg);
       thinkingMessageId = thinkingMsg.id!;
 
+      // Automatically expand the thinking component when thinking process begins
+      setIsHistoryExpanded(true);
+
       const response = await apiService.smartChat(agent_id, userInput);
 
       // Remove the thinking message by ID if it exists
@@ -679,7 +696,7 @@ To get started, let's define its foundation:
         }
       }
 
-      // Universal knowledge update detection (fallback method)
+      // Knowledge update detection (fallback method)
       const hasKnowledgeUpdate = 
         response.updated_domain_tree ||
         response.status === 'knowledge_status_update' ||

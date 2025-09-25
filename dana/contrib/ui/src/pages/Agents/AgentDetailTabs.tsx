@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import OverviewTab from './tabs/OverviewTab';
 import KnowledgeBaseTab from './tabs/KnowledgeBaseTab';
 import CodeTab from './tabs/CodeTab';
@@ -8,7 +8,7 @@ import { Code2, List, BookOpen, Network, CheckCircle, Building, Rocket, Globe, P
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 import { useUIStore } from '@/stores/ui-store';
-import { useAutoSwitchToKnowledgeTab, useUniversalKnowledgeUpdates } from '@/hooks';
+import { useAutoSwitchToKnowledgeTab } from '@/hooks';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -60,20 +60,6 @@ export const AgentDetailTabs: React.FC<{
 
   // Auto-switch to Domain Knowledge tab when tree is updated (legacy method)
   useAutoSwitchToKnowledgeTab();
-  
-  // Universal knowledge updates handler
-  const { connectWebSocket, disconnectWebSocket } = useUniversalKnowledgeUpdates();
-
-  // Connect to universal knowledge updates WebSocket when agent changes
-  useEffect(() => {
-    if (selectedAgent?.id) {
-      connectWebSocket(selectedAgent.id.toString());
-    }
-    
-    return () => {
-      disconnectWebSocket();
-    };
-  }, [selectedAgent?.id, connectWebSocket, disconnectWebSocket]);
 
   // Deployment state
   const [showLocalAPI, setShowLocalAPI] = useState(false);
