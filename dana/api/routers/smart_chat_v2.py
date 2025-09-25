@@ -52,8 +52,11 @@ class SmartChatWSNotifier:
         self.active_connections[websocket_id] = websocket
 
     def disconnect(self, websocket_id: str):
-        if websocket_id in self.active_connections:
-            del self.active_connections[websocket_id]
+        try:
+            if websocket_id in self.active_connections:
+                del self.active_connections[websocket_id]
+        except Exception as e:
+            logger.error(f"Error disconnecting WebSocket {websocket_id}: {e}")
 
     async def send_chat_update_msg(
         self,
@@ -431,21 +434,7 @@ async def smart_chat_v2(
         if updated_domain_tree:
             response["updated_domain_tree"] = updated_domain_tree.model_dump()
             
-            # Send universal notification for tree updates
-            try:
-                from dana.api.services.universal_knowledge_update_notifier import universal_knowledge_notifier
-                await universal_knowledge_notifier.notify_tree_modified(
-                    agent_id=agent_id,
-                    operation="smart_chat_update",
-                    details={
-                        "status": result.get("status"),
-                        "processor": "knowledge_ops_handler",
-                        "agent_id": agent_id
-                    }
-                )
-                logger.info(f"[SmartChatV2] Sent universal notification for agent {agent_id}")
-            except Exception as e:
-                logger.error(f"[SmartChatV2] Failed to send universal notification: {e}")
+            logger.info(f"[SmartChatV2] Tree modification completed for agent {agent_id}")
 
         # --- Save agent response to AgentChatHistory ---
         agent_response_text = response.get("follow_up_message")

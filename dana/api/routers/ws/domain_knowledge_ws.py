@@ -16,8 +16,11 @@ class DomainKnowledgeWSNotifier:
         self.active_connections[websocket_id] = websocket
 
     def disconnect(self, websocket_id: str):
-        if websocket_id in self.active_connections:
-            del self.active_connections[websocket_id]
+        try:
+            if websocket_id in self.active_connections:
+                del self.active_connections[websocket_id]
+        except Exception as e:
+            logger.error(f"Error disconnecting WebSocket {websocket_id}: {e}")
 
     async def send_chat_update_msg(
         self,
