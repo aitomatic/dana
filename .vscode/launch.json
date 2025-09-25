@@ -35,6 +35,7 @@
       "name" : "Debug Dana Backend",
       "type": "python",
       "request": "launch",
+      "justMyCode": false,
       "module": "dana.apps.cli.__main__",
       "args": ["studio"],
       "console": "integratedTerminal",

@@ -95,13 +95,16 @@ class WorkflowInfo(BaseModel):
     methods: list[str]
 
 
+API_FOLDER = Path(__file__).parent.parent.parent
+
+
 def _copy_na_files_from_prebuilt(prebuilt_key: str, target_folder: str) -> bool:
     """Copy only .na files from a prebuilt agent asset folder into the target agent folder, preserving structure.
 
     Skips any files under a 'knows' directory.
     """
     try:
-        source_folder = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key
+        source_folder = API_FOLDER / "server" / "assets" / prebuilt_key
         if not source_folder.exists():
             logger.error(f"Prebuilt agent folder not found for key: {prebuilt_key}")
             return False
@@ -177,7 +180,7 @@ def _parse_workflow_content(content: str) -> dict:
 def _load_prebuilt_agents() -> list[dict]:
     """Load available prebuilt agents from assets JSON."""
     try:
-        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        assets_path = API_FOLDER / "server" / "assets" / "prebuilt_agents.json"
         if not assets_path.exists():
             logger.warning("prebuilt_agents.json not found")
             return []
@@ -808,7 +811,7 @@ async def get_prebuilt_agents():
     """
     try:
         # Load prebuilt agents from the assets file
-        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        assets_path = API_FOLDER / "server" / "assets" / "prebuilt_agents.json"
 
         if not assets_path.exists():
             logger.warning(f"Prebuilt agents file not found at {assets_path}")
@@ -1061,7 +1064,7 @@ async def create_agent_from_prebuilt(
     """Create a new agent by cloning a prebuilt agent's files and domain_knowledge.json."""
     try:
         # Load prebuilt agents list
-        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        assets_path = API_FOLDER / "server" / "assets" / "prebuilt_agents.json"
         with open(assets_path, encoding="utf-8") as f:
             prebuilt_agents = json.load(f)
         prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
@@ -1077,7 +1080,7 @@ async def create_agent_from_prebuilt(
         db.commit()
         db.refresh(db_agent)
         # Copy files from prebuilt assets folder
-        prebuilt_folder = Path(__file__).parent.parent / "server" / "assets" / prebuilt_agent["key"]
+        prebuilt_folder = API_FOLDER / "server" / "assets" / prebuilt_agent["key"]
         agents_dir = Path("agents")
         agents_dir.mkdir(exist_ok=True)
         safe_name = db_agent.name.lower().replace(" ", "_").replace("-", "_")
@@ -1798,7 +1801,7 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
             logger.info(f"Testing prebuilt agent: {agent_id}")
 
             # Load prebuilt agents list
-            assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+            assets_path = API_FOLDER / "server" / "assets" / "prebuilt_agents.json"
 
             try:
                 with open(assets_path, encoding="utf-8") as f:
@@ -1813,7 +1816,7 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
                 agent_description = prebuilt_agent.get("description", "A prebuilt Dana agent")
 
                 # Check if prebuilt agent folder exists in assets
-                prebuilt_folder = Path(__file__).parent.parent / "server" / "assets" / agent_id
+                prebuilt_folder = API_FOLDER / "server" / "assets" / agent_id
 
                 if not prebuilt_folder.exists():
                     raise HTTPException(status_code=404, detail=f"Prebuilt agent folder '{agent_id}' not found")
@@ -1839,7 +1842,7 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
 
         # Import the test logic from agent_test module
-        from dana.api.routers.agent_test import AgentTestRequest, test_agent
+        from dana.api.routers.v1.agent_test import AgentTestRequest, test_agent
         from dana.__init__.init_modules import (
             initialize_module_system,
             reset_module_system,
@@ -2217,7 +2220,7 @@ async def get_prebuilt_agent_workflow_info(prebuilt_key: str):
             raise HTTPException(status_code=404, detail=f"Prebuilt agent not found: {prebuilt_key}")
 
         # Try to read workflows.na file
-        workflows_path = Path(__file__).parent.parent / "server" / "assets" / prebuilt_key / "workflows.na"
+        workflows_path = API_FOLDER / "server" / "assets" / prebuilt_key / "workflows.na"
 
         if not workflows_path.exists():
             # Return empty workflow info if file doesn't exist
