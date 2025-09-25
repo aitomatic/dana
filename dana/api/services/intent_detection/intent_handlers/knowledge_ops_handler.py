@@ -146,6 +146,7 @@ class KnowledgeOpsHandler(AbstractHandler):
                 domain=self.domain,
                 role=self.role,
                 tasks=self.tasks,
+                notifier=self.notifier,
             ).as_dict()
         )
 

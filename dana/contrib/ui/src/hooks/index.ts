@@ -11,4 +11,3 @@ export { useIsMobile } from './use-mobile';
 export { useSidebar } from './use-sidebar';
 export { useAnalytics, useDanaAnalytics } from './useAnalytics';
 export { useAutoSwitchToKnowledgeTab } from './useAutoSwitchToKnowledgeTab';
-export { useUniversalKnowledgeUpdates } from './useUniversalKnowledgeUpdates';

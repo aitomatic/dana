@@ -74,22 +74,6 @@ async def knowledge_status_ws(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 
-@ws_router.websocket("/ws/universal-knowledge-updates/{agent_id}")
-async def universal_knowledge_updates_ws(websocket: WebSocket, agent_id: str):
-    """WebSocket endpoint for universal knowledge update notifications."""
-    from ..services.universal_knowledge_update_notifier import universal_knowledge_notifier
-    
-    # Generate unique WebSocket ID
-    websocket_id = f"agent_{agent_id}_{datetime.now().timestamp()}"
-    
-    await universal_knowledge_notifier.connect(websocket_id, websocket, agent_id)
-    try:
-        while True:
-            await websocket.receive_text()  # Keep alive
-    except WebSocketDisconnect:
-        universal_knowledge_notifier.disconnect(websocket_id)
-    except Exception:
-        universal_knowledge_notifier.disconnect(websocket_id)
 
 
 @asynccontextmanager
