@@ -1,11 +1,11 @@
 {
     "llm": {
         "preferred_models": [
-	    "huggingface:openai/gpt-oss-120b",
-	    "anthropic:kimi-k2-0711-preview",
-	    "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
-	    "moonshot:kimi",
-	    "openrouter:gpt-4o-mini",
+            "huggingface:openai/gpt-oss-120b",
+            "anthropic:kimi-k2-0711-preview",
+            "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
+            "moonshot:kimi",
+            "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
             "azure:gpt-4",
             "azure:gpt-4o-mini",
@@ -15,7 +15,6 @@
             "google:gemini-1.5-pro-latest",
             "groq:llama3-70b-8192",
             "ibm_watsonx:ibm/granite-20b-multilingual",
-            "local",
             "mistral:mistral-large-latest",
             "openai:gpt-4.1-mini",
             "openai:gpt-4.1-nano",
@@ -28,29 +27,40 @@
             "xai:grok-3-mini",
             "xai:grok-3",
             "xai:grok-4-0709",
-            "xai:grok-beta"
+            "xai:grok-beta",
+            "local:phi3:mini",
+            "local:llama3.2",
+            "local:gemma3",
+            "ollama:phi3:mini",
+            "ollama:llama3.2",
+            "ollama:gemma3"
         ],
         "provider_configs": {
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
-                "base_url": "http://localhost:8000/v1",
-                "model_name": "microsoft/Phi-3.5-mini-instruct"
+                "base_url": "env:LOCAL_BASE_URL",
+                "model_name": "env:LOCAL_MODEL_NAME"
             },
-	    "huggingface": {
-		"api_key": "env:HF_TOKEN",
-		"base_url": "https://router.huggingface.co/v1"
-	    },
-	    "openrouter": {
-		"api_key": "env:OPENROUTER_API_KEY",
-		"base_url": "https://openrouter.ai/api/v1"
-	    },
+            "ollama": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_BASE_URL",
+                "model_name": "env:LOCAL_MODEL_NAME"
+            },
+	        "huggingface": {
+		        "api_key": "env:HF_TOKEN",
+		        "base_url": "https://router.huggingface.co/v1"
+	        },
+	        "openrouter": {
+		        "api_key": "env:OPENROUTER_API_KEY",
+		        "base_url": "https://openrouter.ai/api/v1"
+	        },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "base_url": "https://api.openai.com/v1"
             },
             "moonshot": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/openai"
+		        "base_url": "https://api.moonshot.ai/openai"
             },
             "cohere": {
                 "api_key": "env:COHERE_API_KEY"
@@ -60,7 +70,7 @@
             },
             "anthropic": {
                 "api_key": "env:MOONSHOT_API_KEY",
-		"base_url": "https://api.moonshot.ai/anthropic"
+		        "base_url": "https://api.moonshot.ai/anthropic"
             },
             "groq": {
                 "api_key": "env:GROQ_API_KEY"
@@ -104,9 +114,29 @@
             "openai:text-embedding-3-large",
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
-            "cohere:embed-english-v3.0"
+            "cohere:embed-english-v3.0",
+            "local:bge-m3",
+            "local:nomic-embed-text",
+            "local:mxbai-embed-large",
+            "ollama:bge-m3",
+            "ollama:nomic-embed-text",
+            "ollama:mxbai-embed-large"
         ],
         "provider_configs": {
+            "local": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_EMBEDDING_BASE_URL",
+                "model_name": "env:LOCAL_EMBEDDING_MODEL_NAME",
+                "dimension": "env:EMBEDDING_DIMENSIONS",
+                "batch_size": "env:EMBEDDING_BATCH_SIZE"
+            },
+            "ollama": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_EMBEDDING_BASE_URL",
+                "model_name": "env:LOCAL_EMBEDDING_MODEL_NAME",
+                "dimension": "env:EMBEDDING_DIMENSIONS",
+                "batch_size": "env:EMBEDDING_BATCH_SIZE"
+            },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",

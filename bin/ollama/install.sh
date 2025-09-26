@@ -1,190 +1,137 @@
 #!/bin/bash
-#
-# install.sh: Installs Ollama for Dana on macOS and Linux
-# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
-#
-# Usage:
-#   ./bin/ollama/install.sh
-#
-# The script performs the following actions:
-# 1. Detects the operating system
-# 2. Installs Ollama using the appropriate method for each OS
-# 3. Verifies the installation
-#
 
-set -e
-set -o pipefail
+set -euo pipefail
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Detect operating system
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macos"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if command -v apt-get &> /dev/null; then
-            echo "ubuntu"
-        elif command -v yum &> /dev/null; then
-            echo "rhel"
-        else
-            echo "linux"
-        fi
-    else
-        echo "unknown"
-    fi
+usage() {
+	cat <<'EOF'
+Install Ollama for Dana
+
+Usage: ./bin/ollama/install.sh [--force]
+
+Options:
+  --force   Reinstall even if Ollama is already detected
+  -h, --help  Show this help message
+
+The script installs Ollama using the recommended method for your OS:
+  • macOS   → Homebrew formula `ollama`
+  • Linux   → Official install script from https://ollama.com
+
+After installation, run the guided setup (`make install-ollama`) if you need to update
+Dana environment variables, then start the daemon with `make start-ollama`.
+EOF
 }
 
-OS_TYPE=$(detect_os)
-
-case "$OS_TYPE" in
-    "macos")
-        echo -e "${BLUE}🚀 Starting Ollama Installation for Dana (macOS)...${NC}"
-        ;;
-    "ubuntu"|"linux")
-        echo -e "${BLUE}🚀 Starting Ollama Installation for Dana (Linux)...${NC}"
-        ;;
-    "rhel")
-        echo -e "${BLUE}🚀 Starting Ollama Installation for Dana (RHEL/CentOS)...${NC}"
-        ;;
-    *)
-        echo -e "${RED}❌ Error: Unsupported operating system: $OSTYPE${NC}"
-        echo -e "${YELLOW}💡 Supported systems: macOS, Ubuntu/Debian, RHEL/CentOS${NC}"
-        exit 1
-        ;;
-esac
-
-# OS-specific installation
-install_ollama() {
-    case "$OS_TYPE" in
-        "macos")
-            # --- Check for Homebrew ---
-            if ! command -v brew &> /dev/null; then
-                echo -e "${RED}❌ Error: Homebrew is not installed.${NC}"
-                echo -e "${YELLOW}Please install Homebrew first by following the instructions at https://brew.sh/${NC}"
-                exit 1
-            fi
-            
-            echo -e "${GREEN}✅ Homebrew is installed.${NC}"
-            
-            # --- Install Ollama ---
-            echo -e "${BLUE}📦 Installing Ollama via Homebrew...${NC}"
-            if brew list ollama &>/dev/null; then
-                echo -e "${YELLOW}Ollama is already installed. If you face issues, consider running 'brew reinstall ollama'.${NC}"
-            else
-                if ! brew install ollama; then
-                    echo -e "${RED}❌ Ollama installation failed.${NC}"
-                    exit 1
-                fi
-                echo -e "${GREEN}✅ Ollama installed successfully.${NC}"
-            fi
-            ;;
-        "ubuntu"|"linux")
-            # Check if Ollama is already installed
-            if command -v ollama &> /dev/null; then
-                echo -e "${YELLOW}Ollama is already installed.${NC}"
-                OLLAMA_VERSION=$(ollama --version)
-                echo -e "${GREEN}Current version: ${OLLAMA_VERSION}${NC}"
-                return 0
-            fi
-            
-            # Check for curl
-            if ! command -v curl &> /dev/null; then
-                echo -e "${YELLOW}📦 Installing curl...${NC}"
-                sudo apt-get update && sudo apt-get install -y curl
-            fi
-            
-            echo -e "${BLUE}📦 Installing Ollama for Linux...${NC}"
-            echo -e "${YELLOW}Using official Ollama installation script...${NC}"
-            
-            # Download and run the official Ollama installation script
-            if curl -fsSL https://ollama.com/install.sh | sh; then
-                echo -e "${GREEN}✅ Ollama installed successfully.${NC}"
-            else
-                echo -e "${RED}❌ Ollama installation failed.${NC}"
-                echo -e "${YELLOW}💡 You can try manual installation:${NC}"
-                echo -e "${YELLOW}   curl -fsSL https://ollama.com/install.sh | sh${NC}"
-                exit 1
-            fi
-            ;;
-        "rhel")
-            # Check if Ollama is already installed
-            if command -v ollama &> /dev/null; then
-                echo -e "${YELLOW}Ollama is already installed.${NC}"
-                OLLAMA_VERSION=$(ollama --version)
-                echo -e "${GREEN}Current version: ${OLLAMA_VERSION}${NC}"
-                return 0
-            fi
-            
-            # Check for curl
-            if ! command -v curl &> /dev/null; then
-                echo -e "${YELLOW}📦 Installing curl...${NC}"
-                sudo yum install -y curl
-            fi
-            
-            echo -e "${BLUE}📦 Installing Ollama for RHEL/CentOS...${NC}"
-            echo -e "${YELLOW}Using official Ollama installation script...${NC}"
-            
-            # Download and run the official Ollama installation script
-            if curl -fsSL https://ollama.com/install.sh | sh; then
-                echo -e "${GREEN}✅ Ollama installed successfully.${NC}"
-            else
-                echo -e "${RED}❌ Ollama installation failed.${NC}"
-                echo -e "${YELLOW}💡 You can try manual installation:${NC}"
-                echo -e "${YELLOW}   curl -fsSL https://ollama.com/install.sh | sh${NC}"
-                exit 1
-            fi
-            ;;
-    esac
+has_command() {
+	command -v "$1" >/dev/null 2>&1
 }
 
-install_ollama
+FORCE=false
 
-# --- Verify Installation ---
-echo -e "${BLUE}🔍 Verifying Ollama installation...${NC}"
-if ! command -v ollama &> /dev/null; then
-    echo -e "${RED}❌ Verification failed. 'ollama' command not found in PATH.${NC}"
-    exit 1
-fi
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--force)
+			FORCE=true
+			shift
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		*)
+			echo "Unknown option: $1" >&2
+			usage >&2
+			exit 1
+			;;
+	esac
+done
 
-OLLAMA_VERSION=$(ollama --version)
-echo -e "${GREEN}✅ Verification successful. ${OLLAMA_VERSION} is ready for Dana.${NC}"
-
-# --- OS-specific post-installation instructions ---
-show_post_installation_instructions() {
-    echo -e "\n${BLUE}🎉 Ollama setup for Dana is complete!${NC}"
-    
-    case "$OS_TYPE" in
-        "macos")
-            echo -e "Ollama will now run as a background service."
-            echo -e "You can start using it with the following commands:"
-            echo -e "  - To start the server and run a model: ${YELLOW}ollama run phi3${NC}"
-            echo -e "  - To see a list of downloaded models: ${YELLOW}ollama list${NC}"
-            echo -e "  - To use the custom start script: ${YELLOW}./bin/ollama/start.sh${NC}"
-            ;;
-        "ubuntu"|"linux"|"rhel")
-            echo -e "Ollama has been installed and can run as a systemd service."
-            echo -e "\n${BLUE}💡 Service Management:${NC}"
-            echo -e "  - To start the service: ${YELLOW}sudo systemctl start ollama${NC}"
-            echo -e "  - To enable auto-start: ${YELLOW}sudo systemctl enable ollama${NC}"
-            echo -e "  - To check service status: ${YELLOW}sudo systemctl status ollama${NC}"
-            echo -e "\n${BLUE}🚀 Usage Commands:${NC}"
-            echo -e "  - To run a model: ${YELLOW}ollama run phi3${NC}"
-            echo -e "  - To see downloaded models: ${YELLOW}ollama list${NC}"
-            echo -e "  - To use the custom start script: ${YELLOW}./bin/ollama/start.sh${NC}"
-            echo -e "\n${BLUE}🔧 Optional: Start service now${NC}"
-            echo -e "  ${YELLOW}sudo systemctl start ollama${NC}"
-            echo -e "  ${YELLOW}sudo systemctl enable ollama${NC}"
-            ;;
-    esac
-    
-    echo -e "\n${GREEN}✨ Happy modeling with Ollama and Dana!${NC}"
+require_curl() {
+	if ! has_command curl; then
+		echo "curl is required to install Ollama." >&2
+		echo "Please install curl (e.g. apt-get install curl) and retry." >&2
+		exit 1
+	fi
 }
 
-show_post_installation_instructions
+install_linux() {
+	require_curl
+	echo "📦 Installing Ollama (Linux)..."
+	if [[ "$FORCE" == true ]]; then
+		echo "ℹ️  Forcing reinstall via official script."
+	elif has_command ollama; then
+		echo "✅ Ollama already installed. Re-run with --force to reinstall."
+		return
+	fi
 
-exit 0 
+	if curl -fsSL https://ollama.com/install.sh | sh; then
+		echo "✅ Ollama install script finished."
+	else
+		echo "❌ Failed to execute Ollama install script." >&2
+		exit 1
+	fi
+}
+
+install_macos() {
+	if ! has_command brew; then
+		echo "❌ Homebrew is required to install Ollama on macOS." >&2
+		echo "Install Homebrew from https://brew.sh/ and retry." >&2
+		exit 1
+	fi
+
+	echo "📦 Installing Ollama (macOS via Homebrew)..."
+	if brew list --formula | grep -q '^ollama$'; then
+		if [[ "$FORCE" == true ]]; then
+			echo "ℹ️  Reinstalling Homebrew formula 'ollama'."
+			brew reinstall ollama
+		else
+			echo "✅ Ollama already installed. Re-run with --force to reinstall."
+			return
+		fi
+	else
+		brew install ollama
+	fi
+
+	echo "✅ Homebrew completed the Ollama installation."
+}
+
+verify_install() {
+	if ! has_command ollama; then
+		echo "❌ Ollama command not found after installation." >&2
+		echo "Please review the output above for errors." >&2
+		exit 1
+	fi
+
+	local version
+	version="$(ollama --version 2>/dev/null || true)"
+	if [[ -z "$version" ]]; then
+		echo "⚠️  Ollama installed but version check failed." >&2
+	else
+		echo "🎉 Ollama detected: $version"
+	fi
+}
+
+main() {
+	case "$(uname -s)" in
+		Linux)
+			install_linux
+			;;
+		Darwin)
+			install_macos
+			;;
+		*)
+			echo "❌ Unsupported operating system: $(uname -s)" >&2
+			exit 1
+			;;
+	esac
+
+	verify_install
+
+	echo
+	echo "Next steps:"
+	echo "  • (Optional) run 'make install-ollama' to configure Dana environment files"
+	echo "  • Start the daemon with 'make start-ollama'"
+}
+
+main "$@"

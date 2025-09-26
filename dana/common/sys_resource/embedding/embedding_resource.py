@@ -39,14 +39,14 @@ class EmbeddingResource(BaseSysResource):
             self.warning(f"Could not load config: {e}. Using defaults.")
             embedding_config = {}
 
+        # Load and resolve provider configurations
+        self.provider_configs = self._load_provider_configs(embedding_config, kwargs)
+
         # Get preferred models from config
         self.preferred_models = embedding_config.get("preferred_models", [])
 
         # Determine model to use
         self._model = model or self._select_available_model()
-
-        # Load and resolve provider configurations
-        self.provider_configs = self._load_provider_configs(embedding_config, kwargs)
 
         # Build final configuration
         self.config = {**embedding_config, **kwargs}
@@ -107,6 +107,62 @@ class EmbeddingResource(BaseSysResource):
                 else:
                     provider_configs[provider] = config
 
+        # Provide environment-based defaults when config entries are missing
+        env_defaults: dict[str, dict[str, Any]] = {
+            "ollama": {
+                "base_url": os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL"),
+                "model_name": os.getenv("LOCAL_EMBEDDING_MODEL_NAME"),
+                "batch_size": os.getenv("EMBEDDING_BATCH_SIZE"),
+                "dimension": os.getenv("EMBEDDING_DIMENSIONS"),
+            },
+            "local": {
+                "base_url": os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL"),
+                "model_name": os.getenv("LOCAL_EMBEDDING_MODEL_NAME"),
+                "batch_size": os.getenv("EMBEDDING_BATCH_SIZE"),
+                "dimension": os.getenv("EMBEDDING_DIMENSIONS"),
+            },
+            "openai": {
+                "api_key": os.getenv("OPENAI_API_KEY"),
+            },
+            "azure": {
+                "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
+                "base_url": os.getenv("AZURE_OPENAI_API_URL"),
+                "api_version": os.getenv("AZURE_OPENAI_API_VERSION"),
+            },
+            "cohere": {
+                "api_key": os.getenv("COHERE_API_KEY"),
+            },
+            "huggingface": {
+                "api_key": os.getenv("HF_TOKEN"),
+            },
+            "ibm_watsonx": {
+                "api_key": os.getenv("WATSONX_API_KEY"),
+                "project_id": os.getenv("WATSONX_PROJECT_ID"),
+            },
+        }
+
+        for provider, defaults in env_defaults.items():
+            cleaned: dict[str, Any] = {}
+            for key, value in defaults.items():
+                if value is None or value == "":
+                    continue
+                if key in {"batch_size", "dimension"}:
+                    try:
+                        cleaned[key] = int(value)
+                    except (TypeError, ValueError):
+                        cleaned[key] = value
+                else:
+                    cleaned[key] = value
+
+            if not cleaned:
+                continue
+
+            if provider not in provider_configs:
+                provider_configs[provider] = cleaned
+            else:
+                for key, value in cleaned.items():
+                    provider_configs[provider].setdefault(key, value)
+
         return provider_configs
 
     def _select_available_model(self) -> str | None:
@@ -117,21 +173,56 @@ class EmbeddingResource(BaseSysResource):
         return None
 
     def _is_model_available(self, model: str) -> bool:
-        """Check if a model is available by validating API keys."""
+        """Check if a model is available by validating configuration and credentials."""
         if ":" not in model:
             return False
 
-        provider = model.split(":", 1)[0]
+        provider, _ = model.split(":", 1)
+        provider_config = self.provider_configs.get(provider, {})
 
-        # Check provider requirements
-        key_mapping = {
-            "openai": "OPENAI_API_KEY",
-            "cohere": "COHERE_API_KEY",
-            "huggingface": None,  # No API key required
-        }
+        def _resolve_env(value: Any) -> Any:
+            if isinstance(value, str) and value.startswith("env:"):
+                return os.getenv(value[4:])
+            return value
 
-        required_key = key_mapping.get(provider)
-        return required_key is None or bool(os.getenv(required_key))
+        def _has_value(value: Any) -> bool:
+            resolved = _resolve_env(value)
+            return bool(resolved)
+
+        if provider == "ollama":
+            base_url = provider_config.get("base_url") or os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL")
+            model_name = provider_config.get("model_name") or os.getenv("LOCAL_EMBEDDING_MODEL_NAME")
+            return _has_value(base_url) and _has_value(model_name)
+
+        if provider == "local":
+            base_url = provider_config.get("base_url") or os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL")
+            model_name = provider_config.get("model_name") or os.getenv("LOCAL_EMBEDDING_MODEL_NAME")
+            return _has_value(base_url) and _has_value(model_name)
+
+        if provider == "openai":
+            api_key = provider_config.get("api_key") or os.getenv("OPENAI_API_KEY")
+            return _has_value(api_key)
+
+        if provider == "cohere":
+            api_key = provider_config.get("api_key") or os.getenv("COHERE_API_KEY")
+            return _has_value(api_key)
+
+        if provider == "azure":
+            api_key = provider_config.get("api_key") or os.getenv("AZURE_OPENAI_API_KEY")
+            base_url = provider_config.get("base_url") or os.getenv("AZURE_OPENAI_API_URL")
+            return _has_value(api_key) and _has_value(base_url)
+
+        if provider == "ibm_watsonx":
+            api_key = provider_config.get("apikey") or provider_config.get("api_key") or os.getenv("WATSONX_API_KEY")
+            project_id = provider_config.get("project_id") or provider_config.get("projectId") or os.getenv("WATSONX_PROJECT_ID")
+            return _has_value(api_key) and _has_value(project_id)
+
+        if provider == "huggingface":
+            # Public models can be used without token, but if a token is provided ensure it resolves
+            token = provider_config.get("api_key") or os.getenv("HF_TOKEN")
+            return token is None or _has_value(token)
+
+        return False
 
     @ToolCallable.tool
     async def query(self, request: BaseRequest) -> BaseResponse:

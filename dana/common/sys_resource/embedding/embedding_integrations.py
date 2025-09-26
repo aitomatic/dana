@@ -93,7 +93,11 @@ class LlamaIndexEmbeddingResource(Loggable):
 
         if provider == "openai":
             return self._create_openai_embedding(model_id, provider_config, dimension_override)
-        if provider == "azure":
+        elif provider == "ollama":
+            return self._create_ollama_embedding(model_id, provider_config, dimension_override)
+        elif provider == "local":
+            return self._create_ollama_embedding(model_id, provider_config, dimension_override)
+        elif provider == "azure":
             return self._create_azure_embedding(model_id, provider_config, dimension_override)
         elif provider == "cohere":
             return self._create_cohere_embedding(model_id, provider_config, dimension_override)
@@ -104,21 +108,53 @@ class LlamaIndexEmbeddingResource(Loggable):
         else:
             raise EmbeddingError(f"Unsupported provider: {provider}")
 
-    @staticmethod
-    def _is_model_available(model_name: str) -> bool:
-        """Check if a model is available by validating API keys."""
+    def _is_model_available(self, model_name: str) -> bool:
+        """Check if a model is available by validating its configuration and credentials."""
         if ":" not in model_name:
             return False
 
-        provider = model_name.split(":", 1)[0]
-        key_mapping = {
-            "openai": "OPENAI_API_KEY",
-            "cohere": "COHERE_API_KEY",
-            "huggingface": None,  # No API key required
-        }
+        provider, _ = model_name.split(":", 1)
+        config = self._get_config().get("embedding", {})
+        provider_config = config.get("provider_configs", {}).get(provider, {})
 
-        required_key = key_mapping.get(provider)
-        return required_key is None or bool(os.getenv(required_key))
+        def _resolve_env(value: Any) -> Any:
+            if isinstance(value, str) and value.startswith("env:"):
+                return os.getenv(value[4:])
+            return value
+
+        def _has_value(value: Any) -> bool:
+            resolved = _resolve_env(value)
+            return bool(resolved)
+
+        if provider == "ollama":
+            base_url = provider_config.get("base_url") or os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL")
+            model_id = provider_config.get("model_name") or os.getenv("LOCAL_EMBEDDING_MODEL_NAME")
+            return _has_value(base_url) and _has_value(model_id)
+
+        if provider == "openai":
+            api_key = provider_config.get("api_key") or os.getenv("OPENAI_API_KEY")
+            return _has_value(api_key)
+
+        if provider == "azure":
+            api_key = provider_config.get("api_key") or os.getenv("AZURE_OPENAI_API_KEY")
+            base_url = provider_config.get("base_url") or os.getenv("AZURE_OPENAI_API_URL")
+            return _has_value(api_key) and _has_value(base_url)
+
+        if provider == "cohere":
+            api_key = provider_config.get("api_key") or os.getenv("COHERE_API_KEY")
+            return _has_value(api_key)
+
+        if provider == "huggingface":
+            token = provider_config.get("api_key") or os.getenv("HF_TOKEN")
+            # Token is optional for public models; only require when explicitly provided
+            return token is None or _has_value(token)
+
+        if provider == "ibm_watsonx":
+            api_key = provider_config.get("apikey") or provider_config.get("api_key") or os.getenv("WATSONX_API_KEY")
+            project_id = provider_config.get("project_id") or provider_config.get("projectId") or os.getenv("WATSONX_PROJECT_ID")
+            return _has_value(api_key) and _has_value(project_id)
+
+        return False
 
     @staticmethod
     def _resolve_env_var(value: str, default: str = "") -> str:
@@ -126,6 +162,45 @@ class LlamaIndexEmbeddingResource(Loggable):
         if isinstance(value, str) and value.startswith("env:"):
             return os.getenv(value[4:], default)
         return value
+
+    def _create_ollama_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create Ollama LlamaIndex embedding.
+
+        Args:
+            model_name: Ollama model name
+            provider_config: Provider configuration from dana_config.json
+            dimension_override: Override dimension from upstream config (Note: Ollama models have fixed dimensions)
+        """
+        try:
+            from llama_index.embeddings.ollama import OllamaEmbedding  # type: ignore
+        except ImportError:
+            raise EmbeddingError("Install: pip install llama-index-embeddings-ollama")
+
+        base_url_config = provider_config.get("base_url")
+        if base_url_config:
+            base_url = self._resolve_env_var(base_url_config, "http://localhost:11434")
+        else:
+            base_url = os.getenv("LOCAL_EMBEDDING_BASE_URL") or os.getenv("LOCAL_BASE_URL") or "http://localhost:11434"
+
+        if base_url.endswith("/"):
+            base_url = base_url[:-1]
+
+        batch_size_config = provider_config.get("batch_size")
+        if batch_size_config is None:
+            env_batch = os.getenv("EMBEDDING_BATCH_SIZE")
+            if env_batch is not None:
+                try:
+                    batch_size_config = int(env_batch)
+                except ValueError:
+                    batch_size_config = env_batch
+        if batch_size_config is None:
+            batch_size_config = 100
+
+        return OllamaEmbedding(
+            model_name=model_name,
+            base_url=base_url,
+            embed_batch_size=batch_size_config,
+        )
 
     def _create_openai_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
         """Create OpenAI LlamaIndex embedding.

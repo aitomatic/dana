@@ -204,13 +204,17 @@ mypy: ## Run type checking
 # LLM Integration
 # =============================================================================
 
-install-ollama: ## Install Ollama for local model inference
+install-ollama: ## Install Ollama for local model inference (runs guided setup)
 	@echo "🦙 Installing Ollama for Dana..."
-	@./bin/ollama/install.sh
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		bash ./bin/ollama/setup_macos.sh $(ARGS); \
+	else \
+		bash ./bin/ollama/setup.sh $(ARGS); \
+	fi
 
-start-ollama: ## Start Ollama with Dana configuration
+start-ollama: ## Start the Ollama daemon (respects system service)
 	@echo "🚀 Starting Ollama for Dana..."
-	@./bin/ollama/start.sh
+	@./bin/ollama/start.sh $(ARGS)
 
 install-vllm: ## Install vLLM for local model inference
 	@echo "⚡ Installing vLLM for Dana..."

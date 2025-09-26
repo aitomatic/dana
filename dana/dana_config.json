@@ -16,7 +16,6 @@
             "google:gemini-1.5-pro-latest",
             "groq:llama3-70b-8192",
             "ibm_watsonx:ibm/granite-20b-multilingual",
-            "local",
             "mistral:mistral-large-latest",
             "openai:gpt-4.1",
             "openai:gpt-4.1-mini",
@@ -29,10 +28,21 @@
             "xai:grok-3-mini",
             "xai:grok-3",
             "xai:grok-4-0709",
-            "xai:grok-beta"
+            "xai:grok-beta",
+            "local:phi3:mini",
+            "local:llama3.2",
+            "local:gemma3",
+            "ollama:phi3:mini",
+            "ollama:llama3.2",
+            "ollama:gemma3"
         ],
         "provider_configs": {
             "local": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_BASE_URL",
+                "model_name": "env:LOCAL_MODEL_NAME"
+            },
+            "ollama": {
                 "api_key": "env:LOCAL_API_KEY",
                 "base_url": "env:LOCAL_BASE_URL",
                 "model_name": "env:LOCAL_MODEL_NAME"
@@ -108,9 +118,29 @@
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
             "cohere:embed-english-v3.0",
-            "ibm_watsonx:ibm/slate-125m-english-rtrvr"
+            "ibm_watsonx:ibm/slate-125m-english-rtrvr",
+            "ollama:bge-m3",
+            "ollama:nomic-embed-text",
+            "ollama:mxbai-embed-large",
+            "local:bge-m3",
+            "local:nomic-embed-text",
+            "local:mxbai-embed-large"
         ],
         "provider_configs": {
+            "ollama": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_EMBEDDING_BASE_URL",
+                "model_name": "env:LOCAL_EMBEDDING_MODEL_NAME",
+                "dimension": 1024,
+                "batch_size": 100
+            },
+            "local": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "env:LOCAL_EMBEDDING_BASE_URL",
+                "model_name": "env:LOCAL_EMBEDDING_MODEL_NAME",
+                "dimension": 1024,
+                "batch_size": 100
+            },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
                 "api_type": "openai",
