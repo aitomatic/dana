@@ -13,6 +13,8 @@ This specification includes concrete test modules in the `.spec/` directory that
 - **`namespace_package/`** - Namespace package without `__init__.na`
 - **`mixed_package/`** - Mixed package with both Dana and Python modules
 - **`circular_package/`** - Package with allowable circular imports
+- **`python_module.py`** - Python module for testing cross-language imports
+- **`python_package/`** - Python package with submodules for testing cross-language imports
 Each test module contains specific objects and functions that should be importable according to the patterns described below.
 
 ## Importable Objects
@@ -39,6 +41,60 @@ Each test module contains specific objects and functions that should be importab
 - **Module A**: `I_AM`
 - **Module B**: `I_AM`
 
+### Python Module (`python_module.py`)
+- **Variables**: `I_AM_PY`
+
+### Python Package (`python_package/`)
+- **Package variables**: `I_AM_PY`
+- **Submodule**: `I_AM_PY`
+- **Nested package**: `I_AM_PY`
+- **Deep module**: `I_AM_PY`
+
+## Python Importing Requirements
+
+### Key Principles
+1. **`.py` Suffix Required**: All Python imports must use `.py` suffix
+2. **Equivalent Treatment**: Python modules treated as equivalent to Dana modules
+3. **Full Pattern Support**: All import patterns (absolute, relative, from, star) work with Python
+4. **Package Support**: Python packages work identically to Dana packages
+5. **Cross-Language Seamless**: No special handling needed beyond the `.py` suffix
+
+### Import Syntax Rules
+- **Basic imports**: `import module.py`
+- **From imports**: `from module.py import name`
+- **Package imports**: `import package.py`, `import package.submodule.py`
+- **Relative imports**: `from .module.py import name`, `from ..package.py import name`
+- **Star imports**: `from module.py import *`
+
+### Examples
+```dana
+# Standard library imports
+import os.py
+import sys.py
+from os.py import path
+from sys.py import argv
+
+# Third-party imports
+import pandas.py
+import numpy.py
+from pandas.py import DataFrame, read_csv
+from numpy.py import array, zeros
+
+# Local Python module imports
+import my_py_module.py
+from my_py_module.py import my_function, MyClass
+
+# Python package imports
+import my_py_package.py
+from my_py_package.py import submodule
+from my_py_package.py.submodule import my_function
+
+# Relative Python imports
+from .sibling_py_module.py import sibling_function
+from ..parent_py_package.py import parent_function
+from ..parent_py_package.py.child_py_module import child_function
+```
+
 ## Core Import Patterns
 
 ### 1. **Module Resolution**
@@ -49,6 +105,7 @@ Each test module contains specific objects and functions that should be importab
 - **Support**: Both Dana (`.na`) and Python (`.py`) modules
 - **Examples**:
   ```dana
+  # Dana modules
   import os
   import sys
   import basic_module
@@ -56,7 +113,14 @@ Each test module contains specific objects and functions that should be importab
   import regular_package.submodule1
   import namespace_package.module1
   import mixed_package.dana_module
-  import mixed_package.python_module
+  
+  # Python modules (with .py suffix)
+  import os.py
+  import sys.py
+  import python_module.py
+  import python_package.py
+  import python_package.py.submodule
+  import mixed_package.python_module.py
   ```
 
 #### Relative Imports
@@ -71,13 +135,30 @@ Each test module contains specific objects and functions that should be importab
   from .subpackage import module
   ```
 
-#### Cross-Language Imports
-- **Pattern**: Dana modules importing Python modules and vice versa
-- **Behavior**: Seamless interoperability between Dana and Python
+#### Cross-Language Imports (Python into Dana)
+- **Pattern**: Dana modules importing Python modules using `.py` suffix
+- **Behavior**: Python modules treated as equivalent to Dana modules, with `.py` suffix required
+- **Syntax**: `import module.py`, `from module.py import name`, `from package.submodule.py import name`
 - **Examples**:
   ```dana
-  import os.py          # Dana importing Python
-  import mymodule.py    # Dana importing Python
+  # Absolute imports
+  import pandas.py
+  import numpy.py
+  import my_py_module.py
+  
+  # From imports
+  from pandas.py import DataFrame, read_csv
+  from numpy.py import array, zeros
+  from my_py_module.py import my_py_obj
+  
+  # Package imports
+  import my_py_package.py
+  from my_py_package.py import submodule
+  
+  # Relative imports
+  from ..my_relative_outer_py_module.py import my_py_obj
+  from ..my_relative_outer_py_module.a_py_submodule.py import another_py_obj
+  from .sibling_py_module.py import sibling_py_obj
   ```
 
 ### 2. **Package Types**
@@ -140,6 +221,7 @@ Each test module contains specific objects and functions that should be importab
 - **Multiple**: `from module import name1, name2, name3`
 - **Examples**:
   ```dana
+  # Dana modules
   from os import path
   from sys import argv as args
   from basic_module import I_AM
@@ -147,7 +229,14 @@ Each test module contains specific objects and functions that should be importab
   from regular_package.submodule1 import I_AM
   from namespace_package.module1 import I_AM
   from mixed_package.dana_module import I_AM
-  from mixed_package.python_module import I_AM_PY
+  
+  # Python modules (with .py suffix)
+  from os.py import path
+  from sys.py import argv as args
+  from python_module.py import I_AM_PY
+  from python_package.py import submodule
+  from python_package.py.submodule import I_AM_PY
+  from mixed_package.python_module.py import I_AM_PY
   ```
 
 #### Star Imports
@@ -156,10 +245,16 @@ Each test module contains specific objects and functions that should be importab
 - **Privacy**: Respect `__exports__` if defined, exclude private names (starting with `_`)
 - **Examples**:
   ```dana
+  # Dana modules
   from basic_module import *
   from regular_package.submodule1 import *
   from namespace_package.module1 import *
   from mixed_package.dana_module import *
+  
+  # Python modules (with .py suffix)
+  from python_module.py import *
+  from python_package.py.submodule import *
+  from mixed_package.python_module.py import *
   ```
 
 ### 4. **Lazy Loading Strategy**
@@ -370,5 +465,34 @@ To verify that the importing system meets this specification, test the following
    print(circular_package.module_a.I_AM)  # Should print: 'circular_package.module_a'
    print(circular_package.module_b.I_AM)  # Should print: 'circular_package.module_b'
    ```
+
+7. **Python Module imports**:
+   ```dana
+   import python_module.py
+   print(python_module.py.I_AM_PY)  # Should print: 'python_module'
+   ```
+
+8. **Python Package imports**:
+   ```dana
+   import python_package.py
+   print(python_package.py.I_AM_PY)  # Should print: 'python_package'
+   print(python_package.py.submodule.I_AM_PY)  # Should print: 'python_package.submodule'
+   ```
+
+9. **Python From imports**:
+   ```dana
+   from python_module.py import I_AM_PY
+   print(I_AM_PY)  # Should print: 'python_module'
+   
+   from python_package.py.submodule import I_AM_PY
+   print(I_AM_PY)  # Should print: 'python_package.submodule'
+   ```
+
+10. **Python Relative imports**:
+    ```dana
+    from ..python_package.py import I_AM_PY
+    from ..python_package.py.nested import I_AM_PY
+    from ..python_package.py.nested.deep_module import I_AM_PY
+    ```
 
 The importing system is successful when all these patterns work correctly without errors.
