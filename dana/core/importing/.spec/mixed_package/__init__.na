@@ -1,0 +1,8 @@
+# Mixed package with both Dana and Python modules
+I_AM = 'mixed_package'
+
+# Import Dana modules
+from . import dana_module
+
+# Import Python modules
+from . import python_module
