@@ -1,0 +1,2 @@
+# Basic module for testing absolute imports
+I_AM = 'basic_module'
