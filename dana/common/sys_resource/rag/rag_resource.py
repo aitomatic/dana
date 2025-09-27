@@ -20,7 +20,7 @@ class RAGResource(BaseSysResource):
         self,
         sources: list[str],
         name: str = "rag_resource",
-        cache_dir: str = None,  # Changed default to None
+        cache_dir: str | None = None,  # Changed default to None
         force_reload: bool = False,
         description: str | None = None,
         chunk_size: int = 1024,
@@ -28,6 +28,7 @@ class RAGResource(BaseSysResource):
         debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,
+        return_raw: bool = False,
         num_results: int = 15,
     ):
         super().__init__(name, description)
@@ -42,6 +43,7 @@ class RAGResource(BaseSysResource):
             reranking=reranking,
             initial_multiplier=initial_multiplier,
         )
+        self.return_raw = return_raw
         self.num_results = num_results
 
     def post_init(
@@ -151,7 +153,7 @@ class RAGResource(BaseSysResource):
         self._filenames = [] if self._orchestrator._retriever is None else self._orchestrator._retriever.get_all_filenames()
 
     @ToolCallable.tool
-    async def query(self, query: str, num_results: int = 10) -> str:
+    async def query(self, query: str, num_results: int = 10) -> str | list:
         """Retrieve relevant documents. Minimum number of results is 5"""
         if not self._is_ready:
             await self.initialize()
@@ -178,8 +180,10 @@ class RAGResource(BaseSysResource):
         elif len(results) > num_results:
             # Truncate to requested number if no reranking
             results = results[:num_results]
-
-        return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
+        if not self.return_raw:
+            return "\n\n".join([result.node.get_content(MetadataMode.LLM) for result in results])
+        else:
+            return results
 
     async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.
@@ -317,6 +321,12 @@ Response (JSON array only):"""
 
 
 if __name__ == "__main__":
-    rag = RAGResource(sources=["agents/agent_1_nova/knows"])
+    rag = RAGResource(
+        sources=["agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md"], reranking=True, debug=True
+    )
+    import asyncio
+
     print(rag.is_available)
     print(rag.filenames)
+
+    print(len(asyncio.run(rag.query("What is the profit and loss"))))

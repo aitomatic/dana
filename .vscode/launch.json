@@ -37,7 +37,7 @@
       "request": "launch",
       "justMyCode": false,
       "module": "dana.apps.cli.__main__",
-      "args": ["studio"],
+      "args": ["studio", "--reload"],
       "console": "integratedTerminal",
       "env" : {
         "DANAPATH" : "${workspaceFolder}"
