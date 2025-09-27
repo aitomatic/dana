@@ -10,9 +10,22 @@ The Dana importing system is built on three fundamental abstract concepts:
 
 ### **1. Module Path**
 A specification of which module to import, supporting:
-- **Absolute paths**: `module`, `package.submodule`
-- **Relative paths**: `.module`, `..package.submodule`
-- **Language targeting**: `module` (Dana), `module.py` (Python)
+
+#### **Absolute Module Paths**
+- **Dana modules**: `module`, `package.submodule`
+- **Python modules**: `module.py`, `package.submodule.py`
+
+#### **Pure Dotted Relative Paths**
+- **Current directory**: `.` (Dana), `.py` (Python)
+- **Parent directory**: `..` (Dana), `..py` (Python)
+- **Grandparent directory**: `...` (Dana), `...py` (Python)
+- **Higher levels**: `....`, `.....`, etc.
+
+#### **Relative Dotted Paths**
+- **Sibling modules**: `.a_fellow_submodule`, `.a_fellow_submodule.py`
+- **Parent level modules**: `..a_parent_level_submodule`, `..a_parent_level_submodule.py`
+- **Complex relative paths**: `..a_parent_level_submodule.a_fellow_submodule_of_another_parent`
+- **Mixed language paths**: `..a_parent_level_submodule.py.a_fellow_submodule`
 
 ### **2. Object Spec**
 A specification of what to import from a module:
@@ -25,6 +38,66 @@ A specification of what to import from a module:
 Optional name rebinding for imported items:
 - **No alias**: Use original name
 - **With alias**: `as alias` for name rebinding
+
+## Module Path Specification
+
+The Module Path concept is the foundation of all importing in Dana. It specifies exactly which module to import through a combination of absolute/relative positioning and language targeting.
+
+### **Absolute Module Paths**
+Absolute paths start from the root of the module search path and specify the complete path to the target module.
+
+#### **Dana Module Paths**
+- **Simple module**: `module` → `module.na`
+- **Package submodule**: `package.submodule` → `package/submodule.na`
+- **Deep package**: `package.subpackage.submodule` → `package/subpackage/submodule.na`
+
+#### **Python Module Paths**
+- **Simple module**: `module.py` → `module.py`
+- **Package submodule**: `package.submodule.py` → `package/submodule.py`
+- **Deep package**: `package.subpackage.submodule.py` → `package/subpackage/submodule.py`
+
+### **Pure Dotted Relative Paths**
+Pure dotted paths use only dots to navigate the directory hierarchy, with optional language suffix.
+
+#### **Current Directory Navigation**
+- **Dana current**: `.` → Current directory (Dana)
+- **Python current**: `.py` → Current directory (Python)
+
+#### **Parent Directory Navigation**
+- **Dana parent**: `..` → Parent directory (Dana)
+- **Python parent**: `..py` → Parent directory (Python)
+
+#### **Higher Level Navigation**
+- **Dana grandparent**: `...` → Grandparent directory (Dana)
+- **Python grandparent**: `...py` → Grandparent directory (Python)
+- **Dana great-grandparent**: `....` → Great-grandparent directory (Dana)
+- **Python great-grandparent**: `....py` → Great-grandparent directory (Python)
+
+### **Relative Dotted Paths**
+Relative dotted paths combine directory navigation with specific module names.
+
+#### **Sibling Module Paths**
+- **Dana sibling**: `.a_fellow_submodule` → `./a_fellow_submodule.na`
+- **Python sibling**: `.a_fellow_submodule.py` → `./a_fellow_submodule.py`
+
+#### **Parent Level Module Paths**
+- **Dana parent level**: `..a_parent_level_submodule` → `../a_parent_level_submodule.na`
+- **Python parent level**: `..a_parent_level_submodule.py` → `../a_parent_level_submodule.py`
+
+#### **Complex Relative Paths**
+- **Multi-level Dana**: `..a_parent_level_submodule.a_fellow_submodule_of_another_parent` → `../a_parent_level_submodule/a_fellow_submodule_of_another_parent.na`
+- **Multi-level Python**: `..a_parent_level_submodule.py.a_fellow_submodule_of_another_parent.py` → `../a_parent_level_submodule.py/a_fellow_submodule_of_another_parent.py`
+
+#### **Mixed Language Paths**
+- **Dana parent, Python child**: `..a_parent_level_submodule.py.a_fellow_submodule` → `../a_parent_level_submodule.py/a_fellow_submodule.na`
+- **Python parent, Dana child**: `..a_parent_level_submodule.a_fellow_submodule.py` → `../a_parent_level_submodule/a_fellow_submodule.py`
+
+### **Module Path Resolution Rules**
+1. **Language Detection**: `.py` suffix indicates Python module, no suffix indicates Dana module
+2. **Directory Navigation**: Each `.` represents one level up in the directory hierarchy
+3. **Path Construction**: Relative paths are resolved from the current module's directory
+4. **File Extension**: Dana modules use `.na` extension, Python modules use `.py` extension
+5. **Package Detection**: Directories with `__init__.na` or `__init__.py` are treated as packages
 
 ## Fundamental Import Syntax
 
