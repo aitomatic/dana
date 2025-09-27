@@ -113,7 +113,7 @@ from ..parent_py_package.py.child_py_module import child_function
   import regular_package.submodule1
   import namespace_package.module1
   import mixed_package.dana_module
-  
+
   # Python modules (with .py suffix)
   import os.py
   import sys.py
@@ -145,16 +145,16 @@ from ..parent_py_package.py.child_py_module import child_function
   import pandas.py
   import numpy.py
   import my_py_module.py
-  
+
   # From imports
   from pandas.py import DataFrame, read_csv
   from numpy.py import array, zeros
   from my_py_module.py import my_py_obj
-  
+
   # Package imports
   import my_py_package.py
   from my_py_package.py import submodule
-  
+
   # Relative imports
   from ..my_relative_outer_py_module.py import my_py_obj
   from ..my_relative_outer_py_module.a_py_submodule.py import another_py_obj
@@ -229,7 +229,7 @@ from ..parent_py_package.py.child_py_module import child_function
   from regular_package.submodule1 import I_AM
   from namespace_package.module1 import I_AM
   from mixed_package.dana_module import I_AM
-  
+
   # Python modules (with .py suffix)
   from os.py import path
   from sys.py import argv as args
@@ -250,7 +250,7 @@ from ..parent_py_package.py.child_py_module import child_function
   from regular_package.submodule1 import *
   from namespace_package.module1 import *
   from mixed_package.dana_module import *
-  
+
   # Python modules (with .py suffix)
   from python_module.py import *
   from python_package.py.submodule import *
@@ -354,22 +354,6 @@ from ..parent_py_package.py.child_py_module import child_function
 - **Causes**: Lazy loader failed to resolve, module not fully loaded
 - **Recovery**: Ensure module is fully loaded before accessing attributes
 
-## Performance Requirements
-
-### Loading Performance
-- **Module Discovery**: O(log n) where n is number of modules in search paths
-- **Lazy Loading**: O(1) for subsequent access to lazy-loaded modules
-- **Circular Import Detection**: O(1) for simple cases, O(n) for complex dependency graphs
-
-### Memory Usage
-- **Module Caching**: Configurable cache size with LRU eviction
-- **Lazy Loaders**: Minimal memory overhead for lazy loader functions
-- **Dependency Tracking**: Efficient storage of dependency relationships
-
-### Scalability
-- **Large Packages**: Efficient handling of packages with many submodules
-- **Deep Nesting**: Support for deeply nested package structures
-- **Namespace Packages**: Efficient discovery and loading of namespace packages
 
 ## Compatibility Requirements
 
@@ -391,11 +375,10 @@ The importing system meets the specification when:
 
 1. **All Smoke Tests Pass**: `tests/importing/test-imports.na` executes without errors
 2. **Python Compatibility**: Dana imports behave like Python imports
-3. **Performance**: No significant performance regression compared to current system
-4. **Error Handling**: Clear, helpful error messages for all failure cases
-5. **Lazy Loading**: Efficient lazy loading without circular import issues
-6. **Circular Import Tolerance**: Allow legitimate circular imports that Python permits
-7. **Cross-Language Support**: Seamless Dana-Python module interoperability
+3. **Error Handling**: Clear, helpful error messages for all failure cases
+4. **Lazy Loading**: Lazy loading works without circular import issues
+5. **Circular Import Tolerance**: Allow legitimate circular imports that Python permits
+6. **Cross-Language Support**: Seamless Dana-Python module interoperability
 
 ## Test Coverage
 
@@ -410,8 +393,7 @@ The specification must be validated through comprehensive testing:
 ### Integration Tests
 - Complex package structures
 - Cross-language imports
-- Performance benchmarks
-- Memory usage tests
+- Edge cases and error conditions
 
 ### Smoke Tests
 - Original failing tests
@@ -483,7 +465,7 @@ To verify that the importing system meets this specification, test the following
    ```dana
    from python_module.py import I_AM_PY
    print(I_AM_PY)  # Should print: 'python_module'
-   
+
    from python_package.py.submodule import I_AM_PY
    print(I_AM_PY)  # Should print: 'python_package.submodule'
    ```
