@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 import re
+from typing import Any
 
 
 class AbstractHandler(ABC):
     @abstractmethod
-    def handle(self, *args, **kwargs) -> str:
+    def handle(self, *args, **kwargs) -> Any:
         pass
 
     def _parse_xml_tool_call(self, xml_content: str) -> tuple[str, dict, str]:

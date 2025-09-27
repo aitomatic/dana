@@ -20,16 +20,19 @@ from dana.api.core.schemas import (
     KnowledgePackSmartChatResponse,
     PaginatedKnowledgePackResponse,
 )
-from uuid import uuid4
+from dana.api.core.schemas_v2 import BaseMessage
 from dana.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo, get_conversation_repo, AbstractConversationRepo
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
-from .ws.domain_knowledge_ws import create_domain_knowledge_ws_notifier, domain_knowledge_ws_notifier
+from ..ws.domain_knowledge_ws import domain_knowledge_ws_notifier
 from fastapi import WebSocket
 from fastapi.concurrency import run_until_first_complete
+from .kp_structuring import router as kp_structuring_router
+from .common import KPConversationType
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge-pack"])
+router.include_router(kp_structuring_router)
 
 
 @router.get("/{knowledge_id}", response_model=DomainKnowledgeTree | dict)
@@ -101,19 +104,21 @@ async def update_knowledge_pack(
 @router.post("/{knowledge_id}/smart-chat", response_model=KnowledgePackSmartChatResponse)
 async def smart_chat(
     knowledge_id: int,
-    request: MessageCreate,
+    request: BaseMessage,
     conv_repo: type[AbstractConversationRepo] = Depends(get_conversation_repo),
     kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
     db: Session = Depends(get_db),
 ):
     """
+    # API for compatibility with smart_chat_v2.py
     Smart chat for a knowledge pack.
     """
-    conversation = await conv_repo.get_conversation_by_kp_id(kp_id=knowledge_id, db=db)
+    conversation = await conv_repo.get_conversation_by_kp_id_and_type(kp_id=knowledge_id, type=KPConversationType.SMART_CHAT.value, db=db)
     if not conversation:
         conversation = await conv_repo.create_conversation(
             conversation_data=ConversationCreate(title=f"Generate knowledge pack [{knowledge_id}]", agent_id=None, kp_id=knowledge_id),
             messages=[request],
+            type=KPConversationType.SMART_CHAT.value,
             db=db,
         )
     else:
@@ -122,7 +127,7 @@ async def smart_chat(
     kb = await kb_repo.get_kp(kp_id=knowledge_id, db=db)
     if kb is None:
         raise HTTPException(status_code=404, detail="Knowledge pack not found")
-    spec = kb.get_spec()
+    spec = kb.get_specialization_info()
 
     intent_request = IntentDetectionRequest(
         user_message=request.content,
@@ -140,7 +145,7 @@ async def smart_chat(
         domain=spec.domain,
         role=spec.role,
         tasks=[spec.task],
-        notifier=create_domain_knowledge_ws_notifier(websocket_id=str(knowledge_id)),
+        notifier=domain_knowledge_ws_notifier.get_notifier(websocket_id=str(knowledge_id)),
     )
     logger.info(f"🚀 Starting KnowledgeOpsHandler workflow for knowledge pack {knowledge_id}")
     result = await handler.handle(intent_request)
@@ -177,8 +182,6 @@ async def smart_chat(
 
 @router.websocket("/ws/{knowledge_id}")
 async def send_chat_update_msg(knowledge_id: str, websocket: WebSocket):
-    session_id = str(uuid4())
-    await domain_knowledge_ws_notifier.connect(knowledge_id, session_id, websocket)
     await run_until_first_complete(
         (domain_knowledge_ws_notifier.run_ws_loop_forever, {"websocket": websocket, "websocket_id": knowledge_id}),
     )

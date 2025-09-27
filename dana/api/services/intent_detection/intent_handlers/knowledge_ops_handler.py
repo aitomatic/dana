@@ -4,7 +4,7 @@ from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource a
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from dana.api.core.schemas import DomainKnowledgeTree, IntentDetectionRequest, DomainNode, MessageData
-from typing import Any
+from typing import Any, Literal, Awaitable, Callable
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools import (
     AskQuestionTool,
     ExploreKnowledgeTool,
@@ -19,7 +19,6 @@ from dana.api.services.intent_detection.intent_handlers.handler_utility import k
 import logging
 import re
 from pathlib import Path
-from collections.abc import Callable, Coroutine
 import os
 
 logger = logging.getLogger(__name__)
@@ -44,7 +43,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         role: str = "Domain Expert",
         tasks: list[str] | None = None,
         knowledge_status_path: str | None = None,
-        notifier: Coroutine[Any, Any, Callable[[str, str, str, float | None], None]] | None = None,
+        notifier: Callable[[str, str, Literal["init", "in_progress", "finish", "error"], float | None], Awaitable[None]] | None = None,
     ):
         from pathlib import Path
 

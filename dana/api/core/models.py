@@ -69,6 +69,7 @@ class Conversation(Base):
     agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True, index=True)
     kp_id = Column(Integer, ForeignKey("knowledge_packs.id"), nullable=True, index=True)
     code_gen_id = Column(Integer, ForeignKey("agents.id"), nullable=True, index=True)  # Conversation for code generation
+    type = Column(String, nullable=True, default="chat_with_agent")  # NOTE: Assume that number of types is small, so we won't index it
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
@@ -82,9 +83,9 @@ class Message(Base):
     conversation_id = Column(Integer, ForeignKey("conversations_v2.id"), nullable=False, index=True)
     sender = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    require_user = Column(Boolean, nullable=True, default=False)
-    treat_as_tool = Column(Boolean, nullable=True, default=False)
-    msg_metadata = Column("metadata", JSON, nullable=True, default={})
+    require_user = Column(Boolean, nullable=False, default=False)
+    treat_as_tool = Column(Boolean, nullable=False, default=False)
+    msg_metadata = Column("metadata", JSON, nullable=False, default={})
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     conversation = relationship("Conversation", back_populates="messages")

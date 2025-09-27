@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Union, Annotated
 import re
-from pydantic import BaseModel, ConfigDict, Field, field_validator, BeforeValidator, AfterValidator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, BeforeValidator
 from enum import Enum
 
 
@@ -710,7 +710,7 @@ class KnowledgePackOutput(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    def get_spec(self) -> Specialization:
+    def get_specialization_info(self) -> Specialization:
         return Specialization(
             domain=self.kp_metadata.get("domain", "General"),
             role=self.kp_metadata.get("role", "Domain Expert"),
@@ -739,7 +739,7 @@ class PaginatedKnowledgePackResponse(BaseModel):
 
 
 class KnowledgePackCreateRequest(BaseModel):
-    kp_metadata: Annotated[Specialization | dict, AfterValidator(lambda v: v.model_dump() if isinstance(v, BaseModel) else v)]
+    kp_metadata: Specialization
 
 
 class KnowledgePackUpdateRequest(KnowledgePackCreateRequest):

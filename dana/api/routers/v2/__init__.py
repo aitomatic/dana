@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from .domain_knowledge_v2 import router as domain_knowledge_v2_router
+from .knowledge_pack import router as knowledge_pack_router
 
 router = APIRouter()
 
-router.include_router(domain_knowledge_v2_router)
+router.include_router(knowledge_pack_router)
