@@ -135,13 +135,13 @@ class RAGResource(BaseSysResource):
     def filenames(self) -> list[str]:
         if not self._is_ready:
             Misc.safe_asyncio_run(self.initialize)
-        return self._filenames
+        return self._filenames or []
 
     @property
     def is_available(self) -> bool:
         if not self._is_ready:
             Misc.safe_asyncio_run(self.initialize)
-        return any([fn != "system" for fn in self.filenames])
+        return self._filenames is not None and any([fn != "system" for fn in self.filenames])
 
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""
