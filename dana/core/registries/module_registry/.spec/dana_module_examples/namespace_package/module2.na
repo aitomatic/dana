@@ -1,0 +1,2 @@
+# Module 2 in namespace package (no __init__.na)
+I_AM = 'namespace_package.module2'
