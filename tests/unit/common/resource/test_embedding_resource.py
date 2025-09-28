@@ -16,7 +16,15 @@ class TestEmbeddingResource(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "COHERE_API_KEY"]:
+        for key in [
+            "OPENAI_API_KEY",
+            "COHERE_API_KEY",
+            "LOCAL_EMBEDDING_BASE_URL",
+            "LOCAL_EMBEDDING_MODEL_NAME",
+            "LOCAL_BASE_URL",
+            "EMBEDDING_BATCH_SIZE",
+            "EMBEDDING_DIMENSIONS",
+        ]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]
@@ -169,3 +177,29 @@ class TestEmbeddingResource(unittest.TestCase):
             resolved_config = embedding.provider_configs.get("openai", {})
             self.assertEqual(resolved_config["api_key"], "test-api-key")
             self.assertEqual(resolved_config["batch_size"], 100)
+
+    def test_ollama_env_fallback_auto_selection(self):
+        """Test that Ollama configuration falls back to environment variables when config is empty."""
+        with patch("dana.common.sys_resource.embedding.embedding_resource.ConfigLoader") as mock_loader:
+            mock_config = {
+                "embedding": {
+                    "preferred_models": ["ollama:nomic-embed-text"],
+                    "provider_configs": {},
+                }
+            }
+            mock_loader.return_value.get_default_config.return_value = mock_config
+
+            os.environ["LOCAL_EMBEDDING_BASE_URL"] = "http://localhost:11434"
+            os.environ["LOCAL_BASE_URL"] = "http://localhost:11434"
+            os.environ["LOCAL_EMBEDDING_MODEL_NAME"] = "nomic-embed-text"
+            os.environ["EMBEDDING_BATCH_SIZE"] = "64"
+            os.environ["EMBEDDING_DIMENSIONS"] = "768"
+
+            embedding = EmbeddingResource(name="test_embedding_env")
+
+            self.assertEqual(embedding.model, "ollama:nomic-embed-text")
+            ollama_config = embedding.provider_configs.get("ollama", {})
+            self.assertEqual(ollama_config.get("base_url"), "http://localhost:11434")
+            self.assertEqual(ollama_config.get("model_name"), "nomic-embed-text")
+            self.assertEqual(ollama_config.get("batch_size"), 64)
+            self.assertEqual(ollama_config.get("dimension"), 768)

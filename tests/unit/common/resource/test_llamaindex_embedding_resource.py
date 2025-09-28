@@ -1,7 +1,9 @@
 """Test the LlamaIndex embedding integration."""
 
 import os
+import sys
 import unittest
+import types
 from unittest.mock import MagicMock, patch
 
 from dana.common.exceptions import EmbeddingError
@@ -18,7 +20,14 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.original_env = {key: os.environ.get(key) for key in ["OPENAI_API_KEY", "COHERE_API_KEY"]}
+        tracked_env_keys = [
+            "OPENAI_API_KEY",
+            "COHERE_API_KEY",
+            "LOCAL_EMBEDDING_BASE_URL",
+            "LOCAL_BASE_URL",
+            "EMBEDDING_BATCH_SIZE",
+        ]
+        self.original_env = {key: os.environ.get(key) for key in tracked_env_keys}
         # Set a dummy API key to satisfy checks that assume it's available
         os.environ["OPENAI_API_KEY"] = "test-key"
 
@@ -92,6 +101,46 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         with self.assertRaises(EmbeddingError) as context:
             get_embedding_model("invalid-format")
         self.assertIn("Invalid model format", str(context.exception))
+
+    @patch("dana.common.sys_resource.embedding.embedding_integrations.ConfigLoader")
+    def test_ollama_env_defaults_used_when_config_missing(self, mock_loader):
+        """Ensure Ollama embedding creation uses environment fallbacks when config is empty."""
+        mock_loader.return_value.get_default_config.return_value = {
+            "embedding": {
+                "provider_configs": {"ollama": {}},
+                "preferred_models": ["ollama:nomic-embed-text"],
+            }
+        }
+
+        os.environ["LOCAL_EMBEDDING_BASE_URL"] = "http://localhost:11434"
+        os.environ["LOCAL_BASE_URL"] = "http://localhost:11434"
+        os.environ["EMBEDDING_BATCH_SIZE"] = "32"
+
+        fake_llama_index = types.ModuleType("llama_index")
+        fake_llama_index.__path__ = []  # mark as package
+        fake_embeddings_pkg = types.ModuleType("llama_index.embeddings")
+        fake_embeddings_pkg.__path__ = []
+        fake_ollama_pkg = types.ModuleType("llama_index.embeddings.ollama")
+        mock_embedding_cls = MagicMock(return_value="embedding-instance")
+        fake_ollama_pkg.OllamaEmbedding = mock_embedding_cls
+
+        with patch.dict(
+            sys.modules,
+            {
+                "llama_index": fake_llama_index,
+                "llama_index.embeddings": fake_embeddings_pkg,
+                "llama_index.embeddings.ollama": fake_ollama_pkg,
+            },
+        ):
+            resource = LlamaIndexEmbeddingResource()
+            embedding = resource._create_ollama_embedding("nomic-embed-text", {}, None)
+
+        self.assertEqual(embedding, "embedding-instance")
+        self.assertTrue(mock_embedding_cls.called)
+        _, kwargs = mock_embedding_cls.call_args
+        self.assertEqual(kwargs.get("model_name"), "nomic-embed-text")
+        self.assertEqual(kwargs.get("base_url"), "http://localhost:11434")
+        self.assertEqual(kwargs.get("embed_batch_size"), 32)
 
 
 if __name__ == "__main__":

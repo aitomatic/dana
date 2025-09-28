@@ -5,6 +5,7 @@ MIT License
 """
 
 import asyncio
+import os
 from typing import Any
 
 from dana.common.exceptions import (
@@ -30,6 +31,7 @@ class EmbeddingQueryExecutor(Loggable):
         self._openai_client = None
         self._huggingface_model = None
         self._cohere_client = None
+        self._ollama_client = None
 
     @property
     def model(self) -> str | None:
@@ -61,14 +63,46 @@ class EmbeddingQueryExecutor(Loggable):
         # Initialize relevant provider clients
         if self._model and ":" in self._model:
             provider = self._model.split(":", 1)[0]
+
             if provider == "openai" and "openai" in provider_configs:
                 await self._initialize_openai()
+            elif provider in {"ollama", "local"}:
+                provider_key = provider if provider in provider_configs else "ollama"
+                if provider_key in provider_configs:
+                    await self._initialize_ollama(provider_key)
             elif provider == "huggingface" and "huggingface" in provider_configs:
                 await self._initialize_huggingface()
             elif provider == "cohere" and "cohere" in provider_configs:
                 await self._initialize_cohere()
 
         self._initialized = True
+
+    async def _initialize_ollama(self, provider_key: str = "ollama") -> None:
+        """Initialize Ollama client."""
+        try:
+            import httpx
+
+            config = self._provider_configs.get(provider_key, {})
+            fallback_base_url = (
+                config.get("base_url")
+                or self._provider_configs.get("ollama", {}).get("base_url")
+                or os.getenv("LOCAL_EMBEDDING_BASE_URL")
+                or os.getenv("LOCAL_BASE_URL")
+                or "http://localhost:11434"
+            )
+            base_url = fallback_base_url
+            
+            # Remove trailing slash and ensure proper format
+            if base_url.endswith("/"):
+                base_url = base_url[:-1]
+            
+            self._ollama_client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
+            self.debug("Ollama client initialized successfully")
+
+        except ImportError:
+            self.warning("httpx library not installed. Install with: pip install httpx")
+        except Exception as e:
+            self.error(f"Failed to initialize Ollama client: {e}")
 
     async def _initialize_openai(self) -> None:
         """Initialize OpenAI client."""
@@ -151,6 +185,8 @@ class EmbeddingQueryExecutor(Loggable):
         # Route to appropriate provider
         if provider == "openai":
             return await self._generate_openai_embeddings(texts)
+        elif provider in {"ollama", "local"}:
+            return await self._generate_ollama_embeddings(texts)
         elif provider == "huggingface":
             return await self._generate_huggingface_embeddings(texts)
         elif provider == "cohere":
@@ -159,6 +195,42 @@ class EmbeddingQueryExecutor(Loggable):
             return await self._generate_mock_embeddings(texts)
         else:
             raise EmbeddingProviderError(f"Unsupported provider: {provider}")
+
+    async def _generate_ollama_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings using Ollama API."""
+        if not self._ollama_client:
+            raise EmbeddingProviderError("Ollama client not initialized")
+
+        try:
+            model_name = self._model.split(":", 1)[1] if self._model and ":" in self._model else "bge-m3:latest"
+            
+            # Ollama embedding API endpoint
+            response = await self._ollama_client.post(
+                "/api/embed",
+                json={
+                    "model": model_name,
+                    "input": texts,
+                },
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            if isinstance(result, dict):
+                if "data" in result and isinstance(result["data"], list):
+                    return [item.get("embedding", []) for item in result["data"]]
+                if "embedding" in result:
+                    embedding_value = result["embedding"]
+                    if isinstance(embedding_value, list) and embedding_value and isinstance(embedding_value[0], list):
+                        return embedding_value
+                    return [embedding_value]
+
+            raise EmbeddingProviderError("Unexpected response format from Ollama embed endpoint")
+
+        except Exception as e:
+            if "unauthorized" in str(e).lower() or "authentication" in str(e).lower():
+                raise EmbeddingAuthenticationError(f"Ollama authentication failed: {e}")
+            else:
+                raise EmbeddingProviderError(f"Ollama embedding failed: {e}")
 
     async def _generate_openai_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings using OpenAI API."""

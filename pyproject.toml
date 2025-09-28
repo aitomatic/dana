@@ -80,10 +80,6 @@ dependencies = [
     "python-lsp-server[all]>=1.13.0",
     "pyright>=1.1.403",
     "jedi>=0.19.2",
-    "llama-index-embeddings-openai>=0.3.1",
-    "llama-index-llms-cohere>=0.5.0",
-    "llama-index-vector-stores-duckdb>=0.4.6",
-    "llama-index-vector-stores-postgres>=0.5.5",
     "llm-code-executor",
     "mcp",
     "openai>=1.55.3",
@@ -135,6 +131,11 @@ dependencies = [
     "pillow>=11.1.0", # Python Imaging Library for image processing
     "pymupdf>=1.25.3", # PDF processing and manipulation library
     "llama-index-embeddings-azure-openai>=0.3.9",
+    "llama-index-embeddings-ollama>=0.3.1",
+    "llama-index-embeddings-openai>=0.3.1",
+    "llama-index-llms-cohere>=0.5.0",
+    "llama-index-vector-stores-duckdb>=0.4.6",
+    "llama-index-vector-stores-postgres>=0.5.5",
     "llama-index-llms-azure-openai>=0.3.4",
     "llama-index-embeddings-ibm>=0.3.1",
     "llama-search>=0.3.4",
