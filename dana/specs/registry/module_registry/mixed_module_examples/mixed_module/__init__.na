@@ -1,5 +1,5 @@
-# Mixed package with both Dana and Python modules
-I_AM = 'mixed_package'
+# Mixed module with both Dana and Python modules
+I_AM = 'mixed_module'
 
 # Import Dana modules
 from . import dana_module

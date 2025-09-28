@@ -1,5 +1,5 @@
-# Regular package with __init__.na
-I_AM = 'regular_package'
+# Regular module with __init__.na
+I_AM = 'regular_module'
 
 # Import submodules
 from . import submodule1

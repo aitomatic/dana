@@ -1,5 +1,5 @@
-# Package with allowable circular imports
-I_AM = 'circular_package'
+# Module with allowable circular imports
+I_AM = 'circular_module'
 
 # Import submodules that reference each other
 from . import module_a

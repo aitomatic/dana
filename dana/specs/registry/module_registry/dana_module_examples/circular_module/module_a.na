@@ -1,5 +1,5 @@
 # Module A with circular reference to Module B
-I_AM = 'circular_package.module_a'
+I_AM = 'circular_module.module_a'
 
 # Import Module B (circular reference)
 from . import module_b

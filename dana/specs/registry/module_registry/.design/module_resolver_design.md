@@ -32,8 +32,8 @@ Main resolver that handles:
 ### Absolute Paths
 - `module` → `module.na` (Dana)
 - `module.py` → `module.py` (Python)
-- `package.submodule` → `package/submodule.na` (Dana)
-- `package.submodule.py` → `package/submodule.py` (Python)
+- `module.submodule` → `module/submodule.na` (Dana)
+- `module.submodule.py` → `module/submodule.py` (Python)
 
 ### Pure Dotted Relative Paths
 - `.` → Current directory (Dana)
