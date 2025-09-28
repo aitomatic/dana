@@ -13,6 +13,7 @@ import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from dana.common.utils import Misc
 
 # from typing import List
 import json
@@ -231,7 +232,7 @@ Return your response in this exact JSON format:
       "explanation": "Brief explanation of why this agent matches"
     },
     {
-      "agent_index": 1, 
+      "agent_index": 1,
       "agent_name": "Agent Name",
       "matching_percentage": 72,
       "explanation": "Brief explanation of why this agent matches"
@@ -1155,9 +1156,10 @@ async def create_agent_from_prebuilt(
         except Exception as e:
             logger.error(f"Error updating knowledge status for prebuilt agent: {e}")
 
-        # Update config with folder_path
+        # Update config with folder_path and status
         updated_config = db_agent.config.copy() if db_agent.config else {}
         updated_config["folder_path"] = str(agent_folder)
+        updated_config["status"] = "success"
         db_agent.config = updated_config
         db_agent.generation_phase = "code_generated"
         flag_modified(db_agent, "config")
@@ -2110,9 +2112,63 @@ async def build_agent_from_suggestion(
         # Update agent config with folder path
         updated_config = db_agent.config.copy() if db_agent.config else {}
         updated_config["folder_path"] = str(agent_folder)
+
+        template_config = {k: v for k, v in db_agent.config.items() if k in ["domain", "specialties", "skills", "task", "role"]}
+        prompt = f"""
+User request: {request.user_input}
+template config:
+```json
+{template_config}
+```
+
+Adjust the agent config to match the user request.
+Output format :
+```json
+{{
+    "domain": "...",
+    "specialties": ["..."],
+    "skills": ["..."],
+    "task": "...",
+    "role": "...",
+}}
+```
+"""
+
+        # Adjust agent config
+        llm_request = BaseRequest(
+            arguments={
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant that adjusts agent config based on user request."},
+                    {"role": "user", "content": prompt},
+                ]
+            }
+        )
+        response = await LLMResource().query(llm_request)
+        result = Misc.get_response_content(response)
+        new_config = Misc.text_to_dict(result)
+        updated_config.update(new_config)
+
+        # Ensure domain_knowledge.json is in the correct location and has UUIDs
+        domain_knowledge_path = agent_folder / "domain_knowledge.json"
+        if not domain_knowledge_path.exists():
+            # Try to generate domain_knowledge.json from knowledge files
+            try:
+                from dana.common.utils.domain_knowledge_generator import (
+                    DomainKnowledgeGenerator,
+                )
+
+                generator = DomainKnowledgeGenerator()
+                domain = updated_config.get("domain", "General")
+
+                if generator.save_domain_knowledge(str(knows_folder), domain, str(domain_knowledge_path)):
+                    logger.info(f"Generated domain_knowledge.json for agent {db_agent.id} built from suggestion")
+                else:
+                    logger.warning(f"Failed to generate domain_knowledge.json for agent {db_agent.id} built from suggestion")
+            except Exception as e:
+                logger.error(f"Error generating domain_knowledge.json for agent {db_agent.id} built from suggestion: {e}")
+
         db_agent.config = updated_config
         db_agent.generation_phase = "ready_for_training"  # Different phase since no knowledge files
-
         flag_modified(db_agent, "config")
         db.commit()
         db.refresh(db_agent)

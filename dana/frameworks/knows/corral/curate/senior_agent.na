@@ -1,6 +1,6 @@
 document_folder = "/Users/lam/Desktop/repos/opendxa/proposal"
 
-websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+websearch = use("mcp", url="YOUR_MCP_URL")
 specialized_kb = use("rag", sources=[document_folder])
 
 

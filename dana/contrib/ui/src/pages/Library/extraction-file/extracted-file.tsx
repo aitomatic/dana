@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import FileIcon from '@/components/file-icon';
-import { IconFile, IconLoader } from '@tabler/icons-react';
+import { IconFile, IconLoader, IconUpload } from '@tabler/icons-react';
 
 import { PDFReview } from './components/pdf-review';
 import { ExcelReview } from './components/excel-review';
@@ -103,10 +103,100 @@ const FilePreview = ({
 
 interface ExtractedFileProps {
   selectedFile: any;
+  onFileUpload?: (files: File[]) => void;
 }
 
+// Drag and Drop Component
+const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0 && onFileUpload) {
+      onFileUpload(files);
+    }
+  }, [onFileUpload]);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0 && onFileUpload) {
+      onFileUpload(files);
+    }
+  }, [onFileUpload]);
+
+  return (
+    <div
+      className={`flex flex-col gap-4 justify-center items-center h-full p-8 border-1 border-dashed rounded-lg transition-colors ${
+        isDragOver
+          ? 'border-blue-400 bg-blue-50 text-blue-600'
+          : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-gray-50'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="flex flex-col items-center gap-4">
+        <div className={`p-4 rounded-full transition-colors ${
+          isDragOver ? 'bg-blue-100' : 'bg-gray-100'
+        }`}>
+          <IconUpload className={`size-8 ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`} />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-lg mb-2">
+            {isDragOver ? 'Drop files here' : 'Upload Files'}
+          </p>
+          <p className="text-sm mb-4">
+            {isDragOver 
+              ? 'Release to upload your files' 
+              : 'Drag and drop files here, or click to browse'
+            }
+          </p>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.pptx,.ppt"
+            onChange={handleFileInput}
+            className="hidden"
+            id="file-upload"
+          />
+          <label
+            htmlFor="file-upload"
+            className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+              isDragOver
+                ? 'hidden'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <IconUpload className="size-4 mr-2" />
+            Browse Files
+          </label>
+        </div>
+        <div className="text-sm text-gray-400 text-center max-w-md">
+          (.pdf, .doc, .docx, .md. Max 5MB per file)
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main component
-export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
+export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showPromptInput, setShowPromptInput] = useState<boolean>(false);
 
@@ -146,15 +236,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
   };
 
   if (!selectedFile) {
-    return (
-      <div className="flex flex-col gap-4 justify-center items-center h-full text-gray-500">
-        <IconFile className="size-12" />
-        <div className="text-center">
-          <p className="font-medium">No Files Extracted</p>
-          <p className="text-sm">Upload and extract files to get started</p>
-        </div>
-      </div>
-    );
+    return <DragDropArea onFileUpload={onFileUpload} />;
   }
 
   return (
@@ -166,7 +248,7 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
             <ResizablePanel defaultSize={50} minSize={30}>
               <div className="flex flex-col w-full h-full">
                 {/* File Header */}
-                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                <div className="flex justify-between items-center pb-4 pt-4  bg-white ">
                   <div className="flex gap-2 items-center">
                     <div className="flex size-6">
                       <FileIcon ext={fileType.extension} className="text-gray-600 size-5" />
@@ -199,11 +281,11 @@ export const ExtractedFile = ({ selectedFile }: ExtractedFileProps) => {
 
             {/* Extracted File */}
             <ResizablePanel defaultSize={50} minSize={30}>
-              <div className="flex flex-col w-full h-full bg-gray-50 rounded-lg">
+              <div className="flex border-1 border-gray-200 flex-col w-full h-full bg-gray-50 rounded-lg">
                 {/* Header */}
-                <div className="flex gap-2 justify-between items-center p-4 border-b border-gray-200">
+                <div className="flex gap-2 justify-between items-center p-3">
                   <span className="text-sm font-semibold text-gray-600">
-                    Extract {documents.length > 0 && `(${documents.length} pages)`}
+                    Extracted Content {documents.length > 0 && `(${documents.length} pages)`}
                   </span>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls

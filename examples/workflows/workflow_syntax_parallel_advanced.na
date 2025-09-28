@@ -21,7 +21,7 @@ def workflow_calc_quick_asset(resources) -> float = [get_cash_and_equiv,
                                                      get_recvable] | sum_quick_asset_components
 
 
-resource_amd_annual_report = get_resource('rag', sources=['../resources/docs/AMD-2024-10K.pdf'])
+resource_amd_ar = get_resource('rag', sources=['../resources/docs/AMD-AR.pdf'])
 
 
-workflow_calc_quick_asset([resource_amd_annual_report])
+workflow_calc_quick_asset([resource_amd_ar])

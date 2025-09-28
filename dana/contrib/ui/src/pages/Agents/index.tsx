@@ -36,15 +36,20 @@ const WorkflowStepBox: React.FC<{
 
   return (
     <div className="relative pb-0">
-      <div className="w-full p-5 border-2 border-gray-800 bg-white rounded-lg shadow-sm">
-        <div className="text-md font-medium text-gray-900 capitalize text-center">
+      <div className="p-5 w-full bg-white rounded-lg border-2 border-gray-800 shadow-sm">
+        <div className="font-medium text-center text-gray-900 capitalize text-md">
           {formattedStep}
         </div>
       </div>
       {!isLast && (
-        <div className="relative flex flex-col items-center">
+        <div className="flex relative flex-col items-center">
           <div className="w-0.5 h-6 bg-gray-800"></div>
-          <NavArrowDown width={16} height={16} strokeWidth={3} className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/3 text-gray-800" />
+          <NavArrowDown
+            width={16}
+            height={16}
+            strokeWidth={3}
+            className="absolute bottom-0 left-1/2 text-gray-800 transform -translate-x-1/2 translate-y-1/3"
+          />
         </div>
       )}
     </div>
@@ -63,9 +68,14 @@ const ExampleBox: React.FC<{
         <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: example }} />
       </div>
       {!isLast && (
-        <div className="relative flex flex-col items-center">
+        <div className="flex relative flex-col items-center">
           <div className="w-0.5 h-6 bg-gray-800"></div>
-          <NavArrowDown width={16} height={16} strokeWidth={3} className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/3 text-gray-800" />
+          <NavArrowDown
+            width={16}
+            height={16}
+            strokeWidth={3}
+            className="absolute bottom-0 left-1/2 text-gray-800 transform -translate-x-1/2 translate-y-1/3"
+          />
         </div>
       )}
     </div>
@@ -81,11 +91,11 @@ const ToggleButton: React.FC<{
     <Button
       onClick={onClick}
       variant="ghost"
-      size='sm'
+      size="sm"
       className={` ${
         isActive
-          ? 'bg-gray-100 text-gray-700 border-gray-800'
-          : 'bg-gray-100 text-gray-700 border-gray-800 hover:bg-gray-50'
+          ? 'text-gray-700 bg-gray-100 border-gray-800'
+          : 'text-gray-700 bg-gray-100 border-gray-800 hover:bg-gray-50'
       }`}
     >
       {isActive ? 'Hide Example' : 'View Example'}
@@ -101,10 +111,9 @@ const SimpleWorkflowChart: React.FC<{
   setShowExamples: (show: boolean) => void;
   agentKey?: string;
 }> = ({ workflow, showExamples, agentKey }) => {
-
   if (!workflow.steps || workflow.steps.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+      <div className="flex justify-center items-center h-32 text-sm text-gray-500">
         <span>No workflow steps defined</span>
       </div>
     );
@@ -117,46 +126,46 @@ const SimpleWorkflowChart: React.FC<{
       return [
         "<em>What's the best time to visit Japan for cherry blossoms</em>",
         "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
-        "Search across uploaded travel documents using <strong>refined keywords</strong>",
-        "The best time to visit Japan for cherry blossoms is typically late March to early April...",
-        "Task completed successfully with <strong>comprehensive answer</strong> provided"
+        'Search across uploaded travel documents using <strong>refined keywords</strong>',
+        'The best time to visit Japan for cherry blossoms is typically late March to early April...',
+        'Task completed successfully with <strong>comprehensive answer</strong> provided',
       ];
     }
-    
+
     const agentType = agentKey.toLowerCase();
-    
+
     if (agentType.includes('jordan') || agentType.includes('operational')) {
       return [
         "<strong>User:</strong>Turn my notes from today's meeting into a task list.",
-        "Agent compresses → <strong>input: meeting notes; output: structured task list.</strong>",
-        "Execute Steps: <em>1. Read meeting notes → 2. Identify action items → 3. Format into clear to-do list.</em>",
+        'Agent compresses → <strong>input: meeting notes; output: structured task list.</strong>',
+        'Execute Steps: <em>1. Read meeting notes → 2. Identify action items → 3. Format into clear to-do list.</em>',
         "Here's your to-do list: [example to-do list]",
       ];
     } else if (agentType.includes('nova') || agentType.includes('autonomous')) {
       return [
-        "<strong>User:</strong> Optimize <strong>warehouse inventory management system</strong>",
+        '<strong>User:</strong> Optimize <strong>warehouse inventory management system</strong>',
         "Agent identifies issues: <em>'Low stock alerts, inefficient reorder points, manual processes'</em>",
-        "Analyze inventory data, implement <strong>automated reorder system</strong>, update warehouse layout",
-        "System optimized: <strong>30% reduction in stockouts, 25% cost savings</strong>, automated alerts active",
-        "Task completed: <strong>Inventory management system</strong> fully optimized and operational"
+        'Analyze inventory data, implement <strong>automated reorder system</strong>, update warehouse layout',
+        'System optimized: <strong>30% reduction in stockouts, 25% cost savings</strong>, automated alerts active',
+        'Task completed: <strong>Inventory management system</strong> fully optimized and operational',
       ];
     } else if (agentType.includes('dana')) {
       return [
-        "<strong>User:</strong> Is it better to pay off my mortgage early or invest in stocks?",
+        '<strong>User:</strong> Is it better to pay off my mortgage early or invest in stocks?',
         "<strong>Agent refines query:</strong> <em>'mortgage prepayment vs stock investment financial comparison risk return'</em>",
-        "<strong>Query Document:</strong> Agent reviews uploaded financial reports, mortgage agreements, and investment guides.",
-        "<strong>Query Knowledge:</strong> Cross-checks with general financial principles and market data.",
-        "<em>Prepaying a mortgage guarantees savings equal to your interest rate, while stock investing offers...</em>",
-        "Task completed."
+        '<strong>Query Document:</strong> Agent reviews uploaded financial reports, mortgage agreements, and investment guides.',
+        '<strong>Query Knowledge:</strong> Cross-checks with general financial principles and market data.',
+        '<em>Prepaying a mortgage guarantees savings equal to your interest rate, while stock investing offers...</em>',
+        'Task completed.',
       ];
     } else {
       // Default Q&A Agent examples
       return [
         "<strong>User:</strong>What's the <strong>best time</strong> to visit Japan for cherry blossoms",
         "Agent refines query: <em>'cherry blossom season Japan travel dates optimal timing'</em>",
-        "Search across uploaded travel documents using <strong>refined keywords</strong>",
-        "The best time to visit Japan for cherry blossoms is typically <strong>late March to early April</strong>...",
-        "Task completed successfully with <strong>comprehensive answer</strong> provided"
+        'Search across uploaded travel documents using <strong>refined keywords</strong>',
+        'The best time to visit Japan for cherry blossoms is typically <strong>late March to early April</strong>...',
+        'Task completed successfully with <strong>comprehensive answer</strong> provided',
       ];
     }
   };
@@ -164,17 +173,15 @@ const SimpleWorkflowChart: React.FC<{
   const examples = getExamplesForAgent(agentKey);
 
   // Create complete workflow with User query and Complete task
-  const completeWorkflowSteps = [
-    "User query",
-    ...workflow.steps,
-    "Complete task"
-  ];
+  const completeWorkflowSteps = ['User query', ...workflow.steps, 'Complete task'];
 
   return (
     <div className="w-full">
       <div className="flex transition-all duration-300 ease-in-out">
         {/* Left Column: Workflow Steps */}
-        <div className={`transition-all duration-300 ease-in-out ${showExamples ? ' flex' : 'w-full flex justify-center'}`}>
+        <div
+          className={`transition-all duration-300 ease-in-out ${showExamples ? 'flex' : 'flex justify-center w-full'}`}
+        >
           <div className="w-full max-w-[200px]">
             {completeWorkflowSteps.map((step, index) => (
               <WorkflowStepBox
@@ -188,9 +195,11 @@ const SimpleWorkflowChart: React.FC<{
         </div>
 
         {/* Right Column: Examples */}
-        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showExamples ? 'ml-6 flex-1 opacity-100' : 'w-0 opacity-0'}`}>
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${showExamples ? 'flex-1 ml-6 opacity-100' : 'w-0 opacity-0'}`}
+        >
           <div>
-            {completeWorkflowSteps.map((step, index) => (
+            {completeWorkflowSteps.map((_step, index) => (
               <div key={index}>
                 <ExampleBox
                   example={examples[index] || ''}
@@ -221,7 +230,7 @@ export default function AgentsPage() {
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
-  const [creating, setCreating] = useState(false);
+  const [creating] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCreateAgentPopup, setShowCreateAgentPopup] = useState(false);
   const [userInput, setUserInput] = useState('');
@@ -234,7 +243,6 @@ export default function AgentsPage() {
   const [initiatingAgentKey, setInitiatingAgentKey] = useState<string | null>(null);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
-
 
   // Get activeTab from URL params, default to 'explore'
   const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
@@ -350,50 +358,50 @@ export default function AgentsPage() {
     }
   };
 
-  const handleCreateAgentFromInput = async () => {
-    setCreating(true);
-    try {
-      // Create agent with user input
-      const newAgent = await apiService.createAgent({
-        name: 'Untitled Agent',
-        description: userInput,
-        config: {},
-      });
-      if (newAgent && newAgent.id) {
-        navigate(`/agents/${newAgent.id}`);
-      }
-    } catch (e) {
-      console.error('Error creating agent:', e);
-      // Optionally show error toast
-    } finally {
-      setCreating(false);
-      setShowCreateAgentPopup(false);
-      setUserInput('');
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
+  // const handleCreateAgentFromInput = async () => {
+  //   setCreating(true);
+  //   try {
+  //     // Create agent with user input
+  //     const newAgent = await apiService.createAgent({
+  //       name: 'Untitled Agent',
+  //       description: userInput,
+  //       config: {},
+  //     });
+  //     if (newAgent && newAgent.id) {
+  //       navigate(`/agents/${newAgent.id}`);
+  //     }
+  //   } catch (e) {
+  //     console.error('Error creating agent:', e);
+  //     // Optionally show error toast
+  //   } finally {
+  //     setCreating(false);
+  //     setShowCreateAgentPopup(false);
+  //     setUserInput('');
+  //     setSuggestions([]);
+  //     setShowSuggestions(false);
+  //   }
+  // };
 
-  const handleCancelCreate = () => {
-    setShowCreateAgentPopup(false);
-    setUserInput('');
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setSuggestionError('');
-  };
+  // const handleCancelCreate = () => {
+  //   setShowCreateAgentPopup(false);
+  //   setUserInput('');
+  //   setSuggestions([]);
+  //   setShowSuggestions(false);
+  //   setSuggestionError('');
+  // };
 
-  const handleTryAgain = () => {
-    setShowSuggestions(false);
-    setSuggestions([]);
-    setSuggestionError('');
-  };
+  // const handleTryAgain = () => {
+  //   setShowSuggestions(false);
+  //   setSuggestions([]);
+  //   setSuggestionError('');
+  // };
 
   const handleBuildFromSuggestion = async (suggestion: AgentSuggestion) => {
     setInitiatingAgentKey(suggestion.key);
     try {
       // Add 3-5 second delay to show loading indicator
       const delay = Math.random() * 2000 + 3000; // Random delay between 3-5 seconds
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
       const buildRequest: BuildAgentFromSuggestionRequest = {
         prebuilt_key: suggestion.key,
@@ -420,19 +428,19 @@ export default function AgentsPage() {
     <div className="flex overflow-hidden flex-col w-full h-full">
       {/* Hero Section with Animated Background */}
       <div
-        className={`hidden relative overflow-hidden transition-all duration-700 ease-out ${
+        className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r to-purple-900 min-h-[200px] from-slate-900'
-            : 'py-16 bg-gradient-to-br via-purple-900 min-h-[600px] from-slate-900 to-slate-900'
+            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-slate-900'
+            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-slate-900 to-slate-900'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-72 h-72 bg-purple-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-72 h-72 bg-yellow-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+              <div className="absolute top-0 left-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
+              <div className="absolute top-0 right-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
             </div>
 
             {/* Grid Pattern Overlay */}
@@ -453,7 +461,7 @@ export default function AgentsPage() {
             }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400">
+              <span className="text-transparent bg-clip-text bg-white">
                 Dana
               </span>
             </h1>
@@ -469,7 +477,7 @@ export default function AgentsPage() {
             }`}
           >
             The complete platform for{' '}
-            <span className="font-semibold text-purple-300">building, training, and deploying</span>{' '}
+            <span className="font-semibold text-brand-200">building, training, and deploying</span>{' '}
             Dana Expert Agents
           </p>
 
@@ -481,7 +489,7 @@ export default function AgentsPage() {
           >
             {/* Agent Maker - Available Now */}
             <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl shadow-lg">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -505,11 +513,11 @@ export default function AgentsPage() {
             {/* Experience Learner - Coming Soon */}
             <div className="relative p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/5 border-white/10 hover:scale-105">
               <div className="absolute top-4 right-4">
-                <span className="px-2 py-1 text-xs font-semibold text-yellow-300 rounded-full border bg-yellow-500/20 border-yellow-400/40">
+                <span className="px-2 py-1 text-xs font-semibold text-white rounded-full border bg-white-500/20 border-white-400/40">
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-pink-400 to-yellow-400 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -533,11 +541,11 @@ export default function AgentsPage() {
             {/* App Generators - Coming Soon */}
             <div className="relative p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 group bg-white/5 border-white/10 hover:scale-105">
               <div className="absolute top-4 right-4">
-                <span className="px-2 py-1 text-xs font-semibold text-yellow-300 rounded-full border bg-yellow-500/20 border-yellow-400/40">
+                <span className="px-2 py-1 text-xs font-semibold text-white rounded-full border bg-white-500/20 border-white-400/40">
                   Coming Soon
                 </span>
               </div>
-              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-yellow-400 to-purple-400 rounded-2xl shadow-lg opacity-60">
+              <div className="flex justify-center items-center mx-auto mb-6 w-16 h-16 bg-gradient-to-r from-brand-300 to-brand-500 rounded-2xl shadow-lg opacity-60">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -593,9 +601,7 @@ export default function AgentsPage() {
         {/* Enhanced Floating Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
-            <div className="absolute bottom-20 left-20 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-40 left-40 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
+
           </>
         )}
 
@@ -608,7 +614,7 @@ export default function AgentsPage() {
           <div className="flex flex-col gap-4 items-center">
             {/* Main Title with Gradient Highlight */}
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              <span className="text-transparent bg-clip-text bg-white">
                 Dana Agent Studio
               </span>
             </h1>
@@ -630,6 +636,25 @@ export default function AgentsPage() {
 
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
+        {/* Dana Agent Maker Feature */}
+        <div className="flex items-center justify-between p-8 mb-8 bg-gray-50 rounded-lg">
+          <div className="flex flex-col gap-2">
+            <div className="text-lg font-semibold text-gray-900">
+              Dana Agent Maker
+            </div>
+            <div className="text-sm text-gray-700">
+              Define your requirements and receive workflow solutions.
+            </div>
+          </div>
+          <Button
+            onClick={handleCreateAgent}
+            className="w-[152px] px-4 py-1 font-semibold"
+          >
+            <Plus style={{ width: '20', height: '20' }} />
+            Create Agent
+          </Button>
+        </div>
+
         {/* Search and Navigation */}
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
@@ -659,15 +684,6 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
-            <Button
-              variant="default"
-              className="w-[168px] px-4 py-1 font-semibold"
-              onClick={handleCreateAgent}
-              disabled={creating}
-            >
-              <Plus style={{ width: '20', height: '20' }} />
-            Train New Agent
-            </Button>
           </div>
         </div>
 
@@ -729,13 +745,13 @@ export default function AgentsPage() {
           className={`${showSuggestions && suggestions.length > 0 ? 'sm:max-w-[1000px]' : 'sm:max-w-xl'} max-h-[80vh] overflow-y-auto`}
         >
           <DialogHeader>
-            <DialogTitle>Train Your Own Agent</DialogTitle>
+            <DialogTitle>Dana Agent Maker</DialogTitle>
           </DialogHeader>
 
-          <div className="flex space-y-4 flex-col">
-            <div className="flex w-full flex-col gap-2">
-              <label className="block text-md font-medium text-gray-700 mb-4">
-                What your agent will do?
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col gap-2 w-full">
+              <label className="block mb-4 font-medium text-gray-700 text-md">
+                Define your requirements
               </label>
               <textarea
                 value={userInput}
@@ -749,7 +765,7 @@ export default function AgentsPage() {
                   }
                 }}
                 placeholder="e.g. I want an agent that can help me with financial analysis"
-                className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="p-3 w-full rounded-lg border border-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 rows={4}
                 autoFocus
               />
@@ -764,8 +780,8 @@ export default function AgentsPage() {
                     disabled={loadingSuggestions}
                   >
                     {loadingSuggestions ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      <div className="flex gap-2 items-center">
+                        <div className="w-4 h-4 rounded-full border-b-2 border-gray-600 animate-spin"></div>
                         <span>Regenerating...</span>
                       </div>
                     ) : (
@@ -778,7 +794,7 @@ export default function AgentsPage() {
 
             {/* Error State */}
             {suggestionError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-sm text-red-600">{suggestionError}</p>
               </div>
             )}
@@ -812,26 +828,26 @@ export default function AgentsPage() {
                     return (
                       <div
                         key={suggestion.key}
-                        className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+                        className="overflow-hidden relative p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md"
                       >
                         {/* Background Pattern */}
                         <div className="absolute inset-0 opacity-5">
                           <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full blur-3xl"></div>
-                          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br from-pink-400 to-orange-500 rounded-full blur-3xl"></div>
+                          <div className="absolute right-0 bottom-0 w-24 h-24 bg-gradient-to-br from-pink-400 to-orange-500 rounded-full blur-3xl"></div>
                         </div>
 
                         <div className="relative z-10">
                           {/* Header Section */}
-                          <div className="flex items-start justify-between mb-4">
+                          <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
+                              <div className="flex gap-3 items-center mb-2">
                                 <div>
                                   <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="font-semibold text-md text-gray-900">
+                                    <div className="flex gap-2 items-center">
+                                      <h4 className="font-semibold text-gray-900 text-md">
                                         {workflowName}
                                       </h4>
-                                      <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                                      <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-full">
                                         {workflowConfidence}% match
                                       </span>
                                     </div>
@@ -847,12 +863,14 @@ export default function AgentsPage() {
                               disabled={initiatingAgentKey === suggestion.key}
                             >
                               {initiatingAgentKey === suggestion.key ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600"></div>
-                                  <span className="text-sm">Initiating your agent with selected workflow...</span>
+                                <div className="flex gap-2 items-center">
+                                  <div className="w-4 h-4 rounded-full border-b-2 animate-spin border-brand-600"></div>
+                                  <span className="text-sm">
+                                    Initiating your agent with selected workflow...
+                                  </span>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-2">
+                                <div className="flex gap-2 items-center">
                                   <span className="text-sm font-semibold">Select</span>
                                 </div>
                               )}
@@ -861,11 +879,13 @@ export default function AgentsPage() {
 
                           {/* Workflow Chart Visualization */}
                           {mainWorkflow && mainWorkflow.steps.length > 0 && (
-                            <div className=" ">
+                            <div className="">
                               <div className="flex justify-between items-center mb-4">
-                                <p className="text-md text-gray-700 flex flex-col ">
+                                <p className="flex flex-col text-gray-700 text-md">
                                   <span className="font-medium">Execute steps</span>
-                                  <p className="text-sm text-gray-500">Steps can be modified later</p>
+                                  <p className="text-sm text-gray-500">
+                                    Steps can be modified later
+                                  </p>
                                 </p>
                                 <ToggleButton
                                   onClick={() => setShowExamples(!showExamples)}
@@ -897,10 +917,10 @@ export default function AgentsPage() {
               <Button
                 onClick={handleGetSuggestions}
                 variant="default"
-                className="w-full "
+                className="w-full"
                 disabled={loadingSuggestions || !userInput.trim()}
               >
-                {loadingSuggestions ? 'Getting started...' : 'Start training'}
+                {loadingSuggestions ? 'Generating agent...' : 'Generate Agent'}
               </Button>
             )}
             {/* <Button

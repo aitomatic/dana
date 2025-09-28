@@ -2,10 +2,12 @@
 
 
 def plan_trip(location, weather):
-    return llm(f'Plan a day trip in {location} with weather being {weather}')
+    return llm(f'Recommend a day trip in {location} with weather being {weather}')
 
 def estimate_cost(trip):
-    return llm(f'Estimate the cost of the trip: {trip}. Include a summary of the trip for ease of understanding.')
+    return llm(f"Estimate the cost of the trip: {trip}.
+Make reasonable assumptions (i.e. don't ask me anything).
+Include a summary of the trip for ease of understanding.")
 
 
 def workflow_plan_and_cost(city: str, weather: str) -> str = plan_trip | estimate_cost

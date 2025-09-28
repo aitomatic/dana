@@ -37,6 +37,7 @@ class Topic(Base):
 
 class Document(Base):
     __tablename__ = "documents"
+
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     filename = Column(String, index=True)  # UUID filename
     original_filename = Column(String)
@@ -44,11 +45,14 @@ class Document(Base):
     file_size = Column(Integer)
     mime_type = Column(String)
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=True)
-    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True) # TODO : For now a single document can only be associated with a single agent, workaround by using `agent.config["associated_documents"]` to manage association
+    agent_id = Column(
+        Integer, ForeignKey("agents.id"), nullable=True
+    )  # TODO : For now a single document can only be associated with a single agent, workaround by using `agent.config["associated_documents"]` to manage association
     # For JSON extraction files: link to the original PDF document
     source_document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    doc_metadata = Column("metadata", JSON, nullable=True, default={})
 
     topic = relationship("Topic", back_populates="documents")
     agent = relationship("Agent", back_populates="documents")

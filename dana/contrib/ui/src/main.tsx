@@ -6,8 +6,13 @@ import { Layout } from './components/layout';
 import AgentsPage from './pages/Agents';
 import AgentDetailPage from './pages/Agents/detail';
 import LibraryPage from './pages/Library';
+import DocumentationPage from './pages/Documentation';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
+import { analytics } from './lib/analytics';
+
+// Initialize Google Analytics
+analytics.initialize();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,7 +30,7 @@ createRoot(document.getElementById('root')!).render(
             fontSize: '14px',
             fontWeight: '500',
           },
-          // @ts-ignore
+          // @ts-expect-error - Sonner toast options
           success: {
             style: {
               background: '#c8e3d0',
@@ -119,6 +124,14 @@ createRoot(document.getElementById('root')!).render(
           element={
             <Layout>
               <LibraryPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/documentation"
+          element={
+            <Layout>
+              <DocumentationPage />
             </Layout>
           }
         />

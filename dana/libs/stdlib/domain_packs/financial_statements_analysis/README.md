@@ -1,5 +1,8 @@
 # Financial-Analysis Domain Expertise Module / Domain Knowledge Pack
 
+> __AUTHORS__
+> Vinh Luong (vinh@aitomatic.com)
+
 This directory contains a comprehensive suite of Dana (`.na`) code examples and utilities for financial statement analysis and financial ratio workflows. The examples are organized to demonstrate how to extract, compute, and analyze key financial metrics from company financial statements using the Dana language.
 
 ## Structure and Contents
@@ -16,12 +19,6 @@ This directory contains a comprehensive suite of Dana (`.na`) code examples and 
     Each file implements calculations for a specific class of financial ratios or metrics, such as leverage (debt/equity), liquidity, capital intensity, profit margins, turnover, returns, income utilization, and adjusted income measures (EBITDA).
   - These modules use the core statement extractors to compute ratios according to standard financial formulas.
   - **Workflow Composition**: The modules demonstrate Dana's workflow composition syntax using pipe (`|`) and parallel execution (`[]`) operators for building complex financial analysis pipelines.
-
-- **Test and Example Scripts**
-  - `tests.na`:
-    Main test harness for running and validating the extraction and calculation functions across the modules.
-  - `docs/`:
-    Contains sample financial statement documents (e.g., `AMD_2022_10K.pdf`, `VERIZON_2022_10K.pdf`, `CVSHEALTH_2022_10K.pdf`) used as data sources for the tests.
 
 ## How to Use
 

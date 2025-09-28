@@ -1,15 +1,25 @@
-<!-- Compatible with Dana vX.Y.Z -->
-![Dana Version](https://img.shields.io/pypi/v/dana-lang)
+<!-- Compatible with Dana v0.5 -->
+![Dana Version](https://img.shields.io/pypi/v/dana)
 
-### Dana Runtime API Reference
+### Dana Runtime API Reference (v0.5)
 
-Catalog of public runtime APIs. Update within 24 hours of public changes.
+Public surface validated against GitHub `v0.5` and PyPI `dana==0.5`.
 
-Include:
-- CLI commands: `dana run`, `dana validate`, etc. (publicly available only)
-- Configuration and environment variables
-- Error codes/messages
-- Integration points (Python interop)
+#### CLI
+- `dana --version`
+- `dana run <path-to-file.na>`
+  - Example: `dana run examples/agents/agent_with_resources_and_workflows/agent_with_resources.na`
+- `dana studio`
+
+#### Environment
+- `DANA_LOG_LEVEL`: `info` (default), `debug`, `warn`, `error`
+
+#### Exit codes
+- `0`: success
+- `1`: general error
+
+#### Python interop
+- If available in v0.5, see `examples/` for usage patterns.
 
 
 

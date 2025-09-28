@@ -914,7 +914,7 @@ export const AgentDetailSidebar: React.FC = () => {
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div className="flex-1">
             <div className="text-sm font-semibold text-gray-900">Dana</div>
-            <div className="text-xs text-gray-500">Agent builder assistant</div>
+            <div className="text-xs text-gray-500">Dana Agent Maker</div>
           </div>
           <div className="flex gap-1 items-center">
             <div

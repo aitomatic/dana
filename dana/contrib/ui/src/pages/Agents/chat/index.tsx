@@ -6,7 +6,7 @@ import ConversationsSidebar from './conversations-sidebar';
 import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
 import { TooltipTrigger } from '@/components/ui/tooltip';
 import { TooltipPortal } from '@radix-ui/react-tooltip';
-import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
+import { ChatPlusIn, Menu } from 'iconoir-react';
 
 const SIDEBAR_COLLAPSED_KEY = 'agent-sidebar-collapsed';
 

@@ -27,7 +27,8 @@ def execute_task_with_validation(task: str, task_results: list) -> TaskResult:
     needs_search = should_use_websearch(task)
     
     # Determine if task can use document knowledge
-    needs_docs = should_use_documents(task) and has_docs
+    # needs_docs = should_use_documents(task) and has_docs
+    needs_docs = True and has_docs
     
     # Gather information from multiple sources
     context_parts = []
@@ -41,7 +42,12 @@ def execute_task_with_validation(task: str, task_results: list) -> TaskResult:
     if needs_search:
         print(f"🌐 Searching web...: {task}")
         search_query = extract_search_query(task)
-        search_results = websearch.openai_websearch(query=search_query)
+        try:
+            # REPLACE the following line WITH YOUR MCP function : websearch.search, websearch.abc, ...
+            search_results = websearch.openai_websearch(query=search_query)
+        except:
+            print("⚠️ Web Search Failed. Please replace `websearch.openai_websearch(query=search_query)` with your MCP function")
+            search_results = ""
         context_parts.append(f"Web Search Results: {search_results}")
         print(f"🌐 Web Search Done")
     
@@ -86,6 +92,9 @@ def should_use_websearch(task: str) -> bool:
     ]
     task_lower = task.lower()
     
+    if websearch is None:
+        return False
+
     for keyword in search_keywords:
         if keyword in task_lower:
             return True
@@ -136,7 +145,7 @@ def check_for_documents() -> bool:
     """Check if there are any documents available in the docs folder"""
     # For now, assume docs are available and let the query handle errors
     # This avoids the MCP tool call issue
-    return True
+    return docs.is_available
 
 def check_task_fulfillment(task_result: TaskResult) -> TaskResult:
     """Check if the task result fulfills the task requirements"""
