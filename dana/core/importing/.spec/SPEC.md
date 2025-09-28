@@ -16,9 +16,9 @@ A specification of which module to import, supporting:
 - **Python modules**: `module.py`, `package.submodule.py`
 
 #### **Pure Dotted Relative Paths**
-- **Current directory**: `.` (Dana), `.py` (Python)
-- **Parent directory**: `..` (Dana), `..py` (Python)
-- **Grandparent directory**: `...` (Dana), `...py` (Python)
+- **Current directory**: `.` (Dana), `..py` (Python)
+- **Parent directory**: `..` (Dana), `...py` (Python)
+- **Grandparent directory**: `...` (Dana), `....py` (Python)
 - **Higher levels**: `....`, `.....`, etc.
 
 #### **Relative Dotted Paths**
@@ -61,15 +61,15 @@ Pure dotted paths use only dots to navigate the directory hierarchy, with option
 
 #### **Current Directory Navigation**
 - **Dana current**: `.` → Current directory (Dana)
-- **Python current**: `.py` → Current directory (Python)
+- **Python current**: `..py` → Current directory (Python)
 
 #### **Parent Directory Navigation**
 - **Dana parent**: `..` → Parent directory (Dana)
-- **Python parent**: `..py` → Parent directory (Python)
+- **Python parent**: `...py` → Parent directory (Python)
 
 #### **Higher Level Navigation**
 - **Dana grandparent**: `...` → Grandparent directory (Dana)
-- **Python grandparent**: `...py` → Grandparent directory (Python)
+- **Python grandparent**: `....py` → Grandparent directory (Python)
 - **Dana great-grandparent**: `....` → Great-grandparent directory (Dana)
 - **Python great-grandparent**: `....py` → Great-grandparent directory (Python)
 
