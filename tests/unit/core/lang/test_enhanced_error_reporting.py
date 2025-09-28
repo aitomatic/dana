@@ -21,39 +21,61 @@ class TestEnhancedErrorReporting:
 
     def test_attribute_error_shows_location(self):
         """Test that AttributeError shows file, line, column and source."""
+        import os
+        import time
+        
         with tempfile.NamedTemporaryFile(mode="w", suffix=".na", delete=False) as f:
             f.write("""# Test file
 x = None
 y = x.missing_attr  # Error on line 3
 """)
             f.flush()
+            temp_file_path = f.name
 
-            try:
-                result = DanaSandbox.execute_file_once(f.name)
-                assert result.success is False
-                error = result.error
+        try:
+            result = DanaSandbox.execute_file_once(temp_file_path)
+            assert result.success is False
+            error = result.error
 
-                # Check error type
-                assert isinstance(error, EnhancedDanaError)
+            # Check error type
+            assert isinstance(error, EnhancedDanaError)
 
-                # Check error message contains location info
-                error_str = str(error)
-                assert "line 3" in error_str
-                assert "column" in error_str
-                assert "missing_attr" in error_str
-                assert "'NoneType' object has no attribute" in error_str
+            # Check error message contains location info
+            error_str = str(error)
+            assert "line 3" in error_str
+            assert "column" in error_str
+            assert "missing_attr" in error_str
+            assert "'NoneType' object has no attribute" in error_str
 
-                # Check error has location attributes
-                assert error.line == 3
-                assert error.column is not None
-                # Normalize paths to handle macOS /var symlink issue
-                assert Path(error.filename).resolve() == Path(f.name).resolve()
+            # Check error has location attributes
+            assert error.line == 3
+            assert error.column is not None
+            # Normalize paths to handle macOS /var symlink issue
+            assert error.filename is not None
+            assert Path(error.filename).resolve() == Path(temp_file_path).resolve()
 
-            finally:
-                Path(f.name).unlink()
+        finally:
+            # Windows-specific file cleanup with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < max_retries - 1:
+                        time.sleep(0.1)  # Brief delay before retry
+                        continue
+                    else:
+                        # On Windows, sometimes we can't delete the file immediately
+                        # This is acceptable for test cleanup
+                        pass
 
     def test_nested_function_error_shows_stack(self):
         """Test that errors in nested functions show call stack."""
+        import os
+        import time
+        
         with tempfile.NamedTemporaryFile(mode="w", suffix=".na", delete=False) as f:
             f.write("""# Test nested functions
 def inner_func(x):
@@ -65,71 +87,125 @@ def outer_func(y):
 result = outer_func(None)
 """)
             f.flush()
+            temp_file_path = f.name
 
-            try:
-                result = DanaSandbox.execute_file_once(f.name)
-                # With universal EagerPromise wrapping, results are wrapped in promises
-                if result.success:
-                    # Check if there's an error in the result
-                    # result.result is now an EagerPromise, so we need to wait for it
-                    try:
-                        result_value = result.result._wait_for_delivery()
-                        result_str = str(result_value)
-                        assert "bad_attr" in result_str or "inner_func" in result_str
-                    except Exception as promise_error:
-                        # If the promise contains an error, check the error message
-                        error_str = str(promise_error)
-                        assert "inner_func" in error_str or "line 3" in error_str or "bad_attr" in error_str
-                else:
-                    error = result.error
-                    # Check error contains function names in message
-                    error_str = str(error)
+        try:
+            result = DanaSandbox.execute_file_once(temp_file_path)
+            # With universal EagerPromise wrapping, results are wrapped in promises
+            if result.success:
+                # Check if there's an error in the result
+                # result.result is now an EagerPromise, so we need to wait for it
+                try:
+                    result_value = result.result._wait_for_delivery()
+                    result_str = str(result_value)
+                    assert "bad_attr" in result_str or "inner_func" in result_str
+                except Exception as promise_error:
+                    # If the promise contains an error, check the error message
+                    error_str = str(promise_error)
                     assert "inner_func" in error_str or "line 3" in error_str or "bad_attr" in error_str
+            else:
+                error = result.error
+                # Check error contains function names in message
+                error_str = str(error)
+                assert "inner_func" in error_str or "line 3" in error_str or "bad_attr" in error_str
 
-            finally:
-                Path(f.name).unlink()
+        finally:
+            # Windows-specific file cleanup with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < max_retries - 1:
+                        time.sleep(0.1)  # Brief delay before retry
+                        continue
+                    else:
+                        # On Windows, sometimes we can't delete the file immediately
+                        # This is acceptable for test cleanup
+                        pass
 
     def test_syntax_error_shows_location(self):
         """Test that syntax errors show location."""
+        import os
+        import time
+        
         with tempfile.NamedTemporaryFile(mode="w", suffix=".na", delete=False) as f:
             f.write("""# Test syntax error
 x = 1 +   # Incomplete expression
 """)
             f.flush()
+            temp_file_path = f.name
 
-            try:
-                result = DanaSandbox.execute_file_once(f.name)
-                assert result.success is False
+        try:
+            result = DanaSandbox.execute_file_once(temp_file_path)
+            assert result.success is False
 
-                # Syntax errors should at least show the file
-                error_str = str(result.error)
-                assert "line 2" in error_str.lower() or "syntax" in error_str.lower()
+            # Syntax errors should at least show the file
+            error_str = str(result.error)
+            assert "line 2" in error_str.lower() or "syntax" in error_str.lower()
 
-            finally:
-                Path(f.name).unlink()
+        finally:
+            # Windows-specific file cleanup with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < max_retries - 1:
+                        time.sleep(0.1)  # Brief delay before retry
+                        continue
+                    else:
+                        # On Windows, sometimes we can't delete the file immediately
+                        # This is acceptable for test cleanup
+                        pass
 
     def test_error_in_expression(self):
         """Test error reporting in complex expressions."""
+        import os
+        import time
+        
         with tempfile.NamedTemporaryFile(mode="w", suffix=".na", delete=False) as f:
             f.write("""# Test expression error
 data = {"key": None}
 result = data["key"].some_method()  # Error on accessing None.some_method
 """)
             f.flush()
+            temp_file_path = f.name
 
-            try:
-                result = DanaSandbox.execute_file_once(f.name)
-                assert result.success is False
+        try:
+            result = DanaSandbox.execute_file_once(temp_file_path)
+            assert result.success is False
 
-                error_str = str(result.error)
-                assert "some_method" in error_str
-                assert "NoneType" in error_str
+            error_str = str(result.error)
+            assert "some_method" in error_str
+            assert "NoneType" in error_str
 
-            finally:
-                Path(f.name).unlink()
+        finally:
+            # Windows-specific file cleanup with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < max_retries - 1:
+                        time.sleep(0.1)  # Brief delay before retry
+                        continue
+                    else:
+                        # On Windows, sometimes we can't delete the file immediately
+                        # This is acceptable for test cleanup
+                        pass
 
     def test_multiple_errors_in_file(self):
         """Test that first error is reported with correct location."""
+        import os
+        import time
+        
         with tempfile.NamedTemporaryFile(mode="w", suffix=".na", delete=False) as f:
             f.write("""# Multiple potential errors
 x = None
@@ -137,19 +213,34 @@ y = x.first_error  # First error here
 z = y.second_error  # This won't execute
 """)
             f.flush()
+            temp_file_path = f.name
 
-            try:
-                result = DanaSandbox.execute_file_once(f.name)
-                assert result.success is False
+        try:
+            result = DanaSandbox.execute_file_once(temp_file_path)
+            assert result.success is False
 
-                error_str = str(result.error)
-                assert "first_error" in error_str
-                assert "line 3" in error_str
-                # Should not reach second error
-                assert "second_error" not in error_str
+            error_str = str(result.error)
+            assert "first_error" in error_str
+            assert "line 3" in error_str
+            # Should not reach second error
+            assert "second_error" not in error_str
 
-            finally:
-                Path(f.name).unlink()
+        finally:
+            # Windows-specific file cleanup with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                    break
+                except (PermissionError, OSError):
+                    if attempt < max_retries - 1:
+                        time.sleep(0.1)  # Brief delay before retry
+                        continue
+                    else:
+                        # On Windows, sometimes we can't delete the file immediately
+                        # This is acceptable for test cleanup
+                        pass
 
     def test_error_in_imported_module(self):
         """Test error reporting across module boundaries."""

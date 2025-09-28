@@ -23,7 +23,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # - windows-latest  # temporarily turning off Windows testing
+          - windows-latest
         python: ["3.12"]
 
     defaults:

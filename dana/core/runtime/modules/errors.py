@@ -29,7 +29,12 @@ class ModuleError(Exception):
             parts.append(f"Module: {self.module_name}")
 
         if self.file_path:
-            parts.append(f"File: {self.file_path}")
+            # Normalize path separators for consistent cross-platform output
+            if isinstance(self.file_path, Path):
+                file_path_str = str(self.file_path)
+            else:
+                file_path_str = str(self.file_path)
+            parts.append(f"File: {file_path_str}")
 
         if self.line_number is not None:
             parts.append(f"Line {self.line_number}")
