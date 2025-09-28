@@ -17,28 +17,27 @@ ignore-paths=^(.*/)?(tests|examples|demos)/.*$
 
 [MESSAGES CONTROL]
 # Disable specific warnings that are too noisy or not applicable
-disable=wrong-import-order,
-        ungrouped-imports,
-        wrong-import-position,
-        missing-module-docstring,
+disable=broad-except,
+        consider-using-f-string,
+        fixme,
+        line-too-long,
         missing-class-docstring,
         missing-function-docstring,
-        line-too-long,
-
+        missing-module-docstring,
         no-member,
-        unsubscriptable-object,
-        unsupported-assignment-operation,
+        protected-access,
         too-few-public-methods,
         too-many-arguments,
-        too-many-locals,
         too-many-branches,
-        too-many-statements,
         too-many-instance-attributes,
+        too-many-locals,
+        too-many-statements,
+        ungrouped-imports,
+        unsubscriptable-object,
+        unsupported-assignment-operation,
         unused-argument,
-        broad-except,
-        fixme,
-
-        consider-using-f-string
+        wrong-import-order,
+        wrong-import-position,
 
 # Enable specific warnings that are valuable
 enable=useless-suppression

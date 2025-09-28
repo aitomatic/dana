@@ -391,14 +391,11 @@ class ImportHandler(Loggable):
                             # Check if it's our lazy loader by examining the __NAME__ attribute
                             if hasattr(imported_obj, "__NAME__") and imported_obj.__NAME__ == "__LAZY_MODULE_LOADER__":
                                 # This is a lazy loader, call it to get the actual module
-                                try:
-                                    potential_module = imported_obj()
-                                    # If it returns a Module object, this was a lazy loader
-                                    if hasattr(potential_module, "__name__") and hasattr(potential_module, "__file__"):
-                                        imported_obj = potential_module
-                                except Exception:
-                                    # If calling fails, it's not a lazy loader, leave as-is
-                                    pass
+                                potential_module = imported_obj()
+                                # If it returns a Module object, this was a lazy loader
+                                if hasattr(potential_module, "__name__") and hasattr(potential_module, "__file__"):
+                                    imported_obj = potential_module
+
                         context.set_in_scope(context_name, imported_obj, scope="local")
                         imported_successfully = True
                 except SandboxError as e:

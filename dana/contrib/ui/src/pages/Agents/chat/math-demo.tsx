@@ -125,13 +125,12 @@ $$
         </div>
       </div>
 
-      <div className={`border rounded-lg overflow-hidden ${
-        backgroundContext === 'user' ? 'bg-gray-50' : 'bg-white'
-      }`}>
-        <MarkdownViewerSmall 
-          theme={theme}
-          backgroundContext={backgroundContext}
-        >
+      <div
+        className={`border rounded-lg overflow-hidden ${
+          backgroundContext === 'user' ? 'bg-gray-50' : 'bg-white'
+        }`}
+      >
+        <MarkdownViewerSmall theme={theme} backgroundContext={backgroundContext}>
           {mathExamples}
         </MarkdownViewerSmall>
       </div>

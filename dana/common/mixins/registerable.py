@@ -32,9 +32,10 @@ class Registerable(Identifiable):
         Args:
             object_id: ID of the object to remove
         """
-        if object_id not in cls._registry:
-            raise ValueError(f"Object {object_id} not found in registry {cls._registry.keys()}")
-        del cls._registry[object_id]
+        pass
+        # if object_id not in cls._registry:
+        #     raise ValueError(f"Object {object_id} not found in registry {cls._registry.keys()}")
+        # del cls._registry[object_id]
 
     def add_to_registry(self) -> None:
         """Add myself to the registry."""
@@ -42,4 +43,5 @@ class Registerable(Identifiable):
 
     def remove_from_registry(self) -> None:
         """Remove myself from the registry."""
-        self.__class__.remove_object_from_registry(self.id)
+        # self.__class__.remove_object_from_registry(self.id)
+        pass

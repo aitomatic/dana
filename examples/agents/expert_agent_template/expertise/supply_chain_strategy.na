@@ -1,0 +1,18 @@
+"""International Trade Strategy Workflows."""
+
+
+__all__ = [
+    'get_tariff_rates',
+]
+
+
+def get_tariff_rates(resources) -> str:
+    return reason('Collect all mentioned tariff rates among mentioned countries',
+                  resources=resources)
+
+
+# | ======== |
+# | EXERCISE |
+# | ======== |
+# Add new functions & workflows for extracting & analysing useful data about tariffs & trading
+# (... your functions/workflows code here ...)

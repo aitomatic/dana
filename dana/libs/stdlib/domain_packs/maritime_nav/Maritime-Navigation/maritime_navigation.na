@@ -1,0 +1,96 @@
+"""Maritime Navigation Collision Avoidance Decision System."""
+
+
+# import expert agent blueprint from `blueprints` stdlib
+from blueprints.expert_agent import ExpertAgent
+
+# import relevant expertise module(s)
+from expertise import vessel_identification, collision_analysis
+
+# import utility templates
+from utils import STEP1_VESSEL_IDENTIFICATION_TEMPLATE
+from utils import STEP2_SITUATION_ANALYSIS_TEMPLATE
+from utils import STEP3_ENVIRONMENTAL_CONTEXT_TEMPLATE
+from utils import STEP4_DECISION_RECOMMENDATION_TEMPLATE
+
+
+# instantiate expert agent with relevant expertise module(s)
+NavigationExpert = ExpertAgent(expertise=[vessel_identification, collision_analysis])
+
+
+# instantiate individual resources for comprehensive analysis
+resource_vessel_registry = get_resource('rag', sources=['resources/vessel_registry.txt'])
+resource_navigation_rules = get_resource('rag', sources=['resources/navigation_rules.txt'])
+resource_environmental_data = get_resource('rag', sources=['resources/environmental_data.txt'])
+resource_historical_incidents = get_resource('rag', sources=['resources/historical_incidents.txt'])
+resource_colregs_database = get_resource('rag', sources=['resources/colregs_database.txt'])
+
+# use expert agent to solve problems
+def __main__(scenario: str = None, output_path = '.output/navigation-recommendation.txt'):
+    # import Python modules/utilities
+    from pathlib.py import Path
+
+    print('STARTING MARITIME NAVIGATION COLLISION AVOIDANCE ANALYSIS...')
+
+    # If no scenario provided, load from default file
+    if not scenario:
+        try:
+            scenario = Path('.input/head-on-scenario.txt').read_text()
+            print("Using default scenario from .input/head-on-scenario.txt")
+        except Exception as e:
+            print(f"Error loading default scenario: {e}")
+            return
+
+    print(f"Scenario: {scenario}")
+
+    # Use the scenario directly
+    problem = scenario
+
+    print('STEP 1: Vessel Identification & Capability Assessment...')
+
+    step1_result = NavigationExpert.solve(
+        STEP1_VESSEL_IDENTIFICATION_TEMPLATE.format(scenario=scenario),
+        resources=[resource_vessel_registry],
+        quick=True)
+
+    Path('.output/step-1.txt').write_text(step1_result)
+
+    print('STEP 2: Current Situation Analysis...')
+
+    step2_result = NavigationExpert.solve(
+        STEP2_SITUATION_ANALYSIS_TEMPLATE.format(
+            context=step1_result,
+            scenario=scenario),
+        resources=[resource_navigation_rules],
+        quick=True)
+
+    Path('.output/step-2.txt').write_text(step2_result)
+
+    print('STEP 3: Environmental & Regulatory Context Analysis...')
+
+    step3_result = NavigationExpert.solve(
+        STEP3_ENVIRONMENTAL_CONTEXT_TEMPLATE.format(step2_result=step2_result),
+        resources=[resource_environmental_data, resource_colregs_database],
+        quick=True)
+
+    Path('.output/step-3.txt').write_text(step3_result)
+
+    print('STEP 4: Historical Pattern Correlation & Decision Recommendation...')
+    
+    step4_result = NavigationExpert.solve(
+        STEP4_DECISION_RECOMMENDATION_TEMPLATE.format(
+            step1_result=step1_result,
+            step2_result=step2_result,
+            step3_result=step3_result),
+        resources=[resource_historical_incidents],
+        quick=True)
+
+    Path('.output/step-4.txt').write_text(step4_result)
+
+    # Use Step 4 result directly as the final recommendation
+    final_recommendation = step4_result
+
+    # Write final recommendation to output file
+    Path(output_path).write_text(final_recommendation)
+
+    return final_recommendation

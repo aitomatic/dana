@@ -9,7 +9,6 @@
             "moonshot:kimi",
             "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
-            "azure:gpt-4o-mini",
             "azure:gpt-4o",
             "azure:gpt-4o-mini",
             "cohere:command",
