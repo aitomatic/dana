@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from dana.api.core.models import KnowledgePack
-from dana.api.core.schemas import KnowledgePackOutput, DomainKnowledgeTree, DomainNode, PaginatedKnowledgePackResponse, PaginationInfo
+from dana.api.core.schemas import KnowledgePackOutput, PaginatedKnowledgePackResponse, PaginationInfo
+from dana.api.core.schemas_v2 import DomainNodeV2, DomainKnowledgeTreeV2
 from pathlib import Path
 from threading import Lock
 from collections import defaultdict
@@ -24,8 +25,27 @@ class AbstractDomainKnowledgeRepo(ABC):
         return _fn
 
     @classmethod
+    def save_tree(cls, tree_path: str | Path, tree: DomainKnowledgeTreeV2) -> None:
+        Path(tree_path).write_text(tree.model_dump_json(indent=4))
+
+    @classmethod
     @abstractmethod
-    async def get_kp_tree(cls, kp_id: int, **kwargs) -> DomainKnowledgeTree:
+    async def get_kp_tree(cls, kp_id: int, **kwargs) -> DomainKnowledgeTreeV2:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def delete_kp_tree_node(cls, kp_id: int, tree_node_path: str, **kwargs) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def update_kp_tree_node_name(cls, kp_id: int, tree_node_path: str, node_name: str, **kwargs) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def add_kp_tree_child_node(cls, kp_id: int, tree_node_path: str, child_topics: list[str], **kwargs) -> None:
         pass
 
     @classmethod
@@ -66,13 +86,13 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
         if not domain:
             raise ValueError(f"Domain not found in kp_metadata: {kp.kp_metadata}")
         if not domain_tree_path.exists():
-            tree = DomainKnowledgeTree(root=DomainNode(topic=domain))
-            domain_tree_path.write_text(tree.model_dump_json(indent=4))
+            tree = DomainKnowledgeTreeV2(root=DomainNodeV2(topic=domain))
+            cls.save_tree(domain_tree_path, tree)
         else:
-            tree = DomainKnowledgeTree.model_validate_json(domain_tree_path.read_text())
+            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
             if tree.root.topic != kp.kp_metadata.get("domain"):
                 tree.root.topic = domain
-                domain_tree_path.write_text(tree.model_dump_json(indent=4))
+                cls.save_tree(domain_tree_path, tree)
 
     @classmethod
     def _format_kp_response(cls, kp: KnowledgePack) -> KnowledgePackOutput:
@@ -88,11 +108,34 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
         )
 
     @classmethod
-    async def get_kp_tree(cls, kp_id: int, **kwargs) -> DomainKnowledgeTree:
+    async def get_kp_tree(cls, kp_id: int, **kwargs) -> DomainKnowledgeTreeV2:
         with cls._locks[kp_id]:
-            folder = cls.get_knowledge_pack_folder(kp_id)
-            domain_tree_path = folder / "domain_knowledge.json"
-            return DomainKnowledgeTree.model_validate_json(domain_tree_path.read_text())
+            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
+            return DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
+
+    @classmethod
+    async def delete_kp_tree_node(cls, kp_id: int, tree_node_path: str, **kwargs) -> None:
+        with cls._locks[kp_id]:
+            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
+            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
+            tree.delete_node(tree_node_path)
+            cls.save_tree(domain_tree_path, tree)
+
+    @classmethod
+    async def update_kp_tree_node_name(cls, kp_id: int, tree_node_path: str, node_name: str, **kwargs) -> None:
+        with cls._locks[kp_id]:
+            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
+            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
+            tree.update_node_name(tree_node_path, node_name)
+            cls.save_tree(domain_tree_path, tree)
+
+    @classmethod
+    async def add_kp_tree_child_node(cls, kp_id: int, tree_node_path: str, child_topics: list[str], **kwargs) -> None:
+        with cls._locks[kp_id]:
+            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
+            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
+            tree.add_children_to_node(tree_node_path, child_topics)
+            cls.save_tree(domain_tree_path, tree)
 
     @classmethod
     async def list_kp(cls, limit: int = 100, offset: int = 0, **kwargs) -> PaginatedKnowledgePackResponse:

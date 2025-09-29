@@ -50,7 +50,7 @@ class RAGResource(BaseSysResource):
         self,
         sources: list[str],
         name: str,
-        cache_dir: str,
+        cache_dir: str | None,
         force_reload: bool,
         chunk_size: int,
         chunk_overlap: int,
@@ -119,7 +119,7 @@ class RAGResource(BaseSysResource):
                 new_sources.append(src)
         return new_sources
 
-    def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
+    def _resolve_cache_dir(self, cache_dir: str | None, danapath: str) -> str:
         # If cache_dir is absolute, use it as is
         if cache_dir and os.path.isabs(cache_dir):
             return cache_dir

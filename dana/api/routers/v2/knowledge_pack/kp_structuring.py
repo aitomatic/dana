@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dana.api.core.schemas import MessageCreate, ConversationCreate
-from dana.api.core.schemas_v2 import BaseMessage, HandlerMessage, HandlerConversation
+from dana.api.core.schemas_v2 import BaseMessage, HandlerMessage, HandlerConversation, AddChildNodeRequest
 from dana.api.repositories import AbstractConversationRepo, AbstractDomainKnowledgeRepo
 from dana.api.core.database import get_db
 from dana.api.core.schemas_v2 import KnowledgePackResponse
@@ -90,3 +90,49 @@ async def smart_chat(
         internal_conversation=internal_conversation[-len(new_messages) :],
         error=result.get("error", None),
     )
+
+
+@router.delete("/{knowledge_id}/{tree_node_path:path}")
+async def delete_tree_node(
+    knowledge_id: int,
+    tree_node_path: str,
+    db: Session = Depends(get_db),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+):
+    """
+    Delete a tree path from a knowledge pack.
+    """
+    await kb_repo.delete_kp_tree_node(kp_id=knowledge_id, tree_node_path=tree_node_path, db=db)
+    return {"message": "Tree node deleted successfully"}
+
+
+@router.put("/{knowledge_id}/{tree_node_path:path}")
+async def update_tree_node(
+    knowledge_id: int,
+    tree_node_path: str,
+    node_name: str,
+    db: Session = Depends(get_db),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+):
+    """
+    Update a tree node in a knowledge pack.
+    """
+    await kb_repo.update_kp_tree_node_name(kp_id=knowledge_id, tree_node_path=tree_node_path, node_name=node_name, db=db)
+    return {"message": "Tree node updated successfully"}
+
+
+@router.post("/{knowledge_id}/{tree_node_path:path}/children")
+async def add_child_node(
+    knowledge_id: int,
+    tree_node_path: str,
+    request: AddChildNodeRequest,
+    db: Session = Depends(get_db),
+    kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+):
+    """
+    Add child nodes to an existing tree node in a knowledge pack.
+    """
+    await kb_repo.add_kp_tree_child_node(kp_id=knowledge_id, tree_node_path=tree_node_path, child_topics=request.child_topics, db=db)
+    children_count = len(request.child_topics)
+    children_list = ", ".join(f"'{topic}'" for topic in request.child_topics)
+    return {"message": f"{children_count} child node(s) [{children_list}] added successfully to path '{tree_node_path}'"}
