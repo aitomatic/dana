@@ -147,6 +147,7 @@ class ConversationBase(BaseModel):
     title: str
     agent_id: int | None = None
     kp_id: int | None = None
+    type: str | None = None
 
 
 class ConversationCreate(ConversationBase):

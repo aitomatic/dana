@@ -508,7 +508,7 @@ class DocumentService:
         """
         try:
             from dana.api.core.models import Agent
-            from dana.api.routers.agents import clear_agent_cache
+            from dana.api.routers.v1.agents import clear_agent_cache
 
             for agent_id in affected_agent_ids:
                 agent = db_session.query(Agent).filter(Agent.id == agent_id).first()

@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
 from dana.api.core.schemas import (
-    DomainKnowledgeTree,
     KnowledgePackCreateRequest,
     KnowledgePackUpdateRequest,
     KnowledgePackOutput,
@@ -20,7 +19,7 @@ from dana.api.core.schemas import (
     KnowledgePackSmartChatResponse,
     PaginatedKnowledgePackResponse,
 )
-from dana.api.core.schemas_v2 import BaseMessage
+from dana.api.core.schemas_v2 import BaseMessage, DomainKnowledgeTreeV2
 from dana.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo, get_conversation_repo, AbstractConversationRepo
 from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
 from ..ws.domain_knowledge_ws import domain_knowledge_ws_notifier
@@ -35,7 +34,7 @@ router = APIRouter(prefix="/knowledge", tags=["knowledge-pack"])
 router.include_router(kp_structuring_router)
 
 
-@router.get("/{knowledge_id}", response_model=DomainKnowledgeTree | dict)
+@router.get("/{knowledge_id}", response_model=DomainKnowledgeTreeV2 | dict)
 async def get_knowledge_pack(
     knowledge_id: int, repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo), db: Session = Depends(get_db)
 ):
