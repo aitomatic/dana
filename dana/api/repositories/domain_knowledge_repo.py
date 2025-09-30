@@ -102,7 +102,7 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
         return KnowledgePackOutput(
             id=kp.id,
             kp_metadata=kp.kp_metadata,
-            folder_path=cls.get_knowledge_pack_folder(kp.id).absolute(),
+            folder_path=str(cls.get_knowledge_pack_folder(kp.id).absolute()),
             created_at=kp.created_at,
             updated_at=kp.updated_at,
         )
