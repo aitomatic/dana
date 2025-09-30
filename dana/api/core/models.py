@@ -153,6 +153,7 @@ class BackGroundTask(Base):
     type = Column(String, nullable=False)
     status = Column(String, nullable=False, default="pending")
     data = Column(JSON, nullable=False, default={})
+    task_hash = Column(String, nullable=True)
     error = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

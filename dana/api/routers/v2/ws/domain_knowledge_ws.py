@@ -44,4 +44,4 @@ class DomainKnowledgeWSManager(WSManager):
 
 domain_knowledge_ws_notifier = DomainKnowledgeWSManager(prefix=KPConversationType.SMART_CHAT.value)
 kp_structuring_ws_notifier = DomainKnowledgeWSManager(prefix=KPConversationType.STRUCTURING.value)
-kp_generation_ws_notifier = DomainKnowledgeWSManager(prefix=KPConversationType.GENERATION.value)
+kp_generation_ws_notifier = DomainKnowledgeWSManager(prefix=KPConversationType.QUESTION_GENERATION.value)

@@ -607,6 +607,28 @@ class DocumentService:
             logger.error(f"Error getting agents with document {document_id}: {e}")
             raise
 
+    async def check_document_exists(self, original_filename: str, db_session) -> DocumentRead | None:
+        """
+        Check if a document with the given original filename already exists.
+
+        Args:
+            original_filename: The original filename to check
+            db_session: Database session
+
+        Returns:
+            DocumentRead object if document exists, None otherwise
+        """
+        try:
+            document = db_session.query(Document).filter(Document.original_filename == original_filename).first()
+            if not document:
+                return None
+
+            return DocumentRead.model_validate(document)
+
+        except Exception as e:
+            logger.error(f"Error checking if document exists with filename {original_filename}: {e}")
+            raise
+
     async def associate_documents_with_agent(self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session) -> list[str]:
         """
         Associate documents with an agent.
