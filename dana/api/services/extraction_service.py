@@ -50,8 +50,34 @@ class ExtractionService:
         try:
             # Get the source document to verify it exists
             source_document = db_session.query(Document).filter(Document.id == source_document_id).first()
+
             if not source_document:
                 raise ValueError(f"Source document with ID {source_document_id} not found")
+
+            # NOTE : Remove old extraction files
+            extraction_files = db_session.query(Document).filter(Document.source_document_id == source_document_id).all()
+
+            if extraction_files:
+                logger.info("Found %d extraction files to delete for document %d", len(extraction_files), source_document_id)
+                for extraction_file in extraction_files:
+                    # Delete extraction file from disk
+                    if extraction_file.file_path:
+                        # Extraction files store relative paths, so always join with upload directory
+                        file_path = os.path.join(self.base_upload_directory, extraction_file.file_path)
+
+                        if os.path.exists(file_path):
+                            try:
+                                os.remove(file_path)
+                                logger.info("Deleted extraction file: %s", file_path)
+                            except Exception as file_error:
+                                logger.warning("Could not delete extraction file %s: %s", file_path, file_error)
+                        else:
+                            logger.warning("Extraction file not found: %s", file_path)
+
+                    # Delete extraction file database record
+                    db_session.delete(extraction_file)
+
+                logger.info("Deleted %d extraction files for document %d", len(extraction_files), source_document_id)
 
             # Create JSON filename based on original filename
             base_name = os.path.splitext(original_filename)[0]

@@ -10,7 +10,6 @@
             "huggingface:mistralai/Mistral-7B-Instruct-v0.3",
             "openrouter:gpt-4o-mini",
             "anthropic:claude-3-5-sonnet-20240620",
-            "azure:gpt-4o-mini",
             "azure:gpt-4o",
             "azure:gpt-4o-mini",
             "cohere:command",

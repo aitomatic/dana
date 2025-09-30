@@ -156,7 +156,6 @@ class GenerateKnowledgeTool(BaseTool):
             try:
                 # Check if already generated
                 if self.status_manager:
-                    path_str = self._path_parts_to_string(path)
                     if self.status_manager.is_success(path_str):
                         generation_results.append(f"⏭️ Skipped '{leaf_topic}' - already complete")
                         # Stream skip notification
@@ -416,7 +415,7 @@ Return as JSON:
         # The path_parts excludes the root, so add it back
 
         # Convert to file path format with "/" separators
-        file_path = "/".join(path_parts)
+        file_path = "/".join([DomainNode(topic=topic).fd_name for topic in path_parts])
         # Add "/knowledge.json" suffix
         return file_path + "/knowledge.json"
 

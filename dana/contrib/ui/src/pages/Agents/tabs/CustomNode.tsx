@@ -291,14 +291,10 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         {/* Icons positioned on the right edge */}
         <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
           {hasChildren && (
-            <span style={{ fontSize: '16px' }}>
-              {isExpanded ? '' : <NavArrowRight />}
-            </span>
+            <span style={{ fontSize: '16px' }}>{isExpanded ? '' : <NavArrowRight />}</span>
           )}
           {isLeafNode && knowledgeStatus && (
-            <span style={{ fontSize: '16px' }}>
-              {getStatusIcon(knowledgeStatus.status)}
-            </span>
+            <span style={{ fontSize: '16px' }}>{getStatusIcon(knowledgeStatus.status)}</span>
           )}
         </div>
       </div>

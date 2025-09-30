@@ -8,6 +8,13 @@ export const API_CONFIG = {
   RETRY_DELAY: 1000, // 1 second
 } as const;
 
+// Google Analytics Configuration
+export const GA_CONFIG = {
+  TRACKING_ID: 'G-66GE7JMVY5',
+  ENABLED: true,
+  DEBUG: import.meta.env?.MODE === 'development',
+} as const;
+
 // API Endpoints
 export const API_ENDPOINTS = {
   HEALTH: '/health',

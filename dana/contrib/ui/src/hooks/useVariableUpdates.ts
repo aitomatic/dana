@@ -87,7 +87,8 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
   const [updates, setUpdates] = useState<VariableUpdate[]>([]);
   const [logUpdates, setLogUpdates] = useState<LogUpdate[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [bulkEvaluationProgress, setBulkEvaluationProgress] = useState<BulkEvaluationProgress | null>(null);
+  const [bulkEvaluationProgress, setBulkEvaluationProgress] =
+    useState<BulkEvaluationProgress | null>(null);
   const [bulkEvaluationResults, setBulkEvaluationResults] = useState<BulkEvaluationResult[]>([]);
   const updateIdCounter = useRef(0);
   const logIdCounter = useRef(0);
@@ -141,7 +142,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
           });
         } else if (data.type === 'bulk_evaluation_progress') {
           const progressMessage = data as BulkEvaluationProgressMessage;
-          
+
           setBulkEvaluationProgress({
             progress: progressMessage.progress,
             current_question: progressMessage.current_question,
@@ -153,7 +154,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
           });
         } else if (data.type === 'bulk_evaluation_result') {
           const resultMessage = data as BulkEvaluationResultMessage;
-          
+
           const newResult: BulkEvaluationResult = {
             id: `bulk-result-${++bulkResultIdCounter.current}`,
             question_index: resultMessage.question_index,
@@ -164,7 +165,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             error: resultMessage.error,
             timestamp: new Date(resultMessage.timestamp * 1000),
           };
-          
+
           setBulkEvaluationResults((prev) => {
             const newResults = [...prev, newResult];
             // Keep only the most recent results

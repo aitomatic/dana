@@ -128,15 +128,18 @@ class Configurable(Loggable):
 
             # Handle dot notation in path (but not in filename)
             if "." in str(path):
-                # Split into path parts and filename
-                parts = str(path).split("/")
-                # Only convert dots to slashes in path parts, not in filename
+                # Split into path parts and filename using pathlib for cross-OS compatibility
+                path_parts = path.parts
+                # Only convert dots to path separators in path parts, not in filename
                 converted_parts = []
-                for part in parts[:-1]:  # All parts except the last one
-                    converted_parts.append(part.replace(".", "/"))
+                for part in path_parts[:-1]:  # All parts except the last one
+                    # Split on dots and add each part separately for cross-OS compatibility
+                    dot_parts = part.split(".")
+                    converted_parts.extend(dot_parts)
                 # Add the filename as is
-                converted_parts.append(parts[-1])
-                path = Path("/".join(converted_parts))
+                converted_parts.append(path_parts[-1])
+                # Use pathlib to join parts for cross-OS compatibility
+                path = Path(*converted_parts)
 
             # Check for file extension
             if not path.suffix:
@@ -443,9 +446,20 @@ class Configurable(Loggable):
                 raise ValueError(f"Configuration file not found: {config_path}")
             return config_path
 
-        # Convert dot notation to slashes if needed
+        # Convert dot notation to path separators if needed
         if "." in str(path) and not path.endswith(".yaml") and not path.endswith(".yml"):
-            path = str(path).replace(".", "/")
+            # Use pathlib for cross-OS compatibility
+            path_obj = Path(path)
+            path_parts = []
+            for part in path_obj.parts:
+                if "." in part and not part.endswith((".yaml", ".yml")):
+                    # Convert dots to path separators within the part
+                    # Split on dots and join with path separators
+                    dot_parts = part.split(".")
+                    path_parts.extend(dot_parts)
+                else:
+                    path_parts.append(part)
+            path = str(Path(*path_parts))
 
         # Try both .yaml and .yml extensions
         yaml_path = cls.get_config_path(

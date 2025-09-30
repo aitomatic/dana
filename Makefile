@@ -352,7 +352,7 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 # Package Building & Publishing
 # =============================================================================
 
-build: ## Build package distribution files
+build: build-frontend ## Build package distribution files (includes frontend)
 	@echo "📦 Building package..."
 	$(UV_CMD) run python -m build
 

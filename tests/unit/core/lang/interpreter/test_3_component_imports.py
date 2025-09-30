@@ -19,7 +19,7 @@ class TestComponentImports:
 
         # Set up DANAPATH to include test_modules
         self.original_danapath = os.environ.get("DANAPATH", "")
-        os.environ["DANAPATH"] = f"{test_modules_path}:{self.original_danapath}"
+        os.environ["DANAPATH"] = f"{test_modules_path}{os.pathsep}{self.original_danapath}"
 
         self.sandbox = DanaSandbox()
 

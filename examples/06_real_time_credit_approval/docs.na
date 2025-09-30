@@ -1,7 +1,0 @@
-"""Credit Approval Documents - Minimal & Efficient"""
-
-fsa_rules = {"max_dti": 10, "min_docs": ["income", "identity", "employment"], "cooling_period": "7_days"}
-
-basel_requirements = {"min_capital": "8%", "risk_weights": {"retail": 75, "corporate": 100, "sovereign": 0}}
-
-bureau_data = {"primary": ["cic", "jicc", "ksc"], "data_types": ["credit_history", "payment_patterns", "outstanding_balances"]}

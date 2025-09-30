@@ -1,8 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, X, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface UploadedFile {
   id: string;
@@ -38,6 +41,9 @@ export function FileUpload({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Analytics
+  const { trackFileUpload } = useDanaAnalytics();
 
   // Auto-open file dialog on mount if autoOpen is true
   useEffect(() => {
@@ -81,6 +87,10 @@ export function FileUpload({
           uploadedFile.status = 'success';
           uploadedFile.path = doc.filename;
         }
+
+        // Track successful file upload
+        const fileExtension = file.name.split('.').pop() || 'unknown';
+        trackFileUpload(fileExtension, file.size);
       } catch (error) {
         uploadedFile.status = 'error';
         uploadedFile.error = (error as Error).message;

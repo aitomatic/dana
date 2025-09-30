@@ -3,7 +3,21 @@ import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, Trash2, ChevronDown, ChevronUp, X, MessageSquare, FileSpreadsheet, Upload, FileText, Settings, BarChart3, Download } from 'lucide-react';
+import {
+  Send,
+  Loader2,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  X,
+  MessageSquare,
+  FileSpreadsheet,
+  Upload,
+  FileText,
+  Settings,
+  BarChart3,
+  Download,
+} from 'lucide-react';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import LogViewer from '@/components/LogViewer';
@@ -89,20 +103,20 @@ const AgentTestChat = ({
   const [isTesting, setIsTesting] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [hideLogs, setHideLogs] = useState(false);
-  
+
   // Chat mode state
   const [chatMode, setChatMode] = useState<ChatMode>('individual');
-  
+
   // Bulk evaluation state
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [parsedCSV, setParsedCSV] = useState<ParsedCSV | null>(null);
   const [isParsingCSV, setIsParsingCSV] = useState(false);
-  
+
   // Bulk evaluation configuration
   const [batchSize, setBatchSize] = useState(5);
   const [showConfig, setShowConfig] = useState(false);
-  
+
   // Bulk evaluation state
   const [bulkEvaluation, setBulkEvaluation] = useState<BulkEvaluationState>({
     isRunning: false,
@@ -121,13 +135,13 @@ const AgentTestChat = ({
   );
 
   // WebSocket for variable updates and log streaming
-  const { 
-    logUpdates, 
-    bulkEvaluationProgress, 
-    bulkEvaluationResults, 
-    disconnect, 
-    clearLogUpdates, 
-    clearBulkEvaluationData 
+  const {
+    logUpdates,
+    bulkEvaluationProgress,
+    bulkEvaluationResults,
+    disconnect,
+    clearLogUpdates,
+    clearBulkEvaluationData,
   } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
@@ -156,7 +170,7 @@ const AgentTestChat = ({
   // Update bulk evaluation state from WebSocket progress updates
   useEffect(() => {
     if (bulkEvaluationProgress && bulkEvaluation.isRunning) {
-      setBulkEvaluation(prev => ({
+      setBulkEvaluation((prev) => ({
         ...prev,
         progress: bulkEvaluationProgress.progress,
         currentQuestionIndex: bulkEvaluationProgress.current_question,
@@ -169,7 +183,7 @@ const AgentTestChat = ({
   useEffect(() => {
     if (bulkEvaluationResults.length > 0 && bulkEvaluation.isRunning) {
       const latestResult = bulkEvaluationResults[bulkEvaluationResults.length - 1];
-      
+
       // Add question message
       const questionMessage: TestChatMessage = {
         id: `q-${latestResult.id}`,
@@ -186,7 +200,9 @@ const AgentTestChat = ({
       const responseMessage: TestChatMessage = {
         id: `r-${latestResult.id}`,
         role: 'agent',
-        content: latestResult.response || (latestResult.error ? `Error: ${latestResult.error}` : 'No response'),
+        content:
+          latestResult.response ||
+          (latestResult.error ? `Error: ${latestResult.error}` : 'No response'),
         timestamp: new Date(),
         metadata: {
           questionIndex: latestResult.question_index,
@@ -346,45 +362,52 @@ const AgentTestChat = ({
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-          const lines = text.split('\n').filter(line => line.trim());
-          
+          const lines = text.split('\n').filter((line) => line.trim());
+
           if (lines.length < 2) {
             resolve({
               headers: [],
               rows: [],
               questionColumn: '',
               isValid: false,
-              errors: ['CSV must have at least 2 lines (header + 1 data row)']
+              errors: ['CSV must have at least 2 lines (header + 1 data row)'],
             });
             return;
           }
 
           // Parse headers
-          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-          
+          const headers = lines[0].split(',').map((h) => h.trim().replace(/"/g, ''));
+
           // Find question column
-          const questionColumn = headers.find(h => 
-            h.toLowerCase().includes('question') || 
-            h.toLowerCase() === 'q' ||
-            h.toLowerCase() === 'query'
+          const questionColumn = headers.find(
+            (h) =>
+              h.toLowerCase().includes('question') ||
+              h.toLowerCase() === 'q' ||
+              h.toLowerCase() === 'query',
           );
 
           const errors: string[] = [];
           if (!questionColumn) {
-            errors.push('No "question" column found. Please include a column with "question" in the name.');
+            errors.push(
+              'No "question" column found. Please include a column with "question" in the name.',
+            );
           }
 
           // Parse rows
           const rows: CSVRow[] = [];
-          for (let i = 1; i < lines.length && i <= 1000; i++) { // Limit to 1000 questions
-            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+          for (let i = 1; i < lines.length && i <= 1000; i++) {
+            // Limit to 1000 questions
+            const values = lines[i].split(',').map((v) => v.trim().replace(/"/g, ''));
             const row: CSVRow = { question: '' };
-            
+
             headers.forEach((header, index) => {
               const value = values[index] || '';
               if (header === questionColumn) {
                 row.question = value;
-              } else if (header.toLowerCase().includes('expected') || header.toLowerCase().includes('answer')) {
+              } else if (
+                header.toLowerCase().includes('expected') ||
+                header.toLowerCase().includes('answer')
+              ) {
                 row.expected_answer = value;
               } else if (header.toLowerCase().includes('context')) {
                 row.context = value;
@@ -413,7 +436,7 @@ const AgentTestChat = ({
             rows,
             questionColumn: questionColumn || '',
             isValid: errors.length === 0,
-            errors
+            errors,
           });
         } catch (error) {
           resolve({
@@ -421,7 +444,9 @@ const AgentTestChat = ({
             rows: [],
             questionColumn: '',
             isValid: false,
-            errors: [`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`]
+            errors: [
+              `Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            ],
           });
         }
       };
@@ -446,7 +471,7 @@ const AgentTestChat = ({
   // Bulk evaluation control functions
   const startBulkEvaluation = useCallback(async () => {
     if (!parsedCSV?.isValid) return;
-    
+
     setBulkEvaluation({
       isRunning: true,
       isPaused: false,
@@ -466,7 +491,7 @@ const AgentTestChat = ({
     const startMessage: TestChatMessage = {
       id: Date.now().toString(),
       role: 'system',
-      content: `🚀 Starting bulk evaluation of ${parsedCSV.rows.length} questions...\n\n**Configuration:**\n- Batch size: ${batchSize} questions\n- Total batches: ${Math.ceil(parsedCSV.rows.length / batchSize)}\n- Estimated time: ~${Math.ceil(parsedCSV.rows.length / batchSize * 3)} seconds`,
+      content: `🚀 Starting bulk evaluation of ${parsedCSV.rows.length} questions...\n\n**Configuration:**\n- Batch size: ${batchSize} questions\n- Total batches: ${Math.ceil(parsedCSV.rows.length / batchSize)}\n- Estimated time: ~${Math.ceil((parsedCSV.rows.length / batchSize) * 3)} seconds`,
       timestamp: new Date(),
       metadata: { isBulkEvaluation: true },
     };
@@ -492,12 +517,12 @@ const AgentTestChat = ({
 
       if (response.success) {
         // Update bulk evaluation state with results
-        setBulkEvaluation(prev => ({
+        setBulkEvaluation((prev) => ({
           ...prev,
           isRunning: false,
           progress: 100,
           currentQuestionIndex: response.total_questions,
-          results: response.results.map(result => ({
+          results: response.results.map((result) => ({
             question: result.question,
             response: result.response,
             responseTime: result.response_time,
@@ -518,13 +543,15 @@ const AgentTestChat = ({
         };
         setMessages((prev) => [...prev, completeMessage]);
 
-        toast.success(`Bulk evaluation completed! ${response.successful_count}/${response.total_questions} successful`);
+        toast.success(
+          `Bulk evaluation completed! ${response.successful_count}/${response.total_questions} successful`,
+        );
       } else {
         throw new Error(response.error || 'Bulk evaluation failed');
       }
     } catch (error) {
       console.error('Failed to start bulk evaluation:', error);
-      
+
       // Add error message
       const errorMessage: TestChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -534,20 +561,30 @@ const AgentTestChat = ({
         metadata: { isBulkEvaluation: true },
       };
       setMessages((prev) => [...prev, errorMessage]);
-      
-      setBulkEvaluation(prev => ({ ...prev, isRunning: false }));
+
+      setBulkEvaluation((prev) => ({ ...prev, isRunning: false }));
       toast.error('Failed to start bulk evaluation. Please check your agent configuration.');
     } finally {
       setIsTesting(false);
     }
-  }, [parsedCSV, batchSize, clearLogUpdates, agentCode, agentName, agentDescription, currentFolder, websocketId, apiService]);
+  }, [
+    parsedCSV,
+    batchSize,
+    clearLogUpdates,
+    agentCode,
+    agentName,
+    agentDescription,
+    currentFolder,
+    websocketId,
+    apiService,
+  ]);
 
   const pauseBulkEvaluation = useCallback(() => {
-    setBulkEvaluation(prev => ({ ...prev, isPaused: true }));
+    setBulkEvaluation((prev) => ({ ...prev, isPaused: true }));
   }, []);
 
   const resumeBulkEvaluation = useCallback(() => {
-    setBulkEvaluation(prev => ({ ...prev, isPaused: false }));
+    setBulkEvaluation((prev) => ({ ...prev, isPaused: false }));
   }, []);
 
   const cancelBulkEvaluation = useCallback(() => {
@@ -569,8 +606,8 @@ const AgentTestChat = ({
     const { results, startTime } = bulkEvaluation;
     if (results.length === 0) return null;
 
-    const successful = results.filter(r => r.status === 'success').length;
-    const failed = results.filter(r => r.status === 'error').length;
+    const successful = results.filter((r) => r.status === 'success').length;
+    const failed = results.filter((r) => r.status === 'error').length;
     const successRate = (successful / results.length) * 100;
     const avgResponseTime = results.reduce((sum, r) => sum + r.responseTime, 0) / results.length;
     const totalTime = startTime ? Date.now() - startTime.getTime() : 0;
@@ -586,69 +623,79 @@ const AgentTestChat = ({
   }, [bulkEvaluation]);
 
   // Export bulk evaluation results
-  const exportBulkResults = useCallback((format: 'csv' | 'json') => {
-    const stats = getBulkEvaluationStats();
-    if (!stats || bulkEvaluation.results.length === 0) return;
+  const exportBulkResults = useCallback(
+    (format: 'csv' | 'json') => {
+      const stats = getBulkEvaluationStats();
+      if (!stats || bulkEvaluation.results.length === 0) return;
 
-    if (format === 'csv') {
-      const headers = ['Question Index', 'Question', 'Agent Response', 'Status', 'Response Time (ms)', 'Expected Answer'];
-      const rows = bulkEvaluation.results.map(result => [
-        result.rowIndex + 1,
-        `"${result.question.replace(/"/g, '""')}"`,
-        `"${result.response.replace(/"/g, '""')}"`,
-        result.status,
-        result.responseTime,
-        result.expectedAnswer ? `"${result.expectedAnswer.replace(/"/g, '""')}"` : ''
-      ]);
-      
-      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bulk-evaluation-results-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else {
-      const jsonData = {
-        metadata: {
-          exportDate: new Date().toISOString(),
-          agentName: agentName,
-          ...stats
-        },
-        results: bulkEvaluation.results
-      };
-      
-      const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bulk-evaluation-results-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-    
-    toast.success(`Results exported as ${format.toUpperCase()}`);
-  }, [bulkEvaluation.results, getBulkEvaluationStats, agentName]);
+      if (format === 'csv') {
+        const headers = [
+          'Question Index',
+          'Question',
+          'Agent Response',
+          'Status',
+          'Response Time (ms)',
+          'Expected Answer',
+        ];
+        const rows = bulkEvaluation.results.map((result) => [
+          result.rowIndex + 1,
+          `"${result.question.replace(/"/g, '""')}"`,
+          `"${result.response.replace(/"/g, '""')}"`,
+          result.status,
+          result.responseTime,
+          result.expectedAnswer ? `"${result.expectedAnswer.replace(/"/g, '""')}"` : '',
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bulk-evaluation-results-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const jsonData = {
+          metadata: {
+            exportDate: new Date().toISOString(),
+            agentName: agentName,
+            ...stats,
+          },
+          results: bulkEvaluation.results,
+        };
+
+        const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bulk-evaluation-results-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      toast.success(`Results exported as ${format.toUpperCase()}`);
+    },
+    [bulkEvaluation.results, getBulkEvaluationStats, agentName],
+  );
 
   return (
     <div className={cn('flex flex-col h-full bg-[#EFF4FE]', className)}>
       {/* Header with mode toggle and clear button */}
-      <div className="flex justify-between items-center bg-gray-50 border-b border-gray-200 px-3 py-2">
+      <div className="flex justify-between items-center px-3 py-2 bg-gray-50 border-b border-gray-200">
         {/* Mode Toggle */}
-        <div className="flex bg-white border border-gray-200 rounded-lg p-1">
+        <div className="flex p-1 bg-white rounded-lg border border-gray-200">
           <Button
             onClick={() => setChatMode('individual')}
             variant={chatMode === 'individual' ? 'default' : 'ghost'}
             size="sm"
             className={cn(
               'px-3 py-1 h-8 text-xs font-medium transition-all',
-              chatMode === 'individual' 
-                ? 'bg-blue-600 text-white shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
+              chatMode === 'individual'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900',
             )}
           >
-            <MessageSquare className="w-3 h-3 mr-1" />
+            <MessageSquare className="mr-1 w-3 h-3" />
             Individual
           </Button>
           <Button
@@ -657,12 +704,12 @@ const AgentTestChat = ({
             size="sm"
             className={cn(
               'px-3 py-1 h-8 text-xs font-medium transition-all',
-              chatMode === 'bulk' 
-                ? 'bg-blue-600 text-white shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
+              chatMode === 'bulk'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900',
             )}
           >
-            <FileSpreadsheet className="w-3 h-3 mr-1" />
+            <FileSpreadsheet className="mr-1 w-3 h-3" />
             Bulk
           </Button>
         </div>
@@ -686,38 +733,41 @@ const AgentTestChat = ({
             key={message.id}
             className={cn(
               'flex gap-3',
-              message.role === 'user' ? 'justify-end' : 
-              message.role === 'system' ? 'justify-center' : 'justify-start'
+              message.role === 'user'
+                ? 'justify-end'
+                : message.role === 'system'
+                  ? 'justify-center'
+                  : 'justify-start',
             )}
           >
             <div
               className={cn(
                 'max-w-[80%] rounded-lg px-3 py-2 text-sm',
-                message.role === 'user' 
-                  ? 'bg-blue-600 text-white' 
-                  : message.role === 'system' 
-                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800' 
+                message.role === 'user'
+                  ? 'bg-blue-600 text-white'
+                  : message.role === 'system'
+                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'
                     : message.metadata?.status === 'error'
                       ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100',
               )}
             >
               {/* Sender label inside bubble */}
               <div
                 className={cn(
                   'text-xs font-medium mb-1 flex items-center justify-between',
-                  message.role === 'user' 
-                    ? 'text-blue-100 opacity-80' 
-                    : message.role === 'system' 
-                      ? 'text-amber-600 dark:text-amber-400' 
-                      : 'text-gray-500 dark:text-gray-400 opacity-80'
+                  message.role === 'user'
+                    ? 'text-blue-100 opacity-80'
+                    : message.role === 'system'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-gray-500 dark:text-gray-400 opacity-80',
                 )}
               >
                 <span>
-                  {message.role === 'user' 
-                    ? 'User' 
-                    : message.role === 'system' 
-                      ? 'System' 
+                  {message.role === 'user'
+                    ? 'User'
+                    : message.role === 'system'
+                      ? 'System'
                       : agentName || 'Agent'}
                   {message.metadata?.questionIndex !== undefined && (
                     <span className="ml-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded text-xs">
@@ -741,9 +791,11 @@ const AgentTestChat = ({
 
               {/* Expected answer comparison for bulk evaluation */}
               {message.metadata?.expectedAnswer && (
-                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Expected Answer:</div>
-                  <div className="text-xs bg-gray-50 dark:bg-gray-600 p-2 rounded">
+                <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-600">
+                  <div className="mb-1 text-xs text-gray-600 dark:text-gray-400">
+                    Expected Answer:
+                  </div>
+                  <div className="p-2 text-xs bg-gray-50 rounded dark:bg-gray-600">
                     {message.metadata.expectedAnswer}
                   </div>
                 </div>
@@ -753,11 +805,11 @@ const AgentTestChat = ({
               <div
                 className={cn(
                   'text-xs mt-1',
-                  message.role === 'user' 
-                    ? 'text-blue-100' 
-                    : message.role === 'system' 
-                      ? 'text-amber-600 dark:text-amber-400' 
-                      : 'text-gray-500 dark:text-gray-400'
+                  message.role === 'user'
+                    ? 'text-blue-100'
+                    : message.role === 'system'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-gray-500 dark:text-gray-400',
                 )}
               >
                 {message.timestamp.toLocaleTimeString()}
@@ -782,97 +834,100 @@ const AgentTestChat = ({
       </div>
 
       {/* Bulk Evaluation Summary */}
-      {!bulkEvaluation.isRunning && bulkEvaluation.results.length > 0 && (() => {
-        const stats = getBulkEvaluationStats();
-        return stats ? (
-          <div className="mx-3 mb-3">
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Evaluation Complete
-                  </h3>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => exportBulkResults('csv')}
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Download className="w-3 h-3 mr-1" />
-                    CSV
-                  </Button>
-                  <Button
-                    onClick={() => exportBulkResults('json')}
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Download className="w-3 h-3 mr-1" />
-                    JSON
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {stats.total}
+      {!bulkEvaluation.isRunning &&
+        bulkEvaluation.results.length > 0 &&
+        (() => {
+          const stats = getBulkEvaluationStats();
+          return stats ? (
+            <div className="mx-3 mb-3">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex gap-2 items-center">
+                    <BarChart3 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Evaluation Complete
+                    </h3>
                   </div>
-                  <div className="text-green-600 dark:text-green-400">Total Questions</div>
-                </div>
-                
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {stats.successRate.toFixed(1)}%
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => exportBulkResults('csv')}
+                      size="sm"
+                      variant="outline"
+                      className="px-2 h-7 text-xs"
+                    >
+                      <Download className="mr-1 w-3 h-3" />
+                      CSV
+                    </Button>
+                    <Button
+                      onClick={() => exportBulkResults('json')}
+                      size="sm"
+                      variant="outline"
+                      className="px-2 h-7 text-xs"
+                    >
+                      <Download className="mr-1 w-3 h-3" />
+                      JSON
+                    </Button>
                   </div>
-                  <div className="text-green-600 dark:text-green-400">Success Rate</div>
                 </div>
-                
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {stats.avgResponseTime}ms
-                  </div>
-                  <div className="text-green-600 dark:text-green-400">Avg Response</div>
-                </div>
-                
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {stats.totalTime}s
-                  </div>
-                  <div className="text-green-600 dark:text-green-400">Total Time</div>
-                </div>
-              </div>
 
-              {stats.failed > 0 && (
-                <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
-                  <div className="text-sm text-amber-700 dark:text-amber-300">
-                    <strong>{stats.failed}</strong> questions failed - check individual responses above for details
+                <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                      {stats.total}
+                    </div>
+                    <div className="text-green-600 dark:text-green-400">Total Questions</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                      {stats.successRate.toFixed(1)}%
+                    </div>
+                    <div className="text-green-600 dark:text-green-400">Success Rate</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                      {stats.avgResponseTime}ms
+                    </div>
+                    <div className="text-green-600 dark:text-green-400">Avg Response</div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                      {stats.totalTime}s
+                    </div>
+                    <div className="text-green-600 dark:text-green-400">Total Time</div>
                   </div>
                 </div>
-              )}
+
+                {stats.failed > 0 && (
+                  <div className="pt-3 mt-3 border-t border-green-200 dark:border-green-800">
+                    <div className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>{stats.failed}</strong> questions failed - check individual responses
+                      above for details
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ) : null;
-      })()}
+          ) : null;
+        })()}
 
       {/* Collapsible Live Logs Section */}
       {(isTesting || logUpdates.length > 0) && !hideLogs && (
-        <div className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="bg-gray-50 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
           {/* Toggle Button */}
-          <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div className="flex justify-between items-center px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
             <div
-              className="flex items-center gap-2 cursor-pointer flex-1"
+              className="flex flex-1 gap-2 items-center cursor-pointer"
               onClick={() => setShowLogs(!showLogs)}
             >
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 Backend Logs
               </span>
               {isTesting && (
-                <div className="flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                <div className="flex gap-1 items-center">
+                  <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
                   <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
                 </div>
               )}
@@ -895,7 +950,7 @@ const AgentTestChat = ({
                   setHideLogs(true);
                   setShowLogs(false);
                 }}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                 title="Hide logs"
               >
                 <X className="w-3 h-3 text-gray-400 dark:text-gray-500" />
@@ -918,7 +973,7 @@ const AgentTestChat = ({
       )}
 
       {/* Input - Different UI based on chat mode */}
-      <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-3 bg-gray-50 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         {chatMode === 'individual' ? (
           // Individual chat input
           <div className="flex gap-2">
@@ -928,7 +983,7 @@ const AgentTestChat = ({
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Chat with agent"
-                className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 resize-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={2}
                 disabled={isTesting}
               />
@@ -954,10 +1009,10 @@ const AgentTestChat = ({
               // CSV Upload Area
               <div
                 className={cn(
-                  'border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer',
-                  isDragOver 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  'p-6 rounded-lg border-2 border-dashed transition-colors cursor-pointer',
+                  isDragOver
+                    ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
                 )}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -965,8 +1020,8 @@ const AgentTestChat = ({
                 onClick={() => document.getElementById('csv-file-input')?.click()}
               >
                 <div className="flex flex-col items-center text-center">
-                  <FileSpreadsheet className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <FileSpreadsheet className="mb-2 w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Drop CSV file here or click to browse
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -985,21 +1040,26 @@ const AgentTestChat = ({
               // CSV File Selected and Preview
               <div className="space-y-3">
                 {/* File Info */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className={cn(
-                        "w-4 h-4",
-                        isParsingCSV ? "text-blue-500" : 
-                        parsedCSV?.isValid ? "text-green-600" : "text-red-500"
-                      )} />
+                <div className="p-3 bg-white rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2 items-center">
+                      <FileText
+                        className={cn(
+                          'w-4 h-4',
+                          isParsingCSV
+                            ? 'text-blue-500'
+                            : parsedCSV?.isValid
+                              ? 'text-green-600'
+                              : 'text-red-500',
+                        )}
+                      />
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {csvFile.name}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {(csvFile.size / 1024).toFixed(1)} KB
-                          {isParsingCSV && " • Parsing..."}
+                          {isParsingCSV && ' • Parsing...'}
                           {parsedCSV && ` • ${parsedCSV.rows.length} questions`}
                         </p>
                       </div>
@@ -1017,12 +1077,12 @@ const AgentTestChat = ({
 
                 {/* CSV Preview */}
                 {parsedCSV && parsedCSV.isValid && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                  <div className="bg-white rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
                     <div className="p-3 border-b border-gray-200 dark:border-gray-600">
                       <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Preview ({parsedCSV.rows.length} questions)
                       </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Question column: "{parsedCSV.questionColumn}"
                       </p>
                     </div>
@@ -1031,7 +1091,10 @@ const AgentTestChat = ({
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-600">
                             {parsedCSV.headers.slice(0, 4).map((header, index) => (
-                              <th key={index} className="text-left p-2 font-medium text-gray-700 dark:text-gray-300">
+                              <th
+                                key={index}
+                                className="p-2 font-medium text-left text-gray-700 dark:text-gray-300"
+                              >
                                 {header}
                                 {header === parsedCSV.questionColumn && (
                                   <span className="ml-1 px-1 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">
@@ -1041,7 +1104,7 @@ const AgentTestChat = ({
                               </th>
                             ))}
                             {parsedCSV.headers.length > 4 && (
-                              <th className="text-left p-2 font-medium text-gray-500">
+                              <th className="p-2 font-medium text-left text-gray-500">
                                 +{parsedCSV.headers.length - 4} more
                               </th>
                             )}
@@ -1049,9 +1112,15 @@ const AgentTestChat = ({
                         </thead>
                         <tbody>
                           {parsedCSV.rows.slice(0, 3).map((row, rowIndex) => (
-                            <tr key={rowIndex} className="border-b border-gray-100 dark:border-gray-700">
+                            <tr
+                              key={rowIndex}
+                              className="border-b border-gray-100 dark:border-gray-700"
+                            >
                               {parsedCSV.headers.slice(0, 4).map((header, colIndex) => (
-                                <td key={colIndex} className="p-2 text-gray-600 dark:text-gray-400 max-w-32 truncate">
+                                <td
+                                  key={colIndex}
+                                  className="p-2 text-gray-600 truncate dark:text-gray-400 max-w-32"
+                                >
                                   {row[header] || '—'}
                                 </td>
                               ))}
@@ -1062,7 +1131,10 @@ const AgentTestChat = ({
                           ))}
                           {parsedCSV.rows.length > 3 && (
                             <tr>
-                              <td colSpan={Math.min(parsedCSV.headers.length, 5)} className="p-2 text-center text-gray-500 text-xs">
+                              <td
+                                colSpan={Math.min(parsedCSV.headers.length, 5)}
+                                className="p-2 text-xs text-center text-gray-500"
+                              >
                                 +{parsedCSV.rows.length - 3} more questions...
                               </td>
                             </tr>
@@ -1075,12 +1147,12 @@ const AgentTestChat = ({
 
                 {/* Configuration */}
                 {parsedCSV && parsedCSV.isValid && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
-                    <div 
-                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  <div className="bg-white rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700">
+                    <div
+                      className="flex justify-between items-center p-3 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
                       onClick={() => setShowConfig(!showConfig)}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <Settings className="w-4 h-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           Configuration
@@ -1095,18 +1167,18 @@ const AgentTestChat = ({
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                       )}
                     </div>
-                    
+
                     {showConfig && (
-                      <div className="px-3 pb-3 border-t border-gray-200 dark:border-gray-600 pt-3 space-y-3">
+                      <div className="px-3 pt-3 pb-3 space-y-3 border-t border-gray-200 dark:border-gray-600">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Batch Size
                           </label>
-                          <div className="flex items-center gap-2">
+                          <div className="flex gap-2 items-center">
                             <select
                               value={batchSize}
                               onChange={(e) => setBatchSize(Number(e.target.value))}
-                              className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="flex-1 px-3 py-2 text-sm text-gray-900 bg-white rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                               <option value={1}>1 question at a time</option>
                               <option value={3}>3 questions at a time</option>
@@ -1115,14 +1187,15 @@ const AgentTestChat = ({
                               <option value={20}>20 questions at a time</option>
                             </select>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Higher batch sizes process faster but use more resources
                           </p>
                         </div>
 
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
+                        <div className="p-2 bg-blue-50 rounded-lg border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
                           <p className="text-xs text-blue-700 dark:text-blue-300">
-                            <strong>Estimated time:</strong> ~{Math.ceil(parsedCSV.rows.length / batchSize * 3)} seconds
+                            <strong>Estimated time:</strong> ~
+                            {Math.ceil((parsedCSV.rows.length / batchSize) * 3)} seconds
                             <br />
                             <strong>Total questions:</strong> {parsedCSV.rows.length}
                             <br />
@@ -1136,11 +1209,11 @@ const AgentTestChat = ({
 
                 {/* Error Display */}
                 {parsedCSV && !parsedCSV.isValid && (
-                  <div className="border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 rounded-lg p-3">
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200 dark:border-red-800 dark:bg-red-900/20">
                     <p className="text-sm font-medium text-red-800 dark:text-red-200">
                       CSV Validation Errors:
                     </p>
-                    <ul className="mt-1 text-xs text-red-600 dark:text-red-300 list-disc list-inside">
+                    <ul className="mt-1 text-xs list-disc list-inside text-red-600 dark:text-red-300">
                       {parsedCSV.errors.map((error, index) => (
                         <li key={index}>{error}</li>
                       ))}
@@ -1149,10 +1222,10 @@ const AgentTestChat = ({
                 )}
               </div>
             )}
-            
+
             {/* Progress Tracking */}
             {bulkEvaluation.isRunning && (
-              <div className="border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 rounded-lg p-4 space-y-3">
+              <div className="p-4 space-y-3 bg-blue-50 rounded-lg border border-blue-200 dark:border-blue-800 dark:bg-blue-900/20">
                 <div className="flex justify-between items-center">
                   <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                     Bulk Evaluation in Progress
@@ -1163,7 +1236,7 @@ const AgentTestChat = ({
                         onClick={resumeBulkEvaluation}
                         size="sm"
                         variant="outline"
-                        className="h-7 px-2 text-xs"
+                        className="px-2 h-7 text-xs"
                       >
                         Resume
                       </Button>
@@ -1172,7 +1245,7 @@ const AgentTestChat = ({
                         onClick={pauseBulkEvaluation}
                         size="sm"
                         variant="outline"
-                        className="h-7 px-2 text-xs"
+                        className="px-2 h-7 text-xs"
                       >
                         Pause
                       </Button>
@@ -1181,31 +1254,33 @@ const AgentTestChat = ({
                       onClick={cancelBulkEvaluation}
                       size="sm"
                       variant="outline"
-                      className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                      className="px-2 h-7 text-xs text-red-600 hover:text-red-700"
                     >
                       Cancel
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xs text-blue-700 dark:text-blue-300">
                     <span>
-                      Question {bulkEvaluation.currentQuestionIndex + 1} of {bulkEvaluation.totalQuestions}
+                      Question {bulkEvaluation.currentQuestionIndex + 1} of{' '}
+                      {bulkEvaluation.totalQuestions}
                     </span>
                     <span>{bulkEvaluation.progress}% complete</span>
                   </div>
-                  <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                  <div className="w-full h-2 bg-blue-200 rounded-full dark:bg-blue-800">
                     <div
-                      className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                      className="h-2 bg-blue-600 rounded-full transition-all duration-300 dark:bg-blue-400"
                       style={{ width: `${bulkEvaluation.progress}%` }}
                     />
                   </div>
                   <div className="flex justify-between items-center text-xs text-blue-600 dark:text-blue-400">
                     <span>
-                      {bulkEvaluation.results.filter(r => r.status === 'success').length} successful, {' '}
-                      {bulkEvaluation.results.filter(r => r.status === 'error').length} failed
+                      {bulkEvaluation.results.filter((r) => r.status === 'success').length}{' '}
+                      successful,{' '}
+                      {bulkEvaluation.results.filter((r) => r.status === 'error').length} failed
                     </span>
                     <span>~{Math.round(bulkEvaluation.estimatedTimeRemaining)}s remaining</span>
                   </div>
@@ -1220,7 +1295,7 @@ const AgentTestChat = ({
                 className="w-full"
                 disabled={isTesting || isParsingCSV}
               >
-                <Upload className="w-4 h-4 mr-2" />
+                <Upload className="mr-2 w-4 h-4" />
                 Start Evaluation ({parsedCSV.rows.length} questions)
               </Button>
             )}

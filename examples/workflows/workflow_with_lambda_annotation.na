@@ -1,0 +1,26 @@
+def add_one(a : int = 1):
+    return a + 1
+
+def add_two(a : int = 2):
+    return a + 2
+
+def multiply_two(a : int = 2, b : int = 2):
+    return a * b
+
+def final_workflow(a : int = 1) -> int = noop as base | add_one(base) as first | add_two(base) as second | multiply_two(first, second)
+def final_workflow_2(a : int = 1) -> int = add_one as first | add_two as second | multiply_two(first, second)
+    
+print(final_workflow(1))
+# This will do : 
+# noop as base -> base = 1 # noop mean no operation, this will return the input as it is
+# add_one(base) as first -> first = 1 + 1 = 2
+# add_two(base) as second -> second = 1 + 2 = 3
+# multiply_two(first, second) -> 2 * 3 = 6
+# return 6
+
+print(final_workflow_2(2))
+# This will do : 
+# add_one as first -> first = 1 + 1 = 2
+# add_two as second -> second = 2 + 2 = 4
+# multiply_two(first, second) -> 2 * 4 = 8
+# return 8

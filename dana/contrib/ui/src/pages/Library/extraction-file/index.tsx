@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import FileIcon from '@/components/file-icon';
-import { IconLoader2, IconUpload } from '@tabler/icons-react';
+import { IconLoader2 } from '@tabler/icons-react';
 import { Check } from 'iconoir-react';
 import { ExtractedFile } from './extracted-file';
 import { cn } from '@/lib/utils';
@@ -62,9 +62,15 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     event.target.value = '';
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
+  const handleFileUpload = (files: File[]) => {
+    files.forEach((file) => {
+      addFile(file);
+    });
   };
+
+  // const handleUploadClick = () => {
+  //   fileInputRef.current?.click();
+  // };
 
   const handleSaveAndFinish = async () => {
     await saveAndFinish();
@@ -93,7 +99,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Extract Files</DialogTitle>
+            <DialogTitle>Deep Extract</DialogTitle>
             <DialogDescription className="text-sm text-gray-600">
               Process and extract content from your files
             </DialogDescription>
@@ -107,7 +113,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                   <span className="font-semibold text-gray-600">
                     Uploaded Files ({extractedFiles.length ?? 0})
                   </span>
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={handleUploadClick}
@@ -115,7 +121,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                   >
                     <IconUpload className="mr-2 w-4 h-4" />
                     Add Files
-                  </Button>
+                  </Button> */}
                 </div>
                 <span className="text-sm text-gray-500">
                   Enable deep extraction for better content analysis
@@ -131,15 +137,15 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                       selectedFile?.id === file?.id && 'bg-gray-50',
                     )}
                   >
-                    <div className="flex gap-2 w-full">
-                      <div className="flex justify-center items-center size-6">
+                    <div className="flex gap-2 w-[92%]">
+                      <div className="flex justify-center items-center size-6 flex-1">
                         <FileIcon
                           className="size-6"
                           ext={file?.original_filename?.split('.').pop()}
                         />
                       </div>
-                      <div className="flex flex-col gap-1 w-full">
-                        <span className="text-sm font-medium text-gray-900">
+                      <div className="flex flex-col gap-1 w-[90%] overflow-ellipsis">
+                        <span className="text-sm font-medium text-gray-900 truncate block max-w-[90%]">
                           {file?.original_filename}
                         </span>
                         <span className="text-xs text-gray-500">
@@ -176,7 +182,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
 
             {/* Extracted file */}
             <div className="flex flex-col flex-1 gap-2 px-4 min-h-0">
-              <ExtractedFile selectedFile={selectedFile ?? extractedFiles[0]} />
+              <ExtractedFile selectedFile={selectedFile ?? extractedFiles[0]} onFileUpload={handleFileUpload} />
             </div>
           </div>
 
@@ -185,7 +191,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             <div className="flex gap-2 justify-end">
               <Button
                 onClick={() => setShowConfirmDiscard(true)}
-                variant="secondary"
+                variant="outline"
                 disabled={isDisabled}
               >
                 Discard
@@ -228,7 +234,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end">
-            <Button variant="secondary" onClick={() => setShowConfirmDiscard(false)}>
+            <Button variant="outline" onClick={() => setShowConfirmDiscard(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteFile}>

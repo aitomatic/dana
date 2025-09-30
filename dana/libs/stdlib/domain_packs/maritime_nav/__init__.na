@@ -1,0 +1,15 @@
+"""Maritime-Navigation Domain Expertise Module / Domain Knowledge Pack."""
+
+
+AUTHORS: list[str] = [
+    'William Nguyen <william@aitomatic.com>',
+    'Vinh Luong <vinh@aitomatic.com>',
+]
+
+
+from .colreg import *
+from .rel_motion import *
+
+
+__all__ = [
+]
