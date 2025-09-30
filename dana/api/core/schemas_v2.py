@@ -63,6 +63,18 @@ class DomainNodeV2(DomainNode):
                     return child.find_node_by_path(tree_node_path[1:])
         return None, -1, None
 
+    def get_str(self, indent_level: int = 0, indent: int = 2, is_last: bool | None = None, parent_prefix: str = "") -> str:
+        prefix_str = "└── " if is_last is True else "├── " if is_last is False else ""
+        _str = f"{parent_prefix}{prefix_str}{self.topic}\n"
+
+        for i, child in enumerate(self.children):
+            is_child_last = i == len(self.children) - 1
+            # Build the prefix for children: parent prefix + current connection + spacing
+            child_prefix = parent_prefix + ("    " if is_last is True else "│   " if is_last is False else "")
+            child_str = child.get_str(indent_level + 1, indent, is_child_last, child_prefix)
+            _str += child_str
+        return _str
+
 
 class DomainKnowledgeTreeV2(DomainKnowledgeTree):
     root: DomainNodeV2
@@ -135,3 +147,12 @@ class DomainKnowledgeTreeV2(DomainKnowledgeTree):
                 if child_topic not in current_child_topics:
                     new_child = DomainNodeV2(topic=child_topic, children=[])
                     target_node.children.append(new_child)
+
+    def get_str(self, indent_level: int = 0, indent: int = 2) -> str:
+        return self.root.get_str(indent_level, indent, is_last=None, parent_prefix="")
+
+
+if __name__ == "__main__":
+    with open("dana/api/server/assets/jordan_financial_analyst/domain_knowledge.json") as f:
+        tree = DomainKnowledgeTreeV2.model_validate_json(f.read())
+        print(tree.get_str())
