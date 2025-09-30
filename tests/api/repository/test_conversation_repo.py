@@ -8,7 +8,8 @@ from unittest.mock import Mock
 
 from dana.api.repositories.conversation_repo import SQLConversationRepo, AbstractConversationRepo
 from dana.api.core.models import Conversation, Message, Agent, KnowledgePack, KnowledgeAgentRelationship, AgentChatHistory
-from dana.api.core.schemas import ConversationCreate, MessageCreate, ConversationWithMessages, MessageRead, SenderRole
+from dana.api.core.schemas import ConversationCreate, ConversationWithMessages, MessageRead, SenderRole
+from dana.api.core.schemas_v2 import BaseMessage, HandlerMessage
 
 
 class TestAbstractConversationRepo:
@@ -243,7 +244,7 @@ class TestSQLConversationRepo:
         # Prepare conversation data
         conversation_data = ConversationCreate(title="New Conversation", agent_id=agent.id, kp_id=kp.id)
 
-        messages_data = [MessageCreate(sender=SenderRole.USER, content="Hello"), MessageCreate(sender=SenderRole.AGENT, content="Hi there")]
+        messages_data = [BaseMessage(role=SenderRole.USER, content="Hello"), BaseMessage(role=SenderRole.AGENT, content="Hi there")]
 
         # Test the method
         result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
@@ -295,8 +296,8 @@ class TestSQLConversationRepo:
 
         # Prepare new messages
         new_messages = [
-            MessageCreate(sender=SenderRole.AGENT, content="Response 1"),
-            MessageCreate(sender=SenderRole.USER, content="Follow up"),
+            BaseMessage(role=SenderRole.AGENT, content="Response 1"),
+            BaseMessage(role=SenderRole.USER, content="Follow up"),
         ]
 
         # Test the method
@@ -313,11 +314,10 @@ class TestSQLConversationRepo:
     @pytest.mark.asyncio
     async def test_add_messages_to_conversation_not_found(self, db_session):
         """Test adding messages to a conversation that doesn't exist."""
-        new_messages = [MessageCreate(sender=SenderRole.USER, content="Test message")]
+        new_messages = [BaseMessage(role=SenderRole.USER, content="Test message")]
 
-        result = await SQLConversationRepo.add_messages_to_conversation(999, new_messages, db=db_session)
-
-        assert result is None
+        with pytest.raises(ValueError, match="Conversation with id 999 not found"):
+            await SQLConversationRepo.add_messages_to_conversation(999, new_messages, db=db_session)
 
     @pytest.mark.asyncio
     async def test_add_messages_to_conversation_empty_list(self, db_session):
@@ -379,7 +379,7 @@ class TestSQLConversationRepo:
 
         conversation_data = ConversationCreate(title="Timestamp Test", agent_id=agent.id)
 
-        messages_data = [MessageCreate(sender=SenderRole.USER, content="Test message")]
+        messages_data = [BaseMessage(role=SenderRole.USER, content="Test message")]
 
         result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
 
@@ -443,7 +443,7 @@ class TestSQLConversationRepo:
 
         conversation_data = ConversationCreate(title="Large Message Test", agent_id=agent.id)
 
-        messages_data = [MessageCreate(sender=SenderRole.USER, content=long_content)]
+        messages_data = [BaseMessage(role=SenderRole.USER, content=long_content)]
 
         result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
 
@@ -462,7 +462,7 @@ class TestSQLConversationRepo:
 
         conversation_data = ConversationCreate(title="Special Chars Test", agent_id=agent.id)
 
-        messages_data = [MessageCreate(sender=SenderRole.USER, content=special_content)]
+        messages_data = [BaseMessage(role=SenderRole.USER, content=special_content)]
 
         result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
 
@@ -523,7 +523,7 @@ class TestSQLConversationRepo:
 
         conversation_data = ConversationCreate(title="Schema Consistency Test", agent_id=agent.id, kp_id=kp.id)
 
-        messages_data = [MessageCreate(sender=SenderRole.USER, content="Test")]
+        messages_data = [BaseMessage(role=SenderRole.USER, content="Test")]
 
         result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
 
@@ -537,3 +537,335 @@ class TestSQLConversationRepo:
         assert isinstance(result.messages, list)
         assert len(result.messages) == 1
         assert isinstance(result.messages[0], MessageRead)
+
+    @pytest.mark.asyncio
+    async def test_get_conversation_by_kp_id_and_type_success(self, db_session):
+        """Test getting a conversation by knowledge pack ID and type successfully."""
+        # Create test data
+        agent = Agent(name="Test Agent", description="Test", config={})
+        kp = KnowledgePack(kp_metadata={})
+        db_session.add(agent)
+        db_session.add(kp)
+        db_session.commit()
+
+        # Create conversations with different types
+        conv1 = Conversation(title="Type A Conversation", agent_id=agent.id, kp_id=kp.id, type="type_a")
+        conv2 = Conversation(title="Type B Conversation", agent_id=agent.id, kp_id=kp.id, type="type_b")
+        conv3 = Conversation(title="No Type Conversation", agent_id=agent.id, kp_id=kp.id, type=None)
+
+        db_session.add(conv1)
+        db_session.add(conv2)
+        db_session.add(conv3)
+        db_session.commit()
+
+        # Add messages to each conversation
+        msg1 = Message(conversation_id=conv1.id, sender="user", content="Type A message")
+        msg2 = Message(conversation_id=conv2.id, sender="user", content="Type B message")
+        msg3 = Message(conversation_id=conv3.id, sender="user", content="No type message")
+
+        db_session.add(msg1)
+        db_session.add(msg2)
+        db_session.add(msg3)
+        db_session.commit()
+
+        # Test getting conversation by kp_id and type
+        result = await SQLConversationRepo.get_conversation_by_kp_id_and_type(kp.id, "type_a", db=db_session)
+
+        assert result is not None
+        assert result.id == conv1.id
+        assert result.title == "Type A Conversation"
+        assert result.agent_id == agent.id
+        assert result.kp_id == kp.id
+        assert result.type == "type_a"
+        assert len(result.messages) == 1
+        assert result.messages[0].content == "Type A message"
+
+    @pytest.mark.asyncio
+    async def test_get_conversation_by_kp_id_and_type_not_found(self, db_session):
+        """Test getting a conversation by knowledge pack ID and type that doesn't exist."""
+        result = await SQLConversationRepo.get_conversation_by_kp_id_and_type(999, "nonexistent_type", db=db_session)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_get_conversation_by_kp_id_and_type_none_type(self, db_session):
+        """Test getting a conversation by knowledge pack ID with type=None."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        kp = KnowledgePack(kp_metadata={})
+        db_session.add(agent)
+        db_session.add(kp)
+        db_session.commit()
+
+        # Create conversation with type=None
+        conversation = Conversation(title="No Type Conversation", agent_id=agent.id, kp_id=kp.id, type=None)
+        db_session.add(conversation)
+        db_session.commit()
+
+        # Explicitly set type to None to override the default
+        conversation.type = None
+        db_session.commit()
+
+        message = Message(conversation_id=conversation.id, sender="user", content="No type message")
+        db_session.add(message)
+        db_session.commit()
+
+        # Test getting conversation with type=None
+        result = await SQLConversationRepo.get_conversation_by_kp_id_and_type(kp.id, None, db=db_session)
+
+        assert result is not None
+        assert result.id == conversation.id
+        assert result.title == "No Type Conversation"
+        assert result.type is None
+        assert len(result.messages) == 1
+        assert result.messages[0].content == "No type message"
+
+    def test_convert_message_to_message_model_base_message(self):
+        """Test convert_message_to_message_model with BaseMessage."""
+        base_message = BaseMessage(role=SenderRole.USER, content="Test message")
+
+        result = AbstractConversationRepo.convert_message_to_message_model(base_message)
+
+        assert isinstance(result, Message)
+        assert result.sender == SenderRole.USER.value
+        assert result.content == "Test message"
+        assert result.require_user is False
+        assert result.treat_as_tool is False
+        assert result.msg_metadata == {}
+
+    def test_convert_message_to_message_model_handler_message(self):
+        """Test convert_message_to_message_model with HandlerMessage."""
+        handler_message = HandlerMessage(
+            role=SenderRole.AGENT, content="Handler message", require_user=True, treat_as_tool=True, metadata={"key": "value"}
+        )
+
+        result = AbstractConversationRepo.convert_message_to_message_model(handler_message)
+
+        assert isinstance(result, Message)
+        assert result.sender == SenderRole.AGENT.value
+        assert result.content == "Handler message"
+        assert result.require_user is True
+        assert result.treat_as_tool is True
+        assert result.msg_metadata == {"key": "value"}
+
+    def test_convert_message_to_message_model_with_defaults(self):
+        """Test convert_message_to_message_model with BaseMessage that has default attributes."""
+        base_message = BaseMessage(role=SenderRole.USER, content="Test message")
+
+        result = AbstractConversationRepo.convert_message_to_message_model(base_message)
+
+        # Test that default values are used when attributes don't exist
+        assert result.require_user is False
+        assert result.treat_as_tool is False
+        assert result.msg_metadata == {}
+
+    @pytest.mark.asyncio
+    async def test_create_conversation_with_type_success(self, db_session):
+        """Test creating a conversation with type parameter successfully."""
+        # Create test data
+        agent = Agent(name="Test Agent", description="Test", config={})
+        kp = KnowledgePack(kp_metadata={})
+        db_session.add(agent)
+        db_session.add(kp)
+        db_session.commit()
+
+        # Prepare conversation data
+        conversation_data = ConversationCreate(title="Typed Conversation", agent_id=agent.id, kp_id=kp.id)
+        messages_data = [BaseMessage(role=SenderRole.USER, content="Hello")]
+
+        # Test the method with type
+        result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, type="test_type", db=db_session)
+
+        assert result is not None
+        assert result.title == "Typed Conversation"
+        assert result.agent_id == agent.id
+        assert result.kp_id == kp.id
+        assert result.type == "test_type"
+        assert len(result.messages) == 1
+
+        # Check that conversation was actually created in database with type
+        db_conversation = db_session.query(Conversation).filter(Conversation.id == result.id).first()
+        assert db_conversation is not None
+        assert db_conversation.type == "test_type"
+
+    @pytest.mark.asyncio
+    async def test_create_conversation_with_base_message(self, db_session):
+        """Test creating a conversation with BaseMessage objects."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        db_session.add(agent)
+        db_session.commit()
+
+        conversation_data = ConversationCreate(title="BaseMessage Test", agent_id=agent.id)
+        messages_data = [
+            BaseMessage(role=SenderRole.USER, content="User message"),
+            BaseMessage(role=SenderRole.AGENT, content="Agent response"),
+        ]
+
+        result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
+
+        assert result is not None
+        assert len(result.messages) == 2
+        assert result.messages[0].sender == SenderRole.USER.value
+        assert result.messages[0].content == "User message"
+        assert result.messages[1].sender == SenderRole.AGENT.value
+        assert result.messages[1].content == "Agent response"
+
+    @pytest.mark.asyncio
+    async def test_create_conversation_with_handler_message(self, db_session):
+        """Test creating a conversation with HandlerMessage objects."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        db_session.add(agent)
+        db_session.commit()
+
+        conversation_data = ConversationCreate(title="HandlerMessage Test", agent_id=agent.id)
+        messages_data = [
+            HandlerMessage(
+                role=SenderRole.USER, content="User message", require_user=True, treat_as_tool=False, metadata={"user_id": "123"}
+            ),
+            HandlerMessage(
+                role=SenderRole.AGENT,
+                content="Agent response",
+                require_user=False,
+                treat_as_tool=True,
+                metadata={"tool_name": "calculator"},
+            ),
+        ]
+
+        result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
+
+        assert result is not None
+        assert len(result.messages) == 2
+
+        # Check first message (user)
+        user_msg = result.messages[0]
+        assert user_msg.sender == SenderRole.USER.value
+        assert user_msg.content == "User message"
+        assert user_msg.require_user is True
+        assert user_msg.treat_as_tool is False
+        assert user_msg.metadata == {"user_id": "123"}
+
+        # Check second message (agent)
+        agent_msg = result.messages[1]
+        assert agent_msg.sender == SenderRole.AGENT.value
+        assert agent_msg.content == "Agent response"
+        assert agent_msg.require_user is False
+        assert agent_msg.treat_as_tool is True
+        assert agent_msg.metadata == {"tool_name": "calculator"}
+
+    @pytest.mark.asyncio
+    async def test_add_messages_to_conversation_with_base_message(self, db_session):
+        """Test adding BaseMessage objects to an existing conversation."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        db_session.add(agent)
+        db_session.commit()
+
+        conversation = Conversation(title="Test Conversation", agent_id=agent.id)
+        db_session.add(conversation)
+        db_session.commit()
+
+        # Add initial message
+        initial_message = Message(conversation_id=conversation.id, sender="user", content="Initial message")
+        db_session.add(initial_message)
+        db_session.commit()
+
+        # Prepare new BaseMessage objects
+        new_messages = [
+            BaseMessage(role=SenderRole.AGENT, content="Agent response"),
+            BaseMessage(role=SenderRole.USER, content="User follow-up"),
+        ]
+
+        # Test the method
+        result = await SQLConversationRepo.add_messages_to_conversation(conversation.id, new_messages, db=db_session)
+
+        assert result is not None
+        assert result.id == conversation.id
+        assert len(result.messages) == 3  # 1 initial + 2 new
+
+        # Check that messages were actually added to database
+        db_conversation = db_session.query(Conversation).filter(Conversation.id == conversation.id).first()
+        assert len(db_conversation.messages) == 3
+
+    @pytest.mark.asyncio
+    async def test_add_messages_to_conversation_with_handler_message(self, db_session):
+        """Test adding HandlerMessage objects to an existing conversation."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        db_session.add(agent)
+        db_session.commit()
+
+        conversation = Conversation(title="Test Conversation", agent_id=agent.id)
+        db_session.add(conversation)
+        db_session.commit()
+
+        # Prepare new HandlerMessage objects
+        new_messages = [
+            HandlerMessage(
+                role=SenderRole.AGENT, content="Agent response", require_user=False, treat_as_tool=True, metadata={"tool": "calculator"}
+            ),
+            HandlerMessage(
+                role=SenderRole.USER,
+                content="User follow-up",
+                require_user=True,
+                treat_as_tool=False,
+                metadata={"user_action": "confirmation"},
+            ),
+        ]
+
+        # Test the method
+        result = await SQLConversationRepo.add_messages_to_conversation(conversation.id, new_messages, db=db_session)
+
+        assert result is not None
+        assert result.id == conversation.id
+        assert len(result.messages) == 2
+
+        # Check message properties
+        agent_msg = result.messages[0]
+        assert agent_msg.sender == SenderRole.AGENT.value
+        assert agent_msg.content == "Agent response"
+        assert agent_msg.require_user is False
+        assert agent_msg.treat_as_tool is True
+        assert agent_msg.metadata == {"tool": "calculator"}
+
+        user_msg = result.messages[1]
+        assert user_msg.sender == SenderRole.USER.value
+        assert user_msg.content == "User follow-up"
+        assert user_msg.require_user is True
+        assert user_msg.treat_as_tool is False
+        assert user_msg.metadata == {"user_action": "confirmation"}
+
+    @pytest.mark.asyncio
+    async def test_create_conversation_with_mixed_message_types(self, db_session):
+        """Test creating a conversation with mixed BaseMessage and HandlerMessage types."""
+        agent = Agent(name="Test Agent", description="Test", config={})
+        db_session.add(agent)
+        db_session.commit()
+
+        conversation_data = ConversationCreate(title="Mixed Message Types", agent_id=agent.id)
+        messages_data = [
+            BaseMessage(role=SenderRole.USER, content="Simple user message"),
+            HandlerMessage(
+                role=SenderRole.AGENT,
+                content="Complex agent response",
+                require_user=True,
+                treat_as_tool=False,
+                metadata={"response_type": "detailed"},
+            ),
+        ]
+
+        result = await SQLConversationRepo.create_conversation(conversation_data, messages_data, db=db_session)
+
+        assert result is not None
+        assert len(result.messages) == 2
+
+        # Check first message (BaseMessage)
+        base_msg = result.messages[0]
+        assert base_msg.sender == SenderRole.USER.value
+        assert base_msg.content == "Simple user message"
+        assert base_msg.require_user is False  # Default value
+        assert base_msg.treat_as_tool is False  # Default value
+        assert base_msg.metadata == {}  # Default value
+
+        # Check second message (HandlerMessage)
+        handler_msg = result.messages[1]
+        assert handler_msg.sender == SenderRole.AGENT.value
+        assert handler_msg.content == "Complex agent response"
+        assert handler_msg.require_user is True
+        assert handler_msg.treat_as_tool is False
+        assert handler_msg.metadata == {"response_type": "detailed"}
