@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Any, Union
-
+import re
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -464,6 +464,11 @@ class DomainNode(BaseModel):
     topic: str
     children: list[DomainNode] = []
 
+    @property
+    def fd_name(self) -> str:
+        topic = self.topic
+        return re.sub(r"[^a-zA-Z0-9]+", "_", topic)
+
 
 class DomainKnowledgeTree(BaseModel):
     """Complete domain knowledge tree structure"""
@@ -604,3 +609,67 @@ class ExtractionResponse(BaseModel):
     """Response schema for deep extraction endpoint"""
 
     file_object: FileObject
+
+
+class WorkflowExecutionRequest(BaseModel):
+    """Request schema for workflow execution endpoint"""
+
+    agent_id: int
+    workflow_name: str
+    input_data: dict[str, Any] = Field(default_factory=dict)
+    execution_mode: str = "sync"  # sync, async, step-by-step
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkflowExecutionResponse(BaseModel):
+    """Response schema for workflow execution endpoint"""
+
+    success: bool
+    execution_id: str
+    status: str  # idle, running, completed, failed, paused, cancelled
+    current_step: int = 0
+    total_steps: int = 0
+    execution_time: float = 0.0
+    result: Any = None
+    error: str | None = None
+    step_results: list[dict[str, Any]] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkflowExecutionStatus(BaseModel):
+    """Schema for workflow execution status updates"""
+
+    execution_id: str
+    workflow_name: str
+    status: str
+    current_step: int
+    total_steps: int
+    execution_time: float
+    step_results: list[dict[str, Any]]
+    error: str | None = None
+    last_update: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkflowExecutionControl(BaseModel):
+    """Schema for workflow execution control commands"""
+
+    execution_id: str
+    action: str  # start, stop, pause, resume, cancel
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkflowExecutionControlResponse(BaseModel):
+    """Response schema for workflow execution control"""
+
+    success: bool
+    execution_id: str
+    new_status: str
+    message: str
+    error: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)

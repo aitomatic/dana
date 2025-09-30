@@ -127,4 +127,4 @@ if exist "%DANA_CLI%" (
     echo The extension will look for dana in PATH when running files
 )
 
-pause 
+pause

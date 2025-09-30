@@ -1,0 +1,130 @@
+# # struct OutputFormat:
+# #     sender_name : str # Name of the sender, should be constant
+# #     sender_email : str # Email address of the sender, should be constant
+# #     sent : str # Current time, should be current time
+# #     receiver_name : str # Sales rep's name
+# #     receiver_email : str # Sales rep's email address
+# #     cc_emails : list[str] # Sales rep's manager's email address, should have the same suffix as the sales rep, and WescoLicenseRenewals
+# #     subject : str # Subject of the email
+# #     body : str # Body of the email
+# #     attachment : str # Attachment of the email, should be the template email
+# #     is_followup : bool # Whether the email is a followup email
+
+# # agent Lam
+
+# # email : OutputFormat = Lam.reason("Craft me an mock email")
+# # print(email)
+
+
+# # email : OutputFormat = reason("Craft me an mock email")
+# # print(email)
+
+
+# # # import import_test
+# # # from pathlib.py import Path
+
+# # # folder = Path(".cache/test")
+# # # folder.mkdir(parents=True, exist_ok=True)
+
+# # # for i in range(10):
+# # #     import_test.na.long_running_function(i)
+
+
+# # # rag = use("rag", sources=["/Users/lam/Downloads/2024-Wesco-AnnualReport.pdf"], reranking=True)
+
+# # # print(reason("What is the revenue of Wesco"))
+
+
+# # # result = reason("Test prompt with options", {"temperature": 0.5,"system_message": "You are a helpful assistant"})
+
+# # # import time.py
+
+
+# # # def long_running_task():
+# # #     print("long_running_task started")
+# # #     time.sleep(10)
+# # #     print("long_running_task done")
+# # #     return "long_running_task done"
+
+# # # def short_running_task():
+# # #     print("short_running_task started")
+# # #     time.sleep(4)
+# # #     print("short_running_task done")
+# # #     return "short_running_task done"
+
+# # # start = time.time()
+# # # a = long_running_task()
+# # # b = short_running_task()
+# # # print(a)
+# # # print(b)
+# # # print(f"Total processing time: {time.time() - start}")
+
+# import pandas.py as pd
+
+# template_email = """
+# From: Marquardt, Natalie <Natalie.Marquardt@anixter.com>           # This should be constant
+# Sent: Monday, July 7, 2025 8:09 AM                                 # Should use current time
+# To: Jaimez, Norina <Norina.Jaimez@anixter.com>                     # Sales rep
+# Cc: Altamirano, Tricia <Tricia.Altamirano@anixter.com>; WescoLicenseRenewals <WescoLicenseRenewals@wesco.com>  # Should cc sale rep's manager which has the same suffix as the sales rep and WescoLicenseRenewals (constant)
+# Subject: Renewal due HID Mobile Credentials (Pyro-Comm Systems for Roth Staffing)
+
+# Hi Norina,
+
+# Your customer Pyro-Comm Systems has Qty 100 Mobile credentials for Roth Staffing that "technically" expire on 8/31/25. There is a grace period of at least 30 days with no functionality loss. So hopefully this will be an easy renewal sale!
+
+# Below is all they need to prepare a quote for the customer. We don't need to get a quote from HID first, you can simply quote Qty 100 of part 9790021 i.e. MID-SUB-T100.
+
+# When you get the Purchase Order, please make sure that the HID Mobile ID and HID Contract # below are both included in the direct ship PO notes on your sales order.
+
+# Also if you could please reply to this email with a COPY of your quote to the customer that would be great!
+
+# Thank you
+# Natalie
+
+
+# Attachment:
+# | endcustomerid_sp (HID MOB ID) |  supplier_so (HID CONTRACT#) | integrator_name | Integrator_id | endcustomer_name | Renew Qty | vendor_part_number | Original wesco_so |
+# | 5551000 | 11100006935 | A3 COMMUNICATIONS INC | 414645 | CITY OF ROCK HILL | 100 | MID-SUB-T100 | 1C3B0931 |
+# """
+
+# struct OutputFormat:
+#     sender_name : str # Name of the sender, should be constant
+#     sender_email : str # Email address of the sender, should be constant
+#     sent : str # Current time, should be current time
+#     receiver_name : str # Sales rep's name
+#     receiver_email : str # Sales rep's email address
+#     cc_emails : list[str] # Sales rep's manager's email address, should have the same suffix as the sales rep, and WescoLicenseRenewals
+#     subject : str # Subject of the email
+#     body : str # Body of the email
+#     attachment : str # Attachment of the email, should be the template email
+#     is_followup : bool # Whether the email is a followup email
+
+# license_data = pd.read_csv("/Users/lam/Desktop/Wesco-Dana/Demos/License-Management/data/LM_mock_1000_ALIGNED_to_source_header.csv").iloc[0]
+
+# agent Natalie
+
+# email : OutputFormat = Natalie.reason(f"Craft me an email to renew this license {license_data} to the sales rep and cc the manager")
+
+# print(email)
+
+# # def print_draft(draft_email: dict):
+# #     print("="*100)
+# #     print(f"From : {draft_email['sender_name']} <{draft_email['sender_email']}>")
+# #     print(f"To : {draft_email['receiver_name']} <{draft_email['receiver_email']}>")
+# #     print(f"CC : {draft_email['cc_emails']}")
+# #     print(f"Subject : {draft_email['subject']}")
+# #     print(f"{draft_email['body']}")
+# #     print("")
+# #     print("Attachment")
+# #     print(f"{draft_email['attachment']}")
+# #     print(f"Is Followup : {draft_email['is_followup']}")
+# #     print("="*100)
+
+# # print_draft(email)
+
+
+from config import SEARCH_CONFIG, get_tabular_index_config
+tabular_index_config = get_tabular_index_config()
+product_data = use("tabular_index", tabular_index_config=tabular_index_config)
+
+print(product_data)

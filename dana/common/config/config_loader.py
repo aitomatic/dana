@@ -181,12 +181,17 @@ class ConfigLoader(Loggable):
             return config
 
         # 3. Check User's Home Directory (~/.dana/)
-        home_path = Path.home() / ".dana" / self.DEFAULT_CONFIG_FILENAME
-        if home_path.is_file():
-            # No try-except here, let _load_config_from_path handle errors
-            config = self._load_config_from_path(home_path)
-            self._cached_config = config  # Cache the result
-            return config
+        try:
+            home_path = Path.home() / ".dana" / self.DEFAULT_CONFIG_FILENAME
+            if home_path.is_file():
+                # No try-except here, let _load_config_from_path handle errors
+                config = self._load_config_from_path(home_path)
+                self._cached_config = config  # Cache the result
+                return config
+        except (RuntimeError, OSError):
+            # Skip home directory check if home directory cannot be determined
+            # This can happen in CI environments or restricted environments
+            self.debug("Could not determine home directory, skipping home config check")
 
         # 4. Check Dana Library Directory (default config)
         lib_path = self.config_dir / self.DEFAULT_CONFIG_FILENAME
@@ -197,12 +202,18 @@ class ConfigLoader(Loggable):
             return config
 
         # If not found anywhere
+        try:
+            home_path = Path.home() / ".dana" / self.DEFAULT_CONFIG_FILENAME
+            home_status = str(home_path)
+        except (RuntimeError, OSError):
+            home_status = "(could not determine home directory)"
+        
         raise ConfigurationError(
             f"Default config '{self.DEFAULT_CONFIG_FILENAME}' not found.\n"
             f"Checked locations:\n"
             f"- DANA_CONFIG environment variable: (not set or failed)\n"
             f"- Current Working Directory: {cwd_path}\n"
-            f"- User Home Directory: {home_path}\n"
+            f"- User Home Directory: {home_status}\n"
             f"- Dana Library Directory: {lib_path}"
         )
 

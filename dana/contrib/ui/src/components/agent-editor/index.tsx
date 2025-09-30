@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Editor, useMonaco } from '@monaco-editor/react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { editor } from 'monaco-editor';
@@ -129,13 +130,13 @@ export const AgentEditor = ({
 
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
-  const [_, setAnimationTarget] = useState('');
+  const [, setAnimationTarget] = useState('');
   const previousValueRef = useRef(value);
   const editorRef = useRef<any>(null);
   const animationIntervalRef = useRef<number | null>(null);
 
   // Auto-validation state
-  const [_autoValidation, setAutoValidation] = useState<AutoValidationState>({
+  const [, setAutoValidation] = useState<AutoValidationState>({
     isChecking: false,
     hasErrors: false,
     errorMessage: '',
@@ -255,6 +256,7 @@ export const AgentEditor = ({
           });
         }
       } catch (error) {
+        console.error('Error performing auto-validation:', error);
         setAutoValidation({
           isChecking: false,
           hasErrors: false,
@@ -585,7 +587,10 @@ export const AgentEditor = ({
             // Knowledge blocks
             [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
             // Agent declarations - use custom state
-            [/\bagent_blueprint\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
+            [
+              /\bagent_blueprint\s+([a-zA-Z_]\w*)\s*:/,
+              { token: 'keyword', next: '@agent_declaration' },
+            ],
             [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
             // Struct declarations - use custom state
             [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
@@ -626,7 +631,7 @@ export const AgentEditor = ({
             // Operators
             [/[+\-*/=<>!&|%^~]/, 'operator'],
             // Brackets
-            [/[(\){}\[\]]/, 'delimiter.bracket'],
+            [/[(){}[\]]/, 'delimiter.bracket'],
             // Identifiers
             [/[a-zA-Z_]\w*/, 'identifier'],
             // Whitespace
@@ -867,7 +872,8 @@ export const AgentEditor = ({
         });
 
         // Block typing inside mentions
-        editor.onWillType((_: string) => {
+        editor.onWillType((_event: string) => {
+          console.log('onWillType', _event);
           const position = editor.getPosition();
           if (!position) return;
 

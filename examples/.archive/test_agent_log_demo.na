@@ -1,0 +1,23 @@
+# Test Agent Log Demo
+# This example demonstrates the new log() method and on_log() callback functionality
+
+# Import the agent system
+import agent
+
+# Define a simple agent
+agent TestLogger:
+    name: str = "demo_agent"
+    log_level: str = "INFO"
+
+# Create an instance
+logger_agent = TestLogger()
+
+# Test the log() method
+logger_agent.log("Hello from the agent!")
+
+# Test with different messages
+logger_agent.log("This is a test message")
+logger_agent.log("Agent is working correctly")
+
+# The log() method should output messages to the console
+# and can be used for debugging and monitoring agent behavior

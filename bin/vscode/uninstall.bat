@@ -62,4 +62,4 @@ goto :end
 echo Note: You may need to restart %EDITOR_NAME% for changes to take effect
 
 :end
-endlocal 
+endlocal

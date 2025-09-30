@@ -13,10 +13,11 @@ import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Union
-
+from dana.common.utils import Misc
 from dana.common.exceptions import FunctionRegistryError, SandboxError
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+import asyncio
 
 if TYPE_CHECKING:
     from dana.core.lang.sandbox_context import SandboxContext
@@ -486,6 +487,15 @@ class FunctionRegistry:
             # This preserves the Promise system's lazy evaluation behavior
             return value
 
+        def _execute_any_function(func, *args, **kwargs):
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    return Misc.safe_asyncio_run(func, *args, **kwargs)
+                else:
+                    return _resolve_if_promise(func(*args, **kwargs))
+            except Exception as _:
+                return _resolve_if_promise(func(*args, **kwargs))
+
         # Resolve the function
         func, metadata = self.resolve(__name, __namespace)
 
@@ -565,26 +575,26 @@ class FunctionRegistry:
                 # Security check for reason function: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context - this will likely fail but maintains security
-                    return _resolve_if_promise(wrapped_func(prompt))
+                    return _execute_any_function(wrapped_func, prompt)
 
                 # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
-                    return _resolve_if_promise(wrapped_func(__context, prompt, options, use_mock))
+                    return _execute_any_function(wrapped_func, __context, prompt, options, use_mock)
                 elif options:
-                    return _resolve_if_promise(wrapped_func(__context, prompt, options))
+                    return _execute_any_function(wrapped_func, __context, prompt, options)
                 elif use_mock is not None:
-                    return _resolve_if_promise(wrapped_func(__context, prompt, None, use_mock))
+                    return _execute_any_function(wrapped_func, __context, prompt, None, use_mock)
                 else:
-                    return _resolve_if_promise(wrapped_func(__context, prompt))
+                    return _execute_any_function(wrapped_func, __context, prompt)
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
                 # Security check: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context
-                    return _resolve_if_promise(wrapped_func(positional_args[0]))
+                    return _execute_any_function(wrapped_func, positional_args[0])
                 else:
                     # Pass the single argument followed by context
-                    return _resolve_if_promise(wrapped_func(positional_args[0], __context))
+                    return _execute_any_function(wrapped_func, positional_args[0], __context)
 
             # Call with context as first argument if expected, with error handling
             try:
@@ -592,31 +602,14 @@ class FunctionRegistry:
                     # Security check: only trusted functions can receive context
                     if not func._is_trusted_for_context():
                         # Function wants context but is not trusted - call without context with async detection
-                        import asyncio
-                        from dana.common.utils.misc import Misc
+                        return _execute_any_function(wrapped_func, *positional_args, **func_kwargs)
 
-                        if asyncio.iscoroutinefunction(wrapped_func):
-                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
-                        else:
-                            return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
                     else:
                         # First parameter is context and function is trusted - add execute-time async detection
-                        import asyncio
-                        from dana.common.utils.misc import Misc
-
-                        if asyncio.iscoroutinefunction(wrapped_func):
-                            return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, __context, *positional_args, **func_kwargs))
-                        else:
-                            return _resolve_if_promise(wrapped_func(__context, *positional_args, **func_kwargs))
+                        return _execute_any_function(wrapped_func, __context, *positional_args, **func_kwargs)
                 else:
                     # No context parameter - add execute-time async detection
-                    import asyncio
-                    from dana.common.utils.misc import Misc
-
-                    if asyncio.iscoroutinefunction(wrapped_func):
-                        return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
-                    else:
-                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
+                    return _execute_any_function(wrapped_func, *positional_args, **func_kwargs)
             except Exception as e:
                 # Standardize error handling for direct function calls
                 import traceback
@@ -632,7 +625,7 @@ class FunctionRegistry:
             # Direct call to the PythonFunction's execute method
             if __context is None:
                 __context = SandboxContext()  # Create a default context if none provided
-            return _resolve_if_promise(func.execute(__context, *positional_args, **func_kwargs))
+            return _execute_any_function(func.execute, __context, *positional_args, **func_kwargs)
         else:
             # Check if it's a DanaFunction and call via execute method
             from dana.core.lang.interpreter.functions.dana_function import DanaFunction
@@ -641,7 +634,7 @@ class FunctionRegistry:
                 # DanaFunction objects have an execute method that needs context
                 if __context is None:
                     __context = SandboxContext()  # Create a default context if none provided
-                return _resolve_if_promise(func.execute(__context, *positional_args, **func_kwargs))
+                return _execute_any_function(func.execute, __context, *positional_args, **func_kwargs)
             elif callable(func):
                 # Fallback - call the function directly if it's a regular callable
                 # Check if the function expects context by looking at its signature
@@ -677,12 +670,12 @@ class FunctionRegistry:
                                 matched_kwargs["options"] = options
                         varkwargs = match_args_kwargs_result.varkwargs  # This will be matched to the function's **kwargs
 
-                        return _resolve_if_promise(func(*matched_args, *varargs, **matched_kwargs, **varkwargs))
-                    return _resolve_if_promise(func(*positional_args_with_context, **func_kwargs))
+                        return _execute_any_function(func, *matched_args, *varargs, **matched_kwargs, **varkwargs)
+                    return _execute_any_function(func, *positional_args_with_context, **func_kwargs)
 
                 except (ValueError, TypeError):
                     # If we can't inspect the signature, assume it doesn't expect context
-                    return _resolve_if_promise(func(*positional_args, **func_kwargs))
+                    return _execute_any_function(func, *positional_args, **func_kwargs)
             else:
                 # Not a callable
                 raise SandboxError(f"Function '{__name}' is not callable")

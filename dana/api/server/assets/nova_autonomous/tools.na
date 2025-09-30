@@ -1,7 +1,10 @@
 # Tools configuration for Aurea Autonomous Agent
 # This file defines external tools and services available to the agent
 
-websearch = use("mcp", url="https://dev.mcp.aitomatic.com/websearch_v2")
+try:
+    websearch = use("mcp", url="YOUR MCP URL HERE")
+except:
+    websearch = None
 
 # Additional tools can be added here as needed
 # Example:

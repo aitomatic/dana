@@ -16,6 +16,33 @@ const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 420;
 const RESIZE_HANDLE_WIDTH = 2;
 
+// Function to convert snake_case tool names to friendly display names
+const formatToolName = (toolName: string): string => {
+  const toolNameMap: Record<string, string> = {
+    generate_knowledge: 'Generate Knowledge',
+    modify_tree: 'Modify Tree',
+    ask_question: 'General Q&A',
+    search_documents: 'Search Documents',
+    analyze_data: 'Analyze Data',
+    create_summary: 'Create Summary',
+    extract_information: 'Extract Information',
+    process_request: 'Process Request',
+    update_knowledge: 'Update Knowledge',
+    validate_input: 'Validate Input',
+  };
+
+  // If we have a specific mapping, use it
+  if (toolNameMap[toolName]) {
+    return toolNameMap[toolName];
+  }
+
+  // Otherwise, convert snake_case to Title Case
+  return toolName
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 // Resize handle component
 const ResizeHandle: React.FC<{
   onResize: (width: number) => void;
@@ -122,7 +149,7 @@ const ProcessingStatusHistory: React.FC<{
         className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
       >
         {isExpanded ? <Collapse className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
-        Show thinking ({messages.length})
+        {isExpanded ? 'Hide thinking' : 'Show thinking'} ({messages.length})
       </button>
 
       {isExpanded && (
@@ -146,12 +173,16 @@ const ProcessingStatusHistory: React.FC<{
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
-                <span className="text-sm font-medium text-gray-600">{msg.toolName}</span>
+                <span className="text-sm font-medium text-gray-600">
+                  {formatToolName(msg.toolName)}
+                </span>
                 <span className="ml-auto text-xs text-gray-400">
                   {msg.timestamp.toLocaleTimeString()}
                 </span>
               </div>
-              <span className="text-sm text-gray-600">{msg.message}</span>
+              <div className="text-sm text-gray-600">
+                <HybridRenderer content={msg.message} backgroundContext="agent" />
+              </div>
               {msg.progression !== undefined && (
                 <div className="w-full h-2 bg-gray-200 rounded-full">
                   <div
@@ -216,23 +247,23 @@ const SmartAgentChat: React.FC<{
   const [processingStatusHistory, setProcessingStatusHistory] = useState<ProcessingStatusMessage[]>(
     [],
   );
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const [previousAgentId, setPreviousAgentId] = useState<string | null>(null);
-  const [hasShownWelcomeMessage, setHasShownWelcomeMessage] = useState(false);
   const welcomeMessageTimeoutRef = useRef<number | null>(null);
+  const hasShownWelcomeMessageRef = useRef(false);
 
   // Function to show welcome message with typing effect
   const showWelcomeMessageWithTypingEffect = useCallback(
     (displayName: string, agentDomain: string) => {
-      // Prevent duplicate welcome messages
-      if (hasShownWelcomeMessage) {
+      // Prevent duplicate welcome messages using ref to avoid stale closures
+      if (hasShownWelcomeMessageRef.current) {
         return null;
       }
 
       // Mark that we're showing a welcome message
-      setHasShownWelcomeMessage(true);
+      hasShownWelcomeMessageRef.current = true;
 
       // Show typing effect for 2 seconds before displaying the welcome message
       setIsTyping(true);
@@ -263,18 +294,18 @@ To get started, let's define its foundation:
       welcomeMessageTimeoutRef.current = timeoutId;
       return timeoutId;
     },
-    [addMessage, hasShownWelcomeMessage],
+    [addMessage],
   );
 
   // Function to show fallback welcome message with typing effect
   const showFallbackWelcomeMessageWithTypingEffect = useCallback(() => {
-    // Prevent duplicate welcome messages
-    if (hasShownWelcomeMessage) {
+    // Prevent duplicate welcome messages using ref to avoid stale closures
+    if (hasShownWelcomeMessageRef.current) {
       return null;
     }
 
     // Mark that we're showing a welcome message
-    setHasShownWelcomeMessage(true);
+    hasShownWelcomeMessageRef.current = true;
 
     // Show typing effect for 2 seconds before displaying the fallback welcome message
     setIsTyping(true);
@@ -287,7 +318,7 @@ To get started, let's define its foundation:
     // Store the timeout ID for cleanup purposes
     welcomeMessageTimeoutRef.current = timeoutId;
     return timeoutId;
-  }, [addMessage, hasShownWelcomeMessage]);
+  }, [addMessage]);
 
   // Agent switch detection and cleanup
   useEffect(() => {
@@ -307,7 +338,7 @@ To get started, let's define its foundation:
         setHasLoadedHistory(false);
         setIsLoadingHistory(false);
         setIsTyping(false);
-        setHasShownWelcomeMessage(false);
+        hasShownWelcomeMessageRef.current = false;
       }
 
       setPreviousAgentId(agent_id);
@@ -357,7 +388,7 @@ To get started, let's define its foundation:
       setIsLoadingHistory(false);
       setPreviousAgentId(null);
       setIsTyping(false);
-      setHasShownWelcomeMessage(false);
+      hasShownWelcomeMessageRef.current = false;
 
       // Clear any pending operations
       if (loading) {
@@ -585,6 +616,9 @@ To get started, let's define its foundation:
 
   const sendMessage = async () => {
     if (!input.trim() || !agent_id || !agentStore) return;
+
+    // Clear previous thinking messages when starting new processing
+    setProcessingStatusHistory([]);
 
     // Add user message
     const userMsg = { sender: 'user' as const, text: input };
@@ -880,7 +914,7 @@ export const AgentDetailSidebar: React.FC = () => {
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div className="flex-1">
             <div className="text-sm font-semibold text-gray-900">Dana</div>
-            <div className="text-xs text-gray-500">Agent builder assistant</div>
+            <div className="text-xs text-gray-500">Dana Agent Maker</div>
           </div>
           <div className="flex gap-1 items-center">
             <div

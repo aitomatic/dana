@@ -1,0 +1,12 @@
+import file_loader
+
+loader = file_loader.FileLoader()
+
+name = loader.name # This works
+print(name)
+
+# Use the functions directly from the module
+files = file_loader.list_files(loader) # This works
+print(files)
+
+print(file_loader.say_hi(loader))

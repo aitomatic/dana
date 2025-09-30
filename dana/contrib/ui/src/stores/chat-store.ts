@@ -1,7 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { apiService } from '@/lib/api';
 import type { ChatRequest, ChatResponse } from '@/lib/api';
-import type { ConversationRead, ConversationWithMessages, ConversationCreate } from '@/types/conversation';
+import type {
+  ConversationRead,
+  ConversationWithMessages,
+  ConversationCreate,
+} from '@/types/conversation';
 import type { MessageRead } from '@/types/conversation';
 
 // Session-based conversation for prebuilt agents
@@ -19,20 +24,28 @@ export interface ChatStore {
   messages: MessageRead[];
   conversations: ConversationRead[];
   selectedConversation: ConversationWithMessages | null;
-  currentAgentId: number | string | null;  // Support both string and number agent IDs
-  currentSessionId: string | null;  // For prebuilt agent session tracking
-  sessionConversations: SessionConversation[];  // Session-based conversations for prebuilt agents
+  currentAgentId: number | string | null; // Support both string and number agent IDs
+  currentSessionId: string | null; // For prebuilt agent session tracking
+  sessionConversations: SessionConversation[]; // Session-based conversations for prebuilt agents
   isLoading: boolean;
   isSending: boolean;
   isCreating: boolean;
   error: string | null;
 
   // Actions
-  sendMessage: (message: string, agentId: number | string, conversationId?: number | string, websocketId?: string) => Promise<ChatResponse>;
-  fetchConversations: (agentId: number) => Promise<void>;  // Keep as number since only regular agents have conversations
+  sendMessage: (
+    message: string,
+    agentId: number | string,
+    conversationId?: number | string,
+    websocketId?: string,
+  ) => Promise<ChatResponse>;
+  fetchConversations: (agentId: number) => Promise<void>; // Keep as number since only regular agents have conversations
   fetchConversation: (conversationId: number) => Promise<void>;
   createConversation: (conversation: ConversationCreate) => Promise<ConversationRead>;
-  updateConversation: (conversationId: number, conversation: ConversationCreate) => Promise<ConversationRead>;
+  updateConversation: (
+    conversationId: number,
+    conversation: ConversationCreate,
+  ) => Promise<ConversationRead>;
   deleteConversation: (conversationId: number) => Promise<void>;
   setCurrentAgentId: (agentId: number | string | null) => void;
   setSelectedConversation: (conversation: ConversationWithMessages | null) => void;
@@ -85,15 +98,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   error: null,
 
   // Actions
-  sendMessage: async (messageData: string | { message: string; role: string; files?: any[] }, agentId: number | string, conversationId?: number | string, websocketId?: string) => {
+  sendMessage: async (
+    messageData: string | { message: string; role: string; files?: any[] },
+    agentId: number | string,
+    conversationId?: number | string,
+    websocketId?: string,
+  ) => {
     // Handle both string messages and message objects with files
     const message = typeof messageData === 'string' ? messageData : messageData.message;
     const files = typeof messageData === 'string' ? undefined : messageData.files;
-    
+
     // Create message content that includes file information
     let messageContent = message;
     if (files && files.length > 0) {
-      const fileList = files.map(f => `📎 ${f.name}`).join('\n');
+      const fileList = files.map((f) => `📎 ${f.name}`).join('\n');
       messageContent = `${message}${message ? '\n\n' : ''}Attached files:\n${fileList}`;
     }
 
@@ -101,7 +119,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const { messages } = get();
     const tempUserMessage: MessageRead = {
       id: Date.now(), // Temporary ID
-      // @ts-ignore
+      // @ts-expect-error conversationId can be string or number
       conversation_id: conversationId || 0,
       sender: 'user',
       content: messageContent,
@@ -112,18 +130,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({
       messages: [...messages, tempUserMessage],
       isSending: true,
-      error: null
+      error: null,
     });
 
     try {
       // For prebuilt agents with session IDs, don't send conversation_id to backend
-      const isSessionConversation = typeof conversationId === 'string' && conversationId.startsWith('session_');
-      
+      const isSessionConversation =
+        typeof conversationId === 'string' && conversationId.startsWith('session_');
+
       // Handle conversation ID for request
       let requestConversationId: number | undefined;
       if (!isSessionConversation && conversationId) {
         // Only send conversation_id if it's a valid number and not a session conversation
-        const numericId = typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
+        const numericId =
+          typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
         requestConversationId = !isNaN(numericId) && numericId < 1000000000 ? numericId : undefined;
       }
 
@@ -141,7 +161,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       // Handle both regular agents (conversation_id > 0) and prebuilt agents (conversation_id = 0)
       if (response.conversation_id !== null && response.conversation_id !== undefined) {
         const currentMessages = get().messages;
-        
+
         // Update the last message (temporary user message) with proper IDs from response
         const updatedUserMessage: MessageRead = {
           ...currentMessages[currentMessages.length - 1], // Keep the existing user message
@@ -168,7 +188,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
         set({
           messages: updatedMessages,
-          isSending: false
+          isSending: false,
         });
 
         // For prebuilt agents (conversation_id = 0), save to session storage
@@ -189,7 +209,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       set({
         messages: currentMessages.slice(0, -1),
         error: error instanceof Error ? error.message : 'Failed to send message',
-        isSending: false
+        isSending: false,
       });
       throw error;
     }
@@ -219,7 +239,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     try {
       const conversation = await apiService.getConversation(conversationId);
-      
+
       if (conversation.messages && Array.isArray(conversation.messages)) {
         set({
           selectedConversation: conversation,
@@ -248,7 +268,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           return;
         }
       }
-      
+
       // For other errors, show the error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch conversation';
       console.error('Error fetching conversation:', errorMessage);
@@ -301,8 +321,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const updatedConversation = await apiService.updateConversation(conversationId, conversation);
       const { conversations } = get();
       set({
-        conversations: conversations.map(c =>
-          c.id === conversationId ? updatedConversation : c
+        conversations: conversations.map((c) =>
+          c.id === conversationId ? updatedConversation : c,
         ),
         isCreating: false,
       });
@@ -324,7 +344,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       await apiService.deleteConversation(conversationId);
       const { conversations } = get();
       set({
-        conversations: conversations.filter(c => c.id !== conversationId),
+        conversations: conversations.filter((c) => c.id !== conversationId),
         isCreating: false,
       });
     } catch (error) {
@@ -344,7 +364,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setSelectedConversation: (conversation: ConversationWithMessages | null) => {
     set({
       selectedConversation: conversation,
-      messages: conversation?.messages || []
+      messages: conversation?.messages || [],
     });
   },
 
@@ -363,12 +383,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   // Session-based conversation methods for prebuilt agents
   loadSessionConversation: (sessionId: string, agentId: string) => {
     const sessionConversations = get().sessionConversations;
-    const sessionConv = sessionConversations.find(conv => conv.id === sessionId && conv.agentId === agentId);
+    const sessionConv = sessionConversations.find(
+      (conv) => conv.id === sessionId && conv.agentId === agentId,
+    );
 
     if (sessionConv) {
       set({
         messages: sessionConv.messages,
-        currentSessionId: sessionId
+        currentSessionId: sessionId,
       });
     } else {
       // Create new session conversation if not found
@@ -385,7 +407,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       title: 'New chat',
       messages: [],
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     const sessionConversations = [...get().sessionConversations, newConversation];
@@ -396,15 +418,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   saveSessionConversation: (sessionId: string, messages: MessageRead[]) => {
-    const sessionConversations = get().sessionConversations.map(conv =>
+    const sessionConversations = get().sessionConversations.map((conv) =>
       conv.id === sessionId
         ? {
-          ...conv,
-          messages,
-          title: messages.length > 0 ? messages[0].content.slice(0, 50) + '...' : 'New chat',
-          updated_at: new Date().toISOString()
-        }
-        : conv
+            ...conv,
+            messages,
+            title: messages.length > 0 ? messages[0].content.slice(0, 50) + '...' : 'New chat',
+            updated_at: new Date().toISOString(),
+          }
+        : conv,
     );
 
     set({ sessionConversations });
@@ -412,11 +434,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   getSessionConversations: (agentId: string): SessionConversation[] => {
-    return get().sessionConversations.filter(conv => conv.agentId === agentId);
+    return get().sessionConversations.filter((conv) => conv.agentId === agentId);
   },
 
   deleteSessionConversation: (sessionId: string) => {
-    const sessionConversations = get().sessionConversations.filter(conv => conv.id !== sessionId);
+    const sessionConversations = get().sessionConversations.filter((conv) => conv.id !== sessionId);
     set({ sessionConversations });
     saveToSessionStorage(sessionConversations);
 

@@ -1,0 +1,7 @@
+"""Documents Resource Querying."""
+
+agent Neo
+
+resource_amd_ar = get_resource('rag', sources=['AMD-AR.pdf'])
+
+Neo.reason("AMD's 2024 revenue", resources=[resource_amd_ar])

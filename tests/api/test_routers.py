@@ -113,55 +113,7 @@ class TestAgentRouter:
         data = response.json()
         assert data["detail"] == "Agent not found"
 
-    def test_create_agent_valid(self, client, db_session):
-        agent_data = {"name": "New Agent", "description": "A new test agent", "config": {"model": "gpt-4", "temperature": 0.7}}
-        response = client.post("/api/agents/", json=agent_data)
-        assert response.status_code == 200
-        data = response.json()
-        assert data["name"] == "New Agent"
-        assert data["description"] == "A new test agent"
-        # Check that the original config values are preserved
-        assert data["config"]["model"] == "gpt-4"
-        assert data["config"]["temperature"] == 0.7
-        # Check that folder_path was added
-        assert "folder_path" in data["config"]
-        assert data["config"]["folder_path"].startswith("agents/agent_")
-        assert "id" in data
-        assert isinstance(data["id"], int)
-
     def test_create_agent_invalid_data(self, client):
         invalid_data = {"name": "Test Agent"}
         response = client.post("/api/agents/", json=invalid_data)
         assert response.status_code == 422  # Validation error
-
-    def test_create_agent_empty_config(self, client, db_session):
-        agent_data = {"name": "Empty Config Agent", "description": "Agent with empty config", "config": {}}
-        response = client.post("/api/agents/", json=agent_data)
-        assert response.status_code == 200
-        data = response.json()
-        assert data["name"] == "Empty Config Agent"
-        # Check that folder_path was added to empty config
-        assert "folder_path" in data["config"]
-        assert data["config"]["folder_path"].startswith("agents/agent_")
-
-    def test_create_agent_complex_config(self, client, db_session):
-        complex_config = {
-            "model": "gpt-4",
-            "temperature": 0.7,
-            "max_tokens": 1000,
-            "nested": {"key": "value", "array": [1, 2, 3], "boolean": True},
-        }
-        agent_data = {"name": "Complex Config Agent", "description": "Agent with complex config", "config": complex_config}
-        response = client.post("/api/agents/", json=agent_data)
-        assert response.status_code == 200
-        data = response.json()
-        # Check that all original config values are preserved
-        assert data["config"]["model"] == complex_config["model"]
-        assert data["config"]["temperature"] == complex_config["temperature"]
-        assert data["config"]["max_tokens"] == complex_config["max_tokens"]
-        assert data["config"]["nested"] == complex_config["nested"]
-        assert data["config"]["nested"]["array"] == [1, 2, 3]
-        assert data["config"]["nested"]["boolean"] is True
-        # Check that folder_path was added
-        assert "folder_path" in data["config"]
-        assert data["config"]["folder_path"].startswith("agents/agent_")

@@ -1,0 +1,13 @@
+import file_loader_methods
+
+loader = file_loader_methods.FileLoader()
+
+name = loader.name # This works
+print(name)
+
+# Method syntax fails across module boundaries
+files = loader.list_files() # This will fail
+print(files)
+
+print(loader.say_hi())
+

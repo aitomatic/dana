@@ -90,6 +90,7 @@ from dana.common.sys_resource.base_sys_resource import BaseSysResource, Resource
 
 # Import additional resources from main branch
 from dana.common.sys_resource.embedding import EmbeddingResource
+from dana.common.sys_resource.web_search import WebSearchResource
 
 # HumanResource moved to core resource plugins
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
@@ -157,6 +158,7 @@ __all__ = [
     "STMemoryResource",
     "PermMemoryResource",
     "EmbeddingResource",
+    "WebSearchResource",
     # MCP Services (from integrations/mcp/)
     "MCPResource",
     # Utils (from utils/)

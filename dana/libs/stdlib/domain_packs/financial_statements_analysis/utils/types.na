@@ -1,0 +1,17 @@
+"""Financial-Analysis Data Types."""
+
+
+from typing.py import Optional
+
+
+__all__ = [
+    'CurrAndPrevNums',
+]
+
+
+struct CurrAndPrevNums:
+    """Current and previous numerical values of a financial metric."""
+
+    curr: float
+    prev: float
+    unit_of_measurement: str

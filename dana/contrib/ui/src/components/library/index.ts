@@ -1,5 +1,6 @@
 // Main components
 export { LibraryTable } from './library-table';
+export { LibraryFileSelectionModal } from './library-file-selection-modal';
 
 // Utilities
 export {

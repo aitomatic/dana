@@ -16,4 +16,4 @@ if not exist "%VSCODE_SCRIPT%" (
 )
 
 REM Call the VSCode uninstall script with --cursor flag
-call "%VSCODE_SCRIPT%" --cursor 
+call "%VSCODE_SCRIPT%" --cursor
