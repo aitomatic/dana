@@ -21,6 +21,7 @@ from llama_index.core import Document
 from dana.common.sys_resource.rag.loader.local_loader import LocalLoader
 from dana.common.sys_resource.rag.loader.web_loader import WebLoader
 from dana.common.sys_resource.rag.pipeline.base_stage import BaseStage
+from dana.common.utils.misc import Misc
 
 
 class DocumentLoader(BaseStage):
@@ -36,6 +37,10 @@ class DocumentLoader(BaseStage):
 
     async def load_sources(self, sources: list[str]) -> dict[str, list[Document]]:
         docs_by_source = await self._load_sources(sources)
+        return docs_by_source
+
+    def sync_load_sources(self, sources: list[str]) -> dict[str, list[Document]]:
+        docs_by_source = Misc.safe_asyncio_run(self._load_sources, sources)
         return docs_by_source
 
     async def _load(self, source: str) -> list[Document]:

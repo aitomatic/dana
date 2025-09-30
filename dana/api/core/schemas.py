@@ -757,13 +757,3 @@ class KnowledgePackSmartChatResponse(BaseModel):
     agent_response: str
     internal_conversation: list[MessageData] = []
     error: str | None = None
-
-
-class BackgroundTaskResponse(BaseModel):
-    id: int
-    type: str
-    status: str
-    data: dict = {}
-    error: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
