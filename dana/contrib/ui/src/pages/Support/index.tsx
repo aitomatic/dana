@@ -10,7 +10,7 @@ export default function SupportPage() {
         <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="mb-2 text-2xl font-bold text-gray-900">Support Center</h1>
-            <p className="mx-auto mb-6 max-w-3xl text-gray-600 text-sm">
+            <p className="mx-auto mb-6 max-w-3xl text-gray-600 text-SM">
               We're here to help! Submit your feedback, report bugs, or suggest new features to make Dana Studio even better.
             </p>
           </div>
@@ -22,7 +22,7 @@ export default function SupportPage() {
         <div className="w-full max-w-4xl">
           {/* SLA Information */}
           <div className="mb-8 text-center">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Our Service Level Agreements</h2>
+            <h2 className="mb-4 text-xl font-bold text-gray-900">Our Service Level Agreements</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
                 <Clock className="w-5 h-5 text-red-600" />
@@ -51,7 +51,7 @@ export default function SupportPage() {
           {/* Main Support Options */}
           <Card className="mb-8">
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Submit Your Request</CardTitle>
+              <CardTitle className="text-xl font-bold">Submit Your Request</CardTitle>
               <CardDescription>
                 Choose the appropriate form for your support request
               </CardDescription>
@@ -136,7 +136,7 @@ export default function SupportPage() {
           {/* Contact Information */}
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-lg">Need Immediate Help?</CardTitle>
+              <CardTitle className="text-lg font-bold">Need Immediate Help?</CardTitle>
               <CardDescription>
                 For urgent issues or questions, contact us directly
               </CardDescription>
