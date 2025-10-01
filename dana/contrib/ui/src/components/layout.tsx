@@ -53,6 +53,10 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
         return 'Dana Expert Agents';
       case '/library':
         return 'Library';
+      case '/documentation':
+        return 'Documentation';
+      case '/support':
+        return 'Support';
       default:
         // Handle dynamic routes
         if (location.pathname.startsWith('/agents/') && location.pathname.includes('/chat')) {
