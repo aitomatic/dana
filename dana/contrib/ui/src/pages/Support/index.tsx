@@ -1,7 +1,7 @@
-import React from 'react';
-import { Bug, LightBulb, Mail } from 'iconoir-react';
+import { Bug, LightBulb, Mail, Clock, CheckCircle, ArrowRight } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function SupportPage() {
   return (
@@ -20,7 +20,35 @@ export default function SupportPage() {
 
       {/* Main Content - Centered */}
       <div className="flex items-center justify-center min-h-[60vh] px-4 py-12">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-4xl">
+          {/* SLA Information */}
+          <div className="mb-8 text-center">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">Our Service Level Agreements</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+                <Clock className="w-5 h-5 text-red-600" />
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">Critical Bugs</div>
+                  <div className="text-xs text-gray-600">Response: 2-4 hours</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+                <Clock className="w-5 h-5 text-yellow-600" />
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">Bug Reports</div>
+                  <div className="text-xs text-gray-600">Response: 24-48 hours</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">Feature Requests</div>
+                  <div className="text-xs text-gray-600">Review: 1-2 weeks</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Main Support Options */}
           <Card className="mb-8">
             <CardHeader className="text-center">
@@ -30,26 +58,102 @@ export default function SupportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {/* Feature Request Button */}
-                <Button
-                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank')}
-                  className="h-16 flex-col gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                  size="lg"
-                >
-                  <LightBulb className="w-6 h-6" />
-                  <span className="font-medium">Feature Request</span>
-                </Button>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Feature Request Card */}
+                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                          <LightBulb className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Feature Request</h3>
+                          <p className="text-sm text-gray-600">Suggest new features</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Product roadmap consideration</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Community voting</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Regular updates</span>
+                      </div>
+                    </div>
 
-                {/* Bug Report Button */}
-                <Button
-                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank')}
-                  className="h-16 flex-col gap-2 bg-red-600 hover:bg-red-700 text-white"
-                  size="lg"
-                >
-                  <Bug className="w-6 h-6" />
-                  <span className="font-medium">Bug Report</span>
-                </Button>
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Review: 1-2 weeks
+                        </Badge>
+                        <Button
+                          onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
+                        >
+                          Submit Request
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bug Report Card */}
+                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                          <Bug className="w-6 h-6 text-red-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Bug Report</h3>
+                          <p className="text-sm text-gray-600">Report issues & errors</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Priority-based triage</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Developer assignment</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Progress tracking</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="destructive" className="text-xs">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Response: 24-48h
+                        </Badge>
+                        <Button
+                          onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank')}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm"
+                        >
+                          Report Bug
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
