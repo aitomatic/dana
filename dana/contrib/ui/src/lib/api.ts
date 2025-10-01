@@ -412,6 +412,28 @@ export interface ProcessAgentDocumentsResponse {
   error?: string;
 }
 
+export interface TarExportRequest {
+  agent_id: number;
+  include_dependencies: boolean;
+}
+
+export interface TarExportResponse {
+  success: boolean;
+  tar_path: string;
+  message: string;
+}
+
+export interface TarImportRequest {
+  agent_name: string;
+  agent_description?: string;
+}
+
+export interface TarImportResponse {
+  success: boolean;
+  agent_id: number;
+  message: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -1103,6 +1125,46 @@ class ApiService {
   // Get workflow information from prebuilt agent
   async getPrebuiltAgentWorkflowInfo(prebuiltKey: string): Promise<WorkflowInfo> {
     const response = await this.client.get<WorkflowInfo>(`/agents/${prebuiltKey}/workflow-info`);
+    return response.data;
+  }
+
+  // Agent Export Methods
+  async exportAgentTar(
+    agentId: number,
+    includeDependencies: boolean = true,
+  ): Promise<TarExportResponse> {
+    const response = await this.client.post<TarExportResponse>(`/agents/${agentId}/export-tar`, {
+      agent_id: agentId,
+      include_dependencies: includeDependencies,
+    });
+    return response.data;
+  }
+
+  async downloadAgentTar(agentId: number, tarPath: string): Promise<Blob> {
+    const response = await this.client.get(
+      `/agents/${agentId}/download-tar?path=${encodeURIComponent(tarPath)}`,
+      {
+        responseType: 'blob',
+      },
+    );
+    return response.data;
+  }
+
+  async importAgentTar(
+    file: File,
+    agentName: string,
+    agentDescription: string = 'Imported agent',
+  ): Promise<TarImportResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('agent_name', agentName);
+    formData.append('agent_description', agentDescription);
+
+    const response = await this.client.post<TarImportResponse>('/agents/import-tar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 }
