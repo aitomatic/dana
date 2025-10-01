@@ -305,6 +305,16 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         </div>
       </div>
 
+      {/* Progress bar for in-progress knowledge generation */}
+      {isLeafNode && knowledgeStatus?.status === 'in_progress' && (
+        <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
+          <div
+            className="h-2 bg-blue-500 rounded-full transition-all duration-300 animate-pulse"
+            style={{ width: '100%' }}
+          ></div>
+        </div>
+      )}
+
       {/* Handles can be hidden or removed if not needed */}
       <Handle
         type="target"

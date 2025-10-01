@@ -78,7 +78,7 @@ const KnowledgeBaseTab: React.FC = () => {
 
       {/* Show Legend Button - Only show when legend is hidden */}
       {activeSubTab === 'Domain Knowledge' && !showLegend && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute bottom-4 right-2 z-10">
           <button
             onClick={() => setShowLegend(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
@@ -92,44 +92,48 @@ const KnowledgeBaseTab: React.FC = () => {
 
       {/* Status Legend - Only show for Domain Knowledge sub-tab and when toggled on */}
       {activeSubTab === 'Domain Knowledge' && showLegend && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="absolute bottom-4 right-2 transform z-10">
           <div className="flex gap-4 items-center px-4 py-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-600">
-            {/* Hide Legend Button */}
-            <button
-              onClick={() => setShowLegend(false)}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              title="Hide Legend"
-            >
-              <EyeClosed className="w-3 h-3" />
-              <span>Hide</span>
-            </button>
-            
-            {/* Separator */}
-            <div className="w-px h-4 bg-gray-300"></div>
+         
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-100"></div>
-   
-              <span>Pending</span>
+              <div className="w-4 h-4 rounded border-2 border-gray-300 bg-gray-100"></div>
+              <span>Content generation required</span>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-100"></div>
            
               <span>In Progress</span>
-            </div>
+            </div> */}
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-100"></div>
 
-              <span>Success</span>
+              <span>Content Generated</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-100"></div>
+   
+              <span>In Progress</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-100"></div>
        
               <span>Failed</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-gray-500 bg-gray-100"></div>
-              <span>Knowledge generation required</span>
-            </div>
+    
+            {/* Separator */}
+            <div className="w-px h-4 bg-gray-300"></div>
+               {/* Hide Legend Button */}
+               <button
+              onClick={() => setShowLegend(false)}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+              title="Hide Legend"
+            >
+              
+              <EyeClosed className="w-3 h-3" />
+              <span>Hide</span>
+            </button>
+            
           </div>
         </div>
       )}

@@ -9,7 +9,6 @@ import { apiService } from '@/lib/api';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
-import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search, Collapse, Expand } from 'iconoir-react';
 
@@ -852,6 +851,29 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   }, [domainTree, statusData, searchQuery]);
 
+  // Real-time status updates - React to knowledgeStatus changes
+  useEffect(() => {
+    if (!domainTree || !statusData || !domainTree.root) return;
+
+    console.log('[DomainKnowledgeTree] Status data updated, refreshing nodes');
+    
+    // Preserve current expansion state
+    const currentExpanded = expandedNodesRef.current.size > 0
+      ? expandedNodesRef.current
+      : new Set([domainTree.root.topic]);
+
+    // Convert domain knowledge to flow format with updated status
+    const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+      domainTree,
+      statusData as KnowledgeStatusResponse,
+      currentExpanded,
+      searchQuery,
+    );
+    const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+    setNodes(layoutedNodes);
+    setEdges(flowEdges);
+  }, [statusData]);
+
   // Hide popup when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -906,29 +928,43 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         } finally {
           setSidebarLoading(false);
         }
-      } else {
-        // Show toast that knowledge is not generated yet
-        const status = nodeData.knowledgeStatus?.status || 'pending';
-        let message = '';
+        } else {
+          // Show drawer with message and CTA for nodes without knowledge content
+          const status = nodeData.knowledgeStatus?.status || 'pending';
+          let message = '';
+          let showGenerateButton = false;
 
-        switch (status) {
-          case 'pending':
-            message = `Knowledge for "${nodeData.label}" is not generated yet. Request "Generate Knowledge" with Dana Agent Maker to start generation.`;
-            break;
-          case 'in_progress':
-            message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
-            break;
-          case 'failed':
-            message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
-            break;
-          default:
-            message = `Knowledge for "${nodeData.label}" is not available yet.`;
+          switch (status) {
+            case 'pending':
+              message = `Content is not generated yet for "${nodeData.label}".`;
+              showGenerateButton = true;
+              break;
+            case 'in_progress':
+              message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
+              showGenerateButton = false;
+              break;
+            case 'failed':
+              message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
+              showGenerateButton = true;
+              break;
+            default:
+              message = `Knowledge for "${nodeData.label}" is not available yet.`;
+              showGenerateButton = true;
+          }
+
+          // Open sidebar with message and CTA
+          setSidebarOpen(true);
+          setSidebarTopicPath(topicPath);
+          setSidebarLoading(false);
+          setSidebarError(null);
+          setSidebarContent({
+            message,
+            showGenerateButton,
+            topicPath,
+            nodeLabel: nodeData.label,
+            status
+          });
         }
-
-        toast.info(message, {
-          duration: 5000,
-        });
-      }
 
       return;
     }

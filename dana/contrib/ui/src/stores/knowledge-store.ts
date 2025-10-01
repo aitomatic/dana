@@ -29,6 +29,7 @@ interface KnowledgeState {
   setTreeUpdateCallback: (callback: (agentId: string | number) => void) => void;
   connectWebSocket: (agentId: string | number) => void;
   disconnectWebSocket: () => void;
+  updateTopicStatus: (topicPath: string, status: string, progression?: number) => void;
 }
 
 // Debounce delay for API calls (in milliseconds)
@@ -155,16 +156,23 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+          console.log('[KnowledgeStore] Received WebSocket message:', msg);
+          
           if (msg.type === 'knowledge_status_update') {
-            console.log('[KnowledgeStore] Received knowledge status update, refreshing data');
-
-            // Use a small delay to debounce rapid updates
-            setTimeout(() => {
-              const currentState = get();
-              if (currentState.currentAgentId === agentId) {
-                get().fetchKnowledgeData(agentId, true); // Force refresh
-              }
-            }, 100);
+            // Handle specific topic updates
+            if (msg.path && msg.status) {
+              console.log('[KnowledgeStore] Updating specific topic:', msg.path, msg.status);
+              get().updateTopicStatus(msg.path, msg.status, msg.progression);
+            } else {
+              // Fallback to full refresh for general updates
+              console.log('[KnowledgeStore] General knowledge status update, refreshing data');
+              setTimeout(() => {
+                const currentState = get();
+                if (currentState.currentAgentId === agentId) {
+                  get().fetchKnowledgeData(agentId, true); // Force refresh
+                }
+              }, 100);
+            }
           }
         } catch (error) {
           console.warn('[KnowledgeStore] Failed to parse WebSocket message:', error);
@@ -203,6 +211,41 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       console.log('[KnowledgeStore] Disconnecting WebSocket');
       state.websocket.close(1000, 'Intentional disconnect');
       set({ websocket: null });
+    }
+  },
+
+  updateTopicStatus: (topicPath: string, status: string, progression?: number) => {
+    const state = get();
+    
+    if (!state.knowledgeStatus) {
+      console.warn('[KnowledgeStore] Cannot update topic status - no knowledge status data');
+      return;
+    }
+
+    console.log('[KnowledgeStore] Updating topic status:', { topicPath, status, progression });
+
+    const updatedTopics = state.knowledgeStatus.topics.map(topic => {
+      if (topic.path === topicPath) {
+        return {
+          ...topic,
+          status: status as 'pending' | 'in_progress' | 'success' | 'failed',
+          last_generated: status === 'success' ? new Date().toISOString() : topic.last_generated,
+        };
+      }
+      return topic;
+    });
+
+    set({
+      knowledgeStatus: {
+        ...state.knowledgeStatus,
+        topics: updatedTopics
+      }
+    });
+
+    // Trigger tree update callback if available
+    if (state.onTreeUpdate && state.currentAgentId) {
+      console.log('[KnowledgeStore] Triggering tree update callback for topic status change');
+      state.onTreeUpdate(state.currentAgentId);
     }
   },
 }));

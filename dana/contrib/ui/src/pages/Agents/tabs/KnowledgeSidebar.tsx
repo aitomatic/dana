@@ -16,11 +16,19 @@ interface KnowledgeContent {
   structured_data?: any;
 }
 
+interface MessageContent {
+  message: string;
+  showGenerateButton: boolean;
+  topicPath: string;
+  nodeLabel: string;
+  status: string;
+}
+
 interface KnowledgeSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   topicPath: string;
-  content: KnowledgeContent | null;
+  content: KnowledgeContent | MessageContent | null;
   loading: boolean;
   error: string | null;
 }
@@ -51,13 +59,16 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   };
 
   const renderQAndAPairs = () => {
-    if (!content?.questions_by_topics || !content?.answers_by_topics) return null;
+    if (!content || 'message' in content || !('questions_by_topics' in content) || !('answers_by_topics' in content)) return null;
 
-    const topics = Object.keys(content.questions_by_topics);
+    const knowledgeContent = content as KnowledgeContent;
+    if (!knowledgeContent.questions_by_topics || !knowledgeContent.answers_by_topics) return null;
+
+    const topics = Object.keys(knowledgeContent.questions_by_topics);
 
     return topics.map((topic) => {
-      const questions = content.questions_by_topics[topic] || [];
-      const answer = content.answers_by_topics[topic] || '';
+      const questions = knowledgeContent.questions_by_topics[topic] || [];
+      const answer = knowledgeContent.answers_by_topics[topic] || '';
 
       // Format topic name for display
       const formattedTopic = topic.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
@@ -76,7 +87,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
                 Research Questions
               </h5>
               <ul className="mb-4 ml-8 space-y-2">
-                {questions.map((question, qIndex) => (
+                {questions.map((question: string, qIndex: number) => (
                   <li key={qIndex} className="text-sm list-disc text-gray-700 rounded-md">
                     {/* <Info size={12} className="inline mr-2 text-blue-500" /> */}
                     {question}
@@ -115,7 +126,9 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   };
 
   const renderUserInstructions = () => {
-    if (!content?.user_instructions || content.user_instructions.length === 0) return null;
+    if (!content || 'message' in content || !('user_instructions' in content) || !content.user_instructions || content.user_instructions.length === 0) return null;
+
+    const knowledgeContent = content as KnowledgeContent;
 
     return (
       <div className="mb-6">
@@ -124,7 +137,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
           User Instructions
         </h4>
         <div className="space-y-2">
-          {content.user_instructions.map((instruction, index) => (
+          {knowledgeContent.user_instructions?.map((instruction: string, index: number) => (
             <div
               key={index}
               className="p-3 text-sm text-blue-700 bg-blue-50 rounded-md border-l-4 border-blue-200"
@@ -140,7 +153,9 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   };
 
   const renderMetadata = () => {
-    if (!content) return null;
+    if (!content || 'message' in content || !('final_confidence' in content)) return null;
+
+    const knowledgeContent = content as KnowledgeContent;
 
     return (
       <div className="p-4 mb-6 bg-gray-50 rounded-lg">
@@ -151,15 +166,15 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
             <span className="text-gray-500">Confidence:</span>
-            <div className="font-medium text-gray-700">{content.final_confidence}%</div>
+            <div className="font-medium text-gray-700">{knowledgeContent.final_confidence}%</div>
           </div>
           <div>
             <span className="text-gray-500">Questions:</span>
-            <div className="font-medium text-gray-700">{content.total_questions}</div>
+            <div className="font-medium text-gray-700">{knowledgeContent.total_questions}</div>
           </div>
           <div>
             <span className="text-gray-500">Iterations:</span>
-            <div className="font-medium text-gray-700">{content.iterations_used}</div>
+            <div className="font-medium text-gray-700">{knowledgeContent.iterations_used}</div>
           </div>
         </div>
       </div>
@@ -174,6 +189,52 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
             {JSON.stringify(content, null, 2)}
           </pre>
         </div>
+      </div>
+    );
+  };
+
+  const renderMessageContent = () => {
+    if (!content || !('message' in content)) return null;
+
+    const messageContent = content as MessageContent;
+
+    const handleGenerateKnowledge = () => {
+      // Auto-send message to Dana Agent Maker
+      const message = `Generate knowledge for "${messageContent.nodeLabel}" (${messageContent.topicPath})`;
+      
+      // Use the global sendMessage function if available
+      if (typeof window !== 'undefined' && (window as any).sendMessage) {
+        (window as any).setInput(message);
+        (window as any).sendMessage();
+      }
+      
+      // Close the sidebar
+      onClose();
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Message */}
+        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="flex gap-2 items-start">
+            <AlertCircle size={20} className="text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800">{messageContent.message}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Generate Knowledge Button */}
+        {messageContent.showGenerateButton && (
+          <div className="flex justify-center">
+            <button
+              onClick={handleGenerateKnowledge}
+              className="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Generate Knowledge
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -224,30 +285,38 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
 
           {!loading && !error && content && (
             <div className="space-y-6">
-              {/* Content V2 - Structured Data */}
-              {content.structured_data && renderStructuredData()}
+              {/* Message Content (for nodes without knowledge) */}
+              {'message' in content && renderMessageContent()}
 
-              {/* Content V1 - Legacy Format */}
-              {!content.structured_data && (
+              {/* Knowledge Content (for nodes with generated knowledge) */}
+              {!('message' in content) && (
                 <>
-                  {/* Description */}
-                  {/* {content.knowledge_area_description && (
-                    <div>
-                      <h4 className="mb-2 text-sm font-semibold text-gray-700">Description</h4>
-                      <p className="text-sm leading-relaxed text-gray-600">
-                        {content.knowledge_area_description}
-                      </p>
-                    </div>
-                  )} */}
+                  {/* Content V2 - Structured Data */}
+                  {content.structured_data && renderStructuredData()}
 
-                  {/* User Instructions */}
-                  {renderUserInstructions()}
+                  {/* Content V1 - Legacy Format */}
+                  {!content.structured_data && (
+                    <>
+                      {/* Description */}
+                      {/* {content.knowledge_area_description && (
+                        <div>
+                          <h4 className="mb-2 text-sm font-semibold text-gray-700">Description</h4>
+                          <p className="text-sm leading-relaxed text-gray-600">
+                            {content.knowledge_area_description}
+                          </p>
+                        </div>
+                      )} */}
 
-                  {/* Q&A Pairs by Topic */}
-                  {renderQAndAPairs()}
+                      {/* User Instructions */}
+                      {renderUserInstructions()}
 
-                  {/* Metadata */}
-                  {renderMetadata()}
+                      {/* Q&A Pairs by Topic */}
+                      {renderQAndAPairs()}
+
+                      {/* Metadata */}
+                      {renderMetadata()}
+                    </>
+                  )}
                 </>
               )}
             </div>
