@@ -11,6 +11,7 @@ from dana.api.core.database import get_db
 from datetime import datetime
 import logging
 import threading
+from dana.common.sys_resource.rag import get_global_rag_resource
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class TaskManager:
         }
         self.bg_cls = get_background_task_repo()
         self.extraction_service = get_extraction_service()
+        self.rag_resource = get_global_rag_resource()
 
     async def add_knowledge_gen_task(self, data: dict, check_exist: bool = True) -> int | None:
         for db in get_db():
@@ -251,6 +253,8 @@ class TaskManager:
                         "documents": [{"text": page.page_content, "page_number": page.page_number} for page in pages],
                     },
                 )
+
+                Misc.safe_asyncio_run(self.rag_resource.index_extraction_response, result, overwrite=False)
 
                 Misc.safe_asyncio_run(
                     self.extraction_service.save_extraction_json,

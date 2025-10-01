@@ -5,23 +5,39 @@ import asyncio
 from llama_index.core import Settings
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.sys_resource.base_sys_resource import BaseSysResource
+from dana.api.core.schemas import ExtractionResponse
 from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana.common.sys_resource.embedding import get_default_embedding_model
-from llama_index.core import StorageContext, VectorStoreIndex, load_index_from_storage
+from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
 from llama_index.core.schema import Document, NodeWithScore
+import duckdb
 from dana.common.sys_resource.rag.pipeline.document_loader import DocumentLoader
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from llama_index.core.schema import MetadataMode
+from uuid import uuid4
 
 CACHE_DIR = os.getenv("RAG_CACHE_PATH", os.path.expanduser("~/.dana/.cache/rag"))
 PERSIST_DIR = os.path.join(CACHE_DIR, "storage")
 Path(PERSIST_DIR).mkdir(parents=True, exist_ok=True)
 RAG_NAME = "dana_rag_db"
 
+_conn = {}
 
-class RAGResource(BaseSysResource):
+
+def get_duckdb_connection(database_name: str, persist_dir: str, read_only: bool = False) -> duckdb.DuckDBPyConnection:
+    full_path = os.path.join(persist_dir, database_name)
+    print(f"Getting duckdb connection for {full_path}")
+    key = (full_path, read_only)
+    if key in _conn:
+        return _conn[key]
+    conn = duckdb.connect(full_path, read_only=read_only)
+    _conn[key] = conn
+    return conn
+
+
+class RAGResourceV2(BaseSysResource):
     """RAG resource for document retrieval."""
 
     def __init__(
@@ -40,6 +56,7 @@ class RAGResource(BaseSysResource):
         num_results: int = 15,
         dimensions: int = 1024,
         embed_batch_size: int = 512,
+        read_only: bool = True,
     ):
         super().__init__(name, description)
         danapath = self._get_danapath()
@@ -60,6 +77,8 @@ class RAGResource(BaseSysResource):
         self.loader = DocumentLoader()
         self._is_ready = False
         self._filenames = None
+        self.vector_index = None
+        self.read_only = read_only
 
         # Initialize LLM resource for reranking if enabled
         if self.reranking:
@@ -73,45 +92,48 @@ class RAGResource(BaseSysResource):
     def get_table_name(self) -> str:
         return f"{RAG_NAME.replace('.', '_')}_{self.dimension}"
 
-    def get_existing_filenames_and_sizes(self) -> list[tuple[str, int]]:
-        import duckdb
-
-        conn = duckdb.connect(os.path.join(PERSIST_DIR, self.get_table_name()))
-        result = conn.execute(f"""
-            SELECT DISTINCT 
-                json_extract_string(metadata_, '$.file_name')::VARCHAR as file_name, 
-                json_extract(metadata_, '$.file_size')::INTEGER as file_size 
-            FROM {self.get_table_name()}.main.documents;""").fetchall()
-        return result
+    def get_existing_hashes(self) -> list[str]:
+        try:
+            with get_duckdb_connection(self.get_table_name(), PERSIST_DIR) as conn:
+                result = conn.execute(f"""
+                    SELECT DISTINCT 
+                        json_extract_string(metadata_, '$.file_hash')::VARCHAR as file_hash, 
+                    FROM {self.get_table_name()}.main.documents;""").fetchall()
+            return [row[0] for row in result]
+        except Exception as _:
+            return []
 
     def _load_or_create_index(self, document_dict: dict[str, list[Document]]) -> None:
         def get_vector_store():
-            return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
+            # return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
+            # return DuckDBVectorStore(embed_dim=self.dimension, client=get_duckdb_connection(self.get_table_name(), PERSIST_DIR), database_name=self.get_table_name(), persist_dir=PERSIST_DIR)
+            if self.read_only:
+                return DuckDBVectorStore(
+                    embed_dim=self.dimension, client=get_duckdb_connection(self.get_table_name(), PERSIST_DIR, read_only=False)
+                )
+            else:
+                return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
 
         self.embed_model = get_default_embedding_model(dimension_override=self.dimension)
         if hasattr(self.embed_model, "dimensions"):
             # override using dimension from embed_model
             self.dimension = self.embed_model.dimensions
         uri = os.path.join(PERSIST_DIR, self.get_table_name())
-        if Path(uri).exists():
-            print(f"Loading index from {uri}")
-            vector_store = get_vector_store()
-            storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=PERSIST_DIR)
-            self.vector_index = load_index_from_storage(
-                storage_context,
-                embed_model=self.embed_model,
-            )
-        else:
-            print(f"Creating index from {uri}")
-            vector_store = get_vector_store()
-            storage_context = StorageContext.from_defaults(vector_store=vector_store)
-            documents = []
-            for docs in document_dict.values():
-                documents.extend(docs)
-            self.vector_index = VectorStoreIndex.from_documents(
-                documents=documents, storage_context=storage_context, embed_model=self.embed_model
-            )
-            self.vector_index.storage_context.persist(persist_dir=PERSIST_DIR)
+        if not self.vector_index:
+            if Path(uri).exists():
+                print(f"Loading index from {uri}")
+                vector_store = get_vector_store()
+                self.vector_index = VectorStoreIndex.from_vector_store(vector_store, embed_model=self.embed_model)
+            else:
+                print(f"Creating index from {uri}")
+                vector_store = get_vector_store()
+                storage_context = StorageContext.from_defaults(vector_store=vector_store)
+                documents = []
+                for docs in document_dict.values():
+                    documents.extend(docs)
+                self.vector_index = VectorStoreIndex.from_documents(
+                    documents=documents, storage_context=storage_context, embed_model=self.embed_model
+                )
 
     def _get_danapath(self) -> str | None:
         # Use DANAPATH if set, otherwise default to .cache/rag
@@ -175,34 +197,236 @@ class RAGResource(BaseSysResource):
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""
         if not self._is_ready:
-            document_dict = await self.loader.load_sources(self.sources)
+            document_dict = await self.loader.load_sources(self.sources, group_by_fn=True)
             self._load_or_create_index(document_dict)
-            self.documents = document_dict
+            documents = document_dict
+            self._filenames = [] if documents is None else list(documents.keys())
+            await self._index_documents(documents)
             self._is_ready = True
-            self._filenames = [] if self.documents is None else list(self.documents.keys())
-            self.existing_filenames = self.get_existing_filenames_and_sizes()
 
-            mapping = {}
-            for filename, docs in self.documents.items():
-                if len(docs):
-                    mapping[(docs[0].metadata["file_name"], docs[0].metadata["file_size"])] = filename
+    async def _index_documents(self, documents: dict[str, list[Document]]) -> None:
+        if not self.vector_index:
+            raise ValueError("Vector index is not initialized. Please call initialize() first.")
 
-            doc_to_add = set(mapping.keys()).difference(set(self.existing_filenames))
+        if not documents:
+            return
 
-            print(f"Adding {doc_to_add} documents to the index")
+        existing_hashes = self.get_existing_hashes()
 
-            tasks = []
-            for data in doc_to_add:
-                docs = self.documents[mapping[data]]
-                tasks.extend([self.vector_index.ainsert(doc) for doc in docs])
+        mapping = {}
+        for filename, docs in documents.items():
+            if len(docs):
+                mapping[(docs[0].metadata.get("file_hash", str(uuid4())))] = filename
 
-            await asyncio.gather(*tasks)
+        doc_to_add = set(mapping.keys()).difference(set(existing_hashes))
 
-            self.vector_index.storage_context.persist(persist_dir=PERSIST_DIR)
+        print(f"Adding {len(doc_to_add)} documents to the index")
+
+        tasks = []
+        for data in doc_to_add:
+            docs = documents[mapping[data]]
+            tasks.extend([self.vector_index.ainsert(doc) for doc in docs])
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            print(f"Error inserting document: {result}")
+
+        self.vector_index.storage_context.persist(persist_dir=PERSIST_DIR)
+
+    async def index_sources(self, sources: list[str]) -> None:
+        document_dict = await self.loader.load_sources(sources, group_by_fn=True)
+        if not self._is_ready:
+            await self.initialize()
+        documents = document_dict
+        await self._index_documents(documents)
+
+    async def index_extraction_response(self, extraction_response: ExtractionResponse, overwrite: bool = False) -> None:
+        """Index an ExtractionResponse by converting it to Document objects and adding to the vector index.
+
+        Args:
+            extraction_response: The extraction response containing file data and pages
+            overwrite: If True, remove existing documents with the same file_name before indexing
+        """
+        if not self._is_ready:
+            await self.initialize()
+
+        if not self.vector_index:
+            raise ValueError("Vector index is not initialized. Please call initialize() first.")
+
+        # Convert ExtractionResponse to Document objects
+        documents = self._convert_extraction_response_to_documents(extraction_response)
+
+        if not documents:
+            if self.debug:
+                print("No documents to index from extraction response")
+            return
+
+        file_name = extraction_response.file_object.file_name
+
+        # Remove existing documents if overwrite is True
+        if overwrite:
+            # Get file hash from the first document's metadata
+            file_hash = documents[0].metadata.get("file_hash") if documents else None
+            if file_hash:
+                await self._remove_documents_by_file_hash(file_hash)
+                if self.debug:
+                    print(f"Removed existing documents for file: {file_name} (hash: {file_hash})")
+            else:
+                if self.debug:
+                    print(f"Warning: No file_hash found in metadata for file: {file_name}")
+
+        # Create document dict in the format expected by _index_documents
+        document_dict = {file_name: documents}
+
+        # Use existing _index_documents method to handle the indexing
+        await self._index_documents(document_dict)
+
+        if self.debug:
+            print(f"Successfully indexed {len(documents)} documents from extraction response: {file_name}")
+
+    def _convert_extraction_response_to_documents(self, extraction_response: ExtractionResponse) -> list[Document]:
+        """Convert an ExtractionResponse to a list of Document objects.
+
+        Args:
+            extraction_response: The extraction response to convert
+
+        Returns:
+            List of Document objects ready for indexing
+        """
+        import os
+        from datetime import datetime
+
+        documents = []
+        file_object = extraction_response.file_object
+
+        # Get file stats for metadata
+        file_path = file_object.file_full_path
+        try:
+            stat = os.stat(file_path)
+            file_size = stat.st_size
+            creation_date = datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d")
+            last_modified_date = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d")
+        except (OSError, FileNotFoundError):
+            # Fallback values if file doesn't exist or can't be accessed
+            file_size = getattr(file_object, "total_words", 0)
+            creation_date = datetime.now().strftime("%Y-%m-%d")
+            last_modified_date = datetime.now().strftime("%Y-%m-%d")
+
+        # Determine file type from extension
+        file_extension = os.path.splitext(file_object.file_name)[1].lower()
+        file_type_map = {
+            ".pdf": "application/pdf",
+            ".txt": "text/plain",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".doc": "application/msword",
+            ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".xls": "application/vnd.ms-excel",
+            ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".ppt": "application/vnd.ms-powerpoint",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+            ".tiff": "image/tiff",
+            ".tif": "image/tiff",
+            ".webp": "image/webp",
+        }
+        file_type = file_type_map.get(file_extension, "application/octet-stream")
+
+        # Generate file hash for unique identification using aicapture
+        try:
+            from aicapture.cache import HashUtils
+
+            file_hash = HashUtils.calculate_file_hash(file_path)
+        except (ImportError, OSError, FileNotFoundError):
+            # Fallback to using cache_key as file hash if aicapture is not available or file is not accessible
+            raise ValueError("Failed to generate file hash for file: {file_path}")
+
+        # Create a document for each page
+        for page in file_object.pages:
+            # Create metadata matching the specified format
+            metadata = {
+                "page_label": str(page.page_number),
+                "file_name": file_object.file_name,
+                "file_path": file_object.file_full_path,
+                "file_type": file_type,
+                "file_size": file_size,
+                "creation_date": creation_date,
+                "last_modified_date": last_modified_date,
+                "source": file_object.file_full_path,
+                "file_hash": file_hash,  # Add file hash for unique identification
+                # Additional metadata for extraction responses
+                "page_number": page.page_number,
+                "page_hash": page.page_hash,
+                "total_pages": file_object.total_pages,
+                "cache_key": file_object.cache_key,
+                "extraction_type": "extraction_response",
+            }
+
+            # Define excluded metadata keys
+            excluded_embed_metadata_keys = [
+                "file_name",
+                "file_type",
+                "file_size",
+                "creation_date",
+                "last_modified_date",
+                "last_accessed_date",
+            ]
+            excluded_llm_metadata_keys = [
+                "file_name",
+                "file_type",
+                "file_size",
+                "creation_date",
+                "last_modified_date",
+                "last_accessed_date",
+            ]
+
+            # Create Document object
+            doc = Document(text=page.page_content, metadata=metadata, id_=f"{file_object.cache_key}_page_{page.page_number}")
+
+            # Set excluded metadata keys
+            doc.excluded_embed_metadata_keys = excluded_embed_metadata_keys
+            doc.excluded_llm_metadata_keys = excluded_llm_metadata_keys
+
+            documents.append(doc)
+
+        return documents
+
+    async def _remove_documents_by_file_hash(self, file_hash: str) -> None:
+        """Remove documents from the vector index by file hash.
+
+        Args:
+            file_hash: The file hash to match for removal
+        """
+        if not self.vector_index:
+            raise ValueError("Vector index is not initialized.")
+
+        try:
+            # Connect to the DuckDB database
+            with get_duckdb_connection(self.get_table_name(), PERSIST_DIR) as conn:
+                # Remove documents with matching file hash
+                query = f"""
+                    DELETE FROM {self.get_table_name()}.main.documents 
+                    WHERE json_extract_string(metadata_, '$.file_hash') = ?
+                """
+                result = conn.execute(query, [file_hash])
+                removed_count = result.rowcount
+
+            if self.debug:
+                print(f"Removed {removed_count} documents with file_hash: {file_hash}")
+
+        except Exception as e:
+            if self.debug:
+                print(f"Error removing documents by file_hash {file_hash}: {e}")
+            # Don't raise the exception to allow the indexing to continue
+            # This ensures that even if removal fails, new documents can still be added
 
     async def retrieve(self, query: str, num_results: int = 10) -> list[NodeWithScore]:
         if not self._is_ready:
             await self.initialize()
+        if not self.vector_index:
+            raise ValueError("Vector index is not initialized. Please call initialize() first.")
         return await self.vector_index.as_retriever(similarity_top_k=num_results, embed_model=self.embed_model).aretrieve(query)
 
     @ToolCallable.tool
@@ -374,14 +598,14 @@ Response (JSON array only):"""
 
 
 if __name__ == "__main__":
-    rag = RAGResource(
+    rag = RAGResourceV2(
         sources=[
             "/Users/lam/Downloads/STD-ENG-015.pdf",
             "/Users/lam/Downloads/Fans Best practice work pack rev 4.pdf",
             "/Users/lam/Desktop/repos/opendxa/docs/reference",
             "docs/releases",
         ],
-        reranking=True,
+        reranking=False,
         debug=True,
     )
     import asyncio

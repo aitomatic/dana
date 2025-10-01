@@ -12,6 +12,8 @@ from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana.api.background.task_manager import get_task_manager
 from dana.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo
 from dana.api.core.schemas_v2 import BackgroundTaskResponse
+from dana.common.sys_resource.rag import get_global_rag_resource, RAGResourceV2
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,7 @@ async def upload_document(
     allow_duplicate: bool = Form(False),
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
+    rag_resource: RAGResourceV2 = Depends(get_global_rag_resource),
 ):
     """Upload a document with duplicate checking and background deep extraction."""
     try:
@@ -64,9 +67,11 @@ async def upload_document(
         result: ExtractionResponse = await deep_extract(
             DeepExtractionRequest(document_id=document.id, use_deep_extraction=False, config={}), db=db
         )
+
+        await rag_resource.index_extraction_response(result, overwrite=False)
         pages = result.file_object.pages
 
-        # Save extraction data
+        # Save normal extraction data
         await save_extraction_data(
             ExtractionDataRequest(
                 original_filename=document.original_filename,

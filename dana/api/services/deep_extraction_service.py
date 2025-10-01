@@ -213,6 +213,8 @@ class DeepExtractionService:
             result = self._convert_aicapture_response(aicapture_result, file_path, prompt)
 
             logger.info("Successfully processed file: %s", file_path)
+
+            result.file_object.file_full_path = str(Path(file_path).absolute())
             return result
 
         except ImportError as e:
