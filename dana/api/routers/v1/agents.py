@@ -8,6 +8,8 @@ import base64
 import logging
 import os
 import shutil
+import tarfile
+import tempfile
 
 # import traceback
 import uuid
@@ -28,6 +30,7 @@ from fastapi import (
     Query,
     UploadFile,
 )
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -93,6 +96,28 @@ class BuildAgentFromSuggestionRequest(BaseModel):
 class WorkflowInfo(BaseModel):
     workflows: list[dict]
     methods: list[str]
+
+
+class TarExportRequest(BaseModel):
+    agent_id: int
+    include_dependencies: bool = True
+
+
+class TarExportResponse(BaseModel):
+    success: bool
+    tar_path: str
+    message: str
+
+
+class TarImportRequest(BaseModel):
+    agent_name: str
+    agent_description: str = "Imported agent"
+
+
+class TarImportResponse(BaseModel):
+    success: bool
+    agent_id: int
+    message: str
 
 
 API_FOLDER = Path(__file__).parent.parent.parent
@@ -436,6 +461,46 @@ def _ensure_domain_knowledge_has_uuids(domain_knowledge_path: str):
 
     except Exception as e:
         logger.error(f"Error adding UUIDs to domain knowledge: {e}")
+
+
+def _create_agent_tar(agent_id: int, agent_folder: str, include_dependencies: bool = True) -> str:
+    """Create a tar archive of the agent folder."""
+    try:
+        logger.info(f"Creating tar archive for agent {agent_id} from folder: {agent_folder}")
+        logger.info(f"Current working directory: {os.getcwd()}")
+        logger.info(f"Agent folder exists: {os.path.exists(agent_folder)}")
+
+        # Create a temporary directory for the tar file
+        temp_dir = tempfile.mkdtemp()
+        tar_filename = f"agent_{agent_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar.gz"
+        tar_path = os.path.join(temp_dir, tar_filename)
+        logger.info(f"Tar file will be created at: {tar_path}")
+
+        # Create the tar archive
+        with tarfile.open(tar_path, "w:gz") as tar:
+            # Add the agent folder to the tar
+            logger.info(f"Adding agent folder {agent_folder} to tar as agent_{agent_id}")
+            tar.add(agent_folder, arcname=f"agent_{agent_id}")
+
+            # Optionally include dependencies (Dana framework files)
+            if include_dependencies:
+                # Add core Dana files that might be needed
+                dana_core_path = Path(__file__).parent.parent.parent.parent / "dana"
+                logger.info(f"Looking for Dana core at: {dana_core_path}")
+                if dana_core_path.exists():
+                    # Add essential Dana modules
+                    essential_modules = ["__init__.py", "core", "common", "frameworks"]
+                    for module in essential_modules:
+                        module_path = dana_core_path / module
+                        if module_path.exists():
+                            logger.info(f"Adding Dana module: {module_path}")
+                            tar.add(module_path, arcname=f"dana/{module}")
+
+        logger.info(f"Successfully created tar archive: {tar_path}")
+        return tar_path
+    except Exception as e:
+        logger.error(f"Error creating tar archive for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create tar archive: {str(e)}")
 
 
 async def _create_basic_dana_files(
@@ -2239,3 +2304,202 @@ async def get_prebuilt_agent_workflow_info(prebuilt_key: str):
     except Exception as e:
         logger.error(f"Error getting workflow info for {prebuilt_key}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/export-tar", response_model=TarExportResponse)
+async def export_agent_tar(agent_id: int, request: TarExportRequest, db: Session = Depends(get_db)):
+    """
+    Create a tar archive of the agent for sharing.
+
+    Args:
+        agent_id: The ID of the agent to export
+        request: Export configuration including whether to include dependencies
+
+    Returns:
+        TarExportResponse: Success status and path to the tar file
+    """
+    try:
+        # Get the agent from database
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            logger.error(f"Agent {agent_id} not found in database")
+            raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+        logger.info(f"Found agent {agent_id}: {agent.name}")
+        logger.info(f"Agent config: {agent.config}")
+
+        # Get agent folder path
+        agent_folder = None
+        if agent.config and "folder_path" in agent.config:
+            agent_folder = agent.config["folder_path"]
+            logger.info(f"Using config folder_path: {agent_folder}")
+        else:
+            # Try to find the agent folder in the agents directory
+            agents_dir = Path("agents")
+            possible_folders = list(agents_dir.glob(f"agent_{agent_id}_*"))
+            logger.info(f"Searching for agent_{agent_id}_* in {agents_dir}")
+            logger.info(f"Found possible folders: {possible_folders}")
+            if possible_folders:
+                agent_folder = str(possible_folders[0])
+                logger.info(f"Using found folder: {agent_folder}")
+
+        if not agent_folder:
+            logger.error(f"No agent folder found for agent {agent_id}")
+            raise HTTPException(status_code=404, detail=f"Agent folder not found for agent {agent_id}")
+
+        if not os.path.exists(agent_folder):
+            logger.error(f"Agent folder does not exist: {agent_folder}")
+            raise HTTPException(status_code=404, detail=f"Agent folder does not exist: {agent_folder}")
+
+        logger.info(f"Using agent folder: {agent_folder}")
+
+        # Create the tar archive
+        tar_path = _create_agent_tar(agent_id, agent_folder, request.include_dependencies)
+
+        return TarExportResponse(
+            success=True,
+            tar_path=tar_path,
+            message=f"Successfully created tar archive for agent {agent_id}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error exporting agent {agent_id} to tar: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to export agent: {str(e)}")
+
+
+@router.get("/{agent_id}/download-tar")
+async def download_agent_tar(agent_id: int, path: str = Query(...), db: Session = Depends(get_db)):
+    """
+    Download a tar archive of the agent.
+
+    Args:
+        agent_id: The ID of the agent
+        path: The path to the tar file to download
+
+    Returns:
+        FileResponse: The tar file for download
+    """
+    try:
+        # Validate that the path exists and is a tar file
+        if not os.path.exists(path) or not path.endswith('.tar.gz'):
+            raise HTTPException(status_code=404, detail="Tar file not found")
+
+        # Get the agent name for the filename
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        agent_name = agent.name if agent else f"agent_{agent_id}"
+
+        # Create a safe filename
+        safe_name = "".join(c for c in agent_name if c.isalnum() or c in "._-")
+        filename = f"{safe_name}_{agent_id}.tar.gz"
+
+        return FileResponse(
+            path=path,
+            filename=filename,
+            media_type='application/gzip'
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading tar for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to download tar file: {str(e)}")
+
+
+@router.post("/import-tar", response_model=TarImportResponse)
+async def import_agent_tar(
+    file: UploadFile = File(...),
+    agent_name: str = Form(...),
+    agent_description: str = Form("Imported agent"),
+    db: Session = Depends(get_db)
+):
+    """
+    Import an agent from a tar archive.
+
+    Args:
+        file: The tar file to import
+        agent_name: Name for the imported agent
+        agent_description: Description for the imported agent
+
+    Returns:
+        TarImportResponse: Success status and new agent ID
+    """
+    try:
+        # Validate file type
+        if not file.filename or not file.filename.endswith('.tar.gz'):
+            raise HTTPException(status_code=400, detail="Only .tar.gz files are supported")
+
+        # Create a new agent in the database
+        db_agent = Agent(
+            name=agent_name,
+            description=agent_description,
+            config={}
+        )
+        db.add(db_agent)
+        db.commit()
+        db.refresh(db_agent)
+
+        # Create agent folder
+        agents_dir = Path("agents")
+        agents_dir.mkdir(exist_ok=True)
+
+        safe_name = agent_name.lower().replace(" ", "_").replace("-", "_")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        folder_name = f"agent_{db_agent.id}_{safe_name}"
+        agent_folder = agents_dir / folder_name
+        agent_folder.mkdir(exist_ok=True)
+
+        # Create subdirectories
+        docs_folder = agent_folder / "docs"
+        docs_folder.mkdir(exist_ok=True)
+        knows_folder = agent_folder / "knows"
+        knows_folder.mkdir(exist_ok=True)
+
+        # Save uploaded file temporarily
+        temp_dir = tempfile.mkdtemp()
+        temp_file_path = os.path.join(temp_dir, file.filename)
+
+        with open(temp_file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+
+        # Extract tar file - extract only the files, not the directory structure
+        with tarfile.open(temp_file_path, "r:gz") as tar:
+            # Get all members and filter out directories
+            members = tar.getmembers()
+            for member in members:
+                # Skip directories
+                if member.isdir():
+                    continue
+
+                # Extract only the filename (remove the path)
+                member.name = os.path.basename(member.name)
+                tar.extract(member, agent_folder)
+
+        # Update agent config with folder path
+        updated_config = db_agent.config.copy() if db_agent.config else {}
+        updated_config["folder_path"] = str(agent_folder)
+        db_agent.config = updated_config
+
+        # Force update by marking as dirty
+        flag_modified(db_agent, "config")
+        db.commit()
+
+        # Clean up temp file
+        os.remove(temp_file_path)
+        os.rmdir(temp_dir)
+
+        logger.info(f"Successfully imported agent {db_agent.id} from tar file")
+
+        return TarImportResponse(
+            success=True,
+            agent_id=db_agent.id,
+            message=f"Successfully imported agent {agent_name}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error importing agent from tar: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to import agent: {str(e)}")
