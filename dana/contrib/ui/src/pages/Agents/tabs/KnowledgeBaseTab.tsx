@@ -4,9 +4,8 @@ import DomainKnowledgeTab from './DomainKnowledgeTab';
 import DocumentsTab from './DocumentsTab';
 import ToolsTab from './ToolsTab';
 import { Brain, FilesIcon } from 'lucide-react';
-import { Tools, Clock, CheckCircle, SystemRestart, Xmark, QuestionMark, Eye, EyeClosed } from 'iconoir-react';
+import { Tools, Eye, EyeClosed } from 'iconoir-react';
 import { useUIStore } from '@/stores/ui-store';
-import { useKnowledgeStore } from '@/stores/knowledge-store';
 
 const KNOWLEDGE_SUBTABS = ['Domain Knowledge', 'Documents', 'Tools'] as const;
 type KnowledgeSubTab = (typeof KNOWLEDGE_SUBTABS)[number];
@@ -20,7 +19,6 @@ const SUBTAB_ICONS = {
 const KnowledgeBaseTab: React.FC = () => {
   const { agent_id } = useParams<{ agent_id: string }>();
   const { knowledgeBaseActiveSubTab, setKnowledgeBaseActiveSubTab } = useUIStore();
-  const { knowledgeStatus: statusData } = useKnowledgeStore();
 
   // Use global state if available, otherwise fall back to local state
   const [localActiveSubTab, setLocalActiveSubTab] = useState<KnowledgeSubTab>('Domain Knowledge');
