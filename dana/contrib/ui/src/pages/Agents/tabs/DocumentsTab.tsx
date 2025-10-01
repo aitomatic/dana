@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import {
   Search,
   SystemRestart,
-  DocMagnifyingGlass,
   EmptyPage,
   Upload,
   MultiplePagesPlus,
@@ -94,54 +93,11 @@ const DocumentsTab: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchDocuments]);
 
-  const handleDragDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0 || !agent_id) return;
-
-    const files = Array.from(e.dataTransfer.files);
-    const fileNames = files.map((f) => f.name);
-
-    setUploadingFiles(fileNames);
-
-    try {
-      // Upload all files first to library, then associate with agent
-      for (const file of files) {
-        // Step 1: Upload to library
-        const uploadedDoc = await apiService.uploadDocumentRaw(file);
-        // Step 2: Associate with agent
-        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
-        setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
-      }
-
-      // Wait a moment for backend processing, then refresh documents list
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Refetch agent data to get updated associated_documents
-      if (agent_id) {
-        await fetchAgent(parseInt(agent_id));
-      }
-
-      await fetchDocuments(); // Fetch all documents
-
-      toast.success(`Successfully uploaded ${files.length} file(s)`);
-    } catch (error) {
-      console.error('Failed to upload or associate files:', error);
-      toast.error('Failed to upload files. Please try again.');
-      setUploadingFiles([]);
-      // Still reload documents to show any files that were successfully uploaded before the error
-      await fetchDocuments(); // Fetch all documents
-    }
-  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleAddFileClick = () => {
-    fileInputRef.current?.click();
-  };
 
   const handleAddFromLibrary = () => {
     setLibraryModalOpen(true);
@@ -289,64 +245,23 @@ const DocumentsTab: React.FC = () => {
 
   // Empty state component
   const EmptyState = () => {
-    const [isDragOver, setIsDragOver] = useState(false);
-
-    const handleDragOver = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(false);
-      handleDragDrop(e);
-    };
-
     return (
-      <div
-        className={`flex flex-col items-center justify-center h-[100%] border-2 border-dashed rounded-lg transition-colors ${
-          isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div
-          className={`flex flex-col items-center justify-center mb-4 w-22 h-22 rounded-full ${
-            isDragOver ? 'bg-white' : 'bg-gray-100'
-          }`}
-        >
+      <div className="flex flex-col items-center justify-center h-[100%] border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="flex flex-col items-center justify-center mb-4 w-22 h-22 rounded-full bg-gray-100">
           <EmptyPage className="w-10 h-10 text-gray-400" />
         </div>
 
-        <div className="space-y-2 text-center">
+        <div className="space-y-2 mb-4 text-center">
           <h3 className="text-lg font-semibold text-gray-700">No documents yet</h3>
-          <p className="text-sm text-gray-500">Drag and drop files here to upload</p>
+          <p className="text-sm text-gray-500">Add documents from your library</p>
         </div>
         <Button
-          onClick={handleAddFileClick}
-          className="mt-4 font-semibold cursor-pointer"
+          onClick={handleAddFromLibrary}
           disabled={uploadingFiles.length > 0}
+          variant="outline"
         >
-          {uploadingFiles.length > 0 ? (
-            <>
-              <SystemRestart className="mr-2 w-4 h-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <DocMagnifyingGlass className="mr-2 w-4 h-4" />
-              Browse Files
-            </>
-          )}
+          <MultiplePagesPlus className="mr-2 w-4 h-4" />
+          Add from Library
         </Button>
       </div>
     );
@@ -425,10 +340,7 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
-        <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0} variant="outline">
-          <DocMagnifyingGlass className="mr-2 w-4 h-4" />
-          Browse Files
-        </Button>
+       
         <Button
           onClick={handleAddFromLibrary}
           disabled={uploadingFiles.length > 0}
