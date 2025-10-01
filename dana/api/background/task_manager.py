@@ -1,11 +1,14 @@
 from threading import Thread
 from queue import Queue
-from dana.api.repositories.background_task_repo import SQLBackgroundTaskRepo
+from dana.api.repositories import get_background_task_repo
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools.generate_knowledge_tool import (
     GenerateKnowledgeTool,
 )
+from dana.api.core.schemas import ExtractionDataRequest
+from dana.api.services.extraction_service import get_extraction_service
 from dana.common.utils.misc import Misc
 from dana.api.core.database import get_db
+from datetime import datetime
 import logging
 import threading
 
@@ -42,19 +45,22 @@ class TaskManager:
             BackgroundTaskType.KNOWLEDGE_GEN: threading.Lock(),
             BackgroundTaskType.DEEP_EXTRACT: threading.Lock(),
         }
+        self.bg_cls = get_background_task_repo()
+        self.extraction_service = get_extraction_service()
 
-    async def add_knowledge_gen_task(self, data: dict, check_existing: bool = True):
+    async def add_knowledge_gen_task(self, data: dict, check_exist: bool = True) -> int | None:
         for db in get_db():
-            if check_existing and await SQLBackgroundTaskRepo.check_task_exists(type=BackgroundTaskType.KNOWLEDGE_GEN, data=data, db=db):
+            if check_exist and await self.bg_cls.check_task_exists(type=BackgroundTaskType.KNOWLEDGE_GEN, data=data, db=db):
                 logger.info(f"Knowledge generation task already exists for data: {data}")
-                return
-            task_response = await SQLBackgroundTaskRepo.create_task(type=BackgroundTaskType.KNOWLEDGE_GEN, data=data, db=db)
+                return None
+            task_response = await self.bg_cls.create_task(type=BackgroundTaskType.KNOWLEDGE_GEN, data=data, db=db)
             self.queues[BackgroundTaskType.KNOWLEDGE_GEN].put(
                 {"type": BackgroundTaskType.KNOWLEDGE_GEN, "data": data, "task_id": task_response.id}
             )
             logger.info(f"Added knowledge generation task to queue (DB ID: {task_response.id})")
+            return task_response.id
 
-    async def add_deep_extract_task(self, document_id: int, data: dict | None = None, check_existing: bool = True):
+    async def add_deep_extract_task(self, document_id: int, data: dict | None = None, check_exist: bool = True) -> int | None:
         """Add a deep extraction task to the background queue."""
         if data is None:
             data = {"document_id": document_id}
@@ -62,14 +68,15 @@ class TaskManager:
             data["document_id"] = document_id
 
         for db in get_db():
-            if check_existing and await SQLBackgroundTaskRepo.check_task_exists(type=BackgroundTaskType.DEEP_EXTRACT, data=data, db=db):
+            if check_exist and await self.bg_cls.check_task_exists(type=BackgroundTaskType.DEEP_EXTRACT, data=data, db=db):
                 logger.info(f"Deep extraction task already exists for data: {data}")
-                return
-            task_response = await SQLBackgroundTaskRepo.create_task(type=BackgroundTaskType.DEEP_EXTRACT, data=data, db=db)
+                return None
+            task_response = await self.bg_cls.create_task(type=BackgroundTaskType.DEEP_EXTRACT, data=data, db=db)
             self.queues[BackgroundTaskType.DEEP_EXTRACT].put(
                 {"type": BackgroundTaskType.DEEP_EXTRACT, "data": data, "task_id": task_response.id}
             )
             logger.info(f"Added deep extraction task for document {document_id} (DB ID: {task_response.id})")
+            return task_response.id
 
     def initialize(self):
         """Initialize the task manager with task type-specific worker threads (non-blocking)."""
@@ -93,21 +100,17 @@ class TaskManager:
     def _load_pending_tasks(self):
         """Load pending tasks from database and add them to the queue."""
         try:
-            import asyncio
-            from sqlalchemy.orm import sessionmaker
-            from dana.api.core.database import engine
-
-            # Create database session
-            SessionLocal = sessionmaker(bind=engine)
-            with SessionLocal() as db:
-                # Get pending tasks from database
+            for db in get_db():
+                # Get pending and running tasks from database
                 from dana.api.core.schemas_v2 import BackgroundTaskStatus
 
-                pending_tasks = asyncio.run(SQLBackgroundTaskRepo.get_tasks(status=BackgroundTaskStatus.PENDING, db=db))
+                pending_and_running_tasks = Misc.safe_asyncio_run(
+                    self.bg_cls.get_tasks, status=[BackgroundTaskStatus.PENDING, BackgroundTaskStatus.RUNNING], db=db
+                )
 
-                if pending_tasks:
-                    logger.info(f"Loading {len(pending_tasks)} pending tasks from database")
-                    for task in pending_tasks:
+                if pending_and_running_tasks:
+                    logger.info(f"Loading {len(pending_and_running_tasks)} pending and running tasks from database")
+                    for task in pending_and_running_tasks:
                         # Add task to appropriate queue based on type
                         task_data = {"type": task.type, "data": task.data, "task_id": task.id}
                         # Convert string to enum if needed
@@ -152,7 +155,7 @@ class TaskManager:
         while not self._shutdown_event.is_set():
             try:
                 # Get task from type-specific queue
-                task = self.queues[task_type_enum].get(timeout=1.0)
+                task = self.queues[task_type_enum].get()
                 if task is None:
                     break
 
@@ -224,21 +227,40 @@ class TaskManager:
         """Process deep extraction task in background."""
         try:
             document_id = task["data"]["document_id"]
+            original_filename = task["data"]["original_filename"]
             logger.info(f"Processing deep extraction task for document {document_id}")
 
             # Import here to avoid circular imports
             from dana.api.routers.v1.extract_documents import deep_extract
             from dana.api.core.schemas import DeepExtractionRequest
-            from sqlalchemy.orm import sessionmaker
-            from dana.api.core.database import engine
 
-            # Create new database session for background task
-            SessionLocal = sessionmaker(bind=engine)
-            with SessionLocal() as db:
+            for db in get_db():
                 # Perform deep extraction with use_deep_extraction=True
-                Misc.safe_asyncio_run(
+                result = Misc.safe_asyncio_run(
                     deep_extract, DeepExtractionRequest(document_id=document_id, use_deep_extraction=True, config={}), db=db
                 )
+                pages = result.file_object.pages
+
+                request = ExtractionDataRequest(
+                    original_filename=original_filename,
+                    source_document_id=document_id,
+                    extraction_results={
+                        "original_filename": original_filename,
+                        "extraction_date": datetime.now().isoformat(),  # Should be "2025-09-16T10:41:01.407Z"
+                        "total_pages": result.file_object.total_pages,
+                        "documents": [{"text": page.page_content, "page_number": page.page_number} for page in pages],
+                    },
+                )
+
+                Misc.safe_asyncio_run(
+                    self.extraction_service.save_extraction_json,
+                    original_filename=original_filename,
+                    extraction_results=request.extraction_results,
+                    source_document_id=document_id,
+                    db_session=db,
+                )
+
+                logger.info(f"Successfully saved extraction JSON file with ID: {document_id}")
 
             logger.info(f"Completed deep extraction task for document {document_id}")
 
@@ -249,13 +271,9 @@ class TaskManager:
     def _update_task_status(self, task_id: int, status, error: str | None = None):
         """Update task status in database."""
         try:
-            from sqlalchemy.orm import sessionmaker
-            from dana.api.core.database import engine
             from dana.api.core.models import BackGroundTask
 
-            # Create database session
-            SessionLocal = sessionmaker(bind=engine)
-            with SessionLocal() as db:
+            for db in get_db():
                 task = db.query(BackGroundTask).filter(BackGroundTask.id == task_id).first()
                 if task:
                     # Pydantic will handle enum conversion automatically

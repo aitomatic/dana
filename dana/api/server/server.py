@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from dana.api.client import APIClient
 from dana.api.core.bc_engine import broadcast_engine
+from dana.api.background.task_manager import get_task_manager, shutdown_task_manager
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
 from alembic.config import Config
@@ -89,10 +90,12 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
 
     await broadcast_engine.connect()
+    get_task_manager()  # INIT
     yield
 
     # Shutdown (if needed in the future)
     await broadcast_engine.disconnect()
+    shutdown_task_manager()
 
 
 def create_app():
