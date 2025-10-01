@@ -928,7 +928,7 @@ To get started, let's define its foundation:
 
 export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
-  const [connectionState, setConnectionState] = useState<string>('disconnected');
+  const [, setConnectionState] = useState<string>('disconnected');
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // Try to get saved width from localStorage
     const savedWidth = localStorage.getItem('agent-detail-sidebar-width');

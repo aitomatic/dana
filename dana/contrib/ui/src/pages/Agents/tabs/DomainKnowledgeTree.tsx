@@ -11,7 +11,7 @@ import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledg
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
-import { Search, Collapse, Expand, Clock, CheckCircle, SystemRestart, Xmark } from 'iconoir-react';
+import { Search, Collapse, Expand } from 'iconoir-react';
 
 // Single transition definition for consistency
 const TRANSITION_DURATION = '0.5s';
