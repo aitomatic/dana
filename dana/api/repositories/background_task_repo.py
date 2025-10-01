@@ -30,6 +30,11 @@ class AbstractBackgroundTaskRepo(ABC):
     async def get_tasks(cls, **kwargs) -> list[BackgroundTaskResponse]:
         pass
 
+    @classmethod
+    @abstractmethod
+    async def get_task_by_id(cls, id: int, **kwargs) -> BackgroundTaskResponse:
+        pass
+
 
 class SQLBackgroundTaskRepo(AbstractBackgroundTaskRepo):
     @classmethod
@@ -63,12 +68,28 @@ class SQLBackgroundTaskRepo(AbstractBackgroundTaskRepo):
         )
 
     @classmethod
-    async def get_tasks(cls, status: str | BackgroundTaskStatus = "pending", **kwargs) -> list[BackgroundTaskResponse]:
-        """Get tasks from database by status."""
+    async def get_tasks(
+        cls, status: str | BackgroundTaskStatus | list[str | BackgroundTaskStatus] | None = "pending", **kwargs
+    ) -> list[BackgroundTaskResponse]:
+        """Get tasks from database by status or list of statuses."""
         db = cls._get_db(**kwargs)
-        # Convert enum to string if needed
-        status_value = status.value if hasattr(status, "value") else str(status)
-        tasks = db.query(BackGroundTask).filter(BackGroundTask.status == status_value).all()
+
+        if status is None:
+            # Get all tasks
+            tasks = db.query(BackGroundTask).all()
+        elif isinstance(status, list):
+            # Convert list of enums/strings to list of strings
+            status_values = []
+            for s in status:
+                if hasattr(s, "value"):
+                    status_values.append(s.value)
+                else:
+                    status_values.append(str(s))
+            tasks = db.query(BackGroundTask).filter(BackGroundTask.status.in_(status_values)).all()
+        else:
+            # Convert single enum to string if needed
+            status_value = status.value if hasattr(status, "value") else str(status)
+            tasks = db.query(BackGroundTask).filter(BackGroundTask.status == status_value).all()
         return [
             BackgroundTaskResponse(
                 id=task.id,
@@ -81,3 +102,19 @@ class SQLBackgroundTaskRepo(AbstractBackgroundTaskRepo):
             )
             for task in tasks
         ]
+
+    @classmethod
+    async def get_task_by_id(cls, id: int, **kwargs) -> BackgroundTaskResponse:
+        db = cls._get_db(**kwargs)
+        task = db.query(BackGroundTask).filter(BackGroundTask.id == id).first()
+        if task is None:
+            raise ValueError(f"Task with id {id} not found")
+        return BackgroundTaskResponse(
+            id=task.id,
+            type=task.type,
+            status=task.status,
+            data=task.data,
+            error=task.error,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+        )

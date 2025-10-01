@@ -10,6 +10,8 @@ from dana.api.services.extraction_service import get_extraction_service, Extract
 from dana.api.routers.v1.extract_documents import deep_extract
 from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana.api.background.task_manager import get_task_manager
+from dana.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo
+from dana.api.core.schemas_v2 import BackgroundTaskResponse
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +22,13 @@ class DocumentUploadResponse(BaseModel):
     success: bool
     document: DocumentRead | None = None
     message: str | None = None
+    task_id: int | None = None
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
     topic_id: int | None = Form(None),
-    agent_id: int | None = Form(None),
     build_index: bool = Form(True),
     allow_duplicate: bool = Form(False),
     db: Session = Depends(get_db),
@@ -52,13 +54,13 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="Filename is required")
 
         document = await document_service.upload_document(
-            file=file.file, filename=file.filename, topic_id=topic_id, agent_id=agent_id, db_session=db, build_index=build_index
+            file=file.file, filename=file.filename, topic_id=topic_id, agent_id=None, db_session=db, build_index=build_index
         )
 
-        if build_index and agent_id:
-            logger.info(f"RAG index building started for agent {agent_id}")
+        if build_index:
+            logger.info(f"RAG index building started for document {document.id}")
 
-        # Perform deep_extract with use_deep_extraction=False
+        # Perform normal extraction  (use_deep_extraction=False)
         result: ExtractionResponse = await deep_extract(
             DeepExtractionRequest(document_id=document.id, use_deep_extraction=False, config={}), db=db
         )
@@ -82,10 +84,16 @@ async def upload_document(
 
         # Create background task for deep extraction with use_deep_extraction=True
         task_manager = get_task_manager()
-        await task_manager.add_deep_extract_task(document_id=document.id)
+        task_id = await task_manager.add_deep_extract_task(
+            document_id=document.id,
+            data={
+                "original_filename": document.original_filename,
+                "extraction_date": datetime.now().isoformat(),
+            },
+        )
 
         logger.info(f"Document uploaded successfully with ID: {document.id}")
-        return DocumentUploadResponse(success=True, document=document, message="Document uploaded successfully")
+        return DocumentUploadResponse(success=True, document=document, message="Document uploaded successfully", task_id=task_id)
 
     except Exception as e:
         logger.error(f"Error in document upload endpoint: {e}")
@@ -116,3 +124,12 @@ async def save_extraction_data(
     except Exception as e:
         logger.error(f"Error in save extraction data endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/deep-extraction-status/{task_id}", response_model=BackgroundTaskResponse)
+async def get_deep_extraction_status(
+    task_id: int, db: Session = Depends(get_db), db_repo: AbstractBackgroundTaskRepo = Depends(get_background_task_repo)
+):
+    """Get the status of a deep extraction task."""
+    task = await db_repo.get_task_by_id(task_id, db=db)
+    return task
