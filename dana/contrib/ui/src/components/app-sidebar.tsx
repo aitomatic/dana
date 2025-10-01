@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Book, Box3dCenter, HelpCircle } from 'iconoir-react';
+import { Book, Box3dCenter, HelpCircle, ChatBubble } from 'iconoir-react';
 import { useLocation } from 'react-router-dom';
 
 import { NavMain } from '@/components/nav-main';
@@ -44,9 +44,19 @@ const data = {
       icon: Book,
     },
     {
+      title: 'separator',
+      url: '',
+      isSeparator: true,
+    },
+    {
       title: 'Documentation',
       url: '/documentation',
       icon: HelpCircle,
+    },
+    {
+      title: 'Support',
+      url: '/support',
+      icon: ChatBubble,
     },
   ],
 };
