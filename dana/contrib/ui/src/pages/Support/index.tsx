@@ -1,7 +1,6 @@
 import { Bug, LightBulb, Mail, Clock, CheckCircle, ArrowRight } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 export default function SupportPage() {
   return (
@@ -29,14 +28,14 @@ export default function SupportPage() {
                 <Clock className="w-5 h-5 text-red-600" />
                 <div className="text-left">
                   <div className="text-sm font-medium text-gray-900">Critical Bugs</div>
-                  <div className="text-xs text-gray-600">Response: 2-4 hours</div>
+                  <div className="text-xs text-gray-600">Response: &lt; 24h</div>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
                 <Clock className="w-5 h-5 text-yellow-600" />
                 <div className="text-left">
                   <div className="text-sm font-medium text-gray-900">Bug Reports</div>
-                  <div className="text-xs text-gray-600">Response: 24-48 hours</div>
+                  <div className="text-xs text-gray-600">Response: 3-5 days</div>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
@@ -60,7 +59,10 @@ export default function SupportPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Feature Request Card */}
-                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300">
+                <Card 
+                  className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300"
+                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank')}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -89,26 +91,14 @@ export default function SupportPage() {
                         <span className="text-sm text-gray-700">Regular updates</span>
                       </div>
                     </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Review: 1-2 weeks
-                        </Badge>
-                        <Button
-                          onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
-                        >
-                          Submit Request
-                        </Button>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
 
                 {/* Bug Report Card */}
-                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300">
+                <Card 
+                  className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300"
+                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank')}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -135,21 +125,6 @@ export default function SupportPage() {
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Progress tracking</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="destructive" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Response: 24-48h
-                        </Badge>
-                        <Button
-                          onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank')}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm"
-                        >
-                          Report Bug
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
