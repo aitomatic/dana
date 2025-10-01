@@ -90,24 +90,8 @@ class RefineKnowledgeStructureTool(BaseTool):
             #     refined_structure = self._fix_structure_format(refined_structure, topic)
 
             # Format the response for user review
-            content = f"""🔄 Refined Knowledge Structure: {topic.title()}
+            content = self._build_structured_response(refined_structure, topic, modification_request)
 
-**Applied Modification:** {modification_request}
-
-{refined_structure}
-
-💡 **Review the Updated Structure:**
-- Check if the modification was applied correctly
-- Identify any additional changes needed
-- Consider if the structure still flows logically
-- Ensure all important areas are covered
-
-📋 **Next Steps:**
-- If satisfied: say "approve" or "looks good" to add this structure to your knowledge tree
-- For more changes: describe what else you'd like to modify
-- To undo: say "revert" to go back to the previous version
-
-**Ready for your feedback on this refined structure!**"""
 
             return ToolResult(name="refine_knowledge_structure", result=content, require_user=True)
 
@@ -252,3 +236,47 @@ Apply the requested modification and return ONLY the complete modified structure
                     return topic
 
         return "Unknown Topic"
+
+    def _convert_markdown_to_html(self, markdown_content: str) -> str:
+        """Convert markdown formatting to HTML for consistent rendering."""
+        html_content = markdown_content
+        
+        # Convert **text** to <strong>text</strong>
+        html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html_content)
+        
+        # Convert line breaks to <br> tags for proper HTML formatting
+        html_content = html_content.replace('\n', '<br>\n')
+        
+        # Wrap the entire content in a div for proper structure
+        return f"<div class='structure-content'>{html_content}</div>"
+
+    def _build_structured_response(self, refined_structure: str, topic: str, modification_request: str) -> str:
+        """Build a structured response with refined knowledge structure and action buttons."""
+        response_parts = []
+
+        # Add the main structure header
+        response_parts.append(f"<p>🔄 <strong>Refined Knowledge Structure:</strong> {topic.title()}</p>")
+        response_parts.append("")  # Empty line for spacing
+
+        # Add the modification details
+        response_parts.append(f"<p><strong>Applied Modification:</strong> {modification_request}</p>")
+        response_parts.append("")  # Empty line for spacing
+
+        # Add the structure content (convert markdown to HTML)
+        html_structure = self._convert_markdown_to_html(refined_structure)
+        response_parts.append(html_structure)
+        response_parts.append("")  # Empty line for spacing
+
+        # Add next steps and guidelines with clickable options
+        response_parts.append("<p><strong>Do you want to modify this structure further, or should I add it to domain knowledge?</strong></p>")
+        response_parts.append("")  # Empty line for spacing
+        
+        # Add clickable options
+        response_parts.append("<div class='options-container'>")
+        response_parts.append("<button class='option-button' data-option='1'>Add this structure to domain knowledge</button>")
+        response_parts.append("</div>")
+        response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
+        response_parts.append("")  # Empty line for spacing
+
+        # Join all parts with proper spacing
+        return "\n".join(response_parts)

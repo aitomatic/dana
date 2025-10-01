@@ -5,6 +5,7 @@ import { IconChevronRight } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -27,6 +28,7 @@ export function NavMain({
       title: string;
       url: string;
     }[];
+    isSeparator?: boolean;
   }[];
 }) {
   const navigate = useNavigate();
@@ -36,7 +38,11 @@ export function NavMain({
       <SidebarMenu>
         {items.map((item) => (
           <React.Fragment key={item.title}>
-            {item.items ? (
+            {item.isSeparator ? (
+              <div className="px-2 py-2">
+                <Separator className="bg-gray-200" />
+              </div>
+            ) : item.items ? (
               <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>

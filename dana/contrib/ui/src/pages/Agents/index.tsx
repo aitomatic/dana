@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -5,6 +6,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
+import { ImportAgentDialog } from '@/components/import-agent-dialog';
 import { NavArrowDown, Plus } from 'iconoir-react';
 import {
   Dialog,
@@ -243,6 +245,7 @@ export default function AgentsPage() {
   const [initiatingAgentKey, setInitiatingAgentKey] = useState<string | null>(null);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Get activeTab from URL params, default to 'explore'
   const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
@@ -277,7 +280,6 @@ export default function AgentsPage() {
   useEffect(() => {
     fetchAgents();
     fetchPrebuiltAgents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Smart header behavior - collapse after scroll or user interaction
@@ -430,17 +432,17 @@ export default function AgentsPage() {
       <div
         className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r to-brand-900 min-h-[200px] from-blue-900'
-            : 'py-16 bg-gradient-to-br via-brand-700 min-h-[600px] from-blue-900 to-blue-900'
+            ? 'bg-gradient-to-r from-blue-900 to-brand-900 min-h-[200px]'
+            : 'py-16 bg-gradient-to-br from-blue-900 to-blue-900 via-brand-700 min-h-[600px]'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob"></div>
-              <div className="absolute top-0 right-0 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-brand-500 rounded-full opacity-20 mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+              <div className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob"></div>
+              <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob animation-delay-2000"></div>
+              <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob animation-delay-4000"></div>
             </div>
 
             {/* Grid Pattern Overlay */}
@@ -461,9 +463,7 @@ export default function AgentsPage() {
             }`}
           >
             <h1 className="mb-2 text-7xl font-black tracking-tight leading-none text-white md:text-8xl">
-              <span className="text-transparent bg-clip-text bg-white">
-                Dana
-              </span>
+              <span className="text-transparent bg-clip-text bg-white">Dana</span>
             </h1>
             <h2 className="mb-2 text-5xl font-black tracking-tight text-white md:text-6xl">
               Agent Studio
@@ -599,11 +599,7 @@ export default function AgentsPage() {
         </div>
 
         {/* Enhanced Floating Elements - Only show when expanded */}
-        {!headerCollapsed && (
-          <>
-
-          </>
-        )}
+        {!headerCollapsed && <></>}
 
         {/* Compact Header with Highlights - Show when collapsed */}
         <div
@@ -614,9 +610,7 @@ export default function AgentsPage() {
           <div className="flex flex-col gap-4 items-center">
             {/* Main Title with Gradient Highlight */}
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-transparent bg-clip-text bg-white">
-                Dana Agent Studio
-              </span>
+              <span className="text-transparent bg-clip-text bg-white">Dana Agent Studio</span>
             </h1>
 
             {/* Feature Status Badges */}
@@ -637,22 +631,26 @@ export default function AgentsPage() {
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
         {/* Dana Agent Maker Feature */}
-        <div className="flex items-center justify-between p-8 mb-8 bg-gray-50 rounded-lg">
+        <div className="flex justify-between items-center p-8 mb-8 bg-gray-50 rounded-lg">
           <div className="flex flex-col gap-2">
-            <div className="text-lg font-semibold text-gray-900">
-              Dana Agent Maker
-            </div>
+            <div className="text-lg font-semibold text-gray-900">Dana Agent Maker</div>
             <div className="text-sm text-gray-700">
               Define your requirements and receive workflow solutions.
             </div>
           </div>
-          <Button
-            onClick={handleCreateAgent}
-            className="w-[152px] px-4 py-1 font-semibold"
-          >
-            <Plus style={{ width: '20', height: '20' }} />
-            Create Agent
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setImportDialogOpen(true)}
+              variant="outline"
+              className="w-[152px] px-4 py-1 font-semibold"
+            >
+              Import Agent
+            </Button>
+            <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
+              <Plus style={{ width: '20', height: '20' }} />
+              Create Agent
+            </Button>
+          </div>
         </div>
 
         {/* Search and Navigation */}
@@ -934,6 +932,17 @@ export default function AgentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import Agent Dialog */}
+      <ImportAgentDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportSuccess={() => {
+          // Refresh agent list
+          fetchAgents();
+          setImportDialogOpen(false);
+        }}
+      />
     </div>
   );
 }
