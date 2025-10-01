@@ -4,7 +4,7 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { SystemRestart, Xmark, NavArrowRight } from 'iconoir-react';
+import { SystemRestart, Xmark, NavArrowRight, Clock, CheckCircle, QuestionMark } from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
@@ -73,20 +73,23 @@ const getStatusColor = (status?: string) => {
 const getStatusIcon = (status?: string) => {
   console.log('🧠 status: ', status);
   switch (status) {
+    case 'pending':
+      return <Clock className="text-amber-500" />;
     case 'in_progress':
-      return <SystemRestart className="animate-spin" />;
+      return <SystemRestart className="animate-spin text-blue-500" />;
     case 'success':
-      return '';
+      return <CheckCircle className="text-green-500" />;
     case 'failed':
-      return <Xmark />;
+      return <Xmark className="text-red-500" />;
     default:
-      return '';
+      return <QuestionMark className="text-gray-400" />;
   }
 };
 
 const getStatusText = (status?: string) => {
   switch (status) {
-    // case 'pending': return 'Knowledge generation pending';
+    case 'pending':
+      return 'Knowledge generation pending';
     case 'in_progress':
       return 'Generating knowledge...';
     case 'success':
@@ -240,39 +243,42 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
 
     // Leaf nodes - status-based styling
     switch (knowledgeStatus?.status) {
-      // case 'pending':
-      //   return {
-      //     ...baseStyle,
-      //     background: '#FEF3C7', // Light yellow
-      //     border: '2px solid #F97316', // Orange border
-      //   };
+      case 'pending':
+        return {
+          ...baseStyle,
+          ...selectionStyle,
+          background: '#FEF3C7', // Light yellow/amber
+          border: '2px solid #F59E0B', // Amber border
+          opacity: 0.8, // Slightly faded
+        };
       case 'in_progress':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light blue
-          border: '2px solid #aac5e6', // Blue border
+          background: '#DBEAFE', // Light blue
+          border: '2px solid #3B82F6', // Blue border
         };
       case 'success':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light green
-          border: '2px solid #aac5e6', // Green border
+          background: '#D1FAE5', // Light green
+          border: '2px solid #10B981', // Green border
         };
       case 'failed':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light red
+          background: '#FEE2E2', // Light red
           border: '2px solid #EF4444', // Red border
         };
       default:
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light gray
-          // border: '2px solid #9CA3AF', // Gray border
+          background: '#F3F4F6', // Light gray
+          border: '2px solid #9CA3AF', // Gray border
+          opacity: 0.6, // More faded for unknown status
         };
     }
   };

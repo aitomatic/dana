@@ -498,6 +498,13 @@ To get started, let's define its foundation:
     }
   }, [messages]);
 
+  // Auto-scroll when new thinking messages are added
+  useEffect(() => {
+    if (bottomRef.current && processingStatusHistory.length > 0) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [processingStatusHistory]);
+
   useEffect(() => {
     const fetchHistory = async () => {
       if (!agent_id || !agentStore || isLoadingHistory || hasLoadedHistory) return;
@@ -959,18 +966,7 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Dana Agent Maker</div>
           </div>
-          <div className="flex gap-1 items-center">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                connectionState === 'connected'
-                  ? 'bg-green-500'
-                  : connectionState === 'connecting'
-                    ? 'bg-yellow-500'
-                    : 'bg-red-500'
-              }`}
-            />
-            <span className="text-xs text-gray-500 capitalize">{connectionState}</span>
-          </div>
+
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat

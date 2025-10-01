@@ -11,7 +11,7 @@ import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledg
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
-import { Search, Collapse, Expand } from 'iconoir-react';
+import { Search, Collapse, Expand, Clock, CheckCircle, SystemRestart, Xmark } from 'iconoir-react';
 
 // Single transition definition for consistency
 const TRANSITION_DURATION = '0.5s';
@@ -913,7 +913,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
         switch (status) {
           case 'pending':
-            message = `Knowledge for "${nodeData.label}" is not generated yet. Click "Generate Contextual Knowledge" to start generation.`;
+            message = `Knowledge for "${nodeData.label}" is not generated yet. Request "Generate Knowledge" with Dana Agent Maker to start generation.`;
             break;
           case 'in_progress':
             message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
@@ -1346,6 +1346,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           )}
         </div>
       </div>
+
 
       {/* Knowledge Sidebar */}
       <KnowledgeSidebar

@@ -129,7 +129,7 @@ Query: {query}
 Depth: {max_depth} levels
 Total areas found: 0
 
-❌ No knowledge areas found matching '{query}'.
+No knowledge areas found matching '{query}'.
 
 💡 Suggestions:
 - Try a broader query like "all" to see available areas
