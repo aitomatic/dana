@@ -39,7 +39,7 @@ async def deep_extract(request: DeepExtractionRequest, db: Session = Depends(get
         logger.info("Received deep extraction request for document ID: %s", request.document_id)
 
         # Get document from database
-        document = db.query(Document).filter(Document.id == request.document_id).first()
+        document = db.query(Document).filter(Document.id == request.document_id).order_by(Document.id.desc()).first()
         if not document:
             raise FileNotFoundError(f"Document not found with ID: {request.document_id}")
 
