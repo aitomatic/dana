@@ -254,7 +254,7 @@ class TaskManager:
                     },
                 )
 
-                Misc.safe_asyncio_run(self.rag_resource.index_extraction_response, result, overwrite=False)
+                Misc.safe_asyncio_run(self.rag_resource.index_extraction_response, result, overwrite=True)
 
                 Misc.safe_asyncio_run(
                     self.extraction_service.save_extraction_json,
