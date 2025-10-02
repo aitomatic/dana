@@ -22,6 +22,7 @@ export const convertDocumentToFileItem = (document: DocumentRead): FileItem => (
   lastModified: new Date(document.updated_at),
   path: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/documents/${document.id}/download`,
   topicId: document.topic_id || undefined,
+  metadata: document.metadata, // Include metadata for extraction status
 });
 
 export const formatFileSize = (bytes: number): string => {

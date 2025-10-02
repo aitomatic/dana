@@ -117,6 +117,18 @@ class DocumentService:
                 asyncio.create_task(self._build_index_for_agent(agent_id, file_path, db_session))
                 logger.info(f"Started background index building for agent {agent_id} with document {filename}")
 
+            # Ensure metadata is a dictionary, not a MetaData object
+            metadata = document.doc_metadata
+            if metadata is None:
+                metadata = {}
+            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                # If it's a MetaData object or similar, convert to dict
+                metadata = {}
+            elif not isinstance(metadata, dict):
+                # If it's not a dict, convert to empty dict
+                metadata = {}
+
+            print(metadata)
             return DocumentRead(
                 id=document.id,
                 filename=document.filename,
@@ -127,6 +139,7 @@ class DocumentService:
                 agent_id=document.agent_id,
                 created_at=document.created_at,
                 updated_at=document.updated_at,
+                metadata=metadata if metadata is not None else {},
             )
 
         except Exception as e:
@@ -149,6 +162,45 @@ class DocumentService:
             if not document:
                 return None
 
+            # Compute metadata
+            file_extension = None
+            if document.original_filename and '.' in document.original_filename:
+                file_extension = document.original_filename.split('.')[-1].lower()
+
+            file_size_mb = None
+            if document.file_size:
+                file_size_mb = round(document.file_size / (1024 * 1024), 2)
+
+            is_extraction_file = document.source_document_id is not None
+
+            days_since_created = None
+            days_since_updated = None
+            if document.created_at:
+                # Ensure both datetimes are timezone-aware
+                if document.created_at.tzinfo is None:
+                    created_at_utc = document.created_at.replace(tzinfo=UTC)
+                else:
+                    created_at_utc = document.created_at.astimezone(UTC)
+                days_since_created = (datetime.now(UTC) - created_at_utc).days
+            if document.updated_at:
+                # Ensure both datetimes are timezone-aware
+                if document.updated_at.tzinfo is None:
+                    updated_at_utc = document.updated_at.replace(tzinfo=UTC)
+                else:
+                    updated_at_utc = document.updated_at.astimezone(UTC)
+                days_since_updated = (datetime.now(UTC) - updated_at_utc).days
+
+            # Ensure metadata is a dictionary, not a MetaData object
+            metadata = document.doc_metadata
+            if metadata is None:
+                metadata = {}
+            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                # If it's a MetaData object or similar, convert to dict
+                metadata = {}
+            elif not isinstance(metadata, dict):
+                # If it's not a dict, convert to empty dict
+                metadata = {}
+
             return DocumentRead(
                 id=document.id,
                 filename=document.filename,
@@ -159,6 +211,12 @@ class DocumentService:
                 agent_id=document.agent_id,
                 created_at=document.created_at,
                 updated_at=document.updated_at,
+                metadata=metadata,
+                file_extension=file_extension,
+                file_size_mb=file_size_mb,
+                is_extraction_file=is_extraction_file,
+                days_since_created=days_since_created,
+                days_since_updated=days_since_updated,
             )
 
         except Exception as e:
@@ -287,7 +345,7 @@ class DocumentService:
 
     async def list_documents(
         self, topic_id: int | None = None, agent_id: int | None = None, limit: int = 100, offset: int = 0, db_session=None
-    ) -> list[DocumentRead]:
+    ) -> tuple[list[DocumentRead], int]:
         """
         List documents with optional filtering.
 
@@ -299,7 +357,7 @@ class DocumentService:
             db_session: Database session
 
         Returns:
-            List of DocumentRead objects
+            Tuple of (List of DocumentRead objects, total count)
         """
         try:
             query = db_session.query(Document)
@@ -317,10 +375,68 @@ class DocumentService:
                     associated_documents = agent.config.get("associated_documents", [])
                     query = query.filter(Document.id.in_(associated_documents))
 
+            # Get total count before applying limit/offset
+            total_count = query.count()
+
             documents = query.offset(offset).limit(limit).all()
 
-            return [
-                DocumentRead(
+            document_reads = []
+            for doc in documents:
+                # Compute metadata
+                file_extension = None
+                if doc.original_filename and '.' in doc.original_filename:
+                    file_extension = doc.original_filename.split('.')[-1].lower()
+
+                file_size_mb = None
+                if doc.file_size:
+                    file_size_mb = round(doc.file_size / (1024 * 1024), 2)
+
+                is_extraction_file = doc.source_document_id is not None
+
+                days_since_created = None
+                days_since_updated = None
+                if doc.created_at:
+                    # Ensure both datetimes are timezone-aware
+                    if doc.created_at.tzinfo is None:
+                        created_at_utc = doc.created_at.replace(tzinfo=UTC)
+                    else:
+                        created_at_utc = doc.created_at.astimezone(UTC)
+                    days_since_created = (datetime.now(UTC) - created_at_utc).days
+                if doc.updated_at:
+                    # Ensure both datetimes are timezone-aware
+                    if doc.updated_at.tzinfo is None:
+                        updated_at_utc = doc.updated_at.replace(tzinfo=UTC)
+                    else:
+                        updated_at_utc = doc.updated_at.astimezone(UTC)
+                    days_since_updated = (datetime.now(UTC) - updated_at_utc).days
+
+                # Ensure metadata is a dictionary, not a MetaData object
+                metadata = doc.doc_metadata
+                if metadata is None:
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+                elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                    # If it's a MetaData object or similar, use default metadata
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+                elif not isinstance(metadata, dict):
+                    # If it's not a dict, use default metadata
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+
+                document_reads.append(DocumentRead(
                     id=doc.id,
                     filename=doc.filename,
                     original_filename=doc.original_filename,
@@ -330,9 +446,15 @@ class DocumentService:
                     agent_id=doc.agent_id,
                     created_at=doc.created_at,
                     updated_at=doc.updated_at,
-                )
-                for doc in documents
-            ]
+                    metadata=metadata,
+                    file_extension=file_extension,
+                    file_size_mb=file_size_mb,
+                    is_extraction_file=is_extraction_file,
+                    days_since_created=days_since_created,
+                    days_since_updated=days_since_updated,
+                ))
+
+            return document_reads, total_count
 
         except Exception as e:
             logger.error(f"Error listing documents: {e}")

@@ -65,8 +65,8 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
         }
 
         try {
-          const documents = await apiService.getDocuments({ agent_id: Number(agentId) });
-          setAgentDocuments(documents);
+          const response = await apiService.getDocuments({ agent_id: Number(agentId) });
+          setAgentDocuments(response.documents || []);
         } catch (error) {
           console.error('Failed to fetch agent documents:', error);
           setAgentDocuments([]);
@@ -133,10 +133,18 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
             uploadedFile.status = 'success';
             uploadedFile.path = doc.filename;
           } else {
-            // Fallback to the general upload endpoint
-            const doc = await apiService.uploadDocument({ file, title: file.name });
+            // Use v2 upload endpoint
+            const uploadedResponse = await apiService.uploadDocumentRaw(file, {
+              build_index: true,
+              allow_duplicate: false,
+            });
+
+            if (!uploadedResponse.success || !uploadedResponse.document) {
+              throw new Error(uploadedResponse.message || 'Upload failed');
+            }
+
             uploadedFile.status = 'success';
-            uploadedFile.path = doc.filename;
+            uploadedFile.path = uploadedResponse.document.filename;
           }
         } catch (error) {
           uploadedFile.status = 'error';

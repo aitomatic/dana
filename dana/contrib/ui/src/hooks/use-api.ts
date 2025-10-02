@@ -39,7 +39,7 @@ export const useApiInitialization = () => {
             duration: 0, // Don't auto-dismiss
           });
         }
-      } catch (error) {
+      } catch {
         addNotification({
           type: 'error',
           title: 'Connection Error',
@@ -68,7 +68,7 @@ export const usePoetOperations = () => {
         message: 'POET configuration updated successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Configuration Failed',
@@ -87,7 +87,7 @@ export const usePoetOperations = () => {
         message: 'Available domains refreshed successfully',
         duration: 2000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Refresh Failed',
@@ -129,7 +129,7 @@ export const useApiHealth = () => {
           duration: 5000,
         });
       }
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Health Check Failed',
@@ -176,7 +176,7 @@ export const useTopicOperations = () => {
         message: 'Topic created successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Creation Failed',
@@ -195,7 +195,7 @@ export const useTopicOperations = () => {
         message: 'Topic updated successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Update Failed',
@@ -214,7 +214,7 @@ export const useTopicOperations = () => {
         message: 'Topic deleted successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Deletion Failed',
@@ -275,7 +275,7 @@ export const useDocumentOperations = () => {
         message: 'Document uploaded successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Upload Failed',
@@ -297,7 +297,7 @@ export const useDocumentOperations = () => {
         message: 'Document updated successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Update Failed',
@@ -316,7 +316,7 @@ export const useDocumentOperations = () => {
         message: 'Document deleted successfully',
         duration: 3000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Deletion Failed',
@@ -335,7 +335,7 @@ export const useDocumentOperations = () => {
         message: 'Document downloaded successfully',
         duration: 2000,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Download Failed',

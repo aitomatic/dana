@@ -4,7 +4,14 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { SystemRestart, Xmark, NavArrowRight, Clock, CheckCircle, QuestionMark } from 'iconoir-react';
+import {
+  SystemRestart,
+  Xmark,
+  NavArrowRight,
+  Clock,
+  CheckCircle,
+  QuestionMark,
+} from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
@@ -76,7 +83,7 @@ const getStatusIcon = (status?: string) => {
     case 'pending':
       return <Clock className="text-amber-500" />;
     case 'in_progress':
-      return <SystemRestart className="animate-spin text-blue-500" />;
+      return <SystemRestart className="text-blue-500 animate-spin" />;
     case 'success':
       return <CheckCircle className="text-green-500" />;
     case 'failed':
@@ -192,7 +199,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   //   if (!isSelected) return null;
 
   //   return (
-  //     <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+  //     <div className="flex absolute -top-1 -right-1 justify-center items-center w-5 h-5 bg-blue-600 rounded-full shadow-lg animate-pulse">
   //       {/* <CheckIcon size={14} className="text-white" /> */}
   //     </div>
   //   );
@@ -307,7 +314,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
 
       {/* Progress bar for in-progress knowledge generation */}
       {isLeafNode && knowledgeStatus?.status === 'in_progress' && (
-        <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
+        <div className="mt-2 w-full h-2 bg-gray-200 rounded-full">
           <div
             className="h-2 bg-blue-500 rounded-full transition-all duration-300 animate-pulse"
             style={{ width: '100%' }}

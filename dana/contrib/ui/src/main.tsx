@@ -24,6 +24,8 @@ createRoot(document.getElementById('root')!).render(
         richColors
         closeButton
         duration={4000}
+        expand={true}
+        visibleToasts={5}
         toastOptions={{
           style: {
             border: '1px solid #e5e7eb',

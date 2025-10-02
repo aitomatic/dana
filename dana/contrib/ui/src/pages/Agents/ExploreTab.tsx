@@ -228,7 +228,7 @@ export const ExploreTab: React.FC<{
           Can't find a pre-trained agent for your domain?
         </div>
         <div className="text-sm text-gray-700">
-        Train you own agent with support from <b>Dana</b>, our training expert.
+          Train you own agent with support from <b>Dana</b>, our training expert.
         </div>
         <Button
           variant="default"
@@ -237,7 +237,7 @@ export const ExploreTab: React.FC<{
           disabled={creating}
         >
           <Plus style={{ width: '20', height: '20' }} />
-        Create Agent
+          Create Agent
         </Button>
       </div>
 

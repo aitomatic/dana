@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 from datetime import datetime
 from dana.api.core.database import get_db
-from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRequest
+from dana.api.core.schemas import DocumentRead, DocumentUpdate, ExtractionDataRequest, DocumentListResponse
 from dana.api.services.document_service import get_document_service, DocumentService
 from dana.api.services.extraction_service import get_extraction_service, ExtractionService
 from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
@@ -108,7 +108,7 @@ async def get_document(document_id: int, db: Session = Depends(get_db), document
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/", response_model=list[DocumentRead])
+@router.get("/", response_model=DocumentListResponse)
 async def list_documents(
     topic_id: int | None = None,
     agent_id: int | None = None,
@@ -117,9 +117,11 @@ async def list_documents(
     db: Session = Depends(get_db),
     document_service=Depends(get_document_service),
 ):
-    """List documents with optional filtering."""
+    """List documents with optional filtering and metadata."""
     try:
-        documents = await document_service.list_documents(topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db)
+        documents, total_count = await document_service.list_documents(topic_id=topic_id, agent_id=agent_id, limit=limit, offset=offset, db_session=db)
+
+        # Apply agent_id filtering logic for backward compatibility
         for document in documents:
             if not agent_id:
                 document.agent_id = (
@@ -127,7 +129,31 @@ async def list_documents(
                 )
             else:
                 document.agent_id = agent_id
-        return documents
+
+        # Calculate pagination metadata
+        has_more = (offset + len(documents)) < total_count
+
+        # Additional metadata
+        metadata = {
+            "filters": {
+                "topic_id": topic_id,
+                "agent_id": agent_id,
+            },
+            "pagination": {
+                "current_page": (offset // limit) + 1 if limit > 0 else 1,
+                "total_pages": (total_count + limit - 1) // limit if limit > 0 else 1,
+            },
+            "response_time": datetime.now().isoformat(),
+        }
+
+        return DocumentListResponse(
+            documents=documents,
+            total=total_count,
+            limit=limit,
+            offset=offset,
+            has_more=has_more,
+            metadata=metadata
+        )
 
     except Exception as e:
         logger.error(f"Error in list documents endpoint: {e}")

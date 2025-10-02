@@ -44,28 +44,34 @@ export const DocumentEditor = ({
 
   return (
     <div className="flex flex-col w-full h-full">
-      {(isUploading || isDeepExtracting) && (
+      {isUploading && (
         <div className="flex flex-col gap-2">
           <Skeleton className="w-[300px] h-4 rounded-full" />
           <Skeleton className="w-[250px] h-4 rounded-full" />
           <Skeleton className="w-[200px] h-4 rounded-full" />
           <div className="flex gap-2 items-center mt-2">
             <SystemRestart className="animate-spin size-4" />
-            <span className="text-sm text-gray-600">
-              {isUploading ? 'Uploading file...' : 'Extracting content...'}
-            </span>
+            <span className="text-sm text-gray-600">Uploading file...</span>
           </div>
         </div>
       )}
-      {!isDeepExtracting &&
-        !isUploading &&
-        (isEditing ? (
-          <div className="flex flex-col w-full h-full">
-            <MarkdownEditor value={value} onChange={setValue} />
-          </div>
-        ) : (
-          <FadeText text={value} />
-        ))}
+      {!isUploading && (
+        <>
+          {isDeepExtracting && value && (
+            <div className="flex gap-2 items-center p-2 mb-2 bg-blue-50 rounded-md border border-blue-200">
+              <SystemRestart className="text-blue-600 animate-spin size-4" />
+              <span className="text-sm text-blue-600">Deep extraction in progress...</span>
+            </div>
+          )}
+          {isEditing ? (
+            <div className="flex flex-col w-full h-full">
+              <MarkdownEditor value={value} onChange={setValue} />
+            </div>
+          ) : (
+            <FadeText text={value} />
+          )}
+        </>
+      )}
     </div>
   );
 };

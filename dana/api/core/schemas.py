@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Union, Annotated
 import re
-from pydantic import BaseModel, ConfigDict, Field, field_validator, BeforeValidator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, BeforeValidator
 from enum import Enum
 
 
@@ -114,8 +114,27 @@ class DocumentRead(DocumentBase):
     source_document_id: int | None = None
     created_at: datetime
     updated_at: datetime
+    metadata: dict[str, Any] | None = Field(default_factory=dict, validation_alias=AliasChoices("doc_metadata", "metadata"))
+
+    # Additional computed metadata fields
+    file_extension: str | None = None
+    file_size_mb: float | None = None
+    is_extraction_file: bool = False
+    days_since_created: int | None = None
+    days_since_updated: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentListResponse(BaseModel):
+    """Response schema for document list endpoint with metadata."""
+
+    documents: list[DocumentRead]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class DocumentUpdate(BaseModel):
