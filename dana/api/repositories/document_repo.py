@@ -30,7 +30,7 @@ class SQLDocumentRepo(AbstractDocumentRepo):
     async def get_extraction(cls, document_id: int, deep_extract: bool | None = None, **kwargs) -> ExtractionOutput | None:
         db = cls._get_db(**kwargs)
         if deep_extract is None:
-            original_document = db.query(Document).filter(Document.source_document_id == document_id).first()
+            original_document = db.query(Document).filter(Document.id == document_id).first()
             if original_document is None:
                 raise ValueError(f"Original extraction not found for document_id: {document_id}")
             deep_extract = original_document.doc_metadata.get("deep_extracted")
