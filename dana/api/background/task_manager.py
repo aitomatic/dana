@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Task type-specific concurrency limits
 from dana.api.core.schemas_v2 import BackgroundTaskType
 
+# 1 worker for knowledge gen, 1 worker for deep extract
 TASK_TYPE_LIMITS = {BackgroundTaskType.KNOWLEDGE_GEN: 1, BackgroundTaskType.DEEP_EXTRACT: 1}
 
 
@@ -262,6 +263,9 @@ class TaskManager:
                     extraction_results=request.extraction_results,
                     source_document_id=document_id,
                     db_session=db,
+                    remove_old_extraction_files=False,
+                    deep_extracted=True,
+                    metadata={},
                 )
 
                 logger.info(f"Successfully saved extraction JSON file with ID: {document_id}")

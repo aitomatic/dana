@@ -182,6 +182,19 @@ class BackgroundTaskResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
+class PageContent(BaseModel):
+    text: str
+    page_number: int
+
+
+class ExtractionOutput(BaseModel):
+    original_filename: str
+    source_document_id: int
+    extraction_date: str
+    total_pages: int
+    documents: list[PageContent] = []
+
+
 if __name__ == "__main__":
     with open("dana/api/server/assets/jordan_financial_analyst/domain_knowledge.json") as f:
         tree = DomainKnowledgeTreeV2.model_validate_json(f.read())
