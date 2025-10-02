@@ -43,6 +43,7 @@ class DocumentService:
         db_session=None,
         upload_directory: str | None = None,
         build_index: bool = True,
+        use_original_filename: bool = True,
     ) -> DocumentRead:
         """
         Upload and store a document.
@@ -97,7 +98,7 @@ class DocumentService:
 
             document = Document(
                 filename=actual_filename,
-                original_filename=document_data.original_filename,
+                original_filename=document_data.original_filename if use_original_filename else actual_filename,
                 file_path=file_path,
                 file_size=file_size,
                 mime_type=mime_type,

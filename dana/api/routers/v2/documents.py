@@ -10,8 +10,8 @@ from dana.api.services.extraction_service import get_extraction_service, Extract
 from dana.api.routers.v1.extract_documents import deep_extract
 from dana.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana.api.background.task_manager import get_task_manager
-from dana.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo
-from dana.api.core.schemas_v2 import BackgroundTaskResponse
+from dana.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo, get_document_repo, AbstractDocumentRepo
+from dana.api.core.schemas_v2 import BackgroundTaskResponse, ExtractionOutput
 from dana.common.sys_resource.rag import get_global_rag_resource, RAGResourceV2
 
 
@@ -31,7 +31,6 @@ class DocumentUploadResponse(BaseModel):
 async def upload_document(
     file: UploadFile = File(...),
     topic_id: int | None = Form(None),
-    build_index: bool = Form(True),
     allow_duplicate: bool = Form(False),
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
@@ -57,11 +56,14 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="Filename is required")
 
         document = await document_service.upload_document(
-            file=file.file, filename=file.filename, topic_id=topic_id, agent_id=None, db_session=db, build_index=build_index
+            file=file.file,
+            filename=file.filename,
+            topic_id=topic_id,
+            agent_id=None,
+            db_session=db,
+            build_index=False,
+            use_original_filename=False,
         )
-
-        if build_index:
-            logger.info(f"RAG index building started for document {document.id}")
 
         # Perform normal extraction  (use_deep_extraction=False)
         result: ExtractionResponse = await deep_extract(
@@ -74,10 +76,10 @@ async def upload_document(
         # Save normal extraction data
         await save_extraction_data(
             ExtractionDataRequest(
-                original_filename=document.original_filename,
+                original_filename=document.filename,
                 source_document_id=document.id,
                 extraction_results={
-                    "original_filename": document.original_filename,
+                    "original_filename": document.filename,
                     "extraction_date": datetime.now().isoformat(),
                     "total_pages": result.file_object.total_pages,
                     "documents": [{"text": page.page_content, "page_number": page.page_number} for page in pages],
@@ -119,6 +121,9 @@ async def save_extraction_data(
             extraction_results=request.extraction_results,
             source_document_id=request.source_document_id,
             db_session=db,
+            remove_old_extraction_files=False,
+            deep_extracted=False,
+            metadata={},
         )
 
         logger.info(f"Successfully saved extraction JSON file with ID: {document.id}")
@@ -133,8 +138,22 @@ async def save_extraction_data(
 
 @router.get("/deep-extraction-status/{task_id}", response_model=BackgroundTaskResponse)
 async def get_deep_extraction_status(
-    task_id: int, db: Session = Depends(get_db), db_repo: AbstractBackgroundTaskRepo = Depends(get_background_task_repo)
+    task_id: int, db: Session = Depends(get_db), bg_repo: AbstractBackgroundTaskRepo = Depends(get_background_task_repo)
 ):
     """Get the status of a deep extraction task."""
-    task = await db_repo.get_task_by_id(task_id, db=db)
+    task = await bg_repo.get_task_by_id(task_id, db=db)
     return task
+
+
+@router.get("/{document_id}", response_model=ExtractionOutput)
+async def get_extraction_data(
+    document_id: int,
+    deep_extract: bool = False,
+    db: Session = Depends(get_db),
+    doc_repo: AbstractDocumentRepo = Depends(get_document_repo),
+):
+    """Get the extraction data for a document."""
+    extraction = await doc_repo.get_extraction(document_id, deep_extract, db=db)
+    if extraction is None:
+        raise HTTPException(status_code=404, detail="Extraction data not found")
+    return extraction

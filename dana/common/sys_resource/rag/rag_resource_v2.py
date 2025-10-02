@@ -229,7 +229,8 @@ class RAGResourceV2(BaseSysResource):
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in results:
-            print(f"Error inserting document: {result}")
+            if isinstance(result, Exception):
+                print(f"Error inserting document: {result}")
 
         self.vector_index.storage_context.persist(persist_dir=PERSIST_DIR)
 
