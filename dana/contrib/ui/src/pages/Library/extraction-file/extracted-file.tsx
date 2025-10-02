@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from 'react';
 import FileIcon from '@/components/file-icon';
 import { IconFile, IconLoader, IconUpload } from '@tabler/icons-react';
@@ -8,11 +9,9 @@ import TextReview from './components/text-review';
 import DocReview from './components/doc-review';
 
 import { Pagination } from './components/pagination';
-import { useDeepExtraction } from './hooks/useDeepExtraction';
 import { useDocumentEditing } from './hooks/useDocumentEditing';
-import { useFilePreview } from './hooks/useFilePreview';
+import { useDocumentPreview } from './hooks/useDocumentPreview';
 import { getFileType, hasPreviewPane } from './utils/fileUtils';
-// import { PromptSection } from './components/PromptSection';
 import { ExtractionControls } from './components/ExtractionControls';
 import { DocumentEditor } from './components/DocumentEditor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -122,50 +121,57 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0 && onFileUpload) {
-      onFileUpload(files);
-    }
-  }, [onFileUpload]);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0 && onFileUpload) {
+        onFileUpload(files);
+      }
+    },
+    [onFileUpload],
+  );
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0 && onFileUpload) {
-      onFileUpload(files);
-    }
-  }, [onFileUpload]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0 && onFileUpload) {
+        onFileUpload(files);
+      }
+    },
+    [onFileUpload],
+  );
 
   return (
     <div
       className={`flex flex-col gap-4 justify-center items-center h-full p-8 border-1 border-dashed rounded-lg transition-colors ${
         isDragOver
-          ? 'border-blue-400 bg-blue-50 text-blue-600'
-          : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-gray-50'
+          ? 'text-blue-600 bg-blue-50 border-blue-400'
+          : 'text-gray-500 bg-gray-50 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col items-center gap-4">
-        <div className={`p-4 rounded-full transition-colors ${
-          isDragOver ? 'bg-blue-100' : 'bg-gray-100'
-        }`}>
+      <div className="flex flex-col gap-4 items-center">
+        <div
+          className={`p-4 rounded-full transition-colors ${
+            isDragOver ? 'bg-blue-100' : 'bg-gray-100'
+          }`}
+        >
           <IconUpload className={`size-8 ${isDragOver ? 'text-blue-600' : 'text-gray-500'}`} />
         </div>
         <div className="text-center">
-          <p className="font-medium text-lg mb-2">
+          <p className="mb-2 text-lg font-medium">
             {isDragOver ? 'Drop files here' : 'Upload Files'}
           </p>
-          <p className="text-sm mb-4">
-            {isDragOver 
-              ? 'Release to upload your files' 
-              : 'Drag and drop files here, or click to browse'
-            }
+          <p className="mb-4 text-sm">
+            {isDragOver
+              ? 'Release to upload your files'
+              : 'Drag and drop files here, or click to browse'}
           </p>
           <input
             type="file"
@@ -180,14 +186,14 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
             className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
               isDragOver
                 ? 'hidden'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
             }`}
           >
-            <IconUpload className="size-4 mr-2" />
+            <IconUpload className="mr-2 size-4" />
             Browse Files
           </label>
         </div>
-        <div className="text-sm text-gray-400 text-center max-w-md">
+        <div className="max-w-md text-sm text-center text-gray-400">
           (.pdf, .doc, .docx, .md. Max 5MB per file)
         </div>
       </div>
@@ -198,42 +204,46 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
 // Main component
 export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [showPromptInput, setShowPromptInput] = useState<boolean>(false);
 
-  // Custom hooks
-  const {
-    isDeepExtracting,
-    isDeepExtracted,
-    deepExtractedDocuments,
-    handleDeepExtractWithoutPrompt,
-  } = useDeepExtraction(selectedFile);
+  // Deep extraction status from selected file
+  const isDeepExtracting = selectedFile?.deep_extraction_status === 'running';
+  const deepExtractedDocuments = selectedFile?.deep_extracted_documents || [];
 
   const { isEditing, value, setValue, handleSave, handleEdit } = useDocumentEditing(
     selectedFile,
     currentPage,
   );
 
-  const { blobUrl, loading, error } = useFilePreview(selectedFile?.file || null);
+  const { blobUrl, loading, error } = useDocumentPreview(selectedFile);
   const { error: extractionError } = useExtractionFileStore();
 
   // File type detection
-  const fileType = getFileType(selectedFile?.file?.name || '');
-  const hasPreview = hasPreviewPane(selectedFile?.file?.name || '');
+  const fileName = selectedFile?.file?.name || selectedFile?.original_filename || '';
+  const fileType = getFileType(fileName);
+  const hasPreview = hasPreviewPane(fileName);
 
-  // Get documents from either deep extraction or original data
+  // Create a file-like object for existing documents
+  // For existing documents, we'll use a placeholder file object since the actual content is downloaded separately
+  const fileObject =
+    selectedFile?.file ||
+    ({
+      name: fileName,
+      type: selectedFile?.mime_type || 'application/octet-stream',
+      size: selectedFile?.file_size || 0,
+    } as File);
+
+  // Get documents from either deep extraction or standard extraction
   const documents =
-    deepExtractedDocuments?.length > 0 ? deepExtractedDocuments : selectedFile?.documents || [];
+    selectedFile?.is_deep_extracted && selectedFile?.deep_extracted_documents?.length > 0
+      ? selectedFile.deep_extracted_documents
+      : deepExtractedDocuments?.length > 0
+        ? deepExtractedDocuments
+        : selectedFile?.documents || [];
 
   // Navigation functions
   const goBack = (): void => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   const goNext = (): void =>
     setCurrentPage((prev) => (prev < (documents?.length || 0) ? prev + 1 : prev));
-
-  // Wrapper functions to handle deep extraction and hide prompt input
-  const handleDeepExtractWithoutPromptWrapper = (): void => {
-    setShowPromptInput(false);
-    handleDeepExtractWithoutPrompt();
-  };
 
   if (!selectedFile) {
     return <DragDropArea onFileUpload={onFileUpload} />;
@@ -248,13 +258,13 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
             <ResizablePanel defaultSize={50} minSize={30}>
               <div className="flex flex-col w-full h-full">
                 {/* File Header */}
-                <div className="flex justify-between items-center pb-4 pt-4  bg-white ">
+                <div className="flex justify-between items-center pt-4 pb-4 bg-white">
                   <div className="flex gap-2 items-center">
                     <div className="flex size-6">
                       <FileIcon ext={fileType.extension} className="text-gray-600 size-5" />
                     </div>
                     <span className="text-sm font-medium text-gray-900 truncate max-w-[350px]">
-                      {selectedFile.file.name}
+                      {fileName}
                     </span>
                   </div>
                 </div>
@@ -263,7 +273,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                 <div className="flex overflow-hidden flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
                   <FilePreview
                     blobUrl={blobUrl}
-                    file={selectedFile.file}
+                    file={fileObject}
                     isPdf={fileType.isPdf}
                     isExcel={fileType.isExcel}
                     isText={fileType.isText}
@@ -281,20 +291,37 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
 
             {/* Extracted File */}
             <ResizablePanel defaultSize={50} minSize={30}>
-              <div className="flex border-1 border-gray-200 flex-col w-full h-full bg-gray-50 rounded-lg">
+              <div className="flex flex-col w-full h-full bg-gray-50 rounded-lg border-gray-200 border-1">
                 {/* Header */}
                 <div className="flex gap-2 justify-between items-center p-3">
-                  <span className="text-sm font-semibold text-gray-600">
-                    Extracted Content {documents.length > 0 && `(${documents.length} pages)`}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-gray-600">
+                      Extracted Content {documents.length > 0 && `(${documents.length} pages)`}
+                    </span>
+                    {selectedFile?.is_deep_extracted &&
+                      selectedFile?.deep_extracted_documents?.length > 0 && (
+                        <span className="text-xs font-medium text-blue-600">
+                          Deep extraction results
+                        </span>
+                      )}
+                    {selectedFile?.status === 'ready' &&
+                      !selectedFile?.is_deep_extracted &&
+                      selectedFile?.deep_extraction_status === 'running' && (
+                        <span className="text-xs text-blue-500">
+                          Standard extraction results - Deep extraction in progress
+                        </span>
+                      )}
+                    {selectedFile?.status === 'ready' &&
+                      !selectedFile?.is_deep_extracted &&
+                      selectedFile?.deep_extraction_status === 'failed' && (
+                        <span className="text-xs text-yellow-600">
+                          Standard extraction results - Deep extraction failed
+                        </span>
+                      )}
+                  </div>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls
-                      isDeepExtracted={isDeepExtracted}
                       isDeepExtracting={isDeepExtracting}
-                      showPromptInput={showPromptInput}
-                      onShowPromptInput={() => setShowPromptInput(true)}
-                      onDeepExtractWithPrompt={handleDeepExtractWithoutPromptWrapper}
-                      onDeepExtractWithoutPrompt={handleDeepExtractWithoutPromptWrapper}
                       isEditing={isEditing}
                       onEdit={handleEdit}
                       onSave={handleSave}
@@ -305,16 +332,6 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                 {/* Content */}
                 <div className="flex overflow-hidden flex-col flex-1 gap-4 p-4">
                   {/* Prompt Section */}
-                  {/* <PromptSection
-                    showPromptInput={showPromptInput}
-                    setShowPromptInput={setShowPromptInput}
-                    prompt={prompt}
-                    setPrompt={setPrompt}
-                    isDeepExtracting={isDeepExtracting}
-                    isDeepExtracted={isDeepExtracted}
-                    onDeepExtractWithPrompt={handleDeepExtractWithoutPromptWrapper}
-                    onDeepExtractWithoutPrompt={handleDeepExtractWithoutPromptWrapper}
-                  /> */}
 
                   {/* Extraction Error Banner */}
                   {extractionError && (
@@ -349,7 +366,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                   <FileIcon ext={fileType.extension} className="text-gray-600 size-5" />
                 </div>
                 <span className="text-sm font-medium text-gray-900 truncate max-w-[350px]">
-                  {selectedFile.file.name}
+                  {fileName}
                 </span>
               </div>
             </div>
@@ -358,7 +375,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
             <div className="flex overflow-hidden flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
               <FilePreview
                 blobUrl={blobUrl}
-                file={selectedFile.file}
+                file={fileObject}
                 isPdf={fileType.isPdf}
                 isExcel={fileType.isExcel}
                 isText={fileType.isText}

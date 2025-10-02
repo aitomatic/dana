@@ -856,11 +856,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     if (!domainTree || !statusData || !domainTree.root) return;
 
     console.log('[DomainKnowledgeTree] Status data updated, refreshing nodes');
-    
+
     // Preserve current expansion state
-    const currentExpanded = expandedNodesRef.current.size > 0
-      ? expandedNodesRef.current
-      : new Set([domainTree.root.topic]);
+    const currentExpanded =
+      expandedNodesRef.current.size > 0
+        ? expandedNodesRef.current
+        : new Set([domainTree.root.topic]);
 
     // Convert domain knowledge to flow format with updated status
     const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
@@ -928,43 +929,43 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         } finally {
           setSidebarLoading(false);
         }
-        } else {
-          // Show drawer with message and CTA for nodes without knowledge content
-          const status = nodeData.knowledgeStatus?.status || 'pending';
-          let message = '';
-          let showGenerateButton = false;
+      } else {
+        // Show drawer with message and CTA for nodes without knowledge content
+        const status = nodeData.knowledgeStatus?.status || 'pending';
+        let message = '';
+        let showGenerateButton = false;
 
-          switch (status) {
-            case 'pending':
-              message = `Content is not generated yet for "${nodeData.label}".`;
-              showGenerateButton = true;
-              break;
-            case 'in_progress':
-              message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
-              showGenerateButton = false;
-              break;
-            case 'failed':
-              message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
-              showGenerateButton = true;
-              break;
-            default:
-              message = `Knowledge for "${nodeData.label}" is not available yet.`;
-              showGenerateButton = true;
-          }
-
-          // Open sidebar with message and CTA
-          setSidebarOpen(true);
-          setSidebarTopicPath(topicPath);
-          setSidebarLoading(false);
-          setSidebarError(null);
-          setSidebarContent({
-            message,
-            showGenerateButton,
-            topicPath,
-            nodeLabel: nodeData.label,
-            status
-          });
+        switch (status) {
+          case 'pending':
+            message = `Content is not generated yet for "${nodeData.label}".`;
+            showGenerateButton = true;
+            break;
+          case 'in_progress':
+            message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
+            showGenerateButton = false;
+            break;
+          case 'failed':
+            message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
+            showGenerateButton = true;
+            break;
+          default:
+            message = `Knowledge for "${nodeData.label}" is not available yet.`;
+            showGenerateButton = true;
         }
+
+        // Open sidebar with message and CTA
+        setSidebarOpen(true);
+        setSidebarTopicPath(topicPath);
+        setSidebarLoading(false);
+        setSidebarError(null);
+        setSidebarContent({
+          message,
+          showGenerateButton,
+          topicPath,
+          nodeLabel: nodeData.label,
+          status,
+        });
+      }
 
       return;
     }
@@ -1382,7 +1383,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           )}
         </div>
       </div>
-
 
       {/* Knowledge Sidebar */}
       <KnowledgeSidebar

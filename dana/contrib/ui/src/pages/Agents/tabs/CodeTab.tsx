@@ -114,7 +114,7 @@ const CodeTab: React.FC = () => {
     // Save to backend
     try {
       await apiService.updateAgentFileContent(selectedAgent.id, file.path, value);
-      
+
       // Clear any existing timeouts
       if (saveSuccessTimeout) {
         clearTimeout(saveSuccessTimeout);
@@ -122,19 +122,19 @@ const CodeTab: React.FC = () => {
       if (showBadgeTimeout) {
         clearTimeout(showBadgeTimeout);
       }
-      
+
       // Show success badge after 500ms delay
       const showTimeout = setTimeout(() => {
         setShowSaveSuccess(true);
-        
+
         // Auto-hide the badge after 4 seconds
         const hideTimeout = setTimeout(() => {
           setShowSaveSuccess(false);
         }, 4000);
-        
+
         setSaveSuccessTimeout(hideTimeout);
       }, 500);
-      
+
       setShowBadgeTimeout(showTimeout);
     } catch (err) {
       console.error('Failed to save file:', err);

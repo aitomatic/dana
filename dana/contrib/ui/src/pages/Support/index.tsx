@@ -11,7 +11,8 @@ export default function SupportPage() {
           <div className="text-center">
             <h1 className="mb-2 text-2xl font-bold text-gray-900">Support Center</h1>
             <p className="mx-auto mb-6 max-w-3xl text-gray-600 text-SM">
-              We're here to help! Submit your feedback, report bugs, or suggest new features to make Dana Studio even better.
+              We're here to help! Submit your feedback, report bugs, or suggest new features to make
+              Dana Studio even better.
             </p>
           </div>
         </div>
@@ -59,9 +60,14 @@ export default function SupportPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Feature Request Card */}
-                <Card 
+                <Card
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300"
-                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank')}
+                  onClick={() =>
+                    window.open(
+                      'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707',
+                      '_blank',
+                    )
+                  }
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -76,7 +82,7 @@ export default function SupportPage() {
                       </div>
                       <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-600" />
@@ -95,9 +101,14 @@ export default function SupportPage() {
                 </Card>
 
                 {/* Bug Report Card */}
-                <Card 
+                <Card
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300"
-                  onClick={() => window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank')}
+                  onClick={() =>
+                    window.open(
+                      'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5',
+                      '_blank',
+                    )
+                  }
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -112,7 +123,7 @@ export default function SupportPage() {
                       </div>
                       <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-600" />
@@ -137,9 +148,7 @@ export default function SupportPage() {
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-lg font-bold">Need Immediate Help?</CardTitle>
-              <CardDescription>
-                For urgent issues or questions, contact us directly
-              </CardDescription>
+              <CardDescription>For urgent issues or questions, contact us directly</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <Button

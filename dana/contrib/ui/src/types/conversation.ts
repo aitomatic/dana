@@ -58,10 +58,13 @@ export interface ConversationState {
   fetchConversations: (filters?: ConversationFilters) => Promise<void>;
   fetchConversation: (conversationId: number) => Promise<ConversationWithMessages>;
   createConversation: (conversation: ConversationCreate) => Promise<ConversationRead>;
-  updateConversation: (conversationId: number, conversation: ConversationCreate) => Promise<ConversationRead>;
+  updateConversation: (
+    conversationId: number,
+    conversation: ConversationCreate,
+  ) => Promise<ConversationRead>;
   deleteConversation: (conversationId: number) => Promise<void>;
   setSelectedConversation: (conversation: ConversationWithMessages | null) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
   reset: () => void;
-} 
+}

@@ -23,7 +23,7 @@ const KnowledgeBaseTab: React.FC = () => {
   // Use global state if available, otherwise fall back to local state
   const [localActiveSubTab, setLocalActiveSubTab] = useState<KnowledgeSubTab>('Domain Knowledge');
   const activeSubTab = (knowledgeBaseActiveSubTab as KnowledgeSubTab) || localActiveSubTab;
-  
+
   // State for legend visibility
   const [showLegend, setShowLegend] = useState(true);
 
@@ -94,12 +94,11 @@ const KnowledgeBaseTab: React.FC = () => {
       {activeSubTab === 'Domain Knowledge' && showLegend && (
         <div className="absolute bottom-4 right-2 transform z-10">
           <div className="flex gap-4 items-center px-4 py-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-600">
-         
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-gray-300 bg-gray-100"></div>
               <span>Content generation required</span>
             </div>
-            
+
             {/* <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-100"></div>
            
@@ -112,28 +111,26 @@ const KnowledgeBaseTab: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-100"></div>
-   
+
               <span>In Progress</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-100"></div>
-       
+
               <span>Failed</span>
             </div>
-    
+
             {/* Separator */}
             <div className="w-px h-4 bg-gray-300"></div>
-               {/* Hide Legend Button */}
-               <button
+            {/* Hide Legend Button */}
+            <button
               onClick={() => setShowLegend(false)}
               className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
               title="Hide Legend"
             >
-              
               <EyeClosed className="w-3 h-3" />
               <span>Hide</span>
             </button>
-            
           </div>
         </div>
       )}

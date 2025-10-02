@@ -25,7 +25,7 @@ const ColorPalette = () => {
         { name: 'brand-800', value: 'rgb(4 6 10)', hex: '#04060A' },
         { name: 'brand-900', value: 'rgb(2 3 5)', hex: '#020305' },
         { name: 'brand-950', value: 'rgb(1 1 2)', hex: '#010102' },
-      ]
+      ],
     },
     {
       name: 'Blue Colors (Formerly Brand Colors)',
@@ -42,7 +42,7 @@ const ColorPalette = () => {
         { name: 'blue-800', value: 'rgb(53 58 158)', hex: '#353A9E' },
         { name: 'blue-900', value: 'rgb(49 54 126)', hex: '#31367E' },
         { name: 'blue-950', value: 'rgb(29 31 73)', hex: '#1D1F49' },
-      ]
+      ],
     },
     {
       name: 'Success Colors',
@@ -59,7 +59,7 @@ const ColorPalette = () => {
         { name: 'success-800', value: 'rgb(22 101 52)', hex: '#166534' },
         { name: 'success-900', value: 'rgb(20 83 45)', hex: '#14532D' },
         { name: 'success-950', value: 'rgb(5 46 22)', hex: '#052E16' },
-      ]
+      ],
     },
     {
       name: 'Warning Colors',
@@ -76,7 +76,7 @@ const ColorPalette = () => {
         { name: 'warning-800', value: 'rgb(146 64 14)', hex: '#92400E' },
         { name: 'warning-900', value: 'rgb(120 53 15)', hex: '#78350F' },
         { name: 'warning-950', value: 'rgb(69 26 3)', hex: '#451A03' },
-      ]
+      ],
     },
     {
       name: 'Error Colors',
@@ -93,7 +93,7 @@ const ColorPalette = () => {
         { name: 'error-800', value: 'rgb(153 27 27)', hex: '#991B1B' },
         { name: 'error-900', value: 'rgb(127 29 29)', hex: '#7F1D1D' },
         { name: 'error-950', value: 'rgb(69 10 10)', hex: '#450A0A' },
-      ]
+      ],
     },
     {
       name: 'Gray Scale',
@@ -110,8 +110,8 @@ const ColorPalette = () => {
         { name: 'gray-800', value: 'rgb(24 34 48)', hex: '#182230' },
         { name: 'gray-900', value: 'rgb(16 24 40)', hex: '#101828' },
         { name: 'gray-950', value: 'rgb(12 17 29)', hex: '#0C111D' },
-      ]
-    }
+      ],
+    },
   ];
 
   return (
@@ -123,7 +123,7 @@ const ColorPalette = () => {
           <div className="grid grid-cols-6 gap-4">
             {group.colors.map((color) => (
               <div key={color.name} className="space-y-2">
-                <div 
+                <div
                   className="w-full h-16 rounded-md border border-gray-200"
                   style={{ backgroundColor: color.value }}
                 />
@@ -163,7 +163,7 @@ const TypographyShowcase = () => {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-semibold">Typography</h2>
-      
+
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-medium mb-4">Font Sizes</h3>
@@ -184,7 +184,9 @@ const TypographyShowcase = () => {
             {fontWeights.map((weight) => (
               <div key={weight.name} className="flex items-center gap-4">
                 <div className="w-20 text-sm text-gray-600">{weight.name}</div>
-                <div className={cn(weight.class, 'text-lg')}>The quick brown fox jumps over the lazy dog</div>
+                <div className={cn(weight.class, 'text-lg')}>
+                  The quick brown fox jumps over the lazy dog
+                </div>
                 <div className="text-sm text-gray-500">{weight.description}</div>
               </div>
             ))}
@@ -195,7 +197,8 @@ const TypographyShowcase = () => {
           <h3 className="text-lg font-medium mb-4">Font Family</h3>
           <div className="p-4 bg-gray-50 rounded-md">
             <code className="text-sm">
-              system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif
+              system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+              Arial, 'Noto Sans', sans-serif
             </code>
           </div>
         </div>
@@ -225,7 +228,7 @@ const SpacingShowcase = () => {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-semibold">Spacing System</h2>
-      
+
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Base Spacing Scale</h3>
         <div className="space-y-3">
@@ -301,7 +304,7 @@ const ComponentShowcase = () => {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-semibold">Components</h2>
-      
+
       {/* Buttons */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Buttons</h3>
@@ -320,7 +323,7 @@ const ComponentShowcase = () => {
               <Button variant="tertiary">Tertiary</Button>
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-sm font-medium mb-2">Sizes</h4>
             <div className="flex flex-wrap items-center gap-2">
@@ -345,7 +348,7 @@ const ComponentShowcase = () => {
               <Input size="lg" placeholder="Large input" />
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-sm font-medium mb-2">States</h4>
             <div className="space-y-2">
@@ -374,26 +377,26 @@ const ComponentShowcase = () => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="demo-input">Label</Label>
-            <Input 
+            <Input
               id="demo-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Controlled input"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="demo-textarea">Textarea</Label>
-            <Textarea 
+            <Textarea
               id="demo-textarea"
               value={textareaValue}
               onChange={(e) => setTextareaValue(e.target.value)}
               placeholder="Enter your message..."
             />
           </div>
-          
+
           <div className="flex items-center space-x-2">
-            <Checkbox 
+            <Checkbox
               id="demo-checkbox"
               checked={checkboxChecked}
               onCheckedChange={setCheckboxChecked}
@@ -408,7 +411,17 @@ const ComponentShowcase = () => {
 
 // Interactive playground
 const ComponentPlayground = () => {
-  const [selectedVariant, setSelectedVariant] = useState<'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'success' | 'warning' | 'tertiary'>('default');
+  const [selectedVariant, setSelectedVariant] = useState<
+    | 'default'
+    | 'destructive'
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'link'
+    | 'success'
+    | 'warning'
+    | 'tertiary'
+  >('default');
   const [selectedSize, setSelectedSize] = useState<'sm' | 'default' | 'lg' | 'icon'>('lg');
   const [buttonText, setButtonText] = useState('Click me');
 
@@ -434,15 +447,15 @@ const ComponentPlayground = () => {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-semibold">Component Playground</h2>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Controls</h3>
-          
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="variant-select">Variant</Label>
-              <select 
+              <select
                 id="variant-select"
                 value={selectedVariant}
                 onChange={(e) => setSelectedVariant(e.target.value as any)}
@@ -455,10 +468,10 @@ const ComponentPlayground = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <Label htmlFor="size-select">Size</Label>
-              <select 
+              <select
                 id="size-select"
                 value={selectedSize}
                 onChange={(e) => setSelectedSize(e.target.value as any)}
@@ -471,10 +484,10 @@ const ComponentPlayground = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <Label htmlFor="button-text">Button Text</Label>
-              <Input 
+              <Input
                 id="button-text"
                 value={buttonText}
                 onChange={(e) => setButtonText(e.target.value)}
@@ -483,13 +496,13 @@ const ComponentPlayground = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Preview</h3>
           <div className="p-8 bg-gray-50 rounded-lg">
             <div className="flex justify-center">
-              <Button 
-                variant={selectedVariant} 
+              <Button
+                variant={selectedVariant}
                 size={selectedSize}
                 onClick={() => alert('Button clicked!')}
               >
@@ -497,7 +510,7 @@ const ComponentPlayground = () => {
               </Button>
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-100 rounded-md">
             <h4 className="text-sm font-medium mb-2">Code</h4>
             <pre className="text-xs overflow-x-auto">
@@ -554,7 +567,7 @@ export default function StyleGuidePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {sections.find(section => section.id === activeSection)?.component}
+        {sections.find((section) => section.id === activeSection)?.component}
       </div>
     </div>
   );

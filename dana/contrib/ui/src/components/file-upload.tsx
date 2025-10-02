@@ -82,10 +82,18 @@ export function FileUpload({
           uploadedFile.status = 'success';
           uploadedFile.path = doc.filename;
         } else {
-          // Fallback to the old upload endpoint
-          const doc = await apiService.uploadDocument({ file, title: file.name });
+          // Use v2 upload endpoint
+          const uploadedResponse = await apiService.uploadDocumentRaw(file, {
+            build_index: true,
+            allow_duplicate: false,
+          });
+
+          if (!uploadedResponse.success || !uploadedResponse.document) {
+            throw new Error(uploadedResponse.message || 'Upload failed');
+          }
+
           uploadedFile.status = 'success';
-          uploadedFile.path = doc.filename;
+          uploadedFile.path = uploadedResponse.document.filename;
         }
 
         // Track successful file upload

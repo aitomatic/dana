@@ -21,12 +21,12 @@ import './katex-styling.css';
 let codeStyle: any;
 try {
   // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+
   codeStyle = require('react-syntax-highlighter/dist/styles/hljs/vs2015').default;
 } catch (e) {
   try {
     // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     codeStyle = require('react-syntax-highlighter/dist/styles/default').default;
   } catch (e2) {
     codeStyle = {};

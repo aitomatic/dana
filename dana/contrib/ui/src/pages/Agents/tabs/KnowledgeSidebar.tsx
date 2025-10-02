@@ -59,7 +59,13 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   };
 
   const renderQAndAPairs = () => {
-    if (!content || 'message' in content || !('questions_by_topics' in content) || !('answers_by_topics' in content)) return null;
+    if (
+      !content ||
+      'message' in content ||
+      !('questions_by_topics' in content) ||
+      !('answers_by_topics' in content)
+    )
+      return null;
 
     const knowledgeContent = content as KnowledgeContent;
     if (!knowledgeContent.questions_by_topics || !knowledgeContent.answers_by_topics) return null;
@@ -126,7 +132,14 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   };
 
   const renderUserInstructions = () => {
-    if (!content || 'message' in content || !('user_instructions' in content) || !content.user_instructions || content.user_instructions.length === 0) return null;
+    if (
+      !content ||
+      'message' in content ||
+      !('user_instructions' in content) ||
+      !content.user_instructions ||
+      content.user_instructions.length === 0
+    )
+      return null;
 
     const knowledgeContent = content as KnowledgeContent;
 
@@ -201,13 +214,13 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
     const handleGenerateKnowledge = () => {
       // Auto-send message to Dana Agent Maker
       const message = `Generate knowledge for "${messageContent.nodeLabel}" (${messageContent.topicPath})`;
-      
+
       // Use the global sendMessage function if available
       if (typeof window !== 'undefined' && (window as any).sendMessage) {
         (window as any).setInput(message);
         (window as any).sendMessage();
       }
-      
+
       // Close the sidebar
       onClose();
     };

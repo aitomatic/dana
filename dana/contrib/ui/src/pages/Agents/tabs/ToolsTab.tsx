@@ -46,7 +46,7 @@ const mockTools = [
     name: 'Scheduling events',
     description: 'Connect to Google Patents to retrieve Patent document',
     icon: <IconListCheck className="w-6 h-6 text-green-500" />,
-  }
+  },
 ];
 
 const ToolsTab: React.FC = () => {

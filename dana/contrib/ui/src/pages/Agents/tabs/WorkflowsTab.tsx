@@ -761,7 +761,6 @@ const WorkflowsTab: React.FC = () => {
                   className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getExecutionStatusColor(execution?.status || ExecutionStatus.IDLE)}`}
                 >
                   {getExecutionStatusIcon(execution?.status || ExecutionStatus.IDLE)}
-            
                 </div>
               </div>
 
@@ -1323,10 +1322,7 @@ const WorkflowsTab: React.FC = () => {
                         {/* Step-by-Step Execution Results */}
                         <div className="space-y-3">
                           {execution.stepResults.map((stepResult, index) => (
-                            <div
-                              key={index}
-                              className="p-3 rounded-lg border border-gray-200 "
-                            >
+                            <div key={index} className="p-3 rounded-lg border border-gray-200 ">
                               {/* Step Header */}
                               <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center space-x-2">

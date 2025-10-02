@@ -401,55 +401,63 @@ To get started, let's define its foundation:
   // No global handlers needed
 
   // WebSocket integration for real-time updates
-  const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
-    const newStatusMessage: ProcessingStatusMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      toolName: message.tool_name,
-      message: message.content,
-      status: message.status,
-      progression: message.progression,
-      timestamp: new Date(),
-    };
+  const handleChatUpdate = useCallback(
+    (message: ChatUpdateMessage) => {
+      const newStatusMessage: ProcessingStatusMessage = {
+        id: `${Date.now()}-${Math.random()}`,
+        toolName: message.tool_name,
+        message: message.content,
+        status: message.status,
+        progression: message.progression,
+        timestamp: new Date(),
+      };
 
-    setProcessingStatusHistory((prev) => {
-      // If this is an update to an existing tool, replace it
-      const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
-      if (existingIndex !== -1) {
-        const updated = [...prev];
-        updated[existingIndex] = newStatusMessage;
-        return updated;
-      }
-      // Otherwise add as new message
-      return [...prev, newStatusMessage];
-    });
+      setProcessingStatusHistory((prev) => {
+        // If this is an update to an existing tool, replace it
+        const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = newStatusMessage;
+          return updated;
+        }
+        // Otherwise add as new message
+        return [...prev, newStatusMessage];
+      });
 
-    // Automatically expand the thinking component when processing status updates are received
-    setIsHistoryExpanded(true);
+      // Automatically expand the thinking component when processing status updates are received
+      setIsHistoryExpanded(true);
 
-    // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
-    if ((message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') && message.status === 'finish') {
-      console.log('[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab');
-      
-      // Use the existing knowledge store callback system for auto-switching
-      const knowledgeStore = useKnowledgeStore.getState();
-      if (knowledgeStore.onTreeUpdate && agent_id) {
-        knowledgeStore.onTreeUpdate(agent_id);
-      }
-    }
-
-    // Don't clear processing status - keep it in history
-    // Only remove very old messages (older than 1 hour) to prevent memory issues
-    setTimeout(
-      () => {
-        setProcessingStatusHistory((prev) =>
-          prev.filter(
-            (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
-          ),
+      // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
+      if (
+        (message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') &&
+        message.status === 'finish'
+      ) {
+        console.log(
+          '[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab',
         );
-      },
-      60 * 60 * 1000,
-    );
-  }, [agent_id]);
+
+        // Use the existing knowledge store callback system for auto-switching
+        const knowledgeStore = useKnowledgeStore.getState();
+        if (knowledgeStore.onTreeUpdate && agent_id) {
+          knowledgeStore.onTreeUpdate(agent_id);
+        }
+      }
+
+      // Don't clear processing status - keep it in history
+      // Only remove very old messages (older than 1 hour) to prevent memory issues
+      setTimeout(
+        () => {
+          setProcessingStatusHistory((prev) =>
+            prev.filter(
+              (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
+            ),
+          );
+        },
+        60 * 60 * 1000,
+      );
+    },
+    [agent_id],
+  );
 
   const { connectionState } = useSmartChatWebSocket({
     agentId: agent_id || '',
@@ -704,20 +712,19 @@ To get started, let's define its foundation:
       }
 
       // Knowledge update detection (fallback method)
-      const hasKnowledgeUpdate = 
+      const hasKnowledgeUpdate =
         response.updated_domain_tree ||
         response.status === 'knowledge_status_update' ||
-        response.updates_applied?.some((update: string) => 
-          update.includes('knowledge') || 
-          update.includes('tree') ||
-          update.includes('domain')
+        response.updates_applied?.some(
+          (update: string) =>
+            update.includes('knowledge') || update.includes('tree') || update.includes('domain'),
         ) ||
         response.processor === 'knowledge_ops_handler' ||
         response.detected_intent === 'knowledge_ops';
 
       if (hasKnowledgeUpdate) {
         console.log('[AgentDetailSidebar] Knowledge update detected in response (fallback method)');
-        
+
         // Trigger knowledge store refresh
         const knowledgeStore = useKnowledgeStore.getState();
         knowledgeStore.fetchKnowledgeData(agent_id, true);
@@ -741,7 +748,7 @@ To get started, let's define its foundation:
       }
 
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
-      
+
       // Collapse the thinking component even on error
       setIsHistoryExpanded(false);
     } finally {
@@ -966,7 +973,6 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Dana Agent Maker</div>
           </div>
-
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat
