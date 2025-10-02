@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime, UTC
 import uuid
 from typing import BinaryIO
+import shutil
 
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
@@ -457,10 +458,13 @@ class DocumentService:
         except Exception as e:
             logger.error(f"Error building index for agent {agent_id}: {e}", exc_info=True)
 
-    def get_agent_associated_fp(self, agent_folder_path: str, document_original_filename: str):
+    def get_agent_associated_fp(self, agent_folder_path: str, document_original_filename: str, convert_to_md: bool = False):
         """Get the associated file path for a document."""
         original_filename = os.path.splitext(document_original_filename)[0]
-        destination_fp = os.path.join(agent_folder_path, "docs", f"{original_filename}.md")
+        if convert_to_md:
+            destination_fp = os.path.join(agent_folder_path, "docs", f"{original_filename}.md")
+        else:
+            destination_fp = os.path.join(agent_folder_path, "docs", document_original_filename)
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         return destination_fp
 
@@ -521,14 +525,15 @@ class DocumentService:
                     continue
 
                 # Remove the copied document file from agent folder
-                document_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                for convert_to_md in [True, False]:
+                    document_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename, convert_to_md)
 
-                if os.path.exists(document_fp):
-                    try:
-                        os.remove(document_fp)
-                        logger.info(f"Removed document from agent folder: {document_fp}")
-                    except Exception as file_error:
-                        logger.warning(f"Could not remove document from agent folder {document_fp}: {file_error}")
+                    if os.path.exists(document_fp):
+                        try:
+                            os.remove(document_fp)
+                            logger.info(f"Removed document from agent folder: {document_fp}")
+                        except Exception as file_error:
+                            logger.warning(f"Could not remove document from agent folder {document_fp}: {file_error}")
 
                 # Clear RAG cache for this agent
                 try:
@@ -630,7 +635,9 @@ class DocumentService:
             logger.error(f"Error checking if document exists with filename {original_filename}: {e}")
             raise
 
-    async def associate_documents_with_agent(self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session) -> list[str]:
+    async def associate_documents_with_agent(
+        self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session, convert_to_md: bool = False
+    ) -> list[str]:
         """
         Associate documents with an agent.
         """
@@ -648,20 +655,28 @@ class DocumentService:
                 document.agent_id = agent_id
                 extraction_files = document.extraction_files
                 if extraction_files:
-                    final_md = ""
-                    for extraction_file in extraction_files:
-                        extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
-                        with open(extract_fp) as f:
-                            extract_data = json.load(f)
-                        for extraction_doc in extract_data["documents"]:
-                            final_md += extraction_doc["text"]
-                            final_md += "\n\n"
-                    final_md = final_md.strip()
-                    if final_md:
-                        destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
-                        with open(destination_fp, "w") as f:
-                            f.write(final_md)
+                    if convert_to_md:
+                        final_md = ""
+                        for extraction_file in extraction_files:
+                            extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
+                            with open(extract_fp) as f:
+                                extract_data = json.load(f)
+                            for extraction_doc in extract_data["documents"]:
+                                final_md += extraction_doc["text"]
+                                final_md += "\n\n"
+                        final_md = final_md.strip()
+                        if final_md:
+                            destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                            with open(destination_fp, "w") as f:
+                                f.write(final_md)
+                            new_destination_fps.append(destination_fp)
+                    else:
+                        destination_fp = self.get_agent_associated_fp(
+                            agent_folder_path, document.original_filename, convert_to_md=convert_to_md
+                        )
+                        shutil.copy(document.file_path, destination_fp)
                         new_destination_fps.append(destination_fp)
+
                 else:
                     logger.warning(f"Document {document.id} {document.original_filename} failed to associated with agent {agent_id}")
 

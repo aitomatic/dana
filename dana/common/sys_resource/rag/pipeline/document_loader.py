@@ -36,6 +36,8 @@ class DocumentLoader(BaseStage):
         self._web_loader = WebLoader()
 
     async def load_sources(self, sources: list[str], group_by_fn: bool = False) -> dict[str, list[Document]]:
+        if not sources:
+            return {}
         docs_by_source = await self._load_sources(sources)
         if not group_by_fn:
             return docs_by_source
