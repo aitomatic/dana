@@ -8,7 +8,7 @@ _global_rag_resource = None
 def get_global_rag_resource():
     global _global_rag_resource
     if _global_rag_resource is None:
-        _global_rag_resource = RAGResourceV2(sources=[], read_only=False)
+        _global_rag_resource = RAGResourceV2(sources=[])
     return _global_rag_resource
 
 

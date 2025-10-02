@@ -148,7 +148,7 @@ async def get_deep_extraction_status(
 @router.get("/{document_id}", response_model=ExtractionOutput)
 async def get_extraction_data(
     document_id: int,
-    deep_extract: bool = False,
+    deep_extract: bool | None = None,
     db: Session = Depends(get_db),
     doc_repo: AbstractDocumentRepo = Depends(get_document_repo),
 ):
