@@ -145,7 +145,7 @@ export const MyAgentTab: React.FC<{
                             className="p-0 transform translate-x-4 -translate-y-2"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVert className="text-gray-700 size-4" strokeWidth={2} />
+                            <MoreVert className="text-gray-700 size-4" strokeWidth={3} />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">

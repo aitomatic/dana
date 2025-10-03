@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X, FileText, Calendar, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useUIStore } from '@/stores/ui-store';
+import { Button } from '@/components/ui/button';
 
 interface KnowledgeContent {
   knowledge_area_description: string;
@@ -22,6 +23,8 @@ interface MessageContent {
   topicPath: string;
   nodeLabel: string;
   status: string;
+  title: string;
+  description: string;
 }
 
 interface KnowledgeSidebarProps {
@@ -228,24 +231,22 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
     return (
       <div className="space-y-6">
         {/* Message */}
-        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-          <div className="flex gap-2 items-start">
-            <AlertCircle size={20} className="text-amber-600 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-amber-800">{messageContent.message}</p>
-            </div>
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="space-y-2">
+            <h3 className="text-md font-semibold text-gray-900">{messageContent.title}</h3>
+            <p className="text-sm text-gray-600">{messageContent.description}</p>
           </div>
         </div>
 
         {/* Generate Knowledge Button */}
         {messageContent.showGenerateButton && (
-          <div className="flex justify-center">
-            <button
+          <div className="flex">
+            <Button
               onClick={handleGenerateKnowledge}
-              className="px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              variant="default"
             >
               Generate Knowledge
-            </button>
+            </Button>
           </div>
         )}
       </div>
