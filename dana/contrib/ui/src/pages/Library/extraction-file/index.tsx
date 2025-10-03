@@ -272,52 +272,57 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                     </div>
 
                     <div className="flex justify-center items-center size-6">
-                      {/* Phase 1: Upload and Standard Extraction */}
-                      {(getFileStatus(file) === 'uploading' ||
-                        getFileStatus(file) === 'extracting') && (
-                        <IconLoader2 className="animate-spin size-4 text-brand-700" />
+                      {/* Only show icons in upload mode, not in review mode */}
+                      {!isReviewMode && (
+                        <>
+                          {/* Phase 1: Upload and Standard Extraction */}
+                          {(getFileStatus(file) === 'uploading' ||
+                            getFileStatus(file) === 'extracting') && (
+                            <IconLoader2 className="animate-spin size-4 text-brand-700" />
+                          )}
+
+                          {/* Phase 2: Deep Extraction */}
+                          {getFileStatus(file) === 'ready' &&
+                            file.deep_extraction_status === 'running' && (
+                              <IconLoader2 className="text-blue-600 animate-spin size-4" />
+                            )}
+
+                          {/* Final States */}
+                          {getFileStatus(file) === 'ready' &&
+                            file.deep_extraction_status === 'completed' && (
+                              <div className="flex justify-center items-center bg-green-500 rounded-full size-4">
+                                <Check className="text-white size-3" strokeWidth={3} />
+                              </div>
+                            )}
+                          {getFileStatus(file) === 'ready' &&
+                            file.deep_extraction_status === 'failed' && (
+                              <div className="flex justify-center items-center bg-yellow-500 rounded-full size-4">
+                                <span className="text-xs text-white">!</span>
+                              </div>
+                            )}
+                          {getFileStatus(file) === 'ready' && !file.deep_extraction_status && (
+                            <div className="flex justify-center items-center bg-green-500 rounded-full size-4">
+                              <Check className="text-white size-3" strokeWidth={3} />
+                            </div>
+                          )}
+
+                          {/* Error States */}
+                          {file.duplicate_error && (
+                            <div className="flex justify-center items-center bg-orange-500 rounded-full size-4">
+                              <span className="text-xs text-white">!</span>
+                            </div>
+                          )}
+
+                          {/* Default State */}
+                          {getFileStatus(file) === 'ready' &&
+                            !file.deep_extraction_status &&
+                            !file.duplicate_error && (
+                              <div className="flex justify-center items-center bg-gray-400 rounded-full size-4">
+                                <Check className="text-white size-3" strokeWidth={3} />
+                              </div>
+                            )}
+                        </>
                       )}
-
-                      {/* Phase 2: Deep Extraction */}
-                      {getFileStatus(file) === 'ready' &&
-                        file.deep_extraction_status === 'running' && (
-                          <IconLoader2 className="text-blue-600 animate-spin size-4" />
-                        )}
-
-                      {/* Final States */}
-                      {getFileStatus(file) === 'ready' &&
-                        file.deep_extraction_status === 'completed' && (
-                          <div className="flex justify-center items-center bg-green-500 rounded-full size-4">
-                            <Check className="text-white size-3" strokeWidth={3} />
-                          </div>
-                        )}
-                      {getFileStatus(file) === 'ready' &&
-                        file.deep_extraction_status === 'failed' && (
-                          <div className="flex justify-center items-center bg-yellow-500 rounded-full size-4">
-                            <span className="text-xs text-white">!</span>
-                          </div>
-                        )}
-                      {getFileStatus(file) === 'ready' && !file.deep_extraction_status && (
-                        <div className="flex justify-center items-center bg-green-500 rounded-full size-4">
-                          <Check className="text-white size-3" strokeWidth={3} />
-                        </div>
-                      )}
-
-                      {/* Error States */}
-                      {file.duplicate_error && (
-                        <div className="flex justify-center items-center bg-orange-500 rounded-full size-4">
-                          <span className="text-xs text-white">!</span>
-                        </div>
-                      )}
-
-                      {/* Default State */}
-                      {getFileStatus(file) === 'ready' &&
-                        !file.deep_extraction_status &&
-                        !file.duplicate_error && (
-                          <div className="flex justify-center items-center bg-gray-400 rounded-full size-4">
-                            <Check className="text-white size-3" strokeWidth={3} />
-                          </div>
-                        )}
                     </div>
                   </div>
                 ))}
