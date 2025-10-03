@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle,
   QuestionMark,
+  Trash,
 } from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
@@ -51,6 +52,7 @@ if (typeof document !== 'undefined') {
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
   onNodeClick: (event: React.MouseEvent) => void;
+  onDeleteNode?: (nodeId: string, nodePath: string) => void;
 }
 
 interface NodeData {
@@ -170,15 +172,26 @@ export const FilePopup = ({
   </PortalPopup>
 );
 
-const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }) => {
+const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, onDeleteNode }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [, setPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const nodeData = data as NodeData;
   const knowledgeStatus = nodeData.knowledgeStatus;
   const isLeafNode = nodeData.isLeafNode;
   const hasChildren = nodeData.hasChildren;
   const isExpanded = nodeData.isExpanded;
+
+  // Handle delete button click
+  const handleDeleteClick = (event: React.MouseEvent) => {
+    // Use nodePath as fallback ID if data.id is undefined
+    const nodeId = data.id || nodeData.nodePath;
+    event.stopPropagation(); // Prevent node click
+    if (onDeleteNode && nodeData.nodePath) {
+      onDeleteNode(nodeId, nodeData.nodePath);
+    }
+  };
 
   useEffect(() => {
     if (isSelected && nodeRef.current) {
@@ -291,7 +304,14 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   };
 
   return (
-    <div ref={nodeRef} className={getNodeClasses()} style={getNodeStyling()} onClick={onNodeClick}>
+    <div
+      ref={nodeRef}
+      className={getNodeClasses()}
+      style={getNodeStyling()}
+      onClick={onNodeClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div
         style={{
           width: '100%',
@@ -302,7 +322,35 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       >
         <span style={{ textAlign: 'left', flex: 1 }}>{nodeData.label}</span>
         {/* Icons positioned on the right edge */}
-        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8, gap: 4 }}>
+          {/* Delete button - only show on hover and if onDeleteNode is provided */}
+          {isHovered && onDeleteNode && (
+            <button
+              onClick={handleDeleteClick}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+              }}
+              title="Delete node"
+            >
+              <Trash width={14} height={14} style={{ color: '#ef4444' }} />
+            </button>
+          )}
           {hasChildren && (
             <span style={{ fontSize: '16px' }}>{isExpanded ? '' : <NavArrowRight />}</span>
           )}

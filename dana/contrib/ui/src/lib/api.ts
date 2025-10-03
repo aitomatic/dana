@@ -1040,6 +1040,16 @@ class ApiService {
     return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
   }
 
+  async deleteDomainKnowledgeNode(
+    agentId: string | number,
+    topicParts: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/agents/${agentId}/domain-knowledge-node`, {
+      data: { topic_parts: topicParts },
+    });
+    return response.data;
+  }
+
   // Agent File Management API Methods
   async getAgentFiles(agentId: number): Promise<{
     files: Array<{
