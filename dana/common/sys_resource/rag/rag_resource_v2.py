@@ -32,10 +32,10 @@ def get_duckdb_connection(database_name: str, persist_dir: str, read_only: bool 
     print(f"Getting duckdb connection for {full_path}")
     key = (full_path, read_only)
     if key in _conn:
-        return _conn[key]
+        return _conn[key].cursor()
     conn = duckdb.connect(full_path, read_only=read_only)
     _conn[key] = conn
-    return conn
+    return conn.cursor()
 
 
 class RAGResourceV2(BaseSysResource):
@@ -100,7 +100,8 @@ class RAGResourceV2(BaseSysResource):
                     SELECT DISTINCT 
                         json_extract_string(metadata_, '$.file_hash')::VARCHAR as file_hash, 
                     FROM {self.get_table_name()}.main.documents;""").fetchall()
-            return [row[0] for row in result]
+                hashes = [row[0] for row in result]
+            return hashes
         except Exception as _:
             return []
 
@@ -418,8 +419,8 @@ class RAGResourceV2(BaseSysResource):
                 result = conn.execute(query, [file_hash])
                 removed_count = result.rowcount
 
-            if self.debug:
-                print(f"Removed {removed_count} documents with file_hash: {file_hash}")
+                if self.debug:
+                    print(f"Removed {removed_count} documents with file_hash: {file_hash}")
 
         except Exception as e:
             if self.debug:
