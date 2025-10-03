@@ -108,6 +108,51 @@ interface ExtractedFileProps {
 // Drag and Drop Component
 const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+
+  const validateFileSizes = (files: File[]): { isValid: boolean; errorMessage: string | null } => {
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length === 0) {
+      return { isValid: true, errorMessage: null };
+    }
+
+    if (oversizedFiles.length === 1) {
+      const file = oversizedFiles[0];
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      return { 
+        isValid: false, 
+        errorMessage: `"${file.name}" (${sizeMB}MB) exceeds the 50MB file size limit. Please choose a smaller file.` 
+      };
+    } else {
+      const fileNames = oversizedFiles.map(file => file.name).join(', ');
+      return { 
+        isValid: false, 
+        errorMessage: `Multiple files exceed the 50MB limit: ${fileNames}. Please choose smaller files.` 
+      };
+    }
+  };
+
+  const handleFileUpload = useCallback(
+    (files: File[]) => {
+      const validation = validateFileSizes(files);
+      
+      if (!validation.isValid) {
+        setFileSizeError(validation.errorMessage);
+        // Don't proceed with upload if validation fails
+        return;
+      }
+      
+      // Clear any previous error and proceed with upload
+      setFileSizeError(null);
+      if (onFileUpload) {
+        onFileUpload(files);
+      }
+    },
+    [onFileUpload],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -128,21 +173,21 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
       setIsDragOver(false);
 
       const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0 && onFileUpload) {
-        onFileUpload(files);
+      if (files.length > 0) {
+        handleFileUpload(files);
       }
     },
-    [onFileUpload],
+    [handleFileUpload],
   );
 
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
-      if (files.length > 0 && onFileUpload) {
-        onFileUpload(files);
+      if (files.length > 0) {
+        handleFileUpload(files);
       }
     },
-    [onFileUpload],
+    [handleFileUpload],
   );
 
   return (
@@ -194,8 +239,15 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
           </label>
         </div>
         <div className="max-w-md text-sm text-center text-gray-400">
-          (.pdf, .doc, .docx, .md. Max 5MB per file)
+          (.pdf, .doc, .docx, .md. Max 50MB per file)
         </div>
+        {/* File Size Error Message */}
+        {fileSizeError && (
+          <div className="max-w-lg p-3 mt-2 text-sm text-red-700 bg-red-50 rounded-md border border-red-200">
+            <p className="font-medium">File size too large</p>
+            <p className="mt-1">{fileSizeError}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -321,7 +373,11 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                   </div>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls
+                      isDeepExtracted={selectedFile?.is_deep_extracted || false}
                       isDeepExtracting={isDeepExtracting}
+                      showPromptInput={false}
+                      onShowPromptInput={() => {}}
+                      onDeepExtractWithPrompt={() => {}}
                       isEditing={isEditing}
                       onEdit={handleEdit}
                       onSave={handleSave}
