@@ -10,7 +10,7 @@ import { useKnowledgeStore } from '@/stores/knowledge-store';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import KnowledgeSidebar from './KnowledgeSidebar';
-import { Search, Collapse, Expand } from 'iconoir-react';
+import { Search, Collapse, Expand, Xmark, LightBulb, ThumbsUp } from 'iconoir-react';
 
 // Single transition definition for consistency
 const TRANSITION_DURATION = '0.5s';
@@ -312,6 +312,70 @@ interface DomainKnowledgeTreeProps {
 // Use backend URL for WebSocket (now disabled - using centralized store)
 // const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
 
+// KnowledgeIntroBox Component
+interface KnowledgeIntroBoxProps {
+  isVisible: boolean;
+  hasNewKnowledge: boolean;
+  onDismiss: () => void;
+}
+
+const KnowledgeIntroBox: React.FC<KnowledgeIntroBoxProps> = ({
+  isVisible,
+  hasNewKnowledge,
+  onDismiss,
+}) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className={`mb-6 mx-4 p-4 rounded-lg border border-dashed transition-all duration-300 ${
+      hasNewKnowledge 
+        ? 'bg-green-50 border-green-200' 
+        : 'bg-white border-gray-200'
+    }`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex gap-3 flex-1">
+          <div className="flex-shrink-0">
+            <div className={`flex justify-center items-center w-8 h-8 rounded-full ${
+              hasNewKnowledge ? 'bg-green-600' : 'bg-gray-600'
+            }`}>
+              {hasNewKnowledge ? (
+                <ThumbsUp width={20} height={20} strokeWidth={2} className="text-white" />
+              ) : (
+                <LightBulb width={20} height={20} strokeWidth={2} className="text-white" />
+              )}
+            </div>
+          </div>
+          <div className="flex-1">
+            <h3 className={`text-md font-semibold mb-2 ${
+              hasNewKnowledge ? 'text-green-800' : 'text-gray-800'
+            }`}>
+              {hasNewKnowledge ? 'Nice! You have added a new knowledge topic.' : "This is your agent's knowledge graph — the map of what it knows"}
+            </h3>
+            <p className={`text-sm ${
+              hasNewKnowledge ? 'text-green-700' : 'text-gray-700'
+            }`}>
+              {hasNewKnowledge 
+                ? "Keep going to complete your agent knowledge map."
+                : "Each node is a knowledge topic. Right now you only have General Purpose. Use the Agent Maker to add more knowledge and watch the graph grow."
+              }
+            </p>
+          </div>
+        </div>
+      
+          <button
+            onClick={onDismiss}
+            className={`p-1 rounded-full h transition-colors ${
+              hasNewKnowledge ? 'text-green-600 hover:text-green-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-700'
+            }`}
+          >
+            <Xmark width={16} height={16} />
+          </button>
+
+      </div>
+    </div>
+  );
+};
+
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
   // Use centralized knowledge store
   const {
@@ -344,6 +408,49 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // New UX improvement states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Knowledge intro box states
+  const [showKnowledgeIntro, setShowKnowledgeIntro] = useState<boolean>(false);
+  const [hasNewKnowledge, setHasNewKnowledge] = useState<boolean>(false);
+  const [previousKnowledgeCount, setPreviousKnowledgeCount] = useState<number>(0);
+
+  // Helper function to detect if graph has been modified
+  const hasGraphBeenModified = () => {
+    if (!statusData || !statusData.topics) return false;
+    
+    // Check if any knowledge topics have been generated successfully
+    const hasGeneratedContent = statusData.topics.some((topic: any) => 
+      topic.status === 'success' || topic.status === 'completed'
+    );
+    
+    // Check if there are multiple knowledge topics beyond basic structure
+    const topicCount = statusData.topics.length;
+    const isOnlyBasicStructure = topicCount <= 1; // Only "General Purpose" or similar
+    
+    return hasGeneratedContent || !isOnlyBasicStructure;
+  };
+  
+  // Initial state management with localStorage persistence
+  useEffect(() => {
+    const dismissedKey = `knowledge-intro-dismissed-${agentId}`;
+    const hasBeenDismissed = localStorage.getItem(dismissedKey);
+    
+    if (hasBeenDismissed) {
+      // User dismissed this intro before - don't show at all
+      setShowKnowledgeIntro(false);
+      return;
+    }
+    
+    // Check if graph has been modified - if modified, don't show intro
+    if (hasGraphBeenModified()) {
+      setShowKnowledgeIntro(false);
+      return;
+    }
+    
+    // Show intro only for unmodified graphs on first visit
+    setShowKnowledgeIntro(true);
+  }, [agentId, statusData]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   // const wsRef = useRef<WebSocket | null>(null); // No longer needed
   const expandedNodesRef = useRef<Set<string>>(new Set());
@@ -871,9 +978,23 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       searchQuery,
     );
     const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+    
+    // Knowledge detection logic - only detect transitions if intro box is visible
+    const currentKnowledgeCount = flowNodes.length;
+    if (showKnowledgeIntro) {
+      if (previousKnowledgeCount > 0 && currentKnowledgeCount > previousKnowledgeCount) {
+        // New knowledge topic detected - show celebration transition
+        setHasNewKnowledge(true);
+      } else if (previousKnowledgeCount === 0 && currentKnowledgeCount >= 0) {
+        // Initial state when intro first becomes visible
+        setHasNewKnowledge(false);
+      }
+    }
+    setPreviousKnowledgeCount(currentKnowledgeCount);
+    
     setNodes(layoutedNodes);
     setEdges(flowEdges);
-  }, [statusData]);
+  }, [statusData, showKnowledgeIntro]);
 
   // Hide popup when clicking outside
   useEffect(() => {
@@ -932,24 +1053,29 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       } else {
         // Show drawer with message and CTA for nodes without knowledge content
         const status = nodeData.knowledgeStatus?.status || 'pending';
-        let message = '';
+        let title = '';
+        let description = '';
         let showGenerateButton = false;
 
         switch (status) {
           case 'pending':
-            message = `Content is not generated yet for "${nodeData.label}".`;
+            title = 'Knowledge Not Generated Yet';
+            description = `Content for "${nodeData.label}" will be shown here once knowledge generation is complete. Click the button below to start generating knowledge for this topic.`;
             showGenerateButton = true;
             break;
           case 'in_progress':
-            message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
+            title = 'Generating Knowledge';
+            description = `Knowledge for "${nodeData.label}" is currently being generated. This process may take several minutes. Please wait while we analyze and extract insights from your uploaded documents.`;
             showGenerateButton = false;
             break;
           case 'failed':
-            message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
+            title = 'Knowledge Generation Failed';
+            description = `We encountered an issue while generating knowledge for "${nodeData.label}". Please try regenerating the knowledge. If the problem persists, check your uploaded documents and try again.`;
             showGenerateButton = true;
             break;
           default:
-            message = `Knowledge for "${nodeData.label}" is not available yet.`;
+            title = 'Knowledge Not Available';
+            description = `Knowledge for "${nodeData.label}" is not available yet. Click the button below to start the knowledge generation process.`;
             showGenerateButton = true;
         }
 
@@ -959,7 +1085,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         setSidebarLoading(false);
         setSidebarError(null);
         setSidebarContent({
-          message,
+          message: '', // Keep for backwards compatibility
+          title,
+          description,
           showGenerateButton,
           topicPath,
           nodeLabel: nodeData.label,
@@ -1129,6 +1257,19 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     setEdges(flowEdges);
   };
 
+  // Handle intro box dismissal
+  const handleDismissIntro = () => {
+    // Hide intro permanently for this agent
+    setShowKnowledgeIntro(false);
+    
+    // Store dismissal in localStorage
+    const dismissedKey = `knowledge-intro-dismissed-${agentId}`;
+    localStorage.setItem(dismissedKey, 'true');
+    
+    // Keep hasNewKnowledge state to preserve any celebration animations
+    // Don't reset hasNewKnowledge - let it persist the final state
+  };
+
   // Calculate progress statistics
   const getProgressStats = () => {
     if (!statusData || !statusData.topics)
@@ -1206,7 +1347,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${
+            className={`px-4 ${
               initialLoading || loading ? 'top-16' : 'top-4'
             }`}
           >
@@ -1295,9 +1436,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           </div>
         )}
 
+        {/* Knowledge Intro Box */}
+        <KnowledgeIntroBox
+          isVisible={showKnowledgeIntro}
+          hasNewKnowledge={hasNewKnowledge}
+          onDismiss={handleDismissIntro}
+        />
+
         {/* Tree View Container with smooth margin adjustment */}
         <div
-          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''}`}
+          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-0') : ''}`}
           style={{ transition: TRANSITION_ALL }}
         >
           {nodes.length > 0 ? (
