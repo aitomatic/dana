@@ -596,6 +596,12 @@ class RevertDomainKnowledgeRequest(BaseModel):
     version_id: int
 
 
+class DeleteTopicKnowledgeRequest(BaseModel):
+    """Request to delete topic knowledge content"""
+
+    topic_parts: list[str]
+
+
 class ChatWithIntentRequest(BaseModel):
     """Extended chat request with intent detection"""
 
