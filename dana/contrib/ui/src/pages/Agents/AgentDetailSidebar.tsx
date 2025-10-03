@@ -10,6 +10,86 @@ import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { HybridRenderer } from './chat/hybrid-renderer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
+// CSS for blinking cursor animation
+const cursorBlinkStyle = `
+  .cursor-blink {
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0;
+    }
+  }
+`;
+
+// Add styles to head
+if (typeof window !== 'undefined' && !document.getElementById('animated-placeholder-styles')) {
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'animated-placeholder-styles';
+  styleSheet.textContent = cursorBlinkStyle;
+  document.head.appendChild(styleSheet);
+}
+
+// Animated placeholder component - only shown for new users (no messages sent)
+const AnimatedPlaceholder: React.FC<{ hasMessages: boolean; isFocused: boolean; hasInteracted: boolean }> = ({ hasMessages, isFocused, hasInteracted }) => {
+  const placeholders = [
+    "Add a new knowledge topic",
+    "Show me what my agent knows",
+    "Build my agent using a job description"
+  ];
+
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [currentText, setCurrentText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    // Only animate if there are no messages, textarea is not focused, and user hasn't interacted yet
+    if (hasMessages || isFocused || hasInteracted) {
+      setCurrentText('');
+      return;
+    }
+
+    const typingSpeed = 100;
+    const deletingSpeed = 50;
+    const pauseDuration = 2000;
+
+    const timeout = setTimeout(() => {
+      if (!isDeleting && currentText === placeholders[currentPlaceholder]) {
+        // If we've finished typing, pause then start deleting
+        setTimeout(() => setIsDeleting(true), pauseDuration);
+      } else if (isDeleting && currentText === '') {
+        // If we've finished deleting, move to next placeholder and start typing
+        setIsDeleting(false);
+        setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+      } else if (isDeleting) {
+        // Delete current text
+        setCurrentText(currentText.slice(0, -1));
+      } else {
+        // Type current text
+        setCurrentText(placeholders[currentPlaceholder].slice(0, currentText.length + 1));
+      }
+    }, isDeleting ? deletingSpeed : typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [currentText, isDeleting, currentPlaceholder, placeholders, hasMessages, isFocused, hasInteracted]);
+
+  // If user has sent messages OR is focused OR has interacted, show simple static placeholder
+  if (hasMessages || isFocused || hasInteracted) {
+    return <span>Type your message</span>;
+  }
+
+  return (
+    <span className="relative inline-block">
+      {currentText}
+      <span className="inline-block w-0.5 h-4 ml-0.5 bg-gray-400 cursor-blink"></span>
+    </span>
+  );
+};
+
 // Constants for resize functionality
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 800;
@@ -206,6 +286,8 @@ const SmartAgentChat: React.FC<{
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -879,6 +961,16 @@ To get started, let's define its foundation:
         </div>
         <div className="p-3">
           <div className="relative">
+            {/* Animated placeholder overlay */}
+            {!input && !loading && (
+              <div className="absolute top-3 left-3 text-gray-500 text-sm pointer-events-none z-10">
+                <AnimatedPlaceholder 
+                  hasMessages={messages.some(msg => msg.sender === 'user')} 
+                  isFocused={isFocused}
+                  hasInteracted={hasInteracted}
+                />
+              </div>
+            )}
             <textarea
               className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
               focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
@@ -887,7 +979,11 @@ To get started, let's define its foundation:
               onKeyDown={handleKeyDown}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder="Type your message"
+              onFocus={() => {
+                setIsFocused(true);
+                setHasInteracted(true);
+              }}
+              onBlur={() => setIsFocused(false)}
               disabled={loading}
               rows={1}
               style={{
