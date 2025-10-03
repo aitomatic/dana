@@ -81,17 +81,9 @@ def py_use(
         return resource
 
     elif function_name.lower() == "rag":
-        import os
+        from dana.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 
-        if os.environ.get("STUDIO_RAG", "false").lower() == "true":
-            print("Using RAGResourceV2")
-            from dana.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
-
-            resource = RAGResourceV2(*args, name=_name, **kwargs)
-        else:
-            from dana.common.sys_resource.rag.rag_resource import RAGResource
-
-            resource = RAGResource(*args, name=_name, **kwargs)
+        resource = RAGResourceV2(*args, name=_name, **kwargs)
 
         context.set_resource(_name, resource)
         return resource
