@@ -1144,9 +1144,13 @@ class ApiService {
   }
 
   // Clone agent from prebuilt agent
-  async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
+  async cloneAgentFromPrebuilt(
+    prebuiltKey: string,
+    config?: Record<string, any>,
+  ): Promise<AgentRead> {
     const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
       prebuilt_key: prebuiltKey,
+      config: config || {},
     });
     return response.data;
   }
