@@ -23,8 +23,8 @@ class RAGResource(BaseSysResource):
         cache_dir: str | None = None,  # Changed default to None
         force_reload: bool = False,
         description: str | None = None,
-        chunk_size: int = 1024,
-        chunk_overlap: int = 256,
+        chunk_size: int = 256,
+        chunk_overlap: int = 64,
         debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,

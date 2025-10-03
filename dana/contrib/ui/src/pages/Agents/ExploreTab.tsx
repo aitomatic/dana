@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,7 +66,9 @@ export const ExploreTab: React.FC<{
 
     try {
       if (selectedAgent.is_prebuilt) {
-        const newAgent = await apiService.cloneAgentFromPrebuilt(selectedAgent.key);
+        const newAgent = await apiService.cloneAgentFromPrebuilt(selectedAgent.key, {
+          status: 'success',
+        });
         if (newAgent && newAgent.id) {
           // Set Overview tab before navigating to chat
           setAgentDetailActiveTab('Overview');
@@ -302,7 +305,7 @@ export const ExploreTab: React.FC<{
                         {uniqueTopics.map((topic: string, index: number) => (
                           <span
                             key={index}
-                            className="px-2 py-1 text-sm text-brand-700 capitalize bg-brand-50 rounded-full"
+                            className="px-2 py-1 text-sm capitalize rounded-full text-brand-700 bg-brand-50"
                           >
                             {topic}
                           </span>
