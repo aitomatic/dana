@@ -88,7 +88,7 @@ export const ExploreTab: React.FC<{
       <div className="flex justify-between items-center mb-4 text-gray-600">
         <p>Pre-trained agents with built-in domain expertise by Aitomatic</p>
       </div>
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex hidden flex-wrap gap-2 mb-6">
         {DOMAINS.map((domain) => (
           <Button
             key={domain}

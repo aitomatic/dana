@@ -21,24 +21,26 @@ export function DuplicateFileDialog({ open, file, onAction, onClose }: Duplicate
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-start mb-8 mt-2 gap-3 px-4 py-4 rounded-lg border">
+            <div className="flex items-center gap-2 justify-center w-10 h-10 bg-gray-100 rounded-lg">
             <FileText className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">
-                The file "{file.original_filename}" already exists
+              <p className="text-md text-gray-900">
+                <span className='font-semibold'>{file.original_filename}</span> already exists
               </p>
-              <p className="text-xs text-gray-700 mt-1">
-                What would you like to do with this file?
+              <p className="text-sm text-gray-700 mt-1">
+               Do you want to upload this file as a copy?
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <Button onClick={() => onAction('cancel')} className="justify-start" variant="ghost">
               Cancel upload
             </Button>
 
-            <Button onClick={() => onAction('copy')} className="justify-start" variant="outline">
+            <Button onClick={() => onAction('copy')} className="justify-start" variant="default">
               Upload as a copy
             </Button>
           </div>
