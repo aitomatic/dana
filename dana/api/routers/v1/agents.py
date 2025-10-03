@@ -1123,6 +1123,7 @@ async def fix_agent_code(request: CodeFixRequest):
 @router.post("/from-prebuilt", response_model=AgentRead)
 async def create_agent_from_prebuilt(
     prebuilt_key: str = Body(..., embed=True),
+    config: dict = Body(..., embed=True),
     db: Session = Depends(get_db),
     agent_manager: AgentManager = Depends(get_agent_manager),
 ):
@@ -1135,11 +1136,17 @@ async def create_agent_from_prebuilt(
         prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
         if not prebuilt_agent:
             raise HTTPException(status_code=404, detail="Prebuilt agent not found")
+        # Add status field from provided config to prebuilt config
+        prebuilt_config = prebuilt_agent.get("config", {})
+        merged_config = prebuilt_config.copy()
+        if "status" in config:
+            merged_config["status"] = config["status"]
+
         # Create new agent in DB
         db_agent = Agent(
             name=prebuilt_agent["name"],
             description=prebuilt_agent.get("description", ""),
-            config=prebuilt_agent.get("config", {}),
+            config=merged_config,
         )
         db.add(db_agent)
         db.commit()
@@ -1233,7 +1240,6 @@ async def create_agent_from_prebuilt(
         # Update config with folder_path and status
         updated_config = db_agent.config.copy() if db_agent.config else {}
         updated_config["folder_path"] = str(agent_folder)
-        updated_config["status"] = "success"
         db_agent.config = updated_config
         db_agent.generation_phase = "code_generated"
         flag_modified(db_agent, "config")
