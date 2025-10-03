@@ -105,8 +105,8 @@
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
             "cohere:embed-english-v3.0",
-            "watsonx:ibm/slate-125m-english-rtrvr-v2",
-            "watsonx:ibm/slate-125m-english-rtrvr"
+            "watsonx:ibm/slate-125m-english-rtrvr",
+            "watsonx:ibm/slate-125m-english-rtrvr-v2"
         ],
         "provider_configs": {
             "openai": {

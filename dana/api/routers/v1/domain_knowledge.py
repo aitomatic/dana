@@ -17,6 +17,7 @@ from dana.api.core.schemas import (
     ChatWithIntentRequest,
     ChatWithIntentResponse,
     DomainNode,
+    DeleteTopicKnowledgeRequest,
 )
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.services.intent_detection_service import get_intent_detection_service, IntentDetectionService
@@ -701,4 +702,62 @@ async def get_topic_knowledge_content(agent_id: int, topic_path: str, db: Sessio
         raise
     except Exception as e:
         logger.error(f"Error fetching knowledge content for agent {agent_id}, topic {topic_path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{agent_id}/domain-knowledge-node")
+async def delete_topic_knowledge_content(
+    agent_id: int,
+    request: DeleteTopicKnowledgeRequest,
+    db: Session = Depends(get_db),
+    domain_service: DomainKnowledgeService = Depends(get_domain_knowledge_service),
+):
+    """
+    Delete the generated knowledge content for a specific topic.
+
+    Args:
+        agent_id: Agent ID
+        request: Request containing topic_parts list
+        db: Database session
+        domain_service: Domain knowledge service
+
+    Returns:
+        Success message or error
+    """
+    from dana.api.core.schemas_v2 import DomainKnowledgeTreeV2
+    from dana.api.core.models import Agent
+    from pathlib import Path
+    import shutil
+
+    try:
+        # Construct topic path from topic_parts
+        logger.info(f"Deleting domain knowledge for agent {agent_id}, topic: {request.topic_parts}")
+
+        tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
+
+        if tree:
+            agent = db.query(Agent).filter(Agent.id == agent_id).first()
+            if not agent:
+                logger.error(f"Agent {agent_id} not found")
+                raise HTTPException(status_code=404, detail="Agent not found")
+
+            tree_v2 = DomainKnowledgeTreeV2.model_validate_json(tree.model_dump_json())
+            tree_v2.delete_node(request.topic_parts)
+
+            folder_path = agent.config.get("folder_path")
+            if folder_path:
+                knows_path = Path(agent.config.get("folder_path")) / "knows"
+                node_path = knows_path.joinpath(*request.topic_parts).resolve()
+                if node_path.exists():
+                    shutil.rmtree(node_path)
+                else:
+                    raise HTTPException(status_code=404, detail="Node not found")
+
+            await domain_service.save_agent_domain_knowledge(agent_id, tree_v2, db)
+            return {"message": "Knowledge content deleted successfully"}
+        else:
+            return {"message": "No domain knowledge found for this agent"}
+
+    except Exception as e:
+        logger.error(f"Error fetching domain knowledge for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
