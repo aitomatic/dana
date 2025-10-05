@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { apiService } from '@/lib/api';
+import { analytics } from '@/lib/analytics';
 
 function unwrapMarkdownFences(content: string | undefined): string {
   if (!content) return '';
@@ -322,6 +323,14 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
               };
             });
 
+            // Track successful extraction
+            const fileExtension = file.name.split('.').pop() || 'unknown';
+            analytics.trackEvent({
+              action: 'file_extraction_success',
+              category: 'library',
+              label: `${fileExtension}_basic`,
+            });
+
             // Store results
             set((state) => {
               const updatedFiles = state.extractedFiles.map((f) =>
@@ -353,6 +362,14 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
           } catch (extractionError: any) {
             // Handle extraction-specific errors
             const errorMessage = extractionError?.message || '';
+
+            // Track extraction error
+            const fileExtension = file.name.split('.').pop() || 'unknown';
+            analytics.trackEvent({
+              action: 'file_extraction_failed',
+              category: 'library',
+              label: `${fileExtension}_basic`,
+            });
 
             // Check if this is a duplicate-related extraction failure
             if (
@@ -525,7 +542,15 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
         };
       });
 
-      // Update file with results
+      // Track successful deep extraction
+      const fileExtension = file.file.name.split('.').pop() || 'unknown';
+      analytics.trackEvent({
+        action: 'file_extraction_success',
+        category: 'library',
+        label: `${fileExtension}_deep`,
+      });
+
+      // Update file with deep extraction results
       set((state) => {
         const updatedFiles = state.extractedFiles.map((f) =>
           f.id === file.id
@@ -556,7 +581,15 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
 
       closeDuplicateDialog();
     } catch (error: any) {
-      set({ error: error?.message || 'Upload failed' });
+      // Track deep extraction error
+      const fileExtension = file.file?.name.split('.').pop() || 'unknown';
+      analytics.trackEvent({
+        action: 'file_extraction_failed',
+        category: 'library',
+        label: `${fileExtension}_deep`,
+      });
+      
+      set({ error: error?.message || 'Deep extraction failed' });
       // Reset status on error
       set((state) => ({
         extractedFiles: state.extractedFiles.map((f) => (f.id === file.id ? { ...f } : f)),

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 // import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
 import type { CodeValidationResponse } from '@/lib/api';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 // Define the correct theme type to match Monaco's requirements
 type BuiltinTheme = 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
@@ -127,6 +128,7 @@ export const AgentEditor = ({
 }) => {
   const monaco = useMonaco();
   const isDark = false;
+  const { trackCodeGeneration, trackError } = useDanaAnalytics();
 
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
@@ -263,6 +265,9 @@ export const AgentEditor = ({
           errorMessage: '',
           lastValidationResult: null,
         });
+        
+        // Track validation error
+        trackError('code_validation_failed', error instanceof Error ? error.message : 'Unknown error', 'agent_editor');
       }
     },
     [enableAutoValidation],

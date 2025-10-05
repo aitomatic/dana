@@ -18,8 +18,10 @@ import { PdfViewer } from '@/components/library/pdf-viewer';
 import { JsonViewer } from '@/components/library/json-viewer';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import { ExtractionFilePopup } from './extraction-file';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export default function LibraryPage() {
+  const { trackFolderCreation, trackError } = useDanaAnalytics();
   // API hooks
   const {
     fetchTopics,
@@ -199,6 +201,9 @@ export default function LibraryPage() {
       // Extract error message from the error object (handles both Error and ApiError)
       const errorMessage = error?.message || 'Failed to delete item';
 
+      // Track deletion error
+      trackError('library_item_deletion_failed', errorMessage, selectedItem.id);
+
       // For topics with documents, the store automatically retries with force=true
       // So we should only see an error if the retry also failed
       console.log('Delete error in UI:', errorMessage);
@@ -216,8 +221,17 @@ export default function LibraryPage() {
   };
 
   const handleCreateFolder = async (name: string) => {
-    await createTopic({ name, description: `Topic: ${name}` });
-    setShowCreateFolder(false);
+    try {
+      await createTopic({ name, description: `Topic: ${name}` });
+      
+      // Track folder creation
+      trackFolderCreation(name);
+      
+      setShowCreateFolder(false);
+    } catch (error) {
+      trackError('folder_creation_failed', error instanceof Error ? error.message : 'Unknown error', name);
+      throw error;
+    }
   };
 
   const handleSearchChange = (value: string) => {

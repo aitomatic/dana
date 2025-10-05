@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import MarkdownEditor from '@/components/markdown-editor';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 import { SystemRestart } from 'iconoir-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface FadeTextProps {
   text: string | undefined;
@@ -35,6 +36,8 @@ export const DocumentEditor = ({
   isUploading,
   isDeepExtracting,
 }: DocumentEditorProps) => {
+  const { trackError } = useDanaAnalytics();
+  
   console.log('[DocumentEditor] value:', value);
   console.log('[DocumentEditor] value length:', value?.length);
   console.log('[DocumentEditor] value preview:', value?.substring(0, 200));

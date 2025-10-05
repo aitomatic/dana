@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import { AgentEditor } from '@/components/agent-editor';
 import { apiService } from '@/lib/api';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 import type { MultiFileProject, DanaFile, CodeValidationResponse } from '@/lib/api';
 
 interface MultiFileCodeEditorProps {
@@ -75,6 +76,9 @@ const MultiFileCodeEditor = ({
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
 
+  // Analytics
+  const { trackError, trackCodeGeneration } = useDanaAnalytics();
+
   console.log('Multiple file');
   const handleFileSelect = (file: DanaFile) => {
     setActiveFile(file);
@@ -94,6 +98,7 @@ const MultiFileCodeEditor = ({
       setTimeout(() => setCopiedFile(null), 2000);
     } catch (error) {
       toast.error('Failed to copy file content');
+      trackError('file_copy_failed', (error as Error).message, file.filename);
     }
   };
 
@@ -127,6 +132,7 @@ const MultiFileCodeEditor = ({
     } catch (error) {
       toast.error('Failed to validate project');
       console.error('Validation error:', error);
+      trackError('project_validation_failed', (error as Error).message, project.name);
     } finally {
       setIsValidating(false);
     }

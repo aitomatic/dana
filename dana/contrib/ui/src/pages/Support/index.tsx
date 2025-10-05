@@ -1,8 +1,11 @@
 import { Bug, LightBulb, Mail, Clock, CheckCircle, ArrowRight } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export default function SupportPage() {
+  const { trackError } = useDanaAnalytics();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -62,12 +65,13 @@ export default function SupportPage() {
                 {/* Feature Request Card */}
                 <Card
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300"
-                  onClick={() =>
-                    window.open(
-                      'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707',
-                      '_blank',
-                    )
-                  }
+                  onClick={() => {
+                    try {
+                      window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank');
+                    } catch (error) {
+                      trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'feature_request');
+                    }
+                  }}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -103,12 +107,13 @@ export default function SupportPage() {
                 {/* Bug Report Card */}
                 <Card
                   className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300"
-                  onClick={() =>
-                    window.open(
-                      'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5',
-                      '_blank',
-                    )
-                  }
+                  onClick={() => {
+                    try {
+                      window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank');
+                    } catch (error) {
+                      trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'bug_report');
+                    }
+                  }}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -153,7 +158,13 @@ export default function SupportPage() {
             <CardContent className="text-center">
               <Button
                 variant="outline"
-                onClick={() => window.open('mailto:support@aitomatic.com', '_blank')}
+                onClick={() => {
+                  try {
+                    window.open('mailto:support@aitomatic.com', '_blank');
+                  } catch (error) {
+                    trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'email_support');
+                  }
+                }}
                 className="gap-2"
               >
                 <Mail className="w-4 h-4" />

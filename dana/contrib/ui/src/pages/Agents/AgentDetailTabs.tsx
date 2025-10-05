@@ -25,6 +25,7 @@ import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const TABS = ['Overview', 'Resources', 'Workflows', 'Code', 'Deployment'];
 
@@ -70,6 +71,7 @@ export const AgentDetailTabs: React.FC<{
     agentDetailActiveTab,
     setAgentDetailActiveTab,
   } = useUIStore();
+  const { trackTabNavigation } = useDanaAnalytics();
 
   // Auto-switch to Domain Knowledge tab when tree is updated (legacy method)
   useAutoSwitchToKnowledgeTab();
@@ -107,6 +109,8 @@ export const AgentDetailTabs: React.FC<{
     if (setActiveTab) {
       setActiveTab(tab);
     }
+    // Track tab navigation
+    trackTabNavigation(tab, 'agent_detail');
   };
 
   return (

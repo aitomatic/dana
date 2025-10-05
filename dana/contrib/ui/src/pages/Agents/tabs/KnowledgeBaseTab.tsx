@@ -6,6 +6,7 @@ import ToolsTab from './ToolsTab';
 import { Brain, FilesIcon } from 'lucide-react';
 import { Tools, Eye, EyeClosed } from 'iconoir-react';
 import { useUIStore } from '@/stores/ui-store';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const KNOWLEDGE_SUBTABS = ['Domain Knowledge', 'Documents', 'Tools'] as const;
 type KnowledgeSubTab = (typeof KNOWLEDGE_SUBTABS)[number];
@@ -26,10 +27,14 @@ const KnowledgeBaseTab: React.FC = () => {
 
   // State for legend visibility
   const [showLegend, setShowLegend] = useState(true);
+  const { trackTabNavigation } = useDanaAnalytics();
 
   const handleSubTabChange = (subTab: KnowledgeSubTab) => {
     setKnowledgeBaseActiveSubTab(subTab);
     setLocalActiveSubTab(subTab);
+    
+    // Track sub-tab navigation
+    trackTabNavigation(subTab.toLowerCase().replace(' ', '_'), 'knowledge_base');
   };
 
   const renderSubTabContent = () => {
