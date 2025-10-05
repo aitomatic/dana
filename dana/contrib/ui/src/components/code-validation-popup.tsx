@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, X, Loader2, Wrench, Check } from 'lucide-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface CodeValidationPopupProps {
   code: string;
@@ -24,6 +25,9 @@ export const CodeValidationPopup = ({
   const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
+
+  // Analytics
+  const { trackError, trackCodeGeneration } = useDanaAnalytics();
 
   // Use external validation result if provided
   const result =
@@ -50,6 +54,7 @@ export const CodeValidationPopup = ({
     } catch (error) {
       console.error('Validation failed:', error);
       toast.error('Failed to validate code');
+      trackError('code_validation_failed', (error as Error).message, 'code_validation_popup');
     } finally {
       setIsValidating(false);
     }
@@ -74,12 +79,17 @@ export const CodeValidationPopup = ({
         setAppliedFixes(fixResult.applied_fixes);
         setShowPreview(true);
         toast.success('Code fixes generated successfully!');
+        
+        // Track successful code generation/fixing
+        trackCodeGeneration('code_validation_popup', fixResult.applied_fixes.length * 1000); // Estimate duration
       } else {
         toast.error('Failed to fix code automatically');
+        trackError('code_fix_failed', 'Auto-fix returned unsuccessful result', 'code_validation_popup');
       }
     } catch (error) {
       console.error('Auto-fix failed:', error);
       toast.error('Failed to fix code automatically');
+      trackError('code_fix_failed', (error as Error).message, 'code_validation_popup');
     } finally {
       setIsFixing(false);
     }

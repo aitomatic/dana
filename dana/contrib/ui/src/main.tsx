@@ -16,6 +16,9 @@ import { analytics } from './lib/analytics';
 // Initialize Google Analytics
 analytics.initialize();
 
+// Initialize session tracking
+analytics.initializeSession();
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

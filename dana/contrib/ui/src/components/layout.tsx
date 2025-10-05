@@ -7,6 +7,7 @@ import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   const navigate = useNavigate();
   const { fetchAgent, selectedAgent } = useAgentStore();
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
+  const { trackTabNavigation, trackError } = useDanaAnalytics();
 
   // Fetch agent data when on chat pages
   useEffect(() => {
@@ -92,7 +94,10 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
             <div className="flex gap-2 items-center">
               {isChatPage && (
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => {
+                    trackTabNavigation('back_to_agents', 'main_page');
+                    navigate(-1);
+                  }}
                   className="flex justify-center items-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-gray-100"
                   aria-label="Back to agents"
                 >
@@ -105,6 +110,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
               <div className="flex gap-2 items-center">
                 <Button
                   onClick={() => {
+                    trackTabNavigation('train_mode', 'main_page');
                     navigate(`/agents/${agent_id}`);
                   }}
                   variant="secondary"
@@ -120,6 +126,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                 <Button
                   onClick={async () => {
                     try {
+                      trackTabNavigation('customize_prebuilt_agent', 'main_page');
                       const newAgent = await apiService.cloneAgentFromPrebuilt(prebuiltAgent.key);
                       if (newAgent && newAgent.id) {
                         navigate(`/agents/${newAgent.id}`);
@@ -127,6 +134,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                     } catch (err) {
                       // Optionally show error toast
                       console.error(err);
+                      trackError('prebuilt_agent_clone_failed', (err as Error).message, prebuiltAgent.key);
                     }
                   }}
                   className="font-semibold"

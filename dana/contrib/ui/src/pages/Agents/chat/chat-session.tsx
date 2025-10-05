@@ -4,6 +4,7 @@ import BotMessage from './bot-message';
 import UserMessage from './user-message';
 import BotThinking from './bot-thinking';
 import type { MessageRead } from '@/types/conversation';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface ChatSessionProps {
   messages: MessageRead[];
@@ -12,6 +13,7 @@ interface ChatSessionProps {
   isMessageFeedback?: boolean;
   className?: string;
   currentStep?: string;
+  agentId?: string;
 }
 
 const ChatSession: React.FC<ChatSessionProps> = ({
@@ -21,10 +23,12 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   isMessageFeedback = false,
   className,
   currentStep,
+  agentId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [isScrollEnable, setIsScrollEnable] = useState(false);
+  const { trackChatMessage } = useDanaAnalytics();
 
   useLayoutEffect(() => {
     if (containerRef?.current && listRef.current) {
@@ -87,6 +91,11 @@ const ChatSession: React.FC<ChatSessionProps> = ({
               console.log('Converted message:', messageForComponent);
 
               if (message.sender === 'agent') {
+                // Track agent message received
+                if (agentId) {
+                  trackChatMessage(agentId, 'agent');
+                }
+                
                 return (
                   <BotMessage
                     key={index}

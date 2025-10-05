@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { EditPencil } from 'iconoir-react';
+import { SystemRestart, EditPencil } from 'iconoir-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface ExtractionControlsProps {
   isDeepExtracting: boolean;
@@ -14,6 +15,8 @@ export const ExtractionControls = ({
   onEdit,
   onSave,
 }: ExtractionControlsProps) => {
+  const { trackFileExtraction, trackError } = useDanaAnalytics();
+  
   return (
     <div className="flex gap-2 items-center">
       {!isDeepExtracting &&
