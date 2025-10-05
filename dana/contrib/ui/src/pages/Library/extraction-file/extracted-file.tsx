@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from 'react';
 import FileIcon from '@/components/file-icon';
@@ -113,8 +114,8 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
   const validateFileSizes = (files: File[]): { isValid: boolean; errorMessage: string | null } => {
-    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-    
+    const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
+
     if (oversizedFiles.length === 0) {
       return { isValid: true, errorMessage: null };
     }
@@ -122,15 +123,15 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
     if (oversizedFiles.length === 1) {
       const file = oversizedFiles[0];
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      return { 
-        isValid: false, 
-        errorMessage: `"${file.name}" (${sizeMB}MB) exceeds the 50MB file size limit. Please choose a smaller file.` 
+      return {
+        isValid: false,
+        errorMessage: `"${file.name}" (${sizeMB}MB) exceeds the 50MB file size limit. Please choose a smaller file.`,
       };
     } else {
-      const fileNames = oversizedFiles.map(file => file.name).join(', ');
-      return { 
-        isValid: false, 
-        errorMessage: `Multiple files exceed the 50MB limit: ${fileNames}. Please choose smaller files.` 
+      const fileNames = oversizedFiles.map((file) => file.name).join(', ');
+      return {
+        isValid: false,
+        errorMessage: `Multiple files exceed the 50MB limit: ${fileNames}. Please choose smaller files.`,
       };
     }
   };
@@ -138,13 +139,13 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
   const handleFileUpload = useCallback(
     (files: File[]) => {
       const validation = validateFileSizes(files);
-      
+
       if (!validation.isValid) {
         setFileSizeError(validation.errorMessage);
         // Don't proceed with upload if validation fails
         return;
       }
-      
+
       // Clear any previous error and proceed with upload
       setFileSizeError(null);
       if (onFileUpload) {
@@ -243,7 +244,7 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
         </div>
         {/* File Size Error Message */}
         {fileSizeError && (
-          <div className="max-w-lg p-3 mt-2 text-sm text-red-700 bg-red-50 rounded-md border border-red-200">
+          <div className="p-3 mt-2 max-w-lg text-sm text-red-700 bg-red-50 rounded-md border border-red-200">
             <p className="font-medium">File size too large</p>
             <p className="mt-1">{fileSizeError}</p>
           </div>
@@ -373,11 +374,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                   </div>
                   <div className="flex gap-2 items-center">
                     <ExtractionControls
-                      isDeepExtracted={selectedFile?.is_deep_extracted || false}
                       isDeepExtracting={isDeepExtracting}
-                      showPromptInput={false}
-                      onShowPromptInput={() => {}}
-                      onDeepExtractWithPrompt={() => {}}
                       isEditing={isEditing}
                       onEdit={handleEdit}
                       onSave={handleSave}

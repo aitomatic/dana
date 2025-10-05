@@ -10,7 +10,7 @@ interface FadeTextProps {
 const FadeText = ({ text }: FadeTextProps) => {
   return (
     <div
-      className={`flex overflow-y-auto w-full min-w-full h-full transition-opacity duration-500 scrollbar-hide`}
+      className={`flex overflow-auto w-full min-w-full h-full transition-opacity duration-500 scrollbar-hide`}
       key={text ? text.slice(0, 16) : 'empty'}
     >
       <MarkdownViewerSmall>{text || 'No content available'}</MarkdownViewerSmall>
@@ -64,7 +64,7 @@ export const DocumentEditor = ({
             </div>
           )}
           {isEditing ? (
-            <div className="flex flex-col w-full h-full">
+            <div className="flex flex-col h-full">
               <MarkdownEditor value={value} onChange={setValue} />
             </div>
           ) : (
