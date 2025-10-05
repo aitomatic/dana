@@ -95,7 +95,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
                 if (agentId) {
                   trackChatMessage(agentId, 'agent');
                 }
-                
+
                 return (
                   <BotMessage
                     key={index}

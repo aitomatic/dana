@@ -1,11 +1,11 @@
 /**
  * Custom Analytics Events Examples
- * 
+ *
  * This file contains examples of custom event implementations
  * for specific Dana Agent Studio features and workflows.
  */
 
-import { useDanaAnalytics } from '@/hooks/useAnalytics';
+// Analytics hook available but not used in this example
 import { analytics } from '@/lib/analytics';
 
 // ============================================================================
@@ -13,7 +13,7 @@ import { analytics } from '@/lib/analytics';
 // ============================================================================
 
 export const AgentWorkflowTracking = () => {
-  const { trackAgentCreation, trackError } = useDanaAnalytics();
+  // Analytics hook available but not used in this example
 
   const trackAgentWorkflowStart = (workflowType: string) => {
     analytics.trackEvent({
@@ -50,7 +50,7 @@ export const AgentWorkflowTracking = () => {
     });
 
     // Track specific changes
-    changes.forEach(change => {
+    changes.forEach((change) => {
       analytics.trackEvent({
         action: 'agent_change',
         category: 'agent_development',
@@ -81,7 +81,11 @@ export const DocumentProcessingTracking = () => {
     });
   };
 
-  const trackDocumentProcessing = (documentId: string, processingType: string, duration: number) => {
+  const trackDocumentProcessing = (
+    documentId: string,
+    processingType: string,
+    duration: number,
+  ) => {
     analytics.trackEvent({
       action: 'document_processing',
       category: 'document_processing',
@@ -109,7 +113,11 @@ export const DocumentProcessingTracking = () => {
     });
   };
 
-  const trackDocumentAssociation = (documentId: string, agentId: string, associationType: string) => {
+  const trackDocumentAssociation = (
+    documentId: string,
+    agentId: string,
+    associationType: string,
+  ) => {
     analytics.trackEvent({
       action: 'document_association',
       category: 'document_processing',
@@ -138,7 +146,12 @@ export const ChatInteractionTracking = () => {
     });
   };
 
-  const trackChatMessage = (agentId: string, messageType: 'user' | 'agent', messageLength: number, responseTime?: number) => {
+  const trackChatMessage = (
+    agentId: string,
+    messageType: 'user' | 'agent',
+    messageLength: number,
+    responseTime?: number,
+  ) => {
     analytics.trackEvent({
       action: 'chat_message',
       category: 'chat_interaction',
@@ -156,7 +169,11 @@ export const ChatInteractionTracking = () => {
     }
   };
 
-  const trackChatSatisfaction = (agentId: string, satisfaction: 'positive' | 'negative' | 'neutral', feedback?: string) => {
+  const trackChatSatisfaction = (
+    agentId: string,
+    satisfaction: 'positive' | 'negative' | 'neutral',
+    feedback?: string,
+  ) => {
     analytics.trackEvent({
       action: 'chat_satisfaction',
       category: 'chat_interaction',
@@ -172,7 +189,12 @@ export const ChatInteractionTracking = () => {
     }
   };
 
-  const trackChatSessionEnd = (agentId: string, duration: number, messageCount: number, satisfaction?: string) => {
+  const trackChatSessionEnd = (
+    agentId: string,
+    duration: number,
+    messageCount: number,
+    satisfaction?: string,
+  ) => {
     analytics.trackEvent({
       action: 'chat_session_end',
       category: 'chat_interaction',
@@ -235,7 +257,11 @@ export const OnboardingTracking = () => {
     });
   };
 
-  const trackOnboardingComplete = (totalTime: number, stepsCompleted: number, skippedSteps: string[]) => {
+  const trackOnboardingComplete = (
+    totalTime: number,
+    stepsCompleted: number,
+    skippedSteps: string[],
+  ) => {
     analytics.trackEvent({
       action: 'onboarding_complete',
       category: 'user_onboarding',
@@ -250,7 +276,7 @@ export const OnboardingTracking = () => {
       value: stepsCompleted,
     });
 
-    skippedSteps.forEach(step => {
+    skippedSteps.forEach((step) => {
       analytics.trackEvent({
         action: 'onboarding_step_skipped',
         category: 'user_onboarding',
@@ -289,7 +315,11 @@ export const FeatureUsageTracking = () => {
     });
   };
 
-  const trackFeatureOutcome = (featureName: string, outcome: 'success' | 'failure', result?: any) => {
+  const trackFeatureOutcome = (
+    featureName: string,
+    outcome: 'success' | 'failure',
+    result?: any,
+  ) => {
     analytics.trackEvent({
       action: 'feature_outcome',
       category: 'feature_usage',
@@ -360,7 +390,7 @@ export const PerformanceTracking = () => {
 
   const trackMemoryUsage = (operation: string, memoryBefore: number, memoryAfter: number) => {
     const memoryDelta = memoryAfter - memoryBefore;
-    
+
     analytics.trackEvent({
       action: 'memory_usage',
       category: 'performance',
@@ -368,7 +398,8 @@ export const PerformanceTracking = () => {
       value: memoryDelta,
     });
 
-    if (memoryDelta > 10 * 1024 * 1024) { // > 10MB
+    if (memoryDelta > 10 * 1024 * 1024) {
+      // > 10MB
       analytics.trackEvent({
         action: 'high_memory_usage',
         category: 'performance',
@@ -380,7 +411,7 @@ export const PerformanceTracking = () => {
 
   const trackErrorRate = (component: string, errorCount: number, totalActions: number) => {
     const errorRate = (errorCount / totalActions) * 100;
-    
+
     analytics.trackEvent({
       action: 'error_rate',
       category: 'performance',
@@ -388,7 +419,8 @@ export const PerformanceTracking = () => {
       value: errorRate,
     });
 
-    if (errorRate > 5) { // > 5% error rate
+    if (errorRate > 5) {
+      // > 5% error rate
       analytics.trackEvent({
         action: 'high_error_rate',
         category: 'performance',
@@ -492,7 +524,7 @@ export const UsageExamples = () => {
       documentProcessing.trackDocumentQuality('doc_123', 85, {
         text_quality: 90,
         structure_quality: 80,
-        completeness: 85
+        completeness: 85,
       });
     },
 
@@ -536,11 +568,11 @@ export const UsageExamples = () => {
       businessMetrics.trackAgentSuccess('agent_456', {
         conversations: 25,
         satisfaction_score: 4.2,
-        resolution_rate: 0.85
+        resolution_rate: 0.85,
       });
       businessMetrics.trackContentEngagement('doc_789', 'view', 45000);
       businessMetrics.trackConversion('premium_upgrade', 99, 'feature_usage');
-    }
+    },
   };
 };
 

@@ -67,7 +67,10 @@ export function NavMain({
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
-                                trackTabNavigation(subItem.title.toLowerCase().replace(' ', '_'), 'main_page');
+                                trackTabNavigation(
+                                  subItem.title.toLowerCase().replace(' ', '_'),
+                                  'main_page',
+                                );
                                 navigate(subItem.url);
                               }}
                             >

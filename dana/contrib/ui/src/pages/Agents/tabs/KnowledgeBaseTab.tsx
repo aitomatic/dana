@@ -32,9 +32,9 @@ const KnowledgeBaseTab: React.FC = () => {
   const handleSubTabChange = (subTab: KnowledgeSubTab) => {
     setKnowledgeBaseActiveSubTab(subTab);
     setLocalActiveSubTab(subTab);
-    
+
     // Track sub-tab navigation
-    trackTabNavigation(subTab.toLowerCase().replace(' ', '_'), 'knowledge_base');
+    trackTabNavigation(subTab.toLowerCase().replace(' ', '_'), 'agent_detail');
   };
 
   const renderSubTabContent = () => {
@@ -106,7 +106,7 @@ const KnowledgeBaseTab: React.FC = () => {
 
             {/* <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-100"></div>
-           
+
               <span>In Progress</span>
             </div> */}
             <div className="flex items-center gap-2">

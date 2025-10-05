@@ -35,14 +35,18 @@ const OverviewTab: React.FC<{
         ...agent,
         name: editedName.trim(),
       });
-      
+
       // Track agent name edit
       trackAgentEdit(agent.id.toString(), 'name');
-      
+
       setIsEditingName(false);
     } catch (error) {
       console.error('Failed to update agent name:', error);
-      trackError('agent_update_failed', error instanceof Error ? error.message : 'Unknown error', `agent_${agent.id}`);
+      trackError(
+        'agent_update_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `agent_${agent.id}`,
+      );
       // Reset to original name on error
       setEditedName(agent.name);
     } finally {

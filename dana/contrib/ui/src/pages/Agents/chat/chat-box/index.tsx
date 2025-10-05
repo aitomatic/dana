@@ -134,7 +134,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
             const doc = await apiService.uploadAgentDocument(agentId, file);
             uploadedFile.status = 'success';
             uploadedFile.path = doc.filename;
-            
+
             // Track successful file upload
             const fileExtension = file.name.split('.').pop() || 'unknown';
             trackFileUpload(fileExtension, file.size);
@@ -151,7 +151,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
 
             uploadedFile.status = 'success';
             uploadedFile.path = uploadedResponse.document.filename;
-            
+
             // Track successful file upload
             const fileExtension = file.name.split('.').pop() || 'unknown';
             trackFileUpload(fileExtension, file.size);
@@ -159,7 +159,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
         } catch (error) {
           uploadedFile.status = 'error';
           uploadedFile.error = (error as Error).message;
-          
+
           // Track file upload error
           trackError('file_upload_failed', (error as Error).message, file.name);
         }
@@ -227,12 +227,12 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
 
       requestAnimationFrame(() => {
         handleSendMessage(messageData);
-        
+
         // Track chat message sent
         if (agentId) {
           trackChatMessage(agentId, 'user');
         }
-        
+
         setMessage('');
         // Clear uploaded files after sending
         setUploadedFiles([]);

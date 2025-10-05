@@ -241,10 +241,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         {/* Generate Knowledge Button */}
         {messageContent.showGenerateButton && (
           <div className="flex">
-            <Button
-              onClick={handleGenerateKnowledge}
-              variant="default"
-            >
+            <Button onClick={handleGenerateKnowledge} variant="default">
               Generate Knowledge
             </Button>
           </div>

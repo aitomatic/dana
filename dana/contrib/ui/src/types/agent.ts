@@ -5,9 +5,7 @@ export interface AgentBase {
   config: Record<string, any>;
 }
 
-export interface AgentCreate extends AgentBase {
-  // Same as AgentBase for creation
-}
+export type AgentCreate = AgentBase;
 
 export interface AgentRead extends AgentBase {
   id: number;

@@ -102,9 +102,8 @@ export function FileUpload({
       } catch (error) {
         uploadedFile.status = 'error';
         uploadedFile.error = (error as Error).message;
-        
+
         // Track file upload error
-        const fileExtension = file.name.split('.').pop() || 'unknown';
         trackError('file_upload_failed', (error as Error).message, file.name);
       }
 
@@ -144,7 +143,7 @@ export function FileUpload({
       }
     } catch (error) {
       console.error('Upload error:', error);
-      
+
       // Track batch upload error
       trackError('batch_upload_failed', (error as Error).message, 'multiple_files');
     } finally {

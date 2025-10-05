@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock ResizeObserver
-// @ts-ignore
+// @ts-expect-error - Mock implementation for testing
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
@@ -10,7 +10,7 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock IntersectionObserver
-// @ts-ignore
+// @ts-expect-error - Mock implementation for testing
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
@@ -21,7 +21,7 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 Element.prototype.scrollIntoView = vi.fn();
 
 // Mock DOMMatrix
-// @ts-ignore
+// @ts-expect-error - Mock implementation for testing
 global.DOMMatrix = vi.fn().mockImplementation(() => ({
   a: 1,
   b: 0,

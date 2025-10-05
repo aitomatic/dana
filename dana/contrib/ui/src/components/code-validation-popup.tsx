@@ -79,12 +79,16 @@ export const CodeValidationPopup = ({
         setAppliedFixes(fixResult.applied_fixes);
         setShowPreview(true);
         toast.success('Code fixes generated successfully!');
-        
+
         // Track successful code generation/fixing
         trackCodeGeneration('code_validation_popup', fixResult.applied_fixes.length * 1000); // Estimate duration
       } else {
         toast.error('Failed to fix code automatically');
-        trackError('code_fix_failed', 'Auto-fix returned unsuccessful result', 'code_validation_popup');
+        trackError(
+          'code_fix_failed',
+          'Auto-fix returned unsuccessful result',
+          'code_validation_popup',
+        );
       }
     } catch (error) {
       console.error('Auto-fix failed:', error);

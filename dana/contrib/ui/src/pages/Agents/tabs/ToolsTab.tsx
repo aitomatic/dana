@@ -8,7 +8,7 @@ import {
   IconWorld,
   IconListCheck,
 } from '@tabler/icons-react';
-import { useDanaAnalytics } from '@/hooks/useAnalytics';
+// Analytics hook available but not used in this component
 
 // Mock tool data
 const mockTools = [
@@ -52,7 +52,7 @@ const mockTools = [
 
 const ToolsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { trackError } = useDanaAnalytics();
+  // Analytics hook available but not used in this component
 
   const filteredTools = mockTools.filter((tool) =>
     tool.name.toLowerCase().includes(searchTerm.toLowerCase()),

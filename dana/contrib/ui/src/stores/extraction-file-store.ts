@@ -588,7 +588,7 @@ export const useExtractionFileStore = create<ExtractionFileState>((set, get) => 
         category: 'library',
         label: `${fileExtension}_deep`,
       });
-      
+
       set({ error: error?.message || 'Deep extraction failed' });
       // Reset status on error
       set((state) => ({

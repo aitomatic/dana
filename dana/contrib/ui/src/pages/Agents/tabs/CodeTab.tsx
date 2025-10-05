@@ -24,7 +24,7 @@ const CodeTab: React.FC = () => {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [saveSuccessTimeout, setSaveSuccessTimeout] = useState<number | null>(null);
   const [showBadgeTimeout, setShowBadgeTimeout] = useState<number | null>(null);
-  const { trackError, trackCodeGeneration } = useDanaAnalytics();
+  const { trackError } = useDanaAnalytics();
 
   const selectedFile = files.find((f) => f.id === selectedFileId) || files[0];
 
@@ -97,7 +97,11 @@ const CodeTab: React.FC = () => {
     } catch (err) {
       console.error('Failed to load agent files:', err);
       setError(err instanceof Error ? err.message : 'Failed to load files');
-      trackError('agent_files_load_failed', err instanceof Error ? err.message : 'Unknown error', `agent_${selectedAgent?.id}`);
+      trackError(
+        'agent_files_load_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${selectedAgent?.id}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -141,7 +145,11 @@ const CodeTab: React.FC = () => {
       setShowBadgeTimeout(showTimeout);
     } catch (err) {
       console.error('Failed to save file:', err);
-      trackError('agent_file_save_failed', err instanceof Error ? err.message : 'Unknown error', `agent_${selectedAgent?.id}_${file.name}`);
+      trackError(
+        'agent_file_save_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${selectedAgent?.id}_${file.name}`,
+      );
     }
   };
 
