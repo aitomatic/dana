@@ -117,28 +117,6 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
     selectedFile?.original_filename,
   ]);
 
-  // Clear toasts when dialog closes
-  useEffect(() => {
-    if (!isExtractionPopupOpen) {
-      // Dismiss specific toasts when dialog closes
-      activeToastIds.current.forEach((toastId) => {
-        toast.dismiss(toastId);
-      });
-      activeToastIds.current = [];
-    }
-  }, [isExtractionPopupOpen]);
-
-  // Clear toasts when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clean up toasts when component unmounts
-      activeToastIds.current.forEach((toastId) => {
-        toast.dismiss(toastId);
-      });
-      activeToastIds.current = [];
-    };
-  }, []);
-
   // Determine if buttons should be disabled (during extraction, but allow finishing during deep extraction)
   const isDisabled = isExtracting;
 
