@@ -35,11 +35,15 @@ if (typeof window !== 'undefined' && !document.getElementById('animated-placehol
 }
 
 // Animated placeholder component - only shown for new users (no messages sent)
-const AnimatedPlaceholder: React.FC<{ hasMessages: boolean; isFocused: boolean; hasInteracted: boolean }> = ({ hasMessages, isFocused, hasInteracted }) => {
+const AnimatedPlaceholder: React.FC<{
+  hasMessages: boolean;
+  isFocused: boolean;
+  hasInteracted: boolean;
+}> = ({ hasMessages, isFocused, hasInteracted }) => {
   const placeholders = [
-    "Add a new knowledge topic",
-    "Show me what my agent knows",
-    "Build my agent using a job description"
+    'Add a new knowledge topic',
+    'Show me what my agent knows',
+    'Build my agent using a job description',
   ];
 
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
@@ -57,25 +61,36 @@ const AnimatedPlaceholder: React.FC<{ hasMessages: boolean; isFocused: boolean; 
     const deletingSpeed = 50;
     const pauseDuration = 2000;
 
-    const timeout = setTimeout(() => {
-      if (!isDeleting && currentText === placeholders[currentPlaceholder]) {
-        // If we've finished typing, pause then start deleting
-        setTimeout(() => setIsDeleting(true), pauseDuration);
-      } else if (isDeleting && currentText === '') {
-        // If we've finished deleting, move to next placeholder and start typing
-        setIsDeleting(false);
-        setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
-      } else if (isDeleting) {
-        // Delete current text
-        setCurrentText(currentText.slice(0, -1));
-      } else {
-        // Type current text
-        setCurrentText(placeholders[currentPlaceholder].slice(0, currentText.length + 1));
-      }
-    }, isDeleting ? deletingSpeed : typingSpeed);
+    const timeout = setTimeout(
+      () => {
+        if (!isDeleting && currentText === placeholders[currentPlaceholder]) {
+          // If we've finished typing, pause then start deleting
+          setTimeout(() => setIsDeleting(true), pauseDuration);
+        } else if (isDeleting && currentText === '') {
+          // If we've finished deleting, move to next placeholder and start typing
+          setIsDeleting(false);
+          setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+        } else if (isDeleting) {
+          // Delete current text
+          setCurrentText(currentText.slice(0, -1));
+        } else {
+          // Type current text
+          setCurrentText(placeholders[currentPlaceholder].slice(0, currentText.length + 1));
+        }
+      },
+      isDeleting ? deletingSpeed : typingSpeed,
+    );
 
     return () => clearTimeout(timeout);
-  }, [currentText, isDeleting, currentPlaceholder, placeholders, hasMessages, isFocused, hasInteracted]);
+  }, [
+    currentText,
+    isDeleting,
+    currentPlaceholder,
+    placeholders,
+    hasMessages,
+    isFocused,
+    hasInteracted,
+  ]);
 
   // If user has sent messages OR is focused OR has interacted, show simple static placeholder
   if (hasMessages || isFocused || hasInteracted) {
@@ -964,8 +979,8 @@ To get started, let's define its foundation:
             {/* Animated placeholder overlay */}
             {!input && !loading && (
               <div className="absolute top-3 left-3 text-gray-500 text-sm pointer-events-none z-10">
-                <AnimatedPlaceholder 
-                  hasMessages={messages.some(msg => msg.sender === 'user')} 
+                <AnimatedPlaceholder
+                  hasMessages={messages.some((msg) => msg.sender === 'user')}
                   isFocused={isFocused}
                   hasInteracted={hasInteracted}
                 />

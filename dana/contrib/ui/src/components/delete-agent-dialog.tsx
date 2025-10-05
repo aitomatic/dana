@@ -27,19 +27,23 @@ export function DeleteAgentDialog({
   const handleConfirm = async () => {
     try {
       await onConfirm();
-      
+
       // Track successful deletion
       if (agentId) {
         trackAgentDeletion(agentId);
       }
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       // Track deletion error
-      trackError('agent_deletion_failed', error instanceof Error ? error.message : 'Unknown error', agentId);
+      trackError(
+        'agent_deletion_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        agentId,
+      );
       console.error('Delete operation failed:', error);
     }
   };

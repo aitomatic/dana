@@ -63,7 +63,7 @@ export const useDanaAnalytics = () => {
     (agentName: string, domain?: string) => {
       analytics.incrementActionCount();
       const context = analytics.getSessionContext();
-      
+
       trackEvent({
         action: 'create_agent',
         category: 'agent_management',
@@ -77,7 +77,7 @@ export const useDanaAnalytics = () => {
           label: domain,
         });
       }
-      
+
       // Check if this is user's first agent
       const firstAgent = !sessionStorage.getItem('analytics_first_agent_created');
       if (firstAgent) {
@@ -87,7 +87,7 @@ export const useDanaAnalytics = () => {
           category: 'lifecycle',
           label: agentName,
         });
-        
+
         // Calculate time to first agent (activation metric)
         if (context.session_duration) {
           trackTiming('time_to_first_agent', context.session_duration, 'activation', 'first_agent');
@@ -178,13 +178,13 @@ export const useDanaAnalytics = () => {
     (agentId: string, messageType: 'user' | 'agent') => {
       analytics.incrementActionCount();
       const context = analytics.getSessionContext();
-      
+
       trackEvent({
         action: 'chat_message',
         category: 'agent_interaction',
         label: `${agentId}_${messageType}`,
       });
-      
+
       // Check if this is user's first chat (aha moment!)
       if (messageType === 'user') {
         const firstChat = !sessionStorage.getItem('analytics_first_chat_sent');
@@ -195,7 +195,7 @@ export const useDanaAnalytics = () => {
             category: 'lifecycle',
             label: agentId,
           });
-          
+
           // Calculate time to first chat (engagement metric)
           if (context.session_duration) {
             trackTiming('time_to_first_chat', context.session_duration, 'activation', 'first_chat');
@@ -247,13 +247,13 @@ export const useDanaAnalytics = () => {
   const trackFileExtraction = useCallback(
     (fileType: string, extractionType: 'basic' | 'deep', success: boolean) => {
       analytics.incrementActionCount();
-      
+
       trackEvent({
         action: success ? 'file_extraction_success' : 'file_extraction_failed',
         category: 'library',
         label: `${fileType}_${extractionType}`,
       });
-      
+
       // Track first-time deep extraction usage (feature discovery)
       if (extractionType === 'deep' && success) {
         const firstDeepExtraction = !sessionStorage.getItem('analytics_first_deep_extraction');
@@ -322,5 +322,6 @@ export const useDanaAnalytics = () => {
     trackTabNavigation,
     trackApiConnection,
     trackError,
+    trackTiming,
   };
 };

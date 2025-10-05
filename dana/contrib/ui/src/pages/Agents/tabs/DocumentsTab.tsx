@@ -133,10 +133,10 @@ const DocumentsTab: React.FC = () => {
         data: error.response?.data,
         stack: error.stack,
       });
-      
+
       // Track association error
       trackError('document_association_failed', error?.message || 'Unknown error', agent_id);
-      
+
       toast.error('Failed to add files to agent');
     }
   };
@@ -163,7 +163,7 @@ const DocumentsTab: React.FC = () => {
         if (!uploadedResponse.success || !uploadedResponse.document) {
           throw new Error(uploadedResponse.message || 'Upload failed');
         }
-        
+
         // Track file upload
         const fileExtension = file.name.split('.').pop() || 'unknown';
         trackFileUpload(fileExtension, file.size);
@@ -186,10 +186,14 @@ const DocumentsTab: React.FC = () => {
       toast.success(`Successfully uploaded ${fileList.length} file(s)`);
     } catch (error) {
       console.error('Failed to upload or associate files:', error);
-      
+
       // Track upload error
-      trackError('file_upload_failed', error instanceof Error ? error.message : 'Unknown error', `agent_${agent_id}`);
-      
+      trackError(
+        'file_upload_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `agent_${agent_id}`,
+      );
+
       toast.error('Failed to upload files. Please try again.');
       // Clear uploading state on error
       setUploadingFiles([]);

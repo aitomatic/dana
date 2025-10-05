@@ -655,19 +655,19 @@ export default function AgentsPage() {
               />
             </div>
             <div className="flex gap-2">
-            <Button
-              onClick={() => setImportDialogOpen(true)}
-              variant="outline"
-              className="w-[152px] px-4 py-1 font-semibold"
-            >
-               <Import style={{ width: '20', height: '20' }} />
-              Import Agent
-            </Button>
-            <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
-              <Plus style={{ width: '20', height: '20' }} />
-              Create Agent
-            </Button>
-          </div>
+              <Button
+                onClick={() => setImportDialogOpen(true)}
+                variant="outline"
+                className="w-[152px] px-4 py-1 font-semibold"
+              >
+                <Import style={{ width: '20', height: '20' }} />
+                Import Agent
+              </Button>
+              <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
+                <Plus style={{ width: '20', height: '20' }} />
+                Create Agent
+              </Button>
+            </div>
           </div>
         </div>
 

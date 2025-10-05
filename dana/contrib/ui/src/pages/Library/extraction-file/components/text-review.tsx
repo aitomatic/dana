@@ -16,7 +16,7 @@ const TextReview = ({ content }: TextReviewProps) => {
         const response = await fetch(url);
         const text = await response.text();
         setData(text);
-      } catch (error) {
+      } catch {
         setData('Failed to load text file');
       }
     };

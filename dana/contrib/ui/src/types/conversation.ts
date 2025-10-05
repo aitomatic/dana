@@ -4,9 +4,7 @@ export interface ConversationBase {
   agent_id: number;
 }
 
-export interface ConversationCreate extends ConversationBase {
-  // Same as ConversationBase for creation
-}
+export type ConversationCreate = ConversationBase;
 
 export interface ConversationRead extends ConversationBase {
   id: number;
@@ -19,9 +17,7 @@ export interface MessageBase {
   content: string;
 }
 
-export interface MessageCreate extends MessageBase {
-  // Same as MessageBase for creation
-}
+export type MessageCreate = MessageBase;
 
 export interface MessageRead extends MessageBase {
   id: number;

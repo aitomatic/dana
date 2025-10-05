@@ -4,7 +4,7 @@ import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export function AgentBuildingStatus() {
   const { currentAgent, isGenerating, isAnalyzing, error } = useAgentBuildingStore();
-  const { trackError, trackCodeGeneration } = useDanaAnalytics();
+  const { trackError } = useDanaAnalytics();
 
   if (!currentAgent) {
     return (
@@ -72,7 +72,10 @@ export function AgentBuildingStatus() {
           <div className="p-2 mt-3 bg-red-50 rounded">
             <p className="text-sm text-red-700">Error: {error}</p>
             {/* Track agent building error */}
-            {trackError('agent_building_failed', error, `agent_${currentAgent.id || 'unknown'}`)}
+            {(() => {
+              trackError('agent_building_failed', error, `agent_${currentAgent.id || 'unknown'}`);
+              return null;
+            })()}
           </div>
         )}
 

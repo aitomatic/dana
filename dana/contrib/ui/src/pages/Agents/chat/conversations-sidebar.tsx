@@ -148,7 +148,11 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         }
       } catch (error) {
         console.error('Failed to rename conversation:', error);
-        trackError('conversation_rename_failed', (error as Error).message, `conversation_${selectedConversation.id}`);
+        trackError(
+          'conversation_rename_failed',
+          (error as Error).message,
+          `conversation_${selectedConversation.id}`,
+        );
       }
     }
   };
@@ -185,7 +189,11 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         }
       } catch (error) {
         console.error('Failed to delete conversation:', error);
-        trackError('conversation_delete_failed', (error as Error).message, `conversation_${selectedConversation.id}`);
+        trackError(
+          'conversation_delete_failed',
+          (error as Error).message,
+          `conversation_${selectedConversation.id}`,
+        );
       }
     }
   };

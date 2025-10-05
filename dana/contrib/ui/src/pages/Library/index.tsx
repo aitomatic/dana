@@ -223,13 +223,17 @@ export default function LibraryPage() {
   const handleCreateFolder = async (name: string) => {
     try {
       await createTopic({ name, description: `Topic: ${name}` });
-      
+
       // Track folder creation
       trackFolderCreation(name);
-      
+
       setShowCreateFolder(false);
     } catch (error) {
-      trackError('folder_creation_failed', error instanceof Error ? error.message : 'Unknown error', name);
+      trackError(
+        'folder_creation_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        name,
+      );
       throw error;
     }
   };

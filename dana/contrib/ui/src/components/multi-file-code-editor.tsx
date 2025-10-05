@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,7 @@ const MultiFileCodeEditor = ({
   const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
 
   // Analytics
-  const { trackError, trackCodeGeneration } = useDanaAnalytics();
+  const { trackError } = useDanaAnalytics();
 
   console.log('Multiple file');
   const handleFileSelect = (file: DanaFile) => {

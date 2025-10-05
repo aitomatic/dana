@@ -96,7 +96,7 @@ export const CodeValidation = ({
       if (result.success && result.fixed_code) {
         onCodeChange(result.fixed_code);
         toast.success(`Fixed ${result.applied_fixes.length} issue(s)`);
-        
+
         // Track successful code generation/fixing
         trackCodeGeneration('code_validation', result.applied_fixes.length * 1000); // Estimate duration
 

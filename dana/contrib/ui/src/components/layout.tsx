@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useCallback, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -134,7 +135,11 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                     } catch (err) {
                       // Optionally show error toast
                       console.error(err);
-                      trackError('prebuilt_agent_clone_failed', (err as Error).message, prebuiltAgent.key);
+                      trackError(
+                        'prebuilt_agent_clone_failed',
+                        (err as Error).message,
+                        prebuiltAgent.key,
+                      );
                     }
                   }}
                   className="font-semibold"

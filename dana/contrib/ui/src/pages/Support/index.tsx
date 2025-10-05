@@ -5,7 +5,7 @@ import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export default function SupportPage() {
   const { trackError } = useDanaAnalytics();
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -28,21 +28,21 @@ export default function SupportPage() {
           <div className="mb-8 text-center">
             <h2 className="mb-4 text-xl font-bold text-gray-900">Our Service Level Agreements</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+              <div className="flex gap-2 justify-center items-center p-3 bg-white rounded-lg border border-gray-200">
                 <Clock className="w-5 h-5 text-red-600" />
                 <div className="text-left">
                   <div className="text-sm font-medium text-gray-900">Critical Bugs</div>
                   <div className="text-xs text-gray-600">Response: &lt; 24h</div>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+              <div className="flex gap-2 justify-center items-center p-3 bg-white rounded-lg border border-gray-200">
                 <Clock className="w-5 h-5 text-yellow-600" />
                 <div className="text-left">
                   <div className="text-sm font-medium text-gray-900">Bug Reports</div>
                   <div className="text-xs text-gray-600">Response: 3-5 days</div>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 p-3 bg-white rounded-lg border border-gray-200">
+              <div className="flex gap-2 justify-center items-center p-3 bg-white rounded-lg border border-gray-200">
                 <Clock className="w-5 h-5 text-blue-600" />
                 <div className="text-left">
                   <div className="text-sm font-medium text-gray-900">Feature Requests</div>
@@ -64,19 +64,26 @@ export default function SupportPage() {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Feature Request Card */}
                 <Card
-                  className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-300"
+                  className="border-2 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:-translate-y-1 hover:border-blue-300"
                   onClick={() => {
                     try {
-                      window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707', '_blank');
+                      window.open(
+                        'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/1724931d-cd6c-4af8-b5c0-d72d85ba5707',
+                        '_blank',
+                      );
                     } catch (error) {
-                      trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'feature_request');
+                      trackError(
+                        'support_link_failed',
+                        error instanceof Error ? error.message : 'Unknown error',
+                        'feature_request',
+                      );
                     }
                   }}
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex gap-3 items-center">
+                        <div className="p-3 bg-blue-100 rounded-full transition-colors group-hover:bg-blue-200">
                           <LightBulb className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
@@ -84,19 +91,19 @@ export default function SupportPage() {
                           <p className="text-sm text-gray-600">Suggest new features</p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      <ArrowRight className="w-5 h-5 text-gray-400 transition-colors group-hover:text-blue-600" />
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Product roadmap consideration</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Community voting</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Regular updates</span>
                       </div>
@@ -106,19 +113,26 @@ export default function SupportPage() {
 
                 {/* Bug Report Card */}
                 <Card
-                  className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-red-300"
+                  className="border-2 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:-translate-y-1 hover:border-red-300"
                   onClick={() => {
                     try {
-                      window.open('https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5', '_blank');
+                      window.open(
+                        'https://aitomatic-project-hub.atlassian.net/jira/software/c/form/b446c093-0534-4fc9-8c61-b61e733453d5',
+                        '_blank',
+                      );
                     } catch (error) {
-                      trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'bug_report');
+                      trackError(
+                        'support_link_failed',
+                        error instanceof Error ? error.message : 'Unknown error',
+                        'bug_report',
+                      );
                     }
                   }}
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex gap-3 items-center">
+                        <div className="p-3 bg-red-100 rounded-full transition-colors group-hover:bg-red-200">
                           <Bug className="w-6 h-6 text-red-600" />
                         </div>
                         <div>
@@ -126,19 +140,19 @@ export default function SupportPage() {
                           <p className="text-sm text-gray-600">Report issues & errors</p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                      <ArrowRight className="w-5 h-5 text-gray-400 transition-colors group-hover:text-red-600" />
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Priority-based triage</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Developer assignment</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2 items-center">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                         <span className="text-sm text-gray-700">Progress tracking</span>
                       </div>
@@ -162,7 +176,11 @@ export default function SupportPage() {
                   try {
                     window.open('mailto:support@aitomatic.com', '_blank');
                   } catch (error) {
-                    trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'email_support');
+                    trackError(
+                      'support_link_failed',
+                      error instanceof Error ? error.message : 'Unknown error',
+                      'email_support',
+                    );
                   }
                 }}
                 className="gap-2"

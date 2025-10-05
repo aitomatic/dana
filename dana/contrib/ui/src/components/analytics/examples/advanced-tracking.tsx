@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Advanced Analytics Tracking Examples
- * 
+ *
  * This file contains advanced patterns for analytics tracking including
  * funnel tracking, user segmentation, and performance monitoring.
  */
 
+import { useState } from 'react';
 import { useDanaAnalytics } from '@/hooks/useAnalytics';
 import { analytics } from '@/lib/analytics';
 
@@ -13,23 +15,22 @@ import { analytics } from '@/lib/analytics';
 // ============================================================================
 
 export const AgentCreationFunnel = () => {
-  const { trackError } = useDanaAnalytics();
   const [funnelStep, setFunnelStep] = useState(0);
   const [funnelStartTime, setFunnelStartTime] = useState<number | null>(null);
 
   const funnelSteps = [
     'funnel_start',
     'step_1_name',
-    'step_2_description', 
+    'step_2_description',
     'step_3_resources',
     'step_4_submit',
-    'funnel_complete'
+    'funnel_complete',
   ];
 
   const startFunnel = () => {
     setFunnelStartTime(Date.now());
     setFunnelStep(1);
-    
+
     // Track funnel start
     analytics.trackEvent({
       action: 'funnel_start',
@@ -40,8 +41,8 @@ export const AgentCreationFunnel = () => {
 
   const nextStep = () => {
     if (funnelStep < funnelSteps.length - 1) {
-      setFunnelStep(prev => prev + 1);
-      
+      setFunnelStep((prev) => prev + 1);
+
       // Track step completion
       analytics.trackEvent({
         action: 'funnel_step',
@@ -52,7 +53,7 @@ export const AgentCreationFunnel = () => {
     } else {
       // Complete funnel
       const duration = funnelStartTime ? Date.now() - funnelStartTime : 0;
-      
+
       analytics.trackEvent({
         action: 'funnel_complete',
         category: 'conversion',
@@ -65,7 +66,7 @@ export const AgentCreationFunnel = () => {
   const abandonFunnel = () => {
     if (funnelStartTime) {
       const duration = Date.now() - funnelStartTime;
-      
+
       // Track abandonment with context
       analytics.trackEvent({
         action: 'funnel_abandon',
@@ -81,7 +82,9 @@ export const AgentCreationFunnel = () => {
       <button onClick={startFunnel}>Start Creating Agent</button>
       <button onClick={nextStep}>Next Step</button>
       <button onClick={abandonFunnel}>Cancel</button>
-      <p>Step {funnelStep} of {funnelSteps.length}</p>
+      <p>
+        Step {funnelStep} of {funnelSteps.length}
+      </p>
     </div>
   );
 };
@@ -102,7 +105,7 @@ export const UserSegmentationTracking = () => {
         feature_tier: userData.featureTier,
         organization_id: userData.orgId,
         last_active: new Date().toISOString(),
-      }
+      },
     });
   };
 
@@ -117,7 +120,7 @@ export const UserSegmentationTracking = () => {
 
   const trackPowerUserAction = () => {
     const context = analytics.getSessionContext();
-    
+
     // Check if this is a power user session (10+ actions)
     if (context.action_count >= 10) {
       analytics.trackEvent({
@@ -131,24 +134,24 @@ export const UserSegmentationTracking = () => {
 
   return (
     <div>
-      <button onClick={() => setUserProperties({
-        id: 'user_123',
-        type: 'pro',
-        signupDate: '2025-01-01',
-        totalAgents: 5,
-        featureTier: 'advanced',
-        orgId: 'org_456'
-      })}>
+      <button
+        onClick={() =>
+          setUserProperties({
+            id: 'user_123',
+            type: 'pro',
+            signupDate: '2025-01-01',
+            totalAgents: 5,
+            featureTier: 'advanced',
+            orgId: 'org_456',
+          })
+        }
+      >
         Set User Properties
       </button>
-      
-      <button onClick={() => trackUserMilestone('first_week_active')}>
-        Track Milestone
-      </button>
-      
-      <button onClick={trackPowerUserAction}>
-        Track Power User Action
-      </button>
+
+      <button onClick={() => trackUserMilestone('first_week_active')}>Track Milestone</button>
+
+      <button onClick={trackPowerUserAction}>Track Power User Action</button>
     </div>
   );
 };
@@ -162,17 +165,17 @@ export const PerformanceMonitoring = () => {
 
   const trackOperationPerformance = async (
     operationName: string,
-    operation: () => Promise<any>
+    operation: () => Promise<any>,
   ) => {
     const startTime = Date.now();
     const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
-    
+
     try {
       const result = await operation();
       const duration = Date.now() - startTime;
       const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
       const memoryDelta = endMemory - startMemory;
-      
+
       // Track successful operation
       analytics.trackEvent({
         action: 'operation_success',
@@ -180,12 +183,13 @@ export const PerformanceMonitoring = () => {
         label: operationName,
         value: duration,
       });
-      
+
       // Track timing
       trackTiming(`${operationName}_duration`, duration, 'performance', 'success');
-      
+
       // Track memory usage if significant
-      if (memoryDelta > 1024 * 1024) { // > 1MB
+      if (memoryDelta > 1024 * 1024) {
+        // > 1MB
         analytics.trackEvent({
           action: 'high_memory_usage',
           category: 'performance',
@@ -193,12 +197,11 @@ export const PerformanceMonitoring = () => {
           value: memoryDelta,
         });
       }
-      
+
       return result;
-      
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Track failed operation
       analytics.trackEvent({
         action: 'operation_failed',
@@ -206,10 +209,10 @@ export const PerformanceMonitoring = () => {
         label: operationName,
         value: duration,
       });
-      
+
       trackTiming(`${operationName}_failed_duration`, duration, 'performance', 'error');
-      trackError('operation_performance_error', error.message, operationName);
-      
+      trackError('operation_performance_error', (error as Error).message, operationName);
+
       throw error;
     }
   };
@@ -217,16 +220,12 @@ export const PerformanceMonitoring = () => {
   const performHeavyOperation = async () => {
     return trackOperationPerformance('heavy_file_processing', async () => {
       // Simulate heavy operation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return { processed: true };
     });
   };
 
-  return (
-    <button onClick={performHeavyOperation}>
-      Perform Heavy Operation
-    </button>
-  );
+  return <button onClick={performHeavyOperation}>Perform Heavy Operation</button>;
 };
 
 // ============================================================================
@@ -236,10 +235,10 @@ export const PerformanceMonitoring = () => {
 export const FeatureAdoptionTracking = () => {
   const trackFeatureDiscovery = (featureName: string) => {
     const isFirstTime = !sessionStorage.getItem(`analytics_feature_${featureName}_discovered`);
-    
+
     if (isFirstTime) {
       sessionStorage.setItem(`analytics_feature_${featureName}_discovered`, 'true');
-      
+
       analytics.trackEvent({
         action: 'feature_discovery',
         category: 'adoption',
@@ -270,11 +269,11 @@ export const FeatureAdoptionTracking = () => {
       <button onClick={() => trackFeatureDiscovery('advanced_search')}>
         Discover Advanced Search
       </button>
-      
+
       <button onClick={() => trackFeatureUsage('deep_extraction', 3)}>
         Use Deep Extraction (3rd time)
       </button>
-      
+
       <button onClick={() => trackFeatureAbandonment('workflow_builder', 'step_2')}>
         Abandon Workflow Builder
       </button>
@@ -298,24 +297,28 @@ export const ErrorContextTracking = () => {
       userState: any;
       previousAction?: string;
       timeInFlow?: number;
-    }
+    },
   ) => {
     const sessionContext = analytics.getSessionContext();
-    
+
     // Track error with rich context
-    trackError(errorType, error.message, JSON.stringify({
-      component: context.component,
-      action: context.action,
-      userState: context.userState,
-      previousAction: context.previousAction,
-      timeInFlow: context.timeInFlow,
-      sessionId: sessionContext.session_id,
-      sessionDuration: sessionContext.session_duration,
-      actionCount: sessionContext.action_count,
-      userAgent: navigator.userAgent,
-      url: window.location.href,
-      timestamp: new Date().toISOString(),
-    }));
+    trackError(
+      errorType,
+      error.message,
+      JSON.stringify({
+        component: context.component,
+        action: context.action,
+        userState: context.userState,
+        previousAction: context.previousAction,
+        timeInFlow: context.timeInFlow,
+        sessionId: sessionContext.session_id,
+        sessionDuration: sessionContext.session_duration,
+        actionCount: sessionContext.action_count,
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        timestamp: new Date().toISOString(),
+      }),
+    );
   };
 
   const simulateError = () => {
@@ -332,11 +335,7 @@ export const ErrorContextTracking = () => {
     }
   };
 
-  return (
-    <button onClick={simulateError}>
-      Simulate Error with Context
-    </button>
-  );
+  return <button onClick={simulateError}>Simulate Error with Context</button>;
 };
 
 // ============================================================================
@@ -352,52 +351,55 @@ export const ABTestingInfrastructure = () => {
     });
   };
 
-  const trackExperimentConversion = (experimentName: string, variant: string) => {
-    analytics.trackEvent({
-      action: 'experiment_conversion',
-      category: 'experiments',
-      label: `${experimentName}_${variant}`,
-    });
-  };
+  // Example experiment tracking functions (not used in this component)
+  // const trackExperimentConversion = (experimentName: string, variant: string) => {
+  //   analytics.trackEvent({
+  //     action: 'experiment_conversion',
+  //     category: 'experiments',
+  //     label: `${experimentName}_${variant}`,
+  //   });
+  // };
 
-  const getExperimentVariant = (experimentName: string): string => {
-    // Simple hash-based variant assignment
-    const userId = sessionStorage.getItem('analytics_user_id') || 'anonymous';
-    const hash = userId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    
-    return hash % 2 === 0 ? 'control' : 'treatment';
-  };
+  // const getExperimentVariant = (experimentName: string): string => {
+  //   // Simple hash-based variant assignment
+  //   const userId = sessionStorage.getItem('analytics_user_id') || 'anonymous';
+  //   const hash = userId.split('').reduce((a, b) => {
+  //     a = (a << 5) - a + b.charCodeAt(0);
+  //     return a & a;
+  //   }, 0);
+
+  //   return hash % 2 === 0 ? 'control' : 'treatment';
+  // };
 
   const runExperiment = (experimentName: string) => {
-    const variant = getExperimentVariant(experimentName);
-    
+    const variant = 'control'; // Simplified for example
+
     // Track experiment exposure
     analytics.trackEvent({
       action: 'experiment_exposure',
       category: 'experiments',
       label: `${experimentName}_${variant}`,
     });
-    
+
     return variant;
   };
 
   const trackExperimentAction = (experimentName: string, action: string) => {
-    const variant = getExperimentVariant(experimentName);
+    const variant = 'control'; // Simplified for example
     trackExperiment(experimentName, variant, action);
   };
 
   return (
     <div>
-      <button onClick={() => {
-        const variant = runExperiment('onboarding_flow');
-        console.log(`Running experiment with variant: ${variant}`);
-      }}>
+      <button
+        onClick={() => {
+          const variant = runExperiment('onboarding_flow');
+          console.log(`Running experiment with variant: ${variant}`);
+        }}
+      >
         Start Onboarding Experiment
       </button>
-      
+
       <button onClick={() => trackExperimentAction('onboarding_flow', 'completed')}>
         Track Experiment Completion
       </button>
@@ -410,14 +412,18 @@ export const ABTestingInfrastructure = () => {
 // ============================================================================
 
 export const CustomDashboardMetrics = () => {
-  const trackCustomMetric = (metricName: string, value: number, dimensions: Record<string, string>) => {
+  const trackCustomMetric = (
+    metricName: string,
+    value: number,
+    dimensions: Record<string, string>,
+  ) => {
     analytics.trackEvent({
       action: 'custom_metric',
       category: 'dashboard',
       label: metricName,
       value: value,
     });
-    
+
     // Also track with dimensions
     Object.entries(dimensions).forEach(([key, value]) => {
       analytics.trackEvent({
@@ -439,14 +445,18 @@ export const CustomDashboardMetrics = () => {
 
   return (
     <div>
-      <button onClick={() => trackCustomMetric('agent_quality_score', 85, {
-        domain: 'finance',
-        complexity: 'high',
-        user_type: 'pro'
-      })}>
+      <button
+        onClick={() =>
+          trackCustomMetric('agent_quality_score', 85, {
+            domain: 'finance',
+            complexity: 'high',
+            user_type: 'pro',
+          })
+        }
+      >
         Track Agent Quality Score
       </button>
-      
+
       <button onClick={() => trackBusinessMetric('revenue_per_user', 150, 'monthly')}>
         Track Revenue Per User
       </button>

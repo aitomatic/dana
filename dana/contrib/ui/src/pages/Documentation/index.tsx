@@ -777,7 +777,11 @@ const DocumentationPage: React.FC = () => {
                   try {
                     window.open('mailto:support@aitomatic.com', '_blank');
                   } catch (error) {
-                    trackError('support_link_failed', error instanceof Error ? error.message : 'Unknown error', 'documentation_support');
+                    trackError(
+                      'support_link_failed',
+                      error instanceof Error ? error.message : 'Unknown error',
+                      'documentation_support',
+                    );
                   }
                 }}
                 className="px-6 py-3 font-semibold text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"

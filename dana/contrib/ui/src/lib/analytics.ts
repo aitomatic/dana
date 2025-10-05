@@ -142,14 +142,14 @@ export class Analytics {
         window.gtag('config', GA_CONFIG.TRACKING_ID, {
           user_id: properties.user_id,
         });
-        
+
         // Store in sessionStorage for consistent user tracking
         sessionStorage.setItem('analytics_user_id', properties.user_id);
       }
 
       if (properties.custom_map) {
         window.gtag('set', properties.custom_map);
-        
+
         // Store user properties for context in future events
         Object.entries(properties.custom_map).forEach(([key, value]) => {
           sessionStorage.setItem(`analytics_user_${key}`, String(value));
@@ -166,26 +166,26 @@ export class Analytics {
   public initializeSession(): string {
     const sessionId = sessionStorage.getItem('analytics_session_id');
     const sessionStart = sessionStorage.getItem('analytics_session_start');
-    
+
     if (!sessionId || !sessionStart) {
       // New session
       const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const startTime = Date.now().toString();
-      
+
       sessionStorage.setItem('analytics_session_id', newSessionId);
       sessionStorage.setItem('analytics_session_start', startTime);
       sessionStorage.setItem('analytics_entry_point', window.location.pathname);
       sessionStorage.setItem('analytics_action_count', '0');
-      
+
       // Track session start
       window.gtag('event', 'session_start', {
         session_id: newSessionId,
         entry_point: window.location.pathname,
       });
-      
+
       return newSessionId;
     }
-    
+
     return sessionId;
   }
 
@@ -198,9 +198,9 @@ export class Analytics {
     const entryPoint = sessionStorage.getItem('analytics_entry_point') || 'unknown';
     const actionCount = parseInt(sessionStorage.getItem('analytics_action_count') || '0');
     const userId = sessionStorage.getItem('analytics_user_id') || 'anonymous';
-    
+
     const sessionDuration = Date.now() - parseInt(sessionStart);
-    
+
     return {
       session_id: sessionId,
       session_duration: sessionDuration,

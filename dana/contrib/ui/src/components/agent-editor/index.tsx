@@ -128,7 +128,7 @@ export const AgentEditor = ({
 }) => {
   const monaco = useMonaco();
   const isDark = false;
-  const { trackCodeGeneration, trackError } = useDanaAnalytics();
+  const { trackError } = useDanaAnalytics();
 
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
@@ -265,9 +265,13 @@ export const AgentEditor = ({
           errorMessage: '',
           lastValidationResult: null,
         });
-        
+
         // Track validation error
-        trackError('code_validation_failed', error instanceof Error ? error.message : 'Unknown error', 'agent_editor');
+        trackError(
+          'code_validation_failed',
+          error instanceof Error ? error.message : 'Unknown error',
+          'agent_editor',
+        );
       }
     },
     [enableAutoValidation],

@@ -180,7 +180,11 @@ const WorkflowsTab: React.FC = () => {
     } catch (err) {
       console.error('Error fetching workflows:', err);
       setError('Failed to load workflows');
-      trackError('workflow_load_failed', err instanceof Error ? err.message : 'Unknown error', `agent_${id}`);
+      trackError(
+        'workflow_load_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${id}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -366,14 +370,18 @@ const WorkflowsTab: React.FC = () => {
 
       console.log(`✅ Started workflow execution: ${response.execution_id}`);
       console.log(`📊 Initial execution state:`, execution);
-      
+
       // Track workflow execution start
       if (agentId) {
         trackCodeGeneration(agentId, 0); // Duration will be updated when completed
       }
     } catch (error) {
       console.error('Failed to start workflow execution:', error);
-      trackError('workflow_execution_failed', error instanceof Error ? error.message : 'Unknown error', `workflow_${workflow.name}`);
+      trackError(
+        'workflow_execution_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `workflow_${workflow.name}`,
+      );
     }
   };
 
