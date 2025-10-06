@@ -554,7 +554,7 @@ def _load_flatten_knowledge_content(topic_path: str, folder_path: str) -> dict:
 
         return {
             "success": False,
-            "message": "Knowledge content not found in flattened structure",
+            "message": "Knowledge content not found",
             "topic_path": topic_path,
             "available_files": available_files[:10],  # Limit to first 10 files
         }

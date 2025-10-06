@@ -439,11 +439,6 @@ export default function AgentsPage() {
         {/* Animated Background Elements - Only show when expanded */}
         {!headerCollapsed && (
           <>
-            <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob"></div>
-              <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob animation-delay-2000"></div>
-              <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full opacity-20 mix-blend-multiply filter blur-xl bg-brand-500 animate-blob animation-delay-4000"></div>
-            </div>
 
             {/* Grid Pattern Overlay */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
@@ -629,19 +624,7 @@ export default function AgentsPage() {
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
             <div className="relative w-full md:w-72">
-              <svg
-                className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+             
               <input
                 type="text"
                 placeholder="Search"

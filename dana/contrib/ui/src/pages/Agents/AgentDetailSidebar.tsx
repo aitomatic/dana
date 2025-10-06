@@ -238,7 +238,7 @@ const ProcessingStatusHistory: React.FC<{
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 self-start px-2 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
+    <div className="flex flex-col w-full gap-2 self-start px-2 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
       <button
         onClick={onToggle}
         className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
@@ -539,6 +539,10 @@ To get started, let's define its foundation:
           knowledgeStore.onTreeUpdate(agent_id);
         }
       }
+
+      // Handle real-time node generation updates
+      const knowledgeStore = useKnowledgeStore.getState();
+      knowledgeStore.handleChatUpdateMessage(message);
 
       // Don't clear processing status - keep it in history
       // Only remove very old messages (older than 1 hour) to prevent memory issues
