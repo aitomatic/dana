@@ -614,9 +614,9 @@ Return as JSON with this exact structure:
             return self._build_success_response(operation_results, operations_performed)
 
         except json.JSONDecodeError as e:
-            return f"❌ Error: Invalid JSON in bulk_operations: {str(e)}"
+            return f"Error: Invalid JSON in bulk_operations: {str(e)}"
         except Exception as e:
-            return f"❌ Error executing bulk operations: {str(e)}"
+            return f"Error executing bulk operations: {str(e)}"
 
     def _build_error_response(self, failed_result: dict, operation_number: int, all_results: list) -> str:
         """Build comprehensive error response with context and suggestions."""
@@ -630,7 +630,7 @@ Return as JSON with this exact structure:
 
         content = f"""Tree Operation Failed
 
-🚫 **Operation {operation_number} Failed**: {operation.title()} operation on "{path}"
+**Operation {operation_number} Failed**: {operation.title()} operation on "{path}"
 📋 **Error**: {error_msg}
 🔍 **Error Type**: {error_type}
 

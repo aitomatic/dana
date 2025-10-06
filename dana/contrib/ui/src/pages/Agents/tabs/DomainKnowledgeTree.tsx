@@ -398,6 +398,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     error: storeError,
     setCurrentAgent,
     fetchKnowledgeData,
+    generatingNodes,
   } = useKnowledgeStore();
 
   const [nodes, setNodes] = useState<FlowNode[]>([]);
@@ -714,6 +715,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       <CustomNode
         {...nodeProps}
         isSelected={selectedNodeId === nodeProps.id}
+        isGenerating={generatingNodes.has(nodeProps.data.label)}
         onNodeClick={(event: React.MouseEvent) => onNodeClick(event, nodeProps)}
         onDeleteNode={handleDeleteNode}
       >
