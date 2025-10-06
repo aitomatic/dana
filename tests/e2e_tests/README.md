@@ -4,10 +4,9 @@
 
 ```bash
 cd dana-internal/tests/e2e_tests/
-npm init playwright@latest
 ```
 
-Ensure Dana Studio is running on `http://127.0.0.1:8080/`
+Ensure Dana Studio is running on `<http://localhost:4041/`
 
 ## Run Tests
 
@@ -18,8 +17,10 @@ npx playwright test
 # Run smoke tests only
 npx playwright test smoke_test.spec.ts
 
-# Run essential tests
+# Run essential test base case with only doc
 npx playwright test essential_chat_with_doc_base.spec.ts
+
+# Run essential test doc and knowledge pack
 npx playwright test essential_chat_with_doc_and_knowledge_pack.spec.ts
 
 # Run with visible browser
@@ -28,6 +29,10 @@ npx playwright test --headed
 # Debug mode
 npx playwright test --debug
 ```
+
+## Smoke Tests
+
+Tests the most basic Q&A of the pre-defined agents.
 
 ## Essential Tests
 
@@ -40,8 +45,8 @@ Tests the basic chat functionality with document upload and interaction.
 Tests advanced chat functionality including:
 
 - Agent training from existing templates
-- Document library integration
-- Knowledge pack configuration
+- Document from library
+- Knowledge pack generation
 
 ## Test Results
 
