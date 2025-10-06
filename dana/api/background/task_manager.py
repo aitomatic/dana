@@ -12,6 +12,7 @@ from datetime import datetime
 import logging
 import threading
 from dana.common.sys_resource.rag import get_global_rag_resource
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -273,8 +274,7 @@ class TaskManager:
             logger.info(f"Completed deep extraction task for document {document_id}")
 
         except Exception as e:
-            logger.error(f"Error processing deep extraction task: {e}")
-            # TODO: Update task status to failed in database
+            raise ValueError(f"Error processing deep extraction task: {e}\n{traceback.format_exc()}")
 
     def _update_task_status(self, task_id: int, status, error: str | None = None):
         """Update task status in database."""
