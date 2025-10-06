@@ -876,6 +876,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             hasChildren,
             nodePath,
             isExpanded: expandedNodeIds?.has(nodeId) || false,
+            isRootNode: depth === 0,
           },
           position: { x: 0, y: 0 }, // Will be set by dagre layout
         };
