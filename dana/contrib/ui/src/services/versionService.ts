@@ -169,6 +169,13 @@ class VersionService {
   }
 
   /**
+   * Clear all cached version data - useful when user has updated their installation
+   */
+  clearVersionCache(): void {
+    this.forceVersionCheck();
+  }
+
+  /**
    * Get version information and check for updates
    */
   async checkForUpdates(): Promise<VersionInfo> {
@@ -250,11 +257,18 @@ pip install --upgrade dana`;
     if (!this.shouldCheckForUpdates()) {
       const stored = this.getStoredVersionStatus();
       if (stored) {
-        // Return cached result but update current version
-        return {
-          ...stored,
-          current,
-        };
+        // If current version has changed since last check, force a fresh check
+        if (stored.current !== current) {
+          console.log(`Version changed from ${stored.current} to ${current}, forcing fresh check`);
+          // Clear cache and continue to fresh check
+          this.forceVersionCheck();
+        } else {
+          // Return cached result but update current version
+          return {
+            ...stored,
+            current,
+          };
+        }
       }
     }
 
