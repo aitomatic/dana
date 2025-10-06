@@ -748,8 +748,11 @@ async def delete_topic_knowledge_content(
             if folder_path:
                 knows_path = Path(agent.config.get("folder_path")) / "knows"
                 node_path = knows_path.joinpath(*request.topic_parts).resolve()
+                fallback_node_path = knows_path.joinpath(*[DomainNode(topic=topic).fd_name for topic in request.topic_parts]).resolve()
                 if node_path.exists():
                     shutil.rmtree(node_path)
+                elif fallback_node_path.exists():
+                    shutil.rmtree(fallback_node_path)
                 else:
                     raise HTTPException(status_code=404, detail="Node not found")
 

@@ -414,7 +414,8 @@ class GenerateKnowledgeTool(BaseTool):
         # The path_parts excludes the root, so add it back
 
         # Convert to file path format with "/" separators
-        file_path = "/".join(path_parts)
+        # file_path = "/".join(path_parts)
+        file_path = "/".join([DomainNode(topic=topic).fd_name for topic in path_parts])
         # Add "/knowledge.json" suffix
         return file_path + "/knowledge.json"
 
