@@ -13,7 +13,7 @@ import { Pagination } from './components/pagination';
 import { useDocumentEditing } from './hooks/useDocumentEditing';
 import { useDocumentPreview } from './hooks/useDocumentPreview';
 import { getFileType, hasPreviewPane } from './utils/fileUtils';
-import { ExtractionControls } from './components/ExtractionControls';
+// import { ExtractionControls } from './components/ExtractionControls';
 import { DocumentEditor } from './components/DocumentEditor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
@@ -372,14 +372,14 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                         </span>
                       )}
                   </div>
-                  <div className="flex gap-2 items-center">
+                  {/* <div className="flex gap-2 items-center">
                     <ExtractionControls
                       isDeepExtracting={isDeepExtracting}
                       isEditing={isEditing}
                       onEdit={handleEdit}
                       onSave={handleSave}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Content */}
