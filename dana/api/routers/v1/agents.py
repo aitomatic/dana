@@ -1303,6 +1303,8 @@ async def upload_agent_document(
             agent_id=agent_id,
             db_session=db,
             upload_directory=docs_folder,
+            save_to_db=False,  # Don't save to DB, this is a temporary file,
+            ignore_if_duplicate=True,
         )
 
         # Clear cache to force RAG rebuild with new document
