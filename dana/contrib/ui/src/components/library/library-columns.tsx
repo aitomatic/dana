@@ -21,24 +21,24 @@ const getExtractionStatus = (metadata?: Record<string, any>) => {
   if (!metadata) return 'Not extracted';
 
   if (metadata.deep_extracted === true) {
-    return 'Extracted';
+    return 'Deep extracted';
   }
 
   if (metadata.deep_extracted === false && metadata.processing_status === 'processing') {
-    return 'Extracting';
+    return 'Deep extracting';
   }
 
-  return 'Not extracted';
+  return 'Standard extracted';
 };
 
 // Helper function to get extraction status badge variant
 const getExtractionStatusVariant = (status: string) => {
   switch (status) {
-    case 'Extracted':
+    case 'Deep extracted':
       return 'default'; // Green badge
-    case 'Extracting':
+    case 'Deep extracting':
       return 'secondary'; // Yellow/orange badge
-    case 'Not extracted':
+    case 'Standard extracted':
     default:
       return 'outline'; // Gray badge
   }
@@ -105,7 +105,7 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
           variant={variant}
           className={cn(
             'text-xs',
-            status === 'Extracted' && 'bg-green-50 text-green-800 border-green-200',
+            status === 'Deep extracted' && 'bg-blue-50 text-blue-800 border-blue-200',
           )}
         >
           {status}

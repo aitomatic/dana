@@ -3,7 +3,6 @@ import { IconLayoutSidebarRightExpand } from '@tabler/icons-react';
 
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { useSidebar } from '@/hooks/use-sidebar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function TeamSwitcher({
@@ -34,20 +33,28 @@ export function TeamSwitcher({
             <span className="font-medium truncate">{activeTeam.name}</span>
             <span className="text-sm truncate">{activeTeam.plan}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn('ml-auto cursor-pointer size-6')}
-            onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+          <div
+            className={cn(
+              'inline-flex justify-center items-center ml-auto rounded-md cursor-pointer size-6',
+            )}
+            onClick={(event: React.MouseEvent<HTMLDivElement>) => {
               event.stopPropagation();
               toggleSidebar();
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleSidebar();
+              }
             }}
           >
             {state === 'expanded' && (
               <IconLayoutSidebarRightExpand className="text-gray-500 size-6" strokeWidth={1.5} />
             )}
             <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+          </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
