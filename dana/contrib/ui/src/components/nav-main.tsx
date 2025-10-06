@@ -15,6 +15,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export function NavMain({
   items,
@@ -32,6 +33,7 @@ export function NavMain({
   }[];
 }) {
   const navigate = useNavigate();
+  const { trackTabNavigation } = useDanaAnalytics();
 
   return (
     <SidebarGroup>
@@ -65,6 +67,10 @@ export function NavMain({
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
+                                trackTabNavigation(
+                                  subItem.title.toLowerCase().replace(' ', '_'),
+                                  'main_page',
+                                );
                                 navigate(subItem.url);
                               }}
                             >
@@ -91,6 +97,7 @@ export function NavMain({
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
+                      trackTabNavigation(item.title.toLowerCase().replace(' ', '_'), 'main_page');
                       navigate(item.url);
                     }}
                   >

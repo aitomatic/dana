@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { HelpCircle } from 'iconoir-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 interface DeleteAgentDialogProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface DeleteAgentDialogProps {
   onSuccess?: () => void;
   isDeleting?: boolean;
   agentName?: string;
+  agentId?: string;
 }
 
 export function DeleteAgentDialog({
@@ -18,16 +20,30 @@ export function DeleteAgentDialog({
   onSuccess,
   isDeleting = false,
   agentName,
+  agentId,
 }: DeleteAgentDialogProps) {
+  const { trackAgentDeletion, trackError } = useDanaAnalytics();
+
   const handleConfirm = async () => {
     try {
       await onConfirm();
+
+      // Track successful deletion
+      if (agentId) {
+        trackAgentDeletion(agentId);
+      }
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      // Error handling is done in the parent component
+      // Track deletion error
+      trackError(
+        'agent_deletion_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        agentId,
+      );
       console.error('Delete operation failed:', error);
     }
   };

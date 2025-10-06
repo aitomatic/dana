@@ -136,19 +136,10 @@ async def save_extraction_data(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/deep-extraction-status/{task_id}", response_model=BackgroundTaskResponse)
-async def get_deep_extraction_status(
-    task_id: int, db: Session = Depends(get_db), bg_repo: AbstractBackgroundTaskRepo = Depends(get_background_task_repo)
-):
-    """Get the status of a deep extraction task."""
-    task = await bg_repo.get_task_by_id(task_id, db=db)
-    return task
-
-
 @router.get("/{document_id}", response_model=ExtractionOutput)
 async def get_extraction_data(
     document_id: int,
-    deep_extract: bool = False,
+    deep_extract: bool | None = None,
     db: Session = Depends(get_db),
     doc_repo: AbstractDocumentRepo = Depends(get_document_repo),
 ):

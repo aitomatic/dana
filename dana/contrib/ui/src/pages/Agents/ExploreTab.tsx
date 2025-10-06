@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,7 +66,9 @@ export const ExploreTab: React.FC<{
 
     try {
       if (selectedAgent.is_prebuilt) {
-        const newAgent = await apiService.cloneAgentFromPrebuilt(selectedAgent.key);
+        const newAgent = await apiService.cloneAgentFromPrebuilt(selectedAgent.key, {
+          status: 'success',
+        });
         if (newAgent && newAgent.id) {
           // Set Overview tab before navigating to chat
           setAgentDetailActiveTab('Overview');
@@ -88,7 +91,7 @@ export const ExploreTab: React.FC<{
       <div className="flex justify-between items-center mb-4 text-gray-600">
         <p>Pre-trained agents with built-in domain expertise by Aitomatic</p>
       </div>
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex hidden flex-wrap gap-2 mb-6">
         {DOMAINS.map((domain) => (
           <Button
             key={domain}
@@ -228,7 +231,7 @@ export const ExploreTab: React.FC<{
           Can't find a pre-trained agent for your domain?
         </div>
         <div className="text-sm text-gray-700">
-        Train you own agent with support from <b>Dana</b>, our training expert.
+          Train you own agent with support from <b>Dana</b>, our training expert.
         </div>
         <Button
           variant="default"
@@ -237,7 +240,7 @@ export const ExploreTab: React.FC<{
           disabled={creating}
         >
           <Plus style={{ width: '20', height: '20' }} />
-        Create Agent
+          Create Agent
         </Button>
       </div>
 
@@ -302,7 +305,7 @@ export const ExploreTab: React.FC<{
                         {uniqueTopics.map((topic: string, index: number) => (
                           <span
                             key={index}
-                            className="px-2 py-1 text-sm text-brand-700 capitalize bg-brand-50 rounded-full"
+                            className="px-2 py-1 text-sm capitalize rounded-full text-brand-700 bg-brand-50"
                           >
                             {topic}
                           </span>

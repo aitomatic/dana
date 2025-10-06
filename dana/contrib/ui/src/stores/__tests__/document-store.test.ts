@@ -7,6 +7,20 @@ import type {
   DocumentUploadData,
 } from '@/types/document';
 
+// Helper function to create a complete DocumentRead object
+const createMockDocument = (overrides: Partial<DocumentRead> = {}): DocumentRead => ({
+  id: 1,
+  original_filename: 'test.pdf',
+  filename: 'uuid-test.pdf',
+  file_size: 1024,
+  mime_type: 'application/pdf',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  metadata: {},
+  is_extraction_file: false,
+  ...overrides,
+});
+
 // Mock the API service
 vi.mock('@/lib/api', () => ({
   apiService: {
@@ -79,24 +93,22 @@ describe('Document Store', () => {
   describe('fetchDocuments', () => {
     it('should fetch documents successfully', async () => {
       const mockDocuments: DocumentRead[] = [
-        {
+        createMockDocument({
           id: 1,
           original_filename: 'test1.pdf',
           filename: 'uuid-test1.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
-        {
+        }),
+        createMockDocument({
           id: 2,
           original_filename: 'test2.pdf',
           filename: 'uuid-test2.pdf',
           file_size: 2048,
-          mime_type: 'application/pdf',
           created_at: '2024-01-02T00:00:00Z',
           updated_at: '2024-01-02T00:00:00Z',
-        },
+        }),
       ];
 
       (apiService.getDocuments as any).mockResolvedValue(mockDocuments);
@@ -112,15 +124,14 @@ describe('Document Store', () => {
 
     it('should fetch documents with filters', async () => {
       const mockDocuments: DocumentRead[] = [
-        {
+        createMockDocument({
           id: 1,
           original_filename: 'filtered.pdf',
           filename: 'uuid-filtered.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
+        }),
       ];
 
       const filters: DocumentFilters = {
@@ -153,15 +164,14 @@ describe('Document Store', () => {
 
   describe('fetchDocument', () => {
     it('should fetch single document successfully', async () => {
-      const mockDocument: DocumentRead = {
+      const mockDocument: DocumentRead = createMockDocument({
         id: 1,
         original_filename: 'test.pdf',
         filename: 'uuid-test.pdf',
         file_size: 1024,
-        mime_type: 'application/pdf',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-      };
+      });
 
       (apiService.getDocument as any).mockResolvedValue(mockDocument);
 
@@ -187,15 +197,14 @@ describe('Document Store', () => {
 
   describe('uploadDocument', () => {
     it('should upload document successfully', async () => {
-      const mockUploadedDocument: DocumentRead = {
+      const mockUploadedDocument: DocumentRead = createMockDocument({
         id: 3,
         original_filename: 'uploaded.pdf',
         filename: 'uuid-uploaded.pdf',
         file_size: 3072,
-        mime_type: 'application/pdf',
         created_at: '2024-01-03T00:00:00Z',
         updated_at: '2024-01-03T00:00:00Z',
-      };
+      });
 
       const uploadData: DocumentUploadData = {
         file: new File(['test'], 'test.pdf', { type: 'application/pdf' }),
@@ -207,15 +216,14 @@ describe('Document Store', () => {
       // Set initial documents
       useDocumentStore.setState({
         documents: [
-          {
+          createMockDocument({
             id: 1,
             original_filename: 'existing.pdf',
             filename: 'uuid-existing.pdf',
             file_size: 1024,
-            mime_type: 'application/pdf',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-01T00:00:00Z',
-          },
+          }),
         ],
       });
 
@@ -247,15 +255,14 @@ describe('Document Store', () => {
 
   describe('updateDocument', () => {
     it('should update document successfully', async () => {
-      const mockUpdatedDocument: DocumentRead = {
+      const mockUpdatedDocument: DocumentRead = createMockDocument({
         id: 1,
         original_filename: 'updated.pdf',
         filename: 'uuid-test.pdf',
         file_size: 1024,
-        mime_type: 'application/pdf',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-      };
+      });
 
       const updateData: DocumentUpdate = { original_filename: 'updated.pdf' };
 
@@ -264,15 +271,14 @@ describe('Document Store', () => {
       // Set initial documents
       useDocumentStore.setState({
         documents: [
-          {
+          createMockDocument({
             id: 1,
             original_filename: 'original.pdf',
             filename: 'uuid-test.pdf',
             file_size: 1024,
-            mime_type: 'application/pdf',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-01T00:00:00Z',
-          },
+          }),
         ],
       });
 
@@ -304,24 +310,22 @@ describe('Document Store', () => {
       // Set initial documents
       useDocumentStore.setState({
         documents: [
-          {
+          createMockDocument({
             id: 1,
             original_filename: 'to-delete.pdf',
             filename: 'uuid-to-delete.pdf',
             file_size: 1024,
-            mime_type: 'application/pdf',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-01T00:00:00Z',
-          },
-          {
+          }),
+          createMockDocument({
             id: 2,
             original_filename: 'keep.pdf',
             filename: 'uuid-keep.pdf',
             file_size: 2048,
-            mime_type: 'application/pdf',
             created_at: '2024-01-02T00:00:00Z',
             updated_at: '2024-01-02T00:00:00Z',
-          },
+          }),
         ],
       });
 
@@ -352,15 +356,14 @@ describe('Document Store', () => {
 
       // Set selected document
       useDocumentStore.setState({
-        selectedDocument: {
+        selectedDocument: createMockDocument({
           id: 1,
           original_filename: 'test.pdf',
           filename: 'uuid-test.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
+        }),
       });
 
       await useDocumentStore.getState().downloadDocument(1);
@@ -383,15 +386,14 @@ describe('Document Store', () => {
 
   describe('UI Actions', () => {
     it('should set selected document', () => {
-      const mockDocument: DocumentRead = {
+      const mockDocument: DocumentRead = createMockDocument({
         id: 1,
         original_filename: 'test.pdf',
         filename: 'uuid-test.pdf',
         file_size: 1024,
-        mime_type: 'application/pdf',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-      };
+      });
 
       useDocumentStore.getState().setSelectedDocument(mockDocument);
 
@@ -401,15 +403,14 @@ describe('Document Store', () => {
     it('should clear selected document', () => {
       // Set selected document first
       useDocumentStore.setState({
-        selectedDocument: {
+        selectedDocument: createMockDocument({
           id: 1,
           original_filename: 'test.pdf',
           filename: 'uuid-test.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
+        }),
       });
 
       expect(useDocumentStore.getState().selectedDocument).toBeTruthy();
@@ -444,25 +445,23 @@ describe('Document Store', () => {
       // Modify state
       useDocumentStore.setState({
         documents: [
-          {
+          createMockDocument({
             id: 1,
             original_filename: 'test.pdf',
             filename: 'uuid-test.pdf',
             file_size: 1024,
-            mime_type: 'application/pdf',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-01T00:00:00Z',
-          },
+          }),
         ],
-        selectedDocument: {
+        selectedDocument: createMockDocument({
           id: 1,
           original_filename: 'test.pdf',
           filename: 'uuid-test.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
+        }),
         isLoading: true,
         isCreating: true,
         isUpdating: true,
@@ -498,24 +497,22 @@ describe('Document Store', () => {
   describe('Integration Tests', () => {
     it('should handle complete document workflow', async () => {
       const mockDocuments: DocumentRead[] = [
-        {
+        createMockDocument({
           id: 1,
           original_filename: 'test1.pdf',
           filename: 'uuid-test1.pdf',
           file_size: 1024,
-          mime_type: 'application/pdf',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-        },
-        {
+        }),
+        createMockDocument({
           id: 2,
           original_filename: 'test2.pdf',
           filename: 'uuid-test2.pdf',
           file_size: 2048,
-          mime_type: 'application/pdf',
           created_at: '2024-01-02T00:00:00Z',
           updated_at: '2024-01-02T00:00:00Z',
-        },
+        }),
       ];
 
       (apiService.getDocuments as any).mockResolvedValue(mockDocuments);

@@ -145,7 +145,7 @@ export const MyAgentTab: React.FC<{
                             className="p-0 transform translate-x-4 -translate-y-2"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVert className="text-gray-700 size-4" strokeWidth={2} />
+                            <MoreVert className="text-gray-700 size-4" strokeWidth={3} />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
@@ -225,7 +225,7 @@ export const MyAgentTab: React.FC<{
                 You haven't created any agents yet.
               </div>
               <div className="text-sm text-gray-700">
-              Train New Agent with support from <b>Dana</b>, our training expert.
+                Train New Agent with support from <b>Dana</b>, our training expert.
               </div>
               <Button
                 variant="outline"
@@ -234,7 +234,7 @@ export const MyAgentTab: React.FC<{
                 disabled={creating}
               >
                 <Plus style={{ width: '20', height: '20' }} />
-              Train New Agent
+                Train New Agent
               </Button>
             </div>
           </div>

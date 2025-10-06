@@ -1,18 +1,48 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ColumnDef } from '@tanstack/react-table';
 import type { LibraryItem, FileItem, FolderItem } from '@/types/library';
 import { DataTableColumnHeader } from '@/components/table/data-table-column-header';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { IconDotsVertical, IconEye, IconDownload, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconDotsVertical, IconEye, IconEdit, IconTrash } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 import FileIcon from '@/components/file-icon';
 import { formatFileSize, formatDate } from './library-utils';
+
+// Helper function to get extraction status
+const getExtractionStatus = (metadata?: Record<string, any>) => {
+  if (!metadata) return 'Not extracted';
+
+  if (metadata.deep_extracted === true) {
+    return 'Extracted';
+  }
+
+  if (metadata.deep_extracted === false && metadata.processing_status === 'processing') {
+    return 'Extracting';
+  }
+
+  return 'Not extracted';
+};
+
+// Helper function to get extraction status badge variant
+const getExtractionStatusVariant = (status: string) => {
+  switch (status) {
+    case 'Extracted':
+      return 'default'; // Green badge
+    case 'Extracting':
+      return 'secondary'; // Yellow/orange badge
+    case 'Not extracted':
+    default:
+      return 'outline'; // Gray badge
+  }
+};
 
 // Common columns that are shared between library and selection modes
 export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
@@ -48,6 +78,38 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
             {item.type === 'folder' ? 'Topic' : (item as FileItem).extension.toUpperCase()}
           </span>
         </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'extraction_status',
+    size: 200,
+    meta: {
+      style: { width: '200px', minWidth: '200px', maxWidth: '200px' },
+    },
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Extraction Status" />,
+    cell: ({ row }) => {
+      const item = row.original;
+
+      // Only show extraction status for files
+      if (item.type === 'folder') {
+        return <span className="text-gray-400">-</span>;
+      }
+
+      const fileItem = item as FileItem;
+      const status = getExtractionStatus(fileItem.metadata);
+      const variant = getExtractionStatusVariant(status);
+
+      return (
+        <Badge
+          variant={variant}
+          className={cn(
+            'text-xs',
+            status === 'Extracted' && 'bg-green-50 text-green-800 border-green-200',
+          )}
+        >
+          {status}
+        </Badge>
       );
     },
   },
@@ -129,9 +191,7 @@ export const getSelectionColumns = (
           return (
             <div onClick={(e) => e.stopPropagation()}>
               <Checkbox
-                checked={
-                  allTopicFilesSelected ? true : someTopicFilesSelected ? undefined : false
-                }
+                checked={allTopicFilesSelected ? true : someTopicFilesSelected ? undefined : false}
                 onCheckedChange={(checked) => {
                   if (checked) {
                     // Select all files in this topic
@@ -176,7 +236,6 @@ export const getLibraryColumns = (
   onViewItem: (item: LibraryItem) => void,
   onEditItem: (item: LibraryItem) => void,
   onDeleteItem: (item: LibraryItem) => void,
-  onDownloadItem?: (item: LibraryItem) => void,
 ): ColumnDef<LibraryItem>[] => [
   ...getCommonColumns(),
   {
@@ -184,7 +243,7 @@ export const getLibraryColumns = (
     header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
     meta: {
       style: { maxWidth: '100px', width: '100px' },
-      className: 'max-w-[100px] w-[100px]'
+      className: 'max-w-[100px] w-[100px]',
     },
     cell: ({ row }) => {
       const item = row.original;
@@ -205,17 +264,6 @@ export const getLibraryColumns = (
               <IconEye className="mr-2 w-4 h-4" />
               View
             </DropdownMenuItem>
-            {item.type === 'file' && onDownloadItem && (
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDownloadItem(item);
-                }}
-              >
-                <IconDownload className="mr-2 w-4 h-4" />
-                Download
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem
               disabled={
                 item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf'

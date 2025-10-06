@@ -8,6 +8,7 @@ import {
   IconWorld,
   IconListCheck,
 } from '@tabler/icons-react';
+// Analytics hook available but not used in this component
 
 // Mock tool data
 const mockTools = [
@@ -46,11 +47,12 @@ const mockTools = [
     name: 'Scheduling events',
     description: 'Connect to Google Patents to retrieve Patent document',
     icon: <IconListCheck className="w-6 h-6 text-green-500" />,
-  }
+  },
 ];
 
 const ToolsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  // Analytics hook available but not used in this component
 
   const filteredTools = mockTools.filter((tool) =>
     tool.name.toLowerCase().includes(searchTerm.toLowerCase()),

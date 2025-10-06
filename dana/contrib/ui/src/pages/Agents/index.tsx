@@ -7,7 +7,7 @@ import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 import { ImportAgentDialog } from '@/components/import-agent-dialog';
-import { NavArrowDown, Plus } from 'iconoir-react';
+import { NavArrowDown, Plus, Import } from 'iconoir-react';
 import {
   Dialog,
   DialogContent,
@@ -247,8 +247,8 @@ export default function AgentsPage() {
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  // Get activeTab from URL params, default to 'explore'
-  const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
+  // Get activeTab from URL params, default to 'my'
+  const activeTabId = (searchParams.get('tab') as TabId) || 'my';
   const activeTab = TAB_CONFIG[activeTabId];
 
   // Function to update activeTab in URL
@@ -271,9 +271,9 @@ export default function AgentsPage() {
   };
 
   useEffect(() => {
-    // If no agents and no tab specified, default to explore
+    // If no agents and no tab specified, default to my
     if (agents && agents.length === 0 && !searchParams.get('tab')) {
-      setActiveTab('explore');
+      setActiveTab('my');
     }
   }, [agents, searchParams]);
 
@@ -432,8 +432,8 @@ export default function AgentsPage() {
       <div
         className={` relative overflow-hidden transition-all duration-700 ease-out ${
           headerCollapsed
-            ? 'bg-gradient-to-r from-blue-900 to-brand-900 min-h-[200px]'
-            : 'py-16 bg-gradient-to-br from-blue-900 to-blue-900 via-brand-700 min-h-[600px]'
+            ? 'bg-gradient-to-br from-blue-900 to-blue-800 min-h-[128px]'
+            : 'py-16 bg-gradient-to-br from-blue-900 to-blue-900 via-blue-800 min-h-[600px]'
         }`}
       >
         {/* Animated Background Elements - Only show when expanded */}
@@ -603,25 +603,18 @@ export default function AgentsPage() {
 
         {/* Compact Header with Highlights - Show when collapsed */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
+          className={`absolute inset-0 flex p-8 transition-all duration-700 ease-out ${
             headerCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
           }`}
         >
-          <div className="flex flex-col gap-4 items-center">
+          <div className="flex flex-col">
             {/* Main Title with Gradient Highlight */}
             <h1 className="text-3xl font-bold text-white">
               <span className="text-transparent bg-clip-text bg-white">Dana Agent Studio</span>
             </h1>
 
-            {/* Feature Status Badges */}
-            <div className="flex gap-3 items-center">
-              <span className="px-3 py-1.5 text-sm font-semibold bg-green-500/20 text-green-300 border border-green-400/40 rounded-full shadow-lg">
-                🚀 Agent Maker
-              </span>
-            </div>
-
             {/* Subtle Description */}
-            <p className="max-w-md text-sm text-center text-gray-300">
+            <p className="max-w-xl mt-2 text-sm  text-gray-300">
               The complete platform for building, training, and deploying Dana Expert Agents
             </p>
           </div>
@@ -631,27 +624,6 @@ export default function AgentsPage() {
       {/* Content Section */}
       <div className="flex-1 p-8 bg-white">
         {/* Dana Agent Maker Feature */}
-        <div className="flex justify-between items-center p-8 mb-8 bg-gray-50 rounded-lg">
-          <div className="flex flex-col gap-2">
-            <div className="text-lg font-semibold text-gray-900">Dana Agent Maker</div>
-            <div className="text-sm text-gray-700">
-              Define your requirements and receive workflow solutions.
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setImportDialogOpen(true)}
-              variant="outline"
-              className="w-[152px] px-4 py-1 font-semibold"
-            >
-              Import Agent
-            </Button>
-            <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
-              <Plus style={{ width: '20', height: '20' }} />
-              Create Agent
-            </Button>
-          </div>
-        </div>
 
         {/* Search and Navigation */}
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
@@ -672,7 +644,7 @@ export default function AgentsPage() {
               </svg>
               <input
                 type="text"
-                placeholder="Search agents..."
+                placeholder="Search"
                 value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
                 onChange={(e) =>
                   activeTab === 'My Agent'
@@ -682,6 +654,20 @@ export default function AgentsPage() {
                 className="py-3 pr-4 pl-10 w-full text-base text-gray-900 rounded-sm border border-gray-200 transition-all duration-300 focus:outline-none focus:bg-white focus:shadow-md"
               />
             </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setImportDialogOpen(true)}
+                variant="outline"
+                className="w-[152px] px-4 py-1 font-semibold"
+              >
+                <Import style={{ width: '20', height: '20' }} />
+                Import Agent
+              </Button>
+              <Button onClick={handleCreateAgent} className="w-[152px] px-4 py-1 font-semibold">
+                <Plus style={{ width: '20', height: '20' }} />
+                Create Agent
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -689,16 +675,6 @@ export default function AgentsPage() {
         <div className="flex gap-4 mb-8 border-b border-gray-200">
           <button
             className={`py-3  cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
-              activeTab === 'Explore'
-                ? 'border-brand-500 text-brand-600'
-                : 'border-transparent text-gray-500 hover:text-brand-600'
-            }`}
-            onClick={() => setActiveTab('explore')}
-          >
-            <span className="flex gap-2 items-center">Pre-trained Agents</span>
-          </button>
-          <button
-            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
               activeTab === 'My Agent'
                 ? 'border-brand-500 text-brand-600'
                 : 'border-transparent text-gray-500 hover:text-brand-600'
@@ -706,6 +682,16 @@ export default function AgentsPage() {
             onClick={() => setActiveTab('my')}
           >
             <span className="flex gap-2 items-center">My Agents</span>
+          </button>
+          <button
+            className={`py-3 cursor-pointer font-semibold border-b-2 transition-all duration-300 rounded-t-lg ${
+              activeTab === 'Explore'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-brand-600'
+            }`}
+            onClick={() => setActiveTab('explore')}
+          >
+            <span className="flex gap-2 items-center">Pre-trained Agents</span>
           </button>
         </div>
 

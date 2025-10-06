@@ -82,9 +82,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter className="flex p-4 border-t">
-      <span className="text-xs text-muted-foreground">
-              {state === 'collapsed' ? `${packageJson.version}` : `Version ${packageJson.version}`}
-            </span>
+        <span className="text-xs text-muted-foreground">
+          {state === 'collapsed' ? `${packageJson.version}` : `Version ${packageJson.version}`}
+        </span>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

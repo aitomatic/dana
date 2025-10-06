@@ -113,7 +113,7 @@ const MultiFileViewer = ({
       setCopiedFile(file.filename);
       toast.success(`${file.filename} copied to clipboard`);
       setTimeout(() => setCopiedFile(null), 2000);
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy file content');
     }
   };

@@ -12,6 +12,7 @@ from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
 from llama_index.core.schema import Document, NodeWithScore
 import duckdb
+from llama_index.core.vector_stores import MetadataFilter, MetadataFilters, FilterOperator
 from dana.common.sys_resource.rag.pipeline.document_loader import DocumentLoader
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
@@ -31,10 +32,10 @@ def get_duckdb_connection(database_name: str, persist_dir: str, read_only: bool 
     print(f"Getting duckdb connection for {full_path}")
     key = (full_path, read_only)
     if key in _conn:
-        return _conn[key]
+        return _conn[key].cursor()
     conn = duckdb.connect(full_path, read_only=read_only)
     _conn[key] = conn
-    return conn
+    return conn.cursor()
 
 
 class RAGResourceV2(BaseSysResource):
@@ -56,7 +57,7 @@ class RAGResourceV2(BaseSysResource):
         num_results: int = 15,
         dimensions: int = 1024,
         embed_batch_size: int = 512,
-        read_only: bool = True,
+        **kwargs,
     ):
         super().__init__(name, description)
         danapath = self._get_danapath()
@@ -78,7 +79,7 @@ class RAGResourceV2(BaseSysResource):
         self._is_ready = False
         self._filenames = None
         self.vector_index = None
-        self.read_only = read_only
+        self.hashes = []
 
         # Initialize LLM resource for reranking if enabled
         if self.reranking:
@@ -99,25 +100,21 @@ class RAGResourceV2(BaseSysResource):
                     SELECT DISTINCT 
                         json_extract_string(metadata_, '$.file_hash')::VARCHAR as file_hash, 
                     FROM {self.get_table_name()}.main.documents;""").fetchall()
-            return [row[0] for row in result]
+                hashes = [row[0] for row in result]
+            return hashes
         except Exception as _:
             return []
 
     def _load_or_create_index(self, document_dict: dict[str, list[Document]]) -> None:
         def get_vector_store():
-            # return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
-            # return DuckDBVectorStore(embed_dim=self.dimension, client=get_duckdb_connection(self.get_table_name(), PERSIST_DIR), database_name=self.get_table_name(), persist_dir=PERSIST_DIR)
-            if self.read_only:
-                return DuckDBVectorStore(
-                    embed_dim=self.dimension, client=get_duckdb_connection(self.get_table_name(), PERSIST_DIR, read_only=False)
-                )
-            else:
-                return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
+            return DuckDBVectorStore(database_name=self.get_table_name(), persist_dir=PERSIST_DIR, embed_dim=self.dimension)
 
         self.embed_model = get_default_embedding_model(dimension_override=self.dimension)
         if hasattr(self.embed_model, "dimensions"):
             # override using dimension from embed_model
             self.dimension = self.embed_model.dimensions
+        else:
+            self.dimension = len(self.embed_model.get_text_embedding("test"))
         uri = os.path.join(PERSIST_DIR, self.get_table_name())
         if not self.vector_index:
             if Path(uri).exists():
@@ -198,11 +195,19 @@ class RAGResourceV2(BaseSysResource):
         """Initialize and preprocess sources."""
         if not self._is_ready:
             document_dict = await self.loader.load_sources(self.sources, group_by_fn=True)
+            self.hashes = await self.get_hashes_from_documents(document_dict)
             self._load_or_create_index(document_dict)
             documents = document_dict
             self._filenames = [] if documents is None else list(documents.keys())
             await self._index_documents(documents)
             self._is_ready = True
+
+    async def get_hashes_from_documents(self, documents: dict[str, list[Document]]) -> list[str]:
+        mapping = []
+        for _, docs in documents.items():
+            if len(docs):
+                mapping.append(docs[0].metadata.get("file_hash", str(uuid4())))
+        return mapping
 
     async def _index_documents(self, documents: dict[str, list[Document]]) -> None:
         if not self.vector_index:
@@ -414,8 +419,8 @@ class RAGResourceV2(BaseSysResource):
                 result = conn.execute(query, [file_hash])
                 removed_count = result.rowcount
 
-            if self.debug:
-                print(f"Removed {removed_count} documents with file_hash: {file_hash}")
+                if self.debug:
+                    print(f"Removed {removed_count} documents with file_hash: {file_hash}")
 
         except Exception as e:
             if self.debug:
@@ -428,7 +433,11 @@ class RAGResourceV2(BaseSysResource):
             await self.initialize()
         if not self.vector_index:
             raise ValueError("Vector index is not initialized. Please call initialize() first.")
-        return await self.vector_index.as_retriever(similarity_top_k=num_results, embed_model=self.embed_model).aretrieve(query)
+        return await self.vector_index.as_retriever(
+            similarity_top_k=num_results,
+            embed_model=self.embed_model,
+            filters=MetadataFilters(filters=[MetadataFilter(key="file_hash", operator=FilterOperator.IN, value=self.hashes)]),
+        ).aretrieve(query)
 
     @ToolCallable.tool
     async def query(self, query: str, num_results: int = 10) -> str | list:

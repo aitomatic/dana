@@ -1123,6 +1123,7 @@ async def fix_agent_code(request: CodeFixRequest):
 @router.post("/from-prebuilt", response_model=AgentRead)
 async def create_agent_from_prebuilt(
     prebuilt_key: str = Body(..., embed=True),
+    config: dict = Body(..., embed=True),
     db: Session = Depends(get_db),
     agent_manager: AgentManager = Depends(get_agent_manager),
 ):
@@ -1135,11 +1136,17 @@ async def create_agent_from_prebuilt(
         prebuilt_agent = next((a for a in prebuilt_agents if a["key"] == prebuilt_key), None)
         if not prebuilt_agent:
             raise HTTPException(status_code=404, detail="Prebuilt agent not found")
+        # Add status field from provided config to prebuilt config
+        prebuilt_config = prebuilt_agent.get("config", {})
+        merged_config = prebuilt_config.copy()
+        if "status" in config:
+            merged_config["status"] = config["status"]
+
         # Create new agent in DB
         db_agent = Agent(
             name=prebuilt_agent["name"],
             description=prebuilt_agent.get("description", ""),
-            config=prebuilt_agent.get("config", {}),
+            config=merged_config,
         )
         db.add(db_agent)
         db.commit()
@@ -1233,7 +1240,6 @@ async def create_agent_from_prebuilt(
         # Update config with folder_path and status
         updated_config = db_agent.config.copy() if db_agent.config else {}
         updated_config["folder_path"] = str(agent_folder)
-        updated_config["status"] = "success"
         db_agent.config = updated_config
         db_agent.generation_phase = "code_generated"
         flag_modified(db_agent, "config")
@@ -1377,7 +1383,7 @@ async def associate_documents_with_agent(
                 # Remove the file from agent's folder
                 document = db.query(Document).filter(Document.id == doc_id).first()
                 if document and folder_path:
-                    document_fp = document_service.get_agent_associated_fp(folder_path, document.original_filename)
+                    document_fp = document_service.get_agent_associated_fp(folder_path, str(document.original_filename))
                     if os.path.exists(document_fp):
                         os.remove(document_fp)
 
@@ -2356,11 +2362,7 @@ async def export_agent_tar(agent_id: int, request: TarExportRequest, db: Session
         # Create the tar archive
         tar_path = _create_agent_tar(agent_id, agent_folder, request.include_dependencies)
 
-        return TarExportResponse(
-            success=True,
-            tar_path=tar_path,
-            message=f"Successfully created tar archive for agent {agent_id}"
-        )
+        return TarExportResponse(success=True, tar_path=tar_path, message=f"Successfully created tar archive for agent {agent_id}")
 
     except HTTPException:
         raise
@@ -2383,7 +2385,7 @@ async def download_agent_tar(agent_id: int, path: str = Query(...), db: Session 
     """
     try:
         # Validate that the path exists and is a tar file
-        if not os.path.exists(path) or not path.endswith('.tar.gz'):
+        if not os.path.exists(path) or not path.endswith(".tar.gz"):
             raise HTTPException(status_code=404, detail="Tar file not found")
 
         # Get the agent name for the filename
@@ -2394,11 +2396,7 @@ async def download_agent_tar(agent_id: int, path: str = Query(...), db: Session 
         safe_name = "".join(c for c in agent_name if c.isalnum() or c in "._-")
         filename = f"{safe_name}_{agent_id}.tar.gz"
 
-        return FileResponse(
-            path=path,
-            filename=filename,
-            media_type='application/gzip'
-        )
+        return FileResponse(path=path, filename=filename, media_type="application/gzip")
 
     except HTTPException:
         raise
@@ -2412,7 +2410,7 @@ async def import_agent_tar(
     file: UploadFile = File(...),
     agent_name: str = Form(...),
     agent_description: str = Form("Imported agent"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Import an agent from a tar archive.
@@ -2427,15 +2425,11 @@ async def import_agent_tar(
     """
     try:
         # Validate file type
-        if not file.filename or not file.filename.endswith('.tar.gz'):
+        if not file.filename or not file.filename.endswith(".tar.gz"):
             raise HTTPException(status_code=400, detail="Only .tar.gz files are supported")
 
         # Create a new agent in the database
-        db_agent = Agent(
-            name=agent_name,
-            description=agent_description,
-            config={}
-        )
+        db_agent = Agent(name=agent_name, description=agent_description, config={})
         db.add(db_agent)
         db.commit()
         db.refresh(db_agent)
@@ -2492,11 +2486,7 @@ async def import_agent_tar(
 
         logger.info(f"Successfully imported agent {db_agent.id} from tar file")
 
-        return TarImportResponse(
-            success=True,
-            agent_id=db_agent.id,
-            message=f"Successfully imported agent {agent_name}"
-        )
+        return TarImportResponse(success=True, agent_id=db_agent.id, message=f"Successfully imported agent {agent_name}")
 
     except HTTPException:
         raise
