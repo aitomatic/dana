@@ -329,29 +329,31 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, 
               onClick={handleDeleteClick}
               style={{
                 position: 'absolute',
-                right: 40,
-                top: '50%',
-                transform: 'translateY(-50%)',
+                right: 0,
+                top: '0%',
+                transform: 'translate(25%,-40%)',
                 border: '1px solid rgba(166, 166, 166, 0.3)',
-                borderRadius: '4px',
-                padding: '4px',
+                background: 'rgba(255, 255, 255, 1)',
+                borderRadius: '99px',
+                padding: '10px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s ease',
+                zIndex: 1000,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(166, 166, 166, 0.2)';
+                e.currentTarget.style.background = '#f1f1f1';
                 e.currentTarget.style.borderColor = 'rgba(166, 166, 166, 0.5)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(166, 166, 166, 0.1)';
+                e.currentTarget.style.background = '#f1f1f1';
                 e.currentTarget.style.borderColor = 'rgba(166, 166, 166, 0.3)';
               }}
               title="Delete node"
             >
-              <Trash width={14} height={14} style={{ color: '#7d7d7d' }} />
+              <Trash width={20} height={20} style={{ color: '#7d7d7d' }} />
             </button>
           )}
           {hasChildren && (

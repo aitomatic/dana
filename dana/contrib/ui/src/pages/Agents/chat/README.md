@@ -13,17 +13,18 @@ This component now uses GitHub Markdown CSS instead of custom styling, providing
 
 ### Basic Usage
 
-```tsx
+````tsx
 import { MarkdownViewerSmall } from './markdown-viewer';
 
 <MarkdownViewerSmall>
   # Hello World
-  
+
   This is **bold text** and *italic text*.
-  
+
   ```python
   print("Hello, World!")
-  ```
+````
+
 </MarkdownViewerSmall>
 ```
 
@@ -44,23 +45,20 @@ import { MarkdownViewerSmall } from './markdown-viewer';
 ### With Custom Classes
 
 ```tsx
-<MarkdownViewerSmall 
-  classname="custom-markdown-styles"
-  theme="light"
->
+<MarkdownViewerSmall classname="custom-markdown-styles" theme="light">
   # Custom Styled Content
 </MarkdownViewerSmall>
 ```
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `string` | `''` | Markdown content to render |
-| `classname` | `string` | `''` | Additional CSS classes |
-| `useMath` | `boolean` | `true` | Enable KaTeX math rendering |
-| `theme` | `'light' \| 'dark'` | `'light'` | Theme for markdown styling |
-| `citations` | `any[]` | `undefined` | Citation data for references |
+| Prop        | Type                | Default     | Description                  |
+| ----------- | ------------------- | ----------- | ---------------------------- |
+| `children`  | `string`            | `''`        | Markdown content to render   |
+| `classname` | `string`            | `''`        | Additional CSS classes       |
+| `useMath`   | `boolean`           | `true`      | Enable KaTeX math rendering  |
+| `theme`     | `'light' \| 'dark'` | `'light'`   | Theme for markdown styling   |
+| `citations` | `any[]`             | `undefined` | Citation data for references |
 
 ## Styling
 
@@ -96,6 +94,7 @@ If you were previously using custom CSS classes like `styles.content`, replace t
 ## What Was Fixed
 
 The original issue was that `<strong>` tags had custom styling with:
+
 - `border-radius: 4px !important`
 - `border: 1px solid rgba(59, 130, 246, 0.2) !important`
 - Blue background and padding
