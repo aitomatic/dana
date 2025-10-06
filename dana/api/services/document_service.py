@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime, UTC
 import uuid
 from typing import BinaryIO
+import shutil
 
 from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
@@ -116,6 +117,18 @@ class DocumentService:
                 asyncio.create_task(self._build_index_for_agent(agent_id, file_path, db_session))
                 logger.info(f"Started background index building for agent {agent_id} with document {filename}")
 
+            # Ensure metadata is a dictionary, not a MetaData object
+            metadata = document.doc_metadata
+            if metadata is None:
+                metadata = {}
+            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                # If it's a MetaData object or similar, convert to dict
+                metadata = {}
+            elif not isinstance(metadata, dict):
+                # If it's not a dict, convert to empty dict
+                metadata = {}
+
+            print(metadata)
             return DocumentRead(
                 id=document.id,
                 filename=document.filename,
@@ -126,6 +139,7 @@ class DocumentService:
                 agent_id=document.agent_id,
                 created_at=document.created_at,
                 updated_at=document.updated_at,
+                metadata=metadata if metadata is not None else {},
             )
 
         except Exception as e:
@@ -148,6 +162,45 @@ class DocumentService:
             if not document:
                 return None
 
+            # Compute metadata
+            file_extension = None
+            if document.original_filename and '.' in document.original_filename:
+                file_extension = document.original_filename.split('.')[-1].lower()
+
+            file_size_mb = None
+            if document.file_size:
+                file_size_mb = round(document.file_size / (1024 * 1024), 2)
+
+            is_extraction_file = document.source_document_id is not None
+
+            days_since_created = None
+            days_since_updated = None
+            if document.created_at:
+                # Ensure both datetimes are timezone-aware
+                if document.created_at.tzinfo is None:
+                    created_at_utc = document.created_at.replace(tzinfo=UTC)
+                else:
+                    created_at_utc = document.created_at.astimezone(UTC)
+                days_since_created = (datetime.now(UTC) - created_at_utc).days
+            if document.updated_at:
+                # Ensure both datetimes are timezone-aware
+                if document.updated_at.tzinfo is None:
+                    updated_at_utc = document.updated_at.replace(tzinfo=UTC)
+                else:
+                    updated_at_utc = document.updated_at.astimezone(UTC)
+                days_since_updated = (datetime.now(UTC) - updated_at_utc).days
+
+            # Ensure metadata is a dictionary, not a MetaData object
+            metadata = document.doc_metadata
+            if metadata is None:
+                metadata = {}
+            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                # If it's a MetaData object or similar, convert to dict
+                metadata = {}
+            elif not isinstance(metadata, dict):
+                # If it's not a dict, convert to empty dict
+                metadata = {}
+
             return DocumentRead(
                 id=document.id,
                 filename=document.filename,
@@ -158,6 +211,12 @@ class DocumentService:
                 agent_id=document.agent_id,
                 created_at=document.created_at,
                 updated_at=document.updated_at,
+                metadata=metadata,
+                file_extension=file_extension,
+                file_size_mb=file_size_mb,
+                is_extraction_file=is_extraction_file,
+                days_since_created=days_since_created,
+                days_since_updated=days_since_updated,
             )
 
         except Exception as e:
@@ -286,7 +345,7 @@ class DocumentService:
 
     async def list_documents(
         self, topic_id: int | None = None, agent_id: int | None = None, limit: int = 100, offset: int = 0, db_session=None
-    ) -> list[DocumentRead]:
+    ) -> tuple[list[DocumentRead], int]:
         """
         List documents with optional filtering.
 
@@ -298,7 +357,7 @@ class DocumentService:
             db_session: Database session
 
         Returns:
-            List of DocumentRead objects
+            Tuple of (List of DocumentRead objects, total count)
         """
         try:
             query = db_session.query(Document)
@@ -316,10 +375,68 @@ class DocumentService:
                     associated_documents = agent.config.get("associated_documents", [])
                     query = query.filter(Document.id.in_(associated_documents))
 
+            # Get total count before applying limit/offset
+            total_count = query.count()
+
             documents = query.offset(offset).limit(limit).all()
 
-            return [
-                DocumentRead(
+            document_reads = []
+            for doc in documents:
+                # Compute metadata
+                file_extension = None
+                if doc.original_filename and '.' in doc.original_filename:
+                    file_extension = doc.original_filename.split('.')[-1].lower()
+
+                file_size_mb = None
+                if doc.file_size:
+                    file_size_mb = round(doc.file_size / (1024 * 1024), 2)
+
+                is_extraction_file = doc.source_document_id is not None
+
+                days_since_created = None
+                days_since_updated = None
+                if doc.created_at:
+                    # Ensure both datetimes are timezone-aware
+                    if doc.created_at.tzinfo is None:
+                        created_at_utc = doc.created_at.replace(tzinfo=UTC)
+                    else:
+                        created_at_utc = doc.created_at.astimezone(UTC)
+                    days_since_created = (datetime.now(UTC) - created_at_utc).days
+                if doc.updated_at:
+                    # Ensure both datetimes are timezone-aware
+                    if doc.updated_at.tzinfo is None:
+                        updated_at_utc = doc.updated_at.replace(tzinfo=UTC)
+                    else:
+                        updated_at_utc = doc.updated_at.astimezone(UTC)
+                    days_since_updated = (datetime.now(UTC) - updated_at_utc).days
+
+                # Ensure metadata is a dictionary, not a MetaData object
+                metadata = doc.doc_metadata
+                if metadata is None:
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+                elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                    # If it's a MetaData object or similar, use default metadata
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+                elif not isinstance(metadata, dict):
+                    # If it's not a dict, use default metadata
+                    metadata = {
+                        "upload_source": "api",
+                        "processing_status": "completed",
+                        "file_type": file_extension or "unknown",
+                        "has_extraction": is_extraction_file,
+                    }
+
+                document_reads.append(DocumentRead(
                     id=doc.id,
                     filename=doc.filename,
                     original_filename=doc.original_filename,
@@ -329,9 +446,15 @@ class DocumentService:
                     agent_id=doc.agent_id,
                     created_at=doc.created_at,
                     updated_at=doc.updated_at,
-                )
-                for doc in documents
-            ]
+                    metadata=metadata,
+                    file_extension=file_extension,
+                    file_size_mb=file_size_mb,
+                    is_extraction_file=is_extraction_file,
+                    days_since_created=days_since_created,
+                    days_since_updated=days_since_updated,
+                ))
+
+            return document_reads, total_count
 
         except Exception as e:
             logger.error(f"Error listing documents: {e}")
@@ -457,10 +580,13 @@ class DocumentService:
         except Exception as e:
             logger.error(f"Error building index for agent {agent_id}: {e}", exc_info=True)
 
-    def get_agent_associated_fp(self, agent_folder_path: str, document_original_filename: str):
+    def get_agent_associated_fp(self, agent_folder_path: str, document_original_filename: str, convert_to_md: bool = False):
         """Get the associated file path for a document."""
         original_filename = os.path.splitext(document_original_filename)[0]
-        destination_fp = os.path.join(agent_folder_path, "docs", f"{original_filename}.md")
+        if convert_to_md:
+            destination_fp = os.path.join(agent_folder_path, "docs", f"{original_filename}.md")
+        else:
+            destination_fp = os.path.join(agent_folder_path, "docs", document_original_filename)
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         return destination_fp
 
@@ -521,14 +647,15 @@ class DocumentService:
                     continue
 
                 # Remove the copied document file from agent folder
-                document_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                for convert_to_md in [True, False]:
+                    document_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename, convert_to_md)
 
-                if os.path.exists(document_fp):
-                    try:
-                        os.remove(document_fp)
-                        logger.info(f"Removed document from agent folder: {document_fp}")
-                    except Exception as file_error:
-                        logger.warning(f"Could not remove document from agent folder {document_fp}: {file_error}")
+                    if os.path.exists(document_fp):
+                        try:
+                            os.remove(document_fp)
+                            logger.info(f"Removed document from agent folder: {document_fp}")
+                        except Exception as file_error:
+                            logger.warning(f"Could not remove document from agent folder {document_fp}: {file_error}")
 
                 # Clear RAG cache for this agent
                 try:
@@ -630,7 +757,9 @@ class DocumentService:
             logger.error(f"Error checking if document exists with filename {original_filename}: {e}")
             raise
 
-    async def associate_documents_with_agent(self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session) -> list[str]:
+    async def associate_documents_with_agent(
+        self, agent_id: int, agent_folder_path: str, document_ids: list[int], db_session, convert_to_md: bool = False
+    ) -> list[str]:
         """
         Associate documents with an agent.
         """
@@ -648,20 +777,28 @@ class DocumentService:
                 document.agent_id = agent_id
                 extraction_files = document.extraction_files
                 if extraction_files:
-                    final_md = ""
-                    for extraction_file in extraction_files:
-                        extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
-                        with open(extract_fp) as f:
-                            extract_data = json.load(f)
-                        for extraction_doc in extract_data["documents"]:
-                            final_md += extraction_doc["text"]
-                            final_md += "\n\n"
-                    final_md = final_md.strip()
-                    if final_md:
-                        destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
-                        with open(destination_fp, "w") as f:
-                            f.write(final_md)
+                    if convert_to_md:
+                        final_md = ""
+                        for extraction_file in extraction_files:
+                            extract_fp = os.path.join(self.upload_directory, extraction_file.file_path)
+                            with open(extract_fp) as f:
+                                extract_data = json.load(f)
+                            for extraction_doc in extract_data["documents"]:
+                                final_md += extraction_doc["text"]
+                                final_md += "\n\n"
+                        final_md = final_md.strip()
+                        if final_md:
+                            destination_fp = self.get_agent_associated_fp(agent_folder_path, document.original_filename)
+                            with open(destination_fp, "w") as f:
+                                f.write(final_md)
+                            new_destination_fps.append(destination_fp)
+                    else:
+                        destination_fp = self.get_agent_associated_fp(
+                            agent_folder_path, document.original_filename, convert_to_md=convert_to_md
+                        )
+                        shutil.copy(document.file_path, destination_fp)
                         new_destination_fps.append(destination_fp)
+
                 else:
                     logger.warning(f"Document {document.id} {document.original_filename} failed to associated with agent {agent_id}")
 

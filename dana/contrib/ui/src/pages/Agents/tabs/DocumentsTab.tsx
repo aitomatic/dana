@@ -8,18 +8,13 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Search,
-  SystemRestart,
-  EmptyPage,
-  Upload,
-  MultiplePagesPlus,
-} from 'iconoir-react';
+import { Search, SystemRestart, EmptyPage, Upload, MultiplePagesPlus } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 import { useDocumentStore } from '@/stores/document-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { toast } from 'sonner';
 import { PdfViewer } from '@/components/library/pdf-viewer';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 /**
  * DocumentsTab Component
@@ -47,6 +42,7 @@ const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
     lastModified: new Date(doc.updated_at),
     path: `/documents/${doc.id}`,
     topicId: doc.topic_id,
+    metadata: doc.metadata, // Include metadata for extraction status
   };
 };
 
@@ -67,6 +63,9 @@ const DocumentsTab: React.FC = () => {
 
   // Use agent store to get agent's associated_documents
   const { selectedAgent, fetchAgent } = useAgentStore();
+
+  // Analytics tracking
+  const { trackDocumentAssociation, trackFileUpload, trackError } = useDanaAnalytics();
 
   // Cleanup function to reset deletion state
   const resetDeletionState = () => {
@@ -93,11 +92,9 @@ const DocumentsTab: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchDocuments]);
 
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
 
   const handleAddFromLibrary = () => {
     setLibraryModalOpen(true);
@@ -116,6 +113,9 @@ const DocumentsTab: React.FC = () => {
       const result = await apiService.associateDocumentsWithAgent(agent_id, documentIds);
       console.log('✅ Association result:', result);
 
+      // Track document association
+      trackDocumentAssociation(agent_id, selectedFileIds.length);
+
       toast.success(`Successfully added ${selectedFileIds.length} file(s) to agent`);
 
       // Refetch agent data to get updated associated_documents
@@ -133,6 +133,10 @@ const DocumentsTab: React.FC = () => {
         data: error.response?.data,
         stack: error.stack,
       });
+
+      // Track association error
+      trackError('document_association_failed', error?.message || 'Unknown error', agent_id);
+
       toast.error('Failed to add files to agent');
     }
   };
@@ -151,9 +155,20 @@ const DocumentsTab: React.FC = () => {
       // Upload all files first to library, then associate with agent
       for (const file of fileList) {
         // Step 1: Upload to library
-        const uploadedDoc = await apiService.uploadDocumentRaw(file);
+        const uploadedResponse = await apiService.uploadDocumentRaw(file, {
+          build_index: true,
+          allow_duplicate: false,
+        });
+
+        if (!uploadedResponse.success || !uploadedResponse.document) {
+          throw new Error(uploadedResponse.message || 'Upload failed');
+        }
+
+        // Track file upload
+        const fileExtension = file.name.split('.').pop() || 'unknown';
+        trackFileUpload(fileExtension, file.size);
         // Step 2: Associate with agent
-        await apiService.associateDocumentsWithAgent(agent_id, [uploadedDoc.id]);
+        await apiService.associateDocumentsWithAgent(agent_id, [uploadedResponse.document.id]);
         // Remove this file from uploading list as it completes
         setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
       }
@@ -171,6 +186,14 @@ const DocumentsTab: React.FC = () => {
       toast.success(`Successfully uploaded ${fileList.length} file(s)`);
     } catch (error) {
       console.error('Failed to upload or associate files:', error);
+
+      // Track upload error
+      trackError(
+        'file_upload_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `agent_${agent_id}`,
+      );
+
       toast.error('Failed to upload files. Please try again.');
       // Clear uploading state on error
       setUploadingFiles([]);
@@ -340,7 +363,7 @@ const DocumentsTab: React.FC = () => {
             className="pl-10"
           />
         </div>
-       
+
         <Button
           onClick={handleAddFromLibrary}
           disabled={uploadingFiles.length > 0}

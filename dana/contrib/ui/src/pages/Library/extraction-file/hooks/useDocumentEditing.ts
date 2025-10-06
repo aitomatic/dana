@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useMemo } from 'react';
 
 interface Document {
   text: string;
@@ -10,12 +11,24 @@ interface Document {
 export const useDocumentEditing = (selectedFile: any, currentPage: number) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedDocuments, setEditedDocuments] = useState<Document[]>(selectedFile?.documents || []);
+
+  // Get documents from either deep extraction or standard extraction
+  const documents = useMemo(() => {
+    return selectedFile?.is_deep_extracted && selectedFile?.deep_extracted_documents?.length > 0
+      ? selectedFile.deep_extracted_documents
+      : selectedFile?.documents || [];
+  }, [
+    selectedFile?.is_deep_extracted,
+    selectedFile?.deep_extracted_documents,
+    selectedFile?.documents,
+  ]);
+
   const [value, setValue] = useState<string>(
-    editedDocuments[currentPage - 1]?.page_content || editedDocuments[currentPage - 1]?.text || '',
+    documents[currentPage - 1]?.page_content || documents[currentPage - 1]?.text || '',
   );
 
   useEffect(() => {
-    const currentDoc = selectedFile?.documents?.[currentPage - 1];
+    const currentDoc = documents[currentPage - 1];
     const newValue = currentDoc?.page_content || currentDoc?.text || '';
     console.log('[useDocumentEditing] selectedFile:', selectedFile);
     console.log('[useDocumentEditing] currentPage:', currentPage);
@@ -23,7 +36,7 @@ export const useDocumentEditing = (selectedFile: any, currentPage: number) => {
     console.log('[useDocumentEditing] newValue:', newValue);
     console.log('[useDocumentEditing] newValue length:', newValue?.length);
     setValue(newValue);
-  }, [selectedFile, currentPage]);
+  }, [selectedFile, currentPage, documents]);
 
   const handleSave = (): void => {
     const updatedDocuments = [...editedDocuments];
@@ -47,7 +60,7 @@ export const useDocumentEditing = (selectedFile: any, currentPage: number) => {
   };
 
   const handleCancel = (): void => {
-    const currentDoc = selectedFile?.documents?.[currentPage - 1];
+    const currentDoc = documents[currentPage - 1];
     setValue(currentDoc?.page_content || currentDoc?.text || '');
     setIsEditing(false);
   };

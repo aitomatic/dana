@@ -8,6 +8,7 @@ import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import AgentOverviewChart from './AgentOverviewChart';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NavigateFunction } from 'react-router-dom';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const OverviewTab: React.FC<{
   navigate: NavigateFunction;
@@ -18,6 +19,7 @@ const OverviewTab: React.FC<{
   const [editedName, setEditedName] = useState(agent?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { trackAgentEdit, trackError } = useDanaAnalytics();
 
   const handleEditName = () => {
     setIsEditingName(true);
@@ -33,9 +35,18 @@ const OverviewTab: React.FC<{
         ...agent,
         name: editedName.trim(),
       });
+
+      // Track agent name edit
+      trackAgentEdit(agent.id.toString(), 'name');
+
       setIsEditingName(false);
     } catch (error) {
       console.error('Failed to update agent name:', error);
+      trackError(
+        'agent_update_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `agent_${agent.id}`,
+      );
       // Reset to original name on error
       setEditedName(agent.name);
     } finally {
@@ -221,6 +232,7 @@ const OverviewTab: React.FC<{
         onSuccess={handleDeleteSuccess}
         isDeleting={isDeleting}
         agentName={agent?.name}
+        agentId={agent?.id.toString()}
       />
     </div>
   );

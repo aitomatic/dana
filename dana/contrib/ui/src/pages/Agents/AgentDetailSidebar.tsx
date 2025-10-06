@@ -10,6 +10,101 @@ import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { HybridRenderer } from './chat/hybrid-renderer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
+// CSS for blinking cursor animation
+const cursorBlinkStyle = `
+  .cursor-blink {
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0;
+    }
+  }
+`;
+
+// Add styles to head
+if (typeof window !== 'undefined' && !document.getElementById('animated-placeholder-styles')) {
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'animated-placeholder-styles';
+  styleSheet.textContent = cursorBlinkStyle;
+  document.head.appendChild(styleSheet);
+}
+
+// Animated placeholder component - only shown for new users (no messages sent)
+const AnimatedPlaceholder: React.FC<{
+  hasMessages: boolean;
+  isFocused: boolean;
+  hasInteracted: boolean;
+}> = ({ hasMessages, isFocused, hasInteracted }) => {
+  const placeholders = [
+    'Add a new knowledge topic',
+    'Show me what my agent knows',
+    'Build my agent using a job description',
+  ];
+
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [currentText, setCurrentText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    // Only animate if there are no messages, textarea is not focused, and user hasn't interacted yet
+    if (hasMessages || isFocused || hasInteracted) {
+      setCurrentText('');
+      return;
+    }
+
+    const typingSpeed = 100;
+    const deletingSpeed = 50;
+    const pauseDuration = 2000;
+
+    const timeout = setTimeout(
+      () => {
+        if (!isDeleting && currentText === placeholders[currentPlaceholder]) {
+          // If we've finished typing, pause then start deleting
+          setTimeout(() => setIsDeleting(true), pauseDuration);
+        } else if (isDeleting && currentText === '') {
+          // If we've finished deleting, move to next placeholder and start typing
+          setIsDeleting(false);
+          setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+        } else if (isDeleting) {
+          // Delete current text
+          setCurrentText(currentText.slice(0, -1));
+        } else {
+          // Type current text
+          setCurrentText(placeholders[currentPlaceholder].slice(0, currentText.length + 1));
+        }
+      },
+      isDeleting ? deletingSpeed : typingSpeed,
+    );
+
+    return () => clearTimeout(timeout);
+  }, [
+    currentText,
+    isDeleting,
+    currentPlaceholder,
+    placeholders,
+    hasMessages,
+    isFocused,
+    hasInteracted,
+  ]);
+
+  // If user has sent messages OR is focused OR has interacted, show simple static placeholder
+  if (hasMessages || isFocused || hasInteracted) {
+    return <span>Type your message</span>;
+  }
+
+  return (
+    <span className="relative inline-block">
+      {currentText}
+      <span className="inline-block w-0.5 h-4 ml-0.5 bg-gray-400 cursor-blink"></span>
+    </span>
+  );
+};
+
 // Constants for resize functionality
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 800;
@@ -206,6 +301,8 @@ const SmartAgentChat: React.FC<{
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -401,55 +498,63 @@ To get started, let's define its foundation:
   // No global handlers needed
 
   // WebSocket integration for real-time updates
-  const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
-    const newStatusMessage: ProcessingStatusMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      toolName: message.tool_name,
-      message: message.content,
-      status: message.status,
-      progression: message.progression,
-      timestamp: new Date(),
-    };
+  const handleChatUpdate = useCallback(
+    (message: ChatUpdateMessage) => {
+      const newStatusMessage: ProcessingStatusMessage = {
+        id: `${Date.now()}-${Math.random()}`,
+        toolName: message.tool_name,
+        message: message.content,
+        status: message.status,
+        progression: message.progression,
+        timestamp: new Date(),
+      };
 
-    setProcessingStatusHistory((prev) => {
-      // If this is an update to an existing tool, replace it
-      const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
-      if (existingIndex !== -1) {
-        const updated = [...prev];
-        updated[existingIndex] = newStatusMessage;
-        return updated;
-      }
-      // Otherwise add as new message
-      return [...prev, newStatusMessage];
-    });
+      setProcessingStatusHistory((prev) => {
+        // If this is an update to an existing tool, replace it
+        const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = newStatusMessage;
+          return updated;
+        }
+        // Otherwise add as new message
+        return [...prev, newStatusMessage];
+      });
 
-    // Automatically expand the thinking component when processing status updates are received
-    setIsHistoryExpanded(true);
+      // Automatically expand the thinking component when processing status updates are received
+      setIsHistoryExpanded(true);
 
-    // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
-    if ((message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') && message.status === 'finish') {
-      console.log('[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab');
-      
-      // Use the existing knowledge store callback system for auto-switching
-      const knowledgeStore = useKnowledgeStore.getState();
-      if (knowledgeStore.onTreeUpdate && agent_id) {
-        knowledgeStore.onTreeUpdate(agent_id);
-      }
-    }
-
-    // Don't clear processing status - keep it in history
-    // Only remove very old messages (older than 1 hour) to prevent memory issues
-    setTimeout(
-      () => {
-        setProcessingStatusHistory((prev) =>
-          prev.filter(
-            (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
-          ),
+      // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
+      if (
+        (message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') &&
+        message.status === 'finish'
+      ) {
+        console.log(
+          '[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab',
         );
-      },
-      60 * 60 * 1000,
-    );
-  }, [agent_id]);
+
+        // Use the existing knowledge store callback system for auto-switching
+        const knowledgeStore = useKnowledgeStore.getState();
+        if (knowledgeStore.onTreeUpdate && agent_id) {
+          knowledgeStore.onTreeUpdate(agent_id);
+        }
+      }
+
+      // Don't clear processing status - keep it in history
+      // Only remove very old messages (older than 1 hour) to prevent memory issues
+      setTimeout(
+        () => {
+          setProcessingStatusHistory((prev) =>
+            prev.filter(
+              (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
+            ),
+          );
+        },
+        60 * 60 * 1000,
+      );
+    },
+    [agent_id],
+  );
 
   const { connectionState } = useSmartChatWebSocket({
     agentId: agent_id || '',
@@ -704,20 +809,19 @@ To get started, let's define its foundation:
       }
 
       // Knowledge update detection (fallback method)
-      const hasKnowledgeUpdate = 
+      const hasKnowledgeUpdate =
         response.updated_domain_tree ||
         response.status === 'knowledge_status_update' ||
-        response.updates_applied?.some((update: string) => 
-          update.includes('knowledge') || 
-          update.includes('tree') ||
-          update.includes('domain')
+        response.updates_applied?.some(
+          (update: string) =>
+            update.includes('knowledge') || update.includes('tree') || update.includes('domain'),
         ) ||
         response.processor === 'knowledge_ops_handler' ||
         response.detected_intent === 'knowledge_ops';
 
       if (hasKnowledgeUpdate) {
         console.log('[AgentDetailSidebar] Knowledge update detected in response (fallback method)');
-        
+
         // Trigger knowledge store refresh
         const knowledgeStore = useKnowledgeStore.getState();
         knowledgeStore.fetchKnowledgeData(agent_id, true);
@@ -741,7 +845,7 @@ To get started, let's define its foundation:
       }
 
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
-      
+
       // Collapse the thinking component even on error
       setIsHistoryExpanded(false);
     } finally {
@@ -872,6 +976,16 @@ To get started, let's define its foundation:
         </div>
         <div className="p-3">
           <div className="relative">
+            {/* Animated placeholder overlay */}
+            {!input && !loading && (
+              <div className="absolute top-3 left-3 text-gray-500 text-sm pointer-events-none z-10">
+                <AnimatedPlaceholder
+                  hasMessages={messages.some((msg) => msg.sender === 'user')}
+                  isFocused={isFocused}
+                  hasInteracted={hasInteracted}
+                />
+              </div>
+            )}
             <textarea
               className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
               focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
@@ -880,7 +994,11 @@ To get started, let's define its foundation:
               onKeyDown={handleKeyDown}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder="Type your message"
+              onFocus={() => {
+                setIsFocused(true);
+                setHasInteracted(true);
+              }}
+              onBlur={() => setIsFocused(false)}
               disabled={loading}
               rows={1}
               style={{
@@ -966,7 +1084,6 @@ export const AgentDetailSidebar: React.FC = () => {
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Dana Agent Maker</div>
           </div>
-
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat

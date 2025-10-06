@@ -67,7 +67,8 @@ export function LibraryFileSelectionModal({
 
     try {
       // Use API service directly to avoid store conflicts
-      const allDocuments = await apiService.getDocuments();
+      const response = await apiService.getDocuments();
+      const allDocuments = response.documents || [];
       console.log('📚 Library documents fetched:', {
         count: allDocuments?.length || 0,
         documents: allDocuments?.map((d: DocumentRead) => ({
@@ -76,7 +77,7 @@ export function LibraryFileSelectionModal({
           agent_id: d.agent_id,
         })),
       });
-      setLibraryDocuments(allDocuments || []);
+      setLibraryDocuments(allDocuments);
     } catch (error) {
       console.error('❌ Failed to fetch library documents:', error);
       setLibraryError(error instanceof Error ? error.message : 'Failed to fetch library documents');
@@ -359,8 +360,8 @@ export function LibraryFileSelectionModal({
 
           {/* Footer Actions */}
           <div className="flex flex-shrink-0 items-center pt-4 mt-auto border-t">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => window.open('/library', '_blank')}
               className="mr-auto"
             >

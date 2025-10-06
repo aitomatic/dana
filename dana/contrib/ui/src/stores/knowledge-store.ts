@@ -157,7 +157,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
         try {
           const msg = JSON.parse(event.data);
           console.log('[KnowledgeStore] Received WebSocket message:', msg);
-          
+
           if (msg.type === 'knowledge_status_update') {
             // Handle specific topic updates
             if (msg.path && msg.status) {
@@ -216,7 +216,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
   updateTopicStatus: (topicPath: string, status: string, progression?: number) => {
     const state = get();
-    
+
     if (!state.knowledgeStatus) {
       console.warn('[KnowledgeStore] Cannot update topic status - no knowledge status data');
       return;
@@ -224,7 +224,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     console.log('[KnowledgeStore] Updating topic status:', { topicPath, status, progression });
 
-    const updatedTopics = state.knowledgeStatus.topics.map(topic => {
+    const updatedTopics = state.knowledgeStatus.topics.map((topic) => {
       if (topic.path === topicPath) {
         return {
           ...topic,
@@ -238,8 +238,8 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     set({
       knowledgeStatus: {
         ...state.knowledgeStatus,
-        topics: updatedTopics
-      }
+        topics: updatedTopics,
+      },
     });
 
     // Trigger tree update callback if available

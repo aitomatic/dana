@@ -82,7 +82,7 @@ export const useApiStore = create<ApiState>((set) => ({
     try {
       const isAvailable = await apiService.isApiAvailable();
       set({ isApiAvailable: isAvailable });
-    } catch (error) {
+    } catch {
       set({ isApiAvailable: false });
     }
   },

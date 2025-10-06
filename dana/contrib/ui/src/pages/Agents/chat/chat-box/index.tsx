@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { IconLoader2 } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
 import type { DocumentRead } from '@/types/document';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 import ChatInput from './chat-input';
 import SendButton from './send-button';
@@ -55,6 +56,7 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
     const [agentDocuments, setAgentDocuments] = useState<DocumentRead[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { trackChatMessage, trackFileUpload, trackError } = useDanaAnalytics();
 
     // Fetch agent documents when agentId changes
     useEffect(() => {
@@ -65,8 +67,8 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
         }
 
         try {
-          const documents = await apiService.getDocuments({ agent_id: Number(agentId) });
-          setAgentDocuments(documents);
+          const response = await apiService.getDocuments({ agent_id: Number(agentId) });
+          setAgentDocuments(response.documents || []);
         } catch (error) {
           console.error('Failed to fetch agent documents:', error);
           setAgentDocuments([]);
@@ -132,15 +134,34 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
             const doc = await apiService.uploadAgentDocument(agentId, file);
             uploadedFile.status = 'success';
             uploadedFile.path = doc.filename;
+
+            // Track successful file upload
+            const fileExtension = file.name.split('.').pop() || 'unknown';
+            trackFileUpload(fileExtension, file.size);
           } else {
-            // Fallback to the general upload endpoint
-            const doc = await apiService.uploadDocument({ file, title: file.name });
+            // Use v2 upload endpoint
+            const uploadedResponse = await apiService.uploadDocumentRaw(file, {
+              build_index: true,
+              allow_duplicate: false,
+            });
+
+            if (!uploadedResponse.success || !uploadedResponse.document) {
+              throw new Error(uploadedResponse.message || 'Upload failed');
+            }
+
             uploadedFile.status = 'success';
-            uploadedFile.path = doc.filename;
+            uploadedFile.path = uploadedResponse.document.filename;
+
+            // Track successful file upload
+            const fileExtension = file.name.split('.').pop() || 'unknown';
+            trackFileUpload(fileExtension, file.size);
           }
         } catch (error) {
           uploadedFile.status = 'error';
           uploadedFile.error = (error as Error).message;
+
+          // Track file upload error
+          trackError('file_upload_failed', (error as Error).message, file.name);
         }
 
         return uploadedFile;
@@ -206,6 +227,12 @@ const ChatBox = forwardRef<ChatBoxRef, ChatBoxProps>(
 
       requestAnimationFrame(() => {
         handleSendMessage(messageData);
+
+        // Track chat message sent
+        if (agentId) {
+          trackChatMessage(agentId, 'user');
+        }
+
         setMessage('');
         // Clear uploaded files after sending
         setUploadedFiles([]);
