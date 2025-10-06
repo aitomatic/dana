@@ -58,9 +58,9 @@ export const VersionStatus: React.FC<VersionStatusProps> = ({
     // Handle newer-than-published case
     if (versionInfo?.status === 'newer-than-published') {
       return compact ? (
-        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+        <div className="w-2 h-2 bg-gray-500 rounded-full" />
       ) : (
-        <CheckCircle className="w-3 h-3 text-blue-500" />
+        <CheckCircle className="w-3 h-3 text-gray-500" />
       );
     }
 
@@ -70,9 +70,9 @@ export const VersionStatus: React.FC<VersionStatusProps> = ({
 
     // In collapsed mode, show a subtle indicator for up-to-date status
     return compact ? (
-      <div className="w-2 h-2 bg-green-500 rounded-full" />
+      <div className="w-2 h-2 bg-gray-500 rounded-full" />
     ) : (
-      <CheckCircle className="w-3 h-3 text-green-500" />
+      <CheckCircle className="w-3 h-3 text-gray-500" />
     );
   };
 
@@ -101,7 +101,7 @@ export const VersionStatus: React.FC<VersionStatusProps> = ({
 
   const getStatusColor = () => {
     if (isLoading) return 'text-gray-400';
-    if (versionInfo?.status === 'newer-than-published') return 'text-blue-600';
+    if (versionInfo?.status === 'newer-than-published') return 'text-gray-600';
     if (versionInfo?.updateAvailable) return 'text-orange-600';
     return 'text-green-600';
   };

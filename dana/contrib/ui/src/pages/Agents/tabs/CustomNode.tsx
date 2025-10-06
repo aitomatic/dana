@@ -20,7 +20,7 @@ const TRANSITION_DURATION = '0.5s';
 const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
 const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
-// Add CSS styles for node selection
+// Add CSS styles for node selection and generation
 const nodeStyles = `
   .custom-node {
     transition: ${TRANSITION_ALL};
@@ -32,12 +32,25 @@ const nodeStyles = `
     animation: selectedPulse 2s ease-in-out infinite;
   }
 
+  .custom-node.generating {
+    animation: generatingPulse 2s ease-in-out infinite;
+  }
+
   @keyframes selectedPulse {
     0%, 100% {
       box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.1);
     }
     50% {
       box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.1);
+    }
+  }
+
+  @keyframes generatingPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 0 2px #3B82F6, 0 0 0 8px rgba(59, 130, 246, 0.1);
     }
   }
 `;
@@ -51,6 +64,7 @@ if (typeof document !== 'undefined') {
 
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
+  isGenerating?: boolean;
   onNodeClick: (event: React.MouseEvent) => void;
   onDeleteNode?: (nodeId: string, nodePath: string) => void;
 }
@@ -172,7 +186,7 @@ export const FilePopup = ({
   </PortalPopup>
 );
 
-const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, onDeleteNode }) => {
+const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating = false, onNodeClick, onDeleteNode }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [, setPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -204,6 +218,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, 
   const getNodeClasses = () => {
     const baseClasses = ['custom-node'];
     if (isSelected) baseClasses.push('selected');
+    if (isGenerating) baseClasses.push('generating');
     return baseClasses.join(' ');
   };
 
@@ -245,6 +260,17 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, 
           zIndex: 10,
         }
       : {};
+
+    // Add generation styling (prioritize over other states)
+    if (isGenerating) {
+      return {
+        ...baseStyle,
+        ...selectionStyle,
+        background: '#DBEAFE', // Light blue (same as in_progress)
+        border: '2px solid #3B82F6', // Blue border
+        boxShadow: '0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2)',
+      };
+    }
 
     if (!isLeafNode) {
       // Parent nodes - different styling based on expansion state
@@ -359,7 +385,14 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick, 
           {hasChildren && (
             <span style={{ fontSize: '16px' }}>{isExpanded ? '' : <NavArrowRight />}</span>
           )}
-          {isLeafNode && knowledgeStatus && (
+          {/* Generating indicator - show spinning icon when generating */}
+          {isGenerating && (
+            <span style={{ fontSize: '16px' }}>
+              <SystemRestart className="text-blue-500 animate-spin" />
+            </span>
+          )}
+          {/* Status icon - only show if not generating */}
+          {isLeafNode && knowledgeStatus && !isGenerating && (
             <span style={{ fontSize: '16px' }}>{getStatusIcon(knowledgeStatus.status)}</span>
           )}
         </div>

@@ -91,7 +91,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
         const toastId = `deep-extraction-${taskId}`;
         activeToastIds.current.push(toastId);
         toast.info(`Deep extraction started for "${fileName}"`, {
-          description: 'This may take up to 30 minutes. You can close this dialog anytime.',
+          description: 'This process may take a while. You can close this dialog anytime.',
           duration: Infinity,
           position: 'bottom-left',
           id: toastId,
