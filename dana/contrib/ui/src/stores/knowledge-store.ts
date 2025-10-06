@@ -22,6 +22,9 @@ interface KnowledgeState {
   // Tree update callback
   onTreeUpdate?: (agentId: string | number) => void;
 
+  // Real-time generation tracking
+  generatingNodes: Set<string>;
+
   // Actions
   fetchKnowledgeData: (agentId: string | number, force?: boolean) => Promise<void>;
   clearKnowledgeData: () => void;
@@ -30,10 +33,18 @@ interface KnowledgeState {
   connectWebSocket: (agentId: string | number) => void;
   disconnectWebSocket: () => void;
   updateTopicStatus: (topicPath: string, status: string, progression?: number) => void;
+  updateGeneratingNodes: (nodeNames: string[], isGenerating: boolean) => void;
+  handleChatUpdateMessage: (message: any) => void;
 }
 
 // Debounce delay for API calls (in milliseconds)
 const DEBOUNCE_DELAY = 500;
+
+// Utility function to parse node names from processing messages
+const parseNodeNameFromMessage = (message: string): string | null => {
+  const match = message.match(/Processing \d+\/\d+: (.+)$/);
+  return match ? match[1].trim() : null;
+};
 
 export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   // Initial state
@@ -45,6 +56,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   websocket: null,
   lastFetchTime: 0,
   onTreeUpdate: undefined,
+  generatingNodes: new Set(),
 
   fetchKnowledgeData: async (agentId: string | number, force = false) => {
     const state = get();
@@ -106,6 +118,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       currentAgentId: null,
       error: null,
       lastFetchTime: 0,
+      generatingNodes: new Set(),
     });
   },
 
@@ -159,9 +172,21 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
           console.log('[KnowledgeStore] Received WebSocket message:', msg);
 
           if (msg.type === 'knowledge_status_update') {
+            console.log('🔄 [DEBUG] Generation Completes - knowledge_status_update received:', {
+              path: msg.path,
+              status: msg.status,
+              progression: msg.progression,
+              fullMessage: msg
+            });
+            
             // Handle specific topic updates
             if (msg.path && msg.status) {
               console.log('[KnowledgeStore] Updating specific topic:', msg.path, msg.status);
+              console.log('🔄 [DEBUG] About to call updateTopicStatus with:', {
+                topicPath: msg.path,
+                status: msg.status,
+                progression: msg.progression
+              });
               get().updateTopicStatus(msg.path, msg.status, msg.progression);
             } else {
               // Fallback to full refresh for general updates
@@ -223,6 +248,12 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     }
 
     console.log('[KnowledgeStore] Updating topic status:', { topicPath, status, progression });
+    console.log('🔄 [DEBUG] updateTopicStatus called with:', {
+      topicPath,
+      status,
+      progression,
+      currentGeneratingNodes: Array.from(state.generatingNodes)
+    });
 
     const updatedTopics = state.knowledgeStatus.topics.map((topic) => {
       if (topic.path === topicPath) {
@@ -235,17 +266,101 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       return topic;
     });
 
+    // Clear the node from generatingNodes Set when generation completes (success or failed)
+    let updatedGeneratingNodes = state.generatingNodes;
+    if (status === 'success' || status === 'failed') {
+      // Extract node name from topic path (last part after ' - ')
+      const nodeName = topicPath.split(' - ').pop();
+      console.log('🔄 [DEBUG] Attempting to clear generating node:', {
+        topicPath,
+        extractedNodeName: nodeName,
+        currentGeneratingNodes: Array.from(state.generatingNodes),
+        willClear: nodeName && state.generatingNodes.has(nodeName)
+      });
+      
+      if (nodeName) {
+        const newSet = new Set(state.generatingNodes);
+        const wasPresent = newSet.has(nodeName);
+        newSet.delete(nodeName);
+        updatedGeneratingNodes = newSet;
+        console.log('[KnowledgeStore] Cleared generating node:', nodeName, 'due to status:', status, 'wasPresent:', wasPresent);
+        console.log('🔄 [DEBUG] After clearing - generating nodes:', Array.from(updatedGeneratingNodes));
+      } else {
+        console.log('🔄 [DEBUG] No node name extracted from topicPath:', topicPath);
+      }
+    }
+
     set({
       knowledgeStatus: {
         ...state.knowledgeStatus,
         topics: updatedTopics,
       },
+      generatingNodes: updatedGeneratingNodes,
     });
 
     // Trigger tree update callback if available
     if (state.onTreeUpdate && state.currentAgentId) {
       console.log('[KnowledgeStore] Triggering tree update callback for topic status change');
       state.onTreeUpdate(state.currentAgentId);
+    }
+  },
+
+  updateGeneratingNodes: (nodeNames: string[], isGenerating: boolean) => {
+    const state = get();
+    
+    set((prevState) => {
+      const newSet = new Set(prevState.generatingNodes);
+      if (isGenerating) {
+        nodeNames.forEach(name => newSet.add(name));
+      } else {
+        nodeNames.forEach(name => newSet.delete(name));
+      }
+      
+      console.log('[KnowledgeStore] Updated generating nodes:', { 
+        nodeNames, 
+        isGenerating, 
+        totalGenerating: newSet.size 
+      });
+      
+      return { generatingNodes: newSet };
+    });
+
+    // Trigger tree update callback if available
+    if (state.onTreeUpdate && state.currentAgentId) {
+      console.log('[KnowledgeStore] Triggering tree update callback for generating nodes change');
+      state.onTreeUpdate(state.currentAgentId);
+    }
+  },
+
+  handleChatUpdateMessage: (message: any) => {
+    console.log('🔄 [DEBUG] handleChatUpdateMessage received:', {
+      tool_name: message.tool_name,
+      status: message.status,
+      content: message.content,
+      fullMessage: message
+    });
+    
+    // Handle generation messages from chat WebSocket
+    if (message.tool_name === 'generate_knowledge' && message.status === 'in_progress') {
+      const nodeName = parseNodeNameFromMessage(message.content);
+      console.log('🔄 [DEBUG] Parsed node name from in_progress message:', {
+        originalContent: message.content,
+        parsedNodeName: nodeName
+      });
+      if (nodeName) {
+        console.log('[KnowledgeStore] Node generation started:', nodeName);
+        get().updateGeneratingNodes([nodeName], true);
+      }
+    } else if (message.tool_name === 'generate_knowledge' && message.status === 'finish') {
+      const nodeName = parseNodeNameFromMessage(message.content);
+      console.log('🔄 [DEBUG] Parsed node name from finish message:', {
+        originalContent: message.content,
+        parsedNodeName: nodeName
+      });
+      if (nodeName) {
+        console.log('[KnowledgeStore] Node generation finished:', nodeName);
+        get().updateGeneratingNodes([nodeName], false);
+      }
     }
   },
 }));
