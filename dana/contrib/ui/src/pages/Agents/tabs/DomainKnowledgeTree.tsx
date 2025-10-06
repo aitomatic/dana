@@ -15,7 +15,6 @@ import { Search, Collapse, Expand, Xmark, LightBulb, ThumbsUp } from 'iconoir-re
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -1643,21 +1642,14 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className="flex justify-center items-center w-10 h-10 bg-red-100 rounded-full">
-                <Xmark className="w-6 h-6 text-red-600" />
-              </div>
-              Delete Knowledge Node
+            Delete knowledge node?
             </DialogTitle>
-            <DialogDescription>This action cannot be undone.</DialogDescription>
           </DialogHeader>
 
-          <div className="py-4">
+          <div className="mt-2">
             <p className="text-sm text-gray-700">
-              Are you sure you want to delete the knowledge node{' '}
-              <strong>"{nodeToDelete?.label}"</strong>?
-            </p>
-            <p className="mt-2 text-xs text-gray-500">
-              This will remove the node and all its associated knowledge content.
+            You’re about to remove{' '}
+              <strong>"{nodeToDelete?.label}"</strong>.   This will remove the node and <em>all its sub-nodes and associated knowledge content.</em> 
             </p>
           </div>
 
