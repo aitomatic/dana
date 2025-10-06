@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8080/agents?tab=explore');
+    await page.goto('http://localhost:4041/agents?tab=explore');
     await page.getByText('Lama').click();
     await page.getByRole('button', { name: 'Train from this agent' }).click();
 
@@ -37,7 +37,7 @@ test('test', async ({ page }) => {
     await page.getByTestId('chat-input').fill('hi');
     await page.getByTestId('send-message-button').getByRole('img').click();
 
-    await page.goto('http://127.0.0.1:8080/agents/67/chat/11');
+    await page.goto('http://localhost:4041/agents/67/chat/11');
     await page.getByTestId('chat-input').fill('what is google total revenue in 2024');
     await page.getByTestId('chat-input').click();
     await page.getByTestId('chat-input').fill('what is the gross margin');
