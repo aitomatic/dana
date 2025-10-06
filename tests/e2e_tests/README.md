@@ -14,6 +14,9 @@ Ensure Dana Studio is running on `<http://localhost:4041/`
 # Run all tests
 npx playwright test
 
+# Run all tests with UI
+npx playwright test --ui
+
 # Run smoke tests only
 npx playwright test smoke_test.spec.ts
 
@@ -36,11 +39,11 @@ Tests the most basic Q&A of the pre-defined agents.
 
 ## Essential Tests
 
-### 1\. Essential Chat with Document Base (`essential_chat_with_doc_base.spec.ts`)
+### 1\. Essential Chat with Document Base
 
 Tests the basic chat functionality with document upload and interaction.
 
-### 2\. Essential Chat with Document and Knowledge Pack (`essential_chat_with_doc_and_knowledge_pack.spec.ts`)
+### 2\. Essential Chat with Document and Knowledge Pack
 
 Tests advanced chat functionality including:
 
