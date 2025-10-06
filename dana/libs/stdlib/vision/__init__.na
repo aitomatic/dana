@@ -1,9 +1,9 @@
-# Add local aicapture to Python path
+# Add local ai_capture to Python path
 import os.py as os
-from aicapture.vision_parser.py import VisionParser
-from aicapture.vid_capture.py import VidCapture
-from aicapture.settings.py import MAX_CONCURRENT_TASKS, ImageQuality
-from aicapture.vision_parser.py import DEFAULT_PROMPT
+from ai_capture.vision_parser.py import VisionParser
+from ai_capture.vid_capture.py import VidCapture
+from ai_capture.settings.py import MAX_CONCURRENT_TASKS, ImageQuality
+from ai_capture.vision_parser.py import DEFAULT_PROMPT
 from typing.py import Optional, Dict, Any
 
 # Initialize parsers
@@ -28,7 +28,7 @@ def _get_vid_capture(config: Optional[Dict] = None) -> VidCapture:
     if config is None:
         config = {}
     
-    from aicapture.vid_capture.py import VideoConfig
+    from ai_capture.vid_capture.py import VideoConfig
     
     video_config = VideoConfig(
         max_duration_seconds=config.get('max_duration_seconds', 30),
@@ -47,7 +47,7 @@ def _get_vid_capture(config: Optional[Dict] = None) -> VidCapture:
 
 def vision_extract(file_path: str, prompt: Optional[str] = None, config: Optional[Dict] = None) -> Dict[str, Any]:
     """
-    Unified function to process various file types supported by aicapture.
+    Unified function to process various file types supported by ai_capture.
     
     Args:
         file_path (str): Path to the file to process

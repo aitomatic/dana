@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useCallback, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useDanaAnalytics } from '@/hooks/useAnalytics';
+import VersionNotification from '@/components/version-notification';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -152,7 +154,10 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
             )}
           </div>
         </header>
-        <main className="overflow-auto flex-1">{children}</main>
+        <main>
+          <VersionNotification />
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
