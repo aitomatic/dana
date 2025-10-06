@@ -45,6 +45,8 @@ class DocumentService:
         upload_directory: str | None = None,
         build_index: bool = True,
         use_original_filename: bool = True,
+        save_to_db: bool = True,
+        ignore_if_duplicate: bool = False,
     ) -> DocumentRead:
         """
         Upload and store a document.
@@ -70,7 +72,7 @@ class DocumentService:
             file_path = os.path.join(target_dir, filename)
 
             # If file exists, append timestamp to avoid conflicts
-            if os.path.exists(file_path):
+            if os.path.exists(file_path) and not ignore_if_duplicate:
                 name_without_ext, file_extension = os.path.splitext(filename)
                 timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                 filename_with_timestamp = f"{name_without_ext}_{timestamp}{file_extension}"
@@ -107,13 +109,13 @@ class DocumentService:
                 agent_id=document_data.agent_id,
             )
 
-            if db_session:
+            if save_to_db and db_session:
                 db_session.add(document)
                 db_session.commit()
                 db_session.refresh(document)
 
             # Build RAG index immediately after successful upload
-            if build_index and agent_id:
+            if save_to_db and build_index and agent_id:
                 asyncio.create_task(self._build_index_for_agent(agent_id, file_path, db_session))
                 logger.info(f"Started background index building for agent {agent_id} with document {filename}")
 
@@ -121,7 +123,7 @@ class DocumentService:
             metadata = document.doc_metadata
             if metadata is None:
                 metadata = {}
-            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+            elif hasattr(metadata, "__dict__") and not isinstance(metadata, dict):
                 # If it's a MetaData object or similar, convert to dict
                 metadata = {}
             elif not isinstance(metadata, dict):
@@ -164,8 +166,8 @@ class DocumentService:
 
             # Compute metadata
             file_extension = None
-            if document.original_filename and '.' in document.original_filename:
-                file_extension = document.original_filename.split('.')[-1].lower()
+            if document.original_filename and "." in document.original_filename:
+                file_extension = document.original_filename.split(".")[-1].lower()
 
             file_size_mb = None
             if document.file_size:
@@ -194,7 +196,7 @@ class DocumentService:
             metadata = document.doc_metadata
             if metadata is None:
                 metadata = {}
-            elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+            elif hasattr(metadata, "__dict__") and not isinstance(metadata, dict):
                 # If it's a MetaData object or similar, convert to dict
                 metadata = {}
             elif not isinstance(metadata, dict):
@@ -384,8 +386,8 @@ class DocumentService:
             for doc in documents:
                 # Compute metadata
                 file_extension = None
-                if doc.original_filename and '.' in doc.original_filename:
-                    file_extension = doc.original_filename.split('.')[-1].lower()
+                if doc.original_filename and "." in doc.original_filename:
+                    file_extension = doc.original_filename.split(".")[-1].lower()
 
                 file_size_mb = None
                 if doc.file_size:
@@ -419,7 +421,7 @@ class DocumentService:
                         "file_type": file_extension or "unknown",
                         "has_extraction": is_extraction_file,
                     }
-                elif hasattr(metadata, '__dict__') and not isinstance(metadata, dict):
+                elif hasattr(metadata, "__dict__") and not isinstance(metadata, dict):
                     # If it's a MetaData object or similar, use default metadata
                     metadata = {
                         "upload_source": "api",
@@ -436,23 +438,25 @@ class DocumentService:
                         "has_extraction": is_extraction_file,
                     }
 
-                document_reads.append(DocumentRead(
-                    id=doc.id,
-                    filename=doc.filename,
-                    original_filename=doc.original_filename,
-                    file_size=doc.file_size,
-                    mime_type=doc.mime_type,
-                    topic_id=doc.topic_id,
-                    agent_id=doc.agent_id,
-                    created_at=doc.created_at,
-                    updated_at=doc.updated_at,
-                    metadata=metadata,
-                    file_extension=file_extension,
-                    file_size_mb=file_size_mb,
-                    is_extraction_file=is_extraction_file,
-                    days_since_created=days_since_created,
-                    days_since_updated=days_since_updated,
-                ))
+                document_reads.append(
+                    DocumentRead(
+                        id=doc.id,
+                        filename=doc.filename,
+                        original_filename=doc.original_filename,
+                        file_size=doc.file_size,
+                        mime_type=doc.mime_type,
+                        topic_id=doc.topic_id,
+                        agent_id=doc.agent_id,
+                        created_at=doc.created_at,
+                        updated_at=doc.updated_at,
+                        metadata=metadata,
+                        file_extension=file_extension,
+                        file_size_mb=file_size_mb,
+                        is_extraction_file=is_extraction_file,
+                        days_since_created=days_since_created,
+                        days_since_updated=days_since_updated,
+                    )
+                )
 
             return document_reads, total_count
 
