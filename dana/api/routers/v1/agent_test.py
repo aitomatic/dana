@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-
+from datetime import datetime, UTC
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
 from dana.api.utils.streaming_function_override import streaming_print_override
 from dana.api.utils.streaming_stdout import StdoutContextManager
@@ -56,7 +56,7 @@ class VariableUpdateManager:
                     "variable": var_name,
                     "old_value": str(old_value) if old_value is not None else None,
                     "new_value": str(new_value) if new_value is not None else None,
-                    "timestamp": asyncio.get_event_loop().time(),
+                    "timestamp": datetime.now(UTC).timestamp(),
                 }
                 await websocket.send_text(json.dumps(message))
             except Exception as e:
