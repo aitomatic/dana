@@ -1641,15 +1641,13 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-            Delete knowledge node?
-            </DialogTitle>
+            <DialogTitle className="flex gap-3 items-center">Delete knowledge node?</DialogTitle>
           </DialogHeader>
 
           <div className="mt-2">
             <p className="text-sm text-gray-700">
-            You’re about to remove{' '}
-              <strong>"{nodeToDelete?.label}"</strong>.   This will remove the node and <em>all its sub-nodes and associated knowledge content.</em> 
+              You’re about to remove <strong>"{nodeToDelete?.label}"</strong>. This will remove the
+              node and <em>all its sub-nodes and associated knowledge content.</em>
             </p>
           </div>
 
