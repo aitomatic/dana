@@ -229,13 +229,13 @@ export const MyAgentTab: React.FC<{
                 Train new agent with support from <b>Dana Agent Maker</b>.
               </div>
               <div className="flex gap-2 mt-4">
-              {onSwitchToPretrained && (
+                {onSwitchToPretrained && (
                   <Button
                     variant="default"
-                    className=" px-4 py-1 font-semibold"
+                    className="px-4 py-1 font-semibold"
                     onClick={onSwitchToPretrained}
                   >
-                     <Search style={{ width: '20', height: '20' }} />
+                    <Search style={{ width: '20', height: '20' }} />
                     Browse Pre-trained Agents
                   </Button>
                 )}
@@ -248,7 +248,6 @@ export const MyAgentTab: React.FC<{
                   <Plus style={{ width: '20', height: '20' }} />
                   Create Agent
                 </Button>
-                
               </div>
             </div>
           </div>
