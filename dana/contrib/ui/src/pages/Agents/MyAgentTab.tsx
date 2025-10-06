@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Settings, Play, MoreVert, Trash, Plus } from 'iconoir-react';
+import { Settings, Play, MoreVert, Trash, Plus, Search } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import { toast } from 'sonner';
@@ -46,7 +46,8 @@ export const MyAgentTab: React.FC<{
   navigate: (url: string) => void;
   handleCreateAgent: () => Promise<void>;
   creating: boolean;
-}> = ({ agents, navigate, handleCreateAgent, creating }) => {
+  onSwitchToPretrained?: () => void;
+}> = ({ agents, navigate, handleCreateAgent, creating, onSwitchToPretrained }) => {
   const { deleteAgent, isDeleting } = useAgentStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<any>(null);
@@ -225,17 +226,29 @@ export const MyAgentTab: React.FC<{
                 You haven't created any agents yet.
               </div>
               <div className="text-sm text-gray-700">
-                Train New Agent with support from <b>Dana</b>, our training expert.
+                Train new agent with support from <b>Dana Agent Maker</b>.
               </div>
-              <Button
-                variant="outline"
-                className="w-[200px] px-4 py-1 mt-2 font-semibold"
-                onClick={handleCreateAgent}
-                disabled={creating}
-              >
-                <Plus style={{ width: '20', height: '20' }} />
-                Train New Agent
-              </Button>
+              <div className="flex gap-2 mt-4">
+                {onSwitchToPretrained && (
+                  <Button
+                    variant="default"
+                    className="px-4 py-1 font-semibold"
+                    onClick={onSwitchToPretrained}
+                  >
+                    <Search style={{ width: '20', height: '20' }} />
+                    Browse Pre-trained Agents
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="px-2 py-1 font-semibold"
+                  onClick={handleCreateAgent}
+                  disabled={creating}
+                >
+                  <Plus style={{ width: '20', height: '20' }} />
+                  Create Agent
+                </Button>
+              </div>
             </div>
           </div>
         )}

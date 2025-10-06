@@ -706,6 +706,7 @@ export default function AgentsPage() {
             navigate={navigate}
             handleCreateAgent={handleCreateAgent}
             creating={creating}
+            onSwitchToPretrained={() => setActiveTab('explore')}
           />
         )}
         {activeTab === 'Explore' && (
