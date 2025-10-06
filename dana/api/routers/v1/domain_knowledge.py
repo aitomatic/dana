@@ -754,7 +754,8 @@ async def delete_topic_knowledge_content(
                 elif fallback_node_path.exists():
                     shutil.rmtree(fallback_node_path)
                 else:
-                    raise HTTPException(status_code=404, detail="Node not found")
+                    # NOTE: DELETE FOLDER IS OPTIONAL AND SHOULDN'T BLOCK THE DELETION OF THE NODE
+                    pass
 
             await domain_service.save_agent_domain_knowledge(agent_id, tree_v2, db)
             return {"message": "Knowledge content deleted successfully"}
