@@ -76,6 +76,7 @@ interface NodeData {
   hasChildren?: boolean;
   isExpanded?: boolean;
   nodePath?: string;
+  isRootNode?: boolean;
 }
 
 // Helper functions for status styling
@@ -196,6 +197,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
   const isLeafNode = nodeData.isLeafNode;
   const hasChildren = nodeData.hasChildren;
   const isExpanded = nodeData.isExpanded;
+  const isRootNode = nodeData.isRootNode;
 
   // Handle delete button click
   const handleDeleteClick = (event: React.MouseEvent) => {
@@ -349,8 +351,8 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
         <span style={{ textAlign: 'left', flex: 1 }}>{nodeData.label}</span>
         {/* Icons positioned on the right edge */}
         <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8, gap: 4 }}>
-          {/* Delete button - only show on hover and if onDeleteNode is provided */}
-          {isHovered && onDeleteNode && (
+          {/* Delete button - only show on hover and if onDeleteNode is provided, but not on root nodes */}
+          {isHovered && onDeleteNode && !isRootNode && (
             <button
               onClick={handleDeleteClick}
               style={{
