@@ -238,7 +238,7 @@ const ProcessingStatusHistory: React.FC<{
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex flex-col w-full gap-2 self-start px-2 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
+    <div className={`flex flex-col gap-2 self-start px-2 py-2 text-left bg-gray-50 rounded-lg border border-gray-200 ${isExpanded ? 'w-full' : ''}`}>
       <button
         onClick={onToggle}
         className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
