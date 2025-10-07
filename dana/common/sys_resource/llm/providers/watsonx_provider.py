@@ -18,7 +18,18 @@ class WatsonxProvider(Provider):
                 "Please refer to the setup guide: /guides/watsonx.md."
             )
 
+    def _standardize_messages(self, messages):
+        result = []
+        for message in messages:
+            if "tools" in message and len(message["tools"]) == 0:
+                message.pop("tools")
+            result.append(message)
+        return result
+
     def chat_completions_create(self, model, messages, **kwargs):
+        # NOTE : Handle special cases where watsonx models do not accept empty tools list
+        messages = self._standardize_messages(messages)
+
         model = ModelInference(
             model_id=model,
             credentials=Credentials(

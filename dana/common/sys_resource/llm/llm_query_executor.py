@@ -369,10 +369,6 @@ class LLMQueryExecutor(Loggable):
         try:
             model = request_params.get("model", "")
 
-            # NOTE : Handle special cases where watsonx models do not accept empty tools list
-            if len(request_params.get("tools", [])) == 0 and model.startswith("watsonx:"):
-                request_params.pop("tools")
-
             self.override_client_provider(model)
 
             # Make the actual API call (aisuite is synchronous)
