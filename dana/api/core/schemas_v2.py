@@ -37,7 +37,17 @@ class KnowledgePackResponse(BaseModel):
     error: str | None = None
 
 
+class DeleteNodeRequest(BaseModel):
+    topic_parts: list[str]
+
+
+class UpdateNodeRequest(BaseModel):
+    topic_parts: list[str]
+    node_name: str
+
+
 class AddChildNodeRequest(BaseModel):
+    topic_parts: list[str]
     child_topics: list[str]
 
 
