@@ -205,3 +205,41 @@
 .html-renderer-dark .option-button:hover {
   background: linear-gradient(135deg, #3d52b8 0%, #4a3266 100%);
 }
+
+/* Disabled button styling */
+.button-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background-color: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.button-disabled:hover {
+  background-color: #f3f4f6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.button-disabled:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.button-disabled:focus {
+  box-shadow: none !important;
+}
+
+/* Dark theme disabled button styling */
+.html-renderer-dark .button-disabled {
+  background-color: #374151 !important;
+  color: #6b7280 !important;
+  border-color: #4b5563 !important;
+}
+
+.html-renderer-dark .button-disabled:hover {
+  background-color: #374151 !important;
+}

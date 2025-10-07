@@ -319,6 +319,10 @@ const SmartAgentChat: React.FC<{
   const clearMessages = agentStore ? agentStore((s) => s.clearMessages) : () => {};
   const setMessages = agentStore ? agentStore((s) => s.setMessages) : () => {};
   const getMessageCount = agentStore ? agentStore((s) => s.getMessageCount) : () => 0;
+  
+  // Button state management methods
+  const setMessageButtonsActive = agentStore ? agentStore((s) => s.setMessageButtonsActive) : () => {};
+  const deactivateAllButtons = agentStore ? agentStore((s) => s.deactivateAllButtons) : () => {};
 
   // Make sendMessage globally available for HTMLRenderer to call
   useEffect(() => {
@@ -367,8 +371,8 @@ const SmartAgentChat: React.FC<{
 
       const timeoutId = setTimeout(() => {
         setIsTyping(false);
-        addMessage({
-          sender: 'agent',
+        const welcomeMessage = {
+          sender: 'agent' as const,
           text: displayName
             ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
 Now let's shape it into an agent that really works for you. To begin, tell me:
@@ -384,7 +388,16 @@ To get started, let's define its foundation:
 - **Who** will it assist? (e.g. financial analysts, IT engineers)?
 
 💡 Tip: You can provide a **job description**, and I'll draft the starting expertise for your agent.`,
-        });
+          hasActiveButtons: true, // Welcome message should have active buttons
+        };
+        addMessage(welcomeMessage);
+        
+        // Activate buttons for the welcome message
+        const allMessages = agentStore?.getState().messages || [];
+        const latestMessage = allMessages[allMessages.length - 1];
+        if (latestMessage && latestMessage.id) {
+          setMessageButtonsActive(latestMessage.id);
+        }
       }, 2000);
 
       // Store the timeout ID for cleanup purposes
@@ -409,7 +422,19 @@ To get started, let's define its foundation:
 
     const timeoutId = setTimeout(() => {
       setIsTyping(false);
-      addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+      const fallbackMessage = {
+        sender: 'agent' as const,
+        text: 'Welcome! How can I assist you with this agent?',
+        hasActiveButtons: true, // Fallback message should have active buttons
+      };
+      addMessage(fallbackMessage);
+      
+      // Activate buttons for the fallback message
+      const allMessages = agentStore?.getState().messages || [];
+      const latestMessage = allMessages[allMessages.length - 1];
+      if (latestMessage && latestMessage.id) {
+        setMessageButtonsActive(latestMessage.id);
+      }
     }, 2000);
 
     // Store the timeout ID for cleanup purposes
@@ -750,6 +775,9 @@ To get started, let's define its foundation:
     // Clear previous thinking messages when starting new processing
     setProcessingStatusHistory([]);
 
+    // Deactivate all previous message buttons when user sends a new message
+    deactivateAllButtons();
+
     // Add user message
     const userMsg = { sender: 'user' as const, text: input };
     addMessage(userMsg);
@@ -782,10 +810,26 @@ To get started, let's define its foundation:
       }
 
       // Add the actual response
-      addMessage({
+      const agentResponse = {
         sender: 'agent' as const,
         text: response.follow_up_message || response.agent_response || response.message || '...',
-      });
+      };
+      addMessage(agentResponse);
+      
+      // Check if the response contains buttons and activate them
+      const responseText = agentResponse.text;
+      const hasButtons = responseText.includes('<button') || 
+                        responseText.includes('option-button') || 
+                        responseText.includes('options-container');
+      
+      if (hasButtons) {
+        // Find the message we just added and activate its buttons
+        const allMessages = agentStore.getState().messages;
+        const latestMessage = allMessages[allMessages.length - 1];
+        if (latestMessage && latestMessage.id) {
+          setMessageButtonsActive(latestMessage.id);
+        }
+      }
 
       // Collapse the thinking component after response is generated
       setIsHistoryExpanded(false);
@@ -930,18 +974,30 @@ To get started, let's define its foundation:
                     <HybridRenderer
                       content={msg.text}
                       backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
+                      messageId={msg.id}
+                      hasActiveButtons={msg.hasActiveButtons ?? false}
                     />
                     {isWelcomeMessage && (
                       <div className="flex flex-col gap-2 mt-3">
                         <button
-                          onClick={handleCTAClick}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
+                          onClick={msg.hasActiveButtons ? handleCTAClick : undefined}
+                          disabled={!msg.hasActiveButtons}
+                          className={`px-4 py-2 text-sm font-medium rounded-md border border-gray-300 shadow-sm transition-colors duration-200 ${
+                            msg.hasActiveButtons
+                              ? 'text-gray-700 bg-white cursor-pointer hover:bg-gray-100'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
                         >
                           Add knowledge on a topic
                         </button>
                         <button
-                          onClick={handleAddDocumentsClick}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
+                          onClick={msg.hasActiveButtons ? handleAddDocumentsClick : undefined}
+                          disabled={!msg.hasActiveButtons}
+                          className={`px-4 py-2 text-sm font-medium rounded-md border border-gray-300 shadow-sm transition-colors duration-200 ${
+                            msg.hasActiveButtons
+                              ? 'text-gray-700 bg-white cursor-pointer hover:bg-gray-100'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
                         >
                           Add documents
                         </button>
