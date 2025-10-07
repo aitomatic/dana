@@ -1,5 +1,6 @@
 from aisuite.provider import Provider
 import os
+from typing import Any
 from ibm_watsonx_ai import Credentials
 from ibm_watsonx_ai.foundation_models import ModelInference
 from aisuite.framework import ChatCompletionResponse
@@ -18,7 +19,15 @@ class WatsonxProvider(Provider):
                 "Please refer to the setup guide: /guides/watsonx.md."
             )
 
+    def _standardize_kwargs(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        if "tools" in kwargs and len(kwargs["tools"]) == 0:
+            kwargs.pop("tools")
+        return kwargs
+
     def chat_completions_create(self, model, messages, **kwargs):
+        # NOTE : Handle special cases where watsonx models do not accept empty tools list
+        kwargs = self._standardize_kwargs(kwargs)
+
         model = ModelInference(
             model_id=model,
             credentials=Credentials(
