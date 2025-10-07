@@ -7,7 +7,7 @@ import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 import { ImportAgentDialog } from '@/components/import-agent-dialog';
-import { NavArrowDown, Plus, Import } from 'iconoir-react';
+import { NavArrowDown, Plus, Import, Search } from 'iconoir-react';
 import {
   Dialog,
   DialogContent,
@@ -624,7 +624,7 @@ export default function AgentsPage() {
         <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
             <div className="relative w-full md:w-72">
-             
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5" />
               <input
                 type="text"
                 placeholder="Search"
