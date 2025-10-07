@@ -275,6 +275,7 @@ class KnowledgeGenerationManager:
                 "topic_id": topic_entry.get("id"),
                 "path": topic_entry.get("path"),
                 "status": status,
+                "last_generated": topic_entry.get("last_generated"),  # Include timestamp
             }
             await self.ws_manager.broadcast(msg)
 
