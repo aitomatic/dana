@@ -1801,7 +1801,7 @@ async def generate_agent_knowledge(
 async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db)):
     """
     Get the knowledge generation status for all topics in the agent's domain knowledge tree.
-    Returns the knowledge_status.json content with status information for each topic.
+    Returns status for ALL topics, including ones not yet generated (with status=null).
     """
     try:
         # Get the agent to find its folder_path
@@ -1811,20 +1811,68 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
 
         folder_path = agent.config.get("folder_path") if agent.config else None
         if not folder_path:
-            # Return empty status if no folder exists yet
             return {"topics": []}
 
-        # Check if knowledge status file exists
+        # Load existing knowledge status
         knows_folder = os.path.join(folder_path, "knows")
         status_path = os.path.join(knows_folder, "knowledge_status.json")
 
-        if not os.path.exists(status_path):
-            # Return empty status if no knowledge status file exists yet
-            return {"topics": []}
+        existing_status = {}
+        if os.path.exists(status_path):
+            status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent_id))
+            status_data = status_manager.load()
+            # Create a map of path -> status for quick lookup
+            existing_status = {topic["path"]: topic for topic in status_data.get("topics", [])}
 
-        # Load and return the knowledge status
-        status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent_id))
-        return status_manager.load()
+        # Load domain knowledge tree to get ALL topics
+        from dana.api.services.domain_knowledge_service import DomainKnowledgeService
+        domain_service = DomainKnowledgeService()
+        tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
+
+        # Extract all topic paths from the tree
+        all_topics = []
+
+        def extract_paths(node, parent_path="", is_root=True):
+            if not node:
+                return
+
+            # Build current path
+            current_topic = node.topic if hasattr(node, "topic") else None
+            if not current_topic:
+                return
+
+            # Skip root node in path (to match backend format)
+            if is_root:
+                current_path = ""
+            else:
+                current_path = f"{parent_path} - {current_topic}" if parent_path else current_topic
+
+            # Check if this is a leaf node (no children or empty children)
+            is_leaf = not hasattr(node, "children") or not node.children or len(node.children) == 0
+
+            if is_leaf:
+                # Add this topic with its status (or pending if not in status file)
+                if current_path in existing_status:
+                    all_topics.append(existing_status[current_path])
+                else:
+                    # Topic exists in tree but hasn't been generated yet
+                    all_topics.append({
+                        "path": current_path,
+                        "status": None,  # null = not generated yet
+                        "last_generated": None,
+                        "file": None,
+                        "error": None,
+                    })
+
+            # Recurse for children
+            if hasattr(node, "children") and node.children:
+                for child in node.children:
+                    extract_paths(child, current_path, is_root=False)
+
+        if tree and hasattr(tree, "root"):
+            extract_paths(tree.root, "", is_root=True)
+
+        return {"topics": all_topics}
 
     except HTTPException:
         raise

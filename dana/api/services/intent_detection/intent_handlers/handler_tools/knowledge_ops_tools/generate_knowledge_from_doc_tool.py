@@ -102,6 +102,15 @@ class GenerateKnowledgeTool(BaseTool):
         self.question_batch_size = question_batch_size
         self.notifier = notifier
 
+        # Get WebSocket manager for real-time status updates
+        try:
+            from dana.api.server.server import ws_manager
+
+            self.ws_manager = ws_manager
+        except ImportError:
+            logger.warning("WebSocket manager not available for real-time updates")
+            self.ws_manager = None
+
         # Initialize KnowledgeStatusManager
         self.status_manager = None
         if knowledge_status_path:
@@ -247,9 +256,42 @@ class GenerateKnowledgeTool(BaseTool):
                     successful_generations += 1
                     status_text += f"- {leaf_topic}: {knowledge_node.get_overview()}\n"
                 self.status_manager.set_status(path_str, "success")
+
+                # Broadcast WebSocket notification for success
+                if self.ws_manager:
+                    try:
+                        topic_entry = self.status_manager.get_topic_entry(path_str)
+                        if topic_entry:
+                            await self.ws_manager.broadcast({
+                                "type": "knowledge_status_update",
+                                "topic_id": topic_entry.get("id"),
+                                "path": topic_entry.get("path"),
+                                "status": "success",
+                                "last_generated": topic_entry.get("last_generated"),
+                            })
+                            logger.info(f"Broadcasted success status for: {path_str}")
+                    except Exception as e:
+                        logger.warning(f"Failed to broadcast success status for {path_str}: {e}")
+
             except Exception as e:
                 logger.error(f"Failed to generate knowledge for {path}: {e}")
                 self.status_manager.set_status(path_str, "failed")
+
+                # Broadcast WebSocket notification for failure
+                if self.ws_manager:
+                    try:
+                        topic_entry = self.status_manager.get_topic_entry(path_str)
+                        if topic_entry:
+                            await self.ws_manager.broadcast({
+                                "type": "knowledge_status_update",
+                                "topic_id": topic_entry.get("id"),
+                                "path": topic_entry.get("path"),
+                                "status": "failed",
+                            })
+                            logger.info(f"Broadcasted failed status for: {path_str}")
+                    except Exception as e:
+                        logger.warning(f"Failed to broadcast failed status for {path_str}: {e}")
+
                 failed_generations += 1
                 traceback.print_exc()
             if self.notifier:
