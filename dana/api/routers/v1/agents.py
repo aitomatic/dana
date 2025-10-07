@@ -1020,6 +1020,8 @@ async def update_agent(agent_id: int, agent: AgentUpdate, db: Session = Depends(
 
         if agent.name:
             db_agent.name = agent.name
+        if agent.description:
+            db_agent.description = agent.description
         if agent.config:
             if db_agent.config:
                 db_agent.config.update(agent.config)

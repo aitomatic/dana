@@ -85,7 +85,7 @@ export const VersionStatus: React.FC<VersionStatusProps> = ({
     if (versionInfo?.status === 'newer-than-published') {
       return compact
         ? `v${versionService.getCurrentVersion()}`
-        : `Dev version (v${versionService.getCurrentVersion()})`;
+        : `Beta version (v${versionService.getCurrentVersion()})`;
     }
 
     if (versionInfo?.updateAvailable) {
