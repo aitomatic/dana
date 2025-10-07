@@ -34,7 +34,8 @@ class Specialization(BaseModel):
 
 class AgentUpdate(BaseModel):
     name: str | None = None
-    config: Specialization | None = None
+    description: str | None = None
+    config: dict[str, Any] | None = None
 
 
 class AgentDeployRequest(BaseModel):
