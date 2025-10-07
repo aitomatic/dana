@@ -90,8 +90,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
       if (taskId && status === 'running') {
         const toastId = `deep-extraction-${taskId}`;
         activeToastIds.current.push(toastId);
-        toast.info(`Deep extraction started for "${fileName}"`, {
-          description: 'This process may take a while. You can close this dialog anytime.',
+        toast.loading(`Deep extraction in progress for "${fileName}"`, {
           duration: Infinity,
           position: 'bottom-left',
           id: toastId,
@@ -197,7 +196,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                         <div className="text-xs text-blue-800">
                           <p className="font-medium">Deep extraction in progress</p>
                           <p className="mt-1">
-                            Deep extract runs in the background and may take up to 30 minutes. You
+                           The process runs in the background and may take a while. You
                             can close this dialog anytime.
                           </p>
                         </div>
