@@ -107,13 +107,13 @@ class DocumentCreate(DocumentBase):
 
 
 class DocumentRead(DocumentBase):
-    id: int
+    id: int | None = None
     filename: str
     file_size: int
     mime_type: str
     source_document_id: int | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     metadata: dict[str, Any] | None = Field(default_factory=dict, validation_alias=AliasChoices("doc_metadata", "metadata"))
 
     # Additional computed metadata fields

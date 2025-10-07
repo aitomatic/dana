@@ -21,7 +21,7 @@ from dana.api.services.intent_detection.intent_handlers.handler_prompts.knowledg
 import logging
 import asyncio
 import re
-from dana.common.sys_resource.rag.rag_resource import RAGResource
+from dana.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2 as RAGResource
 from pydantic import BaseModel
 from pathlib import Path
 import traceback

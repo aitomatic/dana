@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dana.api.core.schemas import MessageCreate, ConversationCreate
-from dana.api.core.schemas_v2 import BaseMessage, HandlerMessage, HandlerConversation, AddChildNodeRequest
+from dana.api.core.schemas_v2 import (
+    BaseMessage,
+    HandlerMessage,
+    HandlerConversation,
+    AddChildNodeRequest,
+    DeleteNodeRequest,
+    UpdateNodeRequest,
+)
 from dana.api.repositories import AbstractConversationRepo, AbstractDomainKnowledgeRepo
 from dana.api.core.database import get_db
 from dana.api.core.schemas_v2 import KnowledgePackResponse
@@ -92,47 +99,112 @@ async def smart_chat(
     )
 
 
-@router.delete("/{knowledge_id}/{tree_node_path:path}")
-async def delete_tree_node(
+@router.delete("/{knowledge_id}/node")
+async def delete_node(
     knowledge_id: int,
-    tree_node_path: str,
-    db: Session = Depends(get_db),
+    request: DeleteNodeRequest,
     kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
 ):
     """
-    Delete a tree path from a knowledge pack.
+    Delete a node from the knowledge pack tree.
+
+    Args:
+        knowledge_id: Knowledge pack ID
+        request: Request containing topic_parts list
+        kb_repo: Knowledge pack repository
+        db: Database session
+
+    Returns:
+        Success message or error
     """
-    await kb_repo.delete_kp_tree_node(kp_id=knowledge_id, tree_node_path=tree_node_path, db=db)
-    return {"message": "Tree node deleted successfully"}
+    try:
+        # Validate knowledge pack exists
+        kb = await kb_repo.get_kp(kp_id=knowledge_id, db=db)
+        if kb is None:
+            raise HTTPException(status_code=404, detail="Knowledge pack not found")
+
+        # Delete the node from tree and corresponding folder
+        await kb_repo.delete_kp_tree_node(kp_id=knowledge_id, topic_parts=request.topic_parts, db=db)
+
+        return {"message": "Node deleted successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting node for knowledge pack {knowledge_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/{knowledge_id}/{tree_node_path:path}")
+@router.put("/{knowledge_id}/node")
 async def update_tree_node(
     knowledge_id: int,
-    tree_node_path: str,
-    node_name: str,
-    db: Session = Depends(get_db),
+    request: UpdateNodeRequest,
     kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
 ):
     """
-    Update a tree node in a knowledge pack.
+    Update a node name in the knowledge pack tree.
+
+    Args:
+        knowledge_id: Knowledge pack ID
+        request: Request containing topic_parts and node_name
+        kb_repo: Knowledge pack repository
+        db: Database session
+
+    Returns:
+        Success message or error
     """
-    await kb_repo.update_kp_tree_node_name(kp_id=knowledge_id, tree_node_path=tree_node_path, node_name=node_name, db=db)
-    return {"message": "Tree node updated successfully"}
+    try:
+        # Validate knowledge pack exists
+        kb = await kb_repo.get_kp(kp_id=knowledge_id, db=db)
+        if kb is None:
+            raise HTTPException(status_code=404, detail="Knowledge pack not found")
+
+        # Update the node name in tree and rename corresponding folder
+        await kb_repo.update_kp_tree_node_name(kp_id=knowledge_id, topic_parts=request.topic_parts, node_name=request.node_name, db=db)
+
+        return {"message": "Node updated successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating node for knowledge pack {knowledge_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{knowledge_id}/{tree_node_path:path}/children")
+@router.post("/{knowledge_id}/node/children")
 async def add_child_node(
     knowledge_id: int,
-    tree_node_path: str,
     request: AddChildNodeRequest,
-    db: Session = Depends(get_db),
     kb_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
 ):
     """
-    Add child nodes to an existing tree node in a knowledge pack.
+    Add child nodes to a parent node in the knowledge pack tree.
+
+    Args:
+        knowledge_id: Knowledge pack ID
+        request: Request containing topic_parts and child_topics
+        kb_repo: Knowledge pack repository
+        db: Database session
+
+    Returns:
+        Success message or error
     """
-    await kb_repo.add_kp_tree_child_node(kp_id=knowledge_id, tree_node_path=tree_node_path, child_topics=request.child_topics, db=db)
-    children_count = len(request.child_topics)
-    children_list = ", ".join(f"'{topic}'" for topic in request.child_topics)
-    return {"message": f"{children_count} child node(s) [{children_list}] added successfully to path '{tree_node_path}'"}
+    try:
+        # Validate knowledge pack exists
+        kb = await kb_repo.get_kp(kp_id=knowledge_id, db=db)
+        if kb is None:
+            raise HTTPException(status_code=404, detail="Knowledge pack not found")
+
+        # Add child nodes to the specified parent node
+        await kb_repo.add_kp_tree_child_node(kp_id=knowledge_id, topic_parts=request.topic_parts, child_topics=request.child_topics, db=db)
+
+        return {"message": "Child nodes added successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding child nodes for knowledge pack {knowledge_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
