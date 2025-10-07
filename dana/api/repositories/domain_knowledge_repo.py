@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from dana.api.core.models import KnowledgePack
-from dana.api.core.schemas import KnowledgePackOutput, PaginatedKnowledgePackResponse, PaginationInfo
+from dana.api.core.schemas import KnowledgePackOutput, PaginatedKnowledgePackResponse, PaginationInfo, DomainNode
 from dana.api.core.schemas_v2 import DomainNodeV2, DomainKnowledgeTreeV2
 from pathlib import Path
 from threading import Lock
 from collections import defaultdict
+import shutil
+import logging
 
 DOMAIN_TREE_FN = "domain_knowledge.json"
 
@@ -35,17 +37,17 @@ class AbstractDomainKnowledgeRepo(ABC):
 
     @classmethod
     @abstractmethod
-    async def delete_kp_tree_node(cls, kp_id: int, tree_node_path: str, **kwargs) -> None:
+    async def delete_kp_tree_node(cls, kp_id: int, topic_parts: list[str], **kwargs) -> None:
         pass
 
     @classmethod
     @abstractmethod
-    async def update_kp_tree_node_name(cls, kp_id: int, tree_node_path: str, node_name: str, **kwargs) -> None:
+    async def update_kp_tree_node_name(cls, kp_id: int, topic_parts: list[str], node_name: str, **kwargs) -> None:
         pass
 
     @classmethod
     @abstractmethod
-    async def add_kp_tree_child_node(cls, kp_id: int, tree_node_path: str, child_topics: list[str], **kwargs) -> None:
+    async def add_kp_tree_child_node(cls, kp_id: int, topic_parts: list[str], child_topics: list[str], **kwargs) -> None:
         pass
 
     @classmethod
@@ -78,6 +80,85 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
         if db is None:
             raise ValueError(f"Missing db of type {Session} in kwargs: {kwargs}")
         return db
+
+    @classmethod
+    def _resolve_node_folder_path(cls, knows_path: Path, topic_parts: list[str]) -> Path | None:
+        """
+        Resolve the folder path for a node, trying regular path first, then fallback to fd_name conversion.
+
+        Args:
+            knows_path: Path to the knows directory
+            topic_parts: List of topic parts to resolve
+
+        Returns:
+            Resolved path if found, None otherwise
+        """
+        # Try regular path first
+        node_path = knows_path.joinpath(*topic_parts).resolve()
+        if node_path.exists():
+            return node_path
+
+        # Try fallback path using fd_name
+        fallback_parts = [DomainNode(topic=topic).fd_name for topic in topic_parts]
+        fallback_node_path = knows_path.joinpath(*fallback_parts).resolve()
+        if fallback_node_path.exists():
+            return fallback_node_path
+
+        return None
+
+    @classmethod
+    def _delete_node_folder(cls, knows_path: Path, topic_parts: list[str]) -> bool:
+        """
+        Delete the folder corresponding to a node.
+
+        Args:
+            knows_path: Path to the knows directory
+            topic_parts: List of topic parts to delete
+
+        Returns:
+            True if folder was deleted successfully, False otherwise
+        """
+        try:
+            node_path = cls._resolve_node_folder_path(knows_path, topic_parts)
+            if node_path and node_path.exists():
+                shutil.rmtree(node_path)
+                logging.info(f"Deleted folder: {node_path}")
+                return True
+            else:
+                logging.warning(f"Folder not found for deletion: {topic_parts}")
+                return False
+        except Exception as e:
+            logging.warning(f"Failed to delete folder for {topic_parts}: {e}")
+            return False
+
+    @classmethod
+    def _rename_node_folder(cls, knows_path: Path, topic_parts: list[str], new_name: str) -> bool:
+        """
+        Rename the folder corresponding to a node.
+
+        Args:
+            knows_path: Path to the knows directory
+            topic_parts: List of topic parts to rename
+            new_name: New name for the node
+
+        Returns:
+            True if folder was renamed successfully, False otherwise
+        """
+        try:
+            old_node_path = cls._resolve_node_folder_path(knows_path, topic_parts)
+            if old_node_path and old_node_path.exists():
+                # Create new path with updated name
+                new_parts = topic_parts[:-1] + [new_name]
+                new_node_path = knows_path.joinpath(*new_parts).resolve()
+                old_node_path.rename(new_node_path)
+                logging.info(f"Renamed folder: {old_node_path} -> {new_node_path}")
+                return True
+            else:
+                logging.warning(f"Folder not found for renaming: {topic_parts}")
+                return False
+        except Exception as e:
+            logging.warning(f"Failed to rename folder for {topic_parts}: {e}")
+            return False
 
     @classmethod
     def _ensure_tree_is_valid(cls, folder_path: Path, kp: KnowledgePack) -> None:
@@ -114,27 +195,37 @@ class SQLDomainKnowledgeRepo(AbstractDomainKnowledgeRepo):
             return DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
 
     @classmethod
-    async def delete_kp_tree_node(cls, kp_id: int, tree_node_path: str, **kwargs) -> None:
+    async def delete_kp_tree_node(cls, kp_id: int, topic_parts: list[str], **kwargs) -> None:
         with cls._locks[kp_id]:
             domain_tree_path = cls.get_knowledge_tree_path(kp_id)
             tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
-            tree.delete_node(tree_node_path)
+            tree.delete_node(topic_parts)
             cls.save_tree(domain_tree_path, tree)
 
-    @classmethod
-    async def update_kp_tree_node_name(cls, kp_id: int, tree_node_path: str, node_name: str, **kwargs) -> None:
-        with cls._locks[kp_id]:
-            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
-            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
-            tree.update_node_name(tree_node_path, node_name)
-            cls.save_tree(domain_tree_path, tree)
+            # Also delete the corresponding folder from knows directory
+            folder_path = cls.get_knowledge_pack_folder(kp_id)
+            knows_path = folder_path / "knows"
+            cls._delete_node_folder(knows_path, topic_parts)
 
     @classmethod
-    async def add_kp_tree_child_node(cls, kp_id: int, tree_node_path: str, child_topics: list[str], **kwargs) -> None:
+    async def update_kp_tree_node_name(cls, kp_id: int, topic_parts: list[str], node_name: str, **kwargs) -> None:
         with cls._locks[kp_id]:
             domain_tree_path = cls.get_knowledge_tree_path(kp_id)
             tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
-            tree.add_children_to_node(tree_node_path, child_topics)
+            tree.update_node_name(topic_parts, node_name)
+            cls.save_tree(domain_tree_path, tree)
+
+            # Also rename the corresponding folder from knows directory
+            folder_path = cls.get_knowledge_pack_folder(kp_id)
+            knows_path = folder_path / "knows"
+            cls._rename_node_folder(knows_path, topic_parts, node_name)
+
+    @classmethod
+    async def add_kp_tree_child_node(cls, kp_id: int, topic_parts: list[str], child_topics: list[str], **kwargs) -> None:
+        with cls._locks[kp_id]:
+            domain_tree_path = cls.get_knowledge_tree_path(kp_id)
+            tree = DomainKnowledgeTreeV2.model_validate_json(domain_tree_path.read_text())
+            tree.add_children_to_node(topic_parts, child_topics)
             cls.save_tree(domain_tree_path, tree)
 
     @classmethod
