@@ -24,14 +24,15 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Toaster
         position="top-right"
-        richColors
         closeButton
         duration={4000}
         expand={true}
         visibleToasts={5}
         toastOptions={{
           style: {
-            border: '1px solid #e5e7eb',
+            background: '#101828',
+            color: '#ffffff',
+            border: '1px solid #101828',
             borderRadius: '8px',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
             fontSize: '14px',
@@ -40,46 +41,46 @@ createRoot(document.getElementById('root')!).render(
           // @ts-expect-error - Sonner toast options
           success: {
             style: {
-              background: '#c8e3d0',
-              color: '#1fad49',
-              border: '1px solid #bbf7d0',
+              background: '#101828',
+              color: '#ffffff',
+              border: '1px solid #101828',
             },
             iconTheme: {
-              primary: '#22c55e',
-              secondary: '#f0fdf4',
+              primary: '#ffffff',
+              secondary: '#101828',
             },
           },
           error: {
             style: {
-              background: '#fef2f2',
-              color: '#dc2626',
-              border: '1px solid #fecaca',
+              background: '#101828',
+              color: '#ffffff',
+              border: '1px solid #101828',
             },
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fef2f2',
+              primary: '#ffffff',
+              secondary: '#101828',
             },
           },
           warning: {
             style: {
-              background: '#fffbeb',
-              color: '#d97706',
-              border: '1px solid #fed7aa',
+              background: '#101828',
+              color: '#ffffff',
+              border: '1px solid #101828',
             },
             iconTheme: {
-              primary: '#f59e0b',
-              secondary: '#fffbeb',
+              primary: '#ffffff',
+              secondary: '#101828',
             },
           },
           info: {
             style: {
-              background: '#eff6ff',
-              color: '#1d4ed8',
-              border: '1px solid #bfdbfe',
+              background: '#101828',
+              color: '#ffffff',
+              border: '1px solid #101828',
             },
             iconTheme: {
-              primary: '#3b82f6',
-              secondary: '#eff6ff',
+              primary: '#ffffff',
+              secondary: '#101828',
             },
           },
         }}

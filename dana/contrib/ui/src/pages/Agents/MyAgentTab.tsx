@@ -48,7 +48,7 @@ export const MyAgentTab: React.FC<{
   creating: boolean;
   onSwitchToPretrained?: () => void;
 }> = ({ agents, navigate, handleCreateAgent, creating, onSwitchToPretrained }) => {
-  const { deleteAgent, isDeleting } = useAgentStore();
+  const { isDeleting, startAgentDeletion, completeAgentDeletion, deletingAgents } = useAgentStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<any>(null);
 
@@ -61,11 +61,23 @@ export const MyAgentTab: React.FC<{
   const handleConfirmDelete = async () => {
     if (agentToDelete) {
       try {
-        await deleteAgent(agentToDelete.id);
+        // Start the deletion animation
+        startAgentDeletion(agentToDelete.id);
         setDeleteDialogOpen(false);
-        setAgentToDelete(null);
+        
+        // Wait for animation to complete (400ms) then actually delete
+        setTimeout(async () => {
+          try {
+            await completeAgentDeletion(agentToDelete.id);
+            setAgentToDelete(null);
+          } catch (error) {
+            console.error('Error deleting agent:', error);
+            // If deletion fails, we should remove from deletingAgents
+            // This is handled in the store's error handling
+          }
+        }, 400);
       } catch (error) {
-        console.error('Error deleting agent:', error);
+        console.error('Error starting agent deletion:', error);
       }
     }
   };
@@ -79,9 +91,9 @@ export const MyAgentTab: React.FC<{
       </div>,
       {
         style: {
-          background: '#f0fdf4',
-          color: '#166534',
-          border: '1px solid #bbf7d0',
+          background: '#101828',
+          color: '#ffffff',
+          border: '1px solid #101828',
           borderRadius: '8px',
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           fontSize: '14px',
@@ -114,7 +126,9 @@ export const MyAgentTab: React.FC<{
             .map((agent) => (
               <div
                 key={agent.id}
-                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md"
+                className={`flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md ${
+                  deletingAgents.has(agent.id) ? 'agent-deleting' : ''
+                }`}
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-2 justify-between">

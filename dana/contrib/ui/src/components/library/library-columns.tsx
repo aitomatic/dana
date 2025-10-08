@@ -48,6 +48,7 @@ const getExtractionStatusVariant = (status: string) => {
 export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
   {
     accessorKey: 'name',
+    enableSorting: true,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     cell: ({ row }) => {
       const item = row.original;
@@ -64,6 +65,25 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
   },
   {
     accessorKey: 'type',
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const itemA = rowA.original;
+      const itemB = rowB.original;
+      
+      // First sort by type (folders first, then files)
+      if (itemA.type !== itemB.type) {
+        return itemA.type === 'folder' ? -1 : 1;
+      }
+      
+      // If both are files, sort by extension
+      if (itemA.type === 'file' && itemB.type === 'file') {
+        const extA = (itemA as FileItem).extension.toLowerCase();
+        const extB = (itemB as FileItem).extension.toLowerCase();
+        return extA.localeCompare(extB);
+      }
+      
+      return 0;
+    },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
     cell: ({ row }) => {
       const item = row.original;
@@ -83,6 +103,29 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
   },
   {
     accessorKey: 'extraction_status',
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const itemA = rowA.original;
+      const itemB = rowB.original;
+      
+      // Folders always come first (they show "-")
+      if (itemA.type === 'folder' && itemB.type === 'file') return -1;
+      if (itemA.type === 'file' && itemB.type === 'folder') return 1;
+      if (itemA.type === 'folder' && itemB.type === 'folder') return 0;
+      
+      // For files, sort by extraction status priority
+      const statusA = getExtractionStatus((itemA as FileItem).metadata);
+      const statusB = getExtractionStatus((itemB as FileItem).metadata);
+      
+      const statusPriority = {
+        'Deep extracted': 3,
+        'Standard extracted': 2,
+        'Deep extracting': 1,
+        'Not extracted': 0,
+      };
+      
+      return statusPriority[statusA as keyof typeof statusPriority] - statusPriority[statusB as keyof typeof statusPriority];
+    },
     size: 200,
     meta: {
       style: { width: '200px', minWidth: '200px', maxWidth: '200px' },
@@ -115,6 +158,21 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
   },
   {
     accessorKey: 'size',
+    enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const itemA = rowA.original;
+      const itemB = rowB.original;
+      
+      // Folders first, sorted by item count
+      if (itemA.type === 'folder' && itemB.type === 'folder') {
+        return ((itemA as FolderItem).itemCount || 0) - ((itemB as FolderItem).itemCount || 0);
+      }
+      if (itemA.type === 'folder' && itemB.type === 'file') return -1;
+      if (itemA.type === 'file' && itemB.type === 'folder') return 1;
+      
+      // Files sorted by size
+      return ((itemA as FileItem).size || 0) - ((itemB as FileItem).size || 0);
+    },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Size" />,
     cell: ({ row }) => {
       const item = row.original;
@@ -126,6 +184,7 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
   },
   {
     accessorKey: 'lastModified',
+    enableSorting: true,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Last Modified" />,
     cell: ({ row }) => {
       return (

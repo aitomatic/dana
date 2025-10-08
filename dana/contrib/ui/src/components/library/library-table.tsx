@@ -61,6 +61,7 @@ export function LibraryTable({
       data={data}
       loading={loading}
       handleRowClick={onRowClick ? (row) => onRowClick(row.original) : undefined}
+      defaultSorting={[{ id: 'lastModified', desc: true }]}
     />
   );
 }

@@ -86,7 +86,7 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, deleteAgent, updateAgent, isLoading, error, selectedAgent } = useAgentStore();
+  const { fetchAgent, updateAgent, isLoading, error, selectedAgent, startAgentDeletion, completeAgentDeletion } = useAgentStore();
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -153,7 +153,20 @@ export default function AgentDetailPage() {
 
       // Only try to delete if it's a numeric ID (regular agent)
       if (!isNaN(Number(agent_id))) {
-        await deleteAgent(parseInt(agent_id));
+        const agentId = parseInt(agent_id);
+        // Start the deletion animation
+        startAgentDeletion(agentId);
+        
+        // Wait for animation to complete (400ms) then actually delete
+        setTimeout(async () => {
+          try {
+            await completeAgentDeletion(agentId);
+          } catch (error) {
+            console.error('Failed to delete agent:', error);
+            // If deletion fails, we should remove from deletingAgents
+            // This is handled in the store's error handling
+          }
+        }, 400);
       }
 
       setShowCancelConfirmation(false);

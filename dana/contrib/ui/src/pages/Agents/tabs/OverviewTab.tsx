@@ -14,7 +14,7 @@ const OverviewTab: React.FC<{
   navigate: NavigateFunction;
 }> = ({ navigate }) => {
   const agent = useAgentStore((s) => s.selectedAgent);
-  const { updateAgent, deleteAgent, isDeleting } = useAgentStore();
+  const { updateAgent, isDeleting, startAgentDeletion, completeAgentDeletion } = useAgentStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(agent?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -63,11 +63,22 @@ const OverviewTab: React.FC<{
     if (!agent) return;
 
     try {
-      await deleteAgent(agent.id);
+      // Start the deletion animation
+      startAgentDeletion(agent.id);
       setDeleteDialogOpen(false);
+      
+      // Wait for animation to complete (400ms) then actually delete
+      setTimeout(async () => {
+        try {
+          await completeAgentDeletion(agent.id);
+        } catch (error) {
+          console.error('Failed to delete agent:', error);
+          // If deletion fails, we should remove from deletingAgents
+          // This is handled in the store's error handling
+        }
+      }, 400);
     } catch (error) {
-      console.error('Failed to delete agent:', error);
-      // You might want to show a toast notification here
+      console.error('Error starting agent deletion:', error);
     }
   };
 
