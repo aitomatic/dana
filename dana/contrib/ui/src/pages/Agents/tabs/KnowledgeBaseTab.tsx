@@ -100,28 +100,23 @@ const KnowledgeBaseTab: React.FC = () => {
         <div className="absolute bottom-4 right-2 transform z-10">
           <div className="flex gap-4 items-center px-4 py-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-gray-300 bg-gray-100"></div>
+              <div className="w-4 h-4 rounded border border-gray-500 bg-gray-100" style={{ opacity: 0.6 }}></div>
               <span>Content generation required</span>
             </div>
-
-            {/* <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-blue-500 bg-blue-100"></div>
-
-              <span>In Progress</span>
-            </div> */}
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-green-500 bg-green-100"></div>
-
+              <div className="w-4 h-4 rounded border border-warning-400 bg-warning-100" style={{ opacity: 0.8 }}></div>
+              <span>Pending</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-cyan-400 bg-cyan-100" style={{ boxShadow: '0 0 0 1px rgb(79, 204, 255)' }}></div>
+              <span>In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-success-500 bg-success-50"></div>
               <span>Content Generated</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-100"></div>
-
-              <span>In Progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-red-500 bg-red-100"></div>
-
+              <div className="w-4 h-4 rounded border border-error-500 bg-error-100"></div>
               <span>Failed</span>
             </div>
 

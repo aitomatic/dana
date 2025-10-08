@@ -34,61 +34,151 @@ This style guide establishes standards for UI development in the Dana platform, 
 
 #### Brand Colors (RGB values for opacity support)
 ```css
-/* Brand Colors (New Dark Theme) */
---brand-25: 248 249 250; /* #F8F9FA */
---brand-50: 241 243 245; /* #F1F3F5 */
---brand-100: 233 236 239; /* #E9ECEF */
---brand-200: 206 212 218; /* #CED4DA */
---brand-300: 173 181 189; /* #ADB5BD */
---brand-400: 108 117 125; /* #6C757D */
---brand-500: 16 24 40; /* #101828 */
---brand-600: 12 17 29; /* #0C111D */
---brand-700: 8 12 20; /* #080C14 */
---brand-800: 4 6 10; /* #04060A */
---brand-900: 2 3 5; /* #020305 */
---brand-950: 1 1 2; /* #010102 */
+/* Primary Dark Brand Colors */
+--brand-25: 250 250 250; /* #FAFAFA - Lightest tint */
+--brand-50: 245 245 245; /* #F5F5F5 - Very light */
+--brand-100: 229 229 229; /* #E5E5E5 - Light */
+--brand-200: 212 212 212; /* #D4D4D4 - Soft */
+--brand-300: 163 163 163; /* #A3A3A3 - Medium light */
+--brand-400: 115 115 115; /* #737373 - Medium */
+--brand-500: 15 15 15; /* #0F0F0F - Primary brand dark */
+--brand-600: 12 12 12; /* #0C0C0C - Dark */
+--brand-700: 10 10 10; /* #0A0A0A - Deep dark */
+--brand-800: 7 7 7; /* #070707 - Darker */
+--brand-900: 5 5 5; /* #050505 - Very dark */
+--brand-950: 3 3 3; /* #030303 - Deepest dark */
+```
+
+#### Purple Accent Colors (RGB values for opacity support)
+```css
+/* Purple Accent Colors */
+--purple-25: 252 250 255; /* #FCFAFF - Lightest purple tint */
+--purple-50: 245 243 254; /* #F5F3FE - Very light purple */
+--purple-100: 235 230 253; /* #EBE6FD - Light purple */
+--purple-200: 215 205 251; /* #D7CDFB - Soft purple */
+--purple-300: 175 159 247; /* #AF9FF7 - Medium light purple */
+--purple-400: 139 117 255; /* #8B75FF - Purple light */
+--purple-500: 107 79 255; /* #6B4FFF - Primary purple accent */
+--purple-600: 85 56 232; /* #5538E8 - Purple dark */
+--purple-700: 68 45 186; /* #442DBA - Deep purple */
+--purple-800: 54 36 149; /* #362495 - Darker purple */
+--purple-900: 45 30 125; /* #2D1E7D - Very dark purple */
+--purple-950: 29 19 73; /* #1D1349 - Deepest purple */
 ```
 
 #### Blue Colors (RGB values for opacity support)
 ```css
-/* Blue Colors (Formerly Brand Colors) */
---blue-25: 241 245 254; /* #F1F5FE */
---blue-50: 239 244 254; /* #EFF4FE */
---blue-100: 225 235 254; /* #E1EBFE */
---blue-200: 201 216 252; /* #C9D8FC */
---blue-300: 168 191 249; /* #A8BFF9 */
---blue-400: 134 156 243; /* #869CF3 */
---blue-500: 105 121 235; /* #6979EB */
---blue-600: 61 69 220; /* #3D45DC */
---blue-700: 62 66 196; /* #3E42C4 */
---blue-800: 53 58 158; /* #353A9E */
---blue-900: 49 54 126; /* #31367E */
---blue-950: 29 31 73; /* #1D1F49 */
+/* Secondary Blue Colors */
+--blue-25: 241 248 255; /* #F1F8FF */
+--blue-50: 239 246 255; /* #EFF6FF */
+--blue-100: 219 234 254; /* #DBEAFE */
+--blue-200: 191 219 254; /* #BFDBFE */
+--blue-300: 147 197 253; /* #93C5FD */
+--blue-400: 96 165 250; /* #60A5FA */
+--blue-500: 79 127 255; /* #4F7FFF - Secondary blue */
+--blue-600: 37 99 235; /* #2563EB */
+--blue-700: 29 78 216; /* #1D4ED8 */
+--blue-800: 30 64 175; /* #1E40AF */
+--blue-900: 30 58 138; /* #1E3A8A */
+--blue-950: 23 37 84; /* #172554 */
+```
+
+#### Cyan/Teal Colors (RGB values for opacity support)
+```css
+/* Cyan Accent Colors */
+--cyan-25: 240 253 255; /* #F0FDFF */
+--cyan-50: 236 254 255; /* #ECFEFF */
+--cyan-100: 207 250 254; /* #CFFAFE */
+--cyan-200: 165 243 252; /* #A5F3FC */
+--cyan-300: 103 232 249; /* #67E8F9 */
+--cyan-400: 79 204 255; /* #4FCCFF - Primary cyan accent */
+--cyan-500: 6 182 212; /* #06B6D4 */
+--cyan-600: 8 145 178; /* #0891B2 */
+--cyan-700: 14 116 144; /* #0E7490 */
+--cyan-800: 21 94 117; /* #155E75 */
+--cyan-900: 22 78 99; /* #164E63 */
+--cyan-950: 8 51 68; /* #083344 */
+```
+
+#### Pink/Rose Colors (RGB values for opacity support)
+```css
+/* Pink Accent Colors */
+--pink-25: 255 248 252; /* #FFF8FC */
+--pink-50: 253 242 248; /* #FDF2F8 */
+--pink-100: 252 231 243; /* #FCE7F3 */
+--pink-200: 251 207 232; /* #FBCFE8 */
+--pink-300: 249 168 212; /* #F9A8D4 */
+--pink-400: 244 114 182; /* #F472B6 */
+--pink-500: 255 107 157; /* #FF6B9D - Primary pink accent */
+--pink-600: 219 39 119; /* #DB2777 */
+--pink-700: 190 24 93; /* #BE185D */
+--pink-800: 157 23 77; /* #9D174D */
+--pink-900: 131 24 67; /* #831843 */
+--pink-950: 80 7 36; /* #500724 */
+```
+
+#### Background & Surface Colors (RGB values for opacity support)
+```css
+/* Dark Theme Backgrounds */
+--background-darkest: 5 5 7; /* #050507 - Deepest background */
+--background-darker: 10 11 15; /* #0A0B0F - Darker background */
+--background-dark: 16 17 23; /* #101117 - Dark background */
+--surface-darker: 18 19 26; /* #12131A - Darker surface */
+--surface-dark: 26 27 33; /* #1A1B21 - Dark surface */
+--surface: 32 33 41; /* #202129 - Base surface */
+--surface-light: 42 43 51; /* #2A2B33 - Light surface */
+```
+
+#### Neutral Colors (RGB values for opacity support)
+```css
+/* Gray Scale (Optimized for dark theme) */
+--gray-25: 252 252 253; /* #FCFCFD */
+--gray-50: 249 250 251; /* #F9FAFB */
+--gray-100: 242 244 247; /* #F2F4F7 */
+--gray-200: 228 231 236; /* #E4E7EC */
+--gray-300: 208 213 221; /* #D0D5DD */
+--gray-400: 152 162 179; /* #98A2B3 */
+--gray-500: 107 108 116; /* #6B6C74 - Tertiary text */
+--gray-600: 71 84 103; /* #475467 */
+--gray-700: 52 64 84; /* #344054 */
+--gray-800: 24 34 48; /* #182230 */
+--gray-900: 16 24 40; /* #101828 */
+--gray-950: 12 17 29; /* #0C111D */
+```
+
+#### Text Colors (RGB values for opacity support)
+```css
+/* Text Colors (Optimized for dark backgrounds) */
+--text-primary: 255 255 255; /* #FFFFFF - Primary text on dark */
+--text-secondary: 184 185 192; /* #B8B9C0 - Secondary text */
+--text-tertiary: 107 108 116; /* #6B6C74 - Tertiary text */
+--text-quaternary: 82 83 91; /* #52535B - Quaternary text */
+--text-disabled: 62 63 70; /* #3E3F46 - Disabled text */
 ```
 
 #### Semantic Colors (RGB values for opacity support)
 ```css
 /* Success Colors */
---success-25: 250 255 251; /* #FAFFFB */
---success-50: 240 253 244; /* #F0FDF4 */
---success-100: 220 252 231; /* #DCFCE7 */
---success-200: 187 247 208; /* #BBF7D0 */
---success-300: 134 239 172; /* #86EFAC */
---success-400: 74 222 128; /* #4ADE80 */
---success-500: 34 197 94; /* #22C55E */
---success-600: 22 163 74; /* #16A34A */
---success-700: 21 128 61; /* #15803D */
---success-800: 22 101 52; /* #166534 */
---success-900: 20 83 45; /* #14532D */
---success-950: 5 46 22; /* #052E16 */
+--success-25: 240 254 251; /* #F0FEFB */
+--success-50: 236 253 245; /* #ECFDF5 */
+--success-100: 209 250 229; /* #D1FAE5 */
+--success-200: 167 243 208; /* #A7F3D0 */
+--success-300: 110 231 183; /* #6EE7B7 */
+--success-400: 79 255 176; /* #4FFFB0 - Primary success accent */
+--success-500: 16 185 129; /* #10B981 */
+--success-600: 5 150 105; /* #059669 */
+--success-700: 4 120 87; /* #047857 */
+--success-800: 6 95 70; /* #065F46 */
+--success-900: 6 78 59; /* #064E3B */
+--success-950: 2 44 34; /* #022C22 */
 
 /* Warning Colors */
 --warning-25: 255 253 250; /* #FFFDFA */
---warning-50: 255 251 235; /* #FFFBF0 */
+--warning-50: 255 251 235; /* #FFFBEB */
 --warning-100: 254 243 199; /* #FEF3C7 */
 --warning-200: 253 230 138; /* #FDE68A */
 --warning-300: 252 211 77; /* #FCD34D */
---warning-400: 251 191 36; /* #FBBF24 */
+--warning-400: 255 232 79; /* #FFE84F - Primary warning accent */
 --warning-500: 245 158 11; /* #F59E0B */
 --warning-600: 217 119 6; /* #D97706 */
 --warning-700: 180 83 9; /* #B45309 */
@@ -97,44 +187,60 @@ This style guide establishes standards for UI development in the Dana platform, 
 --warning-950: 69 26 3; /* #451A03 */
 
 /* Error Colors */
---error-25: 255 251 250; /* #FFFBF9 */
+--error-25: 255 251 250; /* #FFFBFA */
 --error-50: 254 242 242; /* #FEF2F2 */
 --error-100: 254 226 226; /* #FEE2E2 */
 --error-200: 254 202 202; /* #FECACA */
 --error-300: 252 165 165; /* #FCA5A5 */
 --error-400: 248 113 113; /* #F87171 */
---error-500: 239 68 68; /* #EF4444 */
+--error-500: 255 79 79; /* #FF4F4F - Primary error */
 --error-600: 220 38 38; /* #DC2626 */
 --error-700: 185 28 28; /* #B91C1C */
 --error-800: 153 27 27; /* #991B1B */
 --error-900: 127 29 29; /* #7F1D1D */
 --error-950: 69 10 10; /* #450A0A */
+
+/* Info Colors */
+--info-25: 240 249 255; /* #F0F9FF */
+--info-50: 240 249 255; /* #F0F9FF */
+--info-100: 224 242 254; /* #E0F2FE */
+--info-200: 186 230 253; /* #BAE6FD */
+--info-300: 125 211 252; /* #7DD3FC */
+--info-400: 79 159 255; /* #4F9FFF - Primary info */
+--info-500: 14 165 233; /* #0EA5E9 */
+--info-600: 2 132 199; /* #0284C7 */
+--info-700: 3 105 161; /* #0369A1 */
+--info-800: 7 89 133; /* #075985 */
+--info-900: 12 74 110; /* #0C4A6E */
+--info-950: 8 47 73; /* #082F49 */
 ```
 
-#### Neutral Colors (RGB values for opacity support)
+#### Gradient Definitions
 ```css
-/* Gray Scale */
---gray-25: 252 252 253; /* #FCFCFD */
---gray-50: 249 250 251; /* #F9FAFB */
---gray-100: 242 244 247; /* #F2F4F7 */
---gray-200: 228 231 236; /* #E4E7EC */
---gray-300: 208 213 221; /* #D0D5DD */
---gray-400: 152 162 179; /* #98A2B3 */
---gray-500: 102 112 133; /* #667085 */
---gray-600: 71 84 103; /* #475467 */
---gray-700: 52 64 84; /* #344054 */
---gray-800: 24 34 48; /* #182230 */
---gray-900: 16 24 40; /* #101828 */
---gray-950: 12 17 29; /* #0C111D */
+/* Primary Gradients */
+--gradient-purple-primary: linear-gradient(135deg, rgb(107, 79, 255) 0%, rgb(155, 127, 255) 100%);
+--gradient-blue-secondary: linear-gradient(135deg, rgb(79, 127, 255) 0%, rgb(79, 204, 255) 100%);
+--gradient-pink-accent: linear-gradient(135deg, rgb(255, 107, 157) 0%, rgb(155, 127, 255) 100%);
+
+/* Background Gradients */
+--gradient-dark-vertical: linear-gradient(180deg, rgb(26, 27, 33) 0%, rgb(10, 11, 15) 100%);
+--gradient-dark-radial: radial-gradient(circle at center, rgba(107, 79, 255, 0.2) 0%, transparent 70%);
+
+/* Glow Effects */
+--gradient-glow-purple: radial-gradient(circle at center, rgba(107, 79, 255, 0.3) 0%, transparent 70%);
+--gradient-glow-blue: radial-gradient(circle at center, rgba(79, 127, 255, 0.3) 0%, transparent 70%);
+--gradient-glow-cyan: radial-gradient(circle at center, rgba(79, 204, 255, 0.3) 0%, transparent 70%);
+
+/* Animated Gradients (for interactive elements) */
+--gradient-animated: linear-gradient(
+  270deg,
+  rgb(107, 79, 255),
+  rgb(155, 127, 255),
+  rgb(79, 127, 255),
+  rgb(79, 204, 255)
+);
 ```
 
-#### Additional Colors
-```css
-/* Purple/Indigo colors */
---purple-25: 253 252 255; /* #FDFCFF */
---purple-50: 250 245 255; /* #FAF5FF */
---indigo-25: 248 250 255; /* #F8FAFF */
-```
 
 ### Typography
 
@@ -158,6 +264,7 @@ font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, '
 - **medium**: 500
 - **semibold**: 600
 - **bold**: 700
+- **extrabold**: 800
 
 ### Spacing System
 
@@ -178,33 +285,47 @@ font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, '
 
 ### Border Radius
 ```css
---radius: 0.625rem;
+--radius: 0.75rem; /* Updated to 12px for modern feel */
 --radius-sm: calc(var(--radius) - 4px);
 --radius-md: calc(var(--radius) - 2px);
 --radius-lg: var(--radius);
 --radius-xl: calc(var(--radius) + 4px);
+--radius-2xl: 1.5rem; /* 24px */
+--radius-full: 9999px;
 ```
 
-### Shadows
+### Shadows & Effects
 ```css
-/* Custom shadow variables */
+/* Custom shadow variables (Updated for dark theme) */
 --shadow-color: 0, 0, 0;
---shadow-opacity-sm: 0.05;
---shadow-opacity-default: 0.1;
---shadow-opacity-md: 0.1;
---shadow-opacity-lg: 0.12;
---shadow-opacity-xl: 0.14;
---shadow-opacity-2xl: 0.25;
---shadow-opacity-inner: 0.06;
+--shadow-opacity-sm: 0.12;
+--shadow-opacity-default: 0.16;
+--shadow-opacity-md: 0.20;
+--shadow-opacity-lg: 0.24;
+--shadow-opacity-xl: 0.30;
+--shadow-opacity-2xl: 0.40;
+--shadow-opacity-inner: 0.10;
 
 /* Shadow definitions */
 --shadow-xs: 0 1px 2px 0 rgba(var(--shadow-color), var(--shadow-opacity-sm));
---shadow: 0 1px 3px 0 rgba(var(--shadow-color), var(--shadow-opacity-default)), 0 1px 2px 0 rgba(var(--shadow-color), 0.06);
---shadow-md: 0 4px 6px -1px rgba(var(--shadow-color), var(--shadow-opacity-md)), 0 2px 4px -1px rgba(var(--shadow-color), 0.06);
---shadow-lg: 0 10px 15px -3px rgba(var(--shadow-color), var(--shadow-opacity-lg)), 0 4px 6px -2px rgba(var(--shadow-color), 0.05);
---shadow-xl: 0 20px 25px -5px rgba(var(--shadow-color), var(--shadow-opacity-xl)), 0 10px 10px -5px rgba(var(--shadow-color), 0.04);
+--shadow: 0 1px 3px 0 rgba(var(--shadow-color), var(--shadow-opacity-default)), 0 1px 2px 0 rgba(var(--shadow-color), 0.08);
+--shadow-md: 0 4px 6px -1px rgba(var(--shadow-color), var(--shadow-opacity-md)), 0 2px 4px -1px rgba(var(--shadow-color), 0.08);
+--shadow-lg: 0 10px 15px -3px rgba(var(--shadow-color), var(--shadow-opacity-lg)), 0 4px 6px -2px rgba(var(--shadow-color), 0.10);
+--shadow-xl: 0 20px 25px -5px rgba(var(--shadow-color), var(--shadow-opacity-xl)), 0 10px 10px -5px rgba(var(--shadow-color), 0.08);
 --shadow-2xl: 0 25px 50px -12px rgba(var(--shadow-color), var(--shadow-opacity-2xl));
 --shadow-inner: inset 0 2px 4px 0 rgba(var(--shadow-color), var(--shadow-opacity-inner));
+
+/* Glow Shadows (Ctrl.xyz style) */
+--shadow-glow-purple: 0 0 40px rgba(107, 79, 255, 0.3);
+--shadow-glow-blue: 0 0 40px rgba(79, 127, 255, 0.3);
+--shadow-glow-cyan: 0 0 40px rgba(79, 204, 255, 0.3);
+--shadow-glow-pink: 0 0 40px rgba(255, 107, 157, 0.3);
+
+/* Glassmorphism Effects (Ctrl.xyz style) */
+--glass-light: rgba(255, 255, 255, 0.05);
+--glass-medium: rgba(255, 255, 255, 0.08);
+--glass-strong: rgba(255, 255, 255, 0.12);
+--glass-blur: blur(20px);
 ```
 
 ## Component Architecture
@@ -264,35 +385,45 @@ export { Component };
 
 **Note**: Some components use `class-variance-authority` (cva) instead of `tailwind-variants` (tv). Both are acceptable, but prefer `tailwind-variants` for new components.
 
-### Component Variants
+### Component Variants (Updated with Ctrl.xyz colors)
 
 #### Button Variants
-- **default**: Primary brand button (`bg-brand-500 text-white`)
-- **destructive**: Error/danger actions (`bg-error-600 text-white`)
-- **outline**: Secondary actions (`border border-gray-200 bg-white text-gray-700`)
-- **secondary**: Subtle actions (`bg-brand-50 text-brand-700`)
-- **ghost**: Minimal actions (`text-gray-700 hover:bg-gray-100`)
-- **link**: Text-based actions (`text-brand-500 hover:text-brand-600`)
-- **success**: Success actions (`bg-success-600 text-white`)
-- **warning**: Warning actions (`bg-warning-600 text-white`)
-- **tertiary**: Neutral actions (`bg-gray-100 text-gray-700`)
+- **default**: Primary brand button (`bg-brand-500 text-white hover:bg-brand-600`)
+- **gradient**: Gradient brand button (`bg-gradient-brand-primary text-white`)
+- **destructive**: Error/danger actions (`bg-error-500 text-white hover:bg-error-600`)
+- **outline**: Secondary actions (`border border-gray-700 bg-transparent text-gray-100 hover:bg-gray-800`)
+- **secondary**: Subtle actions (`bg-surface-dark text-gray-100 hover:bg-surface`)
+- **ghost**: Minimal actions (`text-gray-100 hover:bg-surface-dark`)
+- **link**: Text-based actions (`text-brand-500 hover:text-brand-400`)
+- **success**: Success actions (`bg-success-400 text-gray-900 hover:bg-success-500`)
+- **warning**: Warning actions (`bg-warning-400 text-gray-900 hover:bg-warning-500`)
+- **glass**: Glassmorphism button (`bg-glass-medium backdrop-blur-xl border border-glass-light`)
 
 #### Button Sizes
-- **sm**: Small (h-8, px-3)
-- **default**: Medium (h-9, px-4)
-- **lg**: Large (h-10, px-6) - **Default size**
+- **sm**: Small (h-8, px-3, text-sm)
+- **default**: Medium (h-9, px-4, text-base)
+- **lg**: Large (h-10, px-6, text-lg) - **Default size**
 - **icon**: Icon-only (size-10)
 
 #### Input Sizes
-- **sm**: Small (h-8, px-2.5)
-- **default**: Medium (h-9, px-3)
-- **lg**: Large (h-10, px-4) - **Default size**
+- **sm**: Small (h-8, px-2.5, text-sm)
+- **default**: Medium (h-9, px-3, text-base)
+- **lg**: Large (h-10, px-4, text-lg) - **Default size**
+
+#### Card Variants (Updated for dark theme)
+- **default**: Standard card (`bg-surface-dark border border-gray-800`)
+- **glass**: Glassmorphism card (`bg-glass-medium backdrop-blur-xl border border-glass-light`)
+- **elevated**: Elevated card (`bg-surface-dark border border-gray-800 shadow-lg`)
+- **interactive**: Interactive card (`bg-surface-dark hover:bg-surface hover:border-brand-500`)
+- **gradient**: Gradient border card (`bg-surface-dark border-2 border-transparent bg-gradient-brand-primary`)
 
 #### Badge Variants
-- **default**: Primary badge (`border-transparent bg-primary text-primary-foreground`)
-- **secondary**: Secondary badge (`border-transparent bg-secondary text-secondary-foreground`)
-- **destructive**: Error badge (`border-transparent bg-destructive text-destructive-foreground`)
-- **outline**: Outlined badge (`text-foreground`)
+- **default**: Primary badge (`bg-brand-500 text-white`)
+- **secondary**: Secondary badge (`bg-surface-dark text-gray-100`)
+- **success**: Success badge (`bg-success-400 text-gray-900`)
+- **warning**: Warning badge (`bg-warning-400 text-gray-900`)
+- **error**: Error badge (`bg-error-500 text-white`)
+- **outline**: Outlined badge (`border border-brand-500 text-brand-400`)
 
 ## Naming Conventions
 
@@ -377,13 +508,13 @@ import type { ComponentProps } from '@/types';
 ### Focus Management
 - Use `focus-visible` styles for keyboard focus
 - Manage focus in modals and dialogs
-- Provide visible focus indicators
+- Provide visible focus indicators with brand colors
 - Use `tabIndex` appropriately
 
 ### Color Contrast
 - Ensure minimum 4.5:1 contrast ratio for normal text
 - Ensure minimum 3:1 contrast ratio for large text
-- Don't rely solely on color to convey information
+- Text colors optimized for dark backgrounds
 - Test with color blindness simulators
 
 ### Screen Reader Support
@@ -393,6 +524,12 @@ import type { ComponentProps } from '@/types';
 - Provide descriptive link text
 
 ## Implementation Best Practices
+
+### Dark Theme First
+- All components designed for dark backgrounds
+- Use appropriate text colors for dark theme
+- Leverage glassmorphism effects for depth
+- Use gradient accents sparingly for emphasis
 
 ### State Management
 - Use Zustand for global state
@@ -405,10 +542,11 @@ import type { ComponentProps } from '@/types';
 - Use `useCallback` and `useMemo` appropriately
 - Implement virtual scrolling for large lists
 - Use code splitting for route-based components
+- Optimize gradient and glassmorphism effects
 
 ### Error Handling
 - Use error boundaries for component errors
-- Provide user-friendly error messages
+- Provide user-friendly error messages with semantic colors
 - Log errors for debugging
 - Handle loading and error states gracefully
 
@@ -417,6 +555,45 @@ import type { ComponentProps } from '@/types';
 - Test on multiple screen sizes
 - Use Tailwind's responsive prefixes
 - Implement proper touch targets (minimum 44px)
+
+### Animation & Transitions
+```css
+/* Transition timing */
+--transition-fast: 150ms ease;
+--transition-normal: 300ms ease;
+--transition-slow: 500ms ease;
+
+/* Hover animations */
+.hover-lift {
+  transition: transform var(--transition-normal);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Gradient shift animation */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
+```
 
 ## File Organization
 
@@ -449,6 +626,7 @@ src/
 - Write unit tests for all components
 - Test component variants and states
 - Test accessibility features
+- Test dark theme rendering
 - Use React Testing Library
 
 ### Integration Testing
@@ -456,11 +634,13 @@ src/
 - Test API integrations
 - Test error scenarios
 - Test responsive behavior
+- Test gradient and animation effects
 
 ### Visual Regression Testing
 - Use Storybook for component documentation
 - Capture screenshots for visual regression testing
 - Test across different browsers and devices
+- Test glassmorphism effects across platforms
 
 ## Performance Guidelines
 
@@ -469,21 +649,62 @@ src/
 - Optimize images and assets
 - Remove unused dependencies
 - Use tree shaking effectively
+- Lazy load heavy animations
 
 ### Runtime Performance
 - Minimize re-renders
 - Use proper dependency arrays in hooks
 - Implement proper cleanup in useEffect
 - Use React DevTools Profiler
+- Optimize gradient rendering
 
 ### Loading Performance
-- Implement proper loading states
-- Use skeleton screens
+- Implement proper loading states with skeleton screens
+- Use skeleton screens matching dark theme
 - Optimize critical rendering path
 - Use service workers for caching
+- Preload critical assets
+
+## Usage Examples
+
+### Primary Button with Gradient
+```tsx
+<Button variant="gradient" size="lg">
+  Get Started
+</Button>
+```
+
+### Glass Card Component
+```tsx
+<Card variant="glass" className="p-6">
+  <CardHeader>
+    <CardTitle>Feature Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p className="text-gray-300">Content here</p>
+  </CardContent>
+</Card>
+```
+
+### Interactive Card with Hover Effect
+```tsx
+<Card variant="interactive" className="hover-lift">
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-gradient-brand-primary flex items-center justify-center">
+      <Icon />
+    </div>
+    <div>
+      <h3 className="text-white font-semibold">Title</h3>
+      <p className="text-gray-400 text-sm">Description</p>
+    </div>
+  </div>
+</Card>
+```
 
 ## Conclusion
 
-This style guide should be followed consistently across all UI development in the Dana platform. Regular reviews and updates ensure the guide remains relevant and effective. All team members should be familiar with these standards and apply them in their daily development work.
+This style guide should be followed consistently across all UI development in the Dana platform. The updated color palette from Ctrl.xyz provides a modern, premium aesthetic optimized for dark theme interfaces with vibrant gradient accents.
+
+Regular reviews and updates ensure the guide remains relevant and effective. All team members should be familiar with these standards and apply them in their daily development work.
 
 For questions or suggestions about this style guide, please refer to the development team or create an issue in the project repository.
