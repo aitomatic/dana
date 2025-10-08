@@ -9,8 +9,6 @@ import {
   Xmark,
   NavArrowRight,
   Clock,
-  CheckCircle,
-  QuestionMark,
   Trash,
 } from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
@@ -33,24 +31,24 @@ const nodeStyles = `
   }
 
   .custom-node.generating {
-    animation: generatingPulse 2s ease-in-out infinite;
+   
   }
 
   @keyframes selectedPulse {
     0%, 100% {
-      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(107, 79, 255, 0.1);
     }
     50% {
-      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(107, 79, 255, 0.1);
     }
   }
 
   @keyframes generatingPulse {
     0%, 100% {
-      box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 0 0 2px rgb(107, 79, 255), 0 0 0 4px rgba(107, 79, 255, 0.2);
     }
     50% {
-      box-shadow: 0 0 0 2px #3B82F6, 0 0 0 8px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 2px rgb(107, 79, 255), 0 0 0 8px rgba(107, 79, 255, 0.1);
     }
   }
 `;
@@ -82,15 +80,16 @@ interface NodeData {
 // Helper functions for status styling
 const getStatusColor = (status?: string) => {
   switch (status) {
-    // case 'pending': return '#F97316'; // Orange
+    case 'pending':
+      return 'rgb(255, 232, 79)'; // Warning-400 - Ctrl.xyz accent yellow
     case 'in_progress':
-      return '#3B82F6'; // Blue
+      return 'rgb(79, 204, 255)'; // Cyan-400 - Primary cyan accent
     case 'success':
-      return '#10B981'; // Green
+      return 'rgb(16, 185, 129)'; // Success-500
     case 'failed':
-      return '#EF4444'; // Red
+      return 'rgb(255, 79, 79)'; // Error-500 - Ctrl.xyz error red
     default:
-      return '#6B7280'; // Gray
+      return 'rgb(107, 108, 116)'; // Gray-500 - Ctrl.xyz tertiary text
   }
 };
 
@@ -98,15 +97,15 @@ const getStatusIcon = (status?: string) => {
   console.log('🧠 status: ', status);
   switch (status) {
     case 'pending':
-      return <Clock className="text-amber-500" />;
+      return <Clock className="text-warning-400" />;
     case 'in_progress':
-      return <SystemRestart className="text-blue-500 animate-spin" />;
+      return <SystemRestart className="text-cyan-400 animate-spin" />;
     case 'success':
-      return <CheckCircle className="text-green-500" />;
+      return null;
     case 'failed':
-      return <Xmark className="text-red-500" />;
+      return <Xmark className="text-error-500" />;
     default:
-      return <QuestionMark className="text-gray-400" />;
+      return null;
   }
 };
 
@@ -268,9 +267,9 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
       return {
         ...baseStyle,
         ...selectionStyle,
-        background: '#DBEAFE', // Light blue (same as in_progress)
-        border: '2px solid #3B82F6', // Blue border
-        boxShadow: '0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2)',
+        background: 'rgb(207, 250, 254)', // Cyan-100 - Light cyan
+        border: '1px solid rgb(79, 204, 255)', // Cyan-400 - Primary cyan accent
+        boxShadow: '0 0 0 1px rgb(79, 204, 255)',
       };
     }
 
@@ -295,37 +294,38 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#FEF3C7', // Light yellow/amber
-          border: '2px solid #F59E0B', // Amber border
+          background: 'rgb(254, 243, 199)', // Warning-100 - Light yellow
+          border: '1px solid rgb(255, 232, 79)', // Warning-400 - Ctrl.xyz accent yellow
           opacity: 0.8, // Slightly faded
         };
       case 'in_progress':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#DBEAFE', // Light blue
-          border: '2px solid #3B82F6', // Blue border
+          background: 'rgb(207, 250, 254)', // Cyan-100 - Light cyan
+          border: '1px solid rgb(79, 204, 255)', // Cyan-400 - Primary cyan accent
+          boxShadow: '0 0 0 1px rgb(79, 204, 255)',
         };
       case 'success':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#D1FAE5', // Light green
-          border: '2px solid #10B981', // Green border
+          background: 'rgb(236, 253, 245)', // Success-100 - Light green
+          border: '1px solid rgb(16, 185, 129)', // Success-500
         };
       case 'failed':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#FEE2E2', // Light red
-          border: '2px solid #EF4444', // Red border
+          background: 'rgb(254, 226, 226)', // Error-100 - Light red
+          border: '1px solid rgb(255, 79, 79)', // Error-500 - Ctrl.xyz error red
         };
       default:
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#F3F4F6', // Light gray
-          border: '2px solid #9CA3AF', // Gray border
+          background: 'rgb(243, 244, 246)', // Gray-100 - Light gray
+          border: '1px solid rgb(107, 108, 116)', // Gray-500 - Ctrl.xyz tertiary text
           opacity: 0.6, // More faded for unknown status
         };
     }
@@ -390,7 +390,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
           {/* Generating indicator - show spinning icon when generating */}
           {isGenerating && (
             <span style={{ fontSize: '16px' }}>
-              <SystemRestart className="text-blue-500 animate-spin" />
+              <SystemRestart className="text-cyan-500 animate-spin" />
             </span>
           )}
           {/* Status icon - only show if not generating */}
@@ -404,7 +404,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating 
       {isLeafNode && knowledgeStatus?.status === 'in_progress' && (
         <div className="mt-2 w-full h-2 bg-gray-200 rounded-full">
           <div
-            className="h-2 bg-blue-500 rounded-full transition-all duration-300 animate-pulse"
+            className="h-2 bg-cyan-400 rounded-full transition-all duration-300 animate-pulse"
             style={{ width: '100%' }}
           ></div>
         </div>
