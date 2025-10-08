@@ -18,6 +18,7 @@ import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '.
 import { DataTablePagination } from './data-table-pagination';
 import { IconLoader } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
+import { useScreenHeight } from '@/hooks/useScreenHeight';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -36,13 +37,22 @@ export function DataTable<TData, TValue>({
   is_border = true,
   defaultSorting = [],
 }: DataTableProps<TData, TValue>) {
+  const { pageSize } = useScreenHeight();
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10, // Set to 10 to ensure pagination shows with 14 items
+    pageSize: pageSize,
   });
+
+  // Update pagination when pageSize changes
+  React.useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize: pageSize,
+    }));
+  }, [pageSize]);
 
   const table = useReactTable({
     data,

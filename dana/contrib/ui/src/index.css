@@ -370,28 +370,41 @@
 
 /* Custom Toast Styles */
 .toast-custom {
-  @apply bg-white rounded-lg border border-gray-200 shadow-lg;
+  background: #101828;
+  color: #ffffff;
+  border: 1px solid #101828;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   font-family: var(--font-family-sans);
 }
 
 .toast-success {
-  @apply text-green-800 bg-green-50 border-green-200;
+  background: #101828;
+  color: #ffffff;
+  border: 1px solid #101828;
 }
 
 .toast-error {
-  @apply text-red-800 bg-red-50 border-red-200;
+  background: #101828;
+  color: #ffffff;
+  border: 1px solid #101828;
 }
 
 .toast-warning {
-  @apply text-yellow-800 bg-yellow-50 border-yellow-200;
+  background: #101828;
+  color: #ffffff;
+  border: 1px solid #101828;
 }
 
 .toast-info {
-  @apply text-blue-800 bg-blue-50 border-blue-200;
+  background: #101828;
+  color: #ffffff;
+  border: 1px solid #101828;
 }
 
 /* Toast Close Button Styling */
-[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button] {
+[data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button],
+[data-sonner-toaster] [data-sonner-toast] button[data-sonner-close-button] {
   position: absolute !important;
   top: 8px !important;
   right: 8px !important;
@@ -399,18 +412,19 @@
   width: 20px !important;
   height: 20px !important;
   border-radius: 50% !important;
-  background: rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   border: none !important;
-  color: currentColor !important;
+  color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   transition: background-color 0.2s ease !important;
+  z-index: 10 !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]:hover {
-  background: rgba(0, 0, 0, 0.2) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-sonner-close-button]::before,
@@ -419,7 +433,7 @@
   position: absolute !important;
   width: 12px !important;
   height: 2px !important;
-  background: currentColor !important;
+  background: #ffffff !important;
   border-radius: 1px !important;
 }
 
@@ -528,4 +542,25 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* Agent deletion animation */
+@keyframes agent-disappear {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.95) translateY(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+}
+
+.agent-deleting {
+  animation: agent-disappear 0.4s ease-out forwards;
+  pointer-events: none;
 }
