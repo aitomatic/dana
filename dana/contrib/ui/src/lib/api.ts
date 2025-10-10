@@ -7,6 +7,8 @@ import type {
   DocumentUpdate,
   DocumentFilters,
   DocumentUploadData,
+  DocumentListResponse,
+  ExtractionOutput,
 } from '@/types/document';
 import type { AgentRead, AgentCreate, AgentFilters } from '@/types/agent';
 import type {
@@ -37,6 +39,22 @@ export interface RootResponse {
   version: string;
   status: string;
   endpoints: Record<string, string>;
+}
+
+// V2 Document Upload Types
+export interface DocumentUploadResponse {
+  success: boolean;
+  document: DocumentRead | null;
+  message: string | null;
+  task_id: number | null;
+}
+
+export interface BackgroundTaskResponse {
+  id: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  result?: any;
+  error?: string;
 }
 
 // POET API Types
@@ -412,6 +430,28 @@ export interface ProcessAgentDocumentsResponse {
   error?: string;
 }
 
+export interface TarExportRequest {
+  agent_id: number;
+  include_dependencies: boolean;
+}
+
+export interface TarExportResponse {
+  success: boolean;
+  tar_path: string;
+  message: string;
+}
+
+export interface TarImportRequest {
+  agent_name: string;
+  agent_description?: string;
+}
+
+export interface TarImportResponse {
+  success: boolean;
+  agent_id: number;
+  message: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -510,11 +550,11 @@ class ApiService {
   }
 
   // Document API Methods
-  async getDocuments(filters?: DocumentFilters): Promise<DocumentRead[]> {
+  async getDocuments(filters?: DocumentFilters): Promise<DocumentListResponse> {
     console.log('🌐 API: getDocuments called with filters:', filters);
 
     const params = new URLSearchParams();
-    if (filters?.skip) params.append('skip', filters.skip.toString());
+    if (filters?.skip) params.append('offset', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
     if (filters?.agent_id) params.append('agent_id', filters.agent_id.toString());
@@ -523,11 +563,14 @@ class ApiService {
     console.log('🌐 API: Requesting URL:', url);
 
     try {
-      const response = await this.client.get<DocumentRead[]>(url);
+      const response = await this.client.get<DocumentListResponse>(url);
       console.log('📥 API: getDocuments response:', {
         status: response.status,
-        count: response.data?.length || 0,
-        data: response.data?.map((d) => ({
+        total: response.data?.total || 0,
+        count: response.data?.documents?.length || 0,
+        has_more: response.data?.has_more || false,
+        metadata: response.data?.metadata,
+        data: response.data?.documents?.map((d) => ({
           id: d.id,
           name: d.original_filename,
           agent_id: d.agent_id,
@@ -545,35 +588,57 @@ class ApiService {
     return response.data;
   }
 
-  async uploadDocument(uploadData: DocumentUploadData): Promise<DocumentRead> {
-    const formData = new FormData();
-    formData.append('file', uploadData.file);
-    formData.append('title', uploadData.title);
-    if (uploadData.description) formData.append('description', uploadData.description);
-    if (uploadData.topic_id) formData.append('topic_id', uploadData.topic_id.toString());
-
-    const response = await this.client.post<DocumentRead>('/documents/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  // Get document with deep extraction data (v2 API)
+  async getDocumentV2(documentId: number): Promise<DocumentRead> {
+    const response = await this.client.get<DocumentRead>(`/v2/documents/${documentId}`);
     return response.data;
+  }
+
+  // Get extraction results for a document (v2 API)
+  async getExtractionResults(documentId: number): Promise<ExtractionOutput> {
+    const response = await this.client.get<ExtractionOutput>(`/v2/documents/${documentId}`);
+    return response.data;
+  }
+
+  async uploadDocument(uploadData: DocumentUploadData): Promise<DocumentRead> {
+    const v2Response = await this.uploadDocumentRaw(uploadData.file, {
+      topic_id: uploadData.topic_id,
+      build_index: true,
+      allow_duplicate: false,
+    });
+
+    if (!v2Response.success || !v2Response.document) {
+      throw new Error(v2Response.message || 'Upload failed');
+    }
+
+    return v2Response.document;
   }
 
   // Raw upload for a single file (no title/description required)
   async uploadDocumentRaw(
     file: File,
-    options?: { topic_id?: number; agent_id?: number; build_index?: boolean },
-  ): Promise<DocumentRead> {
+    options?: {
+      topic_id?: number;
+      agent_id?: number;
+      build_index?: boolean;
+      allow_duplicate?: boolean;
+    },
+  ): Promise<DocumentUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
     if (options?.topic_id !== undefined) formData.append('topic_id', String(options.topic_id));
-    if (options?.agent_id !== undefined) formData.append('agent_id', String(options.agent_id));
     if (options?.build_index !== undefined)
       formData.append('build_index', String(options.build_index));
-    const response = await this.client.post<DocumentRead>('/documents/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    if (options?.allow_duplicate !== undefined)
+      formData.append('allow_duplicate', String(options.allow_duplicate));
+
+    const response = await this.client.post<DocumentUploadResponse>(
+      '/v2/documents/upload',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    );
     return response.data;
   }
 
@@ -975,6 +1040,16 @@ class ApiService {
     return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
   }
 
+  async deleteDomainKnowledgeNode(
+    agentId: string | number,
+    topicParts: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/agents/${agentId}/domain-knowledge-node`, {
+      data: { topic_parts: topicParts },
+    });
+    return response.data;
+  }
+
   // Agent File Management API Methods
   async getAgentFiles(agentId: number): Promise<{
     files: Array<{
@@ -1079,9 +1154,13 @@ class ApiService {
   }
 
   // Clone agent from prebuilt agent
-  async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
+  async cloneAgentFromPrebuilt(
+    prebuiltKey: string,
+    config?: Record<string, any>,
+  ): Promise<AgentRead> {
     const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
       prebuilt_key: prebuiltKey,
+      config: config || {},
     });
     return response.data;
   }
@@ -1103,6 +1182,46 @@ class ApiService {
   // Get workflow information from prebuilt agent
   async getPrebuiltAgentWorkflowInfo(prebuiltKey: string): Promise<WorkflowInfo> {
     const response = await this.client.get<WorkflowInfo>(`/agents/${prebuiltKey}/workflow-info`);
+    return response.data;
+  }
+
+  // Agent Export Methods
+  async exportAgentTar(
+    agentId: number,
+    includeDependencies: boolean = true,
+  ): Promise<TarExportResponse> {
+    const response = await this.client.post<TarExportResponse>(`/agents/${agentId}/export-tar`, {
+      agent_id: agentId,
+      include_dependencies: includeDependencies,
+    });
+    return response.data;
+  }
+
+  async downloadAgentTar(agentId: number, tarPath: string): Promise<Blob> {
+    const response = await this.client.get(
+      `/agents/${agentId}/download-tar?path=${encodeURIComponent(tarPath)}`,
+      {
+        responseType: 'blob',
+      },
+    );
+    return response.data;
+  }
+
+  async importAgentTar(
+    file: File,
+    agentName: string,
+    agentDescription: string = 'Imported agent',
+  ): Promise<TarImportResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('agent_name', agentName);
+    formData.append('agent_description', agentDescription);
+
+    const response = await this.client.post<TarImportResponse>('/agents/import-tar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 }

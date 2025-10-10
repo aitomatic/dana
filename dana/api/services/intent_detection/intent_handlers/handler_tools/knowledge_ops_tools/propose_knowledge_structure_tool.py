@@ -189,26 +189,48 @@ Generate the refined structure:"""
             logger.error(f"Failed to refine structure: {e}")
             return f"❌ Error refining structure: {str(e)}\n\nOriginal structure:\n{current_structure}"
 
+    def _convert_markdown_to_html(self, markdown_content: str) -> str:
+        """Convert markdown formatting to HTML for consistent rendering."""
+        html_content = markdown_content
+        
+        # Convert **text** to <strong>text</strong>
+        import re
+        html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html_content)
+        
+        # Convert line breaks to <br> tags for proper HTML formatting
+        html_content = html_content.replace('\n', '<br>\n')
+        
+        # Wrap the entire content in a div for proper structure
+        return f"<div class='structure-content'>{html_content}</div>"
+
     def _build_structured_response(self, user_message: str, topic: str, structure_content: str) -> str:
         """Build a structured response with user message and knowledge structure."""
         response_parts = []
 
         # Add user message first (acknowledgment and context)
         if user_message:
-            response_parts.append(f"{user_message}")
+            response_parts.append(f"<p>{user_message}</p>")
             response_parts.append("")  # Empty line for spacing
 
         # Add the main structure header
-        response_parts.append(f"🏗️ **Proposed Knowledge Structure:** {topic.title()}")
+        response_parts.append(f"<p>🏗️ <strong>Proposed Knowledge Structure:</strong> {topic.title()}</p>")
         response_parts.append("")  # Empty line for spacing
 
-        # Add the structure content
-        response_parts.append(structure_content)
+        # Add the structure content (convert markdown to HTML)
+        html_structure = self._convert_markdown_to_html(structure_content)
+        response_parts.append(html_structure)
         response_parts.append("")  # Empty line for spacing
 
-        # Add next steps and guidelines
-        response_parts.append("""**Do you want to modify this structure, or should I add it to domain knowledge?**
-""")
+        # Add next steps and guidelines with clickable options
+        response_parts.append("<p><strong>Do you want to modify this structure, or should I add it to domain knowledge?</strong></p>")
+        response_parts.append("")  # Empty line for spacing
+        
+        # Add clickable options
+        response_parts.append("<div class='options-container'>")
+        response_parts.append("<button class='option-button' data-option='1'>Add this structure to domain knowledge</button>")
+        response_parts.append("</div>")
+        response_parts.append("<p><em>Or, just type your own request in the chat</em></p>")
+        response_parts.append("")  # Empty line for spacing
 
         # Join all parts with proper spacing
         return "\n".join(response_parts)

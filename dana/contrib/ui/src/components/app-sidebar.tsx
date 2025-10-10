@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { Book, Box3dCenter, HelpCircle } from 'iconoir-react';
+import { Book, Box3dCenter, HelpCircle, ChatBubble } from 'iconoir-react';
 import { useLocation } from 'react-router-dom';
 
 import { NavMain } from '@/components/nav-main';
 import { TeamSwitcher } from '@/components/team-switcher';
+import { VersionStatus } from '@/components/version-status';
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +16,6 @@ import { useSidebar } from '@/hooks/use-sidebar';
 
 // Import logo as a module
 import logo from '/logo.svg';
-// Import version from package.json
-import packageJson from '../../package.json';
 
 // DXA DANA configuration data
 const data = {
@@ -44,9 +43,19 @@ const data = {
       icon: Book,
     },
     {
+      title: 'separator',
+      url: '',
+      isSeparator: true,
+    },
+    {
       title: 'Documentation',
       url: '/documentation',
       icon: HelpCircle,
+    },
+    {
+      title: 'Support',
+      url: '/support',
+      icon: ChatBubble,
     },
   ],
 };
@@ -71,10 +80,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="flex-1">
         <NavMain items={navItems} />
       </SidebarContent>
-      <SidebarFooter className="flex p-4 border-t">
-      <span className="text-xs text-muted-foreground">
-              {state === 'collapsed' ? `${packageJson.version}` : `Version ${packageJson.version}`}
-            </span>
+      <SidebarFooter className="flex flex-col gap-2 p-4 border-t">
+        <VersionStatus className="justify-start" compact={state === 'collapsed'} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -28,26 +28,30 @@ export function DataTableColumnHeader<TData, TValue>({
   return (
     <div
       className={cn(
-        'flex items-center space-x-2 h-full text-xs font-medium text-gray-600 cursor-pointer',
+        'flex items-center space-x-2 h-full text-xs font-medium text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors',
         className,
       )}
+      onClick={() => {
+        if (column.getIsSorted() === 'desc') {
+          column.toggleSorting(false);
+        } else {
+          column.toggleSorting(true);
+        }
+      }}
     >
       {title.toUpperCase()}
       {column.getIsSorted() === 'desc' ? (
         <IconChevronDown
-          onClick={() => column.toggleSorting(false)}
           className="text-gray-600"
           size={16}
         />
       ) : column.getIsSorted() === 'asc' ? (
         <IconChevronUp
-          onClick={() => column.toggleSorting(true)}
           className="text-gray-600"
           size={16}
         />
       ) : (
         <IconSelector
-          onClick={() => column.toggleSorting(true)}
           className="text-gray-600"
           size={16}
         />

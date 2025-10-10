@@ -1,0 +1,151 @@
+{
+    "llm": {
+        "providers": {
+            "openai": {
+                "name": "OpenAI",
+                "priority": 100,
+                "base_url": "https://api.openai.com/v1",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url_env": "OPENAI_BASE_URL",
+                "default_model": "gpt-3.5-turbo",
+                "models": {
+                    "gpt-3.5-turbo": "gpt-3.5-turbo",
+                    "gpt-4": "gpt-4",
+                    "gpt-4-turbo": "gpt-4-turbo"
+                }
+            },
+            "anthropic": {
+                "name": "Anthropic",
+                "priority": 90,
+                "base_url": "https://api.anthropic.com",
+                "api_key_env": "ANTHROPIC_API_KEY",
+                "base_url_env": "ANTHROPIC_BASE_URL",
+                "default_model": "claude-3-sonnet-20240229",
+                "models": {
+                    "claude-3-haiku": "claude-3-haiku-20240307",
+                    "claude-3-sonnet": "claude-3-sonnet-20240229",
+                    "claude-3-opus": "claude-3-opus-20240229"
+                }
+            },
+            "ollama": {
+                "name": "Ollama",
+                "priority": 20,
+                "base_url": "http://localhost:11434/v1",
+                "api_key_env": "OLLAMA_API_KEY",
+                "base_url_env": "OLLAMA_BASE_URL",
+                "default_model": "llama2",
+                "models": {
+                    "llama2": "llama2",
+                    "codellama": "codellama",
+                    "mistral": "mistral"
+                }
+            },
+            "groq": {
+                "name": "Groq",
+                "priority": 80,
+                "base_url": "https://api.groq.com/openai/v1",
+                "api_key_env": "GROQ_API_KEY",
+                "base_url_env": "GROQ_API_URL",
+                "default_model": "llama-3.1-8b-instant",
+                "models": {
+                    "llama-3.1-8b": "llama-3.1-8b-instant",
+                    "llama-3.1-70b": "llama-3.1-70b-versatile",
+                    "llama-3.1-405b": "llama-3.1-405b-reasoning",
+                    "mixtral-8x7b": "mixtral-8x7b-32768"
+                }
+            },
+            "azure": {
+                "name": "Azure OpenAI",
+                "priority": 40,
+                "base_url": "https://your-resource.openai.azure.com/openai/deployments/your-deployment",
+                "api_key_env": "AZURE_OPENAI_API_KEY",
+                "base_url_env": "AZURE_OPENAI_API_URL",
+                "api_version": "2024-02-15-preview",
+                "api_version_env": "AZURE_OPENAI_API_VERSION",
+                "default_model": "gpt-35-turbo",
+                "models": {
+                    "gpt-35-turbo": "gpt-35-turbo",
+                    "gpt-4": "gpt-4",
+                    "gpt-4-32k": "gpt-4-32k",
+                    "gpt-4-turbo": "gpt-4-turbo"
+                }
+            },
+            "moonshot": {
+                "name": "Moonshot (Kimi)",
+                "priority": 50,
+                "base_url": "https://api.moonshot.cn/v1",
+                "api_key_env": "MOONSHOT_API_KEY",
+                "base_url_env": "MOONSHOT_BASE_URL",
+                "default_model": "moonshot-v1-8k",
+                "models": {
+                    "moonshot-v1-8k": "moonshot-v1-8k",
+                    "moonshot-v1-32k": "moonshot-v1-32k",
+                    "moonshot-v1-128k": "moonshot-v1-128k"
+                }
+            },
+            "huggingface": {
+                "name": "Hugging Face",
+                "priority": 5,
+                "base_url": "https://router.huggingface.co/v1",
+                "api_key_env": "HF_TOKEN",
+                "base_url_env": "HF_URL",
+                "default_model": "microsoft/DialoGPT-medium",
+                "models": {
+                    "microsoft-dialo": "microsoft/DialoGPT-medium",
+                    "microsoft-dialo-large": "microsoft/DialoGPT-large",
+                    "facebook-blenderbot": "facebook/blenderbot-400M-distill",
+                    "google-flan": "google/flan-t5-large"
+                }
+            },
+            "qwen": {
+                "name": "Qwen (Alibaba Cloud)",
+                "priority": 50,
+                "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+                "api_key_env": "QWEN_API_KEY",
+                "base_url_env": "QWEN_BASE_URL",
+                "default_model": "qwen-turbo",
+                "models": {
+                    "qwen-turbo": "qwen-turbo",
+                    "qwen-plus": "qwen-plus",
+                    "qwen-max": "qwen-max",
+                    "qwen-long": "qwen-long"
+                }
+            },
+            "deepseek": {
+                "name": "DeepSeek",
+                "priority": 60,
+                "base_url": "https://api.deepseek.com/v1",
+                "api_key_env": "DEEPSEEK_API_KEY",
+                "base_url_env": "DEEPSEEK_BASE_URL",
+                "default_model": "deepseek-chat",
+                "models": {
+                    "deepseek-chat": "deepseek-chat",
+                    "deepseek-coder": "deepseek-coder",
+                    "deepseek-coder-6.7b": "deepseek-coder-6.7b-instruct",
+                    "deepseek-coder-33b": "deepseek-coder-33b-instruct"
+                }
+            },
+            "openrouter": {
+                "name": "OpenRouter",
+                "priority": 70,
+                "base_url": "https://openrouter.ai/api/v1",
+                "api_key_env": "OPENROUTER_API_KEY",
+                "base_url_env": "OPENROUTER_BASE_URL",
+                "default_model": "openai/gpt-3.5-turbo",
+                "models": {
+                    "gpt-3.5-turbo": "openai/gpt-3.5-turbo",
+                    "gpt-4": "openai/gpt-4",
+                    "gpt-4-turbo": "openai/gpt-4-turbo",
+                    "claude-3-sonnet": "anthropic/claude-3-sonnet",
+                    "claude-3-opus": "anthropic/claude-3-opus",
+                    "llama-3-8b": "meta-llama/llama-3-8b-instruct",
+                    "llama-3-70b": "meta-llama/llama-3-70b-instruct",
+                    "mixtral-8x7b": "mistralai/mixtral-8x7b-instruct",
+                    "gemini-pro": "google/gemini-pro",
+                    "qwen-turbo": "qwen/qwen-turbo",
+                    "deepseek-coder": "deepseek/deepseek-coder"
+                }
+            }
+        }
+    }
+}

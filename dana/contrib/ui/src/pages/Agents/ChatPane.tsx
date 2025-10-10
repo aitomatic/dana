@@ -153,7 +153,12 @@ const ChatResizeHandle: React.FC<{
   );
 };
 
-export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose, isVisible, selectedAgent }) => {
+export const ChatPane: React.FC<ChatPaneProps> = ({
+  agentName = 'Agent',
+  onClose,
+  isVisible,
+  selectedAgent,
+}) => {
   const { agent_id } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');

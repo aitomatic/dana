@@ -27,6 +27,7 @@ from dana.common.mixins.tool_callable import OpenAIFunctionCall
 from dana.common.types import BaseResponse
 from dana.common.utils.misc import Misc
 from dana.common.utils.token_management import TokenManagement
+from dana.common.sys_resource.llm.provider import ProviderFactory as CustomProviderFactory
 import asyncio
 
 
@@ -366,6 +367,10 @@ class LLMQueryExecutor(Loggable):
 
         # Make the API call
         try:
+            model = request_params.get("model", "")
+
+            self.override_client_provider(model)
+
             # Make the actual API call (aisuite is synchronous)
             response: ChatCompletion = await asyncio.to_thread(
                 self._client.chat.completions.create,
@@ -398,6 +403,29 @@ class LLMQueryExecutor(Loggable):
             else:
                 self.error(f"An unexpected error occurred during LLM query: {e}")
                 raise LLMError(f"An unexpected error occurred: {e}") from e
+
+    def override_client_provider(self, model: str):
+        # Check that correct format is used
+        if ":" not in model:
+            raise ValueError(f"Invalid model format. Expected 'provider:model', got '{model}'")
+
+        # Extract the provider key from the model identifier, e.g., "google:gemini-xx"
+        provider_key, model_name = model.split(":", 1)
+
+        # Validate if the provider is supported
+        supported_providers = CustomProviderFactory.get_supported_providers()
+        if provider_key not in supported_providers:
+            return
+
+        if not self._client:
+            return
+
+        config = self._client.provider_configs.get(provider_key, {})
+        self._client.providers[provider_key] = CustomProviderFactory.create_provider(provider_key, config)
+
+        provider = self._client.providers.get(provider_key)
+        if not provider:
+            raise ValueError(f"Could not load provider for '{provider_key}'.")
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Intelligent mock LLM query that understands POET-enhanced prompts.

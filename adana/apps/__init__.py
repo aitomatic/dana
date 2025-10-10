@@ -1,0 +1,1 @@
+"""Adana applications package."""
