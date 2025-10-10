@@ -30,6 +30,22 @@ function isAutoExtractCandidate(fileName: string): boolean {
     'txt',
     'md',
     'rtf',
+    'csv',
+  ].includes(ext);
+}
+
+function isDeepExtractionSupported(fileName: string): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return [
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'bmp',
+    'tiff',
+    'tif',
+    'webp',
+    'pdf',
   ].includes(ext);
 }
 
@@ -135,6 +151,9 @@ export interface ExtractionFileState {
   // Reset
   reset: () => void;
 }
+
+// Export the function for use in other components
+export { isDeepExtractionSupported };
 
 export const useExtractionFileStore = create<ExtractionFileState>((set, get) => ({
   // Initial State

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useExtractionFileStore } from '@/stores/extraction-file-store';
+import { useExtractionFileStore, isDeepExtractionSupported } from '@/stores/extraction-file-store';
 import FileIcon from '@/components/file-icon';
 import { IconLoader2 } from '@tabler/icons-react';
 import { Check } from 'iconoir-react';
@@ -86,27 +86,32 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
       const taskId = selectedFile.task_id;
       const fileName = selectedFile.original_filename;
 
-      // Show toast when deep extraction starts
-      if (taskId && status === 'running') {
-        const toastId = `deep-extraction-${taskId}`;
-        activeToastIds.current.push(toastId);
-        toast.loading(`Deep extraction in progress for "${fileName}"`, {
-          duration: Infinity,
-          position: 'bottom-left',
-          id: toastId,
-        });
-      }
+      // Only show toast for files that support deep extraction
+      if (isDeepExtractionSupported(fileName)) {
+        // Show toast when deep extraction starts
+        if (taskId && status === 'running') {
+          const toastId = `deep-extraction-${taskId}`;
+          activeToastIds.current.push(toastId);
+          toast.loading(`Deep extraction in progress for "${fileName}"`, {
+            duration: Infinity,
+            position: 'bottom-left',
+            id: toastId,
+            dismissible: true,
+          });
+        }
 
-      // Show toast when deep extraction fails
-      if (status === 'failed') {
-        const toastId = `deep-extraction-failed-${taskId}`;
-        activeToastIds.current.push(toastId);
-        toast.warning(`Deep extraction failed for "${fileName}"`, {
-          description: 'Standard extraction results are still available.',
-          duration: Infinity,
-          position: 'bottom-left',
-          id: toastId,
-        });
+        // Show toast when deep extraction fails
+        if (status === 'failed') {
+          const toastId = `deep-extraction-failed-${taskId}`;
+          activeToastIds.current.push(toastId);
+          toast.warning(`Deep extraction failed for "${fileName}"`, {
+            description: 'Standard extraction results are still available.',
+            duration: Infinity,
+            position: 'bottom-left',
+            id: toastId,
+            dismissible: true,
+          });
+        }
       }
     }
   }, [
@@ -189,6 +194,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                 {selectedFile &&
                   getFileStatus(selectedFile) === 'ready' &&
                   (selectedFile.deep_extraction_status === 'running' || selectedFile.task_id) &&
+                  isDeepExtractionSupported(selectedFile.original_filename) &&
                   !selectedFile.deep_extracted_documents?.length && // Don't show if already has deep extraction results
                   extractedFiles.some((f) => f.id === selectedFile.id) && (
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -233,13 +239,16 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
                               : file.duplicate_error
                                 ? 'Duplicate file'
                                 : getFileStatus(file) === 'ready' &&
-                                    (file.deep_extraction_status === 'running' || file.task_id)
+                                    (file.deep_extraction_status === 'running' || file.task_id) &&
+                                    isDeepExtractionSupported(file.original_filename)
                                   ? 'Deep extracting in progress...'
                                   : getFileStatus(file) === 'ready' &&
-                                      file.deep_extraction_status === 'completed'
+                                      file.deep_extraction_status === 'completed' &&
+                                      isDeepExtractionSupported(file.original_filename)
                                     ? 'Deep extraction complete'
                                     : getFileStatus(file) === 'ready' &&
-                                        file.deep_extraction_status === 'failed'
+                                        file.deep_extraction_status === 'failed' &&
+                                        isDeepExtractionSupported(file.original_filename)
                                       ? 'Deep extraction failed - Standard results available'
                                       : getFileStatus(file) === 'ready'
                                         ? 'Standard extraction complete'
@@ -260,7 +269,8 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
 
                           {/* Phase 2: Deep Extraction */}
                           {getFileStatus(file) === 'ready' &&
-                            file.deep_extraction_status === 'running' && (
+                            file.deep_extraction_status === 'running' &&
+                            isDeepExtractionSupported(file.original_filename) && (
                               <IconLoader2 className="text-blue-600 animate-spin size-4" />
                             )}
 
@@ -307,7 +317,7 @@ export const ExtractionFilePopup = ({ onSaveCompleted }: ExtractionFilePopupProp
             </div>
 
             {/* Extracted file */}
-            <div className="flex flex-col flex-1 gap-2 px-4 min-h-0">
+            <div className="flex flex-col flex-1 gap-2 px-4 min-h-0 max-w-full overflow-auto">
               <ExtractedFile
                 selectedFile={selectedFile ?? extractedFiles[0]}
                 onFileUpload={handleFileUpload}

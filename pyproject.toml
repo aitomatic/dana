@@ -104,6 +104,7 @@ dependencies = [
     "alembic>=1.16.5",
     "docx2txt>=0.9",
     "broadcaster==0.3.1",
+    "openpyxl>=3.1.5",
 ]
 
 # Command-line entry points
