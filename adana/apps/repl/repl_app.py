@@ -10,6 +10,7 @@ A streamlined REPL that provides an enhanced Python environment with:
 """
 
 import asyncio
+import os
 import sys
 import traceback
 from typing import Any
@@ -38,6 +39,15 @@ class AdanaREPLApp:
 
     def __init__(self):
         """Initialize the Adana REPL."""
+        # Handle Windows console environment issues
+        if sys.platform == "win32":
+            # Fix for Windows CI/CD environments that may have xterm-256color TERM
+            # but expect Windows console behavior
+            term = os.environ.get("TERM", "")
+            if term in ["xterm-256color", "xterm-color"] and not os.environ.get("WT_SESSION"):
+                # This is likely a CI/CD environment, disable prompt_toolkit console features
+                os.environ["PROMPT_TOOLKIT_NO_CONSOLE"] = "1"
+        
         self.namespace = self._setup_namespace()
         self.history = None
         self.session = None
@@ -52,15 +62,27 @@ class AdanaREPLApp:
             history_file = history_dir / "repl_history.txt"
 
             self.history = FileHistory(str(history_file)) if FileHistory else None
-            self.session = (
-                PromptSession(
-                    history=self.history,
-                    lexer=PygmentsLexer(PythonLexer) if PygmentsLexer and PythonLexer else None,
-                    style=self._get_style(),
+            
+            # Handle Windows console issues gracefully
+            try:
+                self.session = (
+                    PromptSession(
+                        history=self.history,
+                        lexer=PygmentsLexer(PythonLexer) if PygmentsLexer and PythonLexer else None,
+                        style=self._get_style(),
+                    )
+                    if PromptSession
+                    else None
                 )
-                if PromptSession
-                else None
-            )
+            except Exception as e:
+                # If prompt_toolkit fails to initialize (e.g., Windows console issues),
+                # disable it and fall back to basic input()
+                if "NoConsoleScreenBufferError" in str(e) or "console" in str(e).lower():
+                    self.session = None
+                    self.history = None
+                else:
+                    # Re-raise other exceptions
+                    raise
 
     def _setup_namespace(self) -> dict[str, Any]:
         """Set up the execution namespace with pre-imported modules.
