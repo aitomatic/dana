@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
@@ -85,14 +86,15 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, deleteAgent, updateAgent, isLoading, error, selectedAgent } = useAgentStore();
+  const { fetchAgent, updateAgent, isLoading, error, selectedAgent, startAgentDeletion, completeAgentDeletion } = useAgentStore();
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   // LIFTED TAB STATE
   const [activeTab, setActiveTab] = useState('Overview');
 
-  const handleDeploy = async () => {
+  // Helper function to update agent status and navigate
+  const handleSaveAgent = async (navigateTo: string) => {
     if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
       // For prebuilt agents or invalid IDs, just navigate
       navigate('/agents');
@@ -102,44 +104,22 @@ export default function AgentDetailPage() {
     try {
       // Update agent with status success in config
       await updateAgent(parseInt(agent_id), {
-        name: selectedAgent.name,
-        description: selectedAgent.description,
-        config: {
-          ...selectedAgent.config,
-          status: 'success',
-        },
-      });
-      navigate(`/agents/${agent_id}/chat`);
-    } catch (error) {
-      console.error('Failed to deploy agent:', error);
-      // You might want to show an error message to the user here
-    }
-  };
-
-  const handleSaveAndExit = async () => {
-    if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
-      // For prebuilt agents or invalid IDs, just navigate
-      navigate('/agents');
-      return;
-    }
-
-    try {
-      // Update agent with status success in config
-      const updatedAgent = {
         ...selectedAgent,
         config: {
           ...selectedAgent.config,
           status: 'success',
         },
-      };
-
-      await updateAgent(parseInt(agent_id), updatedAgent);
-      navigate('/agents');
+      });
+      navigate(navigateTo);
     } catch (error) {
-      console.error('Failed to deploy agent:', error);
+      console.error('Failed to update agent:', error);
       // You might want to show an error message to the user here
     }
   };
+
+  const handleDeploy = () => handleSaveAgent(`/agents/${agent_id}/chat`);
+
+  const handleSaveAndExit = () => handleSaveAgent('/agents');
 
   const handleClose = () => {
     // If agent has status 'success', navigate directly to agents page
@@ -173,7 +153,20 @@ export default function AgentDetailPage() {
 
       // Only try to delete if it's a numeric ID (regular agent)
       if (!isNaN(Number(agent_id))) {
-        await deleteAgent(parseInt(agent_id));
+        const agentId = parseInt(agent_id);
+        // Start the deletion animation
+        startAgentDeletion(agentId);
+        
+        // Wait for animation to complete (400ms) then actually delete
+        setTimeout(async () => {
+          try {
+            await completeAgentDeletion(agentId);
+          } catch (error) {
+            console.error('Failed to delete agent:', error);
+            // If deletion fails, we should remove from deletingAgents
+            // This is handled in the store's error handling
+          }
+        }, 400);
       }
 
       setShowCancelConfirmation(false);

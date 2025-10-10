@@ -4,8 +4,9 @@ import DomainKnowledgeTab from './DomainKnowledgeTab';
 import DocumentsTab from './DocumentsTab';
 import ToolsTab from './ToolsTab';
 import { Brain, FilesIcon } from 'lucide-react';
-import { Tools } from 'iconoir-react';
+import { Tools, Eye, EyeClosed } from 'iconoir-react';
 import { useUIStore } from '@/stores/ui-store';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const KNOWLEDGE_SUBTABS = ['Domain Knowledge', 'Documents', 'Tools'] as const;
 type KnowledgeSubTab = (typeof KNOWLEDGE_SUBTABS)[number];
@@ -24,9 +25,16 @@ const KnowledgeBaseTab: React.FC = () => {
   const [localActiveSubTab, setLocalActiveSubTab] = useState<KnowledgeSubTab>('Domain Knowledge');
   const activeSubTab = (knowledgeBaseActiveSubTab as KnowledgeSubTab) || localActiveSubTab;
 
+  // State for legend visibility
+  const [showLegend, setShowLegend] = useState(true);
+  const { trackTabNavigation } = useDanaAnalytics();
+
   const handleSubTabChange = (subTab: KnowledgeSubTab) => {
     setKnowledgeBaseActiveSubTab(subTab);
     setLocalActiveSubTab(subTab);
+
+    // Track sub-tab navigation
+    trackTabNavigation(subTab.toLowerCase().replace(' ', '_'), 'agent_detail');
   };
 
   const renderSubTabContent = () => {
@@ -71,7 +79,61 @@ const KnowledgeBaseTab: React.FC = () => {
       </div>
 
       {/* Sub-tab content */}
-      <div className="overflow-auto flex-1 custom-scrollbar">{renderSubTabContent()}</div>
+      <div className="overflow-auto flex-1 custom-scrollbar relative">{renderSubTabContent()}</div>
+
+      {/* Show Legend Button - Only show when legend is hidden */}
+      {activeSubTab === 'Domain Knowledge' && !showLegend && (
+        <div className="absolute bottom-4 right-2 z-10">
+          <button
+            onClick={() => setShowLegend(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            title="Show Legend"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Show Legend</span>
+          </button>
+        </div>
+      )}
+
+      {/* Status Legend - Only show for Domain Knowledge sub-tab and when toggled on */}
+      {activeSubTab === 'Domain Knowledge' && showLegend && (
+        <div className="absolute bottom-4 right-2 transform z-10">
+          <div className="flex gap-4 items-center px-4 py-2 bg-white rounded-lg shadow-lg border border-gray-200 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-gray-500 bg-gray-100" style={{ opacity: 0.6 }}></div>
+              <span>Content generation required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-warning-400 bg-warning-100" style={{ opacity: 0.8 }}></div>
+              <span>Pending</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-cyan-400 bg-cyan-100" style={{ boxShadow: '0 0 0 1px rgb(79, 204, 255)' }}></div>
+              <span>In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-success-500 bg-success-50"></div>
+              <span>Content Generated</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border border-error-500 bg-error-100"></div>
+              <span>Failed</span>
+            </div>
+
+            {/* Separator */}
+            <div className="w-px h-4 bg-gray-300"></div>
+            {/* Hide Legend Button */}
+            <button
+              onClick={() => setShowLegend(false)}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+              title="Hide Legend"
+            >
+              <EyeClosed className="w-3 h-3" />
+              <span>Hide</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -9,7 +9,7 @@ const buttonVariants = tv({
   variants: {
     variant: {
       default:
-        'bg-brand-600 text-white  focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800 hover:bg-brand-700 hover:shadow-md',
+        'bg-brand-500 text-white font-medium focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800 hover:bg-brand-600 hover:shadow-md',
       destructive:
         'bg-error-600 text-white  hover:bg-error-700 focus-visible:ring-error-200 dark:focus-visible:ring-error-800 dark:bg-error-600',
       outline:
@@ -18,7 +18,7 @@ const buttonVariants = tv({
         'bg-brand-50 text-brand-700  hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:bg-brand-900/40',
       ghost:
         'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100',
-      link: 'text-brand-600 hover:text-brand-700  dark:text-brand-400 dark:hover:text-brand-300',
+      link: 'text-brand-500 hover:text-brand-600  dark:text-brand-400 dark:hover:text-brand-300',
       success:
         'bg-success-600 text-white hover:bg-success-700 focus-visible:ring-success-200 dark:focus-visible:ring-success-800',
       warning:

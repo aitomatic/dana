@@ -5,9 +5,7 @@ export interface AgentBase {
   config: Record<string, any>;
 }
 
-export interface AgentCreate extends AgentBase {
-  // Same as AgentBase for creation
-}
+export type AgentCreate = AgentBase;
 
 export interface AgentRead extends AgentBase {
   id: number;
@@ -61,6 +59,7 @@ export interface AgentState {
   isCreateAgentDialogOpen: boolean;
   isEditAgentDialogOpen: boolean;
   isDeleteAgentDialogOpen: boolean;
+  deletingAgents: Set<number>; // Track agents being deleted for animation
 
   // Actions
   fetchAgents: (filters?: AgentFilters) => Promise<void>;
@@ -68,9 +67,10 @@ export interface AgentState {
   createAgent: (agent: AgentCreate) => Promise<AgentRead>;
   updateAgent: (agentId: number, agent: AgentCreate) => Promise<AgentRead>;
   deleteAgent: (agentId: number) => Promise<void>;
+  startAgentDeletion: (agentId: number) => void; // Start animation
+  completeAgentDeletion: (agentId: number) => void; // Complete deletion after animation
   setSelectedAgent: (agent: AgentRead | null) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
   reset: () => void;
 }
-

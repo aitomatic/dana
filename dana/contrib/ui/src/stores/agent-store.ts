@@ -19,6 +19,7 @@ export const useAgentStore = create<AgentState>((set) => ({
   isCreateAgentDialogOpen: false,
   isEditAgentDialogOpen: false,
   isDeleteAgentDialogOpen: false,
+  deletingAgents: new Set<number>(),
   // Actions
   fetchAgents: async (filters?: AgentFilters) => {
     set({ isLoading: true, error: null });
@@ -138,6 +139,42 @@ export const useAgentStore = create<AgentState>((set) => ({
     }
   },
 
+  startAgentDeletion: (agentId: number) => {
+    set((state) => ({
+      deletingAgents: new Set([...state.deletingAgents, agentId]),
+    }));
+  },
+
+  completeAgentDeletion: async (agentId: number) => {
+    set({ isDeleting: true, error: null });
+
+    try {
+      await apiService.deleteAgent(agentId);
+
+      // Track agent deletion
+      analytics.trackEvent({
+        action: 'delete_agent',
+        category: 'agent_management',
+        label: agentId.toString(),
+      });
+
+      set((state) => ({
+        agents: state.agents.filter((a) => a.id !== agentId),
+        selectedAgent: state.selectedAgent?.id === agentId ? null : state.selectedAgent,
+        isDeleting: false,
+        deletingAgents: new Set([...state.deletingAgents].filter(id => id !== agentId)),
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete agent';
+      set((state) => ({
+        isDeleting: false,
+        error: errorMessage,
+        deletingAgents: new Set([...state.deletingAgents].filter(id => id !== agentId)),
+      }));
+      throw error;
+    }
+  },
+
   setSelectedAgent: (agent: AgentRead | null) => {
     set({ selectedAgent: agent });
   },
@@ -185,6 +222,7 @@ export const useAgentStore = create<AgentState>((set) => ({
       total: 0,
       skip: 0,
       limit: 10,
+      deletingAgents: new Set<number>(),
     });
   },
 }));

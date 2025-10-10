@@ -8,16 +8,18 @@ import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import AgentOverviewChart from './AgentOverviewChart';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NavigateFunction } from 'react-router-dom';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const OverviewTab: React.FC<{
   navigate: NavigateFunction;
 }> = ({ navigate }) => {
   const agent = useAgentStore((s) => s.selectedAgent);
-  const { updateAgent, deleteAgent, isDeleting } = useAgentStore();
+  const { updateAgent, isDeleting, startAgentDeletion, completeAgentDeletion } = useAgentStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(agent?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { trackAgentEdit, trackError } = useDanaAnalytics();
 
   const handleEditName = () => {
     setIsEditingName(true);
@@ -33,9 +35,18 @@ const OverviewTab: React.FC<{
         ...agent,
         name: editedName.trim(),
       });
+
+      // Track agent name edit
+      trackAgentEdit(agent.id.toString(), 'name');
+
       setIsEditingName(false);
     } catch (error) {
       console.error('Failed to update agent name:', error);
+      trackError(
+        'agent_update_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `agent_${agent.id}`,
+      );
       // Reset to original name on error
       setEditedName(agent.name);
     } finally {
@@ -52,11 +63,22 @@ const OverviewTab: React.FC<{
     if (!agent) return;
 
     try {
-      await deleteAgent(agent.id);
+      // Start the deletion animation
+      startAgentDeletion(agent.id);
       setDeleteDialogOpen(false);
+      
+      // Wait for animation to complete (400ms) then actually delete
+      setTimeout(async () => {
+        try {
+          await completeAgentDeletion(agent.id);
+        } catch (error) {
+          console.error('Failed to delete agent:', error);
+          // If deletion fails, we should remove from deletingAgents
+          // This is handled in the store's error handling
+        }
+      }, 400);
     } catch (error) {
-      console.error('Failed to delete agent:', error);
-      // You might want to show a toast notification here
+      console.error('Error starting agent deletion:', error);
     }
   };
 
@@ -221,6 +243,7 @@ const OverviewTab: React.FC<{
         onSuccess={handleDeleteSuccess}
         isDeleting={isDeleting}
         agentName={agent?.name}
+        agentId={agent?.id.toString()}
       />
     </div>
   );

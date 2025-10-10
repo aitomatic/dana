@@ -15,7 +15,9 @@
             "deepseek:deepseek-chat",
             "google:gemini-1.5-pro-latest",
             "groq:llama3-70b-8192",
-            "ibm_watsonx:ibm/granite-20b-multilingual",
+            "watsonx:meta-llama/llama-3-3-70b-instruct",
+            "watsonx:ibm/granite-3-8b-instruct",
+            "watsonx:ibm/granite-3-2b-instruct",
             "local",
             "mistral:mistral-large-latest",
             "openai:gpt-4.1",
@@ -81,15 +83,10 @@
                 "api_version": "2025-04-01-preview",
                 "api_type": "azure"
             },
-            "ibm_watsonx": {
+            "watsonx": {
                 "api_key": "env:WATSONX_API_KEY",
-                "apiBase": "https://us-south.ml.cloud.ibm.com",
-                "projectId": "env:WATSONX_PROJECT_ID",
-                "model_name": "ibm/granite-20b-multilingual",
-                "provider": "watsonx",
-                "api_type": "watsonx",
-                "deploymentId": "env:WATSONX_DEPLOYMENT_ID",
-                "apiVersion": "2024-03-14"
+                "base_url": "env:WATSONX_SERVICE_URL",
+                "project_id": "env:WATSONX_PROJECT_ID"
             },
             "xai": {
                 "api_key": "env:XAI_API_KEY",
@@ -108,7 +105,8 @@
             "huggingface:BAAI/bge-small-en-v1.5",
             "huggingface:sentence-transformers/all-MiniLM-L6-v2",
             "cohere:embed-english-v3.0",
-            "ibm_watsonx:ibm/slate-125m-english-rtrvr"
+            "watsonx:ibm/slate-125m-english-rtrvr",
+            "watsonx:ibm/slate-125m-english-rtrvr-v2"
         ],
         "provider_configs": {
             "openai": {
@@ -134,12 +132,10 @@
                 "api_type": "azure",
                 "dimension": 1024
             },
-            "ibm_watsonx": {
-                "url" : "env:WATSONX_URL",
+            "watsonx": {
+                "url" : "env:WATSONX_SERVICE_URL",
                 "apikey" : "env:WATSONX_API_KEY",
-                "project_id" : "env:WATSONX_PROJECT_ID",
-                "instance_id" : "env:WATSONX_INSTANCE_ID",
-                "version" : "env:WATSONX_VERSION"
+                "project_id" : "env:WATSONX_PROJECT_ID"
             }
         }
     }

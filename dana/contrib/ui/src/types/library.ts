@@ -8,6 +8,7 @@ export interface FileItem {
   path: string;
   thumbnail?: string;
   topicId?: number; // Add topic association
+  metadata?: Record<string, any>; // Add metadata field for extraction status
 }
 
 export interface FolderItem {

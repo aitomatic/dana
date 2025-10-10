@@ -1,26 +1,29 @@
 import * as React from 'react';
-import * as SeparatorPrimitive from '@radix-ui/react-separator';
-
+import { tv, type VariantProps } from 'tailwind-variants';
 import { cn } from '@/lib/utils';
 
-function Separator({
-  className,
-  orientation = 'horizontal',
-  decorative = true,
-  ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
-  return (
-    <SeparatorPrimitive.Root
-      data-slot="separator"
-      decorative={decorative}
-      orientation={orientation}
-      className={cn(
-        'bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+const separatorVariants = tv({
+  base: 'shrink-0 bg-border',
+  variants: {
+    orientation: {
+      horizontal: 'h-[1px] w-full',
+      vertical: 'h-full w-[1px]',
+    },
+  },
+  defaultVariants: {
+    orientation: 'horizontal',
+  },
+});
+
+interface SeparatorProps
+  extends React.ComponentProps<'div'>,
+    VariantProps<typeof separatorVariants> {}
+
+const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
+  ({ className, orientation, ...props }, ref) => (
+    <div ref={ref} className={cn(separatorVariants({ orientation }), className)} {...props} />
+  ),
+);
+Separator.displayName = 'Separator';
 
 export { Separator };

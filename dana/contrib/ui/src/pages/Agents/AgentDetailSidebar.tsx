@@ -10,6 +10,101 @@ import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { HybridRenderer } from './chat/hybrid-renderer';
 import { useSmartChatWebSocket, type ChatUpdateMessage } from '@/hooks/useSmartChatWebSocket';
 
+// CSS for blinking cursor animation
+const cursorBlinkStyle = `
+  .cursor-blink {
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0;
+    }
+  }
+`;
+
+// Add styles to head
+if (typeof window !== 'undefined' && !document.getElementById('animated-placeholder-styles')) {
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'animated-placeholder-styles';
+  styleSheet.textContent = cursorBlinkStyle;
+  document.head.appendChild(styleSheet);
+}
+
+// Animated placeholder component - only shown for new users (no messages sent)
+const AnimatedPlaceholder: React.FC<{
+  hasMessages: boolean;
+  isFocused: boolean;
+  hasInteracted: boolean;
+}> = ({ hasMessages, isFocused, hasInteracted }) => {
+  const placeholders = [
+    'Add a new knowledge topic',
+    'Show me what my agent knows',
+    'Build my agent using a job description',
+  ];
+
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [currentText, setCurrentText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    // Only animate if there are no messages, textarea is not focused, and user hasn't interacted yet
+    if (hasMessages || isFocused || hasInteracted) {
+      setCurrentText('');
+      return;
+    }
+
+    const typingSpeed = 100;
+    const deletingSpeed = 50;
+    const pauseDuration = 2000;
+
+    const timeout = setTimeout(
+      () => {
+        if (!isDeleting && currentText === placeholders[currentPlaceholder]) {
+          // If we've finished typing, pause then start deleting
+          setTimeout(() => setIsDeleting(true), pauseDuration);
+        } else if (isDeleting && currentText === '') {
+          // If we've finished deleting, move to next placeholder and start typing
+          setIsDeleting(false);
+          setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+        } else if (isDeleting) {
+          // Delete current text
+          setCurrentText(currentText.slice(0, -1));
+        } else {
+          // Type current text
+          setCurrentText(placeholders[currentPlaceholder].slice(0, currentText.length + 1));
+        }
+      },
+      isDeleting ? deletingSpeed : typingSpeed,
+    );
+
+    return () => clearTimeout(timeout);
+  }, [
+    currentText,
+    isDeleting,
+    currentPlaceholder,
+    placeholders,
+    hasMessages,
+    isFocused,
+    hasInteracted,
+  ]);
+
+  // If user has sent messages OR is focused OR has interacted, show simple static placeholder
+  if (hasMessages || isFocused || hasInteracted) {
+    return <span>Type your message</span>;
+  }
+
+  return (
+    <span className="relative inline-block">
+      {currentText}
+      <span className="inline-block w-0.5 h-4 ml-0.5 bg-gray-400 cursor-blink"></span>
+    </span>
+  );
+};
+
 // Constants for resize functionality
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 800;
@@ -143,7 +238,7 @@ const ProcessingStatusHistory: React.FC<{
   if (messages.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 self-start px-3 py-2 text-left bg-gray-50 rounded-lg border border-gray-200">
+    <div className={`flex flex-col gap-2 self-start px-2 py-2 text-left bg-gray-50 rounded-lg border border-gray-200 ${isExpanded ? 'w-full' : ''}`}>
       <button
         onClick={onToggle}
         className="flex gap-2 items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
@@ -206,6 +301,8 @@ const SmartAgentChat: React.FC<{
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
@@ -222,6 +319,10 @@ const SmartAgentChat: React.FC<{
   const clearMessages = agentStore ? agentStore((s) => s.clearMessages) : () => {};
   const setMessages = agentStore ? agentStore((s) => s.setMessages) : () => {};
   const getMessageCount = agentStore ? agentStore((s) => s.getMessageCount) : () => 0;
+  
+  // Button state management methods
+  const setMessageButtonsActive = agentStore ? agentStore((s) => s.setMessageButtonsActive) : () => {};
+  const deactivateAllButtons = agentStore ? agentStore((s) => s.deactivateAllButtons) : () => {};
 
   // Make sendMessage globally available for HTMLRenderer to call
   useEffect(() => {
@@ -270,8 +371,8 @@ const SmartAgentChat: React.FC<{
 
       const timeoutId = setTimeout(() => {
         setIsTyping(false);
-        addMessage({
-          sender: 'agent',
+        const welcomeMessage = {
+          sender: 'agent' as const,
           text: displayName
             ? `Great — you've started with the ${displayName} - the expert in ${agentDomain}.
 Now let's shape it into an agent that really works for you. To begin, tell me:
@@ -287,7 +388,16 @@ To get started, let's define its foundation:
 - **Who** will it assist? (e.g. financial analysts, IT engineers)?
 
 💡 Tip: You can provide a **job description**, and I'll draft the starting expertise for your agent.`,
-        });
+          hasActiveButtons: true, // Welcome message should have active buttons
+        };
+        addMessage(welcomeMessage);
+        
+        // Activate buttons for the welcome message
+        const allMessages = agentStore?.getState().messages || [];
+        const latestMessage = allMessages[allMessages.length - 1];
+        if (latestMessage && latestMessage.id) {
+          setMessageButtonsActive(latestMessage.id);
+        }
       }, 2000);
 
       // Store the timeout ID for cleanup purposes
@@ -312,7 +422,19 @@ To get started, let's define its foundation:
 
     const timeoutId = setTimeout(() => {
       setIsTyping(false);
-      addMessage({ sender: 'agent', text: 'Welcome! How can I assist you with this agent?' });
+      const fallbackMessage = {
+        sender: 'agent' as const,
+        text: 'Welcome! How can I assist you with this agent?',
+        hasActiveButtons: true, // Fallback message should have active buttons
+      };
+      addMessage(fallbackMessage);
+      
+      // Activate buttons for the fallback message
+      const allMessages = agentStore?.getState().messages || [];
+      const latestMessage = allMessages[allMessages.length - 1];
+      if (latestMessage && latestMessage.id) {
+        setMessageButtonsActive(latestMessage.id);
+      }
     }, 2000);
 
     // Store the timeout ID for cleanup purposes
@@ -401,41 +523,67 @@ To get started, let's define its foundation:
   // No global handlers needed
 
   // WebSocket integration for real-time updates
-  const handleChatUpdate = useCallback((message: ChatUpdateMessage) => {
-    const newStatusMessage: ProcessingStatusMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      toolName: message.tool_name,
-      message: message.content,
-      status: message.status,
-      progression: message.progression,
-      timestamp: new Date(),
-    };
+  const handleChatUpdate = useCallback(
+    (message: ChatUpdateMessage) => {
+      const newStatusMessage: ProcessingStatusMessage = {
+        id: `${Date.now()}-${Math.random()}`,
+        toolName: message.tool_name,
+        message: message.content,
+        status: message.status,
+        progression: message.progression,
+        timestamp: new Date(),
+      };
 
-    setProcessingStatusHistory((prev) => {
-      // If this is an update to an existing tool, replace it
-      const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
-      if (existingIndex !== -1) {
-        const updated = [...prev];
-        updated[existingIndex] = newStatusMessage;
-        return updated;
-      }
-      // Otherwise add as new message
-      return [...prev, newStatusMessage];
-    });
+      setProcessingStatusHistory((prev) => {
+        // If this is an update to an existing tool, replace it
+        const existingIndex = prev.findIndex((msg) => msg.toolName === message.tool_name);
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = newStatusMessage;
+          return updated;
+        }
+        // Otherwise add as new message
+        return [...prev, newStatusMessage];
+      });
 
-    // Don't clear processing status - keep it in history
-    // Only remove very old messages (older than 1 hour) to prevent memory issues
-    setTimeout(
-      () => {
-        setProcessingStatusHistory((prev) =>
-          prev.filter(
-            (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
-          ),
+      // Automatically expand the thinking component when processing status updates are received
+      setIsHistoryExpanded(true);
+
+      // Handle knowledge tree updates - automatically switch to Resources -> Domain Knowledge tab
+      if (
+        (message.tool_name === 'modify_tree' || message.tool_name === 'generate_knowledge') &&
+        message.status === 'finish'
+      ) {
+        console.log(
+          '[AgentDetailSidebar] Knowledge updated, triggering auto-switch to Domain Knowledge tab',
         );
-      },
-      60 * 60 * 1000,
-    );
-  }, []);
+
+        // Use the existing knowledge store callback system for auto-switching
+        const knowledgeStore = useKnowledgeStore.getState();
+        if (knowledgeStore.onTreeUpdate && agent_id) {
+          knowledgeStore.onTreeUpdate(agent_id);
+        }
+      }
+
+      // Handle real-time node generation updates
+      const knowledgeStore = useKnowledgeStore.getState();
+      knowledgeStore.handleChatUpdateMessage(message);
+
+      // Don't clear processing status - keep it in history
+      // Only remove very old messages (older than 1 hour) to prevent memory issues
+      setTimeout(
+        () => {
+          setProcessingStatusHistory((prev) =>
+            prev.filter(
+              (msg) => Date.now() - msg.timestamp.getTime() < 60 * 60 * 1000, // 1 hour
+            ),
+          );
+        },
+        60 * 60 * 1000,
+      );
+    },
+    [agent_id],
+  );
 
   const { connectionState } = useSmartChatWebSocket({
     agentId: agent_id || '',
@@ -483,6 +631,13 @@ To get started, let's define its foundation:
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Auto-scroll when new thinking messages are added
+  useEffect(() => {
+    if (bottomRef.current && processingStatusHistory.length > 0) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [processingStatusHistory]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -620,6 +775,9 @@ To get started, let's define its foundation:
     // Clear previous thinking messages when starting new processing
     setProcessingStatusHistory([]);
 
+    // Deactivate all previous message buttons when user sends a new message
+    deactivateAllButtons();
+
     // Add user message
     const userMsg = { sender: 'user' as const, text: input };
     addMessage(userMsg);
@@ -641,6 +799,9 @@ To get started, let's define its foundation:
       addMessage(thinkingMsg);
       thinkingMessageId = thinkingMsg.id!;
 
+      // Automatically expand the thinking component when thinking process begins
+      setIsHistoryExpanded(true);
+
       const response = await apiService.smartChat(agent_id, userInput);
 
       // Remove the thinking message by ID if it exists
@@ -649,10 +810,29 @@ To get started, let's define its foundation:
       }
 
       // Add the actual response
-      addMessage({
+      const agentResponse = {
         sender: 'agent' as const,
         text: response.follow_up_message || response.agent_response || response.message || '...',
-      });
+      };
+      addMessage(agentResponse);
+      
+      // Check if the response contains buttons and activate them
+      const responseText = agentResponse.text;
+      const hasButtons = responseText.includes('<button') || 
+                        responseText.includes('option-button') || 
+                        responseText.includes('options-container');
+      
+      if (hasButtons) {
+        // Find the message we just added and activate its buttons
+        const allMessages = agentStore.getState().messages;
+        const latestMessage = allMessages[allMessages.length - 1];
+        if (latestMessage && latestMessage.id) {
+          setMessageButtonsActive(latestMessage.id);
+        }
+      }
+
+      // Collapse the thinking component after response is generated
+      setIsHistoryExpanded(false);
 
       // Refresh agent data silently if the smart chat updated agent properties
       if (
@@ -676,6 +856,25 @@ To get started, let's define its foundation:
         }
       }
 
+      // Knowledge update detection (fallback method)
+      const hasKnowledgeUpdate =
+        response.updated_domain_tree ||
+        response.status === 'knowledge_status_update' ||
+        response.updates_applied?.some(
+          (update: string) =>
+            update.includes('knowledge') || update.includes('tree') || update.includes('domain'),
+        ) ||
+        response.processor === 'knowledge_ops_handler' ||
+        response.detected_intent === 'knowledge_ops';
+
+      if (hasKnowledgeUpdate) {
+        console.log('[AgentDetailSidebar] Knowledge update detected in response (fallback method)');
+
+        // Trigger knowledge store refresh
+        const knowledgeStore = useKnowledgeStore.getState();
+        knowledgeStore.fetchKnowledgeData(agent_id, true);
+      }
+
       // If the response indicates a knowledge status update, trigger centralized store refresh
       if (response.status === 'knowledge_status_update' || response.updated_domain_tree) {
         // Use our centralized knowledge store for domain knowledge updates
@@ -694,6 +893,9 @@ To get started, let's define its foundation:
       }
 
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
+
+      // Collapse the thinking component even on error
+      setIsHistoryExpanded(false);
     } finally {
       setLoading(false);
     }
@@ -772,18 +974,30 @@ To get started, let's define its foundation:
                     <HybridRenderer
                       content={msg.text}
                       backgroundContext={msg.sender === 'user' ? 'user' : 'agent'}
+                      messageId={msg.id}
+                      hasActiveButtons={msg.hasActiveButtons ?? false}
                     />
                     {isWelcomeMessage && (
                       <div className="flex flex-col gap-2 mt-3">
                         <button
-                          onClick={handleCTAClick}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
+                          onClick={msg.hasActiveButtons ? handleCTAClick : undefined}
+                          disabled={!msg.hasActiveButtons}
+                          className={`px-4 py-2 text-sm font-medium rounded-md border border-gray-300 shadow-sm transition-colors duration-200 ${
+                            msg.hasActiveButtons
+                              ? 'text-gray-700 bg-white cursor-pointer hover:bg-gray-100'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
                         >
                           Add knowledge on a topic
                         </button>
                         <button
-                          onClick={handleAddDocumentsClick}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
+                          onClick={msg.hasActiveButtons ? handleAddDocumentsClick : undefined}
+                          disabled={!msg.hasActiveButtons}
+                          className={`px-4 py-2 text-sm font-medium rounded-md border border-gray-300 shadow-sm transition-colors duration-200 ${
+                            msg.hasActiveButtons
+                              ? 'text-gray-700 bg-white cursor-pointer hover:bg-gray-100'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
+                          }`}
                         >
                           Add documents
                         </button>
@@ -822,6 +1036,16 @@ To get started, let's define its foundation:
         </div>
         <div className="p-3">
           <div className="relative">
+            {/* Animated placeholder overlay */}
+            {!input && !loading && (
+              <div className="absolute top-3 left-3 text-gray-500 text-sm pointer-events-none z-10">
+                <AnimatedPlaceholder
+                  hasMessages={messages.some((msg) => msg.sender === 'user')}
+                  isFocused={isFocused}
+                  hasInteracted={hasInteracted}
+                />
+              </div>
+            )}
             <textarea
               className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
               focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
@@ -830,7 +1054,11 @@ To get started, let's define its foundation:
               onKeyDown={handleKeyDown}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder="Type your message"
+              onFocus={() => {
+                setIsFocused(true);
+                setHasInteracted(true);
+              }}
+              onBlur={() => setIsFocused(false)}
               disabled={loading}
               rows={1}
               style={{
@@ -878,7 +1106,7 @@ To get started, let's define its foundation:
 
 export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
-  const [connectionState, setConnectionState] = useState<string>('disconnected');
+  const [, setConnectionState] = useState<string>('disconnected');
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // Try to get saved width from localStorage
     const savedWidth = localStorage.getItem('agent-detail-sidebar-width');
@@ -915,18 +1143,6 @@ export const AgentDetailSidebar: React.FC = () => {
           <div className="flex-1">
             <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Dana Agent Maker</div>
-          </div>
-          <div className="flex gap-1 items-center">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                connectionState === 'connected'
-                  ? 'bg-green-500'
-                  : connectionState === 'connecting'
-                    ? 'bg-yellow-500'
-                    : 'bg-red-500'
-              }`}
-            />
-            <span className="text-xs text-gray-500 capitalize">{connectionState}</span>
           </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">

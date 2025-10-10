@@ -5,6 +5,7 @@ import { Play, Workflow, Layers, Clock, CheckCircle, XCircle, Pause, Loader } fr
 import { apiService } from '@/lib/api';
 import type { WorkflowExecutionRequest, WorkflowExecutionControl } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 // Execution status enum matching Dana's ExecutionStatus
 const ExecutionStatus = {
@@ -105,6 +106,7 @@ const WorkflowsTab: React.FC = () => {
   );
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
   const [customTestQuery, setCustomTestQuery] = useState<string>('');
+  const { trackError, trackCodeGeneration } = useDanaAnalytics();
 
   // Real-time execution updates from Dana runtime
   useEffect(() => {
@@ -178,6 +180,11 @@ const WorkflowsTab: React.FC = () => {
     } catch (err) {
       console.error('Error fetching workflows:', err);
       setError('Failed to load workflows');
+      trackError(
+        'workflow_load_failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        `agent_${id}`,
+      );
     } finally {
       setLoading(false);
     }
@@ -363,8 +370,18 @@ const WorkflowsTab: React.FC = () => {
 
       console.log(`✅ Started workflow execution: ${response.execution_id}`);
       console.log(`📊 Initial execution state:`, execution);
+
+      // Track workflow execution start
+      if (agentId) {
+        trackCodeGeneration(agentId, 0); // Duration will be updated when completed
+      }
     } catch (error) {
       console.error('Failed to start workflow execution:', error);
+      trackError(
+        'workflow_execution_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        `workflow_${workflow.name}`,
+      );
     }
   };
 
@@ -761,7 +778,6 @@ const WorkflowsTab: React.FC = () => {
                   className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getExecutionStatusColor(execution?.status || ExecutionStatus.IDLE)}`}
                 >
                   {getExecutionStatusIcon(execution?.status || ExecutionStatus.IDLE)}
-            
                 </div>
               </div>
 
@@ -1323,10 +1339,7 @@ const WorkflowsTab: React.FC = () => {
                         {/* Step-by-Step Execution Results */}
                         <div className="space-y-3">
                           {execution.stepResults.map((stepResult, index) => (
-                            <div
-                              key={index}
-                              className="p-3 rounded-lg border border-gray-200 "
-                            >
+                            <div key={index} className="p-3 rounded-lg border border-gray-200 ">
                               {/* Step Header */}
                               <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center space-x-2">

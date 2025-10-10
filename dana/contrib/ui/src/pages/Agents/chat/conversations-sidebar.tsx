@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chat-store';
 import type { ConversationRead } from '@/types/conversation';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 const ConversationItem = ({
   conversation,
@@ -99,6 +100,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<ConversationRead | null>(null);
   const [newName, setNewName] = useState('');
+  const { trackError } = useDanaAnalytics();
 
   const {
     conversations,
@@ -146,6 +148,11 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         }
       } catch (error) {
         console.error('Failed to rename conversation:', error);
+        trackError(
+          'conversation_rename_failed',
+          (error as Error).message,
+          `conversation_${selectedConversation.id}`,
+        );
       }
     }
   };
@@ -182,6 +189,11 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         }
       } catch (error) {
         console.error('Failed to delete conversation:', error);
+        trackError(
+          'conversation_delete_failed',
+          (error as Error).message,
+          `conversation_${selectedConversation.id}`,
+        );
       }
     }
   };

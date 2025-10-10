@@ -236,7 +236,7 @@ class SandboxContextWithNotifier(SandboxContext):
         new_context = SandboxContextWithNotifier(parent=self._parent, manager=self._manager, notifier=self._notifier)
         new_context.set_state(self.get_state())
         new_context.set_notifier(self._notifier)
-        
+
         # Copy all attributes
         self._copy_attributes(new_context, skip_state=False, skip_resources=False)
 
@@ -389,7 +389,7 @@ class SandboxContextWithNotifier(SandboxContext):
             name: The name of the resource
             resource: The resource to set
         """
-        
+
         # Get old value for notification
         try:
             old_resource = self.get_resource(name)
@@ -401,6 +401,7 @@ class SandboxContextWithNotifier(SandboxContext):
 
         # Extract scope and name for notification
         from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
@@ -416,7 +417,7 @@ class SandboxContextWithNotifier(SandboxContext):
             name: The name of the agent
             agent: The agent to set
         """
-        
+
         # Get old value for notification
         try:
             old_agent = self.get_agent(name)
@@ -428,6 +429,7 @@ class SandboxContextWithNotifier(SandboxContext):
 
         # Extract scope and name for notification
         from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
@@ -453,6 +455,7 @@ class SandboxContextWithNotifier(SandboxContext):
 
         # Extract scope and name for notification
         from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
@@ -478,6 +481,7 @@ class SandboxContextWithNotifier(SandboxContext):
 
         # Extract scope and name for notification
         from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
+
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"

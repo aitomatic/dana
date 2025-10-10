@@ -5,6 +5,7 @@ import { IconChevronRight } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -14,6 +15,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export function NavMain({
   items,
@@ -27,16 +29,22 @@ export function NavMain({
       title: string;
       url: string;
     }[];
+    isSeparator?: boolean;
   }[];
 }) {
   const navigate = useNavigate();
+  const { trackTabNavigation } = useDanaAnalytics();
 
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => (
           <React.Fragment key={item.title}>
-            {item.items ? (
+            {item.isSeparator ? (
+              <div className="px-2 py-2">
+                <Separator className="bg-gray-200" />
+              </div>
+            ) : item.items ? (
               <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -59,6 +67,10 @@ export function NavMain({
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
+                                trackTabNavigation(
+                                  subItem.title.toLowerCase().replace(' ', '_'),
+                                  'main_page',
+                                );
                                 navigate(subItem.url);
                               }}
                             >
@@ -85,6 +97,7 @@ export function NavMain({
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
+                      trackTabNavigation(item.title.toLowerCase().replace(' ', '_'), 'main_page');
                       navigate(item.url);
                     }}
                   >

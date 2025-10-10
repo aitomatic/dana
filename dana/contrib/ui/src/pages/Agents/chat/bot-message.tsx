@@ -68,7 +68,7 @@ const BotMessage = ({
   const thinkingMessage = 'Thinking...';
   const { agent_id } = useParams<{ agent_id: string }>();
 
-  const [_, setIsFinished] = useState(false);
+  const [, setIsFinished] = useState(false);
   const [isOldResponse, setIsOldResponse] = useState(false);
 
   const [displayText, setDisplayText] = useState('');

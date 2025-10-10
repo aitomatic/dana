@@ -124,7 +124,8 @@ def test_document_crud(client, db_session, tmp_path):
     # List
     resp = client.get("/api/documents/")
     assert resp.status_code == 200
-    assert any(d["id"] == doc_id for d in resp.json())
+    response_data = resp.json()
+    assert any(d["id"] == doc_id for d in response_data["documents"])
     # Get
     resp = client.get(f"/api/documents/{doc_id}")
     assert resp.status_code == 200

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -20,15 +21,17 @@ import './katex-styling.css';
 
 let codeStyle: any;
 try {
-  // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // @ts-expect-error - This is a valid import
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   codeStyle = require('react-syntax-highlighter/dist/styles/hljs/vs2015').default;
 } catch (e) {
+  console.error(e);
   try {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // @ts-expect-error - This is a valid import
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     codeStyle = require('react-syntax-highlighter/dist/styles/default').default;
   } catch (e2) {
+    console.error(e2);
     codeStyle = {};
   }
 }
@@ -570,10 +573,7 @@ export const MarkdownViewerSmall = ({
 
             table: ({ children }: TableProps) => (
               <div className="overflow-x-auto my-4 w-full">
-                <table
-                  className="w-full rounded border border-gray-200 border-collapse table-fixed"
-                  style={{ tableLayout: 'fixed', width: '100%' }}
-                >
+                <table className="overflow-hidden w-full rounded border border-gray-200 border-collapse">
                   {children}
                 </table>
               </div>

@@ -47,11 +47,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const documents = await apiService.getDocuments(filters);
+      const response = await apiService.getDocuments(filters);
       console.log('📥 Document store: Received documents from API:', {
-        count: documents?.length || 0,
+        total: response?.total || 0,
+        count: response?.documents?.length || 0,
+        has_more: response?.has_more || false,
+        metadata: response?.metadata,
         filters,
-        documents: documents?.map((d) => ({
+        documents: response?.documents?.map((d) => ({
           id: d.id,
           name: d.original_filename,
           agent_id: d.agent_id,
@@ -59,11 +62,11 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       });
 
       set({
-        documents,
+        documents: response.documents,
         isLoading: false,
-        skip: filters?.skip || 0,
-        limit: filters?.limit || 100,
-        total: documents.length, // Note: API doesn't return total count, using array length
+        skip: response.offset,
+        limit: response.limit,
+        total: response.total,
       });
 
       console.log('✅ Document store: Documents updated successfully');
