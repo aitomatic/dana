@@ -105,12 +105,22 @@ dependencies = [
     "docx2txt>=0.9",
     "broadcaster==0.3.1",
     "openpyxl>=3.1.5",
+    "anthropic>=0.30.1",
+    "langfuse==3.5.1",
+    "html2text>=2025.4.15",
+    "beautifulsoup4>=4.13.4",
+    "lxml>=6.0.2",
+    "readability-lxml>=0.8.4.1",
+    "requests>=2.32.4",
 ]
 
 # Command-line entry points
 [project.scripts]
 dana = "dana.apps.cli.__main__:main"
 dana-ls = "dana.core.lang.lsp.server:main"
+adana = "adana.apps.dana.__main__:main"
+adana-repl = "adana.apps.repl.__main__:main"
+adana-ls = "adana.core.lang.lsp.server:main"
 
 # Optional dependency groups
 [project.optional-dependencies]
@@ -170,11 +180,12 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dana*", "alembic*"]
+include = ["dana*", "alembic*", "adana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
 dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*", "**/api/alembic/**/*"]
+adana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*", "**/api/alembic/**/*"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
@@ -184,7 +195,7 @@ dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**
 package = true
 preview = true                       # Enable preview features
 resolution = "highest"               # Use highest compatible versions
-prerelease = "disallow"              # Avoid pre-release versions
+prerelease = "allow"              # Avoid pre-release versions
 python-preference = "only-managed"   # Use uv-managed Python installations
 compile-bytecode = true              # Pre-compile .pyc files for performance
 
@@ -243,6 +254,42 @@ exclude = [
     "__pycache__",
     "dana.egg-info",
     "**/.archived/**",
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+force-single-line = false
+lines-after-imports = 2
+known-first-party = ["adana", "dana"]
+known-third-party = [
+    "openai",
+    "anthropic",
+    "httpx",
+    "structlog",
+    "tqdm",
+    "pytest",
+    "pytest-asyncio",
+    "pre-commit",
+    "ruff",
+    "matplotlib",
+    "pandas",
+    "mypy",
+    "build",
+    "twine",
+    "mkdocs",
+    "mkdocs-material",
+    "requests",
+    "bs4",
+    "lxml",
+    "readability",
+    "html2text",
+]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
 ]
 
 [tool.pyright]
