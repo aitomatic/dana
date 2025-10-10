@@ -7,6 +7,9 @@ Tests basic functionality of the Dana app without network access (no LLM calls).
 from pathlib import Path
 from unittest.mock import patch
 
+import os
+import sys
+
 import pytest
 
 from adana.apps.dana.dana_app import DanaApp
@@ -18,9 +21,32 @@ class TestDanaAppInitialization:
 
     def test_dana_app_creation(self):
         """Test that Dana app can be created without errors."""
-        app = DanaApp()
-        assert app is not None
+        # Handle Windows console issues in CI/CD environments
+        if sys.platform == "win32":
+            # Set environment variables to avoid console issues in CI/CD
+            original_term = os.environ.get("TERM")
+            original_wt_session = os.environ.get("WT_SESSION")
 
+            # Simulate CI/CD environment that might cause console issues
+            if not os.environ.get("WT_SESSION"):
+                os.environ["TERM"] = "xterm-256color"
+
+        try:
+            app = DanaApp()
+            assert app is not None
+        finally:
+            # Restore original environment
+            if sys.platform == "win32":
+                if original_term is not None:
+                    os.environ["TERM"] = original_term
+                elif "TERM" in os.environ:
+                    del os.environ["TERM"]
+                if original_wt_session is not None:
+                    os.environ["WT_SESSION"] = original_wt_session
+                elif "WT_SESSION" in os.environ:
+                    del os.environ["WT_SESSION"]
+
+    @pytest.mark.windows_console
     def test_dana_app_with_prompt_toolkit(self):
         """Test Dana app with prompt toolkit enabled."""
         app = DanaApp()
@@ -33,10 +59,10 @@ class TestDanaAppInitialization:
         """Test that Dana app creates history file."""
         # The history file is created in the user's home directory, not in the current directory
         history_file = Path.home() / ".adana" / "dana_history.txt"
-        
+
         # Create the app
         app = DanaApp()
-        
+
         # The history file is only created when the FileHistory object is actually used
         # So we need to trigger history usage to create the file
         if app.history is not None:
