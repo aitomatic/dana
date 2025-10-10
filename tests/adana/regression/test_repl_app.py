@@ -4,8 +4,12 @@ Regression tests for Adana REPL app.
 Tests basic functionality of the REPL application without network access.
 """
 
+import os
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 
 from adana.apps.repl.repl_app import AdanaREPLApp
 
@@ -15,9 +19,32 @@ class TestREPLAppInitialization:
 
     def test_repl_app_creation(self):
         """Test that REPL app can be created without errors."""
-        app = AdanaREPLApp()
-        assert app is not None
+        # Handle Windows console issues in CI/CD environments
+        if sys.platform == "win32":
+            # Set environment variables to avoid console issues in CI/CD
+            original_term = os.environ.get("TERM")
+            original_wt_session = os.environ.get("WT_SESSION")
+            
+            # Simulate CI/CD environment that might cause console issues
+            if not os.environ.get("WT_SESSION"):
+                os.environ["TERM"] = "xterm-256color"
+        
+        try:
+            app = AdanaREPLApp()
+            assert app is not None
+        finally:
+            # Restore original environment
+            if sys.platform == "win32":
+                if original_term is not None:
+                    os.environ["TERM"] = original_term
+                elif "TERM" in os.environ:
+                    del os.environ["TERM"]
+                if original_wt_session is not None:
+                    os.environ["WT_SESSION"] = original_wt_session
+                elif "WT_SESSION" in os.environ:
+                    del os.environ["WT_SESSION"]
 
+    @pytest.mark.windows_console
     @patch("adana.apps.repl.repl_app.PROMPT_TOOLKIT_AVAILABLE", True)
     @patch("adana.apps.repl.repl_app.FileHistory")
     @patch("adana.apps.repl.repl_app.PromptSession")
