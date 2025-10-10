@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import MarkdownEditor from '@/components/markdown-editor';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 import { SystemRestart } from 'iconoir-react';
+import { isDeepExtractionSupported } from '@/stores/extraction-file-store';
 // Analytics hook available but not used in this component
 
 interface FadeTextProps {
@@ -27,6 +28,7 @@ interface DocumentEditorProps {
   onEdit: () => void;
   isUploading: boolean;
   isDeepExtracting: boolean;
+  fileName: string;
 }
 
 export const DocumentEditor = ({
@@ -35,6 +37,7 @@ export const DocumentEditor = ({
   setValue,
   isUploading,
   isDeepExtracting,
+  fileName,
 }: DocumentEditorProps) => {
   // Analytics hook available but not used in this component
 
@@ -60,7 +63,7 @@ export const DocumentEditor = ({
       )}
       {!isUploading && (
         <>
-          {isDeepExtracting && value && (
+          {isDeepExtracting && value && isDeepExtractionSupported(fileName) && (
             <div className="flex gap-2 items-center p-2 mb-2 bg-blue-50 rounded-md border border-blue-200">
               <SystemRestart className="text-blue-600 animate-spin size-4" />
               <span className="text-sm text-blue-600">Deep extraction in progress...</span>

@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search } from 'iconoir-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Search, Refresh } from 'iconoir-react';
 import { ArrowLeft, ArrowRight } from 'iconoir-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
@@ -213,22 +214,15 @@ export function LibraryFileSelectionModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="!max-w-[880px]  gap-4 overflow-hidden">
         <DialogHeader className="">
-          <DialogTitle className="flex justify-between">
+          <DialogTitle className="flex">
             <span>Add Files from Library</span>
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="p-0 w-8 h-8"
-            >
-              <Xmark className="w-4 h-4" />
-            </Button> */}
+            
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex overflow-y-auto flex-col space-y-4 max-h-full">
           {/* Search and Controls */}
-          <div className="flex flex-shrink-0 items-center space-x-4">
+          <div className="flex flex-shrink-0 items-center space-x-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
               <Input
@@ -237,7 +231,24 @@ export function LibraryFileSelectionModal({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+              
             </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchLibraryDocuments}
+                  disabled={isLoadingLibrary}
+                  className="p-2 w-10 h-10"
+                >
+                  <Refresh strokeWidth={2} className={`w-4 h-4 ${isLoadingLibrary ? 'animate-spin' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Refresh
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="h-[520px] overflow-y-auto border rounded-lg">

@@ -16,7 +16,7 @@ import { getFileType, hasPreviewPane } from './utils/fileUtils';
 // import { ExtractionControls } from './components/ExtractionControls';
 import { DocumentEditor } from './components/DocumentEditor';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useExtractionFileStore } from '@/stores/extraction-file-store';
+import { useExtractionFileStore, isDeepExtractionSupported } from '@/stores/extraction-file-store';
 
 interface FilePreviewProps {
   blobUrl: string | null;
@@ -222,7 +222,7 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
           <input
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.pptx,.ppt"
+            accept=".pdf,.docx,.txt,.xlsx,.xls,.csv"
             onChange={handleFileInput}
             className="hidden"
             id="file-upload"
@@ -240,7 +240,7 @@ const DragDropArea = ({ onFileUpload }: { onFileUpload?: (files: File[]) => void
           </label>
         </div>
         <div className="max-w-md text-sm text-center text-gray-400">
-          (.pdf, .doc, .docx, .md. Max 50MB per file)
+          (.pdf, .docx, .md. Max 50MB per file)
         </div>
         {/* File Size Error Message */}
         {fileSizeError && (
@@ -274,6 +274,9 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
   const fileName = selectedFile?.file?.name || selectedFile?.original_filename || '';
   const fileType = getFileType(fileName);
   const hasPreview = hasPreviewPane(fileName);
+  
+  // Only show deep extraction status for supported file types
+  const showDeepExtractionStatus = isDeepExtractionSupported(fileName);
 
   // Create a file-like object for existing documents
   // For existing documents, we'll use a placeholder file object since the actual content is downloaded separately
@@ -303,8 +306,8 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full h-full">
-      <div className="flex flex-1 gap-4 w-full min-h-0">
+    <div className="flex flex-col gap-4 w-full h-full max-w-full overflow-auto">
+      <div className="flex flex-1 gap-4 w-full min-h-0 max-w-full overflow-auto">
         {hasPreview ? (
           <ResizablePanelGroup direction="horizontal" className="w-full h-full">
             {/* File Preview */}
@@ -323,7 +326,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                 </div>
 
                 {/* File Preview */}
-                <div className="flex overflow-hidden flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
+                <div className="flex flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
                   <FilePreview
                     blobUrl={blobUrl}
                     file={fileObject}
@@ -351,20 +354,20 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                     <span className="text-sm font-semibold text-gray-600">
                       Extracted Content {documents.length > 0 && `(${documents.length} pages)`}
                     </span>
-                    {selectedFile?.is_deep_extracted &&
+                    {showDeepExtractionStatus && selectedFile?.is_deep_extracted &&
                       selectedFile?.deep_extracted_documents?.length > 0 && (
                         <span className="text-xs font-medium text-blue-600">
                           Deep extraction results
                         </span>
                       )}
-                    {selectedFile?.status === 'ready' &&
+                    {showDeepExtractionStatus && selectedFile?.status === 'ready' &&
                       !selectedFile?.is_deep_extracted &&
                       selectedFile?.deep_extraction_status === 'running' && (
                         <span className="text-xs text-blue-500">
                           Standard extraction results - Deep extraction in progress
                         </span>
                       )}
-                    {selectedFile?.status === 'ready' &&
+                    {showDeepExtractionStatus && selectedFile?.status === 'ready' &&
                       !selectedFile?.is_deep_extracted &&
                       selectedFile?.deep_extraction_status === 'failed' && (
                         <span className="text-xs text-yellow-600">
@@ -404,6 +407,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
                       onEdit={handleEdit}
                       isUploading={selectedFile?.status === 'uploading'}
                       isDeepExtracting={isDeepExtracting || selectedFile?.status === 'extracting'}
+                      fileName={fileName}
                     />
                   </div>
                 </div>
@@ -425,7 +429,7 @@ export const ExtractedFile = ({ selectedFile, onFileUpload }: ExtractedFileProps
             </div>
 
             {/* File Preview */}
-            <div className="flex overflow-hidden flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
+            <div className="flex flex-1 w-full min-h-0 rounded-lg scrollbar-hide">
               <FilePreview
                 blobUrl={blobUrl}
                 file={fileObject}
