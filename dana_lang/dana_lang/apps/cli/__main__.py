@@ -59,11 +59,12 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 import uvicorn
+
 
 # Set up compatibility layer for new dana structure
 # Resolve the real path to avoid symlink issues
@@ -79,6 +80,7 @@ from dana_lang.core.lang.dana_sandbox import DanaSandbox
 from dana_lang.core.lang.log_manager import LogLevel, SandboxLogger
 
 from .dana_input_args_parser import parse_dana_input_args
+
 
 # Regex pattern to match "def __main__(" at the beginning of a line with zero whitespace before "def"
 DEF_MAIN_PATTERN: re.Pattern = re.compile(r"^def\s+__main__\s*\(")
@@ -281,8 +283,8 @@ def build_frontend():
     (where frontend is pre-built) or a development installation (where
     we need to build it).
     """
-    import subprocess
     import os
+    import subprocess
 
     try:
         # Check if we're running from a pip installation
@@ -445,9 +447,9 @@ def main():
 
         # Show version if requested
         if args.version:
-            from dana import __version__
+            from dana_lang import __version__
 
-            print(f"Dana {__version__}")
+            print(f"dana_lang v{__version__}")
             return 0
 
         if args.subcommand == "deploy":
@@ -499,7 +501,7 @@ def handle_main_command():
 
     # Show version if requested
     if args.version:
-        from dana import __version__
+        from dana_lang import __version__
 
         print(f"Dana {__version__}")
         return 0

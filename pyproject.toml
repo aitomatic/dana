@@ -1,134 +1,48 @@
-# pyproject.toml - Dana Project Configuration
+# pyproject.toml - Dana Monorepo Configuration
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 # =============================================================================
-# Build System Configuration
+# Monorepo Workspace - Virtual Root (Not a Package)
 # =============================================================================
-
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
-# =============================================================================
-# Project Metadata
+# This is a virtual workspace root that coordinates the 3 real packages:
+#   - dana_agent
+#   - dana_lang
+#   - dana_studio
+#
+# This root directory is NOT itself a package.
 # =============================================================================
 
 [project]
-name = "dana-internal"
-version = "0.6.0.1rc3"
-description = "Dana Internal Monorepo - Agent and Language Components"
-readme = "README.md"
+name = "dana-workspace"
+version = "0.0.0"  # Virtual workspace - real versions are in sub-packages
+description = "Dana Monorepo Workspace - Virtual Root"
 requires-python = ">=3.12"
-authors = [
-    { name = "Christopher Nguyen", email = "ctn@aitomatic.com" },
-]
-maintainers = [
-    { name = "Vinh Luong", email = "vinh@aitomatic.com" },
-    { name = "Annie Ha", email = "annie@aitomatic.com" },
-    { name = "Lam Nguyen", email = "lam@aitomatic.com" },
-    { name = "Roy Vu", email = "roy@aitomatic.com" },
-    { name = "Sang Dinh", email = "sang@aitomatic.com" },
-]
-
-# Common dependencies for all projects
 dependencies = [
-    # Testing frameworks (common to all projects)
+    # Workspace members
+    "dana_agent",
+    "dana_lang",
+    "dana_studio",
+    # Common dev tools
     "pytest>=7.0",
     "pytest-asyncio>=0.23.0",
     "pytest-mock>=3.10.0",
-    # Code quality tools (common to all projects)
-    "black>=22.0",
+    "pytest-cov",
     "ruff>=0.13.0",
     "mypy>=1.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
     "pre-commit>=4.3.0",
-    # Build tools (common to all projects)
+    "pexpect",
+    "textual-dev>=1.7.0",
     "build>=1.3.0",
     "twine>=6.1.0",
 ]
 
-# Command-line entry points (workspace coordinator)
-[project.scripts]
-# These will be provided by the individual subprojects
-# dana = "dana-lang @ file://./dana-lang"
-# dana-agent = "dana-agent @ file://./dana-agent"
-
-# Optional dependency groups
-[project.optional-dependencies]
-# Install all subprojects
-all = [
-    "dana_lang",
-    "dana_agent",
-    "dana_studio",
-]
-
-# Install individual subprojects
-dana_lang = [
-    "dana_lang",
-]
-
-dana_agent = [
-    "dana_agent",
-]
-
-dana_studio = [
-    "dana_studio",
-]
-
-dev = [
-    # Development tools for the monorepo
-    "pexpect",      # Interactive terminal application testing
-    "pytest-cov",   # Test coverage reporting
-    "textual-dev>=1.7.0",  # Textual development tools
-]
-
 docs = [
-    # Core Documentation
     "mkdocs",
     "mkdocs-material",
-    "mkdocs-mermaid2-plugin",
-    "mkdocs-section-index",
-    "mkdocstrings",
-    "mkdocstrings-python",
-    "mkdocs-git-revision-date-localized-plugin",
-    "pymdown-extensions[extra]",
-
-    # Auto-sync and Generation
-    "mkdocs-gen-files",               # Generate docs from code structure
-    "mkdocs-literate-nav",            # Auto-generate navigation
-
-    # Validation Tools
-    "doc8",                           # Documentation style checking
-    "linkcheckmd",                    # Fast async link checking
-    "mkdocs-htmlproofer-plugin",      # Broken link detection
-
-    # Advanced Features
-    "mkdocs-awesome-nav",             # Advanced navigation control
-    "mkdocs-include-markdown-plugin", # Reusable content blocks
-    "mkdocs-macros-plugin",           # Variables and templating
-    "mkdocs-print-site-plugin",       # PDF export for offline reading
-    "mkdocs-redirects",               # Handle URL changes
-    "mkdocs-table-reader-plugin",     # Data tables from CSV/JSON
-]
-
-# =============================================================================
-# Package Configuration
-# =============================================================================
-
-[tool.setuptools]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["dana_lang*", "dana_agent*", "dana_studio*"]
-exclude = ["tests*", "examples*", "docs*", "tmp*"]
-
-[tool.setuptools.package-data]
-"*" = [
-    "**/*.py",
-    "**/*.na",
-    "**/*.lark",
-    "**/*.json",
-    "**/api/server/static/**/*",
-    "**/api/alembic/**/*"
 ]
 
 # =============================================================================
@@ -136,10 +50,10 @@ exclude = ["tests*", "examples*", "docs*", "tmp*"]
 # =============================================================================
 
 [tool.uv]
-package = true
+package = false                      # This is NOT a package, just a workspace coordinator
 preview = true                       # Enable preview features
 resolution = "highest"               # Use highest compatible versions
-prerelease = "allow"              # Avoid pre-release versions
+prerelease = "allow"                 # Allow pre-release versions
 python-preference = "only-managed"   # Use uv-managed Python installations
 compile-bytecode = true              # Pre-compile .pyc files for performance
 
