@@ -47,7 +47,7 @@ class AdanaREPLApp:
             if term in ["xterm-256color", "xterm-color"] and not os.environ.get("WT_SESSION"):
                 # This is likely a CI/CD environment, disable prompt_toolkit console features
                 os.environ["PROMPT_TOOLKIT_NO_CONSOLE"] = "1"
-        
+
         self.namespace = self._setup_namespace()
         self.history = None
         self.session = None
@@ -62,7 +62,7 @@ class AdanaREPLApp:
             history_file = history_dir / "repl_history.txt"
 
             self.history = FileHistory(str(history_file)) if FileHistory else None
-            
+
             # Handle Windows console issues gracefully
             try:
                 self.session = (

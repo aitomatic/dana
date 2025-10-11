@@ -11,6 +11,7 @@ __pycache__/
 .ruff_cache/
 
 # Environment
+.cursor/
 .tmp/
 tmp/
 .venv
