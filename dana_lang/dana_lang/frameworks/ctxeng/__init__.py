@@ -30,5 +30,3 @@ __all__ = [
     "XMLTemplate",
     "TextTemplate",
 ]
-
-__version__ = "1.0.0"

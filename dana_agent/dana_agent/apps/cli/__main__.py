@@ -39,7 +39,7 @@ def main():
     if args.version:
         from __init__ import __version__
 
-        print(f"Adana {__version__}")
+        print(f"dana_agent v{__version__}")
         return 0
 
     # Execute file or start REPL

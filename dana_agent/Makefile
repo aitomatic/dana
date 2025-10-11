@@ -11,6 +11,8 @@ help: ## Show available commands
 	@echo "\033[1m\033[34mDana Agent - Development Commands\033[0m"
 	@echo "\033[1m======================================\033[0m"
 	@echo ""
+	@echo "\033[33m💡 Run 'cd .. && make setup' to install all packages\033[0m"
+	@echo ""
 	@echo "\033[1mTesting:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^test.*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
@@ -21,6 +23,7 @@ help: ## Show available commands
 # =============================================================================
 # Testing
 # =============================================================================
+# Note: Run 'make setup' from the monorepo root to install all packages
 
 test: ## Run all tests (excludes live/deep/windows_console)
 	@echo "🤖 Running dana-agent tests..."
@@ -66,4 +69,3 @@ clean: ## Clean build artifacts and caches
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	rm -rf .ruff_cache/ .mypy_cache/
-

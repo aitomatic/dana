@@ -13,6 +13,4 @@ from .__init__ import (
 )
 
 
-__version__ = "0.1.0"
-
-__all__ = ["LLM", "LLMMessage", "LLMResponse", "STARAgent", "__version__"]
+__all__ = ["LLM", "LLMMessage", "LLMResponse", "STARAgent"]

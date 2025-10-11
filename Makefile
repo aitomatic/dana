@@ -1,95 +1,120 @@
-# Makefile - Dana Development Commands
+# Makefile - Dana Monorepo
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 # =============================================================================
-# Dana Development Makefile - Essential Commands Only
+# Dana Monorepo Makefile
+# =============================================================================
+#
+# This monorepo uses uv workspace (configured in pyproject.toml):
+#   - ONE shared .venv at the root level
+#   - All 3 packages (dana_agent, dana_lang, dana_studio) installed together
+#   - Running 'make setup' or 'uv sync' installs everything in editable mode
+#
+# Sub-packages have their own Makefiles for package-specific operations:
+#   - Testing (unit, integration, live)
+#   - Code quality (lint, format, fix)
+#   - Package-specific tasks
+#
 # =============================================================================
 
 # UV command helper - use system uv if available, otherwise fallback to ~/.local/bin/uv
 UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 
+# Sub-packages
+PACKAGES = dana_agent dana_lang dana_studio
+
 # Default target
 .DEFAULT_GOAL := help
 
+# =============================================================================
+# Meta Target Helper - Propagate targets to all sub-packages
+# =============================================================================
+# Usage: $(call run-in-packages,target-name)
+# This will run 'make target-name' in each package directory
+define run-in-packages
+	@for pkg in $(PACKAGES); do \
+		echo ""; \
+		echo "📦 Running '$(1)' in $$pkg..."; \
+		cd $$pkg && $(MAKE) $(1) || exit 1; \
+		cd ..; \
+	done
+endef
+
 # All targets are phony (don't create files)
-.PHONY: help help-more quickstart install setup-dev sync test test-agent test-lang test-studio dana clean lint format fix check mypy \
-	install-ollama start-ollama install-vllm start-vllm install-vscode install-cursor install-vim install-emacs \
-	docs-serve docs-build docs-deps test-fast test-cov update-deps dev security validate-config release-check studio-server
+.PHONY: help list packages quickstart setup sync test test-agent test-lang test-studio clean dana studio-server \
+	install-ollama start-ollama install-vllm start-vllm
 
 # =============================================================================
-# Help & Quick Start
+# Help & Info
 # =============================================================================
 
-help: ## Show essential Dana commands
+help: ## Show available commands
 	@echo ""
-	@echo "\033[1m\033[34mDana Monorepo Development Commands\033[0m"
-	@echo "\033[1m==========================================\033[0m"
+	@echo "\033[1m\033[34mDana Monorepo\033[0m"
+	@echo "\033[1m==============\033[0m"
+	@echo ""
+	@echo "\033[1mInfo:\033[0m"
+	@echo "  \033[36mlist\033[0m            📦 List packages and installation status"
+	@echo "  \033[36mpackages\033[0m        📋 Show installed Dana packages"
 	@echo ""
 	@echo "\033[1mGetting Started:\033[0m"
-	@echo "  \033[36mquickstart\033[0m      🚀 Get Dana running in 30 seconds!"
-	@echo "  \033[36minstall\033[0m         📦 Install package and dependencies"
-	@echo "  \033[36msetup-dev\033[0m       🛠️  Install with development dependencies"
+	@echo "  \033[36mquickstart\033[0m      🚀 Get Dana running in 30 seconds"
+	@echo "  \033[36msetup\033[0m           🔧 Setup all packages (installs to .venv)"
+	@echo "  \033[36msync\033[0m            🔄 Sync dependencies"
 	@echo ""
-	@echo "\033[1mUsing Dana:\033[0m"
-	@echo "  \033[36mdana\033[0m            🚀 Start the Dana REPL"
-	@echo "  \033[36mstudio-server\033[0m   🎨 Start Dana Studio server (API backend)"
+	@echo "\033[1mDevelopment:\033[0m"
 	@echo "  \033[36mtest\033[0m            🧪 Run all tests"
 	@echo "  \033[36mtest-agent\033[0m      🤖 Run dana-agent tests only"
 	@echo "  \033[36mtest-lang\033[0m       📝 Run dana-lang tests only"
-	@echo "  \033[36mtest-studio\033[0m     🎨 Run Dana Studio (frontend) tests"
+	@echo "  \033[36mtest-studio\033[0m     🎨 Run dana-studio tests only"
+	@echo "  \033[36mclean\033[0m           🧹 Clean all build artifacts"
 	@echo ""
-	@echo "\033[1mCode Quality:\033[0m"
-	@echo "  \033[36mlint\033[0m            🔍 Check code style and quality"
-	@echo "  \033[36mlint-critical\033[0m   🚫 Critical checks (matches CI)"
-	@echo "  \033[36mformat\033[0m          ✨ Format code automatically"
-	@echo "  \033[36mfix\033[0m             🔧 Auto-fix all fixable code issues"
-	@echo "  \033[36mtype-check\033[0m      🔍 Run MyPy type checking (local only)"
-	@echo "  \033[36mci-check\033[0m        🎯 Run same checks as GitHub CI"
+	@echo "\033[1mRun:\033[0m"
+	@echo "  \033[36mdana\033[0m            🚀 Start the Dana REPL"
+	@echo "  \033[36mstudio-server\033[0m   🎨 Start Dana Studio server"
 	@echo ""
-	@echo "\033[1mLLM Integration:\033[0m"
+	@echo "\033[1mLLM Infrastructure:\033[0m"
 	@echo "  \033[36minstall-ollama\033[0m  🦙 Install Ollama for local inference"
+	@echo "  \033[36mstart-ollama\033[0m    🚀 Start Ollama server"
 	@echo "  \033[36minstall-vllm\033[0m    ⚡ Install vLLM for local inference"
+	@echo "  \033[36mstart-vllm\033[0m      🚀 Start vLLM server"
 	@echo ""
-	@echo "\033[1mEditor Support:\033[0m"
-	@echo "  \033[36minstall-vscode\033[0m  📝 Install VS Code extension with LSP"
-	@echo "  \033[36minstall-cursor\033[0m  🎯 Install Cursor extension with LSP"
-	@echo "  \033[36minstall-vim\033[0m     ⚡ Install Vim/Neovim support with LSP"
-	@echo "  \033[36minstall-emacs\033[0m   🌟 Install Emacs support with LSP"
-	@echo ""
-	@echo "\033[1mMaintenance:\033[0m"
-	@echo "  \033[36mclean\033[0m           🧹 Clean build artifacts and caches"
-	@echo ""
-	@echo "\033[33mTip: Run 'make help-more' for additional commands\033[0m"
+	@echo "\033[33m💡 Tip: Each package has its own Makefile with additional targets\033[0m"
+	@echo "   • cd dana_agent && make help"
+	@echo "   • cd dana_lang && make help"
+	@echo "   • cd dana_studio && make help"
 	@echo ""
 
-help-more: ## Show all available commands including advanced ones
+list: ## List all sub-packages and their installation status
 	@echo ""
-	@echo "\033[1m\033[34mDana Monorepo Development Commands (Complete)\033[0m"
-	@echo "\033[1m====================================================\033[0m"
+	@echo "\033[1m\033[34mDana Sub-Packages\033[0m"
+	@echo "\033[1m==================\033[0m"
 	@echo ""
-	@echo "\033[1mGetting Started:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(quickstart|install|setup-dev|sync).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@for pkg in $(PACKAGES); do \
+		echo "📦 \033[36m$$pkg\033[0m"; \
+		if [ -f $$pkg/pyproject.toml ]; then \
+			desc=$$(grep '^description = ' $$pkg/pyproject.toml | head -1 | cut -d'"' -f2); \
+			[ -n "$$desc" ] && echo "   $$desc"; \
+		fi; \
+		if [ -d $$pkg ] && [ -f $$pkg/pyproject.toml ]; then \
+			echo "   ✅ Available in workspace"; \
+		else \
+			echo "   ❌ Missing"; \
+		fi; \
+		echo "   \033[33mcd $$pkg && make help\033[0m"; \
+		echo ""; \
+	done
+
+packages: ## Show Dana packages installed in .venv
 	@echo ""
-	@echo "\033[1mUsing Dana:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(dana|test|run).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "\033[1m\033[34mInstalled Dana Packages\033[0m"
+	@echo "\033[1m========================\033[0m"
 	@echo ""
-	@echo "\033[1mAdvanced Testing:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## MORE: "} /^test.*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "\033[1mCode Quality:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(lint|format|check|fix|mypy).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "\033[1mLLM Integration:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|start-ollama|install-vllm|start-vllm).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "\033[1mEditor Support:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-vscode|install-cursor|install-vim|install-emacs).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "\033[1mDevelopment & Release:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check|docs-build|docs-deps).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "\033[1mMaintenance:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(clean|docs-serve).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@if [ -d .venv ]; then \
+		$(UV_CMD) pip list 2>/dev/null | grep -i "^dana" || echo "⚠️  No Dana packages found - run 'make setup'"; \
+	else \
+		echo "⚠️  No .venv found - run 'make setup'"; \
+	fi
 	@echo ""
 
 # Check if uv is installed, install if missing
@@ -102,7 +127,11 @@ check-uv:
 		echo "✅ uv already available"; \
 	fi
 
-quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
+# =============================================================================
+# Quick Start
+# =============================================================================
+
+quickstart: check-uv ## Get Dana running in 30 seconds
 	@echo ""
 	@echo "🚀 \033[1m\033[32mDana Quick Start\033[0m"
 	@echo "==================="
@@ -111,8 +140,8 @@ quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
 	@$(UV_CMD) sync --quiet
 	@echo "🔧 Setting up environment..."
 	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo "📝 Created .env file from template"; \
+		cp .env.example .env 2>/dev/null || echo "# Add your API keys here" > .env; \
+		echo "📝 Created .env file"; \
 	else \
 		echo "📝 .env file already exists"; \
 	fi
@@ -123,114 +152,83 @@ quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
 	@echo "  \033[36mmake dana\033[0m    # Start Dana REPL"
 	@echo "  \033[36mmake test\033[0m    # Run tests"
 	@echo ""
-	@echo "\033[33m💡 Tip: Run 'open .env' to edit your API keys\033[0m"
+
+# =============================================================================
+# Development Setup
+# =============================================================================
+
+setup: ## Setup development environment (installs all packages in one venv)
+	@echo "🔧 Setting up monorepo development environment..."
+	@echo "📦 Syncing all workspace packages..."
+	@$(UV_CMD) sync --extra dev
 	@echo ""
+	@echo "✅ \033[1m\033[32mAll packages installed in .venv!\033[0m"
+	@echo ""
+	@echo "Installed Dana packages:"
+	@$(UV_CMD) pip list | grep -i "^dana" || true
+	@echo ""
+	@echo "💡 All packages share the same .venv at the root"
+
+sync: ## Sync dependencies (uv workspace handles all packages)
+	@echo "🔄 Syncing workspace dependencies..."
+	@$(UV_CMD) sync
+	@echo "✅ All dependencies synced!"
 
 # =============================================================================
-# Setup & Installation
+# Testing
 # =============================================================================
 
-install: ## Install package and dependencies
-	@echo "📦 Installing dependencies..."
-	$(UV_CMD) sync --extra dev
+test: ## Run all tests
+	@echo "🧪 Running all tests..."
+	$(call run-in-packages,test)
+	@echo ""
+	@echo "✅ \033[1m\033[32mAll tests passed!\033[0m"
 
-setup-dev: ## Install with development dependencies and setup tools
-	@echo "🛠️  Installing development dependencies..."
-	$(UV_CMD) sync --extra dev
-	@echo "🔧 Setting up development tools..."
-	$(UV_CMD) run pre-commit install
-	@echo "✅ Development environment ready!"
+test-agent: ## Run dana-agent tests only
+	@cd dana_agent && $(MAKE) test
 
-sync: ## Sync dependencies with uv.lock
-	@echo "🔄 Syncing dependencies..."
-	$(UV_CMD) sync
+test-lang: ## Run dana-lang tests only
+	@cd dana_lang && $(MAKE) test
+
+test-studio: ## Run dana-studio tests only
+	@cd dana_studio && $(MAKE) test
 
 # =============================================================================
-# Usage
+# Maintenance
+# =============================================================================
+
+clean: ## Clean build artifacts and caches
+	@echo "🧹 Cleaning build artifacts..."
+	$(call run-in-packages,clean)
+	@echo ""
+	@echo "🧹 Cleaning root artifacts..."
+	@rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
+	@find . -maxdepth 1 -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	@find . -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
+	@rm -rf .ruff_cache/ .mypy_cache/
+	@echo "✅ All packages cleaned!"
+
+# =============================================================================
+# Run Applications
 # =============================================================================
 
 dana: ## Start the Dana REPL
 	@echo "🚀 Starting Dana REPL..."
 	$(UV_CMD) run dana
 
-test: ## Run all tests sequentially (uses each package Makefile)
-	@echo "🧪 Running all tests..."
-	@echo ""
-	@cd dana_agent && $(MAKE) test
-	@echo ""
-	@cd dana_lang && $(MAKE) test
-	@echo ""
-	@cd dana_studio && $(MAKE) test
-	@echo ""
-	@echo "✅ \033[1m\033[32mAll tests passed!\033[0m"
-
-test-agent: ## Run dana-agent tests (uses dana_agent/Makefile)
-	@cd dana_agent && $(MAKE) test
-
-test-lang: ## Run dana-lang tests (uses dana_lang/Makefile)
-	@cd dana_lang && $(MAKE) test
-
-test-studio: ## Run dana-studio tests (uses dana_studio/Makefile)
-	@cd dana_studio && $(MAKE) test
+studio-server: ## Start Dana Studio server
+	@echo "🎨 Starting Dana Studio server..."
+	$(UV_CMD) run python -m dana_lang.api.server
 
 # =============================================================================
-# Code Quality
-# =============================================================================
-
-lint: ## Check code style and quality (all packages)
-	@echo "🔍 Running linting checks..."
-	@cd dana_agent && $(MAKE) lint
-	@cd dana_lang && $(MAKE) lint
-	@cd dana_studio && $(MAKE) lint
-	@echo "✅ All linting checks passed!"
-
-lint-critical: ## Run only critical lint checks (BLOCKING)
-	@echo "🚫 Running critical lint checks (BLOCKING)..."
-	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select E722,F821 --exclude dana_lang/contrib
-
-lint-important: ## Run important lint checks (WARNING)
-	@echo "⚠️ Running important lint checks (WARNING)..."
-	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select F841,B017
-
-lint-style: ## Run style and formatting checks (INFO)
-	@echo "✨ Running style and formatting checks (INFO)..."
-	$(UV_CMD) run ruff format --check dana_agent/ dana_lang/ dana_studio/
-	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select UP038,B026,E712,E721,B024,B007
-
-format: ## Format code automatically (all packages)
-	@echo "✨ Formatting code..."
-	@cd dana_agent && $(MAKE) format
-	@cd dana_lang && $(MAKE) format
-	@cd dana_studio && $(MAKE) format
-	@echo "✅ All formatting complete!"
-
-check: lint format-check ## Run all code quality checks
-	@echo "✅ All quality checks completed!"
-
-format-check: ## Check code formatting (matches CI)
-	@echo "📝 Checking code formatting..."
-	$(UV_CMD) run ruff format --check dana_agent/ dana_lang/ dana_studio/
-
-fix: ## Auto-fix all fixable code issues (all packages)
-	@echo "🔧 Auto-fixing code issues..."
-	@cd dana_agent && $(MAKE) fix
-	@cd dana_lang && $(MAKE) fix
-	@cd dana_studio && $(MAKE) fix
-	@echo "✅ All auto-fixes applied!"
-
-mypy: ## Run type checking
-	@echo "🔍 Running type checks..."
-	$(UV_CMD) run mypy .
-
-# =============================================================================
-# LLM Integration
+# LLM Infrastructure
 # =============================================================================
 
 install-ollama: ## Install Ollama for local model inference
 	@echo "🦙 Installing Ollama for Dana..."
 	@./bin/ollama/install.sh
 
-start-ollama: ## Start Ollama with Dana configuration
+start-ollama: ## Start Ollama server
 	@echo "🚀 Starting Ollama for Dana..."
 	@./bin/ollama/start.sh
 
@@ -241,170 +239,3 @@ install-vllm: ## Install vLLM for local model inference
 start-vllm: ## Start vLLM server with interactive model selection
 	@echo "🚀 Starting vLLM for Dana..."
 	@./bin/vllm/start.sh
-
-install-vscode: ## Install VS Code extension with LSP support
-	@echo "📝 Installing Dana VS Code extension..."
-	@./bin/vscode/install.sh
-
-install-cursor: ## Install Cursor extension with LSP support
-	@echo "🎯 Installing Dana Cursor extension..."
-	@./bin/cursor/install.sh
-
-install-vim: ## Install Vim/Neovim support with LSP
-	@echo "⚡ Installing Dana Vim/Neovim support..."
-	@./bin/vim/install.sh
-
-install-emacs: ## Install Emacs support with LSP
-	@echo "🌟 Installing Dana Emacs support..."
-	@./bin/emacs/install.sh
-
-# =============================================================================
-# Maintenance & Documentation
-# =============================================================================
-
-clean: ## Clean build artifacts and caches (all packages)
-	@echo "🧹 Cleaning build artifacts..."
-	@cd dana_agent && $(MAKE) clean
-	@cd dana_lang && $(MAKE) clean
-	@cd dana_studio && $(MAKE) clean
-	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	rm -rf .ruff_cache/ .mypy_cache/
-	@echo "✅ All packages cleaned!"
-
-docs-serve: ## Serve documentation locally
-	@echo "📚 Serving docs at http://localhost:8000"
-	@if [ -f mkdocs.yml ]; then \
-		$(UV_CMD) run --extra docs mkdocs serve; \
-	else \
-		echo "❌ mkdocs.yml not found. Documentation not configured."; \
-	fi
-
-docs-build: ## MORE: Build documentation with strict validation
-	@echo "📖 Building documentation with strict validation..."
-	@if [ -f mkdocs.yml ]; then \
-		$(UV_CMD) run --extra docs mkdocs build --strict; \
-	else \
-		echo "❌ mkdocs.yml not found. Documentation not configured."; \
-	fi
-
-docs-deps: ## MORE: Install documentation dependencies
-	@echo "📚 Installing documentation dependencies..."
-	$(UV_CMD) sync --extra docs
-
-# =============================================================================
-# Advanced/Comprehensive Targets (shown in help-more)
-# =============================================================================
-
-test-fast: ## MORE: Run fast tests only (excludes live/deep tests)
-	@echo "⚡ Running fast tests..."
-	@cd dana_agent && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m "not live and not deep" || true
-	@cd dana_lang && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m "not live and not deep" || true
-
-test-cov: ## MORE: Run tests with coverage report
-	@echo "📊 Running tests with coverage..."
-	@echo "Coverage for dana_agent..."
-	@cd dana_agent && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_agent --cov-report=html:htmlcov/dana_agent --cov-report=term
-	@echo ""
-	@echo "Coverage for dana_lang..."
-	@cd dana_lang && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_lang --cov-report=html:htmlcov/dana_lang --cov-report=term
-	@echo ""
-	@echo "📈 Coverage reports generated in dana_agent/htmlcov/ and dana_lang/htmlcov/"
-
-update-deps: ## MORE: Update dependencies to latest versions
-	@echo "⬆️  Updating dependencies..."
-	$(UV_CMD) lock --upgrade
-
-ci-check: lint-critical test ## Run the same checks as GitHub CI
-
-# Type checking (local development only - not in CI)
-type-check:
-	@echo "🔍 Running MyPy type checking (local development only)..."
-	@echo "Note: This is not run in CI due to extensive type issues"
-	uv run mypy dana_agent/ dana_lang/ dana_studio/ --ignore-missing-imports --no-strict-optional || {
-		echo "⚠️ Type issues found - fix when convenient"
-		echo "Run 'make type-check' locally to see details"
-	}
-	@echo ""
-	@echo "🎯 \033[1m\033[32mCI checks completed!\033[0m"
-	@echo "=================================="
-	@echo "✅ Critical lint checks passed"
-	@echo "✅ Tests passed"
-	@echo ""
-	@echo "\033[33m💡 This matches what GitHub CI will run\033[0m"
-	@echo ""
-
-dev: setup-dev check test-fast ## MORE: Complete development setup and verification
-	@echo ""
-	@echo "🎉 \033[1m\033[32mDevelopment environment is ready!\033[0m"
-	@echo ""
-	@echo "Next steps:"
-	@echo "  • Run '\033[36mmake dana\033[0m' to start the Dana REPL"
-	@echo "  • Run '\033[36mmake test\033[0m' to run tests"
-	@echo "  • Run '\033[36mmake check\033[0m' for code quality checks"
-	@echo ""
-
-security: ## MORE: Run security checks on codebase
-	@echo "🔒 Running security checks..."
-	@if command -v bandit >/dev/null 2>&1; then \
-		$(UV_CMD) run bandit -r dana_agent/ dana_lang/ dana_studio/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
-		$(UV_CMD) run bandit -r dana_agent/ dana_lang/ dana_studio/; \
-	else \
-		echo "❌ bandit not available. Install with: uv add bandit"; \
-	fi
-
-validate-config: ## MORE: Validate project configuration files
-	@echo "⚙️  Validating configuration..."
-	@echo "📝 Checking pyproject.toml..."
-	@python3 -c "import tomllib; tomllib.load(open('pyproject.toml','rb')); print('✅ pyproject.toml is valid')"
-	@if [ -f dana_config.json ]; then \
-		echo "📝 Checking dana_config.json..."; \
-		python3 -c "import json; json.load(open('dana_config.json')); print('✅ dana_config.json is valid')"; \
-	fi
-	@if [ -f mkdocs.yml ]; then \
-		echo "📝 Checking mkdocs.yml..."; \
-		python3 -c "import yaml; yaml.safe_load(open('mkdocs.yml')); print('✅ mkdocs.yml is valid')"; \
-	fi
-
-release-check: clean check test-fast security validate-config ## MORE: Complete pre-release validation
-	@echo ""
-	@echo "🚀 \033[1m\033[32mRelease validation completed!\033[0m"
-	@echo "=================================="
-	@echo ""
-	@echo "✅ Code quality checks passed"
-	@echo "✅ Tests passed"
-	@echo "✅ Security checks completed"
-	@echo "✅ Configuration validated"
-	@echo ""
-	@echo "\033[33m🎯 Ready for release!\033[0m"
-	@echo ""
-
-# =============================================================================
-# Package Building & Publishing
-# =============================================================================
-
-build: build-frontend ## Build package distribution files (includes frontend)
-	@echo "📦 Building package..."
-	$(UV_CMD) run python -m build
-
-dist: clean build ## Clean and build distribution files
-	@echo "✅ Distribution files ready in dist/"
-
-check-dist: ## Validate built distribution files
-	@echo "🔍 Checking distribution files..."
-	$(UV_CMD) run twine check dist/*
-
-publish: check-dist ## Upload to PyPI
-	@echo "🚀 Publishing to PyPI..."
-	$(UV_CMD) run twine upload --verbose dist/*
-
-build-frontend: ## Build the frontend (Vite React app) and copy to backend static
-	cd dana_lang/contrib/ui && npm i && npm run build
-
-build-all: ## Build frontend and Python package
-	build-frontend & uv run python -m build
-
-studio-server: ## Start Dana Studio server (API backend)
-	@echo "🎨 Starting Dana Studio server..."
-	$(UV_CMD) run python -m dana_lang.api.server
