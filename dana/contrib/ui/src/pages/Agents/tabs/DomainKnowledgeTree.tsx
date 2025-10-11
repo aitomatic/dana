@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
@@ -9,9 +10,16 @@ import { apiService } from '@/lib/api';
 import { useKnowledgeStore } from '@/stores/knowledge-store';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
 import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
-import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
-import { Search, Collapse, Expand } from 'iconoir-react';
+import { Search, Collapse, Expand, Xmark, LightBulb, ThumbsUp } from 'iconoir-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 // Single transition definition for consistency
 const TRANSITION_DURATION = '0.5s';
@@ -313,6 +321,74 @@ interface DomainKnowledgeTreeProps {
 // Use backend URL for WebSocket (now disabled - using centralized store)
 // const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
 
+// KnowledgeIntroBox Component
+interface KnowledgeIntroBoxProps {
+  isVisible: boolean;
+  hasNewKnowledge: boolean;
+  onDismiss: () => void;
+}
+
+const KnowledgeIntroBox: React.FC<KnowledgeIntroBoxProps> = ({
+  isVisible,
+  hasNewKnowledge,
+  onDismiss,
+}) => {
+  if (!isVisible) return null;
+
+  return (
+    <div
+      className={`mb-6 mx-4 p-4 rounded-lg border border-dashed transition-all duration-300 ${
+        hasNewKnowledge ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+      }`}
+    >
+      <div className="flex gap-4 justify-between items-start">
+        <div className="flex flex-1 gap-3">
+          <div className="flex-shrink-0">
+            <div
+              className={`flex justify-center items-center w-8 h-8 rounded-full ${
+                hasNewKnowledge ? 'bg-green-600' : 'bg-gray-600'
+              }`}
+            >
+              {hasNewKnowledge ? (
+                <ThumbsUp width={20} height={20} strokeWidth={2} className="text-white" />
+              ) : (
+                <LightBulb width={20} height={20} strokeWidth={2} className="text-white" />
+              )}
+            </div>
+          </div>
+          <div className="flex-1">
+            <h3
+              className={`text-md font-semibold mb-2 ${
+                hasNewKnowledge ? 'text-green-800' : 'text-gray-800'
+              }`}
+            >
+              {hasNewKnowledge
+                ? 'Nice! You have added a new knowledge topic.'
+                : "This is your agent's knowledge graph — the map of what it knows"}
+            </h3>
+            <p className={`text-sm ${hasNewKnowledge ? 'text-green-700' : 'text-gray-700'}`}>
+              {hasNewKnowledge
+                ? 'Keep going to complete your agent knowledge map.'
+                : 'Each node is a knowledge topic. Right now you only have General Purpose. Use the Agent Maker to add more knowledge and watch the graph grow.'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={onDismiss}
+          className={`p-1 rounded-full h transition-colors ${
+            hasNewKnowledge
+              ? 'text-green-600 hover:text-green-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-700'
+          }`}
+        >
+          <Xmark width={16} height={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
   // Use centralized knowledge store
   const {
@@ -321,6 +397,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     isLoading: initialLoading,
     error: storeError,
     setCurrentAgent,
+    fetchKnowledgeData,
+    generatingNodes,
   } = useKnowledgeStore();
 
   const [nodes, setNodes] = useState<FlowNode[]>([]);
@@ -345,6 +423,58 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // New UX improvement states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Knowledge intro box states
+  const [showKnowledgeIntro, setShowKnowledgeIntro] = useState<boolean>(false);
+  const [hasNewKnowledge, setHasNewKnowledge] = useState<boolean>(false);
+  const [previousKnowledgeCount, setPreviousKnowledgeCount] = useState<number>(0);
+
+  // Delete confirmation states
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [nodeToDelete, setNodeToDelete] = useState<{
+    id: string;
+    path: string;
+    label: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Helper function to detect if graph has been modified
+  const hasGraphBeenModified = () => {
+    if (!statusData || !statusData.topics) return false;
+
+    // Check if any knowledge topics have been generated successfully
+    const hasGeneratedContent = statusData.topics.some(
+      (topic: any) => topic.status === 'success' || topic.status === 'completed',
+    );
+
+    // Check if there are multiple knowledge topics beyond basic structure
+    const topicCount = statusData.topics.length;
+    const isOnlyBasicStructure = topicCount <= 1; // Only "General Purpose" or similar
+
+    return hasGeneratedContent || !isOnlyBasicStructure;
+  };
+
+  // Initial state management with localStorage persistence
+  useEffect(() => {
+    const dismissedKey = `knowledge-intro-dismissed-${agentId}`;
+    const hasBeenDismissed = localStorage.getItem(dismissedKey);
+
+    if (hasBeenDismissed) {
+      // User dismissed this intro before - don't show at all
+      setShowKnowledgeIntro(false);
+      return;
+    }
+
+    // Check if graph has been modified - if modified, don't show intro
+    if (hasGraphBeenModified()) {
+      setShowKnowledgeIntro(false);
+      return;
+    }
+
+    // Show intro only for unmodified graphs on first visit
+    setShowKnowledgeIntro(true);
+  }, [agentId, statusData]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   // const wsRef = useRef<WebSocket | null>(null); // No longer needed
   const expandedNodesRef = useRef<Set<string>>(new Set());
@@ -585,7 +715,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       <CustomNode
         {...nodeProps}
         isSelected={selectedNodeId === nodeProps.id}
+        isGenerating={generatingNodes.has(nodeProps.data.label)}
         onNodeClick={(event: React.MouseEvent) => onNodeClick(event, nodeProps)}
+        onDeleteNode={handleDeleteNode}
       >
         {renderStatusIcon(getNodeStatus(nodeProps))}
       </CustomNode>
@@ -701,6 +833,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     ) => {
       const currentPath = [...pathParts, domainNode.topic];
       const nodeId = currentPath.join('/'); // Unique path-based ID
+
       // Create nodePath excluding the root level for knowledge status matching
       // For root node, use just the topic name; for others, exclude the root from the path
       const nodePathParts = depth === 0 ? [domainNode.topic] : currentPath.slice(1);
@@ -733,7 +866,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
       if (shouldShowNode) {
         // Create flow node with knowledge status information
-        nodes.push({
+        const flowNode = {
           id: nodeId,
           type: 'custom',
           data: {
@@ -743,9 +876,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             hasChildren,
             nodePath,
             isExpanded: expandedNodeIds?.has(nodeId) || false,
+            isRootNode: depth === 0,
           },
           position: { x: 0, y: 0 }, // Will be set by dagre layout
-        });
+        };
+
+        nodes.push(flowNode);
 
         // Create edge from parent if exists
         if (parentId) {
@@ -852,6 +988,44 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   }, [domainTree, statusData, searchQuery]);
 
+  // Real-time status updates - React to knowledgeStatus changes
+  useEffect(() => {
+    if (!domainTree || !statusData || !domainTree.root) return;
+
+    console.log('[DomainKnowledgeTree] Status data updated, refreshing nodes');
+
+    // Preserve current expansion state
+    const currentExpanded =
+      expandedNodesRef.current.size > 0
+        ? expandedNodesRef.current
+        : new Set([domainTree.root.topic]);
+
+    // Convert domain knowledge to flow format with updated status
+    const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+      domainTree,
+      statusData as KnowledgeStatusResponse,
+      currentExpanded,
+      searchQuery,
+    );
+    const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+
+    // Knowledge detection logic - only detect transitions if intro box is visible
+    const currentKnowledgeCount = flowNodes.length;
+    if (showKnowledgeIntro) {
+      if (previousKnowledgeCount > 0 && currentKnowledgeCount > previousKnowledgeCount) {
+        // New knowledge topic detected - show celebration transition
+        setHasNewKnowledge(true);
+      } else if (previousKnowledgeCount === 0 && currentKnowledgeCount >= 0) {
+        // Initial state when intro first becomes visible
+        setHasNewKnowledge(false);
+      }
+    }
+    setPreviousKnowledgeCount(currentKnowledgeCount);
+
+    setNodes(layoutedNodes);
+    setEdges(flowEdges);
+  }, [statusData, showKnowledgeIntro]);
+
   // Hide popup when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -907,26 +1081,47 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           setSidebarLoading(false);
         }
       } else {
-        // Show toast that knowledge is not generated yet
+        // Show drawer with message and CTA for nodes without knowledge content
         const status = nodeData.knowledgeStatus?.status || 'pending';
-        let message = '';
+        let title = '';
+        let description = '';
+        let showGenerateButton = false;
 
         switch (status) {
           case 'pending':
-            message = `Knowledge for "${nodeData.label}" is not generated yet. Click "Generate Contextual Knowledge" to start generation.`;
+            title = 'Knowledge Not Generated Yet';
+            description = `Content for "${nodeData.label}" will be shown here once knowledge generation is complete. Click the button below to start generating knowledge for this topic.`;
+            showGenerateButton = true;
             break;
           case 'in_progress':
-            message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
+            title = 'Generating Knowledge';
+            description = `Knowledge for "${nodeData.label}" is currently being generated. This process may take several minutes. Please wait while we analyze and extract insights from your uploaded documents.`;
+            showGenerateButton = false;
             break;
           case 'failed':
-            message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
+            title = 'Knowledge Generation Failed';
+            description = `We encountered an issue while generating knowledge for "${nodeData.label}". Please try regenerating the knowledge. If the problem persists, check your uploaded documents and try again.`;
+            showGenerateButton = true;
             break;
           default:
-            message = `Knowledge for "${nodeData.label}" is not available yet.`;
+            title = 'Knowledge Not Available';
+            description = `Knowledge for "${nodeData.label}" is not available yet. Click the button below to start the knowledge generation process.`;
+            showGenerateButton = true;
         }
 
-        toast.info(message, {
-          duration: 5000,
+        // Open sidebar with message and CTA
+        setSidebarOpen(true);
+        setSidebarTopicPath(topicPath);
+        setSidebarLoading(false);
+        setSidebarError(null);
+        setSidebarContent({
+          message: '', // Keep for backwards compatibility
+          title,
+          description,
+          showGenerateButton,
+          topicPath,
+          nodeLabel: nodeData.label,
+          status,
         });
       }
 
@@ -1092,6 +1287,88 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     setEdges(flowEdges);
   };
 
+  // Handle intro box dismissal
+  const handleDismissIntro = () => {
+    // Hide intro permanently for this agent
+    setShowKnowledgeIntro(false);
+
+    // Store dismissal in localStorage
+    const dismissedKey = `knowledge-intro-dismissed-${agentId}`;
+    localStorage.setItem(dismissedKey, 'true');
+
+    // Keep hasNewKnowledge state to preserve any celebration animations
+    // Don't reset hasNewKnowledge - let it persist the final state
+  };
+
+  // Handle delete node request
+  const handleDeleteNode = (nodeId: string, nodePath: string) => {
+    // Find the node to get its label - try both by ID and by nodePath
+    let node = nodes.find((n) => n.id === nodeId);
+    if (!node) {
+      // If not found by ID, try to find by nodePath in the data
+      node = nodes.find((n) => n.data?.nodePath === nodePath);
+    }
+
+    if (node) {
+      setNodeToDelete({
+        id: nodeId,
+        path: nodePath,
+        label: node.data.label,
+      });
+      setShowDeleteDialog(true);
+    }
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!nodeToDelete || !agentId) return;
+
+    setIsDeleting(true);
+    try {
+      // Parse the node path to get topic parts
+      let topicParts = nodeToDelete.path.split(' - ');
+
+      // If the first part is not "General Purpose", add it as the root
+      if (topicParts[0] !== 'General Purpose') {
+        topicParts = ['General Purpose', ...topicParts];
+      }
+
+      console.log('🗑️ Deleting node with topic_parts:', topicParts);
+      const response = await apiService.deleteDomainKnowledgeNode(agentId, topicParts);
+
+      console.log('📋 Delete response:', response);
+
+      // Check for success - the API returns { message: "Knowledge content deleted successfully" }
+      if (response.success || response.message?.includes('deleted successfully')) {
+        console.log('✅ Delete successful, closing dialog and refreshing tree');
+
+        // Close dialog
+        setShowDeleteDialog(false);
+        setNodeToDelete(null);
+
+        // Refresh the knowledge tree by forcing a refetch
+        if (agentId && fetchKnowledgeData) {
+          console.log('🔄 Refreshing knowledge tree after deletion');
+          await fetchKnowledgeData(agentId, true); // force: true to bypass debouncing
+        }
+      } else {
+        console.error('Delete failed:', response.message);
+        // You could add a toast notification here
+      }
+    } catch (error) {
+      console.error('Error deleting node:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteDialog(false);
+    setNodeToDelete(null);
+  };
+
   // Calculate progress statistics
   const getProgressStats = () => {
     if (!statusData || !statusData.topics)
@@ -1168,11 +1445,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
         {/* Enhanced Control Bar */}
         {agentId && (
-          <div
-            className={`absolute left-4 right-4 z-20 ${
-              initialLoading || loading ? 'top-16' : 'top-4'
-            }`}
-          >
+          <div className={`px-4 ${initialLoading || loading ? 'top-16' : 'top-4'}`}>
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
               <div className="flex flex-1 gap-3 items-center">
@@ -1258,9 +1531,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           </div>
         )}
 
+        {/* Knowledge Intro Box */}
+        <KnowledgeIntroBox
+          isVisible={showKnowledgeIntro}
+          hasNewKnowledge={hasNewKnowledge}
+          onDismiss={handleDismissIntro}
+        />
+
         {/* Tree View Container with smooth margin adjustment */}
         <div
-          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''}`}
+          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-0') : ''}`}
           style={{ transition: TRANSITION_ALL }}
         >
           {nodes.length > 0 ? (
@@ -1359,6 +1639,48 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         loading={sidebarLoading}
         error={sidebarError}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex gap-3 items-center">Delete knowledge node?</DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-2">
+            <p className="text-sm text-gray-700">
+              You’re about to remove <strong>"{nodeToDelete?.label}"</strong>. This will remove the
+              node and <em>all its sub-nodes and associated knowledge content.</em>
+            </p>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:flex-row">
+            <Button
+              onClick={cancelDelete}
+              disabled={isDeleting}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              variant="destructive"
+              className="w-full sm:w-auto"
+            >
+              {isDeleting ? (
+                <div className="flex items-center">
+                  <div className="mr-2 w-4 h-4 rounded-full border-2 border-white animate-spin border-t-transparent"></div>
+                  Deleting...
+                </div>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

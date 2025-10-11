@@ -12,6 +12,7 @@ from typing import Any
 
 from dana.api.core.models import Document
 from dana.api.core.schemas import DocumentRead
+from sqlalchemy.orm.attributes import flag_modified
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,14 @@ class ExtractionService:
         os.makedirs(self.extract_data_directory, exist_ok=True)
 
     async def save_extraction_json(
-        self, original_filename: str, extraction_results: dict[str, Any], source_document_id: int, db_session
+        self,
+        original_filename: str,
+        extraction_results: dict[str, Any],
+        source_document_id: int,
+        db_session,
+        remove_old_extraction_files: bool = True,
+        metadata: dict[str, Any] | None = None,
+        deep_extracted: bool | None = None,
     ) -> DocumentRead:
         """
         Save extraction results as JSON file and create database relationship.
@@ -57,7 +65,7 @@ class ExtractionService:
             # NOTE : Remove old extraction files
             extraction_files = db_session.query(Document).filter(Document.source_document_id == source_document_id).all()
 
-            if extraction_files:
+            if remove_old_extraction_files and extraction_files:
                 logger.info("Found %d extraction files to delete for document %d", len(extraction_files), source_document_id)
                 for extraction_file in extraction_files:
                     # Delete extraction file from disk
@@ -106,6 +114,13 @@ class ExtractionService:
 
             file_size = os.path.getsize(json_path)
 
+            # UPDATE METADATA TO THE EXTRACTION DOCUMENT
+            if not metadata:
+                metadata = {}
+
+            if deep_extracted is not None:
+                metadata["deep_extracted"] = deep_extracted
+
             # Create document record in database
             document = Document(
                 filename=json_filename,
@@ -115,12 +130,20 @@ class ExtractionService:
                 mime_type="application/json",
                 source_document_id=source_document_id,
                 topic_id=None,  # No topic association for extraction files
-                agent_id=None,  # No agent association for extraction files
+                agent_id=None,  # No agent association for extraction files,
+                doc_metadata=metadata,
             )
 
             db_session.add(document)
             db_session.commit()
             db_session.refresh(document)
+
+            # UPDATE METADATA TO THE ORIGINAL DOCUMENT
+            metadata["extraction_file_id"] = document.id
+            source_document.doc_metadata = metadata
+            flag_modified(source_document, "doc_metadata")
+            db_session.commit()
+            db_session.refresh(source_document)
 
             logger.info("Saved extraction JSON file: %s for source document ID: %s", json_filename, source_document_id)
 

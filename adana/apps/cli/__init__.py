@@ -1,0 +1,1 @@
+"""Adana CLI application."""

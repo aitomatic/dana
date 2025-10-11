@@ -56,7 +56,7 @@ export function JsonViewer({ open, onClose, fileUrl, fileName }: JsonViewerProps
         viewMode === 'formatted' && jsonData ? JSON.stringify(jsonData, null, 2) : rawContent;
       await navigator.clipboard.writeText(content);
       toast.success('JSON content copied to clipboard');
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy content');
     }
   };
@@ -75,7 +75,7 @@ export function JsonViewer({ open, onClose, fileUrl, fileName }: JsonViewerProps
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success('JSON file downloaded');
-    } catch (err) {
+    } catch {
       toast.error('Failed to download file');
     }
   };

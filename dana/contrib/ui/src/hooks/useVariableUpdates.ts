@@ -1,6 +1,43 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import useWebSocketLib from 'react-use-websocket';
 
+/**
+ * Smart timestamp parser that handles mixed WebSocket timestamp formats
+ * 
+ * Backend sends two different timestamp formats:
+ * 1. Variable changes: Unix timestamp in seconds (datetime.now(UTC).timestamp())
+ * 2. Log/Bulk messages: Monotonic time in seconds (asyncio.get_event_loop().time())
+ * 
+ * This function detects the format and converts appropriately.
+ */
+export const parseWebSocketTimestamp = (timestamp: number): Date => {
+  try {
+    // Strategy 1: Check if it's a reasonable Unix timestamp (2020-2030)
+    const minUnixSeconds = 1577836800; // 2020-01-01
+    const maxUnixSeconds = 1893456000; // 2030-01-01
+    
+    if (timestamp >= minUnixSeconds && timestamp <= maxUnixSeconds) {
+      // This is a Unix timestamp in seconds - convert to milliseconds
+      return new Date(timestamp * 1000);
+    }
+    
+    // Strategy 2: Check if it's monotonic time (small positive number)
+    if (timestamp > 0 && timestamp < 1000000) {
+      // This is monotonic time - cannot convert to absolute time
+      // Use current time as fallback
+      console.warn(`Monotonic timestamp detected: ${timestamp}. Using current time.`);
+      return new Date();
+    }
+    
+    // Strategy 3: Default - treat as Unix seconds
+    return new Date(timestamp * 1000);
+  } catch (error) {
+    // Fallback to current time if parsing fails
+    console.error('Timestamp parsing error:', error, { timestamp });
+    return new Date();
+  }
+};
+
 // Variable update message types
 export interface VariableUpdateMessage {
   type: 'variable_change';
@@ -111,7 +148,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             variable: updateMessage.variable,
             oldValue: updateMessage.old_value,
             newValue: updateMessage.new_value,
-            timestamp: new Date(updateMessage.timestamp * 1000), // Convert from Unix timestamp
+            timestamp: parseWebSocketTimestamp(updateMessage.timestamp),
           };
 
           setUpdates((prev) => {
@@ -129,7 +166,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             id: `log-${++logIdCounter.current}`,
             level: logMessage.level,
             message: logMessage.message,
-            timestamp: new Date(logMessage.timestamp * 1000), // Convert from Unix timestamp
+            timestamp: parseWebSocketTimestamp(logMessage.timestamp),
           };
 
           setLogUpdates((prev) => {
@@ -150,7 +187,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             successful_count: progressMessage.successful_count,
             failed_count: progressMessage.failed_count,
             estimated_time_remaining: progressMessage.estimated_time_remaining,
-            timestamp: new Date(progressMessage.timestamp * 1000),
+            timestamp: parseWebSocketTimestamp(progressMessage.timestamp),
           });
         } else if (data.type === 'bulk_evaluation_result') {
           const resultMessage = data as BulkEvaluationResultMessage;
@@ -163,7 +200,7 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             response_time: resultMessage.response_time,
             status: resultMessage.status as 'success' | 'error',
             error: resultMessage.error,
-            timestamp: new Date(resultMessage.timestamp * 1000),
+            timestamp: parseWebSocketTimestamp(resultMessage.timestamp),
           };
 
           setBulkEvaluationResults((prev) => {

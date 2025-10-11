@@ -7,6 +7,8 @@ interface HTMLRendererProps {
   className?: string;
   theme?: 'light' | 'dark';
   backgroundContext?: 'user' | 'agent' | 'default';
+  messageId?: string;
+  hasActiveButtons?: boolean;
 }
 
 export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
@@ -14,11 +16,13 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
   className = '',
   theme = 'light',
   backgroundContext = 'default',
+  messageId,
+  hasActiveButtons = true,
 }) => {
   // Define font size classes for consistency with MarkdownViewerSmall
   const textSizeClasses = 'text-xs xl:text-sm';
 
-  // Sanitize HTML content to prevent XSS attacks
+  // Sanitize HTML content to prevent XSS attacks and add disabled styling for inactive buttons
   const sanitizeHTML = (htmlContent: string): string => {
     // Basic sanitization - allow common safe tags including interactive elements
     const allowedTags = [
@@ -66,7 +70,7 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
 
-    // Recursively sanitize nodes
+    // Recursively sanitize nodes and add disabled styling for inactive buttons
     const sanitizeNode = (node: Node): void => {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
@@ -76,6 +80,13 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
         if (!allowedTags.includes(tagName)) {
           element.replaceWith(...Array.from(element.childNodes));
           return;
+        }
+
+        // Handle button elements - add disabled styling if buttons are not active
+        if (tagName === 'button' && !hasActiveButtons) {
+          element.classList.add('button-disabled');
+          element.setAttribute('disabled', 'true');
+          element.setAttribute('aria-disabled', 'true');
         }
 
         // Remove disallowed attributes
@@ -147,26 +158,35 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
 
   // Function to check if a button is in the active message
   const isButtonInActiveMessage = (button: Element): boolean => {
+    // If buttons are not active for this message, don't allow clicks
+    if (!hasActiveButtons) {
+      console.log('Buttons are disabled for this message');
+      return false;
+    }
+
     // Find the message container for this button
     const messageContainer = button.closest('[data-message-id]');
     if (!messageContainer) {
       // If no message ID, assume it's the current message (fallback)
-      return true;
+      return hasActiveButtons;
     }
 
-    // Check if this is the latest message with options
+    // Check if this is the current message
     const messageId = messageContainer.getAttribute('data-message-id');
-
-    const isActive = messageId === currentMessageId;
+    const isActive = messageId === currentMessageId && hasActiveButtons;
+    
     console.log(
-      `Button message ID: ${messageId}, Current: ${currentMessageId}, Active: ${isActive}`,
+      `Button message ID: ${messageId}, Current: ${currentMessageId}, HasActiveButtons: ${hasActiveButtons}, Active: ${isActive}`,
     );
 
     return isActive;
   };
 
-  // Generate a stable message ID that only changes when HTML content changes
+  // Use provided messageId or generate a stable message ID that only changes when HTML content changes
   const currentMessageId = useMemo(() => {
+    if (messageId) {
+      return messageId;
+    }
     // Create a hash based on content length and first few characters
     // This ensures the ID only changes when content actually changes
     const contentHash =
@@ -177,7 +197,7 @@ export const HTMLRenderer: React.FC<HTMLRendererProps> = ({
         .map((c) => c.charCodeAt(0))
         .join('');
     return `message-${contentHash}`;
-  }, [sanitizedHTML]);
+  }, [messageId, sanitizedHTML]);
 
   // Function to handle active option button clicks
   const handleActiveOptionClick = (button: Element) => {

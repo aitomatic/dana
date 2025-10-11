@@ -4,7 +4,13 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { SystemRestart, Xmark, NavArrowRight } from 'iconoir-react';
+import {
+  SystemRestart,
+  Xmark,
+  NavArrowRight,
+  Clock,
+  Trash,
+} from 'iconoir-react';
 // import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
@@ -12,7 +18,7 @@ const TRANSITION_DURATION = '0.5s';
 const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
 const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
-// Add CSS styles for node selection
+// Add CSS styles for node selection and generation
 const nodeStyles = `
   .custom-node {
     transition: ${TRANSITION_ALL};
@@ -24,12 +30,25 @@ const nodeStyles = `
     animation: selectedPulse 2s ease-in-out infinite;
   }
 
+  .custom-node.generating {
+   
+  }
+
   @keyframes selectedPulse {
     0%, 100% {
-      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(107, 79, 255, 0.1);
     }
     50% {
-      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(107, 79, 255, 0.1);
+    }
+  }
+
+  @keyframes generatingPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 2px rgb(107, 79, 255), 0 0 0 4px rgba(107, 79, 255, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 0 2px rgb(107, 79, 255), 0 0 0 8px rgba(107, 79, 255, 0.1);
     }
   }
 `;
@@ -43,7 +62,9 @@ if (typeof document !== 'undefined') {
 
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
+  isGenerating?: boolean;
   onNodeClick: (event: React.MouseEvent) => void;
+  onDeleteNode?: (nodeId: string, nodePath: string) => void;
 }
 
 interface NodeData {
@@ -53,40 +74,45 @@ interface NodeData {
   hasChildren?: boolean;
   isExpanded?: boolean;
   nodePath?: string;
+  isRootNode?: boolean;
 }
 
 // Helper functions for status styling
 const getStatusColor = (status?: string) => {
   switch (status) {
-    // case 'pending': return '#F97316'; // Orange
+    case 'pending':
+      return 'rgb(255, 232, 79)'; // Warning-400 - Ctrl.xyz accent yellow
     case 'in_progress':
-      return '#3B82F6'; // Blue
+      return 'rgb(79, 204, 255)'; // Cyan-400 - Primary cyan accent
     case 'success':
-      return '#10B981'; // Green
+      return 'rgb(16, 185, 129)'; // Success-500
     case 'failed':
-      return '#EF4444'; // Red
+      return 'rgb(255, 79, 79)'; // Error-500 - Ctrl.xyz error red
     default:
-      return '#6B7280'; // Gray
+      return 'rgb(107, 108, 116)'; // Gray-500 - Ctrl.xyz tertiary text
   }
 };
 
 const getStatusIcon = (status?: string) => {
   console.log('🧠 status: ', status);
   switch (status) {
+    case 'pending':
+      return <Clock className="text-warning-400" />;
     case 'in_progress':
-      return <SystemRestart className="animate-spin" />;
+      return <SystemRestart className="text-cyan-400 animate-spin" />;
     case 'success':
-      return '';
+      return null;
     case 'failed':
-      return <Xmark />;
+      return <Xmark className="text-error-500" />;
     default:
-      return '';
+      return null;
   }
 };
 
 const getStatusText = (status?: string) => {
   switch (status) {
-    // case 'pending': return 'Knowledge generation pending';
+    case 'pending':
+      return 'Knowledge generation pending';
     case 'in_progress':
       return 'Generating knowledge...';
     case 'success':
@@ -160,15 +186,27 @@ export const FilePopup = ({
   </PortalPopup>
 );
 
-const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }) => {
+const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, isGenerating = false, onNodeClick, onDeleteNode }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [, setPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const nodeData = data as NodeData;
   const knowledgeStatus = nodeData.knowledgeStatus;
   const isLeafNode = nodeData.isLeafNode;
   const hasChildren = nodeData.hasChildren;
   const isExpanded = nodeData.isExpanded;
+  const isRootNode = nodeData.isRootNode;
+
+  // Handle delete button click
+  const handleDeleteClick = (event: React.MouseEvent) => {
+    // Use nodePath as fallback ID if data.id is undefined
+    const nodeId = data.id || nodeData.nodePath;
+    event.stopPropagation(); // Prevent node click
+    if (onDeleteNode && nodeData.nodePath) {
+      onDeleteNode(nodeId, nodeData.nodePath);
+    }
+  };
 
   useEffect(() => {
     if (isSelected && nodeRef.current) {
@@ -181,6 +219,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   const getNodeClasses = () => {
     const baseClasses = ['custom-node'];
     if (isSelected) baseClasses.push('selected');
+    if (isGenerating) baseClasses.push('generating');
     return baseClasses.join(' ');
   };
 
@@ -189,7 +228,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   //   if (!isSelected) return null;
 
   //   return (
-  //     <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+  //     <div className="flex absolute -top-1 -right-1 justify-center items-center w-5 h-5 bg-blue-600 rounded-full shadow-lg animate-pulse">
   //       {/* <CheckIcon size={14} className="text-white" /> */}
   //     </div>
   //   );
@@ -223,6 +262,17 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         }
       : {};
 
+    // Add generation styling (prioritize over other states)
+    if (isGenerating) {
+      return {
+        ...baseStyle,
+        ...selectionStyle,
+        background: 'rgb(207, 250, 254)', // Cyan-100 - Light cyan
+        border: '1px solid rgb(79, 204, 255)', // Cyan-400 - Primary cyan accent
+        boxShadow: '0 0 0 1px rgb(79, 204, 255)',
+      };
+    }
+
     if (!isLeafNode) {
       // Parent nodes - different styling based on expansion state
       return {
@@ -240,45 +290,56 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
 
     // Leaf nodes - status-based styling
     switch (knowledgeStatus?.status) {
-      // case 'pending':
-      //   return {
-      //     ...baseStyle,
-      //     background: '#FEF3C7', // Light yellow
-      //     border: '2px solid #F97316', // Orange border
-      //   };
+      case 'pending':
+        return {
+          ...baseStyle,
+          ...selectionStyle,
+          background: 'rgb(254, 243, 199)', // Warning-100 - Light yellow
+          border: '1px solid rgb(255, 232, 79)', // Warning-400 - Ctrl.xyz accent yellow
+          opacity: 0.8, // Slightly faded
+        };
       case 'in_progress':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light blue
-          border: '2px solid #aac5e6', // Blue border
+          background: 'rgb(207, 250, 254)', // Cyan-100 - Light cyan
+          border: '1px solid rgb(79, 204, 255)', // Cyan-400 - Primary cyan accent
+          boxShadow: '0 0 0 1px rgb(79, 204, 255)',
         };
       case 'success':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light green
-          border: '2px solid #aac5e6', // Green border
+          background: 'rgb(236, 253, 245)', // Success-100 - Light green
+          border: '1px solid rgb(16, 185, 129)', // Success-500
         };
       case 'failed':
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light red
-          border: '2px solid #EF4444', // Red border
+          background: 'rgb(254, 226, 226)', // Error-100 - Light red
+          border: '1px solid rgb(255, 79, 79)', // Error-500 - Ctrl.xyz error red
         };
       default:
         return {
           ...baseStyle,
           ...selectionStyle,
-          background: '#E1EBFE', // Light gray
-          // border: '2px solid #9CA3AF', // Gray border
+          background: 'rgb(243, 244, 246)', // Gray-100 - Light gray
+          border: '1px solid rgb(107, 108, 116)', // Gray-500 - Ctrl.xyz tertiary text
+          opacity: 0.6, // More faded for unknown status
         };
     }
   };
 
   return (
-    <div ref={nodeRef} className={getNodeClasses()} style={getNodeStyling()} onClick={onNodeClick}>
+    <div
+      ref={nodeRef}
+      className={getNodeClasses()}
+      style={getNodeStyling()}
+      onClick={onNodeClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div
         style={{
           width: '100%',
@@ -289,15 +350,65 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       >
         <span style={{ textAlign: 'left', flex: 1 }}>{nodeData.label}</span>
         {/* Icons positioned on the right edge */}
-        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8, gap: 4 }}>
+          {/* Delete button - only show on hover and if onDeleteNode is provided, but not on root nodes */}
+          {isHovered && onDeleteNode && !isRootNode && (
+            <button
+              onClick={handleDeleteClick}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '0%',
+                transform: 'translate(25%,-40%)',
+                border: '1px solid rgba(166, 166, 166, 0.3)',
+                background: 'rgba(255, 255, 255, 1)',
+                borderRadius: '99px',
+                padding: '10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                zIndex: 1000,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f1f1f1';
+                e.currentTarget.style.borderColor = 'rgba(166, 166, 166, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#f1f1f1';
+                e.currentTarget.style.borderColor = 'rgba(166, 166, 166, 0.3)';
+              }}
+              title="Delete node"
+            >
+              <Trash width={20} height={20} style={{ color: '#7d7d7d' }} />
+            </button>
+          )}
           {hasChildren && (
             <span style={{ fontSize: '16px' }}>{isExpanded ? '' : <NavArrowRight />}</span>
           )}
-          {isLeafNode && knowledgeStatus && (
+          {/* Generating indicator - show spinning icon when generating */}
+          {isGenerating && (
+            <span style={{ fontSize: '16px' }}>
+              <SystemRestart className="text-cyan-500 animate-spin" />
+            </span>
+          )}
+          {/* Status icon - only show if not generating */}
+          {isLeafNode && knowledgeStatus && !isGenerating && (
             <span style={{ fontSize: '16px' }}>{getStatusIcon(knowledgeStatus.status)}</span>
           )}
         </div>
       </div>
+
+      {/* Progress bar for in-progress knowledge generation */}
+      {isLeafNode && knowledgeStatus?.status === 'in_progress' && (
+        <div className="mt-2 w-full h-2 bg-gray-200 rounded-full">
+          <div
+            className="h-2 bg-cyan-400 rounded-full transition-all duration-300 animate-pulse"
+            style={{ width: '100%' }}
+          ></div>
+        </div>
+      )}
 
       {/* Handles can be hidden or removed if not needed */}
       <Handle

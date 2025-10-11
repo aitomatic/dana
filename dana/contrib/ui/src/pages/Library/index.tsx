@@ -2,14 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-import {
-  IconSearch,
-  IconFolderPlus,
-  IconRefresh,
-  IconArrowLeft,
-  IconFileExport,
-} from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconArrowLeft, IconUpload } from '@tabler/icons-react';
 import type { LibraryItem, FolderItem } from '@/types/library';
 import { useTopicOperations, useDocumentOperations } from '@/hooks/use-api';
 import { CreateFolderDialog } from '@/components/library/create-folder-dialog';
@@ -25,8 +18,10 @@ import { PdfViewer } from '@/components/library/pdf-viewer';
 import { JsonViewer } from '@/components/library/json-viewer';
 import { useExtractionFileStore } from '@/stores/extraction-file-store';
 import { ExtractionFilePopup } from './extraction-file';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 export default function LibraryPage() {
+  const { trackFolderCreation, trackError } = useDanaAnalytics();
   // API hooks
   const {
     fetchTopics,
@@ -35,7 +30,7 @@ export default function LibraryPage() {
     deleteTopic,
     topics,
     isLoading: topicsLoading,
-    isCreating: isCreatingTopic,
+    // isCreating: isCreatingTopic,
     isUpdating: isUpdatingTopic,
     error: topicsError,
     clearError: clearTopicsError,
@@ -45,7 +40,6 @@ export default function LibraryPage() {
     fetchDocuments,
     updateDocument,
     deleteDocument,
-    downloadDocument,
     documents,
     isLoading: documentsLoading,
     isUpdating: isUpdatingDocument,
@@ -58,7 +52,8 @@ export default function LibraryPage() {
     useFolderNavigation();
 
   // Extraction file store
-  const { openExtractionPopup, isExtractionPopupOpen } = useExtractionFileStore();
+  const { openExtractionPopup, openExtractionPopupWithDocument, isExtractionPopupOpen } =
+    useExtractionFileStore();
 
   // Local state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
@@ -129,17 +124,28 @@ export default function LibraryPage() {
     if (item.type === 'folder') {
       // Navigate to folder
       navigateToFolder(item as FolderItem);
-    } else if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'pdf') {
-      setPdfFileUrl(item.path);
-      setPdfFileName(item.name);
-      setPdfViewerOpen(true);
-    } else if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'json') {
-      setJsonFileUrl(item.path);
-      setJsonFileName(item.name);
-      setJsonViewerOpen(true);
-    } else {
-      // Open document preview (other file types)
-      console.log('View document:', item);
+    } else if (item.type === 'file') {
+      // Find the document in the documents array
+      const documentId = parseInt(item.id.replace('doc-', ''));
+      const document = documents?.find((d) => d.id === documentId);
+
+      if (document) {
+        // Open extraction dialog with the document
+        openExtractionPopupWithDocument(document);
+      } else {
+        // Fallback to original behavior for files without document data
+        if ((item as any).extension?.toLowerCase() === 'pdf') {
+          setPdfFileUrl(item.path);
+          setPdfFileName(item.name);
+          setPdfViewerOpen(true);
+        } else if ((item as any).extension?.toLowerCase() === 'json') {
+          setJsonFileUrl(item.path);
+          setJsonFileName(item.name);
+          setJsonViewerOpen(true);
+        } else {
+          console.log('View document:', item);
+        }
+      }
     }
   };
 
@@ -195,6 +201,9 @@ export default function LibraryPage() {
       // Extract error message from the error object (handles both Error and ApiError)
       const errorMessage = error?.message || 'Failed to delete item';
 
+      // Track deletion error
+      trackError('library_item_deletion_failed', errorMessage, selectedItem.id);
+
       // For topics with documents, the store automatically retries with force=true
       // So we should only see an error if the retry also failed
       console.log('Delete error in UI:', errorMessage);
@@ -211,21 +220,22 @@ export default function LibraryPage() {
     }
   };
 
-  const handleDownloadDocument = async (item: LibraryItem) => {
-    if (item.type === 'file') {
-      try {
-        const documentId = parseInt(item.id.replace('doc-', ''));
-        await downloadDocument(documentId);
-        toast.success('Document downloaded successfully');
-      } catch {
-        toast.error('Failed to download document');
-      }
-    }
-  };
-
   const handleCreateFolder = async (name: string) => {
-    await createTopic({ name, description: `Topic: ${name}` });
-    setShowCreateFolder(false);
+    try {
+      await createTopic({ name, description: `Topic: ${name}` });
+
+      // Track folder creation
+      trackFolderCreation(name);
+
+      setShowCreateFolder(false);
+    } catch (error) {
+      trackError(
+        'folder_creation_failed',
+        error instanceof Error ? error.message : 'Unknown error',
+        name,
+      );
+      throw error;
+    }
   };
 
   const handleSearchChange = (value: string) => {
@@ -244,37 +254,35 @@ export default function LibraryPage() {
     <div className="flex overflow-hidden flex-col h-[calc(100vh-64px)]">
       <div className="flex flex-col flex-1 p-6 space-y-6 min-h-0">
         {/* Header */}
-        
+
         <div className="flex justify-between items-center">
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 w-[280px]">
-            <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
-            <Input
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
+          {/* Filters */}
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1 w-[280px]">
+              <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
+              <Input
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-
-        </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
               <IconRefresh className="w-4 h-4" />
             </Button>
-            <Button
+            {/* <Button
               variant="outline"
               onClick={() => setShowCreateFolder(true)}
               disabled={isCreatingTopic}
             >
               <IconFolderPlus className="mr-2 w-4 h-4" />
               New Topic
-            </Button>
+            </Button> */}
             <Button onClick={openExtractionPopup} variant="default">
-              <IconFileExport className="mr-2 w-4 h-4" />
-              Deep Extract
+              <IconUpload className="mr-2 w-4 h-4" />
+              Upload File
             </Button>
           </div>
         </div>
@@ -312,7 +320,6 @@ export default function LibraryPage() {
           </div>
         )}
 
-
         {/* Data Table */}
         <div className="overflow-hidden flex-1 min-h-0">
           <LibraryTable
@@ -323,7 +330,6 @@ export default function LibraryPage() {
             onViewItem={handleViewItem}
             onEditItem={handleEditItem}
             onDeleteItem={handleDeleteItem}
-            onDownloadItem={handleDownloadDocument}
             allLibraryItems={itemsWithCounts}
           />
         </div>
