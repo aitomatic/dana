@@ -1,0 +1,405 @@
+# pyproject.toml - Dana Language Project Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
+# =============================================================================
+# Build System Configuration
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# =============================================================================
+# Project Metadata
+# =============================================================================
+
+[project]
+name = "dana-lang"
+version = "0.6.0.1rc3"
+description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Christopher Nguyen", email = "ctn@aitomatic.com" },
+]
+maintainers = [
+    { name = "Vinh Luong", email = "vinh@aitomatic.com" },
+    { name = "Annie Ha", email = "annie@aitomatic.com" },
+    { name = "Lam Nguyen", email = "lam@aitomatic.com" },
+    { name = "Roy Vu", email = "roy@aitomatic.com" },
+    { name = "Sang Dinh", email = "sang@aitomatic.com" },
+]
+
+# Core dependencies organized by functionality
+dependencies = [
+    # Cross-project dependency (workspace member)
+    "dana-agent",
+    # AI/LLM Integration (temporarily without anthropic due to version conflict)
+    "aisuite[azure,groq,huggingface,ollama,openai]>=0.1.11",
+    "google-cloud-aiplatform",
+    "httpx>=0.27.0",
+    "llama-index",
+    "openai>=1.55.3",
+    # Language Processing
+    "lark",
+    # Data Processing
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    # Database & Storage
+    "sqlalchemy",
+    # Networking & I/O
+    "aiohttp",
+    "aioconsole",
+    "websockets",
+    # Configuration & Utilities
+    "python-dotenv",
+    "pyyaml",
+    "structlog",
+    # Interactive Features
+    "prompt-toolkit",
+    "pygments",
+    "textual",
+    "pyperclip",
+    # Web Automation
+    "playwright",
+    # API Server
+    "fastapi",
+    "uvicorn",
+    # Testing Frameworks
+    # "datest",  # TODO: publish `datest` on PyPI
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    # Language Server Protocol
+    "lsprotocol",
+    "pygls",
+    # Agent Integration
+    "python-a2a>=0.5.9",
+    # Misc / Other
+    "tqdm",
+    # "aicapture==0.3.5",  # Temporarily disabled due to anthropic version conflict
+    "python-lsp-server[all]>=1.13.0",
+    "pyright>=1.1.403",
+    "jedi>=0.19.2",
+    "llama-index-embeddings-openai>=0.3.1",
+    "llama-index-llms-cohere>=0.5.0",
+    "llama-index-vector-stores-duckdb>=0.4.6",
+    "llama-index-vector-stores-postgres>=0.5.5",
+    "llm-code-executor",
+    "mcp",
+    # Additional dependencies
+    "numpy>=2.2.3", # Numerical computing library for array operations
+    "loguru>=0.7.3", # Better logging library than Python's built-in logging
+    "textual-dev>=1.7.0",
+    # Vision & Document Processing
+    "opencv-python>=4.11.0.86", # Computer vision library for image processing
+    "pillow>=11.1.0", # Python Imaging Library for image processing
+    "pymupdf>=1.25.3", # PDF processing and manipulation library
+    "llama-index-embeddings-azure-openai>=0.3.9",
+    "llama-index-llms-azure-openai>=0.3.4",
+    "llama-index-embeddings-ibm>=0.3.1",
+    "flask>=3.1.1",
+    "llama-search>=0.3.4",
+    "build>=1.3.0",
+    "twine>=6.1.0",
+    "ruff>=0.13.0",
+    "alembic>=1.16.5",
+    "docx2txt>=0.9",
+    "broadcaster==0.3.1",
+    "openpyxl>=3.1.5",
+    "anthropic>=0.67.0",
+    "langfuse==3.5.1",
+    "html2text>=2025.4.15",
+    "beautifulsoup4>=4.13.4",
+    "lxml>=6.0.2",
+    "readability-lxml>=0.8.4.1",
+    "requests>=2.32.4",
+]
+
+# Command-line entry points
+[project.scripts]
+dana-lang = "dana_lang.apps.cli.__main__:main"
+dana-lsp = "dana_lang.core.lang.lsp.server:main"
+
+# Optional dependency groups
+[project.optional-dependencies]
+dev = [
+    # Code Quality & Linting
+    "mypy",         # Static type checking
+    "pre-commit",   # Git hooks for code quality
+    "pylint",       # Additional code analysis
+    "ruff",         # Fast Python linter
+
+    # Testing
+    "pexpect",      # Interactive terminal application testing
+    "pytest-cov",   # Test coverage reporting
+
+    # Development Tools
+    "textual-dev>=1.7.0",  # Textual development tools
+
+    # Build & Distribution
+    "build",        # Package building tool
+    "twine",        # PyPI upload tool
+]
+
+docs = [
+    # Core Documentation
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-mermaid2-plugin",
+    "mkdocs-section-index",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mkdocs-git-revision-date-localized-plugin",
+    "pymdown-extensions[extra]",
+
+    # Auto-sync and Generation
+    "mkdocs-gen-files",               # Generate docs from code structure
+    "mkdocs-literate-nav",            # Auto-generate navigation
+
+    # Validation Tools
+    "doc8",                           # Documentation style checking
+    "linkcheckmd",                    # Fast async link checking
+    "mkdocs-htmlproofer-plugin",      # Broken link detection
+
+    # Advanced Features
+    "mkdocs-awesome-nav",             # Advanced navigation control
+    "mkdocs-include-markdown-plugin", # Reusable content blocks
+    "mkdocs-macros-plugin",           # Variables and templating
+    "mkdocs-print-site-plugin",       # PDF export for offline reading
+    "mkdocs-redirects",               # Handle URL changes
+    "mkdocs-table-reader-plugin",     # Data tables from CSV/JSON
+]
+
+# =============================================================================
+# Package Configuration
+# =============================================================================
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dana_lang.*"]
+exclude = ["tests*", "examples*", "docs*", "tmp*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "**/*.py",
+    "**/*.na",
+    "**/*.lark",
+    "**/*.json",
+    "**/api/server/static/**/*",
+    "**/api/alembic/**/*"
+]
+
+# =============================================================================
+# Package Manager Configuration (uv)
+# =============================================================================
+
+[tool.uv]
+package = true
+preview = true                       # Enable preview features
+resolution = "highest"               # Use highest compatible versions
+prerelease = "allow"              # Avoid pre-release versions
+python-preference = "only-managed"   # Use uv-managed Python installations
+compile-bytecode = true              # Pre-compile .pyc files for performance
+
+[tool.uv.sources]
+# Future: Custom dependency sources
+
+# =============================================================================
+# Code Quality Tools
+# =============================================================================
+
+[tool.black]
+line-length = 140
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "B",    # bugbear (common Python gotchas)
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modern Python features)
+    "N801", # naming conventions - class names
+    "N803", # naming conventions - argument names
+    "N804", # naming conventions - first argument names
+    "F401", # unused imports
+    "F821", # undefined names
+    "F822", # undefined names in __all__
+    "F841", # unused variables
+]
+
+ignore = [
+    "B008",   # Function call in default argument
+    "B010",   # setattr in class body
+    "B024",   # Abstract base class without abstract methods (design pattern choice)
+    "B904",   # raise ... from ...
+    "E203",   # Whitespace before ':' (conflicts with Black)
+    "E402",   # Module level import not at top of file (intentional in CLI)
+    "E501",   # Line too long (handled by line-length)
+    "F403",   # import * used; unable to detect undefined names (acceptable in __init__.py)
+    "I001",   # import block is un-sorted or un-formatted
+    "N802",   # Function name should be lowercase
+    "UP007",  # use `X | Y` for type annotations,
+    "UP035", # deprecated import
+]
+
+exclude = [
+    "*.na",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "dana.egg-info",
+    "**/.archived/**",
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+force-single-line = false
+lines-after-imports = 2
+known-first-party = ["api", "apps", "common", "core", "frameworks", "integrations", "libs", "registry", "specs", "templates"]
+known-third-party = [
+    "openai",
+    "anthropic",
+    "httpx",
+    "structlog",
+    "tqdm",
+    "pytest",
+    "pytest-asyncio",
+    "pre-commit",
+    "ruff",
+    "matplotlib",
+    "pandas",
+    "mypy",
+    "build",
+    "twine",
+    "mkdocs",
+    "mkdocs-material",
+    "requests",
+    "bs4",
+    "lxml",
+    "readability",
+    "html2text",
+]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.pyright]
+reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
+reportAssignmentType = false
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "core.lang.interpreter.*"
+disallow_untyped_defs = true
+
+# Database Migration Tool FOR DANA STUDIO
+[tool.alembic]
+
+# path to migration scripts.
+# this is typically a path given in POSIX (e.g. forward slashes)
+# format, relative to the token %(here)s which refers to the location of this
+# ini file
+script_location = "%(here)s/api/alembic"
+
+# template used to generate migration file names; The default value is %%(rev)s_%%(slug)s
+# Uncomment the line below if you want the files to be prepended with date and time
+# see https://alembic.sqlalchemy.org/en/latest/tutorial.html#editing-the-ini-file
+# for all available tokens
+# file_template = "%%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d-%%(rev)s_%%(slug)s"
+
+# additional paths to be prepended to sys.path. defaults to the current working directory.
+prepend_sys_path = [
+    "."
+]
+
+# timezone to use when rendering the date within the migration file
+# as well as the filename.
+# If specified, requires the python>=3.9 or backports.zoneinfo library and tzdata library.
+# Any required deps can installed by adding `alembic[tz]` to the pip requirements
+# string value is passed to ZoneInfo()
+# leave blank for localtime
+# timezone =
+
+# max length of characters to apply to the "slug" field
+# truncate_slug_length = 40
+
+# set to 'true' to run the environment during
+# the 'revision' command, regardless of autogenerate
+# revision_environment = false
+
+# set to 'true' to allow .pyc and .pyo files without
+# a source .py file to be detected as revisions in the
+# versions/ directory
+# sourceless = false
+
+# version location specification; This defaults
+# to <script_location>/versions.  When using multiple version
+# directories, initial revisions must be specified with --version-path.
+# version_locations = [
+#    "%(here)s/alembic/versions",
+#    "%(here)s/foo/bar"
+# ]
+
+
+# set to 'true' to search source files recursively
+# in each "version_locations" directory
+# new in Alembic version 1.10
+# recursive_version_locations = false
+
+# the output encoding used when revision files
+# are written from script.py.mako
+# output_encoding = "utf-8"
+
+# This section defines scripts or Python functions that are run
+# on newly generated revision scripts.  See the documentation for further
+# detail and examples
+# [[tool.alembic.post_write_hooks]]
+# format using "black" - use the console_scripts runner,
+# against the "black" entrypoint
+# name = "black"
+# type = "console_scripts"
+# entrypoint = "black"
+# options = "-l 79 REVISION_SCRIPT_FILENAME"
+#
+# [[tool.alembic.post_write_hooks]]
+# lint with attempts to fix using "ruff" - use the module runner, against the "ruff" module
+# name = "ruff"
+# type = "module"
+# module = "ruff"
+# options = "check --fix REVISION_SCRIPT_FILENAME"
+#
+# [[tool.alembic.post_write_hooks]]
+# Alternatively, use the exec runner to execute a binary found on your PATH
+# name = "ruff"
+# type = "exec"
+# executable = "ruff"
+# options = "check --fix REVISION_SCRIPT_FILENAME"

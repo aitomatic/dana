@@ -14,9 +14,9 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana"
+name = "dana-internal"
 version = "0.6.0.1rc3"
-description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
+description = "Dana Internal Monorepo - Agent and Language Components"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
@@ -30,118 +30,50 @@ maintainers = [
     { name = "Sang Dinh", email = "sang@aitomatic.com" },
 ]
 
-# Core dependencies organized by functionality
+# Common dependencies for all projects
 dependencies = [
-    # AI/LLM Integration
-    "aisuite[anthropic,azure,groq,huggingface,ollama,openai]>=0.1.11",
-    "google-cloud-aiplatform",
-    "httpx>=0.27.0",
-    "llama-index",
-    "openai>=1.55.3",
-    # Language Processing
-    "lark",
-    # Data Processing
-    "pandas",
-    "matplotlib",
-    "seaborn",
-    # Database & Storage
-    "sqlalchemy",
-    # Networking & I/O
-    "aiohttp",
-    "aioconsole",
-    "websockets",
-    # Configuration & Utilities
-    "python-dotenv",
-    "pyyaml",
-    "structlog",
-    # Interactive Features
-    "prompt-toolkit",
-    "pygments",
-    "textual",
-    "pyperclip",
-    # Web Automation
-    "playwright",
-    # API Server
-    "fastapi",
-    "uvicorn",
-    # Testing Frameworks
-    # "datest",  # TODO: publish `datest` on PyPI
-    "pytest",
-    "pytest-asyncio",
-    "pytest-mock",
-    # Language Server Protocol
-    "lsprotocol",
-    "pygls",
-    # Agent Integration
-    "python-a2a>=0.5.9",
-    # Misc / Other
-    "tqdm",
-    "aicapture==0.3.5",
-    "python-lsp-server[all]>=1.13.0",
-    "pyright>=1.1.403",
-    "jedi>=0.19.2",
-    "llama-index-embeddings-openai>=0.3.1",
-    "llama-index-llms-cohere>=0.5.0",
-    "llama-index-vector-stores-duckdb>=0.4.6",
-    "llama-index-vector-stores-postgres>=0.5.5",
-    "llm-code-executor",
-    "mcp",
-    # Additional dependencies
-    "numpy>=2.2.3", # Numerical computing library for array operations
-    "loguru>=0.7.3", # Better logging library than Python's built-in logging
-    "textual-dev>=1.7.0",
-    # Vision & Document Processing
-    "opencv-python>=4.11.0.86", # Computer vision library for image processing
-    "pillow>=11.1.0", # Python Imaging Library for image processing
-    "pymupdf>=1.25.3", # PDF processing and manipulation library
-    "llama-index-embeddings-azure-openai>=0.3.9",
-    "llama-index-llms-azure-openai>=0.3.4",
-    "llama-index-embeddings-ibm>=0.3.1",
-    "flask>=3.1.1",
-    "llama-search>=0.3.4",
+    # Testing frameworks (common to all projects)
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.10.0",
+    # Code quality tools (common to all projects)
+    "black>=22.0",
+    "ruff>=0.13.0",
+    "mypy>=1.8.0",
+    "pre-commit>=4.3.0",
+    # Build tools (common to all projects)
     "build>=1.3.0",
     "twine>=6.1.0",
-    "ruff>=0.13.0",
-    "alembic>=1.16.5",
-    "docx2txt>=0.9",
-    "broadcaster==0.3.1",
-    "openpyxl>=3.1.5",
-    "anthropic>=0.30.1",
-    "langfuse==3.5.1",
-    "html2text>=2025.4.15",
-    "beautifulsoup4>=4.13.4",
-    "lxml>=6.0.2",
-    "readability-lxml>=0.8.4.1",
-    "requests>=2.32.4",
 ]
 
-# Command-line entry points
+# Command-line entry points (workspace coordinator)
 [project.scripts]
-dana = "dana.apps.cli.__main__:main"
-dana-ls = "dana.core.lang.lsp.server:main"
-adana = "adana.apps.dana.__main__:main"
-adana-repl = "adana.apps.repl.__main__:main"
-adana-ls = "adana.core.lang.lsp.server:main"
+# These will be provided by the individual subprojects
+# dana = "dana-lang @ file://./dana-lang"
+# dana-agent = "dana-agent @ file://./dana-agent"
 
 # Optional dependency groups
 [project.optional-dependencies]
-dev = [
-    # Code Quality & Linting
-    "mypy",         # Static type checking
-    "pre-commit",   # Git hooks for code quality
-    "pylint",       # Additional code analysis
-    "ruff",         # Fast Python linter
+# Install all subprojects
+all = [
+    "dana-lang",
+    "dana-agent",
+]
 
-    # Testing
+# Install individual subprojects
+dana-lang = [
+    "dana-lang",
+]
+
+dana-agent = [
+    "dana-agent",
+]
+
+dev = [
+    # Development tools for the monorepo
     "pexpect",      # Interactive terminal application testing
     "pytest-cov",   # Test coverage reporting
-
-    # Development Tools
     "textual-dev>=1.7.0",  # Textual development tools
-
-    # Build & Distribution
-    "build",        # Package building tool
-    "twine",        # PyPI upload tool
 ]
 
 docs = [
@@ -181,12 +113,18 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dana*", "alembic*", "adana*"]
+include = ["dana-lang*", "dana-agent*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*", "**/api/alembic/**/*"]
-adana = ["**/*.py", "**/*.na", "**/*.lark", "**/*.json", "**/api/server/static/**/*", "**/api/alembic/**/*"]
+"*" = [
+    "**/*.py",
+    "**/*.na",
+    "**/*.lark",
+    "**/*.json",
+    "**/api/server/static/**/*",
+    "**/api/alembic/**/*"
+]
 
 # =============================================================================
 # Package Manager Configuration (uv)
@@ -200,8 +138,17 @@ prerelease = "allow"              # Avoid pre-release versions
 python-preference = "only-managed"   # Use uv-managed Python installations
 compile-bytecode = true              # Pre-compile .pyc files for performance
 
+# Workspace configuration
+[tool.uv.workspace]
+members = [
+    "dana-lang",
+    "dana-agent",
+]
+
 [tool.uv.sources]
-# Future: Custom dependency sources
+# Workspace member sources
+dana-lang = { workspace = true }
+dana-agent = { workspace = true }
 
 # =============================================================================
 # Code Quality Tools
@@ -261,7 +208,7 @@ exclude = [
 force-sort-within-sections = true
 force-single-line = false
 lines-after-imports = 2
-known-first-party = ["adana", "dana"]
+known-first-party = ["dana-lang", "dana-agent"]
 known-third-party = [
     "openai",
     "anthropic",
