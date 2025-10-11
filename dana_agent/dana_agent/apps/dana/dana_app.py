@@ -11,6 +11,22 @@ import sys
 
 import structlog
 
+# Load .env files automatically when dana_app is imported
+from dotenv import find_dotenv, load_dotenv
+
+
+def _load_env():
+    """Load environment variables from .env file."""
+    dotenv_path = find_dotenv()
+    if dotenv_path:
+        load_dotenv(dotenv_path)
+    else:
+        load_dotenv()
+
+
+# Load .env automatically when dana_app is imported
+_load_env()
+
 from dana_agent.apps.dana.dana_agent import DanaAgent
 from dana_agent.apps.dana.thought_logger import ThoughtLogger
 

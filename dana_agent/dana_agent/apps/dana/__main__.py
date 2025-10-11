@@ -12,6 +12,15 @@ import sys
 def main():
     """Main entry point for the Dana conversational agent."""
     try:
+        # Load .env files manually
+        from dotenv import find_dotenv, load_dotenv
+
+        dotenv_path = find_dotenv()
+        if dotenv_path:
+            load_dotenv(dotenv_path)
+        else:
+            load_dotenv()
+
         from dana_agent.apps.dana.dana_app import DanaApp
 
         app = DanaApp()

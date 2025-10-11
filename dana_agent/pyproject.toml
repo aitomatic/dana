@@ -55,8 +55,8 @@ dependencies = [
 
 # Command-line entry points
 [project.scripts]
-dana-agent = "apps.dana.__main__:main"
-dana-agent-repl = "apps.repl.__main__:main"
+dana-agent = "dana_agent.apps.dana.__main__:main"
+dana-agent-repl = "dana_agent.apps.repl.__main__:main"
 
 # Optional dependency groups
 [project.optional-dependencies]
@@ -92,7 +92,7 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["apps*", "common*", "core*", "frameworks*", "lib*", "specs*"]
+include = ["dana_agent*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*", "dana_agent.egg-info*", ".venv*", ".ruff_cache*", "__pycache__*"]
 
 [tool.setuptools.package-data]
