@@ -6,6 +6,8 @@ and orchestrates other agents, resources, and workflows.
 """
 
 import logging
+import os
+import sys
 
 import structlog
 
@@ -31,6 +33,15 @@ class DanaApp:
 
     def __init__(self):
         """Initialize the Dana application."""
+        # Handle Windows console environment issues
+        if sys.platform == "win32":
+            # Fix for Windows CI/CD environments that may have xterm-256color TERM
+            # but expect Windows console behavior
+            term = os.environ.get("TERM", "")
+            if term in ["xterm-256color", "xterm-color"] and not os.environ.get("WT_SESSION"):
+                # This is likely a CI/CD environment, disable prompt_toolkit console features
+                os.environ["PROMPT_TOOLKIT_NO_CONSOLE"] = "1"
+
         # Configure logging to suppress debug messages
         logging.basicConfig(level=logging.WARNING, format="%(message)s")
 
@@ -53,10 +64,22 @@ class DanaApp:
             history_file = history_dir / "dana_history.txt"
 
             self.history = FileHistory(str(history_file))
-            self.session = PromptSession(
-                history=self.history,
-                style=self._get_style(),
-            )
+
+            # Handle Windows console issues gracefully
+            try:
+                self.session = PromptSession(
+                    history=self.history,
+                    style=self._get_style(),
+                )
+            except Exception as e:
+                # If prompt_toolkit fails to initialize (e.g., Windows console issues),
+                # disable it and fall back to basic input()
+                if "NoConsoleScreenBufferError" in str(e) or "console" in str(e).lower():
+                    self.session = None
+                    self.history = None
+                else:
+                    # Re-raise other exceptions
+                    raise
 
     def _get_style(self):
         """Get the prompt_toolkit style.
