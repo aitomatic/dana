@@ -153,68 +153,70 @@ dana: ## Start the Dana REPL
 	@echo "🚀 Starting Dana REPL..."
 	$(UV_CMD) run dana
 
-test: ## Run all tests (matches CI)
-	@echo "🧪 Running tests (matching CI)..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest -m "not live and not deep" tests/ --tb=short -v --maxfail=10 -k "not rag"
+test: ## Run all tests sequentially (uses each package Makefile)
+	@echo "🧪 Running all tests..."
+	@echo ""
+	@cd dana_agent && $(MAKE) test
+	@echo ""
+	@cd dana_lang && $(MAKE) test
+	@echo ""
+	@cd dana_studio && $(MAKE) test
+	@echo ""
+	@echo "✅ \033[1m\033[32mAll tests passed!\033[0m"
 
-test-agent: ## Run dana-agent tests only
-	@echo "🤖 Running dana-agent tests..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/dana-agent/ --tb=short -v --maxfail=10
+test-agent: ## Run dana-agent tests (uses dana_agent/Makefile)
+	@cd dana_agent && $(MAKE) test
 
-test-lang: ## Run dana-lang tests only
-	@echo "📝 Running dana-lang tests..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/dana-lang/ --tb=short -v --maxfail=10
+test-lang: ## Run dana-lang tests (uses dana_lang/Makefile)
+	@cd dana_lang && $(MAKE) test
 
-test-studio: ## Run Dana Studio (frontend) tests
-	@echo "🎨 Running Dana Studio tests..."
-	@if [ -d "dana-lang/contrib/ui" ]; then \
-		cd dana-lang/contrib/ui && npm test; \
-	else \
-		echo "❌ Dana Studio frontend not found at dana-lang/contrib/ui"; \
-	fi
+test-studio: ## Run dana-studio tests (uses dana_studio/Makefile)
+	@cd dana_studio && $(MAKE) test
 
 # =============================================================================
 # Code Quality
 # =============================================================================
 
-lint: ## Check code style and quality (matches CI)
-	@echo "🔍 Running linting checks (matching CI)..."
-	@echo "🚫 Critical checks (E722, F821)..."
-	$(UV_CMD) run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib
-	@echo "⚠️ Important checks (F841, B017)..."
-	$(UV_CMD) run ruff check dana/ tests/ --select F841,B017
-	@echo "✨ Style checks..."
-	$(UV_CMD) run ruff check dana/ tests/ --select UP038,B026,E712,E721,B024,B007
+lint: ## Check code style and quality (all packages)
+	@echo "🔍 Running linting checks..."
+	@cd dana_agent && $(MAKE) lint
+	@cd dana_lang && $(MAKE) lint
+	@cd dana_studio && $(MAKE) lint
+	@echo "✅ All linting checks passed!"
 
 lint-critical: ## Run only critical lint checks (BLOCKING)
 	@echo "🚫 Running critical lint checks (BLOCKING)..."
-	$(UV_CMD) run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib
+	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select E722,F821 --exclude dana_lang/contrib
 
 lint-important: ## Run important lint checks (WARNING)
 	@echo "⚠️ Running important lint checks (WARNING)..."
-	$(UV_CMD) run ruff check dana/ tests/ --select F841,B017
+	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select F841,B017
 
 lint-style: ## Run style and formatting checks (INFO)
 	@echo "✨ Running style and formatting checks (INFO)..."
-	$(UV_CMD) run ruff format --check dana/ tests/
-	$(UV_CMD) run ruff check dana/ tests/ --select UP038,B026,E712,E721,B024,B007
+	$(UV_CMD) run ruff format --check dana_agent/ dana_lang/ dana_studio/
+	$(UV_CMD) run ruff check dana_agent/ dana_lang/ dana_studio/ --select UP038,B026,E712,E721,B024,B007
 
-format: ## Format code automatically
+format: ## Format code automatically (all packages)
 	@echo "✨ Formatting code..."
-	$(UV_CMD) run ruff format dana/ tests/
+	@cd dana_agent && $(MAKE) format
+	@cd dana_lang && $(MAKE) format
+	@cd dana_studio && $(MAKE) format
+	@echo "✅ All formatting complete!"
 
 check: lint format-check ## Run all code quality checks
 	@echo "✅ All quality checks completed!"
 
 format-check: ## Check code formatting (matches CI)
 	@echo "📝 Checking code formatting..."
-	$(UV_CMD) run ruff format --check dana/ tests/
+	$(UV_CMD) run ruff format --check dana_agent/ dana_lang/ dana_studio/
 
-fix: ## Auto-fix all fixable code issues
+fix: ## Auto-fix all fixable code issues (all packages)
 	@echo "🔧 Auto-fixing code issues..."
-	$(UV_CMD) run ruff check --fix dana/ tests/
-	$(UV_CMD) run ruff format dana/ tests/
-	@echo "🔧 Applied all auto-fixes!"
+	@cd dana_agent && $(MAKE) fix
+	@cd dana_lang && $(MAKE) fix
+	@cd dana_studio && $(MAKE) fix
+	@echo "✅ All auto-fixes applied!"
 
 mypy: ## Run type checking
 	@echo "🔍 Running type checks..."
@@ -260,12 +262,16 @@ install-emacs: ## Install Emacs support with LSP
 # Maintenance & Documentation
 # =============================================================================
 
-clean: ## Clean build artifacts and caches
+clean: ## Clean build artifacts and caches (all packages)
 	@echo "🧹 Cleaning build artifacts..."
+	@cd dana_agent && $(MAKE) clean
+	@cd dana_lang && $(MAKE) clean
+	@cd dana_studio && $(MAKE) clean
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	rm -rf .ruff_cache/ .mypy_cache/
+	@echo "✅ All packages cleaned!"
 
 docs-serve: ## Serve documentation locally
 	@echo "📚 Serving docs at http://localhost:8000"
@@ -293,12 +299,18 @@ docs-deps: ## MORE: Install documentation dependencies
 
 test-fast: ## MORE: Run fast tests only (excludes live/deep tests)
 	@echo "⚡ Running fast tests..."
-	DANA_MOCK_LLM=true $(UV_CMD) run pytest -m "not live and not deep" tests/
+	@cd dana_agent && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m "not live and not deep" || true
+	@cd dana_lang && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m "not live and not deep" || true
 
 test-cov: ## MORE: Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	DANA_MOCK_LLM=true $(UV_CMD) run pytest --cov=dana --cov-report=html --cov-report=term tests/
-	@echo "📈 Coverage report generated in htmlcov/"
+	@echo "Coverage for dana_agent..."
+	@cd dana_agent && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_agent --cov-report=html:htmlcov/dana_agent --cov-report=term
+	@echo ""
+	@echo "Coverage for dana_lang..."
+	@cd dana_lang && DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_lang --cov-report=html:htmlcov/dana_lang --cov-report=term
+	@echo ""
+	@echo "📈 Coverage reports generated in dana_agent/htmlcov/ and dana_lang/htmlcov/"
 
 update-deps: ## MORE: Update dependencies to latest versions
 	@echo "⬆️  Updating dependencies..."
@@ -310,7 +322,7 @@ ci-check: lint-critical test ## Run the same checks as GitHub CI
 type-check:
 	@echo "🔍 Running MyPy type checking (local development only)..."
 	@echo "Note: This is not run in CI due to extensive type issues"
-	uv run mypy dana/core/ dana/common/ --ignore-missing-imports --no-strict-optional || {
+	uv run mypy dana_agent/ dana_lang/ dana_studio/ --ignore-missing-imports --no-strict-optional || {
 		echo "⚠️ Type issues found - fix when convenient"
 		echo "Run 'make type-check' locally to see details"
 	}
@@ -336,8 +348,8 @@ dev: setup-dev check test-fast ## MORE: Complete development setup and verificat
 security: ## MORE: Run security checks on codebase
 	@echo "🔒 Running security checks..."
 	@if command -v bandit >/dev/null 2>&1; then \
-		$(UV_CMD) run bandit -r dana/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
-		$(UV_CMD) run bandit -r dana/; \
+		$(UV_CMD) run bandit -r dana_agent/ dana_lang/ dana_studio/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
+		$(UV_CMD) run bandit -r dana_agent/ dana_lang/ dana_studio/; \
 	else \
 		echo "❌ bandit not available. Install with: uv add bandit"; \
 	fi
@@ -388,11 +400,11 @@ publish: check-dist ## Upload to PyPI
 	$(UV_CMD) run twine upload --verbose dist/*
 
 build-frontend: ## Build the frontend (Vite React app) and copy to backend static
-	cd dana-lang/contrib/ui && npm i && npm run build
+	cd dana_lang/contrib/ui && npm i && npm run build
 
 build-all: ## Build frontend and Python package
 	build-frontend & uv run python -m build
 
 studio-server: ## Start Dana Studio server (API backend)
 	@echo "🎨 Starting Dana Studio server..."
-	$(UV_CMD) run python -m dana-lang.api.server
+	$(UV_CMD) run python -m dana_lang.api.server

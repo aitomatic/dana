@@ -9,10 +9,9 @@ import logging
 import os
 import sys
 
-import structlog
-
 # Load .env files automatically when dana_app is imported
 from dotenv import find_dotenv, load_dotenv
+import structlog
 
 
 def _load_env():

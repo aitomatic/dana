@@ -173,7 +173,6 @@ class TestTimeline:
     def test_timeline_basic_functionality(self):
         """Test basic Timeline functionality with multiple event types."""
         import uuid
-        import time
 
         timeline = Timeline(agent_id=f"test_{uuid.uuid4()}")
 

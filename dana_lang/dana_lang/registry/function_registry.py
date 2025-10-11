@@ -13,7 +13,6 @@ import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Union
-from dana_lang.common.utils import Misc
 from dana_lang.common.exceptions import FunctionRegistryError, SandboxError
 from dana_lang.common.runtime_scopes import RuntimeScopes
 from dana_lang.core.lang.interpreter.executor.function_resolver import FunctionType

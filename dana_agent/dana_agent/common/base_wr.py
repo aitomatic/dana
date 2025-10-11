@@ -2,15 +2,9 @@
 Base WR (Workflow, Resource) class with common functionality.
 """
 
-import inspect
-import json
-import xml.etree.ElementTree as ET
-from typing import Any
-
 from .base_war import BaseWAR
 from .protocols import AgentProtocol
 from .protocols.types import DictParams
-from .protocols.war import IS_TOOL_USE
 
 
 class BaseWR(BaseWAR):

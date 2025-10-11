@@ -71,6 +71,31 @@ where = ["."]
 include = ["dana_studio*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
+# =============================================================================
+# Testing Configuration (pytest)
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+minversion = "7.0"
+
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "studio: Dana Studio specific tests",
+]
+
+asyncio_mode = "auto"
+
 [tool.setuptools.package-data]
 "*" = [
     "**/*.py",

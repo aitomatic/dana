@@ -6,11 +6,12 @@ to perform web research tasks.
 """
 
 from dana_agent.core.agent.star_agent import STARAgent
-from dana_agent.lib.workflows import google_lookup_workflow
 from dana_agent.lib.resources import (
-    _google_searcher,
     WorkflowSelectorResource,
+    _google_searcher,
 )
+from dana_agent.lib.workflows import google_lookup_workflow
+
 from .workflows import (
     FactFindingWorkflow,
     ResearchSynthesisWorkflow,

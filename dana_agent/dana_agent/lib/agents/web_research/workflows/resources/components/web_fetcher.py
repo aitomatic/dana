@@ -17,7 +17,6 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from dana_agent.common.llm import LLM
-from dana_agent.common.observable import observable
 from dana_agent.common.protocols import DictParams
 from dana_agent.core.resource.base_resource import BaseResource
 

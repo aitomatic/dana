@@ -1,10 +1,12 @@
 from dana_agent.core.resource.base_resource import BaseResource
+
 from .extract import ExtractResource
 from .fetch import FetchResource
 from .format import FormatResource
 from .process import ProcessResource
-from .synthesize import SynthesizeResource
 from .search import SearchResource
+from .synthesize import SynthesizeResource
+
 
 _resources_for_workflows: dict[str, BaseResource] = {
     "search": SearchResource(resource_id="search"),

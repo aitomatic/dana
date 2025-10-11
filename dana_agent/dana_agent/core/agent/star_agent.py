@@ -12,14 +12,14 @@ from typing import Any
 
 from dana_agent.common.llm.llm import LLM
 from dana_agent.common.observable import observable
-from dana_agent.common.protocols import AgentProtocol, DictParams, ResourceProtocol, WorkflowProtocol, Notifiable
+from dana_agent.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
 from dana_agent.common.protocols.types import LearningPhase
-from dana_agent.core.agent.base_agent import BaseAgent
 from dana_agent.core.resource.todo_resource import ToDoResource
 
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, Learner, PromptEngineer, State, ToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
+
 
 # from dana_agent.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
 

@@ -7,7 +7,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from dana_lang.common.mixins.registry_observable import RegistryObservable
 from dana_lang.core.builtins.struct_system import StructInstance
@@ -15,7 +15,7 @@ from dana_lang.core.builtins.struct_system import StructInstance
 InstanceT = TypeVar("InstanceT", bound=StructInstance)
 
 
-class StructRegistry(RegistryObservable[InstanceT], Generic[InstanceT]):
+class StructRegistry[InstanceT: StructInstance](RegistryObservable[InstanceT]):
     """Optional registry for tracking StructInstance objects globally.
 
     This registry provides instance tracking capabilities for debugging,

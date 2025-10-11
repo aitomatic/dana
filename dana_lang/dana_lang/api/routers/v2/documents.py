@@ -10,8 +10,8 @@ from dana_lang.api.services.extraction_service import get_extraction_service, Ex
 from dana_lang.api.routers.v1.extract_documents import deep_extract
 from dana_lang.api.core.schemas import DeepExtractionRequest, ExtractionResponse
 from dana_lang.api.background.task_manager import get_task_manager
-from dana_lang.api.repositories import get_background_task_repo, AbstractBackgroundTaskRepo, get_document_repo, AbstractDocumentRepo
-from dana_lang.api.core.schemas_v2 import BackgroundTaskResponse, ExtractionOutput
+from dana_lang.api.repositories import get_document_repo, AbstractDocumentRepo
+from dana_lang.api.core.schemas_v2 import ExtractionOutput
 from dana_lang.common.sys_resource.rag import get_global_rag_resource, RAGResourceV2
 
 

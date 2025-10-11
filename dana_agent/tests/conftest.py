@@ -3,9 +3,7 @@ Pytest configuration for LLM tests
 """
 
 import asyncio
-import sys
 from collections.abc import Generator
-from unittest.mock import Mock
 
 import pytest
 

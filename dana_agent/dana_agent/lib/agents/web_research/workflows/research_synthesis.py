@@ -15,20 +15,20 @@ Execution Pattern: SA-loop (95% deterministic, $0 LLM cost)
 """
 
 import logging
-from typing import TYPE_CHECKING
 
 from dana_agent.common.observable import observable
 from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.workflow.base_workflow import BaseWorkflow, WorkflowStep
 from dana_agent.core.workflow.workflow_executor import WorkflowExecutor
+
 from .resources import (
-    _resources_for_workflows,
-    SearchResource,
     FetchResource,
-    FormatResource,
+    SearchResource,
     SynthesizeResource,
+    _resources_for_workflows,
 )
+
 
 logger = logging.getLogger(__name__)
 

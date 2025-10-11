@@ -39,7 +39,7 @@ def example_natural_language_query():
 
     response = result.get("trace_outputs", {}).get("response", "")
     print("\n✅ Query successful!")
-    print(f"\nResponse preview (first 500 chars):")
+    print("\nResponse preview (first 500 chars):")
     print(response[:500] + "..." if len(response) > 500 else response)
 
 
@@ -64,7 +64,7 @@ def example_url_analysis():
 
     response = result.get("trace_outputs", {}).get("response", "")
     print("\n✅ Analysis successful!")
-    print(f"\nResponse preview (first 500 chars):")
+    print("\nResponse preview (first 500 chars):")
     print(response[:500] + "..." if len(response) > 500 else response)
 
 
@@ -89,7 +89,7 @@ def example_structured_data():
 
     response = result.get("trace_outputs", {}).get("response", "")
     print("\n✅ Data extraction successful!")
-    print(f"\nResponse preview (first 500 chars):")
+    print("\nResponse preview (first 500 chars):")
     print(response[:500] + "..." if len(response) > 500 else response)
 
 

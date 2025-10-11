@@ -1,6 +1,7 @@
-from .ping_resource import PingResource
 from .google_searcher import GoogleSearcherResource
+from .ping_resource import PingResource
 from .workflow_selector import WorkflowSelectorResource
+
 
 _google_searcher = GoogleSearcherResource()
 _workflow_select = WorkflowSelectorResource()
