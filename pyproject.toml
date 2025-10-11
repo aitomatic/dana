@@ -56,17 +56,22 @@ dependencies = [
 [project.optional-dependencies]
 # Install all subprojects
 all = [
-    "dana-lang",
-    "dana-agent",
+    "dana_lang",
+    "dana_agent",
+    "dana_studio",
 ]
 
 # Install individual subprojects
-dana-lang = [
-    "dana-lang",
+dana_lang = [
+    "dana_lang",
 ]
 
-dana-agent = [
-    "dana-agent",
+dana_agent = [
+    "dana_agent",
+]
+
+dana_studio = [
+    "dana_studio",
 ]
 
 dev = [
@@ -113,7 +118,7 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dana-lang*", "dana-agent*"]
+include = ["dana_lang*", "dana_agent*", "dana_studio*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
@@ -141,14 +146,16 @@ compile-bytecode = true              # Pre-compile .pyc files for performance
 # Workspace configuration
 [tool.uv.workspace]
 members = [
-    "dana-lang",
-    "dana-agent",
+    "dana_lang",
+    "dana_agent",
+    "dana_studio",
 ]
 
 [tool.uv.sources]
 # Workspace member sources
-dana-lang = { workspace = true }
-dana-agent = { workspace = true }
+dana_lang = { workspace = true }
+dana_agent = { workspace = true }
+dana_studio = { workspace = true }
 
 # =============================================================================
 # Code Quality Tools

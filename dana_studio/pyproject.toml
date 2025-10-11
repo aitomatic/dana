@@ -1,4 +1,4 @@
-# pyproject.toml - Adana Project Configuration
+# pyproject.toml - Dana Studio Configuration
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 # =============================================================================
@@ -14,9 +14,9 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana-agent"
+name = "dana_studio"
 version = "0.6.0.1rc3"
-description = "Dana Agent - Domain-Aware Neurosymbolic Agents"
+description = "Dana Studio - Web-based IDE for Dana Language Development"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "Christopher Nguyen", email = "ctn@aitomatic.com" }]
@@ -28,35 +28,22 @@ maintainers = [
     { name = "Sang Dinh", email = "sang@aitomatic.com" },
 ]
 
-# Core runtime dependencies for LLM app development
+# Core runtime dependencies for Dana Studio
 dependencies = [
-    # No cross-project dependency (dana-agent is standalone)
-    # Core LLM Integration
-    "openai>=1.55.3",
-    "anthropic>=0.67.0",
-    # HTTP client for API calls
-    "httpx>=0.27.0",
-    # Configuration management
-    "python-dotenv>=1.0.0",
-    # Basic utilities
-    "structlog>=24.0.0",
-    "tqdm>=4.65.0",
-    # Data processing (if needed at runtime)
-    "matplotlib>=3.10.6",
-    "pandas>=2.2.0,<2.3.0",  # Aligned with llama-index-embeddings-ibm requirements
-    "langfuse>=3.5.1",
-    # Web research dependencies
-    "requests>=2.31.0",
-    "beautifulsoup4>=4.12.0",
-    "lxml>=5.0.0",
-    "readability-lxml>=0.8.1",
-    "html2text>=2024.2.26",
+    # Cross-project dependencies
+    "dana_lang",
+    "dana_agent",
+    # Web framework
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    # Development tools
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
 ]
 
 # Command-line entry points
 [project.scripts]
-dana-agent = "apps.dana.__main__:main"
-dana-agent-repl = "apps.repl.__main__:main"
+dana-studio = "dana_studio.server:main"
 
 # Optional dependency groups
 [project.optional-dependencies]
@@ -65,23 +52,12 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     # Code quality tools
-    "ruff>=0.13.0",      # Fast Python linter and formatter
-    "mypy>=1.8.0",       # Static type checking
-    "pre-commit>=4.3.0", # Git hooks for code quality
+    "ruff>=0.13.0",
+    "mypy>=1.8.0",
+    "pre-commit>=4.3.0",
     # Package management
-    "build>=1.0.0", # Package building tool
-    "twine>=5.0.0", # PyPI upload tool
-    # Development utilities
-    "langfuse>=3", # LLM observability
-    # REPL support (dev/interactive use)
-    "prompt-toolkit>=3.0.0",
-    "pygments>=2.0.0",
-]
-
-docs = [
-    # Minimal documentation setup
-    "mkdocs",
-    "mkdocs-material",
+    "build>=1.0.0",
+    "twine>=5.0.0",
 ]
 
 # =============================================================================
@@ -92,16 +68,16 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["apps*", "common*", "core*", "frameworks*", "lib*", "specs*"]
-exclude = ["tests*", "examples*", "docs*", "tmp*", "dana_agent.egg-info*", ".venv*", ".ruff_cache*", "__pycache__*"]
+include = ["dana_studio*"]
+exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
 "*" = [
     "**/*.py",
-    "**/*.na",
-    "**/*.lark",
+    "**/*.html",
+    "**/*.css",
+    "**/*.js",
     "**/*.json",
-    "**/*.xml",
 ]
 
 # =============================================================================
@@ -110,11 +86,11 @@ exclude = ["tests*", "examples*", "docs*", "tmp*", "dana_agent.egg-info*", ".ven
 
 [tool.uv]
 package = true
-preview = true                     # Enable preview features
-resolution = "highest"             # Use highest compatible versions
-prerelease = "allow"               # Allow pre-release versions for OpenTelemetry
-python-preference = "only-managed" # Use uv-managed Python installations
-compile-bytecode = true            # Pre-compile .pyc files for performance
+preview = true
+resolution = "highest"
+prerelease = "allow"
+python-preference = "only-managed"
+compile-bytecode = true
 
 [tool.uv.sources]
 # Future: Custom dependency sources
@@ -175,29 +151,17 @@ exclude = [
 force-sort-within-sections = true
 force-single-line = false
 lines-after-imports = 2
-known-first-party = ["apps", "common", "core", "frameworks", "lib", "specs"]
+known-first-party = ["dana_studio"]
 known-third-party = [
-    "openai",
-    "anthropic",
-    "httpx",
-    "structlog",
-    "tqdm",
+    "fastapi",
+    "uvicorn",
     "pytest",
     "pytest-asyncio",
     "pre-commit",
     "ruff",
-    "matplotlib",
-    "pandas",
     "mypy",
     "build",
     "twine",
-    "mkdocs",
-    "mkdocs-material",
-    "requests",
-    "bs4",
-    "lxml",
-    "readability",
-    "html2text",
 ]
 section-order = [
     "future",
@@ -225,12 +189,3 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "dana.core.lang.interpreter.*"
-disallow_untyped_defs = true
-
-[dependency-groups]
-dev = [
-    "langfuse>=3.5.1",
-]
