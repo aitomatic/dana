@@ -12,9 +12,9 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 .DEFAULT_GOAL := help
 
 # All targets are phony (don't create files)
-.PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check mypy \
+.PHONY: help help-more quickstart install setup-dev sync test test-agent test-lang test-studio dana clean lint format fix check mypy \
 	install-ollama start-ollama install-vllm start-vllm install-vscode install-cursor install-vim install-emacs \
-	docs-serve docs-build docs-deps test-fast test-cov update-deps dev security validate-config release-check
+	docs-serve docs-build docs-deps test-fast test-cov update-deps dev security validate-config release-check studio-server
 
 # =============================================================================
 # Help & Quick Start
@@ -22,8 +22,8 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 
 help: ## Show essential Dana commands
 	@echo ""
-	@echo "\033[1m\033[34mDana Development Commands\033[0m"
-	@echo "\033[1m=====================================\033[0m"
+	@echo "\033[1m\033[34mDana Monorepo Development Commands\033[0m"
+	@echo "\033[1m==========================================\033[0m"
 	@echo ""
 	@echo "\033[1mGetting Started:\033[0m"
 	@echo "  \033[36mquickstart\033[0m      🚀 Get Dana running in 30 seconds!"
@@ -32,7 +32,11 @@ help: ## Show essential Dana commands
 	@echo ""
 	@echo "\033[1mUsing Dana:\033[0m"
 	@echo "  \033[36mdana\033[0m            🚀 Start the Dana REPL"
+	@echo "  \033[36mstudio-server\033[0m   🎨 Start Dana Studio server (API backend)"
 	@echo "  \033[36mtest\033[0m            🧪 Run all tests"
+	@echo "  \033[36mtest-agent\033[0m      🤖 Run dana-agent tests only"
+	@echo "  \033[36mtest-lang\033[0m       📝 Run dana-lang tests only"
+	@echo "  \033[36mtest-studio\033[0m     🎨 Run Dana Studio (frontend) tests"
 	@echo ""
 	@echo "\033[1mCode Quality:\033[0m"
 	@echo "  \033[36mlint\033[0m            🔍 Check code style and quality"
@@ -60,8 +64,8 @@ help: ## Show essential Dana commands
 
 help-more: ## Show all available commands including advanced ones
 	@echo ""
-	@echo "\033[1m\033[34mDana Development Commands (Complete)\033[0m"
-	@echo "\033[1m==========================================\033[0m"
+	@echo "\033[1m\033[34mDana Monorepo Development Commands (Complete)\033[0m"
+	@echo "\033[1m====================================================\033[0m"
 	@echo ""
 	@echo "\033[1mGetting Started:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(quickstart|install|setup-dev|sync).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -152,6 +156,22 @@ dana: ## Start the Dana REPL
 test: ## Run all tests (matches CI)
 	@echo "🧪 Running tests (matching CI)..."
 	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest -m "not live and not deep" tests/ --tb=short -v --maxfail=10 -k "not rag"
+
+test-agent: ## Run dana-agent tests only
+	@echo "🤖 Running dana-agent tests..."
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/dana-agent/ --tb=short -v --maxfail=10
+
+test-lang: ## Run dana-lang tests only
+	@echo "📝 Running dana-lang tests..."
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/dana-lang/ --tb=short -v --maxfail=10
+
+test-studio: ## Run Dana Studio (frontend) tests
+	@echo "🎨 Running Dana Studio tests..."
+	@if [ -d "dana-lang/contrib/ui" ]; then \
+		cd dana-lang/contrib/ui && npm test; \
+	else \
+		echo "❌ Dana Studio frontend not found at dana-lang/contrib/ui"; \
+	fi
 
 # =============================================================================
 # Code Quality
@@ -366,13 +386,13 @@ check-dist: ## Validate built distribution files
 publish: check-dist ## Upload to PyPI
 	@echo "🚀 Publishing to PyPI..."
 	$(UV_CMD) run twine upload --verbose dist/*
-run: dana ## Alias for 'dana' command
 
 build-frontend: ## Build the frontend (Vite React app) and copy to backend static
-	cd dana/contrib/ui && npm i && npm run build
+	cd dana-lang/contrib/ui && npm i && npm run build
 
 build-all: ## Build frontend and Python package
 	build-frontend & uv run python -m build
 
-local-server: ## Start the local server
-	uv run python -m dana.api.server
+studio-server: ## Start Dana Studio server (API backend)
+	@echo "🎨 Starting Dana Studio server..."
+	$(UV_CMD) run python -m dana-lang.api.server
