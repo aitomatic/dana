@@ -34,14 +34,14 @@ def __init__(self):
     Loggable.__init__(self)
     Identifiable.__init__(self)
     Configurable.__init__(self)
-    
+
     # Dependent mixins next
     Registerable.__init__(self)
-    
+
     # Most dependent mixins last
     ToolCallable.__init__(self)
     Queryable.__init__(self)
-    
+
     # Custom initialization last
     # ...your code...
 ```
@@ -138,7 +138,7 @@ class ToolCallable(Registerable, Loggable):
 
 ```python
 class Queryable(ToolCallable):
-    def __init__(self, id=None, name=None, description=None, registry=None, 
+    def __init__(self, id=None, name=None, description=None, registry=None,
                  query_strategy='default', query_max_iterations=3)
     def query(self, query_input, **kwargs)
     def get_query_strategy(self)
@@ -168,8 +168,8 @@ class Capable:
 ### Complete Agent Implementation
 
 ```python
-from dana.common.mixins import Configurable, Loggable, ToolCallable
-from dana.common.capability import Capable
+from dana_lang.common.mixins import Configurable, Loggable, ToolCallable
+from dana_lang.common.capability import Capable
 
 class CompleteAgent(Configurable, Loggable, Capable, ToolCallable):
     def __init__(self, config=None, id=None, name="Agent", description="A complete agent"):
@@ -178,15 +178,15 @@ class CompleteAgent(Configurable, Loggable, Capable, ToolCallable):
         Loggable.__init__(self)
         Capable.__init__(self)
         ToolCallable.__init__(self, id, name, description)
-        
+
         # Agent-specific initialization
         self.initialize()
-    
+
     def initialize(self):
         """Agent-specific initialization logic."""
         self.debug("Initializing agent...")
         # Load capabilities, connect resources, etc.
-    
+
     @ToolCallable.tool(description="Run a simple task")
     def run_task(self, task_input):
         """Example tool method."""
@@ -197,16 +197,16 @@ class CompleteAgent(Configurable, Loggable, Capable, ToolCallable):
 ### Simple Resource with Configuration and Logging
 
 ```python
-from dana.common.mixins import Configurable, Loggable
+from dana_lang.common.mixins import Configurable, Loggable
 
 class SimpleResource(Configurable, Loggable):
     def __init__(self, config_path="resource_config.yaml"):
         Configurable.__init__(self, config_path=config_path)
         Loggable.__init__(self)
-        
+
         self.resource_url = self.get("resource_url", "default_url")
         self.debug(f"Initialized resource with URL: {self.resource_url}")
-    
+
     def connect(self):
         self.info("Connecting to resource...")
         # Connection logic here

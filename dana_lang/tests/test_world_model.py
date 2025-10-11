@@ -4,12 +4,12 @@ Test World Model Functionality
 This test file verifies that the basic world model components work correctly.
 """
 
-import shutil
-import tempfile
 from datetime import datetime
 from pathlib import Path
+import shutil
+import tempfile
 
-from dana.core.agent.mind.models.world_model import (
+from dana_lang.core.agent.mind.models.world_model import (
     DomainKnowledge,
     LocationContext,
     LocationProvider,

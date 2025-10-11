@@ -5,11 +5,12 @@ This module tests the resource handling functionality that was extracted from Ba
 into a separate mixin for better code organization.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
-from dana.core.agent.solvers.mixins.resource_handling import ResourceHandlingMixin
-from dana.core.agent.solvers.base import BaseSolver
+import pytest
+
+from dana_lang.core.agent.solvers.base import BaseSolver
+from dana_lang.core.agent.solvers.mixins.resource_handling import ResourceHandlingMixin
 
 
 class TestResourceHandlingMixin:

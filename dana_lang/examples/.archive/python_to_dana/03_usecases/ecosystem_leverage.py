@@ -16,7 +16,8 @@ MIT License
 
 import time
 
-from dana.dana import dana
+from dana_lang.dana import dana
+
 
 # dana.set_debug(True)
 

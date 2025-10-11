@@ -2,8 +2,8 @@
 
 import os
 
-from dana.__init__ import initialize_module_system, reset_module_system
-from dana.core.lang import DanaSandbox
+from dana_lang.__init__ import initialize_module_system, reset_module_system
+from dana_lang.core.lang import DanaSandbox
 
 
 class TestUnderscorePrivacy:
@@ -12,7 +12,7 @@ class TestUnderscorePrivacy:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear struct registry to ensure test isolation
-        from dana.registry import TYPE_REGISTRY
+        from dana_lang.registry import TYPE_REGISTRY
 
         TYPE_REGISTRY.clear()
 

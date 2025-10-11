@@ -6,7 +6,7 @@ Tests the two-statement approach:
 2. result = pipeline(data)        (pure application)
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 def double(x: int) -> int:
@@ -37,7 +37,7 @@ def double(x: int) -> int:
 
 def square(x: int) -> int:
     return x * x
-    
+
 def cube(x: int) -> int:
     return x * x * x
 

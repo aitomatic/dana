@@ -10,7 +10,7 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widgets import Static
 
-from common import DANA_LOGGER
+from dana_lang.common import DANA_LOGGER
 from dana_lang.core.concurrency import is_promise
 from dana_lang.core.concurrency.base_promise import BasePromise
 from dana_lang.core.lang.dana_sandbox import DanaSandbox

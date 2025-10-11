@@ -7,7 +7,7 @@ from unittest.mock import MagicMock  # Keep MagicMock
 
 import pytest  # Import pytest for fixtures
 
-from dana.common.mixins.loggable import Loggable
+from dana_lang.common.mixins.loggable import Loggable
 
 
 # pylint: disable=missing-function-docstring

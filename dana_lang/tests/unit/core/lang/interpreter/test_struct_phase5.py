@@ -8,11 +8,11 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.core.builtins.struct_system import (
+from dana_lang.core.builtins.struct_system import (
     StructInstance,
 )
-from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
+from dana_lang.registry import TYPE_REGISTRY
 
 
 class TestRealWorldScenarios:

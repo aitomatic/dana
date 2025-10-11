@@ -3,7 +3,7 @@
 Test reason function with user context in Dana language.
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 def test_reason_with_context():

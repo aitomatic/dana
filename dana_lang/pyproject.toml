@@ -33,7 +33,7 @@ maintainers = [
 # Core dependencies organized by functionality
 dependencies = [
     # Cross-project dependency (workspace member)
-    "dana-agent",
+    "dana_agent",
     # AI/LLM Integration (temporarily without anthropic due to version conflict)
     "aisuite[azure,groq,huggingface,ollama,openai]>=0.1.11",
     "google-cloud-aiplatform",
@@ -119,8 +119,8 @@ dependencies = [
 
 # Command-line entry points
 [project.scripts]
-dana-lang = "dana_lang.apps.cli.__main__:main"
-dana-lsp = "dana_lang.core.lang.lsp.server:main"
+dana_lang = "dana_lang.apps.cli.__main__:main"
+dana_lsp = "dana_lang.core.lang.lsp.server:main"
 
 # Optional dependency groups
 [project.optional-dependencies]

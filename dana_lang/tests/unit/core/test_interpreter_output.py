@@ -35,12 +35,12 @@ def format_user_error(e, user_input):
 
 # Example function to run interpreter and capture output (replace with your actual runner)
 def run_and_capture_output(input_code):
-    from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-    from dana.core.lang.sandbox_context import SandboxContext
+    from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana_lang.core.lang.sandbox_context import SandboxContext
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
-    from dana.core.lang.parser.utils.parsing_utils import ParserCache
+    from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     try:

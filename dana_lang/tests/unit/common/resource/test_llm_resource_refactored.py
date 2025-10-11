@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
 
 
 class TestLLMResourceRefactored(unittest.TestCase):
@@ -204,8 +204,8 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Verify that the refactoring actually reduced code complexity."""
         import inspect
 
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
 
         # Get method source code lengths for verification
         llm_validate_lines = len(inspect.getsource(LegacyLLMResource._validate_model).split("\n"))

@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def get_na_files():

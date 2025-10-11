@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestSimpleModelSwitching(unittest.TestCase):

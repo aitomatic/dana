@@ -3,7 +3,8 @@ import os
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ def fresh_sandbox(shared_sandbox):
     original_context = shared_sandbox._context
 
     # Create a fresh context for this test
-    from dana.core.lang.sandbox_context import SandboxContext
+    from dana_lang.core.lang.sandbox_context import SandboxContext
 
     fresh_context = SandboxContext()
     fresh_context.interpreter = shared_sandbox._interpreter
@@ -99,6 +100,6 @@ def pytest_sessionstart(session):
 def pytest_sessionfinish(session, exitstatus):
     """Clean up all DanaSandbox instances at the end of the session."""
     logger.debug("Session finish: cleaning up all DanaSandbox instances")
-    from dana.core.lang.dana_sandbox import DanaSandbox
+    from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
     DanaSandbox.cleanup_all()

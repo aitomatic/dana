@@ -2,11 +2,11 @@
 Unit tests for CodeHandler - tests function logic with all dependencies mocked.
 """
 
+import json
 import unittest
 from unittest.mock import patch
-import json
 
-from dana.api.services.code_handler import CodeHandler
+from dana_lang.api.services.code_handler import CodeHandler
 
 
 class TestCodeHandlerUnit(unittest.TestCase):

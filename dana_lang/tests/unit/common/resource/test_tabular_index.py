@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
 
-from dana.common.sys_resource.tabular_index.config import BatchSearchConfig, TabularConfig
-from dana.common.sys_resource.tabular_index.tabular_index import TabularIndex
+from dana_lang.common.sys_resource.tabular_index.config import BatchSearchConfig, TabularConfig
+from dana_lang.common.sys_resource.tabular_index.tabular_index import TabularIndex
 
 
 class TestTabularIndex(unittest.TestCase):

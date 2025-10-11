@@ -2,7 +2,7 @@
 
 import pytest
 
-from dana.core.lang import DanaSandbox
+from dana_lang.core.lang import DanaSandbox
 
 
 class TestImportEdgeCases:

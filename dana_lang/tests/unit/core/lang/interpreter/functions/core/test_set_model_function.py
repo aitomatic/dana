@@ -4,10 +4,10 @@ import os
 import unittest
 from unittest.mock import Mock, patch
 
-from dana.common.exceptions import SandboxError
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.py_set_model import py_set_model as set_model_function
+from dana_lang.common.exceptions import SandboxError
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.py_set_model import py_set_model as set_model_function
 
 
 class TestSetModelFunction(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestSetModelFunction(unittest.TestCase):
         # Verify LLM resource was created and set in context
         llm_resource = self.context.get_system_llm_resource()
         self.assertIsNotNone(llm_resource)
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
 
         self.assertIsInstance(llm_resource, LLMResourceInstance)
         self.assertEqual(llm_resource.model, "openai:gpt-4o")
@@ -55,8 +55,8 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
         # Create existing LLM resource using the new system
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
         existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="existing_llm", model="openai:gpt-4o-mini"))
         self.context.set_system_llm_resource(existing_llm)
@@ -136,9 +136,9 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         # Create existing LLM resource with custom name using the new system
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
         existing_llm = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="custom_llm_name", model="openai:gpt-4o-mini"))
         self.context.set_system_llm_resource(existing_llm)
@@ -256,7 +256,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_get_available_model_names_helper(self):
         """Test the helper function that gets available model names."""
-        from dana.libs.corelib.py_wrappers.py_set_model import _get_available_model_names
+        from dana_lang.libs.corelib.py_wrappers.py_set_model import _get_available_model_names
 
         models = _get_available_model_names()
 
@@ -271,7 +271,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_find_closest_model_match_helper(self):
         """Test the fuzzy matching helper function directly."""
-        from dana.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
+        from dana_lang.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
 
         available_models = [
             "openai:gpt-4o",
@@ -418,7 +418,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_bug_fixes_model_matching(self):
         """Test specific bug fixes for model matching logic."""
-        from dana.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
+        from dana_lang.libs.corelib.py_wrappers.py_set_model import _find_closest_model_match
 
         # Test Bug Fix 1: Groq model pattern should match llama-3.1-70b-versatile
         available_models = ["groq:llama-3.1-70b-versatile", "groq:llama-3.1-8b-instant", "openai:gpt-4o"]

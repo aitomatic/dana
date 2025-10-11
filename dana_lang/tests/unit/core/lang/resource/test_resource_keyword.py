@@ -10,12 +10,12 @@ This module tests the resource keyword functionality including:
 
 import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     ResourceDefinition,
     ResourceField,
     TypeHint,
 )
-from dana.core.resource import (
+from dana_lang.core.resource import (
     ResourceInstance,
     ResourceType,
     ResourceTypeRegistry,

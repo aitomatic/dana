@@ -14,13 +14,14 @@ Run this to see side-by-side comparison!
 DANA eliminates 90% of LLM integration complexity
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add Dana to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def show_traditional_approach():
@@ -35,12 +36,12 @@ def show_traditional_approach():
     import os
     from typing import Optional
     import time
-    
+
     # Setup client
     client = openai.OpenAI(
         api_key=os.getenv('OPENAI_API_KEY')
     )
-    
+
     def analyze_data(data: dict) -> Optional[str]:
         try:
             prompt = f"Analyze: {data}"
@@ -60,7 +61,7 @@ def show_traditional_approach():
         except Exception as e:
             print(f"Unknown error: {e}")
             return None
-    
+
     # Finally use it:
     result = analyze_data({"sales": 100000})
     """)
@@ -83,8 +84,8 @@ def show_dana_approach():
 
     print("📝 Setup Required (1 line):")
     print("""
-    from dana.dana import dana
-    
+    from dana_lang.dana import dana
+
     # That's it! Use immediately:
     result = dana.reason("Analyze: {sales: 100000}")
     """)

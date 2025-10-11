@@ -5,7 +5,7 @@ Test script for the SandboxContext.cleanse() method.
 This script tests that the cleanse method correctly removes or masks sensitive properties.
 """
 
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def test_sandbox_context_cleanse():

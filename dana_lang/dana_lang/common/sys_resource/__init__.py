@@ -34,7 +34,7 @@ For detailed documentation on specific components, refer to the README files
 within the respective subdirectories.
 
 Example:
-    >>> from common import DANA_LOGGER, ConfigManager
+    >>> from dana_lang.common import DANA_LOGGER, ConfigManager
     >>> DANA_LOGGER.configure(level=DANA_LOGGER.DEBUG, console=True)
     >>> config = ConfigManager().load_config("agent_config.yaml")
 """
@@ -90,10 +90,10 @@ from dana_lang.common.sys_resource.base_sys_resource import BaseSysResource, Res
 
 # Import additional resources from main branch
 from dana_lang.common.sys_resource.embedding import EmbeddingResource
-from dana_lang.common.sys_resource.web_search import WebSearchResource
 
 # HumanResource moved to core resource plugins
 from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.sys_resource.web_search import WebSearchResource
 from dana_lang.common.types import (
     BaseRequest,
     BaseResponse,
@@ -102,6 +102,7 @@ from dana_lang.common.types import (
 )
 from dana_lang.common.utils import DANA_LOGGER, DanaLogger, Misc
 from dana_lang.integrations.mcp import MCPResource
+
 
 __all__ = [
     # Exceptions (from exceptions.py)

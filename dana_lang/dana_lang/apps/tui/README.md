@@ -60,7 +60,7 @@ The TUI features a clean two-panel layout with a simple terminal-like interface:
 ### Panel Details
 
 - **LEFT Panel (65%)**: Simple terminal with inline command input and output, just like a Unix terminal
-- **RIGHT Panel (35%)**: 
+- **RIGHT Panel (35%)**:
   - **Top**: Real-time agent list with status and metrics
   - **Bottom**: Detailed agent I/O and thinking feed
 
@@ -68,7 +68,7 @@ The TUI features a clean two-panel layout with a simple terminal-like interface:
 
 ### Agent Management
 - `agent <name>` - Create new agent
-- `@<agent> <message>` - Send message to specific agent  
+- `@<agent> <message>` - Send message to specific agent
 - `<agent>.chat("message")` - Call agent's chat method directly
 
 ### Meta Commands
@@ -86,7 +86,7 @@ The TUI features a clean two-panel layout with a simple terminal-like interface:
 - `Esc` - Cancel focused agent's current task
 - `Shift+Esc` - Cancel all running tasks
 - `F1` - Show help
-- `Ctrl+L` - Clear transcript  
+- `Ctrl+L` - Clear transcript
 - `Ctrl+S` - Save logs (not yet implemented)
 - `Ctrl+C` - Quit application
 
@@ -123,8 +123,8 @@ To integrate with real Dana agents:
 
 1. **Implement the Agent interface**:
 ```python
-from dana.tui.core.runtime import Agent
-from dana.tui.core.events import *
+from dana_lang.tui.core.runtime import Agent
+from dana_lang.tui.core.events import *
 
 class MyDanaAgent(Agent):
     async def chat(self, message: str) -> AsyncIterator[AgentEvent]:
@@ -137,7 +137,7 @@ class MyDanaAgent(Agent):
 
 2. **Register in the sandbox**:
 ```python
-from dana.tui import DanaSandbox
+from dana_lang.tui import DanaSandbox
 
 sandbox = DanaSandbox()
 sandbox.register(MyDanaAgent("myagent"))
@@ -161,7 +161,7 @@ python -m pytest tests/ -v
 
 ### Code Structure
 - **Events**: All agent communication flows through typed events
-- **Async**: Heavy use of asyncio for non-blocking operations  
+- **Async**: Heavy use of asyncio for non-blocking operations
 - **Reactive UI**: Textual reactive widgets update automatically
 - **Separation**: Core logic independent of UI layer
 
@@ -202,7 +202,7 @@ TEXTUAL_LOG=debug python -m dana.tui
 
 ## License
 
-Copyright © 2025 Aitomatic, Inc.  
+Copyright © 2025 Aitomatic, Inc.
 MIT License - see LICENSE file for details.
 
 ## Community

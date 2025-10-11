@@ -2,10 +2,10 @@
 Test case function integration with Dana pipelines and placeholder expressions.
 """
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser.dana_parser import parse_program
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.parser.dana_parser import parse_program
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
 
 class TestCasePipelines:
@@ -133,7 +133,7 @@ def process_pipeline(input_data, data_type):
     if data_type == "json":
         transformed = transform_json(validated)
     elif data_type == "xml":
-        transformed = transform_xml(validated) 
+        transformed = transform_xml(validated)
     else:
         transformed = transform_default(validated)
     result = finalize_result(transformed)

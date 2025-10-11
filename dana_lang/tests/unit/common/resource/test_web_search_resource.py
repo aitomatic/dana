@@ -1,16 +1,17 @@
 """Tests for WebSearchResource main implementation."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.exceptions import ResourceError
-from dana.common.sys_resource.web_search.web_search_resource import WebSearchResource
-from dana.common.sys_resource.web_search.core.models import (
+import pytest
+
+from dana_lang.common.exceptions import ResourceError
+from dana_lang.common.sys_resource.web_search.core.models import (
+    SearchDepth,
     SearchRequest,
     SearchResults,
     SearchSource,
-    SearchDepth,
 )
+from dana_lang.common.sys_resource.web_search.web_search_resource import WebSearchResource
 
 
 class TestWebSearchResource:
@@ -410,7 +411,7 @@ class TestWebSearchResourceIntegration:
         with patch("dana.common.sys_resource.web_search.google_search_service.load_google_config") as mock_config:
             with patch("os.getenv") as mock_getenv:
                 # Mock configuration
-                from dana.common.sys_resource.web_search.google.config import GoogleSearchConfig
+                from dana_lang.common.sys_resource.web_search.google.config import GoogleSearchConfig
 
                 mock_config.return_value = GoogleSearchConfig(
                     api_key="test_key_123456789",

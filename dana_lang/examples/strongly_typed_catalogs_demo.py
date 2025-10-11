@@ -6,16 +6,17 @@ This example shows how to use the WorkflowCatalog and ResourceCatalog classes
 that work with concrete WorkflowInstance and ResourceInstance objects.
 """
 
-import sys
 import os
+import sys
+
 
 # Add the dana package to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from dana.registry import WorkflowRegistry, ResourceRegistry
-from dana.core.agent.solvers import SignatureMatcher
-from dana.core.workflow.workflow_system import WorkflowInstance, WorkflowType
-from dana.core.resource.resource_instance import ResourceInstance, ResourceType
+from dana_lang.core.agent.solvers import SignatureMatcher
+from dana_lang.core.resource.resource_instance import ResourceInstance, ResourceType
+from dana_lang.core.workflow.workflow_system import WorkflowInstance, WorkflowType
+from dana_lang.registry import ResourceRegistry, WorkflowRegistry
 
 
 def create_example_workflow() -> WorkflowInstance:

@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.core.agent import ProblemContext
-from dana.frameworks.corral import CORRALEngineer
-from dana.frameworks.corral.config import LIGHTWEIGHT_CONFIG
-from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
+from dana_lang.core.agent import ProblemContext
+from dana_lang.frameworks.corral import CORRALEngineer
+from dana_lang.frameworks.corral.config import LIGHTWEIGHT_CONFIG
+from dana_lang.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
 
 class MockAgentInstance:
@@ -222,7 +222,7 @@ class TestCORRALIntegration:
     def test_action_and_learning_cycle(self, enhanced_agent):
         """Test acting on knowledge and learning from outcomes."""
         # Create reasoning result
-        from dana.frameworks.corral.operations import ReasoningResult
+        from dana_lang.frameworks.corral.operations import ReasoningResult
 
         reasoning_result = ReasoningResult(
             conclusions=["Scale application horizontally", "Implement caching layer", "Optimize database queries"],

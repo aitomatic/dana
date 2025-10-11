@@ -6,7 +6,7 @@ This example shows how to use the new structured data classes to create
 rich, type-safe context for LLM prompt assembly.
 """
 
-from dana.frameworks.ctxeng import (
+from dana_lang.frameworks.ctxeng import (
     ContextData,
     ContextEngineer,
     ConversationContextData,

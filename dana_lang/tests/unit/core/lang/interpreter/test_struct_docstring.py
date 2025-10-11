@@ -1,7 +1,7 @@
 """Unit tests for struct docstring functionality."""
 
-from dana.core.builtins.struct_system import StructType
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.builtins.struct_system import StructType
+from dana_lang.registry import TYPE_REGISTRY
 
 
 class TestStructDocstring:

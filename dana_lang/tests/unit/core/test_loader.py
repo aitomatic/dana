@@ -2,10 +2,10 @@
 
 import pytest
 
-from dana.core.runtime.modules.errors import (
+from dana_lang.core.runtime.modules.errors import (
     SyntaxError,
 )
-from dana.core.runtime.modules.types import Module, ModuleSpec
+from dana_lang.core.runtime.modules.types import Module, ModuleSpec
 
 
 def test_loader_find_spec(loader, sample_module, search_paths):

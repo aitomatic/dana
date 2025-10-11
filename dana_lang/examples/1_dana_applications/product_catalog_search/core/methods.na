@@ -1,6 +1,6 @@
-from core.config import SEARCH_CONFIG, get_tabular_index_config
-from core.common import standardize_vector_results, dedupe_results, format_results_for_ranking
-from core.prompts import get_enhancement_prompt, get_ranking_prompt
+from dana_lang.core.config import SEARCH_CONFIG, get_tabular_index_config
+from dana_lang.core.common import standardize_vector_results, dedupe_results, format_results_for_ranking
+from dana_lang.core.prompts import get_enhancement_prompt, get_ranking_prompt
 
 
 # ===== QUERY ENHANCEMENT METHODS =====

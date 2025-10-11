@@ -8,13 +8,13 @@ This test suite measures:
 """
 
 import os
-import time
 from pathlib import Path
+import time
 
 import pytest
 
-from dana.__init__ import initialize_module_system, reset_module_system
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.__init__ import initialize_module_system, reset_module_system
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 @pytest.mark.deep

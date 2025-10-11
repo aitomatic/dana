@@ -5,9 +5,9 @@ These tests verify the functionality of the context preparation, restoration,
 and injection methods in the function classes.
 """
 
-from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-from dana.core.lang.interpreter.functions.python_function import PythonFunction
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.functions.dana_function import DanaFunction
+from dana_lang.core.lang.interpreter.functions.python_function import PythonFunction
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def test_dana_function_context_methods():

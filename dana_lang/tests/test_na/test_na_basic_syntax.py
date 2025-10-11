@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser.dana_parser import parse_program
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.parser.dana_parser import parse_program
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def get_na_files():
@@ -32,13 +32,13 @@ def pytest_configure(config):
 def test_na_file(na_file):
     """Test that a basic syntax .na file can be parsed and executed without errors."""
     # Clear struct registry to ensure test isolation
-    from dana.registry import GLOBAL_REGISTRY
+    from dana_lang.registry import GLOBAL_REGISTRY
 
     GLOBAL_REGISTRY.clear_all()
 
     # Reload core functions after clearing
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+    from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
     do_register_py_builtins(GLOBAL_REGISTRY.functions)
     register_py_wrappers(GLOBAL_REGISTRY.functions)
@@ -65,8 +65,8 @@ def test_na_file(na_file):
         llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Create BaseLLMResource for context access
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -148,13 +148,13 @@ def test_type_system_differences():
     This test documents the important type system behavior shown in the user's example.
     """
     # Clear registries for clean test
-    from dana.registry import GLOBAL_REGISTRY
+    from dana_lang.registry import GLOBAL_REGISTRY
 
     GLOBAL_REGISTRY.clear_all()
 
     # Reload core functions after clearing
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+    from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
     do_register_py_builtins(GLOBAL_REGISTRY.functions)
     register_py_wrappers(GLOBAL_REGISTRY.functions)
@@ -212,8 +212,8 @@ print("Resource Instance Type:", type(r))
     assert callable(r_constructor), "R should be a callable constructor"
 
     # Verify instance types
-    from dana.core.agent import AgentInstance
-    from dana.core.resource.resource_instance import ResourceInstance
+    from dana_lang.core.agent import AgentInstance
+    from dana_lang.core.resource.resource_instance import ResourceInstance
 
     assert isinstance(a_instance, AgentInstance), f"a should be AgentInstance, got {type(a_instance)}"
     assert isinstance(aa_singleton, AgentInstance), f"AA should be AgentInstance, got {type(aa_singleton)}"

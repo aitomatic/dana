@@ -15,7 +15,7 @@ from dana_agent.lib.workflows import google_lookup_workflow
 class DanaAgent(STARAgent):
     def __init__(self, thought_logger: ThoughtLogger, **kwargs):
         """Initialize Dana agent."""
-        super().__init__(agent_id="dana-agent", agent_type="dana-agent", **kwargs)
+        super().__init__(agent_id="dana_agent", agent_type="dana_agent", **kwargs)
 
         self.with_agents(
             WebResearchAgent(),

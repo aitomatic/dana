@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.exceptions import EmbeddingError
-from dana.common.sys_resource.embedding.embedding_integrations import (
+from dana_lang.common.exceptions import EmbeddingError
+from dana_lang.common.sys_resource.embedding.embedding_integrations import (
     LlamaIndexEmbeddingResource,
     RAGEmbeddingResource,
     get_default_embedding_model,

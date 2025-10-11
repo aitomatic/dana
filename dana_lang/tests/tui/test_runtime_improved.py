@@ -11,12 +11,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from dana.apps.tui.core.events import Done, Status, Token
-from dana.core.agent import AgentInstance
+from dana_lang.apps.tui.core.events import Done, Status, Token
+from dana_lang.core.agent import AgentInstance
+
 
 # Skip all tests in this file until TUI runtime tests are updated for new AGENT_REGISTRY architecture
 pytestmark = pytest.mark.skip(reason="TUI runtime tests need updating for AGENT_REGISTRY architecture")
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestAgent:
@@ -208,7 +209,7 @@ class TestDanaSandbox:
 
         assert result.success is False
         # Dana wraps errors in DanaError, not ValueError
-        from dana.common.exceptions import DanaError
+        from dana_lang.common.exceptions import DanaError
 
         assert isinstance(result.error, DanaError)
 
@@ -218,7 +219,7 @@ class TestDanaSandbox:
 
         assert result.success is False
         # Dana wraps syntax errors in DanaError, not SyntaxError
-        from dana.common.exceptions import DanaError
+        from dana_lang.common.exceptions import DanaError
 
         assert isinstance(result.error, DanaError)
 

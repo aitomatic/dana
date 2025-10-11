@@ -169,7 +169,7 @@ dana/frameworks/memory/
 ## Usage Example
 
 ```python
-from dana.frameworks.memory import ConversationMemory
+from dana_lang.frameworks.memory import ConversationMemory
 
 # Initialize memory
 memory = ConversationMemory(filepath="agent_memory.json", max_turns=20)

@@ -1,5 +1,5 @@
 from workflows import final_workflow
-from common import QueryPackage, PROBLEM_STATEMENT_IDENTIFIER_PROMPT
+from dana_lang.common import QueryPackage, PROBLEM_STATEMENT_IDENTIFIER_PROMPT
 from datetime.py import datetime
 
 # ENABLE OR DISABLE THIS TO TEST AGENT WITH/WITHOUT KNOWLEDGES

@@ -20,8 +20,8 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def run_semicolon_code(code):

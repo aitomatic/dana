@@ -8,9 +8,9 @@ import logging
 
 import pytest
 
-from dana.common.mixins.loggable import Loggable
-from dana.common.utils.logging import DANA_LOGGER
-from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from dana_lang.common.mixins.loggable import Loggable
+from dana_lang.common.utils.logging import DANA_LOGGER
+from dana_lang.core.lang.log_manager import LogLevel, SandboxLogger
 
 
 class TestLoggingIntegrationSimple:

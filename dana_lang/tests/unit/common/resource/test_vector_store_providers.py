@@ -3,12 +3,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.sys_resource.vector_store.config import DuckDBConfig, HNSWConfig, PGVectorConfig
-from dana.common.sys_resource.vector_store.providers.base import (
+from dana_lang.common.sys_resource.vector_store.config import DuckDBConfig, HNSWConfig, PGVectorConfig
+from dana_lang.common.sys_resource.vector_store.providers.base import (
     BaseVectorStoreProvider,
 )
-from dana.common.sys_resource.vector_store.providers.duckdb import DuckDBProvider
-from dana.common.sys_resource.vector_store.providers.pgvector import PGVectorProvider
+from dana_lang.common.sys_resource.vector_store.providers.duckdb import DuckDBProvider
+from dana_lang.common.sys_resource.vector_store.providers.pgvector import PGVectorProvider
 
 
 class TestBaseVectorStoreProvider(unittest.TestCase):

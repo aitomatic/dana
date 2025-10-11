@@ -8,8 +8,8 @@ starts at the first line instead of the last line.
 import pytest
 from textual.app import App
 
-from dana.apps.tui.ui.prompt_textarea import PromptStyleTextArea
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.apps.tui.ui.prompt_textarea import PromptStyleTextArea
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class MockApp(App):

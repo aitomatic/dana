@@ -6,7 +6,7 @@ Tests the execution of declarative function definitions with various parameter c
 
 import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     DeclarativeFunctionDefinition,
@@ -15,10 +15,10 @@ from dana.core.lang.ast import (
     Parameter,
     TypeHint,
 )
-from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry.function_registry import FunctionRegistry
+from dana_lang.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana_lang.core.lang.interpreter.executor.statement_executor import StatementExecutor
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.registry.function_registry import FunctionRegistry
 
 
 class TestDeclarativeFunctionExecution:

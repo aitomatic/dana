@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 def get_na_files():

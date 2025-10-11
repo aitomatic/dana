@@ -1,6 +1,6 @@
 """Tests for Dana common exceptions."""
 
-from dana.common.exceptions import (
+from dana_lang.common.exceptions import (
     AgentError,
     CommunicationError,
     ConfigurationError,

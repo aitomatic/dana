@@ -7,7 +7,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from common import DANA_LOGGER
+from dana_lang.common import DANA_LOGGER
 
 
 def initialize_logging_system() -> None:

@@ -2,23 +2,23 @@
 
 from datetime import datetime
 
-from dana.frameworks.corral.operations import (
-    CurationResult,
-    OrganizationResult,
-    RetrievalResult,
-    ReasoningResult,
+from dana_lang.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
+from dana_lang.frameworks.corral.operations import (
     ActionResult,
-    LearningResult,
     CORRALResult,
-    RankedKnowledge,
     CrossReference,
-    ReasoningTrace,
-    KnowledgeGap,
+    CurationResult,
     ExecutedAction,
+    KnowledgeGap,
+    LearningResult,
     LearningUpdate,
     NewPattern,
+    OrganizationResult,
+    RankedKnowledge,
+    ReasoningResult,
+    ReasoningTrace,
+    RetrievalResult,
 )
-from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
 
 class TestCurationResult:

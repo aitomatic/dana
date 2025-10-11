@@ -1,7 +1,8 @@
 from typing import Any
 
-from common import SandboxContext
+from dana_lang.common import SandboxContext
 from dana_lang.integrations.a2a import A2AAgent
+
 
 __all__ = ["py_a2a_agent"]
 

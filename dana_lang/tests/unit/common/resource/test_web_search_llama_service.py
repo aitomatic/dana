@@ -1,15 +1,16 @@
 """Tests for Llama search service implementation."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.sys_resource.web_search.core.models import (
+import pytest
+
+from dana_lang.common.sys_resource.web_search.core.models import (
+    SearchDepth,
     SearchRequest,
     SearchResults,
     SearchSource,
-    SearchDepth,
 )
-from dana.common.sys_resource.web_search.llama_search_service import (
+from dana_lang.common.sys_resource.web_search.llama_search_service import (
     LlamaSearchService,
     MockLlamaSearchService,
 )

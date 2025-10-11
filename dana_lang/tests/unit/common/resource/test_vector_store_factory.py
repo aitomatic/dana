@@ -3,12 +3,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.sys_resource.vector_store.config import (
+from dana_lang.common.sys_resource.vector_store.config import (
     VectorStoreConfig,
     create_duckdb_config,
     create_pgvector_config,
 )
-from dana.common.sys_resource.vector_store.factory import VectorStoreFactory
+from dana_lang.common.sys_resource.vector_store.factory import VectorStoreFactory
 
 
 class TestVectorStoreFactory(unittest.TestCase):

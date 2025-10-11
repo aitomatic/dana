@@ -1,5 +1,6 @@
 import pytest
-from dana.api.core.schemas_v2 import DomainNodeV2, DomainKnowledgeTreeV2
+
+from dana_lang.api.core.schemas_v2 import DomainKnowledgeTreeV2, DomainNodeV2
 
 
 class TestDomainKnowledgeTreeV2:

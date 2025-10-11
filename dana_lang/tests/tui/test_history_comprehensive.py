@@ -7,8 +7,8 @@ covering various scenarios: commands, functions, variables, imports, etc.
 
 import pytest
 
-from dana.apps.tui import DanaTUI
-from dana.apps.tui.ui.prompt_textarea import PromptStyleTextArea
+from dana_lang.apps.tui import DanaTUI
+from dana_lang.apps.tui.ui.prompt_textarea import PromptStyleTextArea
 
 from .history_test_utils import HistoryBackup, clear_history_for_test
 

@@ -6,16 +6,17 @@ This script demonstrates how to use the new workflow framework
 to solve problems with a simple, clean interface.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import the core agent system
-from dana.core.agent.agent_instance import AgentInstance, AgentType
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.agent.agent_instance import AgentInstance, AgentType
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def demo_equipment_status_check():

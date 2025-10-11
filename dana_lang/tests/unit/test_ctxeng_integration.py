@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
 
 
 class TestContextEngineIntegration:

@@ -14,7 +14,7 @@
 %import common.WS
 %declare _INDENT _DEDENT
 
-// Add single-quoted string support  
+// Add single-quoted string support
 SINGLE_QUOTED_STRING: /'([^'\\]|\\.)*'/
 
 // ===== PROGRAM STRUCTURE =====
@@ -293,7 +293,7 @@ DIV_EQUALS: "/="
 
 // Basic operators after compound operators
 POW: "**"  // Define POW as a distinct token separate from MUL
-ADD: "+" 
+ADD: "+"
 SUB: "-"
 MUL: "*"
 DIV: "/"
@@ -306,7 +306,7 @@ DOLLAR_DOLLAR: "$$"
 sum_expr: product ((ADD | SUB) product)*
 product: power ((MUL | DIV | FDIV | MOD) power)*
 
-// Power is right-associative, so use recursion on the right side 
+// Power is right-associative, so use recursion on the right side
 power: factor (POW power)?
 factor: (ADD | SUB) factor | atom trailer*
 
@@ -318,7 +318,7 @@ slice_list: slice_or_index ("," slice_or_index)*
 
 slice_or_index: slice_expr | expr
 
-slice_expr: slice_start_only 
+slice_expr: slice_start_only
           | slice_stop_only
           | slice_start_stop
           | slice_start_stop_step
@@ -326,7 +326,7 @@ slice_expr: slice_start_only
           | slice_step_only
 
 slice_start_only: expr ":"                    // [start:]
-slice_stop_only: ":" expr                     // [:stop]  
+slice_stop_only: ":" expr                     // [:stop]
 slice_start_stop: expr ":" expr               // [start:stop]
 slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
 slice_all: ":"                               // [:]
@@ -340,7 +340,7 @@ argument: (kw_arg | expr) [COMMENT]
 placeholder: DOLLAR_DOLLAR -> placeholder_expression
 
 // ===== STRING LITERALS =====
-// Regular string literals, referenced from common
+// Regular string literals, referenced from dana_lang.common
 // any_string: REGULAR_STRING
 //           | fstring
 //           | raw_string
@@ -349,8 +349,8 @@ placeholder: DOLLAR_DOLLAR -> placeholder_expression
 // Special handling for f-strings - must be before NAME and MULTILINE_STRING to get precedence
 F_STRING_TOKEN.10: /[fF]""".*?"""/s
                  | /[fF]'''.*?'''/s
-                 | /[fF]["](([^"\\]|\\.|\{[^}]*\})*)["]/ 
-                 | /[fF]['](([^'\\]|\\.|\{[^}]*\})*)[']/ 
+                 | /[fF]["](([^"\\]|\\.|\{[^}]*\})*)["]/
+                 | /[fF]['](([^'\\]|\\.|\{[^}]*\})*)[']/
 
 // Raw string token - must have higher priority than NAME to match r"string" patterns
 RAW_STRING.4: /[rR]""".*?"""/s

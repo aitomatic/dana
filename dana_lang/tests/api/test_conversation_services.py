@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from dana.api.core.models import Agent, Conversation
-from dana.api.core.schemas import ConversationCreate, MessageCreate
-from dana.api.services.conversation_service import ConversationService
+from dana_lang.api.core.models import Agent, Conversation
+from dana_lang.api.core.schemas import ConversationCreate, MessageCreate
+from dana_lang.api.services.conversation_service import ConversationService
 
 
 @pytest.mark.asyncio

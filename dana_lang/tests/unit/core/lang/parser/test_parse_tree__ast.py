@@ -7,7 +7,7 @@ from typing import cast
 
 import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -21,10 +21,11 @@ from dana.core.lang.ast import (
     Statement,
     UnaryExpression,
 )
-from dana.core.lang.parser.transformer.expression_transformer import ExpressionTransformer
-from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
-from dana.core.lang.parser.transformer.statement_transformer import StatementTransformer
-from dana.core.lang.parser.transformer.variable_transformer import VariableTransformer
+from dana_lang.core.lang.parser.transformer.expression_transformer import ExpressionTransformer
+from dana_lang.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+from dana_lang.core.lang.parser.transformer.statement_transformer import StatementTransformer
+from dana_lang.core.lang.parser.transformer.variable_transformer import VariableTransformer
+
 
 # 1. VariableTransformer tests
 

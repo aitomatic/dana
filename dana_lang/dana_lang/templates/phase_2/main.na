@@ -1,6 +1,6 @@
 from workflows import workflow_using_doc_kb
 from workflows import workflow_using_web
-from common import RetrievalPackage
+from dana_lang.common import RetrievalPackage
 from methods import should_use_document
 
 

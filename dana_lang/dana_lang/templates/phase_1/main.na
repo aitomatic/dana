@@ -1,5 +1,5 @@
 from workflows import workflow
-from common import RetrievalPackage
+from dana_lang.common import RetrievalPackage
 
 agent GeorgiaFinanceExpertAgent:
     name: str = "Georgia Finance Expert Agent"

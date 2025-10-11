@@ -2,13 +2,13 @@
 Unit tests for workflow_parser module.
 """
 
-from dana.api.services.workflow_parser import (
-    parse_workflow_content,
-    extract_workflow_pipeline,
-    WorkflowImport,
+from dana_lang.api.services.workflow_parser import (
+    FunctionDefinition,
     PipelineStep,
     WorkflowDefinition,
-    FunctionDefinition,
+    WorkflowImport,
+    extract_workflow_pipeline,
+    parse_workflow_content,
 )
 
 
@@ -46,7 +46,7 @@ workflow = refine_query | search_document | get_answer"""
         """Test parsing extended pipeline workflow"""
         content = """from methods import should_use_rag
 from methods import refine_query
-from methods import search_document  
+from methods import search_document
 from methods import get_answer
 
 workflow = should_use_rag | refine_query | search_document | get_answer"""
@@ -79,11 +79,11 @@ workflow = refine_query | helper_function | process_data"""
         """Test parsing function definitions"""
         content = """def standard_workflow(input: str) -> str {
     log("Starting standard workflow")
-    
+
     if not validate_input(input) {
         return "Invalid input provided"
     }
-    
+
     result = process_with_context(input)
     return result
 }
@@ -157,7 +157,7 @@ workflow = refine_query | search_document"""
         content = """
 
 
-        
+
         """
 
         result = parse_workflow_content(content)

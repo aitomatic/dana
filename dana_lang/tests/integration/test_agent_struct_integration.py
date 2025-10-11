@@ -5,10 +5,10 @@ Tests coexistence, method dispatch priority, and registry integration.
 
 import unittest
 
-from dana.core.agent import AgentInstance, AgentType, create_agent_instance
-from dana.core.builtins.struct_system import StructInstance, StructType
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import register_agent_type
+from dana_lang.core.agent import AgentInstance, AgentType, create_agent_instance
+from dana_lang.core.builtins.struct_system import StructInstance, StructType
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.registry import register_agent_type
 
 
 class TestAgentStructCoexistence(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestAgentStructCoexistence(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.types.clear()
 
@@ -63,7 +63,7 @@ class TestAgentStructCoexistence(unittest.TestCase):
     def test_registry_coexistence(self):
         """Test that both types exist in their respective registries."""
         # Check that agent type is in the agent registry
-        from dana.registry import get_agent_type
+        from dana_lang.registry import get_agent_type
 
         agent_registry_type = get_agent_type("TestAgent")
 
@@ -88,7 +88,7 @@ class TestMethodDispatchPriority(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.types.clear()
 
@@ -100,9 +100,9 @@ class TestMethodDispatchPriority(unittest.TestCase):
         context = SandboxContext()
 
         # Set up LLM resource in context for agent methods with mock mode enabled
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -155,9 +155,9 @@ class TestMethodDispatchPriority(unittest.TestCase):
         context = SandboxContext()
 
         # Set up LLM resource in context for agent methods with mock mode enabled
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-        from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-        from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+        from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
         llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
         llm_resource.initialize()
@@ -232,7 +232,7 @@ class TestAgentRegistryIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Clean up any existing registrations
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.types.clear()
 
@@ -244,7 +244,7 @@ class TestAgentRegistryIntegration(unittest.TestCase):
         register_agent_type(agent_type)
 
         # Check that it's in the agent registry
-        from dana.registry import get_agent_type
+        from dana_lang.registry import get_agent_type
 
         agent_registry_type = get_agent_type("TestAgent")
         self.assertIs(agent_registry_type, agent_type)

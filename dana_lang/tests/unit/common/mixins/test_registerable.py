@@ -2,7 +2,7 @@
 
 import pytest
 
-from dana.common.mixins.registerable import Registerable
+from dana_lang.common.mixins.registerable import Registerable
 
 
 # pylint: disable=missing-function-docstring

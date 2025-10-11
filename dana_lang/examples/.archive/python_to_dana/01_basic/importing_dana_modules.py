@@ -14,13 +14,14 @@ Run this to see Python importing DANA code!
 Write business logic in DANA, use from Python seamlessly
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add Dana to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def step1_basic_import():
@@ -54,10 +55,10 @@ def greeting(name: str) -> str:
     print("""
     dana.enable_module_imports()  # Enable DANA imports
     import simple_math            # Import .na file (no extension!)
-    
+
     result = simple_math.add(5, 3)     # Use DANA function
     greeting = simple_math.greeting("Alice")
-    
+
     dana.disable_module_imports() # Clean up
     """)
 
@@ -111,7 +112,7 @@ def is_valid_user_count(count: int) -> bool:
     print("🔧 Python accessing DANA variables:")
     print("""
     import config
-    
+
     name = config.app_name      # Access DANA variable
     version = config.version    # Access DANA variable
     info = config.get_info()    # Call DANA function
@@ -186,11 +187,11 @@ def calculate_total(subtotal: float, discount_percent: float) -> dict:
     discount_amount = 0.0
     if subtotal >= discount_threshold:
         discount_amount = subtotal * (discount_percent / 100)
-    
+
     discounted = subtotal - discount_amount
     tax_amount = discounted * tax_rate
     total = discounted + tax_amount
-    
+
     return {
         "subtotal": subtotal,
         "discount": discount_amount,
@@ -202,7 +203,7 @@ def analyze_purchase(total: float) -> str:
     if total > 500:
         return "high-value purchase"
     elif total > 100:
-        return "medium purchase"  
+        return "medium purchase"
     else:
         return "small purchase"
 """

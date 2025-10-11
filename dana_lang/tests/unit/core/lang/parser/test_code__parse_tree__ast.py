@@ -19,8 +19,9 @@ import textwrap
 
 import pytest
 
-from dana.core.lang.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
-from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana_lang.core.lang.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
+from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
+
 
 CODE_SAMPLES = {
     "nested_if_elif_else": """

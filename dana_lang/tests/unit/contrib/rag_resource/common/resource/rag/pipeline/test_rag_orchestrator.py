@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from dana.common.exceptions import EmbeddingError
-from dana.common.sys_resource.embedding.embedding_utils import has_embedding_api_keys
-from dana.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
+from dana_lang.common.exceptions import EmbeddingError
+from dana_lang.common.sys_resource.embedding.embedding_utils import has_embedding_api_keys
+from dana_lang.common.sys_resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 
 
 class TestRAGOrchestrator:

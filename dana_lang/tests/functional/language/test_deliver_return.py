@@ -8,9 +8,9 @@ in Phase 1 when parser support and FunctionExecutor integration is implemented.
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.concurrency import LazyPromise
+from dana_lang.core.concurrency import LazyPromise
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestLazyPromiseFoundation:

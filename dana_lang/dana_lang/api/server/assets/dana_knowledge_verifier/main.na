@@ -1,5 +1,5 @@
 from workflows import final_workflow
-from common import QueryPackage
+from dana_lang.common import QueryPackage
 
 # ENABLE OR DISABLE THIS TO TEST AGENT WITH/WITHOUT KNOWLEDGES
 USE_KNOWLEDGE= True

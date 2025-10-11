@@ -3,13 +3,13 @@
 #
 # This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 #
-import pytest
 from lark import Tree
+import pytest
 
 
 @pytest.fixture(scope="module")
 def dana_parser():
-    from dana.core.lang.parser.utils.parsing_utils import ParserCache
+    from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
     return ParserCache.get_parser("dana")
 
@@ -534,7 +534,7 @@ a = 5
 result = f"{a}"
 result2 = f"{a} text"
 """
-    from dana.core.lang.parser.utils.parsing_utils import ParserCache
+    from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     # Force parser to reload grammar

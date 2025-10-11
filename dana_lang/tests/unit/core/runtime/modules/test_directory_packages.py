@@ -8,8 +8,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.__init__ import initialize_module_system, reset_module_system
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.__init__ import initialize_module_system, reset_module_system
+
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestDirectoryPackages:

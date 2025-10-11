@@ -2,14 +2,14 @@
 Tests for dual delivery mechanism with deliver and return statements.
 """
 
+# AST imports will be added in Phase 1 when deliver/return statement tests are implemented
+from unittest.mock import Mock
+
 import pytest
 
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.concurrency import LazyPromise
+from dana_lang.core.concurrency import LazyPromise
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
-# AST imports will be added in Phase 1 when deliver/return statement tests are implemented
-
-from unittest.mock import Mock
 
 try:
     from unittest.mock import AsyncMock

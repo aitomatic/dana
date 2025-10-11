@@ -8,8 +8,8 @@ functionality to detect context from comments, docstrings, and AST nodes.
 import unittest
 from unittest.mock import Mock, patch
 
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.py_reason import py_reason
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.py_reason import py_reason
 
 
 class TestPyReasonContextIntegration(unittest.TestCase):
@@ -26,14 +26,14 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         mock_old_reason.return_value = "test response"
 
         # Create a mock assignment node with type hint
-        from dana.core.lang.ast import Assignment, TypeHint
+        from dana_lang.core.lang.ast import Assignment, TypeHint
 
         assignment_node = Mock(spec=Assignment)
         assignment_node.type_hint = Mock(spec=TypeHint)
         assignment_node.type_hint.name = "str"
 
         # Add to execution stack
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         location = ExecutionLocation(filename="test.na", line=5, column=1, function_name="test_function", ast_node=assignment_node)
         self.context._error_context.execution_stack.append(location)
@@ -59,7 +59,7 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         mock_node.metadata = {"comment": "returns a string value"}
 
         # Add to execution stack
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         location = ExecutionLocation(filename="test.na", line=5, column=1, function_name="test_function", ast_node=mock_node)
         self.context._error_context.execution_stack.append(location)
@@ -78,13 +78,13 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         mock_old_reason.return_value = "test response"
 
         # Create a mock function definition with docstring
-        from dana.core.lang.ast import FunctionDefinition
+        from dana_lang.core.lang.ast import FunctionDefinition
 
         func_def = Mock(spec=FunctionDefinition)
         func_def.docstring = "Returns: dict"
 
         # Add to execution stack
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         location = ExecutionLocation(filename="test.na", line=5, column=1, function_name="test_function", ast_node=func_def)
         self.context._error_context.execution_stack.append(location)
@@ -103,13 +103,13 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         mock_old_reason.return_value = "test response"
 
         # Create a mock struct field with comment
-        from dana.core.lang.ast import StructField
+        from dana_lang.core.lang.ast import StructField
 
         field = Mock(spec=StructField)
         field.comment = "user's age in years"
 
         # Add to execution stack
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         location = ExecutionLocation(filename="test.na", line=5, column=1, function_name="test_function", ast_node=field)
         self.context._error_context.execution_stack.append(location)
@@ -128,7 +128,7 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         mock_old_reason.return_value = "test response"
 
         # Create multiple nodes with different context types
-        from dana.core.lang.ast import Assignment, TypeHint
+        from dana_lang.core.lang.ast import Assignment, TypeHint
 
         assignment_node = Mock(spec=Assignment)
         assignment_node.type_hint = Mock(spec=TypeHint)
@@ -138,7 +138,7 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         metadata_node.metadata = {"comment": "returns string"}
 
         # Add to execution stack (assignment should be detected first)
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         location1 = ExecutionLocation(ast_node=metadata_node)  # Lower priority
         location2 = ExecutionLocation(ast_node=assignment_node)  # Higher priority
@@ -199,7 +199,7 @@ class TestPyReasonContextIntegration(unittest.TestCase):
         self.assertIsNone(node)
 
         # Add a node to stack
-        from dana.core.lang.interpreter.error_context import ExecutionLocation
+        from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
         mock_node = Mock()
         location = ExecutionLocation(ast_node=mock_node)

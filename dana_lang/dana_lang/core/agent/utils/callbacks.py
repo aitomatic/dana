@@ -8,7 +8,8 @@ with callback support for custom event processing.
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
-from common import DANA_LOGGER
+from dana_lang.common import DANA_LOGGER
+
 
 if TYPE_CHECKING:
     from dana_lang.core.agent.agent_instance import AgentInstance

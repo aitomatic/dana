@@ -1,9 +1,10 @@
 import pytest
 from textual.widgets import ListView
 
-from dana.apps.tui.tui_app import DanaTUI
-from dana.apps.tui.ui.agents_list import AgentListItem
-from dana.registry import AGENT_REGISTRY
+from dana_lang.apps.tui.tui_app import DanaTUI
+from dana_lang.apps.tui.ui.agents_list import AgentListItem
+from dana_lang.registry import AGENT_REGISTRY
+
 
 # Skip all tests in this file until TUI agent list tests are updated for new AGENT_REGISTRY architecture
 pytestmark = pytest.mark.skip(reason="TUI agent list tests need updating for AGENT_REGISTRY architecture")

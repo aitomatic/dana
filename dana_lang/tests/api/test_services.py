@@ -2,13 +2,14 @@
 
 import pytest
 
+
 # Service functions (create_agent, get_agent, get_agents) don't exist in refactored API structure
 # The obsolete TestAgentServices class has been removed
 
 
 def test_agent_generation_endpoint(client):
     """Test the agent generation endpoint."""
-    from dana.api.core.schemas import AgentGenerationRequest, MessageData
+    from dana_lang.api.core.schemas import AgentGenerationRequest, MessageData
 
     # Test data
     messages = [
@@ -54,7 +55,7 @@ def test_agent_generation_endpoint(client):
 
 def test_agent_generation_endpoint_mock_mode(client, monkeypatch):
     """Test the agent generation endpoint with mock mode enabled."""
-    from dana.api.core.schemas import AgentGenerationRequest, MessageData
+    from dana_lang.api.core.schemas import AgentGenerationRequest, MessageData
 
     # Enable mock mode
     monkeypatch.setenv("DANA_MOCK_AGENT_GENERATION", "true")
@@ -109,7 +110,7 @@ def test_agent_generation_endpoint_mock_mode(client, monkeypatch):
 @pytest.mark.skip(reason="Skipping test_agent_generation_with_current_code")
 def test_agent_generation_with_current_code(client, monkeypatch):
     """Test the agent generation endpoint with current code for iterative improvements."""
-    from dana.api.core.schemas import AgentGenerationRequest, MessageData
+    from dana_lang.api.core.schemas import AgentGenerationRequest, MessageData
 
     # Enable mock mode
     monkeypatch.setenv("DANA_MOCK_AGENT_GENERATION", "true")

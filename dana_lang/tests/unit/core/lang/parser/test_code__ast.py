@@ -17,10 +17,10 @@ Discord: https://discord.gg/6jGD4PYk
 
 import textwrap
 
-import pytest
 from lark import Tree
+import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -43,7 +43,7 @@ from dana.core.lang.ast import (
     WhileLoop,
     WithStatement,
 )
-from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 # === Helper Functions ===

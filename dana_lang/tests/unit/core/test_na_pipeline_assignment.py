@@ -4,7 +4,7 @@ Test runner for declarative function pipeline functionality.
 Tests the pattern: def pipeline(x) = f1 | f2 | f3 and then result = pipeline(x)
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 def test_pipeline_assignment_basic():

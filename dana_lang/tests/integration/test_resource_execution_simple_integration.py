@@ -5,10 +5,12 @@ This module tests the resource execution functionality with minimal mocking
 to ensure the basic integration works correctly.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from dana.core.agent.solvers import SimpleHelpfulSolver
-from dana.core.agent.agent_instance import AgentInstance
+
+import pytest
+
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.solvers import SimpleHelpfulSolver
 
 
 class TestResourceExecutionSimpleIntegration:
@@ -186,7 +188,7 @@ class TestResourceExecutionSimpleIntegration:
 
     def test_resource_parsing_basic(self):
         """Test parsing of resource calls."""
-        from dana.core.agent.solvers.base import BaseSolver
+        from dana_lang.core.agent.solvers.base import BaseSolver
 
         # Create a simple mock solver
         class MockSolver(BaseSolver):

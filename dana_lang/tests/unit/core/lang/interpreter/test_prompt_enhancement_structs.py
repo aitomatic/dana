@@ -10,10 +10,10 @@ MIT License
 
 from unittest.mock import patch
 
-from dana.core.builtins.struct_system import StructType
-from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
-from dana.core.lang.interpreter.prompt_enhancement import PromptEnhancer, enhance_prompt_for_type
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.builtins.struct_system import StructType
+from dana_lang.core.lang.interpreter.context_detection import ContextType, TypeContext
+from dana_lang.core.lang.interpreter.prompt_enhancement import PromptEnhancer, enhance_prompt_for_type
+from dana_lang.registry import TYPE_REGISTRY
 
 
 class TestDanaStructPromptEnhancement:

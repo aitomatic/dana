@@ -6,8 +6,8 @@ This example shows how AgentState assembles its own ContextData and passes it to
 maintaining clean separation of responsibilities.
 """
 
-from dana.core.agent.context import ProblemContext
-from dana.frameworks.ctxeng import ContextEngineer
+from dana_lang.core.agent.context import ProblemContext
+from dana_lang.frameworks.ctxeng import ContextEngineer
 
 
 def demonstrate_agent_state_context_assembly():
@@ -117,7 +117,7 @@ def demonstrate_agent_state_context_assembly():
     # Add the assemble_context_data method to MockAgentState
     def assemble_context_data(self, query: str, template: str = "general"):
         """Assemble structured ContextData from agent state."""
-        from dana.frameworks.ctxeng import (
+        from dana_lang.frameworks.ctxeng import (
             ContextData,
             ConversationContextData,
             ExecutionContextData,

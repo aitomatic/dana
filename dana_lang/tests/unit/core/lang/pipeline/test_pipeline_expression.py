@@ -12,11 +12,11 @@ from typing import Any
 
 import pytest
 
-from dana.common.exceptions import SandboxError
-from dana.core.lang.ast import FunctionCall, Identifier, LiteralExpression, PipelineExpression, PlaceholderExpression
-from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.common.exceptions import SandboxError
+from dana_lang.core.lang.ast import FunctionCall, Identifier, LiteralExpression, PipelineExpression, PlaceholderExpression
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestPipelineExpression:

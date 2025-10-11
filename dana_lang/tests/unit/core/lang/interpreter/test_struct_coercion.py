@@ -13,9 +13,9 @@ import unittest
 
 import pytest
 
-from dana.core.builtins.struct_system import StructInstance, StructType
-from dana.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.builtins.struct_system import StructInstance, StructType
+from dana_lang.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
+from dana_lang.registry import TYPE_REGISTRY
 
 
 @pytest.mark.unit

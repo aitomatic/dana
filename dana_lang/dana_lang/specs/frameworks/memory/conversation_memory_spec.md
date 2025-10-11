@@ -75,19 +75,19 @@ class AgentInstance:
     def __init__(self, **kwargs):
         # ... other initialization ...
         self._conversation_memory = None  # Lazy initialization
-    
+
     def _initialize_conversation_memory(self):
         """Abstract method - must be implemented by subclasses."""
         raise NotImplementedError(
             "Subclasses must implement _initialize_conversation_memory()"
         )
-    
+
     def chat(self, message: str, **kwargs) -> Any:
         """Execute agent chat method."""
         # Ensure conversation memory is initialized
         if self._conversation_memory is None:
             self._initialize_conversation_memory()
-        
+
         # ... rest of chat implementation ...
 ```
 
@@ -101,20 +101,20 @@ class AgentImplementations:
         """Initialize conversation memory with proper file placement."""
         if self._conversation_memory is None:
             from pathlib import Path
-            from dana.frameworks.memory.conversation_memory import ConversationMemory
-            
+            from dana_lang.frameworks.memory.conversation_memory import ConversationMemory
+
             # Create memory file path under ~/.dana/chats/
             agent_name = getattr(self.agent_type, "name", "agent")
             session_id = getattr(self, "session_id", "default")
-            
+
             home_dir = Path.home()
             dana_dir = home_dir / ".dana"
             memory_dir = dana_dir / "chats"
             memory_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Structured naming: {agent_name}_{session_id}_conversation.json
             memory_file = memory_dir / f"{agent_name}_{session_id}_conversation.json"
-            
+
             self._conversation_memory = ConversationMemory(
                 filepath=str(memory_file),
                 max_turns=20
@@ -130,14 +130,14 @@ class ConversationMemory:
     def __init__(self, filepath: str, max_turns: int = 20):
         """
         Initialize conversation memory.
-        
+
         Args:
             filepath: Path to JSON file for persistence (required)
             max_turns: Maximum number of turns to keep in active memory
         """
         if not filepath:
             raise ValueError("filepath is required for ConversationMemory")
-        
+
         self.filepath = Path(filepath)
         self.max_turns = max_turns
         # ... rest of implementation ...

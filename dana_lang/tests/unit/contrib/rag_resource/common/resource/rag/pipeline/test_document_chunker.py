@@ -4,10 +4,10 @@ Simple tests for DocumentChunker class.
 
 import os
 
-import pytest
 from llama_index.core import Document
+import pytest
 
-from dana.common.sys_resource.rag.pipeline.document_chunker import DocumentChunker
+from dana_lang.common.sys_resource.rag.pipeline.document_chunker import DocumentChunker
 
 
 # Helper function to check if OpenAI API key is available

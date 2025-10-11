@@ -2,7 +2,7 @@
 
 import os
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
 
 def test_simple_provider_configs_debug():

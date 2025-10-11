@@ -8,12 +8,13 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
 from unittest.mock import patch
 
-from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+import pytest
+
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestUniversalErrorReporting:
@@ -229,7 +230,7 @@ b = a / 0  # This will cause an error
         # Mock the source file loading
         with patch.object(context.error_context, "load_source", return_value=["x = 42", "y = x + 1", "z = y / 0"]):
             # Manually add some execution locations to the stack
-            from dana.core.lang.interpreter.error_context import ExecutionLocation
+            from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
 
             location1 = ExecutionLocation(filename="test.na", line=1, column=1, function_name="statement 1")
 

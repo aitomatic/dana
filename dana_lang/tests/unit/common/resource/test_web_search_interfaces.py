@@ -1,14 +1,15 @@
 """Tests for web search protocol interfaces."""
 
 import pytest
-from dana.common.sys_resource.web_search.core.models import (
+
+from dana_lang.common.sys_resource.web_search.core.models import (
     DomainResult,
     ProductInfo,
     ResearchRequest,
+    SearchDepth,
     SearchRequest,
     SearchResults,
     SearchSource,
-    SearchDepth,
 )
 
 

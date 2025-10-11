@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.core.agent import ProblemContext
-from dana.frameworks.corral.engineer import CORRALEngineer
-from dana.frameworks.corral.config import CORRALConfig
-from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
+from dana_lang.core.agent import ProblemContext
+from dana_lang.frameworks.corral.config import CORRALConfig
+from dana_lang.frameworks.corral.engineer import CORRALEngineer
+from dana_lang.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
 
 class MockAgent:
@@ -172,7 +172,7 @@ class TestCORRALEngineer:
 
     def test_act_on_knowledge(self, corral_engineer):
         """Test acting on reasoning results."""
-        from dana.frameworks.corral.operations import ReasoningResult
+        from dana_lang.frameworks.corral.operations import ReasoningResult
 
         reasoning_result = ReasoningResult(
             conclusions=["Use blue-green deployment"],
@@ -215,7 +215,14 @@ class TestCORRALEngineer:
 
         # Mock successful cycle
         from datetime import datetime
-        from dana.frameworks.corral.operations import OrganizationResult, RetrievalResult, ReasoningResult, ActionResult, LearningResult
+
+        from dana_lang.frameworks.corral.operations import (
+            ActionResult,
+            LearningResult,
+            OrganizationResult,
+            ReasoningResult,
+            RetrievalResult,
+        )
 
         with (
             patch.multiple(

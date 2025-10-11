@@ -54,7 +54,7 @@ class MemorySystem:
 
 # Add compatibility import in old location
 # dana/frameworks/memory/conversation_memory.py
-from dana.core.agent.mind.memory.conversation import ConversationMemory
+from dana_lang.core.agent.mind.memory.conversation import ConversationMemory
 __all__ = ['ConversationMemory']  # Backward compatibility
 ```
 
@@ -71,18 +71,18 @@ from .capabilities import CapabilityRegistry
 @dataclass
 class AgentState:
     """Enhanced central state hub."""
-    
+
     # Keep existing fields for compatibility
     current_problem: ProblemContext | None = None
     current_conversation_turn: int = 0
     timeline: Timeline = field(default_factory=Timeline)
     # ... other existing fields ...
-    
+
     # Add new subsystems
     mind: AgentMind | None = None
     execution: ExecutionContext | None = None
     capabilities: CapabilityRegistry | None = None
-    
+
     def __post_init__(self):
         """Initialize new subsystems if not provided."""
         if self.mind is None:
@@ -91,10 +91,10 @@ class AgentState:
             self.execution = ExecutionContext()
         if self.capabilities is None:
             self.capabilities = CapabilityRegistry()
-        
+
         # Migrate existing data to new structure
         self._migrate_existing_data()
-    
+
     def _migrate_existing_data(self):
         """Migrate existing fields to new subsystems."""
         if self.current_workflow_id:
@@ -104,12 +104,12 @@ class AgentState:
         if self.available_strategies:
             for strategy in self.available_strategies:
                 self.capabilities.strategies[strategy] = Strategy(strategy)
-    
+
     def get_llm_context(self, depth: str = "standard") -> dict:
         """New unified context method."""
         # Implementation as specified
         pass
-    
+
     # Keep old methods for compatibility with deprecation warnings
     def get_conversation_context(self, max_turns: int = 3) -> str:
         """Deprecated: Use get_llm_context() instead."""
@@ -127,22 +127,22 @@ class AgentState:
 # dana/core/agent/mind/agent_mind.py
 class AgentMind:
     """Enhanced with memory ownership."""
-    
+
     def __init__(self):
         # Memory systems now owned by mind
         self.memory = MemorySystem()
-        
+
         # Keep existing models
         self.user_model = UserModel()
         self.world_model = WorldModel()
-        
+
         # Keep existing patterns
         self.patterns = PatternLibrary()
         self.learning = LearningSystem()
-        
+
         # Migrate existing storage paths
         self._migrate_existing_data()
-    
+
     def _migrate_existing_data(self):
         """Load existing data from old locations."""
         # Load from ~/.models/ if exists
@@ -159,27 +159,27 @@ class AgentMind:
 class AgentInstance:
     def __init__(self, agent_type: AgentType, values: dict):
         # ... existing init ...
-        
+
         # Create centralized state
         self.state = AgentState()
-        
+
         # Compatibility properties (with deprecation warnings)
         self._compatibility_mode = True
-    
+
     @property
     def problem_context(self):
         """Compatibility property."""
         if self._compatibility_mode:
             warnings.warn("Direct access deprecated, use self.state.problem_context")
         return self.state.problem_context
-    
+
     @problem_context.setter
     def problem_context(self, value):
         """Compatibility setter."""
         if self._compatibility_mode:
             warnings.warn("Direct access deprecated, use self.state.problem_context")
         self.state.problem_context = value
-    
+
     # Update methods to use self.state
     def solve_sync(self, problem: str):
         """Updated to use centralized state."""
@@ -187,10 +187,10 @@ class AgentInstance:
             problem_statement=problem,
             objective="solve"
         )
-        
+
         # Use new context building
         context = self.state.get_llm_context()
-        
+
         # Rest of implementation
 ```
 
@@ -199,7 +199,7 @@ class AgentInstance:
 # dana/core/agent/methods/memory.py
 class MemoryMixin:
     """Updated to use centralized state."""
-    
+
     def remember_sync(self, key: str, value: Any):
         """Store in working memory via mind."""
         if hasattr(self, 'state') and self.state.mind:
@@ -207,7 +207,7 @@ class MemoryMixin:
         else:
             # Fallback for compatibility
             self._memory[key] = value
-    
+
     def recall_sync(self, key: str) -> Any:
         """Recall from memory via mind."""
         if hasattr(self, 'state') and self.state.mind:
@@ -233,7 +233,7 @@ class ContextEngine:
         else:
             # Fallback to old discovery
             return cls._from_agent_legacy(agent)
-    
+
     @classmethod
     def from_agent_state(cls, agent_state: AgentState) -> "ContextEngine":
         """New method for AgentState."""
@@ -247,12 +247,12 @@ class ContextEngine:
 def test_centralized_state():
     """Test new centralized state."""
     state = AgentState()
-    
+
     # Test new subsystems
     assert state.mind is not None
     assert state.execution is not None
     assert state.capabilities is not None
-    
+
     # Test context building
     context = state.get_llm_context()
     assert "query" in context
@@ -260,7 +260,7 @@ def test_centralized_state():
 def test_backward_compatibility():
     """Test backward compatibility."""
     state = AgentState()
-    
+
     # Old field access should still work
     state.current_workflow_id = "test"
     assert state.execution.workflow_id == "test"
@@ -275,19 +275,19 @@ def test_backward_compatibility():
 @dataclass
 class AgentState:
     """Clean version without deprecated fields."""
-    
+
     # Core components only
     problem_context: ProblemContext | None = None
     mind: AgentMind = field(default_factory=AgentMind)
     timeline: Timeline = field(default_factory=Timeline)
     execution: ExecutionContext = field(default_factory=ExecutionContext)
     capabilities: CapabilityRegistry = field(default_factory=CapabilityRegistry)
-    
+
     # Metadata
     session_id: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
     last_updated: datetime = field(default_factory=datetime.now)
-    
+
     # No more duplicate fields
 ```
 
@@ -342,7 +342,7 @@ def migrate_agent_data():
     # Migrate conversation memory
     old_path = Path("~/.dana/chats/").expanduser()
     new_path = Path("~/.models/memory/conversation/").expanduser()
-    
+
     # Migrate user profiles
     # Migrate patterns
     # etc.

@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
-from dana.frameworks.poet.core.types import POETConfig
-from dana.frameworks.poet.enforce import EnforcePhase
+from dana_lang.frameworks.poet.core.types import POETConfig
+from dana_lang.frameworks.poet.enforce import EnforcePhase
 
 
 @pytest.fixture

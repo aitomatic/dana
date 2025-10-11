@@ -15,13 +15,14 @@ Traditional Python LLM setup = 15+ lines of boilerplate
 DANA approach = 1 line, zero setup
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add Dana to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def example_1_simple_question():

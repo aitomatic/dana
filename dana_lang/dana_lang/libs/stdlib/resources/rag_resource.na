@@ -1,8 +1,8 @@
-from dana.common.sys_resource.embedding.embedding_integrations.py import get_default_embedding_model
+from dana_lang.common.sys_resource.embedding.embedding_integrations.py import get_default_embedding_model
 from llama_index.core.py import StorageContext, VectorStoreIndex, Settings
-from dana.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
-from dana.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
-from dana.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
+from dana_lang.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
+from dana_lang.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
+from dana_lang.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
 from llama_index.core.ingestion.py import run_transformations
 from llama_index.core.vector_stores.py import MetadataFilter, MetadataFilters, FilterOperator
 from llama_index.core.vector_stores.types.py import BasePydanticVectorStore
@@ -68,7 +68,7 @@ def (rag: RagResource) initialize():
             end = len(total_doc)
         nodes = run_transformations(total_doc[start:end], rag.vector_index._transformations, show_progress=True, embed_model=rag.embedding_model)
         rag.vector_index.insert_nodes(nodes)
-    
+
     # nodes = run_transformations(total_doc, rag.vector_index._transformations, show_progress=True, embed_model=rag.embedding_model)
     # rag.vector_index.insert_nodes(nodes)
 

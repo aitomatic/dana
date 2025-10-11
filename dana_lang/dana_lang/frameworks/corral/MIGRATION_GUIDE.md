@@ -8,8 +8,8 @@ The CORRAL framework uses the **composition pattern** (like ctxeng) for better m
 
 ### Composition Pattern
 ```python
-from dana.frameworks.corral import CORRALEngineer
-from dana.core.agent import AgentInstance
+from dana_lang.frameworks.corral import CORRALEngineer
+from dana_lang.core.agent import AgentInstance
 
 class MyAgent(AgentInstance):
     def __init__(self, *args, **kwargs):
@@ -28,7 +28,7 @@ class MyAgent(AgentInstance):
 ### 1. Import CORRALEngineer
 
 ```python
-from dana.frameworks.corral import CORRALEngineer
+from dana_lang.frameworks.corral import CORRALEngineer
 ```
 
 ### 2. Define Your Agent
@@ -73,8 +73,8 @@ agent.corral_engineer.get_knowledge_state()
 ### Example 1: Using CORRALEngineer
 
 ```python
-from dana.frameworks.corral import CORRALEngineer
-from dana.core.agent import AgentInstance
+from dana_lang.frameworks.corral import CORRALEngineer
+from dana_lang.core.agent import AgentInstance
 
 class KnowledgeAgent(AgentInstance):
     """Agent with knowledge management capabilities"""
@@ -102,8 +102,8 @@ result = agent.solve_problem("How to optimize database queries?")
 ### Example 2: Using CORRALEngineer Directly
 
 ```python
-from dana.frameworks.corral import CORRALEngineer
-from dana.core.agent import AgentInstance
+from dana_lang.frameworks.corral import CORRALEngineer
+from dana_lang.core.agent import AgentInstance
 
 class CustomAgent(AgentInstance):
     def __init__(self, *args, **kwargs):
@@ -126,9 +126,9 @@ class CustomAgent(AgentInstance):
 ### Example 3: Integration with Context Engineering
 
 ```python
-from dana.frameworks.corral import CORRALEngineer
-from dana.frameworks.ctxeng import ContextEngineer
-from dana.core.agent import AgentInstance
+from dana_lang.frameworks.corral import CORRALEngineer
+from dana_lang.frameworks.ctxeng import ContextEngineer
+from dana_lang.core.agent import AgentInstance
 
 class AdvancedAgent(AgentInstance):
     """Agent with both CORRAL and Context Engineering"""

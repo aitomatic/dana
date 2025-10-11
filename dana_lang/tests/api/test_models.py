@@ -3,7 +3,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from dana.api.core.models import Agent, Document, Topic
+from dana_lang.api.core.models import Agent, Document, Topic
 
 
 class TestAgentModel:

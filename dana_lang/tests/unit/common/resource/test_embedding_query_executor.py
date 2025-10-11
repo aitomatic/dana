@@ -5,8 +5,8 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.exceptions import EmbeddingError, EmbeddingProviderError
-from dana.common.sys_resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
+from dana_lang.common.exceptions import EmbeddingError, EmbeddingProviderError
+from dana_lang.common.sys_resource.embedding.embedding_query_executor import EmbeddingQueryExecutor
 
 
 class TestEmbeddingQueryExecutor(unittest.TestCase):

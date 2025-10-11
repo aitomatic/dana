@@ -9,7 +9,8 @@ MIT License
 
 import pytest
 
-from dana.apps.tui import DanaTUI
+from dana_lang.apps.tui import DanaTUI
+
 
 # Skip all tests in this file until TUI integration tests are updated for new AGENT_REGISTRY architecture
 pytestmark = pytest.mark.skip(reason="TUI integration tests need updating for AGENT_REGISTRY architecture")

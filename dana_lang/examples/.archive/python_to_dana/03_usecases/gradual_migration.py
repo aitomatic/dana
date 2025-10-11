@@ -16,9 +16,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from dana_lang.dana import dana
 import pandas as pd
-
-from dana.dana import dana
 
 
 def main():

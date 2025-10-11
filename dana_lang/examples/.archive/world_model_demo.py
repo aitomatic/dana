@@ -6,8 +6,9 @@ This script demonstrates the world model functionality in action,
 showing how agents can be aware of time, location, and system context.
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -15,8 +16,8 @@ sys.path.insert(0, str(project_root))
 
 from datetime import datetime
 
-from dana.core.agent.mind.agent_mind import AgentMind
-from dana.core.agent.mind.models.world_model import DomainKnowledge
+from dana_lang.core.agent.mind.agent_mind import AgentMind
+from dana_lang.core.agent.mind.models.world_model import DomainKnowledge
 
 
 def demo_world_model_basics():

@@ -6,10 +6,11 @@ from pathlib import Path
 
 import pytest
 
+
 pytest_plugins = ["pytest_asyncio"]
 
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
@@ -25,9 +26,9 @@ def create_mock_llm_resource(name="test_llm", model="openai:gpt-4o-mini"):
     Returns:
         Configured LLMResourceInstance with mock mode enabled
     """
-    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+    from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
     # Create the resource type and extract values
     resource_type = LLMResourceType()
@@ -189,7 +190,7 @@ def configure_llm_mocking(request):
 @pytest.fixture(scope="session", autouse=True)
 def clear_promise_groups():
     """Clear Promise groups at the start of each test session to prevent bleeding."""
-    from dana.core.concurrency.lazy_promise import _current_promise_group
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
 
     # Clear any existing Promise groups
     if hasattr(_current_promise_group, "group"):
@@ -205,7 +206,7 @@ def clear_promise_groups():
 @pytest.fixture(autouse=True)
 def clear_promise_groups_per_test():
     """Clear Promise groups before each test to prevent bleeding."""
-    from dana.core.concurrency.lazy_promise import _current_promise_group
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
 
     # Clear any existing Promise groups before test
     if hasattr(_current_promise_group, "group"):
@@ -271,7 +272,7 @@ def api_server():
     logger.info("Set AITOMATIC_API_URL to http://localhost:12345")
 
     # Import and start the API server
-    from dana.api.server.server import APIServiceManager
+    from dana_lang.api.server.server import APIServiceManager
 
     # Create and start the API service
     api_service = APIServiceManager()
@@ -310,8 +311,8 @@ def run_dana_test_file(dana_test_file):
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
     # Clear only what's needed for test isolation, not everything
-    from dana.__init__ import initialize_module_system, reset_module_system
-    from dana.registry import GLOBAL_REGISTRY
+    from dana_lang.__init__ import initialize_module_system, reset_module_system
+    from dana_lang.registry import GLOBAL_REGISTRY
 
     registry = GLOBAL_REGISTRY
 
@@ -326,7 +327,7 @@ def run_dana_test_file(dana_test_file):
     registry.resources.clear()
 
     # Clear Promise group to prevent bleeding between tests
-    from dana.core.concurrency.lazy_promise import _current_promise_group
+    from dana_lang.core.concurrency.lazy_promise import _current_promise_group
 
     # Clear the thread-local Promise group
     if hasattr(_current_promise_group, "group"):

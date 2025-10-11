@@ -7,7 +7,7 @@ function docstrings and poet() decorator parameters.
 
 from unittest.mock import Mock
 
-from dana.frameworks.poet.core.metadata_extractor import (
+from dana_lang.frameworks.poet.core.metadata_extractor import (
     FunctionMetadata,
     MetadataExtractor,
     extract_pipeline_metadata,
@@ -15,7 +15,7 @@ from dana.frameworks.poet.core.metadata_extractor import (
     with_metadata,
     workflow_step,
 )
-from dana.frameworks.poet.core.workflow_helpers import build_workflow_metadata, create_pipeline_metadata, create_workflow_metadata
+from dana_lang.frameworks.poet.core.workflow_helpers import build_workflow_metadata, create_pipeline_metadata, create_workflow_metadata
 
 
 class TestMetadataExtractor:

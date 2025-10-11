@@ -6,16 +6,18 @@ This example shows how to use the ConverseMixin with an agent instance
 to create interactive conversation loops.
 """
 
-import sys
 import os
+import sys
+
 
 # Add the dana package to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.agent.methods.converse import CLIAdapter
-from dana.core.agent.solvers.domain_support import create_llm_powered_support_components
+from dana_lang.core.agent.solvers.domain_support import create_llm_powered_support_components
+
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.agent.methods.converse import CLIAdapter
 
 
 def create_example_agent() -> AgentInstance:

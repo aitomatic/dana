@@ -5,11 +5,11 @@ This module tests the implementation of `from ... import *` syntax
 for both Dana and Python modules.
 """
 
-import tempfile
 import os
 from pathlib import Path
+import tempfile
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestStarImports:
@@ -125,7 +125,7 @@ except:
     def test_star_import_from_corelib(self):
         """Test star import from Dana's corelib modules."""
         code = """
-from dana.libs.corelib.na_modules import *
+from dana_lang.libs.corelib.na_modules import *
 
 # Should have access to BasicAgent and add_one
 agent = BasicAgent()

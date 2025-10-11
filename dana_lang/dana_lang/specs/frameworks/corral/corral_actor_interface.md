@@ -15,8 +15,8 @@ The `CorralActor` mixin provides a standardized interface for Dana agents to uti
 
 ### Usage Pattern
 ```python
-from dana.frameworks.corral import CorralActor
-from dana.core.agent import AgentInstance
+from dana_lang.frameworks.corral import CorralActor
+from dana_lang.core.agent import AgentInstance
 
 class EnhancedAgent(AgentInstance, CorralActor):
     """Agent with CORRAL knowledge capabilities"""
@@ -33,7 +33,7 @@ CorralActor.apply_to_instance(agent)  # Dynamic mixin application
 
 #### Curate
 ```python
-def curate_knowledge(self, 
+def curate_knowledge(self,
     source: Union[str, Resource, Workflow, Interaction],
     context: Optional[Dict[str, Any]] = None,
     quality_threshold: float = 0.7,
@@ -41,20 +41,20 @@ def curate_knowledge(self,
 ) -> CurationResult:
     """
     Curate knowledge from various sources.
-    
+
     Args:
         source: Information source (text, resource, workflow result, etc.)
         context: Additional context for curation
         quality_threshold: Minimum quality score for acceptance
         auto_categorize: Whether to automatically categorize curated knowledge
-        
+
     Returns:
         CurationResult with curated knowledge items and metadata
     """
 
 def curate_from_interaction(self,
     user_query: str,
-    agent_response: str, 
+    agent_response: str,
     outcome: Outcome,
     user_feedback: Optional[Feedback] = None
 ) -> CurationResult:
@@ -78,13 +78,13 @@ def organize_knowledge(self,
 ) -> OrganizationResult:
     """
     Organize knowledge into structured, indexed form.
-    
+
     Args:
         knowledge_items: Raw or partially structured knowledge
         categories: Target categories (auto-detected if None)
         create_relationships: Whether to establish cross-references
         update_indices: Whether to update search indices
-        
+
     Returns:
         OrganizationResult with structured knowledge graph
     """
@@ -113,14 +113,14 @@ def retrieve_knowledge(self,
 ) -> RetrievalResult:
     """
     Retrieve relevant knowledge for current needs.
-    
+
     Args:
         query: Search query or problem context
         categories: Specific knowledge categories to search
         context: Additional context for relevance scoring
         max_results: Maximum number of results to return
         min_confidence: Minimum confidence threshold
-        
+
     Returns:
         RetrievalResult with ranked, relevant knowledge
     """
@@ -146,12 +146,12 @@ def reason_with_knowledge(self,
 ) -> ReasoningResult:
     """
     Apply reasoning to knowledge for problem solving.
-    
+
     Args:
         knowledge_set: Available knowledge for reasoning
         problem: Problem to solve or question to answer
         reasoning_type: Specific type of reasoning (causal, analogical, etc.)
-        
+
     Returns:
         ReasoningResult with conclusions and reasoning trace
     """
@@ -177,11 +177,11 @@ def act_on_knowledge(self,
 ) -> ActionResult:
     """
     Convert reasoning results into executable actions.
-    
+
     Args:
         reasoning_result: Output from reasoning process
         execution_context: Context for action execution
-        
+
     Returns:
         ActionResult with executed actions and outcomes
     """
@@ -208,13 +208,13 @@ def learn_from_outcome(self,
 ) -> LearningResult:
     """
     Update knowledge based on action outcomes.
-    
+
     Args:
         knowledge_used: Knowledge that informed the action
         action_taken: Action that was executed
         outcome: Result of the action
         context: Situational context
-        
+
     Returns:
         LearningResult with knowledge updates and insights
     """
@@ -243,12 +243,12 @@ def execute_corral_cycle(self,
 ) -> CORRALResult:
     """
     Execute complete CORRAL cycle for problem solving.
-    
+
     Args:
         problem: Problem to solve using CORRAL
         initial_knowledge: Starting knowledge (if any)
         cycle_config: Configuration for cycle execution
-        
+
     Returns:
         CORRALResult with complete cycle outcome and learned knowledge
     """
@@ -313,27 +313,27 @@ class CORRALConfig:
     curation_sources: List[SourceType] = field(default_factory=lambda: ['interaction', 'workflow', 'resource'])
     quality_threshold: float = 0.7
     auto_validation: bool = True
-    
+
     # Organization settings
     auto_categorization: bool = True
     relationship_discovery: bool = True
     indexing_strategy: IndexingStrategy = IndexingStrategy.MULTI_DIMENSIONAL
-    
+
     # Retrieval settings
     max_retrieval_results: int = 10
     min_confidence_threshold: float = 0.5
     context_window: int = 5  # Number of related knowledge items to include
-    
+
     # Reasoning settings
     reasoning_types: List[ReasoningType] = field(default_factory=lambda: ['causal', 'analogical'])
     explanation_depth: ExplanationDepth = ExplanationDepth.STANDARD
     confidence_propagation: bool = True
-    
+
     # Action settings
     action_execution_mode: ActionMode = ActionMode.INTEGRATED  # vs STANDALONE
     fallback_strategies: bool = True
     risk_assessment: bool = True
-    
+
     # Learning settings
     learning_rate: float = 0.1
     pattern_discovery: bool = True
@@ -345,11 +345,11 @@ class CORRALConfig:
 ```python
 class CustomCorralActor(CorralActor):
     """Example of extending CORRAL with domain-specific capabilities"""
-    
+
     def curate_domain_specific_knowledge(self, domain_data: DomainData) -> CurationResult:
         """Custom curation for specific domain"""
         pass
-        
+
     def reason_with_domain_rules(self, knowledge: List[Knowledge], domain_context: DomainContext) -> ReasoningResult:
         """Custom reasoning using domain-specific rules"""
         pass
@@ -434,14 +434,14 @@ for corral_result in agent.continuous_corral(problem_stream):
 ```python
 # Enhanced solve method using CORRAL
 class CORRALEnhancedAgent(AgentInstance, CorralActor):
-    
+
     def solve_sync(self, problem: str, **kwargs) -> Any:
         # Use CORRAL to enhance problem solving
         corral_result = self.execute_corral_cycle(problem)
-        
+
         # Use CORRAL insights for workflow selection
         workflow_rec = self.recommend_workflow(problem)
-        
+
         # Execute enhanced workflow
         enhanced_kwargs = {**kwargs, 'corral_insights': corral_result.insights}
         return super().solve_sync(workflow_rec.workflow, **enhanced_kwargs)

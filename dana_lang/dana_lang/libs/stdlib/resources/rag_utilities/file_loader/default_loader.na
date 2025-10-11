@@ -1,4 +1,4 @@
-from dana.common.sys_resource.rag.loader.local_loader.py import LocalFileMetadataFunc
+from dana_lang.common.sys_resource.rag.loader.local_loader.py import LocalFileMetadataFunc
 from llama_index.core.readers.py import SimpleDirectoryReader
 from multiprocessing.py import cpu_count
 from typing.py import Callable, Union

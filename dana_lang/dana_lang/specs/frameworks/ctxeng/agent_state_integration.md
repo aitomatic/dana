@@ -24,7 +24,7 @@ SolvingMixin.solve_sync()
 AgentState.assemble_context_data()  ← Single source of truth
     │
     ├─ Extract problem context
-    ├─ Extract conversation context  
+    ├─ Extract conversation context
     ├─ Extract memory context
     ├─ Extract execution context
     └─ Extract resource context
@@ -65,22 +65,22 @@ SolvingMixin:
 ```python
 class AgentState:
     """Extended to assemble structured context for ContextEngineer."""
-    
+
     def assemble_context_data(self, query: str, template: str = "general") -> ContextData:
         """
         Assemble structured ContextData from agent state.
-        
+
         This method creates a comprehensive ContextData object by extracting
         relevant information from all agent state components.
-        
+
         Args:
             query: The query string
             template: Template name to use
-            
+
         Returns:
             ContextData populated with agent state information
         """
-        from dana.frameworks.ctxeng import (
+        from dana_lang.frameworks.ctxeng import (
             ContextData,
             ProblemContextData,
             WorkflowContextData,
@@ -89,10 +89,10 @@ class AgentState:
             MemoryContextData,
             ExecutionContextData,
         )
-        
+
         # Create base context data
         context_data = ContextData.create_for_agent(query=query, template=template)
-        
+
         # Extract problem context
         if self.problem_context:
             context_data.problem = ProblemContextData(
@@ -103,7 +103,7 @@ class AgentState:
                 constraints=self.problem_context.constraints,
                 assumptions=self.problem_context.assumptions,
             )
-        
+
         # Extract conversation context
         if self.mind and self.mind.memory:
             conversation_history = self.mind.recall_conversation(3)
@@ -111,14 +111,14 @@ class AgentState:
                 conversation_history = "\n".join(str(item) for item in conversation_history)
             elif not isinstance(conversation_history, str):
                 conversation_history = str(conversation_history)
-            
+
             context_data.conversation = ConversationContextData(
                 conversation_history=conversation_history,
                 recent_events=self._get_recent_events(),
                 user_preferences=self.mind.get_user_context(),
                 context_depth="standard",
             )
-        
+
         # Extract memory context
         if self.mind:
             relevant_memories = self.mind.recall_relevant(self.problem_context) if self.problem_context else []
@@ -126,20 +126,20 @@ class AgentState:
                 relevant_memories = [str(relevant_memories)] if relevant_memories else []
             else:
                 relevant_memories = [str(memory) for memory in relevant_memories]
-            
+
             context_priorities = self.mind.assess_context_needs(self.problem_context, "standard") if self.problem_context else []
             if not isinstance(context_priorities, list):
                 context_priorities = [str(context_priorities)] if context_priorities else []
             else:
                 context_priorities = [str(priority) for priority in context_priorities]
-            
+
             context_data.memory = MemoryContextData(
                 relevant_memories=relevant_memories,
                 user_model=self.mind.get_user_context(),
                 world_model=self.mind.world_model.to_dict() if self.mind.world_model else {},
                 context_priorities=context_priorities,
             )
-        
+
         # Extract execution context
         if self.execution:
             context_data.execution = ExecutionContextData(
@@ -147,7 +147,7 @@ class AgentState:
                 execution_constraints=self.execution.get_constraints(),
                 environment_info={},
             )
-        
+
         # Extract resource context
         if self.capabilities:
             context_data.resources = ResourceContextData(
@@ -156,14 +156,14 @@ class AgentState:
                 resource_usage=self.execution.current_metrics.to_dict() if self.execution else {},
                 resource_errors=[],
             )
-        
+
         return context_data
-    
+
     def _get_recent_events(self) -> list[str]:
         """Get recent events from timeline for context."""
         if not self.timeline or not self.timeline.events:
             return []
-        
+
         try:
             events = self.timeline.events[-5:]  # Last 5 events
             return [f"{e.event_type}: {e.data.get('description', 'No description')}" for e in events]
@@ -176,7 +176,7 @@ class AgentState:
 ```python
 class ContextEngineer:
     """Simplified ContextEngineer that works with structured ContextData."""
-    
+
     def engineer_context_structured(
         self,
         context_data: ContextData,
@@ -184,24 +184,24 @@ class ContextEngineer:
     ) -> str:
         """
         Engineer optimized context using structured ContextData.
-        
+
         Args:
             context_data: Structured context data object
             **options: Additional options
-            
+
         Returns:
             Optimized prompt string (XML or text format)
         """
         # Convert structured data to dictionary for template processing
         context_dict = context_data.to_dict()
-        
+
         # Use the structured data's template and query
         query = context_data.query
         template = context_data.template
-        
+
         # Apply relevance filtering and token optimization
         optimized_context = self._optimize_context(context_dict, query, template, options)
-        
+
         # Get template and assemble final prompt
         template_obj = self._template_manager.get_template(template, self.format_type)
         return template_obj.assemble(query, optimized_context, options)
@@ -212,31 +212,31 @@ class ContextEngineer:
 ```python
 class SolvingMixin:
     """Mixin that integrates ContextEngineer into agent solve workflow."""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._context_engineer = None  # Lazy initialization
-    
+
     @property
     def context_engineer(self) -> ContextEngineer:
         """Get or create the context engineer for this agent."""
         if self._context_engineer is None:
             self._context_engineer = ContextEngineer.from_agent(self)
         return self._context_engineer
-    
+
     def solve_sync(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
         """Enhanced solve method with context engineering."""
         if isinstance(problem_or_workflow, str):
             # Set problem context in centralized state
             self.state.set_problem_context(ProblemContext(problem_statement=problem_or_workflow))
-            
+
             # Let AgentState assemble its own ContextData
             context_data = self.state.assemble_context_data(problem_or_workflow, template="problem_solving")
-            
+
             # Use ContextEngineer with structured data
             rich_prompt = self.context_engineer.engineer_context_structured(context_data)
             problem_or_workflow = rich_prompt
-        
+
         # Continue with workflow planning and execution
         workflow = self.plan_sync(problem_or_workflow, **kwargs)
         return workflow.execute(**kwargs)

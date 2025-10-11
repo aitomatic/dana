@@ -1,7 +1,7 @@
 import os.py
 print(os.getenv("DANAPATH"))
-from dana.libs.stdlib.resources.rag_utilities.file_loader.default_loader import DefaultLoader, load_files, list_files
-from dana.libs.stdlib.resources.rag_utilities.file_loader.webpage_loader import WebpageLoader, load_urls
+from dana_lang.libs.stdlib.resources.rag_utilities.file_loader.default_loader import DefaultLoader, load_files, list_files
+from dana_lang.libs.stdlib.resources.rag_utilities.file_loader.webpage_loader import WebpageLoader, load_urls
 
 
 SUPPORTED_TYPES = [".pdf", ".txt", ".docx", ".md", ".csv", ".json", ".html", ".xml", ".pptx", ".xlsx", ".xls", ".doc"]
@@ -11,7 +11,7 @@ struct DocumentLoader:
     local_loader : object = DefaultLoader(required_exts=SUPPORTED_TYPES)
     web_loader : object = WebpageLoader()
     file_extractor : dict = {".json" : None}
-    
+
 
 def (loader: DocumentLoader) load_sources(sources: list[str]) -> list[Document]:
     web_sources = []

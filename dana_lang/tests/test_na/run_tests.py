@@ -9,16 +9,17 @@ Usage:
     python run_tests.py test_basic_assignments.na  # Run specific test file
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser.dana_parser import parse_program
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.parser.dana_parser import parse_program
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def get_na_files(category=None):
@@ -56,13 +57,13 @@ def run_test(na_file):
     print(f"Running test: {Path(na_file).name}")
 
     # Clear registries for test isolation
-    from dana.registry import GLOBAL_REGISTRY
+    from dana_lang.registry import GLOBAL_REGISTRY
 
     GLOBAL_REGISTRY.clear_all()
 
     # Reload core functions after clearing
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-    from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+    from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
     do_register_py_builtins(GLOBAL_REGISTRY.functions)
     register_py_wrappers(GLOBAL_REGISTRY.functions)

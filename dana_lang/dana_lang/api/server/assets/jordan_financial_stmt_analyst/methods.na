@@ -1,19 +1,19 @@
 from knowledge import knows
 from knowledge import docs
 from knowledge import raw_docs
-from common import State
-from common import build_compression_prompt
-from common import PLANNING_SYSTEM_PROMPT
-from common import EXECUTION_SYSTEM_PROMPT
-from common import EXECUTION_PROMPT
-from common import STEP_BREAK
-from common import COMPLEXITY_CLASSIFIER    
-from common import SIMPLE_PLANNING_TEMPLATE
-from common import MODERATE_PLANNING_TEMPLATE
-from common import COMPLEX_PLANNING_TEMPLATE
-from common import FOCUSED_PLANNING_PROMPT
-from common import build_execution_prompt
-from common import get_enchance_step_prompt
+from dana_lang.common import State
+from dana_lang.common import build_compression_prompt
+from dana_lang.common import PLANNING_SYSTEM_PROMPT
+from dana_lang.common import EXECUTION_SYSTEM_PROMPT
+from dana_lang.common import EXECUTION_PROMPT
+from dana_lang.common import STEP_BREAK
+from dana_lang.common import COMPLEXITY_CLASSIFIER
+from dana_lang.common import SIMPLE_PLANNING_TEMPLATE
+from dana_lang.common import MODERATE_PLANNING_TEMPLATE
+from dana_lang.common import COMPLEX_PLANNING_TEMPLATE
+from dana_lang.common import FOCUSED_PLANNING_PROMPT
+from dana_lang.common import build_execution_prompt
+from dana_lang.common import get_enchance_step_prompt
 import yaml.py
 
 STEPS_TO_START_COMPRESSION = 3
@@ -34,7 +34,7 @@ def classify_complexity(question: str) -> dict[str, str]:
     """Classify question complexity and return classification details."""
     complexity_prompt = COMPLEXITY_CLASSIFIER.format(question=question)
     complexity_result = reason(complexity_prompt, resources=[], temperature=0)
-    
+
     # Extract complexity level and select corresponding template
     if "SIMPLE" in complexity_result.upper():
         return {
@@ -44,7 +44,7 @@ def classify_complexity(question: str) -> dict[str, str]:
         }
     elif "COMPLEX" in complexity_result.upper():
         return {
-            "level": "COMPLEX", 
+            "level": "COMPLEX",
             "template": COMPLEX_PLANNING_TEMPLATE,
             "max_steps": "5+ steps as needed"
         }
@@ -58,7 +58,7 @@ def classify_complexity(question: str) -> dict[str, str]:
 def plan_ahead(data : State, complexity : str) -> State:
     # Step 1: Classify complexity and get template in one call
     complexity_info = classify_complexity(data.original_problem)
-    
+
     # Step 3: Create focused planning prompt with ONLY the relevant template
     focused_plan_prompt = FOCUSED_PLANNING_PROMPT.format(
         system_plan_prompt=PLANNING_SYSTEM_PROMPT,
@@ -71,7 +71,7 @@ def plan_ahead(data : State, complexity : str) -> State:
     # template = "EMPTY"
     # log(template)
     str_plan = reason(f"{focused_plan_prompt}. Example plan : {template}", resources=[knows], temperature=0)
-    
+
     # Step 4: Parse the plan into steps using STEP_BREAK (---)
     steps = str_plan.split(STEP_BREAK)
     new_steps = []
@@ -116,16 +116,16 @@ def fetch_all_data(data: State, execution_prompt: str) -> State:
     except:
         step_answer = reason(execution_prompt, temperature=0, resources=[raw_docs, knows])
         return step_answer
-    
+
 
 def execute_step(data : State) -> State:
     log("="*50)
     log(data.current_step)
     if should_execute(data) == True:
-        need_to_get_data = should_get_data(data)        
-        
+        need_to_get_data = should_get_data(data)
+
         # Use regular EXECUTION_PROMPT for calculations and analysis
-        
+
         if need_to_get_data == True:
             execution_prompt = build_execution_prompt(data.original_problem, TOOLS, data.context, data.current_step)
             step_answer = fetch_all_data(data, execution_prompt)
@@ -136,7 +136,7 @@ def execute_step(data : State) -> State:
             execution_prompt = build_execution_prompt(data.original_problem, TOOLS, data.context, data.current_step)
             step_answer = reason(execution_prompt, temperature=0, resources=[docs])
         log("-"*50)
-        log(step_answer)    
+        log(step_answer)
         data.context = f"{data.context}. \n---\n{data.current_step} \n{step_answer}\n---"
         data.current_answer = step_answer
         data.count = data.count + 1
@@ -164,30 +164,29 @@ def compress_context(data : State) -> State:
 #     Can be called after execute_step() to validate period usage.
 #     """
 #     import re.py
-    
+
 #     warnings = []
-    
+
 #     # Check for numbers without period labels
 #     number_pattern = r'\$[\d,]+[KMB]?(?!\s*(?:Q[1-4]|FY|2024|2023|quarterly|annual))'
 #     unlabeled_numbers = re.findall(number_pattern, step_result)
 #     if unlabeled_numbers:
 #         warnings.append("⚠️ Found financial figures without time period labels")
-    
+
 #     # Check for mixed quarterly/annual in same calculation
 #     has_quarterly = bool(re.search(r'Q[1-4]|quarterly', step_result, re.IGNORECASE))
 #     has_annual = bool(re.search(r'annual|yearly|FY', step_result, re.IGNORECASE))
 #     if has_quarterly and has_annual:
 #         if "annualized" not in step_result.lower() and "converted" not in step_result.lower():
 #             warnings.append("⚠️ Mixing quarterly and annual figures - ensure proper conversion")
-    
+
 #     # Check for growth rate confusion
 #     if "growth" in step_result.lower():
 #         if re.search(r'[0-9]+%.*growth', step_result) and not re.search(r'quarterly|annual|monthly', step_result):
 #             warnings.append("⚠️ Growth rate found without time period specification")
-    
+
 #     if warnings:
 #         warning_text = "\n".join(warnings)
 #         return f"{step_result}\n\n**TEMPORAL CONSISTENCY WARNINGS**:\n{warning_text}"
-    
-#     return step_result
 
+#     return step_result

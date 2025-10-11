@@ -1,6 +1,6 @@
 """Tests for F-string lexing in Dana language."""
 
-from dana.core.lang.parser.dana_parser import DanaParser
+from dana_lang.core.lang.parser.dana_parser import DanaParser
 
 
 def test_fstring_lexer():

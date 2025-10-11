@@ -9,12 +9,13 @@ rather than just indicating the approach type.
 import os
 import sys
 
+
 # Add the project root to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def test_corrected_planning_logic():

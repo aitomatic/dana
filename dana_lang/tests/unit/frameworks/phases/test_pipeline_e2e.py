@@ -7,10 +7,10 @@ MIT License
 
 import pytest
 
-from dana.frameworks.poet.core.types import POETConfig
-from dana.frameworks.poet.enforce import EnforcePhase
-from dana.frameworks.poet.operate import OperatePhase
-from dana.frameworks.poet.perceive import PerceivePhase
+from dana_lang.frameworks.poet.core.types import POETConfig
+from dana_lang.frameworks.poet.enforce import EnforcePhase
+from dana_lang.frameworks.poet.operate import OperatePhase
+from dana_lang.frameworks.poet.perceive import PerceivePhase
 
 
 def dummy_func(x, y):

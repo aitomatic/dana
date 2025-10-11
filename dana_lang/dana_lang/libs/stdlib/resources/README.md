@@ -58,20 +58,20 @@ resource MyCustomResource:
     name: str = ""
     state: str = "created"
     config_value: str = "default"
-    
+
 def (resource: MyCustomResource) initialize() -> bool:
     resource.state = "initialized"
     return true
-    
+
 def (resource: MyCustomResource) start() -> bool:
     resource.state = "running"
     return true
-    
+
 def (resource: MyCustomResource) query(request: str) -> str:
     if resource.state != "running":
         return f"Resource not running"
     return f"Processing: {request}"
-    
+
 def (resource: MyCustomResource) stop() -> bool:
     resource.state = "terminated"
     return true
@@ -81,15 +81,15 @@ def (resource: MyCustomResource) stop() -> bool:
 
 ```python
 # my_resource.py
-from dana.core.resource import BaseResource
+from dana_lang.core.resource import BaseResource
 
 class MyCustomResource(BaseResource):
     kind = "custom"
-    
+
     def initialize(self):
         self.state = self.state.__class__.RUNNING
         return True
-    
+
     def query(self, request):
         if not self.is_running():
             return {"error": "Resource not running"}
@@ -124,15 +124,15 @@ cache.stop()
 ```dana
 agent DataProcessor:
     name: str = "DataProcessor"
-    
+
 def (agent: DataProcessor) process(data: str) -> str:
     # Future: Use agent.use() method
     cache = SimpleCacheResource(name="agent_cache")
     cache.start()
-    
+
     # Cache the result
     cache.query(f"set:data:{data}")
-    
+
     return f"Processed and cached: {data}"
 ```
 
@@ -141,7 +141,7 @@ def (agent: DataProcessor) process(data: str) -> str:
 ### Register a Factory Function
 
 ```dana
-from dana.core.resource.resource_helpers import register_resource
+from dana_lang.core.resource.resource_helpers import register_resource
 
 def create_my_resource(name: str, kind: str, **kwargs):
     # Create custom resource
@@ -161,12 +161,12 @@ register_resource("my_type", "my_kind", create_my_resource, {
 ### Register a Python Class
 
 ```python
-from dana.core.resource import BaseResource
-from dana.core.resource.resource_helpers import register_resource_class
+from dana_lang.core.resource import BaseResource
+from dana_lang.core.resource.resource_helpers import register_resource_class
 
 class MyResource(BaseResource):
     kind = "my_kind"
-    
+
     def query(self, request):
         return f"Response: {request}"
 
@@ -177,13 +177,13 @@ register_resource_class(MyResource, {"description": "My resource"})
 ### Add Custom Search Paths
 
 ```dana
-from dana.core.resource.resource_helpers import add_resource_search_path
+from dana_lang.core.resource.resource_helpers import add_resource_search_path
 
 # Add project-specific resources
 add_resource_search_path("/my/project/resources")
 
 # Reload to pick up new resources
-from dana.core.resource.resource_helpers import reload_resources
+from dana_lang.core.resource.resource_helpers import reload_resources
 reload_resources()
 ```
 

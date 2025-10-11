@@ -1,5 +1,5 @@
-from core.workflows import product_search_workflow
-from core.config import MODEL_CONFIG, get_tabular_index_config
+from dana_lang.core.workflows import product_search_workflow
+from dana_lang.core.config import MODEL_CONFIG, get_tabular_index_config
 from time.py import time
 
 log_level("warn")

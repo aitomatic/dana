@@ -4,9 +4,9 @@ Test case function in Dana core library.
 
 import pytest
 
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
-from dana.registry.function_registry import FunctionRegistry
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+from dana_lang.registry.function_registry import FunctionRegistry
 
 
 class TestCaseFunction:

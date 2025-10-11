@@ -28,20 +28,20 @@ Create a memory resource that agents can use:
 
 ```python
 # dana/common/resource/conversation_memory_resource.py
-from dana.common.sys_resource.base_resource import BaseResource
-from dana.frameworks.memory import ConversationMemory
+from dana_lang.common.sys_resource.base_resource import BaseResource
+from dana_lang.frameworks.memory import ConversationMemory
 
 class ConversationMemoryResource(BaseResource):
     """Resource providing conversation memory capabilities to agents."""
-    
+
     def __init__(self, name: str, memory_file: str = None):
         super().__init__(name, "Conversation memory resource")
         self.memory = ConversationMemory(filepath=memory_file or f"{name}_memory.json")
-    
+
     async def add_turn(self, user_input: str, agent_response: str):
         """Add a conversation turn."""
         return self.memory.add_turn(user_input, agent_response)
-    
+
     async def get_context(self, current_query: str, max_turns: int = 5):
         """Get conversation context for LLM."""
         return self.memory.build_llm_context(current_query, max_turns=max_turns)
@@ -51,17 +51,17 @@ Then in Dana agents:
 ```dana
 agent CustomerSupport:
     memory = ConversationMemoryResource("customer_support")
-    
+
     def respond(query: str) -> str:
         # Get conversation context
         context = memory.get_context(query)
-        
+
         # Use context in LLM call
         response = llm(f"{context}\n\nUser: {query}")
-        
+
         # Save turn to memory
         memory.add_turn(query, response)
-        
+
         return response
 ```
 
@@ -72,17 +72,17 @@ Extend the agent struct system with memory capabilities:
 # dana/agent/memory_mixin.py
 class MemoryEnabledAgentMixin:
     """Mixin to add memory capabilities to agents."""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._memory = ConversationMemory(
             filepath=f"{self.__class__.__name__}_memory.json"
         )
-    
+
     def remember_turn(self, user_input: str, response: str):
         """Remember a conversation turn."""
         self._memory.add_turn(user_input, response)
-    
+
     def get_memory_context(self, query: str):
         """Get memory context for current query."""
         return self._memory.build_llm_context(query)
@@ -95,7 +95,7 @@ Sync our memory system with Dana's existing database:
 # dana/api/services/memory_sync_service.py
 class MemorySyncService:
     """Sync conversation memory with database."""
-    
+
     def sync_from_database(self, conversation_id: int, memory: ConversationMemory):
         """Load conversation from database into memory."""
         messages = db.query(Message).filter_by(conversation_id=conversation_id).all()
@@ -105,7 +105,7 @@ class MemorySyncService:
                 agent_msg = next((m for m in messages if m.sender == "agent" and m.created_at > msg.created_at), None)
                 if agent_msg:
                     memory.add_turn(msg.content, agent_msg.content)
-    
+
     def sync_to_database(self, memory: ConversationMemory, conversation_id: int):
         """Save memory turns to database."""
         # Implementation to sync memory back to database
@@ -144,23 +144,23 @@ class MemorySyncService:
 agent MemoryBot:
     name = "MemoryBot"
     memory = ConversationMemoryResource("memorybot")
-    
+
     def chat(message: str) -> str:
         # Get context from memory
         context = memory.get_context(message)
-        
+
         # Generate response with context
         prompt = f"""
         {context}
-        
+
         User: {message}
         Assistant: """
-        
+
         response = llm(prompt)
-        
+
         # Save to memory
         memory.add_turn(message, response)
-        
+
         return response
 ```
 

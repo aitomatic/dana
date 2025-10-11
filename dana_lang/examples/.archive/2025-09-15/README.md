@@ -71,7 +71,7 @@ Before running any examples:
 3. Configure logging (optional):
 
    ```python
-   from dana.common import DANA_LOGGER
+   from dana_lang.common import DANA_LOGGER
    DANA_LOGGER.configure(
        level=DANA_LOGGER.DEBUG,
        console=True,
@@ -160,7 +160,7 @@ log.info(f"Available tools: {tools}")
 search_results = websearch.search("Dana programming language")
 if len(search_results) > 0:
     log.info(f"Found {len(search_results)} results")
-    
+
     # Process results
     for result in search_results:
         analysis = reason("Summarize this search result", context=result)
@@ -175,19 +175,19 @@ with use("mcp.database", "https://db.company.com") as database:
     # Call database methods
     users = database.query("SELECT * FROM users WHERE active = true")
     count = database.count_records("users")
-    
+
     log.info(f"Processing {count} active users")
-    
+
     # Process users and update
     for user in users:
         activity = database.get_user_activity(user.id)
         analysis = reason("Analyze user engagement", context=activity)
-        
+
         if "low_engagement" in analysis:
             database.update_user_status(user.id, "needs_attention")
 ```
 
-### `a2a-agents/`  
+### `a2a-agents/`
 **Agent-to-Agent Communication**
 ```python
 # Connect to specialized agents

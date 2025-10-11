@@ -5,17 +5,15 @@ These tests verify that unsupported functions are properly blocked with
 appropriate error messages and security rationales.
 """
 
+from dana_lang.common.exceptions import SandboxError
+from dana_lang.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
+from dana_lang.libs.corelib.py_builtins.register_py_builtins import UnsupportedReason
+from dana_lang.registry.function_registry import FunctionRegistry
 import pytest
 
-from dana.common.exceptions import SandboxError
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.sandbox_context import SandboxContext
-
-# Import the real PythonicFunctionFactory
-from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
-from dana.libs.corelib.py_builtins.register_py_builtins import UnsupportedReason
-from dana.registry.function_registry import FunctionRegistry
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
 
 class TestUnsupportedFunctions:
@@ -239,7 +237,7 @@ class TestUnsupportedFunctionRegistry:
     def test_unsupported_functions_registered(self):
         """Test that unsupported functions are registered with error handlers."""
         registry = FunctionRegistry()
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
         do_register_py_builtins(registry)
 
@@ -251,7 +249,7 @@ class TestUnsupportedFunctionRegistry:
     def test_calling_unsupported_through_registry(self):
         """Test calling unsupported functions through the registry."""
         registry = FunctionRegistry()
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
         do_register_py_builtins(registry)
         context = SandboxContext()
@@ -280,12 +278,12 @@ class TestUnsupportedFunctionRegistry:
         def safe_eval(context, expr):
             return f"Safe evaluation of: {expr}"
 
-        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana_lang.core.lang.interpreter.functions.python_function import PythonFunction
 
         registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
         # Now register built-ins (should overwrite the custom eval with error handler)
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
         do_register_py_builtins(registry)
 

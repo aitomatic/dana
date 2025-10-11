@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.sys_resource.rag.pipeline.document_loader import DocumentLoader
+from dana_lang.common.sys_resource.rag.pipeline.document_loader import DocumentLoader
 
 
 class TestDocumentLoader:

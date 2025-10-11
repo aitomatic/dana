@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from dana.frameworks.ctxeng import ContextEngineer
+from dana_lang.frameworks.ctxeng import ContextEngineer
 
 
 class TestContextEngineer:

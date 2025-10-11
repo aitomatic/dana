@@ -1,6 +1,6 @@
 import os
 
-from dana.core.lang import DanaSandbox
+from dana_lang.core.lang import DanaSandbox
 
 
 class TestComponentImports:
@@ -9,7 +9,7 @@ class TestComponentImports:
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
         # Clear module registry to ensure test isolation
-        from dana.__init__.init_modules import reset_module_system
+        from dana_lang.__init__.init_modules import reset_module_system
 
         reset_module_system()
 

@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from dana.integrations.python.to_dana import disable_dana_imports, enable_dana_imports
+from dana_lang.integrations.python.to_dana import disable_dana_imports, enable_dana_imports
 
 
 class TestDirectoryPackagesPythonIntegration:

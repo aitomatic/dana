@@ -2,7 +2,7 @@
 
 import unittest
 
-from dana.common.utils.token_management import TokenManagement
+from dana_lang.common.utils.token_management import TokenManagement
 
 
 class TestTokenManagement(unittest.TestCase):

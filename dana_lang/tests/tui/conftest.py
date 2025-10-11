@@ -16,13 +16,14 @@ import asyncio
 import pytest
 from textual.app import App
 
+
 # Test markers
 
 
 @pytest.fixture
 async def dana_tui_pilot():
     """Provide DanaTUI with pilot for testing."""
-    from dana.apps.tui import DanaTUI
+    from dana_lang.apps.tui import DanaTUI
 
     app = DanaTUI()
     async with app.run_test() as pilot:
@@ -57,8 +58,8 @@ def mock_agent():
     """Provide a mock agent for testing."""
     from collections.abc import AsyncIterator
 
-    from dana.apps.tui.core.events import AgentEvent, Done, Status, Token
-    from dana.core.agent import AgentInstance
+    from dana_lang.apps.tui.core.events import AgentEvent, Done, Status, Token
+    from dana_lang.core.agent import AgentInstance
 
     class MockAgent(AgentInstance):
         def __init__(self, name: str):
@@ -96,8 +97,8 @@ def slow_agent():
     """Provide a slow mock agent for testing timeouts."""
     from collections.abc import AsyncIterator
 
-    from dana.apps.tui.core.events import AgentEvent, Done, Status, Token
-    from dana.core.agent import AgentInstance
+    from dana_lang.apps.tui.core.events import AgentEvent, Done, Status, Token
+    from dana_lang.core.agent import AgentInstance
 
     class SlowMockAgent(AgentInstance):
         def __init__(self, name: str, delay: float = 0.1):
@@ -131,8 +132,8 @@ def error_agent():
     """Provide an agent that raises errors for testing error handling."""
     from collections.abc import AsyncIterator
 
-    from dana.apps.tui.core.events import AgentEvent, Error
-    from dana.core.agent import AgentInstance
+    from dana_lang.apps.tui.core.events import AgentEvent, Error
+    from dana_lang.core.agent import AgentInstance
 
     class ErrorMockAgent(AgentInstance):
         def __init__(self, name: str, error_message: str = "Test error"):

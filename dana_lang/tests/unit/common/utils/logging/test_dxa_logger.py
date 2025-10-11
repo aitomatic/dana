@@ -2,7 +2,7 @@
 
 import logging
 
-from dana.common.utils.logging.dana_logger import DanaLogger
+from dana_lang.common.utils.logging.dana_logger import DanaLogger
 
 
 def test_set_level_no_scope():

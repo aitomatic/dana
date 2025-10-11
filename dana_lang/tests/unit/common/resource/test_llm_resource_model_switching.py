@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.common.types import BaseRequest
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.types import BaseRequest
 
 
 class TestLLMResourceModelSwitching:
@@ -178,7 +178,7 @@ class TestLLMResourceModelSwitching:
 
     def test_local_model_format_validation(self):
         """Test that local model format errors are caught during query."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Test with invalid local model format (should be "local:model_name")
         llm = LegacyLLMResource(name="test_local_invalid", model="microsoft/Phi-3.5-mini-instruct")
@@ -204,7 +204,7 @@ class TestLLMResourceModelSwitching:
 
     def test_openai_model_format_validation(self):
         """Test that OpenAI model format errors are caught during query."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Test with invalid OpenAI model format (should be "openai:model_name")
         llm = LegacyLLMResource(name="test_openai_invalid", model="gpt-4-invalid-format")
@@ -230,7 +230,7 @@ class TestLLMResourceModelSwitching:
 
     def test_anthropic_model_format_validation(self):
         """Test that Anthropic model format errors are caught during query."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Test with invalid Anthropic model format (should be "anthropic:model_name")
         llm = LegacyLLMResource(name="test_anthropic_invalid", model="claude-3-invalid-format")
@@ -256,7 +256,7 @@ class TestLLMResourceModelSwitching:
 
     def test_model_switching_with_invalid_formats(self):
         """Test that switching to invalid model formats is caught during query."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Start with valid model
         llm = LegacyLLMResource(name="test_switching_invalid", model="openai:gpt-4")
@@ -289,7 +289,7 @@ class TestLLMResourceModelSwitching:
     @pytest.mark.live
     def test_actual_aisuite_model_format_validation(self):
         """Test that actually triggers the AISuite model format validation error."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # No longer overriding DANA_MOCK_LLM - let environment control it
         try:
@@ -326,8 +326,8 @@ class TestLLMResourceModelSwitching:
         import copy
 
         # Patch ConfigLoader to inject a bad preferred model
-        from dana.common.config import ConfigLoader
-        from dana.common.types import BaseRequest
+        from dana_lang.common.config import ConfigLoader
+        from dana_lang.common.types import BaseRequest
 
         bad_model = "microsoft/Phi-3.5-mini-instruct"
 
@@ -356,7 +356,7 @@ class TestLLMResourceModelSwitching:
     @pytest.mark.live
     def test_local_model_bug_is_fixed(self):
         """Test that the local model bug is fixed - correct model format transformation."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Test 1: Default api_type (should default to "openai")
         provider_configs_default = {
