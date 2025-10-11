@@ -6,8 +6,8 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from dana.common.exceptions import ConfigurationError
-from dana.common.mixins.configurable import Configurable
+from dana_lang.common.exceptions import ConfigurationError
+from dana_lang.common.mixins.configurable import Configurable
 
 
 # pylint: disable=missing-function-docstring

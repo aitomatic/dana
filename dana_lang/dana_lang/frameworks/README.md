@@ -8,12 +8,12 @@ Intelligent capabilities for knowledge organization, workflow orchestration, and
 **Runtime-level** knowledge ingestion, curation, and workflow orchestration.
 
 ```python
-from dana.frameworks.knows import DocumentLoader, KnowledgeCategorizer, ContextExpander
+from dana_lang.frameworks.knows import DocumentLoader, KnowledgeCategorizer, ContextExpander
 
 # Document processing
 documents = DocumentLoader().load("docs/")
 
-# Knowledge extraction  
+# Knowledge extraction
 knowledge = KnowledgeCategorizer().extract(documents)
 
 # Context engineering
@@ -30,7 +30,7 @@ def assess_credit(score: int, income: float) -> str:
 
 # POET automatically provides:
 # - Context injection & fault tolerance (perceive)
-# - Deterministic execution with reliability (operate)  
+# - Deterministic execution with reliability (operate)
 # - Output formatting & validation (enforce)
 # - Adaptive learning from feedback (train)
 ```
@@ -55,7 +55,7 @@ result = data_pipeline(data_source)
 Intelligent context assembly for any domain, query, and role.
 
 ```python
-from dana.frameworks.knows import ContextExpander
+from dana_lang.frameworks.knows import ContextExpander
 
 # Create curated context for LLM interactions
 context = ContextExpander().create(domain="financial", query="assess_credit")
@@ -72,15 +72,15 @@ graph LR
         B --> C[Retrieve]
         C --> D[Reason]
     end
-    
+
     subgraph "POET Enhancement"
         E[Act] --> F[Learn]
     end
-    
+
     subgraph "Workflow"
         G[Orchestrate]
     end
-    
+
     D --> E
     G --> E
     F --> A
@@ -110,7 +110,7 @@ graph LR
 @poet(domain="data_processing")
 def load_data(source): return load(source)
 
-@poet(domain="analysis") 
+@poet(domain="analysis")
 def analyze_data(data): return analyze(data)
 
 # 2. Create workflow
@@ -128,7 +128,7 @@ result = enhanced_pipeline(data_source)
 
 ### **`knows/` Module** - Knowledge Lifecycle
 - **`curation/`**: Knowledge extraction and curation (Curate)
-- **`core/`**: Knowledge organization and categorization (Organize)  
+- **`core/`**: Knowledge organization and categorization (Organize)
 - **`context/`**: Context assembly and reasoning (Retrieve + Reason)
 - **`workflow/`**: Workflow orchestration (Act orchestration)
 

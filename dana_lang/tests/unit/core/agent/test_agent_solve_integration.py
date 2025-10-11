@@ -5,11 +5,11 @@ This module tests the integration between AgentInstance, strategies, and workflo
 in the new agent solving system.
 """
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.agent.context import ProblemContext
-from dana.core.agent.timeline import Timeline
-from dana.core.workflow.workflow_system import WorkflowInstance
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.agent.context import ProblemContext
+from dana_lang.core.agent.timeline import Timeline
+from dana_lang.core.workflow.workflow_system import WorkflowInstance
 
 
 class TestAgentSolveIntegration:

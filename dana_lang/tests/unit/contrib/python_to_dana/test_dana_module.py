@@ -6,8 +6,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python.to_dana.core.exceptions import DanaCallError
-from dana.integrations.python.to_dana.dana_module import Dana
+from dana_lang.integrations.python.to_dana.core.exceptions import DanaCallError
+from dana_lang.integrations.python.to_dana.dana_module import Dana
+
 
 # Test parameters for various Dana module initialization scenarios
 dana_init_params = [

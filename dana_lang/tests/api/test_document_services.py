@@ -3,9 +3,10 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from dana.api.core.models import Topic
-from dana.api.core.schemas import TopicCreate
-from dana.api.services.topic_service import TopicService
+from dana_lang.api.core.models import Topic
+from dana_lang.api.core.schemas import TopicCreate
+from dana_lang.api.services.topic_service import TopicService
+
 
 # FileStorageService was merged into DocumentService during refactoring
 # The obsolete TestFileStorageService class has been removed

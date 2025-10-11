@@ -5,10 +5,10 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 
 import unittest
 
-from dana.core.agent import AgentInstance, AgentType, create_agent_instance
-from dana.core.builtins.struct_system import StructInstance, StructType
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
+from dana_lang.core.agent import AgentInstance, AgentType, create_agent_instance
+from dana_lang.core.builtins.struct_system import StructInstance, StructType
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.registry import TYPE_REGISTRY, get_agent_type, register_agent_type
 
 
 class TestAgentStructType(unittest.TestCase):
@@ -140,7 +140,7 @@ class TestAgentInstance(unittest.TestCase):
         plan_result = agent_instance.plan_sync("test task", sandbox_context=self.sandbox_context)
 
         # The plan method should return a WorkflowInstance
-        from dana.core.workflow.workflow_system import WorkflowInstance
+        from dana_lang.core.workflow.workflow_system import WorkflowInstance
 
         self.assertIsInstance(plan_result, WorkflowInstance, f"Expected WorkflowInstance, got {type(plan_result)}: {plan_result}")
 

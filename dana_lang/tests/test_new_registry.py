@@ -5,12 +5,12 @@ This test verifies that the new registry system works correctly
 before we start integrating it into the Dana system.
 """
 
-import unittest
 from dataclasses import dataclass
 from typing import Any
+import unittest
 
-from dana.core.agent import AgentInstance
-from dana.core.builtins.struct_system import StructInstance, StructType
+from dana_lang.core.agent import AgentInstance
+from dana_lang.core.builtins.struct_system import StructInstance, StructType
 
 
 # Mock classes for testing
@@ -43,13 +43,13 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from dana.registry import clear_all
+        from dana_lang.registry import clear_all
 
         clear_all()
 
     def test_global_registry_singleton(self):
         """Test that GlobalRegistry is a singleton."""
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         registry1 = GLOBAL_REGISTRY
         registry2 = GLOBAL_REGISTRY
@@ -58,7 +58,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_type_registration(self):
         """Test type registration and retrieval."""
-        from dana.registry import (
+        from dana_lang.registry import (
             get_agent_type,
             get_resource_type,
             get_struct_type,
@@ -89,7 +89,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_struct_function_registration(self):
         """Test struct function registration and lookup."""
-        from dana.registry import has_struct_function, lookup_struct_function, register_struct_function
+        from dana_lang.registry import has_struct_function, lookup_struct_function, register_struct_function
 
         # Create mock functions
         def plan_method(agent, task):
@@ -116,7 +116,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_instance_tracking(self):
         """Test instance tracking functionality."""
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         registry = GLOBAL_REGISTRY
 
@@ -142,7 +142,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_event_handler_functionality(self):
         """Test event handler functionality for StructRegistry."""
-        from dana.registry import AGENT_REGISTRY
+        from dana_lang.registry import AGENT_REGISTRY
 
         # Test data to track events
         registered_events = []
@@ -164,7 +164,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
         AGENT_REGISTRY.on_event("registered", on_general_handler)
 
         # Create test instances
-        from dana.core.agent import AgentType
+        from dana_lang.core.agent import AgentType
 
         agent_struct_type = AgentType("TestAgent", {"name": "str"}, ["name"], {"name": "Agent name"})
         agent_instance = AgentInstance(agent_struct_type, {"name": "TestAgent"})
@@ -208,7 +208,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_registry_statistics(self):
         """Test registry statistics."""
-        from dana.registry import GLOBAL_REGISTRY, register_agent_type, register_struct_function
+        from dana_lang.registry import GLOBAL_REGISTRY, register_agent_type, register_struct_function
 
         registry = GLOBAL_REGISTRY
 
@@ -231,7 +231,7 @@ class TestNewGlobalRegistry(unittest.TestCase):
 
     def test_clear_functionality(self):
         """Test that clear_all() works correctly."""
-        from dana.registry import clear_all, get_agent_type, has_struct_function, register_agent_type, register_struct_function
+        from dana_lang.registry import clear_all, get_agent_type, has_struct_function, register_agent_type, register_struct_function
 
         # Add some data
         agent_type = MockAgentType("TestAgent", {"name": "str"}, ["name"])

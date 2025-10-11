@@ -14,20 +14,20 @@ MIT License
 """
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 import pytest
 
-from dana.core.concurrency.promise_limiter import (
+from dana_lang.core.concurrency.promise_limiter import (
     PromiseLimiter,
     PromiseLimiterError,
     get_global_promise_limiter,
     set_global_promise_limiter,
 )
-from dana.core.concurrency.promise_utils import resolve_if_promise, resolve_promise
+from dana_lang.core.concurrency.promise_utils import resolve_if_promise, resolve_promise
 
 
 class TestPromiseLimiter:

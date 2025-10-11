@@ -14,7 +14,7 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana-agent"
+name = "dana_agent"
 version = "0.1.0"
 description = "Dana Agent - Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
@@ -30,7 +30,7 @@ maintainers = [
 
 # Core runtime dependencies for LLM app development
 dependencies = [
-    # No cross-project dependency (dana-agent is standalone)
+    # No cross-project dependency (dana_agent is standalone)
     # Core LLM Integration
     "openai>=1.55.3",
     "anthropic>=0.67.0",
@@ -55,8 +55,8 @@ dependencies = [
 
 # Command-line entry points
 [project.scripts]
-dana-agent = "dana_agent.apps.dana.__main__:main"
-dana-agent-repl = "dana_agent.apps.repl.__main__:main"
+dana_agent = "dana_agent.apps.dana.__main__:main"
+dana_agent_repl = "dana_agent.apps.repl.__main__:main"
 
 # Optional dependency groups
 [project.optional-dependencies]

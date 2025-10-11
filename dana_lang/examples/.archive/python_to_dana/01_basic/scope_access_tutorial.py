@@ -14,13 +14,14 @@ Run this to see scope access in action!
 Control data visibility between DANA modules and Python code
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add Dana to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def step1_direct_scope_access():
@@ -37,7 +38,7 @@ def step1_direct_scope_access():
 local_name = "Dana"
 local_version = 2.0
 
-# PUBLIC SCOPE - Python CAN access these  
+# PUBLIC SCOPE - Python CAN access these
 public:shared_status = "active"
 public:global_counter = 100
 
@@ -154,9 +155,9 @@ def get_all_scopes() -> dict:
     print("🔧 Python accessing all scopes via functions:")
     print("""
     import scope_access
-    
+
     local_data = scope_access.get_local_data()     # ✅ Works
-    public_data = scope_access.get_public_data()   # ✅ Works  
+    public_data = scope_access.get_public_data()   # ✅ Works
     private_data = scope_access.get_private_data() # ✅ Works via function
     system_data = scope_access.get_system_data()   # ✅ Works via function
     """)
@@ -207,7 +208,7 @@ session_timeout = 3600
 def login_user(username: str) -> bool:
     if public:active_users >= max_concurrent_users:
         return false
-    
+
     public:active_users = public:active_users + 1
     private:user_sessions[username] = "active"
     return true
@@ -229,7 +230,7 @@ def get_public_stats() -> dict:
 def admin_get_all_data(admin_password: str) -> dict:
     if admin_password != private:admin_key:
         return {"error": "unauthorized"}
-    
+
     return {
         "public": {
             "active_users": public:active_users,

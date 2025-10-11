@@ -4,7 +4,7 @@ Tests for core.types module - Type System for Python-to-Dana Integration
 
 import pytest
 
-from dana.integrations.python.to_dana.core.types import (
+from dana_lang.integrations.python.to_dana.core.types import (
     DANA_TO_PYTHON_TYPES,
     PYTHON_TO_DANA_TYPES,
     DanaType,
@@ -12,6 +12,7 @@ from dana.integrations.python.to_dana.core.types import (
     get_dana_type,
     validate_python_type,
 )
+
 
 # Test parameters for DanaType enum
 dana_type_values_params = [

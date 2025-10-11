@@ -3,14 +3,14 @@ Tests for POET Feedback System
 """
 
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import Mock
 
 import pytest
 
-from dana.common.types import BaseResponse
-from dana.frameworks.poet.core.types import POETFeedbackError, POETResult
+from dana_lang.common.types import BaseResponse
+from dana_lang.frameworks.poet.core.types import POETFeedbackError, POETResult
 
 
 class AlphaFeedbackSystem:

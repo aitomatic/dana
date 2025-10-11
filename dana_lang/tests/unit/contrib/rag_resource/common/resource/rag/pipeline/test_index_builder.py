@@ -7,10 +7,10 @@ Tests individual index creation, error handling, and integration with documents.
 import os
 from unittest.mock import Mock, patch
 
-import pytest
 from llama_index.core import VectorStoreIndex
+import pytest
 
-from dana.common.sys_resource.rag.pipeline.index_builder import IndexBuilder
+from dana_lang.common.sys_resource.rag.pipeline.index_builder import IndexBuilder
 
 
 # Helper function to check if OpenAI API key is available

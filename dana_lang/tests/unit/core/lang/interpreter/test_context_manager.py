@@ -2,8 +2,8 @@
 Tests for the ContextManager class.
 """
 
-from dana.core.lang.context_manager import ContextManager
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.context_manager import ContextManager
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def test_get_sandboxed_context():

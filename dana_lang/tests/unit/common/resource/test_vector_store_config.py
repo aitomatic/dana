@@ -2,7 +2,7 @@
 
 import unittest
 
-from dana.common.sys_resource.vector_store.config import (
+from dana_lang.common.sys_resource.vector_store.config import (
     DuckDBConfig,
     HNSWConfig,
     PGVectorConfig,

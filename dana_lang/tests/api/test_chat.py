@@ -1,15 +1,15 @@
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy.orm import Session
 
-from dana.api.core import models, schemas
-from dana.api.server.server import create_app
-from dana.api.services.chat_service import ChatService
-from dana.api.services.conversation_service import ConversationService
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.api.core import models, schemas
+from dana_lang.api.server.server import create_app
+from dana_lang.api.services.chat_service import ChatService
+from dana_lang.api.services.conversation_service import ConversationService
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ class TestChatEndpoint:
 
     def test_chat_with_agent_success(self, client):
         """Test successful chat with agent"""
-        from dana.api.services.chat_service import get_chat_service
+        from dana_lang.api.services.chat_service import get_chat_service
 
         # Mock chat service
         mock_chat_service = Mock()
@@ -63,7 +63,7 @@ class TestChatEndpoint:
 
     def test_chat_with_agent_not_found(self, client):
         """Test chat with non-existent agent"""
-        from dana.api.services.chat_service import get_chat_service
+        from dana_lang.api.services.chat_service import get_chat_service
 
         # Mock chat service to raise agent not found error
         mock_chat_service = Mock()
@@ -86,7 +86,7 @@ class TestChatEndpoint:
 
     def test_chat_with_agent_service_error(self, client):
         """Test chat when service returns error"""
-        from dana.api.services.chat_service import get_chat_service
+        from dana_lang.api.services.chat_service import get_chat_service
 
         # Mock chat service error
         mock_chat_service = Mock()

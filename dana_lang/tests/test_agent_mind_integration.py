@@ -5,13 +5,13 @@ This test file verifies that the AgentMind class properly integrates
 with the world model functionality.
 """
 
-import shutil
-import tempfile
 from datetime import datetime
 from pathlib import Path
+import shutil
+import tempfile
 
-from dana.core.agent.mind.agent_mind import AgentMind
-from dana.core.agent.mind.models.world_model import LocationContext, SystemContext, TimeContext
+from dana_lang.core.agent.mind.agent_mind import AgentMind
+from dana_lang.core.agent.mind.models.world_model import LocationContext, SystemContext, TimeContext
 
 
 class TestAgentMindWorldModelIntegration:

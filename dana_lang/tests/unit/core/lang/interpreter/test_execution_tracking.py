@@ -8,15 +8,16 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
-from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
-from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
-from dana.core.lang.interpreter.error_context import ExecutionLocation
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.lang.ast import Program
+import pytest
+
+from dana_lang.core.lang.ast import Program
+from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
+from dana_lang.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana_lang.core.lang.interpreter.executor.program_executor import ProgramExecutor
+from dana_lang.core.lang.interpreter.executor.statement_executor import StatementExecutor
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestExecutionTracking:
@@ -270,7 +271,7 @@ class TestExecutionTracking:
 
     def test_dana_sandbox_configuration(self):
         """Test that DanaSandbox properly passes configuration to context."""
-        from dana.core.lang.dana_sandbox import DanaSandbox
+        from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
         # Test with tracking enabled (default)
         sandbox = DanaSandbox(track_execution=True)

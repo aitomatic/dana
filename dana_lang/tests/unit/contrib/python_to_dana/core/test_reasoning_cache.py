@@ -8,8 +8,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
-from dana.integrations.python.to_dana.core.reasoning_cache import ReasoningCache
+from dana_lang.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana_lang.integrations.python.to_dana.core.reasoning_cache import ReasoningCache
+
 
 # Test data for cache initialization
 cache_initialization_params = [

@@ -9,11 +9,11 @@ Tests that errors include:
 - Stack traces
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 
-from dana.common.exceptions import EnhancedDanaError
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.common.exceptions import EnhancedDanaError
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestEnhancedErrorReporting:

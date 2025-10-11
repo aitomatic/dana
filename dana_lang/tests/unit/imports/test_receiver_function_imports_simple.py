@@ -4,8 +4,8 @@ Simple unit tests for receiver function import system.
 Tests the behavior of importing struct types and their associated receiver functions.
 """
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestReceiverFunctionImportsSimple:
@@ -55,7 +55,7 @@ simple = SimpleStruct()
         # Initialize the module system for the test
         import os
 
-        from dana.__init__.init_modules import initialize_module_system, reset_module_system
+        from dana_lang.__init__.init_modules import initialize_module_system, reset_module_system
 
         # Add tmp_path to DANAPATH so the interpreter can find the module
         original_danapath = os.environ.get("DANAPATH", "")
@@ -107,7 +107,7 @@ files = loader.list_files("some_path")
         # Initialize the module system for the test
         import os
 
-        from dana.__init__.init_modules import initialize_module_system, reset_module_system
+        from dana_lang.__init__.init_modules import initialize_module_system, reset_module_system
 
         # Add tmp_path to DANAPATH so the interpreter can find the module
         original_danapath = os.environ.get("DANAPATH", "")
@@ -167,7 +167,7 @@ product_result = calc.multiply(4, 6)
         # Initialize the module system for the test
         import os
 
-        from dana.__init__.init_modules import initialize_module_system, reset_module_system
+        from dana_lang.__init__.init_modules import initialize_module_system, reset_module_system
 
         # Add tmp_path to DANAPATH so the interpreter can find the module
         original_danapath = os.environ.get("DANAPATH", "")

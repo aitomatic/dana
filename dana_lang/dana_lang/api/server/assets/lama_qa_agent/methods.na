@@ -1,8 +1,8 @@
 from all_resources import knows
 from all_resources import docs
-from common import QueryPackage
+from dana_lang.common import QueryPackage
 from datetime.py import datetime
-from common import QUERY_GENERATION_PROMPT, SYSTEM_PROMPT, ANSWER_PROMPT
+from dana_lang.common import QUERY_GENERATION_PROMPT, SYSTEM_PROMPT, ANSWER_PROMPT
 
 def refine_query(package: QueryPackage) -> QueryPackage:
     package.refined_query = reason(QUERY_GENERATION_PROMPT.format(query=package.query), temperature=0.1)
@@ -23,4 +23,3 @@ def query_knowledge(data : QueryPackage) -> QueryPackage:
 
 def final_answer(data : QueryPackage) -> QueryPackage:
     return reason(ANSWER_PROMPT.format(current_time=datetime.now().date(), system_prompt=SYSTEM_PROMPT, context_str=data.chunks, knowledge_str=data.knowledges, query=data.query))
-    

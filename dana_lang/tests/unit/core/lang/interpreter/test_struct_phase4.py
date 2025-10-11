@@ -4,11 +4,11 @@ Tests for Phase 4: Struct method syntax transformation.
 This module tests the transformation of method calls (obj.method()) to function calls (method(obj)).
 """
 
-from dana.core.builtins.struct_system import (
+from dana_lang.core.builtins.struct_system import (
     StructInstance,
 )
-from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
+from dana_lang.registry import TYPE_REGISTRY
 
 
 class TestMethodSyntaxTransformation:
@@ -365,7 +365,7 @@ def normalize(vector: Vector, length: float = 1.0) -> Vector:
     magnitude_squared = vector.x * vector.x + vector.y * vector.y
     if magnitude_squared == 0:
         return Vector(x=0, y=0)
-    
+
     # Use a simple approximation: scale by length/sqrt(magnitude_squared)
     # For (3,4), sqrt(25) = 5, so scale by length/5
     if magnitude_squared == 25:  # 3² + 4² = 25
@@ -373,7 +373,7 @@ def normalize(vector: Vector, length: float = 1.0) -> Vector:
     else:
         # Fallback for other values
         scale = length / (magnitude_squared ** 0.5)
-    
+
     return Vector(x=vector.x * scale, y=vector.y * scale)
 
 local:vector = Vector(x=3, y=4)

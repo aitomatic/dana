@@ -4,9 +4,9 @@ Tests for the new centralized AgentState architecture.
 
 from datetime import datetime
 
-from dana.core.agent import AgentState, ProblemContext, AgentMind
-from dana.core.agent.context import ExecutionContext
-from dana.core.agent.timeline import Timeline
+from dana_lang.core.agent import AgentMind, AgentState, ProblemContext
+from dana_lang.core.agent.context import ExecutionContext
+from dana_lang.core.agent.timeline import Timeline
 
 
 class TestAgentState:

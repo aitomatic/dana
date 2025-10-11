@@ -18,7 +18,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -28,10 +28,10 @@ from dana.core.lang.ast import (
     Program,
     WhileLoop,
 )
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.functions.python_function import PythonFunction
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.registry.function_registry import FunctionRegistry
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.interpreter.functions.python_function import PythonFunction
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.registry.function_registry import FunctionRegistry
 
 
 # --- Literals ---
@@ -200,7 +200,7 @@ def test_list_literal():
 
 
 def test_fstring_literal():
-    from dana.core.lang.ast import FStringExpression
+    from dana_lang.core.lang.ast import FStringExpression
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -429,7 +429,7 @@ def test_greater_equals():
 
 # --- Unary Expressions ---
 def test_unary_expression():
-    from dana.core.lang.ast import UnaryExpression
+    from dana_lang.core.lang.ast import UnaryExpression
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -448,7 +448,7 @@ def test_unary_expression():
 # --- Function Call ---
 @pytest.mark.xfail(reason="FunctionCall not yet implemented")
 def test_function_call():
-    from dana.core.lang.ast import FunctionCall
+    from dana_lang.core.lang.ast import FunctionCall
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -474,7 +474,7 @@ def test_function_call():
 
 # --- Attribute Access ---
 def test_attribute_access():
-    from dana.core.lang.ast import AttributeAccess, DictLiteral
+    from dana_lang.core.lang.ast import AttributeAccess, DictLiteral
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -492,7 +492,7 @@ def test_attribute_access():
 
 # --- Subscript Expression ---
 def test_subscript_expression():
-    from dana.core.lang.ast import SubscriptExpression
+    from dana_lang.core.lang.ast import SubscriptExpression
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -510,7 +510,7 @@ def test_subscript_expression():
 
 # --- Tuple/Dict/Set Literals ---
 def test_tuple_literal():
-    from dana.core.lang.ast import TupleLiteral
+    from dana_lang.core.lang.ast import TupleLiteral
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -524,7 +524,7 @@ def test_tuple_literal():
 
 
 def test_dict_literal():
-    from dana.core.lang.ast import DictLiteral
+    from dana_lang.core.lang.ast import DictLiteral
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -538,7 +538,7 @@ def test_dict_literal():
 
 
 def test_set_literal():
-    from dana.core.lang.ast import SetLiteral
+    from dana_lang.core.lang.ast import SetLiteral
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -553,7 +553,7 @@ def test_set_literal():
 
 # --- Other Statements ---
 def test_print_statement():
-    from dana.core.lang.ast import FunctionCall
+    from dana_lang.core.lang.ast import FunctionCall
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -567,8 +567,8 @@ def test_print_statement():
 
 
 def test_break_statement():
-    from dana.core.lang.ast import BreakStatement
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import BreakException
+    from dana_lang.core.lang.ast import BreakStatement
+    from dana_lang.core.lang.interpreter.executor.control_flow.exceptions import BreakException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -586,8 +586,8 @@ def test_break_statement():
 
 
 def test_continue_statement():
-    from dana.core.lang.ast import ContinueStatement
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import ContinueException
+    from dana_lang.core.lang.ast import ContinueStatement
+    from dana_lang.core.lang.interpreter.executor.control_flow.exceptions import ContinueException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -605,7 +605,7 @@ def test_continue_statement():
 
 
 def test_pass_statement():
-    from dana.core.lang.ast import PassStatement
+    from dana_lang.core.lang.ast import PassStatement
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -618,8 +618,8 @@ def test_pass_statement():
 
 
 def test_return_statement():
-    from dana.core.lang.ast import ReturnStatement
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+    from dana_lang.core.lang.ast import ReturnStatement
+    from dana_lang.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -637,7 +637,7 @@ def test_return_statement():
 
 
 def test_raise_statement():
-    from dana.core.lang.ast import RaiseStatement
+    from dana_lang.core.lang.ast import RaiseStatement
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -655,7 +655,7 @@ def test_raise_statement():
 
 
 def test_assert_statement():
-    from dana.core.lang.ast import AssertStatement
+    from dana_lang.core.lang.ast import AssertStatement
 
     interpreter = DanaInterpreter()
     context = SandboxContext()

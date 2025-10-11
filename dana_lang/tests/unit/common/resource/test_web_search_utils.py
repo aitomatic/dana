@@ -1,10 +1,11 @@
 """Tests for web search utility functions."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.sys_resource.web_search.utils.content_processor import ContentProcessor
-from dana.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
+import pytest
+
+from dana_lang.common.sys_resource.web_search.utils.content_processor import ContentProcessor
+from dana_lang.common.sys_resource.web_search.utils.summarizer import ContentSummarizer
 
 
 class TestContentProcessor:

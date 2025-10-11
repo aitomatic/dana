@@ -5,10 +5,12 @@ This module tests the resource execution functionality end-to-end across
 different solver types to ensure the feature works consistently.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from dana.core.agent.solvers import SimpleHelpfulSolver, PlannerExecutorSolver, ReactiveSupportSolver, TriageSolver
-from dana.core.agent.agent_instance import AgentInstance
+
+import pytest
+
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.solvers import PlannerExecutorSolver, ReactiveSupportSolver, SimpleHelpfulSolver, TriageSolver
 
 
 class TestResourceExecutionIntegration:

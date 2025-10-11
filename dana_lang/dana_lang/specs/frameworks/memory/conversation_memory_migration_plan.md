@@ -49,7 +49,7 @@ def _initialize_conversation_memory(self):
 # In dana/builtin_types/agent/agent_instance.py
 # REMOVE this import since it's no longer used directly:
 
-from dana.frameworks.memory.conversation_memory import ConversationMemory
+from dana_lang.frameworks.memory.conversation_memory import ConversationMemory
 ```
 
 ## Phase 2: Ensure Proper Inheritance
@@ -84,14 +84,14 @@ class MyAgent(AgentInstance, AgentImplementations):
 def __init__(self, filepath: str, max_turns: int = 20):
     """
     Initialize conversation memory.
-    
+
     Args:
         filepath: Path to JSON file for persistence (required)
         max_turns: Maximum number of turns to keep in active memory
     """
     if not filepath:
         raise ValueError("filepath is required for ConversationMemory")
-    
+
     self.filepath = Path(filepath)
     # ... rest of implementation ...
 ```
@@ -149,7 +149,7 @@ uv run python -m pytest tests/integration/ -v
 ### Step 3: Manual Verification
 ```python
 # Test script to verify file placement
-from dana.core.agent import AgentInstance
+from dana_lang.core.agent import AgentInstance
 from pathlib import Path
 
 # Create an agent

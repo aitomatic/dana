@@ -7,7 +7,7 @@ consistent, standardized error messages following the Dana format:
 
 from unittest.mock import patch
 
-from dana.common.utils.error_formatting import ErrorFormattingUtilities
+from dana_lang.common.utils.error_formatting import ErrorFormattingUtilities
 
 
 class TestErrorFormattingUtilities:

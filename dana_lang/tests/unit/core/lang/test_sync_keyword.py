@@ -12,9 +12,9 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.core.concurrency import is_promise
-from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.concurrency import is_promise
+from dana_lang.core.lang.interpreter.functions.dana_function import DanaFunction
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestSyncKeyword:
@@ -32,7 +32,7 @@ class TestSyncKeyword:
 """
 
         # Parse and execute the source
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         _result = interpreter.execute_program_string(source, context)
@@ -52,7 +52,7 @@ class TestSyncKeyword:
 result = sync_func()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -70,7 +70,7 @@ result = sync_func()
 result = async_func()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -92,7 +92,7 @@ result = async_func()
 result = add(5, 3)
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -109,7 +109,7 @@ result = add(5, 3)
 result = get_value()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -127,7 +127,7 @@ result1 = is_positive(5)
 result2 = is_positive(-3)
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -149,7 +149,7 @@ result2 = is_positive(-3)
 result = factorial(5)
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -166,7 +166,7 @@ result = factorial(5)
 result = sync_operation()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
 
@@ -189,7 +189,7 @@ result = sync_operation()
 result = existing_func()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)
@@ -214,7 +214,7 @@ sync_result = sync_func()
 async_result = async_func()
 """
 
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter.execute_program_string(source, context)

@@ -7,7 +7,7 @@ verifying that method chaining works correctly with various built-in Python obje
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestMethodChaining:

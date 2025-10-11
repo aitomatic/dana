@@ -5,20 +5,20 @@ Thin routing layer that delegates business logic to services.
 
 import asyncio
 import base64
+from datetime import UTC, datetime
+
+# from typing import List
+import json
 import logging
 import os
+from pathlib import Path
 import shutil
 import tarfile
 import tempfile
 
 # import traceback
 import uuid
-from datetime import UTC, datetime
-from pathlib import Path
-from dana_lang.common.utils import Misc
 
-# from typing import List
-import json
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -31,6 +31,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -40,17 +41,14 @@ from dana_lang.api.core.schemas import (
     AgentCreate,
     AgentGenerationRequest,
     AgentRead,
+    AgentUpdate,
     CodeFixRequest,
     CodeFixResponse,
     CodeValidationRequest,
     CodeValidationResponse,
     DocumentRead,
-    AgentUpdate,
 )
-from pydantic import BaseModel
 from dana_lang.api.server.server import ws_manager
-from dana_lang.common.types import BaseRequest
-from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana_lang.api.services.agent_deletion_service import AgentDeletionService, get_agent_deletion_service
 from dana_lang.api.services.agent_manager import AgentManager, get_agent_manager
 from dana_lang.api.services.avatar_service import AvatarService
@@ -67,6 +65,10 @@ from dana_lang.api.services.knowledge_status_manager import (
     KnowledgeGenerationManager,
     KnowledgeStatusManager,
 )
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
+from dana_lang.common.types import BaseRequest
+from dana_lang.common.utils import Misc
+
 
 logger = logging.getLogger(__name__)
 
@@ -513,7 +515,7 @@ async def _create_basic_dana_files(
     main_content = """
 
 from workflows import workflow
-from common import RetrievalPackage
+from dana_lang.common import RetrievalPackage
 
 agent RetrievalExpertAgent:
     name: str = "RetrievalExpertAgent"
@@ -649,10 +651,10 @@ contextual_knowledge = use("rag", sources=["./knows"])
     methods_content = """
 from knowledge import doc_knowledge
 from knowledge import contextual_knowledge
-from common import QUERY_GENERATION_PROMPT
-from common import QUERY_DECISION_PROMPT
-from common import ANSWER_PROMPT
-from common import RetrievalPackage
+from dana_lang.common import QUERY_GENERATION_PROMPT
+from dana_lang.common import QUERY_DECISION_PROMPT
+from dana_lang.common import ANSWER_PROMPT
+from dana_lang.common import RetrievalPackage
 
 def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
@@ -1968,11 +1970,12 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
 
         # Import the test logic from agent_test module
-        from dana_lang.api.routers.v1.agent_test import AgentTestRequest, test_agent
         from __init__.init_modules import (
             initialize_module_system,
             reset_module_system,
         )
+
+        from dana_lang.api.routers.v1.agent_test import AgentTestRequest, test_agent
 
         initialize_module_system()
         reset_module_system()

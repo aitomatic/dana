@@ -1,7 +1,6 @@
 import uuid
 
-
-from dana.api.core.models import Agent
+from dana_lang.api.core.models import Agent
 
 
 # Remove the local client fixture - use the one from conftest.py that has proper test DB setup

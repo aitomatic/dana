@@ -22,7 +22,7 @@ The `Loggable` abstract base class provides a standardized way to add logging ca
 ### Basic Usage
 
 ```python
-from dana.common.utils.logging import Loggable
+from dana_lang.common.utils.logging import Loggable
 
 class MyService(Loggable):
     def __init__(self):

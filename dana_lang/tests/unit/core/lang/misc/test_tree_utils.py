@@ -1,13 +1,13 @@
 """Tests for the tree traversal utilities."""
 
-import pytest
 from lark import Token, Tree
+import pytest
 
-from dana.core.lang.parser.utils.tree_utils import TreeTraverser
-from dana.core.lang.parser.utils.transformer_utils import (
+from dana_lang.core.lang.parser.utils.transformer_utils import (
     extract_token_value,
     unwrap_single_child_tree,
 )
+from dana_lang.core.lang.parser.utils.tree_utils import TreeTraverser
 
 
 # Helper function to create tokens for testing with proper type hints

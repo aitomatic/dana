@@ -4,13 +4,14 @@ Tests for core.exceptions module - Exception classes for Python-to-Dana Integrat
 
 import pytest
 
-from dana.integrations.python.to_dana.core.exceptions import (
+from dana_lang.integrations.python.to_dana.core.exceptions import (
     DanaCallError,
     DanaError,
     ResourceError,
     SecurityError,
     TypeConversionError,
 )
+
 
 # Test parameters for DanaError base exception
 dana_error_params = [

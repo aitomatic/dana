@@ -1,4 +1,4 @@
-from core.methods import enhance_query, search_products, rank_results
+from dana_lang.core.methods import enhance_query, search_products, rank_results
 
 def product_search_workflow(query, product_data):
     enhance_query_results = enhance_query(query)

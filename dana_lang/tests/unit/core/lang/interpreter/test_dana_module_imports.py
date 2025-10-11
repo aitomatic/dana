@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 class TestDanaModuleImports:
@@ -29,7 +29,7 @@ class TestDanaModuleImports:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
         # Reset and reinitialize the module system to pick up the updated DANAPATH
-        from dana.__init__ import initialize_module_system, reset_module_system
+        from dana_lang.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()

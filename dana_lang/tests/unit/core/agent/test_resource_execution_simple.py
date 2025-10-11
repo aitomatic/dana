@@ -5,10 +5,12 @@ This module tests the core resource execution logic with minimal mocking
 to ensure the basic functionality works correctly.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from dana.core.agent.solvers.base import BaseSolver
-from dana.core.agent.agent_instance import AgentInstance
+
+import pytest
+
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.solvers.base import BaseSolver
 
 
 class MockSolver(BaseSolver):

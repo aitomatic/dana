@@ -45,8 +45,8 @@ if first_param_is_ctx:
     if not func._is_trusted_for_context():
         # Function wants context but is not trusted - call without context with async detection
         import asyncio
-        from dana.common.utils.misc import Misc
-        
+        from dana_lang.common.utils.misc import Misc
+
         if asyncio.iscoroutinefunction(wrapped_func):
             return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
         else:
@@ -54,8 +54,8 @@ if first_param_is_ctx:
     else:
         # First parameter is context and function is trusted - add execute-time async detection
         import asyncio
-        from dana.common.utils.misc import Misc
-        
+        from dana_lang.common.utils.misc import Misc
+
         if asyncio.iscoroutinefunction(wrapped_func):
             return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, context, *positional_args, **func_kwargs))
         else:
@@ -63,8 +63,8 @@ if first_param_is_ctx:
 else:
     # No context parameter - add execute-time async detection
     import asyncio
-    from dana.common.utils.misc import Misc
-    
+    from dana_lang.common.utils.misc import Misc
+
     if asyncio.iscoroutinefunction(wrapped_func):
         return _resolve_if_promise(Misc.safe_asyncio_run(wrapped_func, *positional_args, **func_kwargs))
     else:
@@ -77,7 +77,7 @@ else:
 # In python_function.py - execute method
 def execute(self, context: SandboxContext, *args: Any, **kwargs: Any) -> Any:
     import asyncio
-    from dana.common.utils.misc import Misc
+    from dana_lang.common.utils.misc import Misc
 
     # Security check: only trusted functions can receive context
     if self.wants_context and self.context_param_name:
@@ -103,10 +103,10 @@ def execute(self, context: SandboxContext, *args: Any, **kwargs: Any) -> Any:
 def _execute_callable_function(self, resolved_func, context, evaluated_args, evaluated_kwargs, func_name):
     """Execute a regular callable with automatic async detection."""
     import asyncio
-    from dana.common.utils.misc import Misc
-    
+    from dana_lang.common.utils.misc import Misc
+
     func = resolved_func.func
-    
+
     # Execute-time async detection and handling
     if asyncio.iscoroutinefunction(func):
         # Function is async - use Misc.safe_asyncio_run
@@ -114,7 +114,7 @@ def _execute_callable_function(self, resolved_func, context, evaluated_args, eva
     else:
         # Function is sync - call directly
         raw_result = func(*evaluated_args, **evaluated_kwargs)
-        
+
     return self._assign_and_coerce_result(raw_result, func_name)
 ```
 
@@ -122,7 +122,7 @@ def _execute_callable_function(self, resolved_func, context, evaluated_args, eva
 
 ### 1. **Static Function Calls**
 ```dana
-from dana.common.sys_resource.rag.utility.web_fetch.py import fetch_web_content
+from dana_lang.common.sys_resource.rag.utility.web_fetch.py import fetch_web_content
 
 def load_webpage(url: str):
     # Direct call to imported async function
@@ -137,7 +137,7 @@ def process_with_choice(use_async: bool):
         func = fetch_web_content  # Async function
     else:
         func = test_sync_function  # Sync function
-    
+
     # Execute-time detection handles the choice
     return func("data")
 ```
@@ -257,7 +257,7 @@ The core async detection logic is consistent across all components:
 
 ```python
 import asyncio
-from dana.common.utils.misc import Misc
+from dana_lang.common.utils.misc import Misc
 
 if asyncio.iscoroutinefunction(func):
     # Function is async - use Misc.safe_asyncio_run
@@ -305,4 +305,3 @@ The implementation is:
 - **Robust**: Graceful error handling and fallbacks
 
 This makes Dana incredibly powerful for working with Python libraries and APIs, as developers can focus on their business logic rather than managing async/sync complexity.
-

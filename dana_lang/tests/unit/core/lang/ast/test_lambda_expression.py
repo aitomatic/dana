@@ -1,6 +1,6 @@
 """Unit tests for LambdaExpression AST node."""
 
-from dana.core.lang.ast import LambdaExpression, Parameter, TypeHint, LiteralExpression
+from dana_lang.core.lang.ast import LambdaExpression, LiteralExpression, Parameter, TypeHint
 
 
 class TestLambdaExpression:

@@ -5,6 +5,7 @@ CodeHandler: Utilities for code build, extraction, and manipulation in agent gen
 import logging
 import re
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -259,7 +260,7 @@ class CodeHandler:
         """Get template content for missing files."""
         templates = {
             "main.na": """from workflows import workflow
-from common import AgentPackage
+from dana_lang.common import AgentPackage
 
 agent Georgia:
     name: str = "Georgia"
@@ -277,7 +278,7 @@ this_agent = Georgia()
 from methods import generate_response
 
 workflow = process_request | generate_response""",
-            "methods.na": """from common import AgentPackage
+            "methods.na": """from dana_lang.common import AgentPackage
 
 def process_request(package: AgentPackage) -> AgentPackage:
     # Process the user request

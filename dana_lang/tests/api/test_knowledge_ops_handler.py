@@ -1,11 +1,12 @@
 import pytest
-from dana.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
-from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool import (
+
+from dana_lang.api.services.intent_detection.intent_handlers.handler_tools.base_tool import (
+    BaseArgument,
     BaseTool,
     BaseToolInformation,
-    BaseArgument,
     InputSchema,
 )
+from dana_lang.api.services.intent_detection.intent_handlers.knowledge_ops_handler import KnowledgeOpsHandler
 
 
 class MockTool(BaseTool):
@@ -20,7 +21,7 @@ class MockTool(BaseTool):
         super().__init__(tool_info)
 
     async def _execute(self, **kwargs):
-        from dana.api.services.intent_detection.intent_handlers.handler_tools.base_tool import ToolResult
+        from dana_lang.api.services.intent_detection.intent_handlers.handler_tools.base_tool import ToolResult
 
         return ToolResult(name=self.name, result="Mock result", require_user=False)
 
@@ -155,17 +156,17 @@ I should explore the knowledge structure to understand what's available.
 
     def test_parse_tool_call_with_whitespace_handling(self):
         """Test that whitespace is properly handled in XML content."""
-        xml_content = """   
-   
+        xml_content = """
+
 <thinking>
-   Some thinking content with spaces   
+   Some thinking content with spaces
 </thinking>
 
 <ask_question>
 <question>   What is this?   </question>
 <context>   Some context   </context>
 </ask_question>
-   
+
 """
 
         tool_name, params, thinking_content = self.handler._parse_xml_tool_call(xml_content)

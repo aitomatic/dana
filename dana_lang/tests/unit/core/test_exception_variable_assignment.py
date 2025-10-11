@@ -6,8 +6,8 @@ Tests for the new `except Exception as e:` syntax implementation.
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.runtime.exceptions import DanaException
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.runtime.exceptions import DanaException
 
 
 class TestExceptionVariableAssignment:
@@ -172,7 +172,7 @@ class TestDanaExceptionObject:
 
     def test_dana_exception_creation(self):
         """Test creating DanaException from Python exception."""
-        from dana.core.runtime.exceptions import create_dana_exception
+        from dana_lang.core.runtime.exceptions import create_dana_exception
 
         try:
             raise ValueError("test message")
@@ -187,7 +187,7 @@ class TestDanaExceptionObject:
 
     def test_dana_exception_string_representation(self):
         """Test string representation of DanaException."""
-        from dana.core.runtime.exceptions import create_dana_exception
+        from dana_lang.core.runtime.exceptions import create_dana_exception
 
         try:
             raise RuntimeError("test error")
@@ -199,7 +199,7 @@ class TestDanaExceptionObject:
 
     def test_dana_exception_to_dict(self):
         """Test converting DanaException to dictionary."""
-        from dana.core.runtime.exceptions import create_dana_exception
+        from dana_lang.core.runtime.exceptions import create_dana_exception
 
         try:
             raise TypeError("type error")

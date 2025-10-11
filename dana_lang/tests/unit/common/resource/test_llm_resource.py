@@ -4,9 +4,9 @@ import asyncio
 import unittest
 from unittest.mock import patch
 
-from dana.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.common.types import BaseRequest, BaseResponse
+from dana_lang.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.types import BaseRequest, BaseResponse
 
 
 class TestLLMResource(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestLLMResource(unittest.TestCase):
 
     def test_error_classification(self):
         """Test error classification and handling."""
-        from dana.common.types import BaseRequest
+        from dana_lang.common.types import BaseRequest
 
         # Create LLMResource and make it available
         llm = LegacyLLMResource(name="test_llm", model="openai:gpt-4")

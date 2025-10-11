@@ -82,16 +82,16 @@ workflow:
 # Function to demonstrate workflow creation
 def demonstrate_workflow_factory():
     """Demonstrate the WorkflowFactory functionality."""
-    
+
     # Import the factory
-    from dana.core.workflow.factory import WorkflowFactory
-    
+    from dana_lang.core.workflow.factory import WorkflowFactory
+
     # Create factory instance
     factory = WorkflowFactory()
-    
+
     log("\n📋 CREATING WORKFLOWS FROM YAML")
     log("-" * 40)
-    
+
     # Test 1: Simple workflow
     log("\n1️⃣ Creating simple data analysis workflow...")
     try:
@@ -101,7 +101,7 @@ def demonstrate_workflow_factory():
         log(f"   Status: {workflow1.get_status()}")
     except Exception as e:
         log(f"❌ Failed to create workflow 1: {e}")
-    
+
     # Test 2: Custom FSM workflow
     log("\n2️⃣ Creating workflow with custom FSM...")
     try:
@@ -111,7 +111,7 @@ def demonstrate_workflow_factory():
         log(f"   Status: {workflow2.get_status()}")
     except Exception as e:
         log(f"❌ Failed to create workflow 2: {e}")
-    
+
     # Test 3: Metadata workflow
     log("\n3️⃣ Creating workflow with metadata...")
     try:
@@ -121,7 +121,7 @@ def demonstrate_workflow_factory():
         log(f"   Status: {workflow3.get_status()}")
     except Exception as e:
         log(f"❌ Failed to create workflow 3: {e}")
-    
+
     # Test 4: Simple workflow creation
     log("\n4️⃣ Creating simple workflow from step names...")
     try:
@@ -137,13 +137,13 @@ def demonstrate_workflow_factory():
         log(f"   Status: {simple_workflow.get_status()}")
     except Exception as e:
         log(f"❌ Failed to create simple workflow: {e}")
-    
+
     # Test 5: Validation
     log("\n5️⃣ Testing workflow validation...")
     try:
         is_valid = factory.validate_workflow_text(simple_workflow_yaml)
         log(f"✅ Simple workflow validation: {is_valid}")
-        
+
         invalid_yaml = "invalid: yaml: content"
         is_invalid = factory.validate_workflow_text(invalid_yaml)
         log(f"✅ Invalid workflow validation: {is_invalid}")
@@ -153,18 +153,18 @@ def demonstrate_workflow_factory():
 # Function to demonstrate workflow execution
 def demonstrate_workflow_execution():
     """Demonstrate workflow execution."""
-    
+
     log("\n🎯 DEMONSTRATING WORKFLOW EXECUTION")
     log("-" * 40)
-    
+
     try:
-        from dana.core.workflow.factory import WorkflowFactory
-        
+        from dana_lang.core.workflow.factory import WorkflowFactory
+
         factory = WorkflowFactory()
-        
+
         # Create a simple workflow
         workflow = factory.create_from_yaml(simple_workflow_yaml)
-        
+
         # Prepare execution data
         execution_data = {
             "problem": "Analyze sensor data for anomalies",
@@ -174,28 +174,28 @@ def demonstrate_workflow_execution():
             },
             "agent": None  # Would be the agent instance in real usage
         }
-        
+
         log(f"🚀 Executing workflow: {workflow.name}")
         log(f"   Input data: {execution_data['problem']}")
-        
+
         # Execute the workflow
         result = workflow.execute(execution_data)
-        
+
         log(f"✅ Workflow execution completed")
         log(f"   Result: {result}")
         log(f"   Final status: {workflow.get_status()}")
         log(f"   Execution history: {len(workflow.get_execution_history())} steps")
-        
+
     except Exception as e:
         log(f"❌ Workflow execution failed: {e}")
 
 # Function to demonstrate agent integration
 def demonstrate_agent_integration():
     """Demonstrate how the factory integrates with agent.solve()."""
-    
+
     log("\n🤖 DEMONSTRATING AGENT INTEGRATION")
     log("-" * 40)
-    
+
     # This would be the YAML output from agent.reason() when TYPE_WORKFLOW is chosen
     agent_workflow_output = """
 workflow:
@@ -215,22 +215,22 @@ workflow:
       action: "validate_result"
       objective: "Verify the solution works correctly"
 """
-    
+
     try:
-        from dana.core.workflow.factory import WorkflowFactory
-        
+        from dana_lang.core.workflow.factory import WorkflowFactory
+
         factory = WorkflowFactory()
-        
+
         # Simulate what happens in agent.solve() when TYPE_WORKFLOW is detected
         log("📝 Agent generates workflow YAML...")
         log("🔧 Factory parses YAML and creates WorkflowInstance...")
-        
+
         workflow = factory.create_from_yaml(agent_workflow_output)
-        
+
         log(f"✅ Agent successfully created workflow: {workflow.name}")
         log(f"   Steps: {len(workflow.steps) if hasattr(workflow, 'steps') else 'N/A'}")
         log(f"   Ready for execution: {workflow.get_status()}")
-        
+
     except Exception as e:
         log(f"❌ Agent integration failed: {e}")
 

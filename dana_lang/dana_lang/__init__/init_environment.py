@@ -8,7 +8,8 @@ MIT License
 """
 
 import os
-from common import dana_load_dotenv
+
+from dana_lang.common import dana_load_dotenv
 
 
 def initialize_environment_system() -> None:

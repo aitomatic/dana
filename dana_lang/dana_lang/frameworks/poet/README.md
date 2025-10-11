@@ -1,6 +1,6 @@
 # POET Framework - Simplified Directory Structure
 
-**P**erceive → **O**perate → **E**nforce → **T**rain  
+**P**erceive → **O**perate → **E**nforce → **T**rain
 *Simple, Focused Function Enhancement for Dana*
 
 ## 🎯 KISS Design Philosophy
@@ -73,7 +73,7 @@ poet/
 
 ### Files & Purpose:
 
-- **`base.py`** - Base domain template 
+- **`base.py`** - Base domain template
   - *Why needed*: Common foundation for domain-specific enhancements
   - *Contains*: `DomainTemplate` base class, `BaseDomainTemplate`
 
@@ -111,10 +111,10 @@ poet/
 
 ```python
 # ✅ Basic usage
-from dana.frameworks.poet import poet, POETConfig
-from dana.frameworks.poet import financial_services, healthcare  
-from dana.frameworks.poet import debug_poet_function, test_poet_function
-from dana.frameworks.poet import perceive, operate, enforce, train  # Full P→O→E→T
+from dana_lang.frameworks.poet import poet, POETConfig
+from dana_lang.frameworks.poet import financial_services, healthcare
+from dana_lang.frameworks.poet import debug_poet_function, test_poet_function
+from dana_lang.frameworks.poet import perceive, operate, enforce, train  # Full P→O→E→T
 ```
 
 ---
@@ -123,7 +123,7 @@ from dana.frameworks.poet import perceive, operate, enforce, train  # Full P→O
 
 ### Basic Enhancement
 ```python
-from dana.frameworks.poet import poet
+from dana_lang.frameworks.poet import poet
 
 @poet(domain="financial_services", retries=3, enable_training=True)
 def calculate_portfolio_value(holdings, market_data):
@@ -132,7 +132,7 @@ def calculate_portfolio_value(holdings, market_data):
 
 ### Domain-Specific Setup
 ```python
-from dana.frameworks.poet import financial_services
+from dana_lang.frameworks.poet import financial_services
 
 # Quick domain configuration
 config = financial_services(retries=5, timeout=30)
@@ -141,7 +141,7 @@ enhanced_func = poet(**config)(calculate_risk)
 
 ### Testing & Debugging
 ```python
-from dana.frameworks.poet import test_poet_function, debug_poet_function
+from dana_lang.frameworks.poet import test_poet_function, debug_poet_function
 
 # Test enhanced function
 test_poet_function(enhanced_func, test_cases=[...])
@@ -166,7 +166,7 @@ debug_poet_function(enhanced_func, phase="perceive")
 
 **Removed over-engineered components:**
 - ❌ `progressive.py` - Complex 4-level migration system
-- ❌ `feedback.py` - Premature learning/training system  
+- ❌ `feedback.py` - Premature learning/training system
 - ❌ `storage.py` - Complex file-based persistence
 - ❌ `client.py` - Unused remote API client
 - ❌ Domain-specific templates without proven use cases

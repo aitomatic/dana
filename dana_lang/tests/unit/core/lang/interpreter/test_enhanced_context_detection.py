@@ -8,10 +8,10 @@ context detection that can see comments, docstrings, and AST nodes.
 import unittest
 from unittest.mock import Mock
 
-from dana.core.lang.ast import Assignment, FunctionCall, FunctionDefinition, StructField, TypeHint
-from dana.core.lang.interpreter.context_detection import ContextDetector, ContextType
-from dana.core.lang.interpreter.error_context import ExecutionLocation
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.ast import Assignment, FunctionCall, FunctionDefinition, StructField, TypeHint
+from dana_lang.core.lang.interpreter.context_detection import ContextDetector, ContextType
+from dana_lang.core.lang.interpreter.error_context import ExecutionLocation
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestEnhancedContextDetection(unittest.TestCase):

@@ -4,12 +4,13 @@ Tests for utils.converter module - Type Conversion Utilities for Python-to-Dana 
 
 import pytest
 
-from dana.integrations.python.to_dana.core.exceptions import TypeConversionError
-from dana.integrations.python.to_dana.core.types import DanaType
-from dana.integrations.python.to_dana.utils.converter import (
+from dana_lang.integrations.python.to_dana.core.exceptions import TypeConversionError
+from dana_lang.integrations.python.to_dana.core.types import DanaType
+from dana_lang.integrations.python.to_dana.utils.converter import (
     BasicTypeConverter,
     validate_and_convert,
 )
+
 
 # Test parameters for BasicTypeConverter.to_dana method
 to_dana_params = [

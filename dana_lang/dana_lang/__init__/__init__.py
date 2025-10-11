@@ -61,8 +61,9 @@ initialize_runtime_system()
 #
 
 # Import core components for public API
-from common import DANA_LOGGER
-from core import DanaInterpreter, DanaParser, DanaSandbox
+from dana_lang.core import DanaInterpreter, DanaParser, DanaSandbox
+
+from dana_lang.common import DANA_LOGGER
 from dana_lang.integrations.python.to_dana import dana as py2na
 
 from .init_modules import initialize_module_system, reset_module_system

@@ -4,8 +4,8 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.sys_resource.base_sys_resource import BaseSysResource
-from dana.common.sys_resource.llm.llm_tool_call_manager import LLMToolCallManager
+from dana_lang.common.sys_resource.base_sys_resource import BaseSysResource
+from dana_lang.common.sys_resource.llm.llm_tool_call_manager import LLMToolCallManager
 
 
 class MockToolCall:
@@ -297,7 +297,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
         """Test that LLMResource properly uses LLMToolCallManager."""
         import os
 
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API key
         previous_key = os.environ.get("OPENAI_API_KEY")

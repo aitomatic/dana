@@ -58,7 +58,7 @@ The `.dana` directory structure:
 
 Each agent maintains its own conversation file, allowing for:
 - **Isolated conversations** - Each agent type has separate memory
-- **Persistent sessions** - Conversations survive application restarts  
+- **Persistent sessions** - Conversations survive application restarts
 - **Easy management** - Simple JSON files for debugging and backup
 
 ### Advanced Usage
@@ -126,7 +126,7 @@ response = agent.chat("Explain quantum computing")
 The core memory system is implemented in `conversation_memory.py`:
 
 ```python
-from dana.frameworks.memory import ConversationMemory
+from dana_lang.frameworks.memory import ConversationMemory
 
 # Create a memory instance
 memory = ConversationMemory(filepath="my_memory.json", max_turns=20)

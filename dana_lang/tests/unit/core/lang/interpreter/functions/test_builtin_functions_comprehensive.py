@@ -7,9 +7,9 @@ with various input types, edge cases, and error conditions.
 
 import pytest
 
-from dana.common.exceptions import SandboxError
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
+from dana_lang.common.exceptions import SandboxError
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
 
 
 @pytest.mark.deep

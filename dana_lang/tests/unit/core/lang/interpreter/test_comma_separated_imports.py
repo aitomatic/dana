@@ -2,7 +2,7 @@
 
 import pytest
 
-from dana.core.lang import DanaSandbox
+from dana_lang.core.lang import DanaSandbox
 
 
 class TestCommaSeparatedImports:
@@ -145,7 +145,7 @@ class TestCommaSeparatedImports:
         # Test with a hypothetical submodule structure like dana.core.workflow.workflow_system
         # This will test the grammar parsing for 2-component paths
         try:
-            result = self.sandbox.execute_string("from dana.frameworks import workflow, agent")
+            result = self.sandbox.execute_string("from dana_lang.frameworks import workflow, agent")
             # If the module exists, test functionality
             if result.success:
                 # Test that the imported modules are accessible
@@ -165,7 +165,7 @@ class TestCommaSeparatedImports:
         # Test with a hypothetical submodule structure like dana.core.workflow.workflow_system.core
         # This will test the grammar parsing for 3-component paths
         try:
-            result = self.sandbox.execute_string("from dana.core.workflow.workflow_system import core, engine")
+            result = self.sandbox.execute_string("from dana_lang.core.workflow.workflow_system import core, engine")
             # If the module exists, test functionality
             if result.success:
                 # Test that the imported modules are accessible
@@ -184,7 +184,7 @@ class TestCommaSeparatedImports:
         """Test comma-separated imports from submodules with 3 path components and aliases."""
         # Test with aliases for 3-component paths
         try:
-            result = self.sandbox.execute_string("from dana.core.workflow.workflow_system import core as wf_core, engine as wf_engine")
+            result = self.sandbox.execute_string("from dana_lang.core.workflow.workflow_system import core as wf_core, engine as wf_engine")
             # If the module exists, test functionality
             if result.success:
                 # Test that the aliased modules are accessible
@@ -206,7 +206,7 @@ class TestCommaSeparatedImports:
             "from a.b import x, y",
             "from a.b.c import x, y, z",
             "from a.b.c.d import x as X, y as Y",
-            "from dana.core.workflow.workflow_system import core, engine as wf_engine",
+            "from dana_lang.core.workflow.workflow_system import core, engine as wf_engine",
             "from utils.text import capitalize, reverse as rev",
         ]
 

@@ -5,7 +5,7 @@ This test ensures that EagerPromise behaves transparently like its resolved valu
 in all operations, making it indistinguishable from the actual value.
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestEagerPromiseTransparency:

@@ -67,7 +67,7 @@ help: ## Show available commands
 	@echo "  \033[36mtest-agent\033[0m      🤖 Run dana-agent tests only"
 	@echo "  \033[36mtest-lang\033[0m       📝 Run dana-lang tests only"
 	@echo "  \033[36mtest-studio\033[0m     🎨 Run dana-studio tests only"
-	@echo "  \033[36mclean\033[0m           🧹 Clean all build artifacts"
+	@echo "  \033[36mclean\033[0m           🧹 Clean artifacts and remove .venv"
 	@echo ""
 	@echo "\033[1mRun:\033[0m"
 	@echo "  \033[36mdana\033[0m            🚀 Start the Dana REPL"
@@ -107,11 +107,11 @@ list: ## List all sub-packages and their installation status
 
 packages: ## Show Dana packages installed in .venv
 	@echo ""
-	@echo "\033[1m\033[34mInstalled Dana Packages\033[0m"
+	@echo "\033[1m\033[34mInstalled Editable Packages\033[0m"
 	@echo "\033[1m========================\033[0m"
 	@echo ""
 	@if [ -d .venv ]; then \
-		$(UV_CMD) pip list 2>/dev/null | grep -i "^dana" || echo "⚠️  No Dana packages found - run 'make setup'"; \
+		$(UV_CMD) pip list --editable 2>/dev/null || echo "⚠️  No Dana packages found - run 'make setup'"; \
 	else \
 		echo "⚠️  No .venv found - run 'make setup'"; \
 	fi
@@ -197,7 +197,7 @@ test-studio: ## Run dana-studio tests only
 # Maintenance
 # =============================================================================
 
-clean: ## Clean build artifacts and caches
+clean: ## Clean build artifacts and remove .venv
 	@echo "🧹 Cleaning build artifacts..."
 	$(call run-in-packages,clean)
 	@echo ""
@@ -206,7 +206,10 @@ clean: ## Clean build artifacts and caches
 	@find . -maxdepth 1 -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	@find . -maxdepth 1 -type f -name "*.pyc" -delete 2>/dev/null || true
 	@rm -rf .ruff_cache/ .mypy_cache/
-	@echo "✅ All packages cleaned!"
+	@echo ""
+	@echo "🗑️  Removing .venv..."
+	@rm -rf .venv
+	@echo "✅ Clean complete! Run 'make setup' to reinstall."
 
 # =============================================================================
 # Run Applications

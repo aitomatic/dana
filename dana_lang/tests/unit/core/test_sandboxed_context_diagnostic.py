@@ -5,8 +5,8 @@ Diagnostic test for the get_sandboxed_context method.
 
 import sys
 
-from dana.core.lang.context_manager import ContextManager
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.context_manager import ContextManager
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 def test_sandboxed_context():

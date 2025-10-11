@@ -6,15 +6,15 @@ to ensure proper resource initialization and cleanup.
 """
 
 import asyncio
+from pathlib import Path
 import shutil
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestAgentContextManager(unittest.TestCase):

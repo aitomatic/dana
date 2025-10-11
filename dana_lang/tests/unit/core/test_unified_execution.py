@@ -6,10 +6,10 @@ This test verifies that the reason function can be called correctly in a Dana pr
 
 import unittest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 
 
 def test_reason_function_direct_call():
@@ -18,9 +18,9 @@ def test_reason_function_direct_call():
     context = SandboxContext()
 
     # Set up context with LLM resource
-    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+    from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()
@@ -42,9 +42,9 @@ def test_reason_function_parameter_order():
     context = SandboxContext()
 
     # Set up context with LLM resource
-    from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-    from dana.core.resource.builtins.llm_resource_instance import LLMResourceInstance
-    from dana.core.resource.builtins.llm_resource_type import LLMResourceType
+    from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+    from dana_lang.core.resource.builtins.llm_resource_instance import LLMResourceInstance
+    from dana_lang.core.resource.builtins.llm_resource_type import LLMResourceType
 
     llm_resource = LLMResourceInstance(LLMResourceType(), LegacyLLMResource(name="test_llm", model="openai:gpt-4o-mini"))
     llm_resource.initialize()
@@ -87,7 +87,7 @@ class TestUnifiedExecution(unittest.TestCase):
         """Set up the test environment."""
         self.context = SandboxContext()
         self.interpreter = DanaInterpreter()
-        from dana.core.lang.parser.utils.parsing_utils import ParserCache
+        from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
         self.parser = ParserCache.get_parser("dana")
 

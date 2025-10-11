@@ -10,18 +10,18 @@ MIT License
 
 import pytest
 
-from dana.core.builtins.struct_system import (
+from dana_lang.core.builtins.struct_system import (
     StructInstance,
     create_struct_instance,
     register_struct_from_ast,
 )
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     StructDefinition,
     StructField,
     TypeHint,
 )
-from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
-from dana.registry import TYPE_REGISTRY
+from dana_lang.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
+from dana_lang.registry import TYPE_REGISTRY
 
 
 class TestStructTypeValidation:

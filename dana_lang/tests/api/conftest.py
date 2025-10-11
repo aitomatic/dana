@@ -2,11 +2,11 @@
 
 import os
 import tempfile
-import uuid
 from unittest.mock import Mock
+import uuid
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -21,7 +21,7 @@ def test_db():
     """Create a temp SQLite DB, engine, and session factory for each test. Clean up after."""
     temp_db, test_database_url = _make_temp_db_url()
     os.environ["DANA_DATABASE_URL"] = test_database_url
-    from dana.api.core.models import Base
+    from dana_lang.api.core.models import Base
 
     engine = create_engine(test_database_url, connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
@@ -38,7 +38,7 @@ def db_session(test_db):
     """Yield a session using the test DB. Clear all tables before each test."""
     _, SessionLocal, _ = test_db
     session = SessionLocal()
-    from dana.api.core.models import Agent, Conversation, Document, Message, Topic
+    from dana_lang.api.core.models import Agent, Conversation, Document, Message, Topic
 
     # Clear all tables in reverse dependency order
     session.query(Message).delete()
@@ -60,8 +60,8 @@ def client(test_db):
     engine, SessionLocal, _ = test_db
     from unittest.mock import patch
 
-    from dana.api.core.database import get_db
-    from dana.api.server.server import create_app
+    from dana_lang.api.core.database import get_db
+    from dana_lang.api.server.server import create_app
 
     app = create_app()
     # Remove all startup event handlers to prevent demo data insertion
@@ -90,7 +90,7 @@ def mock_db():
 @pytest.fixture
 def sample_agent():
     """Create a sample agent for testing without database."""
-    from dana.api.core.models import Agent
+    from dana_lang.api.core.models import Agent
 
     return Agent(id=1, name="Sample Agent", description="A sample agent for testing", config={"model": "gpt-4", "temperature": 0.7})
 
@@ -98,7 +98,7 @@ def sample_agent():
 @pytest.fixture
 def sample_conversation():
     """Create a sample conversation for testing without database."""
-    from dana.api.core.models import Conversation
+    from dana_lang.api.core.models import Conversation
 
     return Conversation(id=1, title="Test Conversation", created_at="2025-01-27T10:00:00", updated_at="2025-01-27T10:00:00")
 
@@ -106,7 +106,7 @@ def sample_conversation():
 @pytest.fixture
 def sample_message():
     """Create a sample message for testing without database."""
-    from dana.api.core.models import Message
+    from dana_lang.api.core.models import Message
 
     return Message(
         id=1, conversation_id=1, sender="user", content="Hello, agent!", created_at="2025-01-27T10:00:00", updated_at="2025-01-27T10:00:00"
@@ -126,7 +126,7 @@ def mock_get_db(mock_db):
 @pytest.fixture
 def mock_chat_service():
     """Mock the chat service dependency."""
-    from dana.api.services.chat_service import ChatService
+    from dana_lang.api.services.chat_service import ChatService
 
     chat_service = Mock(spec=ChatService)
     return chat_service

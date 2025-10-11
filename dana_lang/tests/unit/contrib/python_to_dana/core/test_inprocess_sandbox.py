@@ -9,8 +9,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python.to_dana.core.exceptions import DanaCallError
-from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana_lang.integrations.python.to_dana.core.exceptions import DanaCallError
+from dana_lang.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+
 
 # Table-driven test parameters for option formatting
 format_options_params = [
@@ -325,7 +326,7 @@ class TestInProcessSandboxInterface:
 
     def test_initialization_with_context(self):
         """Test initialization with custom context."""
-        from dana.core.lang.sandbox_context import SandboxContext
+        from dana_lang.core.lang.sandbox_context import SandboxContext
 
         context = SandboxContext()
         sandbox = InProcessSandboxInterface(debug=False, context=context)
@@ -518,7 +519,7 @@ class TestInProcessSandboxInterface:
         assert underlying_sandbox is not None
 
         # Should be the actual DanaSandbox instance
-        from dana.core.lang.dana_sandbox import DanaSandbox
+        from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
         assert isinstance(underlying_sandbox, DanaSandbox)
 

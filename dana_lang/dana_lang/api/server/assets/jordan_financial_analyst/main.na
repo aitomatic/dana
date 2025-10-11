@@ -1,8 +1,8 @@
 from workflows import final_workflow
 from methods import plan_ahead
 from methods import classify_complexity
-from common import State
-from common import FINAL_ANSWER_PROMPT
+from dana_lang.common import State
+from dana_lang.common import FINAL_ANSWER_PROMPT
 
 agent_blueprint Jordan:
     name: str = "Jordan"

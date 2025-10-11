@@ -10,15 +10,15 @@ MIT License
 
 import pytest
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     AttributeAccess,
     CompoundAssignment,
     Identifier,
     SubscriptExpression,
 )
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser import DanaParser
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.parser import DanaParser
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestCompoundAssignmentParsing:

@@ -12,7 +12,7 @@ MIT License
 import os
 from pathlib import Path
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestRelativeImports:
@@ -35,7 +35,7 @@ class TestRelativeImports:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
         # Reset module system
-        from dana.__init__ import initialize_module_system, reset_module_system
+        from dana_lang.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()
@@ -198,7 +198,7 @@ def deep_function():
             )
 
         # Reset module system
-        from dana.__init__ import initialize_module_system, reset_module_system
+        from dana_lang.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()

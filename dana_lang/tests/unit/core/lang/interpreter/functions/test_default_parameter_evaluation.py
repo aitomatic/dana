@@ -13,9 +13,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dana.core.lang.ast import DictLiteral, ListLiteral, LiteralExpression
-from dana.core.lang.interpreter.executor.function_executor import FunctionExecutor
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.ast import DictLiteral, ListLiteral, LiteralExpression
+from dana_lang.core.lang.interpreter.executor.function_executor import FunctionExecutor
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestDefaultParameterEvaluation:

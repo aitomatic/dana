@@ -7,9 +7,9 @@ Tests the agent events functionality including log() method and on_log() callbac
 import unittest
 from unittest.mock import Mock
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestAgentEvents(unittest.TestCase):

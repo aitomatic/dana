@@ -4,7 +4,7 @@ Unit tests for DeclarativeFunctionDefinition AST node.
 Tests the creation, validation, and basic functionality of declarative function definitions.
 """
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     DeclarativeFunctionDefinition,

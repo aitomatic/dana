@@ -1,8 +1,9 @@
 """Unit tests for LambdaTransformer."""
 
-from lark import Tree, Token
-from dana.core.lang.ast import LambdaExpression, Parameter, TypeHint, LiteralExpression
-from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+from lark import Token, Tree
+
+from dana_lang.core.lang.ast import LambdaExpression, LiteralExpression, Parameter, TypeHint
+from dana_lang.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
 
 
 class TestLambdaTransformer:

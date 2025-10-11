@@ -5,8 +5,8 @@ This module tests the ProblemContext and other context-related classes
 that form the foundation of the agent solving system's context management.
 """
 
-from dana.core.agent.context import ProblemContext, ExecutionContext
-from dana.core.agent.timeline import Timeline
+from dana_lang.core.agent.context import ExecutionContext, ProblemContext
+from dana_lang.core.agent.timeline import Timeline
 
 
 class TestProblemContext:

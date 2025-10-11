@@ -8,8 +8,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
-from dana.common.types import BaseRequest
+from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+from dana_lang.common.types import BaseRequest
 
 
 class TestAnthropicSystemMessageIntegration(unittest.TestCase):

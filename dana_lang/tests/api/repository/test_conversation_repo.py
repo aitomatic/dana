@@ -1,15 +1,16 @@
 """Tests for conversation repository implementation."""
 
-import pytest
-import os
 from datetime import datetime
-from sqlalchemy.orm import Session
+import os
 from unittest.mock import Mock
 
-from dana.api.repositories.conversation_repo import SQLConversationRepo, AbstractConversationRepo
-from dana.api.core.models import Conversation, Message, Agent, KnowledgePack, KnowledgeAgentRelationship, AgentChatHistory
-from dana.api.core.schemas import ConversationCreate, ConversationWithMessages, MessageRead, SenderRole
-from dana.api.core.schemas_v2 import BaseMessage, HandlerMessage
+import pytest
+from sqlalchemy.orm import Session
+
+from dana_lang.api.core.models import Agent, AgentChatHistory, Conversation, KnowledgeAgentRelationship, KnowledgePack, Message
+from dana_lang.api.core.schemas import ConversationCreate, ConversationWithMessages, MessageRead, SenderRole
+from dana_lang.api.core.schemas_v2 import BaseMessage, HandlerMessage
+from dana_lang.api.repositories.conversation_repo import AbstractConversationRepo, SQLConversationRepo
 
 
 class TestAbstractConversationRepo:

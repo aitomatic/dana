@@ -13,6 +13,7 @@ from dana_lang.api.services.code_handler import CodeHandler
 from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 from dana_lang.common.types import BaseRequest
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -625,7 +626,7 @@ IMPORTANT: Generate ONLY pure Dana code between the markers - NO markdown code b
 
 FILE_START:main.na
 from workflows import workflow
-from common import RetrievalPackage
+from dana_lang.common import RetrievalPackage
 
 agent RetrievalExpertAgent:
     name: str = "RetrievalExpertAgent"
@@ -649,10 +650,10 @@ workflow = should_use_rag | refine_query | search_document | get_answer
 FILE_END:workflows.na
 
 FILE_START:methods.na
-{rag_import_block}from common import QUERY_GENERATION_PROMPT
-from common import QUERY_DECISION_PROMPT
-from common import ANSWER_PROMPT
-from common import RetrievalPackage
+{rag_import_block}from dana_lang.common import QUERY_GENERATION_PROMPT
+from dana_lang.common import QUERY_DECISION_PROMPT
+from dana_lang.common import ANSWER_PROMPT
+from dana_lang.common import RetrievalPackage
 
 def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
@@ -679,45 +680,45 @@ FILE_START:common.na
 QUERY_GENERATION_PROMPT = """
 You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
-**Task**  
+**Task**
 Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
 
-**Process**  
-1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
-2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
-3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
-4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes ("like this").  
+**Process**
+1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.
+2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.
+3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes ("like this").
 5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
 
-**Output Format**  
+**Output Format**
 Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
 
 ---
 
-USER_REQUEST: 
+USER_REQUEST:
 {{user_input}}
 """
 
 QUERY_DECISION_PROMPT = """
 You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
 
-Task  
+Task
 Analyze the USER_REQUEST below and decide whether external document retrieval is required to answer it accurately.
 
-Decision Rules  
-1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model's parameters?  
-2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?  
-3. Explicit User Cue – If the user explicitly asks to "look up," "cite," "fetch," "search," or mentions a source/corpus, retrieval is required.  
+Decision Rules
+1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model's parameters?
+2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?
+3. Explicit User Cue – If the user explicitly asks to "look up," "cite," "fetch," "search," or mentions a source/corpus, retrieval is required.
 4. Ambiguity Buffer – When uncertain, default to retrieval (erring on completeness).
 
-Output Format  
-Return **only** one lowercase Boolean literal on a single line:  
-- `true`  → retrieval is needed  
+Output Format
+Return **only** one lowercase Boolean literal on a single line:
+- `true`  → retrieval is needed
 - `false` → retrieval is not needed
 
 ---
 
-USER_REQUEST: 
+USER_REQUEST:
 {{user_input}}
 """
 
@@ -726,47 +727,47 @@ You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Ge
 
 ────────────────────────────────────────
 INPUTS
-• USER_REQUEST: The user's natural-language question.  
+• USER_REQUEST: The user's natural-language question.
 • RETRIEVED_DOCS: *Optional* — multiple objects, each with:
     - metadata
     - content
   If no external retrieval was performed, RETRIEVED_DOCS will be empty.
 
 ────────────────────────────────────────
-TASK  
+TASK
 Produce a single, well-structured answer that satisfies USER_REQUEST.
 
 ────────────────────────────────────────
-GUIDELINES  
-1. **Grounding Strategy**  
-   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
-   • Extract only the facts truly relevant to the question.  
+GUIDELINES
+1. **Grounding Strategy**
+   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.
+   • Extract only the facts truly relevant to the question.
    • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
 
-2. **Fallback Strategy**  
-   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
+2. **Fallback Strategy**
+   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.
    • Answer confidently but avoid invented specifics (no hallucinations).
 
-3. **Citation Rules**  
-   • Cite **every** external fact or quotation with its matching [doc_id].  
-   • Do **not** cite when drawing solely from internal knowledge.  
+3. **Citation Rules**
+   • Cite **every** external fact or quotation with its matching [doc_id].
+   • Do **not** cite when drawing solely from internal knowledge.
    • Never reference retrieval *scores* or expose raw snippets.
 
-4. **Answer Quality**  
-   • Prioritize clarity, accuracy, and completeness.  
-   • Use short paragraphs, bullets, or headings if it helps readability.  
+4. **Answer Quality**
+   • Prioritize clarity, accuracy, and completeness.
+   • Use short paragraphs, bullets, or headings if it helps readability.
    • Maintain a neutral, informative tone unless the user requests otherwise.
 
 ────────────────────────────────────────
-OUTPUT FORMAT  
+OUTPUT FORMAT
 Return **only** the answer text—no markdown fences, JSON, or additional labels.
 Citations must appear inline in square brackets, e.g.:
     Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
 
 ────────────────────────────────────────
-USER_REQUEST: 
+USER_REQUEST:
 {{user_input}}
-RETRIEVED_DOCS: 
+RETRIEVED_DOCS:
 {{retrieved_docs}}
 """
 

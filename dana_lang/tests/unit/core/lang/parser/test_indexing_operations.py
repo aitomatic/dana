@@ -7,8 +7,8 @@ were incorrectly returning the base object instead of the indexed value.
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestIndexingOperations:
@@ -16,7 +16,7 @@ class TestIndexingOperations:
 
     def setup_method(self):
         """Set up test environment for each test."""
-        from dana.core.lang.parser.utils.parsing_utils import ParserCache
+        from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
         self.parser = ParserCache.get_parser("dana")
         self.context = SandboxContext()

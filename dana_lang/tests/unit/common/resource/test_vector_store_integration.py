@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.sys_resource.vector_store import (
+from dana_lang.common.sys_resource.vector_store import (
     DuckDBConfig,
     PGVectorConfig,
     VectorStoreConfig,
@@ -19,7 +19,7 @@ class TestVectorStoreIntegration(unittest.TestCase):
     def test_module_imports(self):
         """Test that all expected classes and functions are importable."""
         # Test that imports work without errors
-        from dana.common.sys_resource.vector_store import (
+        from dana_lang.common.sys_resource.vector_store import (
             DuckDBConfig,
             HNSWConfig,
             PGVectorConfig,

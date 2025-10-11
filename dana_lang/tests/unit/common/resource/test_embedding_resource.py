@@ -5,8 +5,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.sys_resource.embedding.embedding_resource import EmbeddingResource
-from dana.common.types import BaseRequest, BaseResponse
+from dana_lang.common.sys_resource.embedding.embedding_resource import EmbeddingResource
+from dana_lang.common.types import BaseRequest, BaseResponse
 
 
 class TestEmbeddingResource(unittest.TestCase):

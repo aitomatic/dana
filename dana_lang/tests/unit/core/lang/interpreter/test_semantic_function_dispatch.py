@@ -22,8 +22,8 @@ import unittest
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 @pytest.mark.unit
@@ -45,7 +45,7 @@ class TestCurrentSemanticIssues(unittest.TestCase):
         # ISSUE: All string representations of zero return True instead of False
 
         test_code = """zero_string: bool = bool("0")
-zero_decimal: bool = bool("0.0") 
+zero_decimal: bool = bool("0.0")
 zero_negative: bool = bool("-0")
 false_string: bool = bool("false")"""
 
@@ -169,7 +169,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
 
         test_code = """
         pi_precise: float = reason("what is pi?")
-        pi_simple: int = reason("what is pi?") 
+        pi_simple: int = reason("what is pi?")
         pi_story: str = reason("what is pi?")
         pi_exists: bool = reason("what is pi?")
         """

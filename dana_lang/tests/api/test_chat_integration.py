@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from dana.api.core import models
-from dana.api.services.chat_service import ChatService
+from dana_lang.api.core import models
+from dana_lang.api.services.chat_service import ChatService
 
 
 class TestChatIntegration:

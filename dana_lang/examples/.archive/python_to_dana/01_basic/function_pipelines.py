@@ -15,13 +15,14 @@ Perfect for AI Engineers who need data transformation workflows.
 ⚡ Quick Start: Run this file to see pipelines in action!
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add the Dana path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def demo_basic_pipeline():

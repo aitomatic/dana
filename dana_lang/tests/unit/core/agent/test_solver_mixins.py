@@ -4,20 +4,21 @@ Tests for the solver mixins (PlannerExecutorSolverMixin and ReactiveSupportSolve
 This module tests the new solver functionality that was added to the agent system.
 """
 
-import pytest
 from unittest.mock import Mock
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
-from dana.core.agent.solvers import (
+import pytest
+
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+from dana_lang.core.agent.solvers import (
     BaseSolver,
     PlannerExecutorSolver,
     ReactiveSupportSolver,
     SignatureMatcher,
 )
-from dana.registry import WorkflowRegistry
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.workflow.workflow_system import WorkflowInstance
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.workflow.workflow_system import WorkflowInstance
+from dana_lang.registry import WorkflowRegistry
 
 
 def create_mock_agent():

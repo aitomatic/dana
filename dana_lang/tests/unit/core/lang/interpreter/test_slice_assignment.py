@@ -11,7 +11,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestSliceAssignment:

@@ -10,13 +10,14 @@ Difficulty: ⭐⭐⭐⭐ Expert
 Duration: 10-15 minutes
 """
 
-import sys
 from pathlib import Path
+import sys
+
 
 # Add the Dana path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from dana.dana import dana
+from dana_lang.dana import dana
 
 
 def demo_simple_import():

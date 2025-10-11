@@ -9,8 +9,9 @@ showing proper async resource initialization and cleanup.
 import asyncio
 import logging
 
-from dana.core.agent.agent_instance import AgentInstance
-from dana.core.agent.agent_type import AgentType
+from dana_lang.core.agent.agent_instance import AgentInstance
+from dana_lang.core.agent.agent_type import AgentType
+
 
 # Set up logging to see the output
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

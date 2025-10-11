@@ -5,16 +5,15 @@ These tests verify that the PythonicFunctionFactory correctly creates
 and registers built-in functions with proper type validation and execution.
 """
 
+# Import the real PythonicFunctionFactory
 import pytest
 
-from dana.common.exceptions import SandboxError
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.sandbox_context import SandboxContext
-
-# Import the real PythonicFunctionFactory
-from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
-from dana.registry.function_registry import FunctionRegistry
+from dana_lang.common.exceptions import SandboxError
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
+from dana_lang.registry.function_registry import FunctionRegistry
 
 
 def test_pythonic_function_factory_basic():
@@ -129,7 +128,7 @@ def test_register_pythonic_builtins():
     registry = FunctionRegistry()
 
     # Register the built-ins
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
     do_register_py_builtins(registry)
 
@@ -156,12 +155,12 @@ def test_function_lookup_order():
     def custom_len(context, obj):
         return 999  # Custom implementation
 
-    from dana.core.lang.interpreter.functions.python_function import PythonFunction
+    from dana_lang.core.lang.interpreter.functions.python_function import PythonFunction
 
     registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
     # Now register built-ins (should overwrite custom function for safety)
-    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+    from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
     do_register_py_builtins(registry)
 

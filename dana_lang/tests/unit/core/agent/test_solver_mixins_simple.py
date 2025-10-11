@@ -4,13 +4,14 @@ Simple tests for the solver mixins without full agent system imports.
 This module tests the solver functionality in isolation to avoid circular import issues.
 """
 
-import pytest
 from unittest.mock import Mock
 
+import pytest
+
 # Import only the solver mixins directly to avoid circular imports
-from dana.core.agent.solvers.base import BaseSolver
-from dana.core.agent.solvers.planner_executor import PlannerExecutorSolver
-from dana.core.agent.solvers.reactive_support import ReactiveSupportSolver
+from dana_lang.core.agent.solvers.base import BaseSolver
+from dana_lang.core.agent.solvers.planner_executor import PlannerExecutorSolver
+from dana_lang.core.agent.solvers.reactive_support import ReactiveSupportSolver
 
 
 def create_mock_agent():

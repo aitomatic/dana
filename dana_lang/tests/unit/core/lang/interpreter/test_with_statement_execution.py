@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.sys_resource.base_sys_resource import BaseSysResource
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.common.sys_resource.base_sys_resource import BaseSysResource
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class MockMCPResource(BaseSysResource):
@@ -55,14 +55,14 @@ def mock_use_function():
 
     # Instead of patching at module level, we'll patch the function registry's resolve method
     # to return our mock function when 'use' is requested
-    from dana.registry.function_registry import FunctionRegistry
+    from dana_lang.registry.function_registry import FunctionRegistry
 
     original_resolve = FunctionRegistry.resolve
 
     def mock_resolve(self, name, namespace=None):
         if name == "use":
-            from dana.core.lang.interpreter.functions.python_function import PythonFunction
-            from dana.registry.function_registry import FunctionMetadata
+            from dana_lang.core.lang.interpreter.functions.python_function import PythonFunction
+            from dana_lang.registry.function_registry import FunctionMetadata
 
             return PythonFunction(mock_use), FunctionMetadata()
         else:
@@ -233,11 +233,11 @@ with use("mcp", url="http://outer.com") as outer_client:
 with use("mcp", url="http://test1.com") as client1:
     client1_type = type(client1)
 
-# Direct object pattern  
+# Direct object pattern
 client2_obj = use("mcp", url="http://test2.com")
 with client2_obj as client2:
     client2_type = type(client2)
-    
+
 # Both should work the same way
 types_match = client1_type == client2_type
 """
@@ -353,7 +353,7 @@ good_original_name = websearch.name
 
 with websearch as client:
     good_client_name = client.name
-    
+
 # After with block, websearch is still accessible
 good_final_name = websearch.name
 good_still_accessible = True

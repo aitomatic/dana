@@ -72,7 +72,7 @@ dana/core/agent/
 - **Purpose**: Central state orchestrator
 - **Classes**: `AgentState`
 - **Dependencies**: All subsystems (mind, context, timeline, capabilities, execution)
-- **Key Methods**: 
+- **Key Methods**:
   - `get_llm_context()` - Build optimized LLM context
   - `discover_resources_for_ctxeng()` - Support framework discovery
 
@@ -206,17 +206,17 @@ No changes - remains as-is:
 
 ### Before (Current)
 ```python
-from dana.core.agent import AgentInstance
-from dana.core.agent.context import ProblemContext
-from dana.frameworks.memory import ConversationMemory
+from dana_lang.core.agent import AgentInstance
+from dana_lang.core.agent.context import ProblemContext
+from dana_lang.frameworks.memory import ConversationMemory
 ```
 
 ### After (New Structure)
 ```python
-from dana.core.agent import AgentInstance, AgentState
-from dana.core.agent.context import ProblemContext, ExecutionContext
-from dana.core.agent.mind import AgentMind
-from dana.core.agent.mind.memory import MemorySystem, ConversationMemory
+from dana_lang.core.agent import AgentInstance, AgentState
+from dana_lang.core.agent.context import ProblemContext, ExecutionContext
+from dana_lang.core.agent.mind import AgentMind
+from dana_lang.core.agent.mind.memory import MemorySystem, ConversationMemory
 ```
 
 ## Migration Path

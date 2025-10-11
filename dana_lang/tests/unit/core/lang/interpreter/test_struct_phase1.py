@@ -9,13 +9,13 @@ MIT License
 
 import pytest
 
-from dana.core.builtins.struct_system import (
+from dana_lang.core.builtins.struct_system import (
     StructInstance,
     create_struct_instance,
     create_struct_type_from_ast,
     register_struct_from_ast,
 )
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     DictLiteral,
     FunctionCall,
     LiteralExpression,
@@ -23,7 +23,7 @@ from dana.core.lang.ast import (
     StructField,
     TypeHint,
 )
-from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 class TestStructParsing:
@@ -31,13 +31,13 @@ class TestStructParsing:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.clear_all()
 
         # Reload core functions after clearing
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
         do_register_py_builtins(GLOBAL_REGISTRY.functions)
         register_py_wrappers(GLOBAL_REGISTRY.functions)
@@ -154,13 +154,13 @@ class TestStructTypeSystem:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.clear_all()
 
         # Reload core functions after clearing
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
         do_register_py_builtins(GLOBAL_REGISTRY.functions)
         register_py_wrappers(GLOBAL_REGISTRY.functions)
@@ -191,7 +191,7 @@ class TestStructTypeSystem:
         register_struct_from_ast(struct_def)
 
         # Verify registration
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         assert GLOBAL_REGISTRY.types.has_struct_type("Person")
         assert "Person" in GLOBAL_REGISTRY.types.list_struct_types()
@@ -220,7 +220,7 @@ class TestStructTypeSystem:
         register_struct_from_ast(struct_def1)
 
         # Verify the struct is still registered
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         assert GLOBAL_REGISTRY.types.has_struct_type("Test")
         retrieved_type = GLOBAL_REGISTRY.types.get_struct_type("Test")
@@ -338,13 +338,13 @@ class TestStructIntegration:
 
     def setup_method(self):
         """Clear struct registry before each test."""
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         GLOBAL_REGISTRY.clear_all()
 
         # Reload core functions after clearing
-        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
-        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
+        from dana_lang.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
+        from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
         do_register_py_builtins(GLOBAL_REGISTRY.functions)
         register_py_wrappers(GLOBAL_REGISTRY.functions)
@@ -363,7 +363,7 @@ struct Temperature:
         register_struct_from_ast(struct_def)
 
         # Verify registration worked
-        from dana.registry import GLOBAL_REGISTRY
+        from dana_lang.registry import GLOBAL_REGISTRY
 
         assert GLOBAL_REGISTRY.types.has_struct_type("Temperature")
 
@@ -403,7 +403,7 @@ struct Circle:
         register_struct_from_ast(point_def)
         register_struct_from_ast(circle_def)
 
-        from dana.registry import TYPE_REGISTRY
+        from dana_lang.registry import TYPE_REGISTRY
 
         assert TYPE_REGISTRY.has_struct_type("Point")
         assert TYPE_REGISTRY.has_struct_type("Circle")

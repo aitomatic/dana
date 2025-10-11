@@ -4,7 +4,8 @@
 # =============================================================================
 # Monorepo Workspace - Virtual Root (Not a Package)
 # =============================================================================
-# This is a virtual workspace root that coordinates the 3 real packages:
+# This is a virtual workspace root that coordinates the Dana packages:
+#   - dana (backward compat shim → dana_lang)
 #   - dana_agent
 #   - dana_lang
 #   - dana_studio
@@ -19,6 +20,7 @@ description = "Dana Monorepo Workspace - Virtual Root"
 requires-python = ">=3.12"
 dependencies = [
     # Workspace members
+    "dana",  # Backward compat shim
     "dana_agent",
     "dana_lang",
     "dana_studio",
@@ -60,15 +62,17 @@ compile-bytecode = true              # Pre-compile .pyc files for performance
 # Workspace configuration
 [tool.uv.workspace]
 members = [
-    "dana_lang",
+    "dana",
     "dana_agent",
+    "dana_lang",
     "dana_studio",
 ]
 
 [tool.uv.sources]
 # Workspace member sources
-dana_lang = { workspace = true }
+dana = { workspace = true }
 dana_agent = { workspace = true }
+dana_lang = { workspace = true }
 dana_studio = { workspace = true }
 
 # =============================================================================
@@ -129,7 +133,6 @@ exclude = [
 force-sort-within-sections = true
 force-single-line = false
 lines-after-imports = 2
-known-first-party = ["dana-lang", "dana-agent"]
 known-third-party = [
     "openai",
     "anthropic",

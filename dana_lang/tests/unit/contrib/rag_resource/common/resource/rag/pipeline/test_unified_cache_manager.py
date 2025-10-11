@@ -5,10 +5,10 @@ Simple tests for UnifiedCacheManager class.
 import os
 import tempfile
 
-import pytest
 from llama_index.core import Document
+import pytest
 
-from dana.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana_lang.common.sys_resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 
 
 class TestUnifiedCacheManager:

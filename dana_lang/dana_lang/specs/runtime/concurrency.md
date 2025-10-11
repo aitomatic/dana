@@ -3,9 +3,9 @@
 
 # Dana Promise System and Concurrency Model
 
-**Author:** Dana Language Team  
-**Date:** 2025-01-22  
-**Version:** 2.0.0  
+**Author:** Dana Language Team
+**Date:** 2025-01-22
+**Version:** 2.0.0
 **Status:** Implemented
 
 ## Executive Summary
@@ -89,7 +89,7 @@ When a Dana function uses `return`:
 def execute_return_statement(self, node: ReturnStatement, context: SandboxContext):
     def return_computation():
         return self.parent_executor.execute(node.value, captured_context)
-    
+
     promise_value = EagerPromise.create(return_computation, executor)
     raise ReturnException(promise_value)
 ```
@@ -105,7 +105,7 @@ def execute_return_statement(self, node: ReturnStatement, context: SandboxContex
 **Explicit Resolution**:
 ```python
 # Using consolidated utilities
-from dana.core.concurrency import is_promise, resolve_if_promise
+from dana_lang.core.concurrency import is_promise, resolve_if_promise
 
 value = resolve_if_promise(potentially_promise_value)
 ```
@@ -126,9 +126,9 @@ Dana uses a shared ThreadPoolExecutor for all EagerPromise execution:
 def fetch_user_data(user_id: Int) -> UserData:
     // All three API calls start immediately in parallel
     profile = fetch_profile(user_id)      // return creates Promise
-    posts = fetch_posts(user_id)          // return creates Promise  
+    posts = fetch_posts(user_id)          // return creates Promise
     friends = fetch_friends(user_id)      // return creates Promise
-    
+
     // Promises resolve when accessed
     return UserData(
         profile=profile,    // Blocks here if not ready
@@ -142,7 +142,7 @@ def fetch_user_data(user_id: Int) -> UserData:
 def process_data(data: Data) -> Result:
     if data.is_cached():
         return data.cached_result  // Synchronous, no Promise
-    
+
     // Only create Promise for expensive operation
     return expensive_computation(data)  // Concurrent execution
 ```
@@ -230,7 +230,7 @@ Return statements automatically handle Promise creation when needed:
 ### Promise Utilities
 
 ```python
-from dana.core.concurrency import (
+from dana_lang.core.concurrency import (
     is_promise,           # Check if object is a Promise
     resolve_promise,      # Force Promise resolution
     resolve_if_promise,   # Resolve if Promise, else return as-is
@@ -245,7 +245,7 @@ def fetch_all_data(id: Int) -> Data:
     a = api_call_1(id)  // return → Promise, starts immediately
     b = api_call_2(id)  // return → Promise, runs in parallel
     c = api_call_3(id)  // return → Promise, runs in parallel
-    
+
     return Data(a, b, c)  // Waits for all to complete
 
 // Pattern 2: Conditional concurrency

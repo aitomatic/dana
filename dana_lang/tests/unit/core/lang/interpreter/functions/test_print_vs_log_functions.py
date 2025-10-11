@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py_wrappers.py_log import py_log as log_function
-from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.libs.corelib.py_wrappers.py_log import py_log as log_function
+from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
 
 # register_core_functions is now handled by the corelib registration system
@@ -106,8 +106,8 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
-        from dana.registry.function_registry import FunctionRegistry
+        from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana_lang.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -126,7 +126,7 @@ class TestPrintVsLogFunctions:
     @patch("dana.common.utils.logging.dxa_logger.DANA_LOGGER.log")
     def test_sandbox_logger_incorrect_call_signature(self, mock_dxa_log):
         """Test that SandboxLogger.log calls DANA_LOGGER.log with incorrect signature."""
-        from dana.core.lang.log_manager import SandboxLogger
+        from dana_lang.core.lang.log_manager import SandboxLogger
 
         # This will demonstrate the bug: SandboxLogger.log passes 'scope' but DANA_LOGGER.log doesn't accept it
         mock_dxa_log.side_effect = TypeError("log() got an unexpected keyword argument 'scope'")
@@ -146,7 +146,7 @@ class TestPrintVsLogFunctions:
 
         import inspect
 
-        from dana.common.utils.logging.dxa_logger import DANA_LOGGER
+        from dana_lang.common.utils.logging.dxa_logger import DANA_LOGGER
 
         # Get the actual signature of DANA_LOGGER.log
         dxa_log_sig = inspect.signature(DANA_LOGGER.log)
@@ -160,8 +160,8 @@ class TestPrintVsLogFunctions:
         """Demonstrate the signature differences between print and log functions."""
         import inspect
 
-        from dana.libs.corelib.py_wrappers.py_log import py_log as log_function
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.libs.corelib.py_wrappers.py_log import py_log as log_function
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         print_sig = inspect.signature(print_function)
         log_sig = inspect.signature(log_function)
@@ -189,7 +189,7 @@ class TestLogFunctionFix:
 
         # Proposed fix: change SandboxLogger.log to call DANA_LOGGER.log correctly
         with patch("dana.common.utils.logging.dxa_logger.DANA_LOGGER.log") as mock_dxa_log:
-            from dana.core.lang.log_manager import LogLevel
+            from dana_lang.core.lang.log_manager import LogLevel
 
             # Fixed call should be:
             message = "Test message"
@@ -205,7 +205,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_basic(self):
         """Test basic log_level function functionality."""
-        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
+        from dana_lang.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -215,7 +215,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_valid_levels(self):
         """Test log_level function with different valid levels."""
-        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
+        from dana_lang.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -229,7 +229,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_invalid_level(self):
         """Test log_level function with invalid level."""
-        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
+        from dana_lang.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -238,7 +238,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_case_insensitive(self):
         """Test log_level function handles case insensitivity."""
-        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
+        from dana_lang.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -253,7 +253,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_with_options(self):
         """Test log_level function with options parameter."""
-        from dana.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
+        from dana_lang.libs.corelib.py_wrappers.py_log_level import py_log_level as log_level_function
 
         context = SandboxContext()
 
@@ -264,8 +264,8 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from dana.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
-        from dana.registry.function_registry import FunctionRegistry
+        from dana_lang.libs.corelib.py_wrappers.register_py_wrappers import register_core_functions
+        from dana_lang.registry.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -283,13 +283,13 @@ class TestDynamicHelp:
 
     def test_dynamic_help_lists_core_functions(self):
         """Test that dynamic help correctly lists all registered core functions."""
-        import sys
         from io import StringIO
+        import sys
 
-        from dana.apps.repl.commands.help_formatter import HelpFormatter
-        from dana.apps.repl.repl import REPL
-        from dana.common.terminal_utils import ColorScheme
-        from dana.core.lang.log_manager import LogLevel
+        from dana_lang.apps.repl.commands.help_formatter import HelpFormatter
+        from dana_lang.apps.repl.repl import REPL
+        from dana_lang.common.terminal_utils import ColorScheme
+        from dana_lang.core.lang.log_manager import LogLevel
 
         # Create REPL and help formatter directly (avoiding DanaREPLApp initialization)
         repl = REPL(llm_resource=None, log_level=LogLevel.INFO)
@@ -322,13 +322,13 @@ class TestDynamicHelp:
 
     def test_dynamic_help_adapts_to_new_functions(self):
         """Test that dynamic help adapts when new functions are registered."""
-        import sys
         from io import StringIO
+        import sys
 
-        from dana.apps.repl.commands.help_formatter import HelpFormatter
-        from dana.apps.repl.repl import REPL
-        from dana.common.terminal_utils import ColorScheme
-        from dana.core.lang.log_manager import LogLevel
+        from dana_lang.apps.repl.commands.help_formatter import HelpFormatter
+        from dana_lang.apps.repl.repl import REPL
+        from dana_lang.common.terminal_utils import ColorScheme
+        from dana_lang.core.lang.log_manager import LogLevel
 
         # Create REPL and help formatter directly (avoiding DanaREPLApp initialization)
         repl = REPL(llm_resource=None, log_level=LogLevel.INFO)
@@ -368,8 +368,8 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
-        from dana.apps.repl.repl import REPL
-        from dana.core.lang.log_manager import LogLevel
+        from dana_lang.apps.repl.repl import REPL
+        from dana_lang.core.lang.log_manager import LogLevel
 
         # Create REPL directly (avoiding DanaREPLApp initialization)
         repl = REPL(llm_resource=None, log_level=LogLevel.INFO)
@@ -389,13 +389,13 @@ class TestDynamicHelp:
 
     def test_help_error_handling(self):
         """Test that help system handles errors gracefully."""
-        import sys
         from io import StringIO
+        import sys
         from unittest.mock import patch
 
-        from dana.apps.repl.commands.help_formatter import HelpFormatter
-        from dana.apps.repl.repl import REPL
-        from dana.common.terminal_utils import ColorScheme
+        from dana_lang.apps.repl.commands.help_formatter import HelpFormatter
+        from dana_lang.apps.repl.repl import REPL
+        from dana_lang.common.terminal_utils import ColorScheme
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=None)
@@ -431,9 +431,9 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_basic(self, capsys):
         """Test basic f-string evaluation in print function."""
 
-        from dana.core.lang.ast import FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -459,9 +459,9 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_complex(self, capsys):
         """Test complex f-string evaluation in print function."""
 
-        from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -487,9 +487,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_multiple_variables(self, capsys):
         """Test f-string with multiple variables in print function."""
-        from dana.core.lang.ast import FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with multiple variables
         context = SandboxContext()
@@ -515,9 +515,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_with_expressions(self, capsys):
         """Test f-string with complex expressions in print function."""
-        from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -557,9 +557,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_template_style(self, capsys):
         """Test f-string with template and expressions style."""
-        from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()
@@ -590,9 +590,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_error_handling(self, capsys):
         """Test print function error handling with invalid f-strings."""
-        from dana.core.lang.ast import FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context without the required variable
         context = SandboxContext()
@@ -618,9 +618,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_mixed_args_with_fstrings(self, capsys):
         """Test print function with mixed regular and f-string arguments."""
-        from dana.core.lang.ast import FStringExpression, Identifier
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.libs.corelib.py_wrappers.py_print import py_print as print_function
+        from dana_lang.core.lang.ast import FStringExpression, Identifier
+        from dana_lang.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana_lang.libs.corelib.py_wrappers.py_print import py_print as print_function
 
         # Create a context with variables
         context = SandboxContext()

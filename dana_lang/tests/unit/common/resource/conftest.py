@@ -1,8 +1,9 @@
 """Pytest configuration for web search resource tests."""
 
-import pytest
 import os
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +31,7 @@ def mock_async_client():
 @pytest.fixture
 def sample_search_results():
     """Sample search results for testing."""
-    from dana.common.sys_resource.web_search.core.models import SearchResults, SearchSource
+    from dana_lang.common.sys_resource.web_search.core.models import SearchResults, SearchSource
 
     return SearchResults(
         success=True,
@@ -53,7 +54,7 @@ def sample_search_results():
 @pytest.fixture
 def sample_failed_search_results():
     """Sample failed search results for testing."""
-    from dana.common.sys_resource.web_search.core.models import SearchResults
+    from dana_lang.common.sys_resource.web_search.core.models import SearchResults
 
     return SearchResults(
         success=False,

@@ -5,7 +5,7 @@ This test file verifies that the simplified workflow system works correctly
 with the new design that only supports name, composed_function, and metadata.
 """
 
-from dana.core.workflow import WorkflowInstance, WorkflowType
+from dana_lang.core.workflow import WorkflowInstance, WorkflowType
 
 
 class TestWorkflowInstanceContextIntegration:

@@ -12,7 +12,7 @@ MIT License
 import os
 from pathlib import Path
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestCircularImports:
@@ -35,7 +35,7 @@ class TestCircularImports:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
         # Reset module system
-        from dana.__init__ import initialize_module_system, reset_module_system
+        from dana_lang.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()
@@ -57,7 +57,7 @@ def function_a():
 """)
 
         (base_path / "circular_b.na").write_text("""
-# Module B that imports A  
+# Module B that imports A
 import circular_a
 
 I_AM = "circular_b"
@@ -154,7 +154,7 @@ def simple_function():
             )
 
         # Reset module system
-        from dana.__init__ import initialize_module_system, reset_module_system
+        from dana_lang.__init__ import initialize_module_system, reset_module_system
 
         reset_module_system()
         initialize_module_system()

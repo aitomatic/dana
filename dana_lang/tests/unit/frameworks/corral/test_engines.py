@@ -3,17 +3,17 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from dana.core.agent import ProblemContext
-from dana.frameworks.corral.engines import (
-    CurationEngine,
-    OrganizationEngine,
-    RetrievalEngine,
-    ReasoningEngine,
+from dana_lang.core.agent import ProblemContext
+from dana_lang.frameworks.corral.config import CORRALConfig, ReasoningType
+from dana_lang.frameworks.corral.engines import (
     ActionEngine,
+    CurationEngine,
     LearningEngine,
+    OrganizationEngine,
+    ReasoningEngine,
+    RetrievalEngine,
 )
-from dana.frameworks.corral.config import CORRALConfig, ReasoningType
-from dana.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
+from dana_lang.frameworks.corral.knowledge import Knowledge, KnowledgeCategory
 
 
 class TestCurationEngine:
@@ -377,7 +377,7 @@ class TestActionEngine:
         engine = ActionEngine(config)
 
         # Mock reasoning result
-        from dana.frameworks.corral.operations import ReasoningResult
+        from dana_lang.frameworks.corral.operations import ReasoningResult
 
         reasoning_result = ReasoningResult(
             conclusions=["Deploy using blue-green strategy", "Monitor during deployment"],

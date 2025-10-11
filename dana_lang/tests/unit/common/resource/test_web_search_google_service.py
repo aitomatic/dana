@@ -1,33 +1,34 @@
 """Tests for Google search service implementation."""
 
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dana.common.sys_resource.web_search.core.models import (
+import pytest
+
+from dana_lang.common.sys_resource.web_search.core.models import (
+    SearchDepth,
     SearchRequest,
     SearchResults,
     SearchSource,
-    SearchDepth,
 )
-from dana.common.sys_resource.web_search.google.search_engine import (
-    GoogleSearchEngine,
-    GoogleResult,
-    _sanitize_api_key,
-)
-from dana.common.sys_resource.web_search.google.config import (
+from dana_lang.common.sys_resource.web_search.google.config import (
     GoogleSearchConfig,
-    load_google_config,
     _mask_api_key,
+    load_google_config,
 )
-from dana.common.sys_resource.web_search.google.exceptions import (
+from dana_lang.common.sys_resource.web_search.google.exceptions import (
     APIKeyError,
     ConfigurationError,
     GoogleSearchError,
     RateLimitError,
     ServiceUnavailableError,
 )
-from dana.common.sys_resource.web_search.google_search_service import (
+from dana_lang.common.sys_resource.web_search.google.search_engine import (
+    GoogleResult,
+    GoogleSearchEngine,
+    _sanitize_api_key,
+)
+from dana_lang.common.sys_resource.web_search.google_search_service import (
     GoogleSearchService,
     MockGoogleSearchService,
     create_google_search_service,

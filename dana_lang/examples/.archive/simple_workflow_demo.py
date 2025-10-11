@@ -42,7 +42,7 @@ class ResourceType:
 
 # Try to import IWorkflow from interface_system, fallback to mock for demonstration
 try:
-    from dana.core.builtins.interface_system import IWorkflow
+    from dana_lang.core.builtins.interface_system import IWorkflow
 except ImportError:
     # Mock interface types for demonstration
     class InterfaceType:

@@ -14,10 +14,11 @@ from textual.message import Message
 from textual.widgets import Input, TextArea
 
 # Removed autocomplete imports - using history navigation only
-from common import DANA_LOGGER
+from dana_lang.common import DANA_LOGGER
 from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 from ..ui.syntax_highlighter import dana_highlighter
+
 
 # Removed Dana keywords and functions lists - no longer needed for autocomplete
 

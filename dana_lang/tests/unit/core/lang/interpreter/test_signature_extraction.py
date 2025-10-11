@@ -3,15 +3,15 @@
 import inspect
 from unittest.mock import Mock
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     DeclarativeFunctionDefinition,
     Identifier,
     LiteralExpression,
     Parameter,
     TypeHint,
 )
-from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.lang.interpreter.executor.statement_executor import StatementExecutor
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestSignatureExtraction:

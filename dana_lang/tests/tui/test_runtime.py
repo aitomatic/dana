@@ -7,18 +7,19 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import sys
 from pathlib import Path
+import sys
 
 import pytest
+
 
 # Add the project root to path so we can import dana.apps.tui.core
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dana.apps.tui.core.events import Done, Status, Token
-from dana.core.agent import AgentInstance, AgentType
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.apps.tui.core.events import Done, Status, Token
+from dana_lang.core.agent import AgentInstance, AgentType
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class MockTestAgent(AgentInstance):
@@ -162,7 +163,7 @@ class TestDanaSandbox:
         assert sandbox is not None
 
         # Should be a CoreDanaSandbox instance
-        from dana.core.lang.dana_sandbox import DanaSandbox as CoreDanaSandbox
+        from dana_lang.core.lang.dana_sandbox import DanaSandbox as CoreDanaSandbox
 
         assert isinstance(sandbox, CoreDanaSandbox)
 

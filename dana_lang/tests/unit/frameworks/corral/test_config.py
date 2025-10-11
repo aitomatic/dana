@@ -2,16 +2,16 @@
 
 import pytest
 
-from dana.frameworks.corral.config import (
-    CORRALConfig,
-    SourceType,
-    IndexingStrategy,
-    ReasoningType,
-    ExplanationDepth,
-    ActionMode,
+from dana_lang.frameworks.corral.config import (
+    COMPREHENSIVE_CONFIG,
     DEFAULT_CONFIG,
     LIGHTWEIGHT_CONFIG,
-    COMPREHENSIVE_CONFIG,
+    ActionMode,
+    CORRALConfig,
+    ExplanationDepth,
+    IndexingStrategy,
+    ReasoningType,
+    SourceType,
 )
 
 

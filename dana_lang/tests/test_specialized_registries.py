@@ -2,8 +2,8 @@
 Tests for specialized registries (AgentRegistry and ResourceRegistry).
 """
 
-from dana.core.builtins.struct_system import StructInstance
-from dana.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
+from dana_lang.core.builtins.struct_system import StructInstance
+from dana_lang.registry import AGENT_REGISTRY, RESOURCE_REGISTRY
 
 
 def create_mock_struct_instance(name: str) -> StructInstance:

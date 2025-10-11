@@ -1,9 +1,9 @@
 from llama_index.core.py import StorageContext, VectorStoreIndex, Settings
 Settings.chunk_size = 1024
 Settings.chunk_overlap = 256
-from dana.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
-from dana.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
-from dana.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
+from dana_lang.libs.stdlib.resources.rag_utilities.document_loader import DocumentLoader, load_sources
+from dana_lang.libs.stdlib.resources.rag_utilities.embedding_factory import get_embedding_model, EmbeddingFactory
+from dana_lang.libs.stdlib.resources.rag_utilities.storage_factory import get_duckdb_store, get_pgvector_store
 from llama_index.core.ingestion.py import run_transformations
 from llama_index.core.vector_stores.py import MetadataFilter, MetadataFilters, FilterOperator
 from llama_index.core.vector_stores.types.py import BasePydanticVectorStore
@@ -26,14 +26,14 @@ def (rag: RAGOrchestrator) build_index(sources: list[str], dimension_override: i
         dimension = EmbeddingFactory._extract_dimensions(rag.embedding_model)
     if rag.vector_store is None:
         rag.vector_store = get_duckdb_store(database_name="test", persist_dir="test", table_name=f"test_{dimension}", embed_dim=dimension_override)
-    
+
     storage_context = StorageContext.from_defaults(vector_store=rag.vector_store)
     rag.index = VectorStoreIndex.from_vector_store(rag.vector_store, embed_model=rag.embedding_model)
 
     docs_dict = rag.document_loader.load_sources(sources)
 
     filters =MetadataFilters(filters=[MetadataFilter(key="source", operator=FilterOperator.IN, value=list(docs_dict.keys()))])
-    
+
     matched_nodes = rag.index.vector_store.get_nodes(filters=filters)
     existing_sources = set()
     for node in matched_nodes:

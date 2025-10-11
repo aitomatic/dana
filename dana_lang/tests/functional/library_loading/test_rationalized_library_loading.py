@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestRationalizedLibraryLoading:
@@ -22,7 +22,7 @@ class TestRationalizedLibraryLoading:
     def setup_method(self):
         """Set up test fixtures."""
         # Reset module system to ensure clean state
-        from dana.__init__.init_modules import reset_module_system
+        from dana_lang.__init__.init_modules import reset_module_system
 
         reset_module_system()
 
@@ -32,12 +32,12 @@ class TestRationalizedLibraryLoading:
         import dana  # noqa: F401  # noqa: F401
 
         # Verify environment loading function exists and was called
-        from dana.common.utils.dana_load_dotenv import dana_load_dotenv
+        from dana_lang.common.utils.dana_load_dotenv import dana_load_dotenv
 
         assert callable(dana_load_dotenv)
 
         # Verify configuration loader was initialized
-        from dana.common.config.config_loader import ConfigLoader
+        from dana_lang.common.config.config_loader import ConfigLoader
 
         config_loader = ConfigLoader()
         assert config_loader is not None
@@ -53,7 +53,7 @@ class TestRationalizedLibraryLoading:
         # Note: _preloaded_functions is no longer used in the new registry system
         # The new system uses the global registry for function registration
         # Verify that corelib functions are available when DanaInterpreter is created
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
 
@@ -72,7 +72,7 @@ class TestRationalizedLibraryLoading:
         import dana  # noqa: F401
 
         # Explicitly initialize module system to ensure DANAPATH is set up
-        from dana.__init__.init_modules import initialize_module_system
+        from dana_lang.__init__.init_modules import initialize_module_system
 
         initialize_module_system()
 
@@ -121,7 +121,7 @@ result
         # Import dana to trigger startup
 
         # Create interpreter to test function registration
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         registry = interpreter.function_registry
@@ -151,7 +151,7 @@ result
 
         # Measure time to create DanaInterpreter (should be fast due to preloading)
         start_time = time.time()
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         interpreter = DanaInterpreter()
         interpreter_time = time.time() - start_time
@@ -169,7 +169,8 @@ result
         # The current architecture loads corelib functions through the global registry
         # during startup, not through the deprecated _preloaded_functions mechanism
         import dana  # noqa: F401
-        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+
+        from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
         # Create interpreter - corelib functions should be available
         interpreter = DanaInterpreter()
@@ -187,7 +188,7 @@ result
 
         try:
             # Reset module system to test clean startup
-            from dana.__init__.init_modules import reset_module_system
+            from dana_lang.__init__.init_modules import reset_module_system
 
             reset_module_system()
 
@@ -195,7 +196,7 @@ result
 
             # Module system should be available (test mode doesn't prevent initialization,
             # it just minimizes resource usage)
-            from dana.__init__.init_modules import get_module_registry
+            from dana_lang.__init__.init_modules import get_module_registry
 
             # This should succeed - test mode allows module system initialization
             registry = get_module_registry()

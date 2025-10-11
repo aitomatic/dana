@@ -19,7 +19,8 @@ MIT License
 
 import time
 
-from dana.dana import dana
+from dana_lang.dana import dana
+
 
 # ============================================================================
 # Enterprise System Enhancement (Production Line)

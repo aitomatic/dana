@@ -1,22 +1,22 @@
 from tools import code
 from all_resources import knows
 from all_resources import docs
-from common import State
-from common import COMPRESSION_PROMPT
-from common import PLANNING_SYSTEM_PROMPT
-from common import PLANNING_PROMPT
-from common import EXECUTION_SYSTEM_PROMPT
-from common import EXECUTION_PROMPT
-from common import DATA_FETCHING_PROMPT
-from common import STEP_BREAK
-from common import QUESTION_CLASSIFIER
-from common import COMPLEXITY_CLASSIFIER
-from common import EXAMPLE_LIBRARY
-from common import PLAN_VALIDATION_PROMPT
-from common import SIMPLE_PLANNING_TEMPLATE
-from common import MODERATE_PLANNING_TEMPLATE
-from common import COMPLEX_PLANNING_TEMPLATE
-from common import FOCUSED_PLANNING_PROMPT
+from dana_lang.common import State
+from dana_lang.common import COMPRESSION_PROMPT
+from dana_lang.common import PLANNING_SYSTEM_PROMPT
+from dana_lang.common import PLANNING_PROMPT
+from dana_lang.common import EXECUTION_SYSTEM_PROMPT
+from dana_lang.common import EXECUTION_PROMPT
+from dana_lang.common import DATA_FETCHING_PROMPT
+from dana_lang.common import STEP_BREAK
+from dana_lang.common import QUESTION_CLASSIFIER
+from dana_lang.common import COMPLEXITY_CLASSIFIER
+from dana_lang.common import EXAMPLE_LIBRARY
+from dana_lang.common import PLAN_VALIDATION_PROMPT
+from dana_lang.common import SIMPLE_PLANNING_TEMPLATE
+from dana_lang.common import MODERATE_PLANNING_TEMPLATE
+from dana_lang.common import COMPLEX_PLANNING_TEMPLATE
+from dana_lang.common import FOCUSED_PLANNING_PROMPT
 import yaml.py
 
 STEPS_TO_START_COMPRESSION = 3
@@ -34,7 +34,7 @@ def classify_complexity(question: str) -> dict[str, str]:
     """Classify question complexity and return classification details."""
     complexity_prompt = COMPLEXITY_CLASSIFIER.format(question=question)
     complexity_result = reason(complexity_prompt, resources=[], temperature=0)
-    
+
     # Extract complexity level and select corresponding template
     if "SIMPLE" in complexity_result.upper():
         return {
@@ -44,7 +44,7 @@ def classify_complexity(question: str) -> dict[str, str]:
         }
     elif "COMPLEX" in complexity_result.upper():
         return {
-            "level": "COMPLEX", 
+            "level": "COMPLEX",
             "template": COMPLEX_PLANNING_TEMPLATE,
             "max_steps": "5+ steps as needed"
         }
@@ -58,7 +58,7 @@ def classify_complexity(question: str) -> dict[str, str]:
 def plan_ahead(data : State) -> State:
     # Step 1: Classify complexity and get template in one call
     complexity_info = classify_complexity(data.original_problem)
-    
+
     # Step 2: Classify question type for context
     question_type_prompt = QUESTION_CLASSIFIER.format(question=data.original_problem)
     question_type = reason(question_type_prompt, resources=[], temperature=0)
@@ -67,7 +67,7 @@ def plan_ahead(data : State) -> State:
         available_knowledges = knows.query(data.original_problem)
     else:
         available_knowledges = ""
-    
+
     # Step 3: Create focused planning prompt with ONLY the relevant template
     focused_plan_prompt = FOCUSED_PLANNING_PROMPT.format(
         system_plan_prompt=PLANNING_SYSTEM_PROMPT,
@@ -78,9 +78,9 @@ def plan_ahead(data : State) -> State:
         question=data.original_problem,
         knowledge=available_knowledges
     )
-    
+
     str_plan = reason(focused_plan_prompt, temperature=0)
-    
+
     # Step 4: Parse the plan into steps using STEP_BREAK (---)
     steps = str_plan.split(STEP_BREAK)
     data.steps = steps
@@ -101,11 +101,11 @@ def should_execute(data: State) -> bool:
     if len(data.steps) == 0:
         return True
     return False
-    
+
 
 def execute_step(data : State) -> State:
     if should_execute(data) == True:
-        need_to_get_data = should_get_data(data)        
+        need_to_get_data = should_get_data(data)
 
         if need_to_get_data == True:
             if len(data.steps) == 0:
@@ -117,14 +117,14 @@ def execute_step(data : State) -> State:
                     context = context + knows.query(data.original_problem)
                 # Use regular EXECUTION_PROMPT for calculations and analysis
                 execution_prompt = EXECUTION_PROMPT.format(
-                    question=data.original_problem, 
-                    tools=TOOLS, 
-                    context=context, 
-                    step=data.current_step, 
+                    question=data.original_problem,
+                    tools=TOOLS,
+                    context=context,
+                    step=data.current_step,
                     execution_system_prompt=EXECUTION_SYSTEM_PROMPT
                 )
                 step_answer = reason(execution_prompt, temperature=0, resources=[])
-            else:    
+            else:
                 context = ""
                 if docs.is_available:
                     context = docs.query(data.original_problem)
@@ -132,10 +132,10 @@ def execute_step(data : State) -> State:
                     context = context + knows.query(data.original_problem)
                 # Only get data 1 time
                 data_prompt = DATA_FETCHING_PROMPT.format(
-                    question=data.original_problem, 
-                    tools=TOOLS, 
-                    context=f"{data.context}\n{context}", 
-                    step=data.current_step, 
+                    question=data.original_problem,
+                    tools=TOOLS,
+                    context=f"{data.context}\n{context}",
+                    step=data.current_step,
                     execution_system_prompt=EXECUTION_SYSTEM_PROMPT
                 )
                 step_answer = reason(data_prompt, temperature=0, resources=[docs])
@@ -143,14 +143,14 @@ def execute_step(data : State) -> State:
         else:
             # Use regular EXECUTION_PROMPT for calculations and analysis
             execution_prompt = EXECUTION_PROMPT.format(
-                question=data.original_problem, 
-                tools=TOOLS, 
-                context=data.context, 
-                step=data.current_step, 
+                question=data.original_problem,
+                tools=TOOLS,
+                context=data.context,
+                step=data.current_step,
                 execution_system_prompt=EXECUTION_SYSTEM_PROMPT
             )
             step_answer = reason(execution_prompt, temperature=0, resources=[code])
-            
+
         data.context = f"{data.context}\n{step_answer}"
         data.has_new_context = True
         data.count = data.count + 1
@@ -169,4 +169,3 @@ def compress_context(data : State) -> State:
             print("="*50)
             data.has_new_context = False
     return data
-

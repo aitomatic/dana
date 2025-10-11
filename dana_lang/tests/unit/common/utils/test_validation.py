@@ -1,13 +1,13 @@
 """Tests for validation utilities."""
 
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest
 
-from dana.common.utils.validation import ValidationError, ValidationUtilities
+from dana_lang.common.utils.validation import ValidationError, ValidationUtilities
 
 
 class TestValidationUtilities:
@@ -316,7 +316,7 @@ class TestValidationError:
     def test_validation_error_inheritance(self):
         """Test that ValidationError properly inherits from DanaError."""
         error = ValidationError("Test message")
-        from dana.common.exceptions import DanaError
+        from dana_lang.common.exceptions import DanaError
 
         assert isinstance(error, DanaError)
         assert isinstance(error, Exception)

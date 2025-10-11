@@ -26,7 +26,7 @@ help: ## Show available commands
 # Note: Run 'make setup' from the monorepo root to install all packages
 
 test: ## Run all tests (excludes live/deep/windows_console)
-	@echo "🤖 Running dana-agent tests..."
+	@echo "🤖 Running dana_agent tests..."
 	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false pytest tests/ -v --maxfail=10
 
 test-unit: ## Run only unit tests
@@ -51,20 +51,20 @@ test-cov: ## Run tests with coverage report
 # =============================================================================
 
 lint: ## Check code style and quality
-	@echo "🔍 Linting dana-agent..."
+	@echo "🔍 Linting dana_agent..."
 	ruff check .
 
 format: ## Format code automatically
-	@echo "✨ Formatting dana-agent..."
+	@echo "✨ Formatting dana_agent..."
 	ruff format .
 
 fix: ## Auto-fix code issues
-	@echo "🔧 Auto-fixing dana-agent..."
+	@echo "🔧 Auto-fixing dana_agent..."
 	ruff check --fix .
 	ruff format .
 
 clean: ## Clean build artifacts and caches
-	@echo "🧹 Cleaning dana-agent..."
+	@echo "🧹 Cleaning dana_agent..."
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true

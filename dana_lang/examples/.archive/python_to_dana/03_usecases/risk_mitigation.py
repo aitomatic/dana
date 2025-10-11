@@ -14,13 +14,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from dataclasses import dataclass
 import logging
 import random
 import time
-from dataclasses import dataclass
 from typing import Any
 
-from dana.dana import dana
+from dana_lang.dana import dana
+
 
 # Configure logging for risk monitoring
 logging.basicConfig(level=logging.INFO)

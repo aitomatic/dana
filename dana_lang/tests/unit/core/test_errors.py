@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from dana.core.runtime.modules.errors import (
+from dana_lang.core.runtime.modules.errors import (
     CircularImportError,
     CompileError,
     ImportError,

@@ -17,9 +17,9 @@ Discord: https://discord.gg/6jGD4PYk
 
 
 def test_division_from_source():
-    from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-    from dana.core.lang.parser.utils.parsing_utils import ParserCache
-    from dana.core.lang.sandbox_context import SandboxContext
+    from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
+    from dana_lang.core.lang.sandbox_context import SandboxContext
 
     parser = ParserCache.get_parser("dana")
     parse_tree = parser.parser.parse("private:x = 6 / 2\n")
@@ -31,7 +31,7 @@ def test_division_from_source():
 
 
 def test_parse_simple_division_expression():
-    from dana.core.lang.parser.utils.parsing_utils import ParserCache
+    from dana_lang.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     parser.parser.parse("6 / 2\n")

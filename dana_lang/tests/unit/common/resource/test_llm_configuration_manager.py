@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
+from dana_lang.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
 
 
 class TestLLMConfigurationManager(unittest.TestCase):
@@ -301,7 +301,7 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
 
     def test_llm_resource_uses_configuration_manager(self):
         """Test that LLMResource properly uses LLMConfigurationManager."""
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Check if we're in mock mode
         if os.environ.get("DANA_MOCK_LLM", "false").lower() == "true":
@@ -344,7 +344,7 @@ class TestLLMConfigurationManagerIntegration(unittest.TestCase):
 
     def test_model_setting_through_property(self):
         """Test setting model through property."""
-        from dana.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
+        from dana_lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource
 
         # Set up API keys
         os.environ["OPENAI_API_KEY"] = "test-key"

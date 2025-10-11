@@ -85,7 +85,7 @@ def optimize_query(self, query: str, search_depth: str = "standard") -> str:
 ### SearchRequest Model
 
 ```python
-from dana.common.sys_resource.web_search.core.models import SearchRequest, SearchDepth
+from dana_lang.common.sys_resource.web_search.core.models import SearchRequest, SearchDepth
 
 # Using enum values (recommended)
 request = SearchRequest(
@@ -95,7 +95,7 @@ request = SearchRequest(
 
 # Using string values (also supported)
 request = SearchRequest(
-    query="Intel Core i7 specifications", 
+    query="Intel Core i7 specifications",
     search_depth="extensive"
 )
 ```
@@ -156,7 +156,7 @@ class SearchDepth(str, Enum):
 # For quick validation
 search_request = SearchRequest(query="product exists?", search_depth="basic")
 
-# For standard research  
+# For standard research
 search_request = SearchRequest(query="product specifications", search_depth="standard")
 
 # For comprehensive analysis
@@ -205,7 +205,7 @@ config = {
 }
 ```
 
-### Research Configuration  
+### Research Configuration
 ```python
 # Comprehensive research setup
 config = {
@@ -246,9 +246,9 @@ Reference links contribute to overall result quality:
 
 ```bash
 # BASIC depth
-=Ë Skipping reference extraction for basic search depth
+=ï¿½ Skipping reference extraction for basic search depth
 
-# STANDARD depth  
+# STANDARD depth
 = Found 3 relevant links from 45 total links
 
 # EXTENSIVE depth
@@ -265,9 +265,9 @@ Reference links contribute to overall result quality:
 
 ---
 
-**Last Updated**: 2025-01-11  
-**Module Version**: Google Web Search v1.0  
-**Related Files**: 
+**Last Updated**: 2025-01-11
+**Module Version**: Google Web Search v1.0
+**Related Files**:
 - `search_engine.py` - Query optimization
 - `reference_extractor.py` - Link extraction logic
 - `core/models.py` - SearchRequest and SearchDepth definitions

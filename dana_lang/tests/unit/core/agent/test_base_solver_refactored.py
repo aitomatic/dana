@@ -5,12 +5,13 @@ This module tests the BaseSolver after the resource handling functionality
 was extracted into ResourceHandlingMixin.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
-from dana.core.agent.solvers.base import BaseSolver, SolverResponse
-from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.workflow.workflow_system import WorkflowInstance
+import pytest
+
+from dana_lang.core.agent.solvers.base import BaseSolver, SolverResponse
+from dana_lang.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.workflow.workflow_system import WorkflowInstance
 
 
 class ConcreteSolver(BaseSolver):

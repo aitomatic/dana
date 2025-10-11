@@ -90,7 +90,7 @@ result = agent.solve(
 For developers and strategies, the full CTXENG capability is available:
 
 ```python
-from dana.frameworks.ctxeng import ContextEngineer, ContextData
+from dana_lang.frameworks.ctxeng import ContextEngineer, ContextData
 
 # Create context engineer
 engineer = ContextEngineer()
@@ -188,10 +188,10 @@ The system automatically selects optimal strategies and context configurations b
 def _select_strategy(self, problem: str, user_profile: UserProfile) -> Strategy:
     # 1. Create problem signature
     problem_signature = self._create_problem_signature(problem)
-    
+
     # 2. Look for existing patterns
     strategy_pattern = self._find_strategy_pattern(problem_signature)
-    
+
     if strategy_pattern and strategy_pattern.success_rate > 0.8:
         # Use learned pattern if it's reliable
         strategy_type = strategy_pattern.strategy_type
@@ -199,7 +199,7 @@ def _select_strategy(self, problem: str, user_profile: UserProfile) -> Strategy:
     else:
         # Fall back to user preferences or defaults
         strategy_type = self._get_fallback_strategy(problem, user_profile)
-    
+
     return self._create_strategy(strategy_type)
 ```
 
@@ -210,34 +210,34 @@ The `AgentMind` mixin handles the complete lifecycle of user profiles, strategy 
 ```python
 class AgentMind:
     """Mixin for managing agent intelligence, learning, and memory."""
-    
+
     def __init__(self):
         self.user_profile: UserProfile = None
         self.strategy_patterns: Dict[str, StrategyPattern] = {}
         self.context_patterns: Dict[str, ContextPattern] = {}
         self.world_model: WorldModel = None  # Future: shared knowledge
-        
+
         # Storage paths
         self.models_dir = Path("~/.models").expanduser()
         self.users_dir = self.models_dir / "users"
         self.strategies_dir = self.models_dir / "strategies"
         self.contexts_dir = self.models_dir / "contexts"
         self.world_dir = self.models_dir / "world"
-    
+
     def initialize_mind(self, user_id: str = "default"):
         """Initialize the agent's mind with user profile and patterns."""
         # Load user profile
         self.user_profile = self._load_user_profile(user_id)
-        
+
         # Load strategy patterns
         self.strategy_patterns = self._load_strategy_patterns(user_id)
-        
+
         # Load context patterns
         self.context_patterns = self._load_context_patterns(user_id)
-        
+
         # Future: Load world model
         # self.world_model = self._load_world_model()
-    
+
     def _load_user_profile(self, user_id: str) -> UserProfile:
         """Load user profile from ~/.users/{user_id}.json"""
         profile_file = self.users_dir / f"{user_id}.json"
@@ -247,7 +247,7 @@ class AgentMind:
                 return UserProfile(**data)
         else:
             return self._create_default_profile(user_id)
-    
+
     def _load_strategy_patterns(self, user_id: str) -> Dict[str, StrategyPattern]:
         """Load strategy patterns from ~/.strategies/{user_id}.json"""
         patterns_file = self.strategies_dir / f"{user_id}.json"
@@ -257,7 +257,7 @@ class AgentMind:
                 return {k: StrategyPattern(**v) for k, v in data.items()}
         else:
             return {}
-    
+
     def _load_context_patterns(self, user_id: str) -> Dict[str, ContextPattern]:
         """Load context patterns from ~/.contexts/{user_id}.json"""
         patterns_file = self.contexts_dir / f"{user_id}.json"
@@ -267,33 +267,33 @@ class AgentMind:
                 return {k: ContextPattern(**v) for k, v in data.items()}
         else:
             return {}
-    
+
     def update_user_preference(self, key: str, value: Any):
         """Update a user preference and persist to storage."""
         if hasattr(self.user_profile, key):
             setattr(self.user_profile, key, value)
             self._save_user_profile()
-    
+
     def learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
         """Learn from execution results and update patterns."""
         problem_signature = self._create_problem_signature(problem)
-        
+
         # Update strategy patterns
         self._update_strategy_pattern(problem_signature, strategy, result)
-        
+
         # Update context patterns
         self._update_context_pattern(problem_signature, context_config, result)
-        
+
         # Persist updated patterns
         self._save_patterns()
-    
+
     def _save_user_profile(self):
         """Save user profile to ~/.users/{user_id}.json"""
         os.makedirs(self.users_dir, exist_ok=True)
         profile_file = self.users_dir / f"{self.user_profile.user_id}.json"
         with open(profile_file, 'w') as f:
             json.dump(self.user_profile.dict(), f, indent=2)
-    
+
     def _save_patterns(self):
         """Save strategy and context patterns to storage."""
         # Save strategy patterns
@@ -301,17 +301,17 @@ class AgentMind:
         strategy_file = self.strategies_dir / f"{self.user_profile.user_id}.json"
         with open(strategy_file, 'w') as f:
             json.dump(self.strategy_patterns, f, indent=2, default=str)
-        
+
         # Save context patterns
         os.makedirs(self.contexts_dir, exist_ok=True)
         context_file = self.contexts_dir / f"{self.user_profile.user_id}.json"
         with open(context_file, 'w') as f:
             json.dump(self.context_patterns, f, indent=2, default=str)
-    
+
     def cleanup_expired_patterns(self):
         """Remove expired patterns based on TTL and usage."""
         current_time = datetime.now()
-        
+
         # Cleanup strategy patterns
         expired_strategies = [
             k for k, v in self.strategy_patterns.items()
@@ -319,7 +319,7 @@ class AgentMind:
         ]
         for k in expired_strategies:
             del self.strategy_patterns[k]
-        
+
         # Cleanup context patterns
         expired_contexts = [
             k for k, v in self.context_patterns.items()
@@ -327,7 +327,7 @@ class AgentMind:
         ]
         for k in expired_contexts:
             del self.context_patterns[k]
-    
+
     def _is_pattern_expired(self, pattern: BasePattern, current_time: datetime) -> bool:
         """Check if a pattern has expired based on TTL and usage."""
         days_since_use = (current_time - pattern.last_used).days
@@ -344,15 +344,15 @@ After each problem-solving session, the system learns and updates patterns:
 ```python
 def _learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
     problem_signature = self._create_problem_signature(problem)
-    
+
     # Update strategy pattern
     strategy_pattern = self._get_or_create_strategy_pattern(problem_signature)
     strategy_pattern.success_rate = self._update_success_rate(
-        strategy_pattern.success_rate, 
-        self._assess_success(result), 
+        strategy_pattern.success_rate,
+        self._assess_success(result),
         strategy_pattern.usage_count
     )
-    
+
     # Update context pattern
     context_pattern = self._get_or_create_context_pattern(problem_signature)
     context_pattern.llm_performance = self._update_performance(
@@ -651,35 +651,35 @@ where weights are configurable per use case
 
 ```python
 class ContextEngineer:
-    def engineer_context_structured(self, 
+    def engineer_context_structured(self,
                 context_data: ContextData,
                 **options) -> str:
         """
         Engineer context using structured ContextData (recommended).
-        
+
         Args:
             context_data: Structured context data object
             **options: Additional configuration options
-            
+
         Returns:
             Optimized prompt string (XML or text format)
         """
         pass
-    
-    def engineer_context(self, 
+
+    def engineer_context(self,
                 query: str,
                 context: dict = None,
                 template: str = None,
                 **options) -> str:
         """
         Engineer context using dictionary approach (legacy).
-        
+
         Args:
             query: What the user is asking
             context: Optional additional context
             template: Template name (e.g., "problem_solving", "conversation")
             **options: Simple configuration options
-            
+
         Returns:
             Optimized prompt string (XML or text format)
         """
@@ -705,14 +705,14 @@ class AgentState:
     def assemble_context_data(self, query: str, template: str = "general") -> ContextData:
         """Assemble structured ContextData from agent state."""
         context_data = ContextData.create_for_agent(query=query, template=template)
-        
+
         # Extract from all agent state components
         if self.problem_context:
             context_data.problem = ProblemContextData(...)
         if self.mind:
             context_data.conversation = ConversationContextData(...)
         # ... etc
-        
+
         return context_data
 
 # SolvingMixin uses AgentState for context assembly
@@ -720,10 +720,10 @@ class SolvingMixin:
     def solve_sync(self, problem: str, **kwargs):
         # Let AgentState assemble its own context
         context_data = self.state.assemble_context_data(problem, template="problem_solving")
-        
+
         # Use ContextEngineer with structured data
         rich_prompt = self.context_engineer.engineer_context_structured(context_data)
-        
+
         # Continue with workflow planning and execution
         workflow = self.plan_sync(rich_prompt, **kwargs)
         return workflow.execute(**kwargs)
@@ -738,7 +738,7 @@ class AgentInstance:
         # ... existing code ...
         # AgentState is initialized with all necessary components
         self.state = AgentState()
-    
+
     def solve(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
         # SolvingMixin handles the context engineering integration
         return self.solve_sync(problem_or_workflow, **kwargs)
@@ -748,26 +748,26 @@ class SolvingMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._context_engineer = None  # Lazy initialization
-    
+
     @property
     def context_engineer(self) -> ContextEngineer:
         """Get or create the context engineer for this agent."""
         if self._context_engineer is None:
             self._context_engineer = ContextEngineer.from_agent(self)
         return self._context_engineer
-    
+
     def solve_sync(self, problem_or_workflow: str | WorkflowInstance, **kwargs) -> Any:
         if isinstance(problem_or_workflow, str):
             # Set problem context in centralized state
             self.state.set_problem_context(ProblemContext(problem_statement=problem_or_workflow))
-            
+
             # Let AgentState assemble its own ContextData
             context_data = self.state.assemble_context_data(problem_or_workflow, template="problem_solving")
-            
+
             # Use ContextEngineer with structured data
             rich_prompt = self.context_engineer.engineer_context_structured(context_data)
             problem_or_workflow = rich_prompt
-        
+
         # Continue with workflow planning and execution
         workflow = self.plan_sync(problem_or_workflow, **kwargs)
         return workflow.execute(**kwargs)
@@ -780,7 +780,7 @@ class RecursiveStrategy:
             # Get user preferences and learned patterns
             user_profile = agent_instance._mind.user_profile
             strategy_patterns = agent_instance._mind.strategy_patterns
-            
+
             # Use learned patterns to optimize strategy selection
             optimal_template = self._select_optimal_template(problem, user_profile, strategy_patterns)
             optimal_scope = self._select_optimal_scope(problem, user_profile, strategy_patterns)
@@ -788,12 +788,12 @@ class RecursiveStrategy:
             # Fall back to defaults
             optimal_template = "problem_solving"
             optimal_scope = "standard"
-        
+
         # Strategy decides what context engineering is needed
         if hasattr(agent_instance, '_context_engine'):
             # Use CTXENG for rich context assembly with learned optimizations
             rich_prompt = agent_instance._context_engine.assemble(
-                problem, 
+                problem,
                 template=optimal_template,
                 context=context.to_dict(),
                 scope=optimal_scope
@@ -801,10 +801,10 @@ class RecursiveStrategy:
         else:
             # Fall back to basic prompt
             rich_prompt = self._build_basic_prompt(problem, context)
-        
+
         # Use rich prompt for LLM interaction
         dana_code = self._get_llm_response(rich_prompt, agent_instance, sandbox_context)
-        
+
         # Continue with workflow creation...
 ```
 
@@ -889,7 +889,7 @@ dana/frameworks/ctxeng/templates/
 
 **Available Templates**:
 - **problem_solving**: Rich context for complex problem solving
-- **conversation**: Optimized for conversational interactions  
+- **conversation**: Optimized for conversational interactions
 - **analysis**: Data-driven analysis and reporting
 - **general**: Default template for unspecified use cases
 
@@ -942,7 +942,7 @@ ctx = ContextEngine(format_type="text") # Text output
 
 **AgentMind Configuration Interface**:
 ```python
-from dana.core.agent.mind import AgentMind
+from dana_lang.core.agent.mind import AgentMind
 
 class AgentMind:
     def __init__(self):
@@ -952,16 +952,16 @@ class AgentMind:
         self.strategies_dir = self.models_dir / "strategies"
         self.contexts_dir = self.models_dir / "contexts"
         self.world_dir = self.models_dir / "world"
-    
+
     def initialize_mind(self, user_id: str = "default"):
         """Initialize agent mind with user profile and patterns"""
-    
+
     def update_user_preference(self, key: str, value: Any):
         """Update user preference and persist to storage"""
-    
+
     def learn_from_execution(self, problem: str, strategy: Strategy, context_config: ContextConfig, result: Result):
         """Learn from execution results and update patterns"""
-    
+
     def cleanup_expired_patterns(self):
         """Remove expired patterns based on TTL and usage"""
 ```
@@ -1222,17 +1222,17 @@ graph TB
         A[ContextEngineer] --> B[TemplateManager]
         A --> C[ContextOptimizer]
         A --> D[PromptAssembler]
-        
+
         B --> E[XMLTemplates]
         B --> F[TextTemplates]
-        
+
         C --> G[RelevanceFiltering]
         C --> H[TokenOptimization]
-        
+
         D --> I[XMLAssembly]
         D --> J[TextAssembly]
     end
-    
+
     subgraph "Structured Context"
         K[ContextData]
         L[ProblemContextData]
@@ -1242,20 +1242,20 @@ graph TB
         P[MemoryContextData]
         Q[ExecutionContextData]
     end
-    
+
     subgraph "Agent Integration"
         R[AgentState] --> K
         S[SolvingMixin] --> A
         T[AgentInstance] --> S
     end
-    
+
     K --> L
     K --> M
     K --> N
     K --> O
     K --> P
     K --> Q
-    
+
     R --> A
     S --> R
     T --> S
@@ -1270,32 +1270,32 @@ flowchart LR
         B[Agent State]
         C[Options]
     end
-    
+
     subgraph "Context Assembly"
         D[AgentState.assemble_context_data]
         E[ContextData Creation]
         F[Type Validation]
     end
-    
+
     subgraph "Processing Pipeline"
         G[Template Selection]
         H[Context Optimization]
         I[Prompt Assembly]
     end
-    
+
     subgraph "Output Layer"
         J[Rich XML/Text Prompt]
         K[LLM Processing]
     end
-    
+
     A --> D
     B --> D
     C --> D
-    
+
     D --> E
     E --> F
     F --> G
-    
+
     G --> H
     H --> I
     I --> J
@@ -1312,19 +1312,19 @@ sequenceDiagram
     participant ContextEngineer
     participant TemplateManager
     participant LLM
-    
+
     User->>SolvingMixin: solve_sync("How can I optimize my database?")
-    
+
     SolvingMixin->>AgentState: set_problem_context(ProblemContext)
     SolvingMixin->>AgentState: assemble_context_data(query, template)
-    
+
     AgentState->>AgentState: Extract problem context
     AgentState->>AgentState: Extract conversation context
     AgentState->>AgentState: Extract memory context
     AgentState->>AgentState: Extract execution context
     AgentState->>AgentState: Extract resource context
     AgentState-->>SolvingMixin: ContextData (structured)
-    
+
     SolvingMixin->>ContextEngineer: engineer_context_structured(context_data)
     ContextEngineer->>ContextEngineer: Convert to dictionary
     ContextEngineer->>ContextEngineer: Apply optimization
@@ -1332,7 +1332,7 @@ sequenceDiagram
     TemplateManager-->>ContextEngineer: Template object
     ContextEngineer->>ContextEngineer: Assemble prompt
     ContextEngineer-->>SolvingMixin: Rich prompt (XML/Text)
-    
+
     SolvingMixin->>LLM: Process rich prompt
     LLM-->>SolvingMixin: Response
     SolvingMixin-->>User: Final result
@@ -1348,17 +1348,17 @@ graph TD
         A --> D[Depth Relevance]
         A --> E[Use Case Relevance]
         A --> F[Constraint Relevance]
-        
+
         B --> G[Weighted Scoring]
         C --> G
         D --> G
         E --> G
         F --> G
-        
+
         G --> H[Final Relevance Score]
         H --> I[Threshold Filtering]
     end
-    
+
     subgraph "Scoring Factors"
         J[Query-Content Overlap]
         K[Time Decay Function]
@@ -1366,7 +1366,7 @@ graph TD
         M[Use Case Alignment]
         N[Constraint Matching]
     end
-    
+
     B --> J
     C --> K
     D --> L
@@ -1380,19 +1380,19 @@ graph TD
 flowchart TD
     A[Context Data] --> B[Token Estimation]
     B --> C{Within Budget?}
-    
+
     C -->|Yes| D[Return As-Is]
     C -->|No| E[Sort by Relevance]
-    
+
     E --> F[Greedy Selection]
     F --> G[Fit in Budget?]
-    
+
     G -->|Yes| H[Return Optimized]
     G -->|No| I[Truncate High-Relevance]
-    
+
     I --> J[Final Check]
     J --> K[Return Truncated]
-    
+
     subgraph "Optimization Strategies"
         L[Relevance-Based Selection]
         M[Smart Truncation]

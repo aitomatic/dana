@@ -5,13 +5,13 @@ Tests the behavior differences between lazy and eager evaluation,
 focusing on correctness rather than precise timing.
 """
 
-import time
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 import pytest
 
-from dana.core.concurrency import BasePromise, EagerPromise, LazyPromise
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.concurrency import BasePromise, EagerPromise, LazyPromise
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestPromiseTypes:

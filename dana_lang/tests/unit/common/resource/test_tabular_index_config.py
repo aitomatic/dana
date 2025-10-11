@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from dana.common.sys_resource.tabular_index.config import (
+from dana_lang.common.sys_resource.tabular_index.config import (
     BatchSearchConfig,
     EmbeddingConfig,
     TabularConfig,

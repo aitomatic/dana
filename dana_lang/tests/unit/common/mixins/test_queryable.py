@@ -2,8 +2,8 @@
 
 import pytest
 
-from dana.common.mixins.queryable import Queryable, QueryStrategy
-from dana.common.types import BaseResponse
+from dana_lang.common.mixins.queryable import Queryable, QueryStrategy
+from dana_lang.common.types import BaseResponse
 
 
 # pylint: disable=missing-function-docstring

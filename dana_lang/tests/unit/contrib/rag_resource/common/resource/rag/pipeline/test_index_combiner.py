@@ -5,10 +5,10 @@ Simple tests for IndexCombiner class.
 import os
 from unittest.mock import Mock
 
-import pytest
 from llama_index.core import Document, VectorStoreIndex
+import pytest
 
-from dana.common.sys_resource.rag.pipeline.index_combiner import IndexCombiner
+from dana_lang.common.sys_resource.rag.pipeline.index_combiner import IndexCombiner
 
 
 # Helper function to check if OpenAI API key is available

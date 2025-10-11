@@ -18,9 +18,8 @@ MIT License
 
 import time
 
+from dana_lang.dana import dana
 import numpy as np
-
-from dana.dana import dana
 
 
 def simulate_sensor_api():

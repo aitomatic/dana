@@ -22,14 +22,14 @@ MIT License
 import time
 from typing import Any
 
+from dana_lang.dana import dana
 from pydantic import BaseModel
 
-from dana.dana import dana
 
 # FastAPI imports
 try:
-    import uvicorn
     from fastapi import FastAPI, HTTPException
+    import uvicorn
 
 except ImportError:
     print("❌ FastAPI not installed. Install with: pip install fastapi uvicorn")

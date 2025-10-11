@@ -4,10 +4,10 @@ Unit tests for parsing declarative function definitions.
 Tests the parser's ability to parse the new declarative function definition syntax.
 """
 
-from dana.core.lang.ast import (
+from dana_lang.core.lang.ast import (
     DeclarativeFunctionDefinition,
 )
-from dana.core.lang.parser import DanaParser
+from dana_lang.core.lang.parser import DanaParser
 
 
 class TestDeclarativeFunctionDefinitionParsing:
@@ -35,7 +35,7 @@ class TestDeclarativeFunctionDefinitionParsing:
         assert statement.parameters[0].type_hint.name == "int"
         assert statement.return_type.name == "str"
         # The composition is now a BinaryExpression with PIPE operator
-        from dana.core.lang.ast import BinaryExpression, BinaryOperator
+        from dana_lang.core.lang.ast import BinaryExpression, BinaryOperator
 
         assert isinstance(statement.composition, BinaryExpression)
         assert statement.composition.operator == BinaryOperator.PIPE

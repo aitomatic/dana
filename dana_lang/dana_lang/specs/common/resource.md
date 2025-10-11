@@ -7,9 +7,9 @@
 
 # Resource System Specification
 
-**Author:** Dana Language Team  
-**Date:** 2025-01-22  
-**Version:** 2.0.0  
+**Author:** Dana Language Team
+**Date:** 2025-01-22
+**Version:** 2.0.0
 **Status:** Implementation
 
 This specification defines the pluggable resource architecture for Dana, including the core resource system, plugin mechanisms, and extension points.
@@ -78,11 +78,11 @@ class BaseResource:
     version: str = "1.0.0"
     description: str = ""
     domain: str = "general"
-    
+
     # Runtime state
     state: ResourceState = ResourceState.CREATED
     owner_agent: str = ""
-    
+
     # Standard interface methods
     def initialize(self) -> bool
     def cleanup(self) -> bool
@@ -129,11 +129,11 @@ resource MyResource:
     name: str = ""
     state: str = "created"
     config: dict = {}
-    
+
 def (resource: MyResource) initialize() -> bool:
     resource.state = "initialized"
     return true
-    
+
 def (resource: MyResource) query(request: str) -> str:
     if resource.state != "running":
         return "Resource not available"
@@ -143,15 +143,15 @@ def (resource: MyResource) query(request: str) -> str:
 ### Python Resource Pattern (.py files)
 
 ```python
-from dana.core.resource import BaseResource
+from dana_lang.core.resource import BaseResource
 
 class MyResource(BaseResource):
     kind = "my_type"
-    
+
     def initialize(self):
         self.state = ResourceState.RUNNING
         return True
-    
+
     def query(self, request):
         if not self.is_running():
             return {"error": "Not running"}

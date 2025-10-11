@@ -13,7 +13,7 @@ import textwrap
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
+from dana_lang.core.lang.dana_sandbox import DanaSandbox
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_basic_elif_execution(sandbox):
                 return "low"
             else:
                 return "zero or negative"
-        
+
         result1 = test_elif(15)
         result2 = test_elif(8)
         result3 = test_elif(3)
@@ -67,7 +67,7 @@ def test_elif_with_complex_conditions(sandbox):
                 return "needs improvement"
             else:
                 return "failing"
-        
+
         # Test various combinations
         result1 = categorize_student(95, 98)  # excellent
         result2 = categorize_student(85, 92)  # good
@@ -93,18 +93,18 @@ def test_elif_with_side_effects(sandbox):
     code = textwrap.dedent("""
         def test_side_effects(x: int) -> dict:
             executed_branch = ""
-            
+
             if x == 1:
                 executed_branch = "first"
             elif x == 2:
-                executed_branch = "second"  
+                executed_branch = "second"
             elif x == 3:
                 executed_branch = "third"
             else:
                 executed_branch = "other"
-            
+
             return {"result": executed_branch, "input": x}
-        
+
         # Test that only the correct branch executes
         result1 = test_side_effects(2)
         result2 = test_side_effects(3)
@@ -156,7 +156,7 @@ def test_nested_elif_chains(sandbox):
                     return "slow"
             else:
                 return "unknown category"
-        
+
         temp_result1 = process_data("temperature", 85)
         temp_result2 = process_data("temperature", 45)
         speed_result1 = process_data("speed", 75)
@@ -182,7 +182,7 @@ def test_elif_with_variable_assignments(sandbox):
             grade = ""
             points = 0
             message = ""
-            
+
             if score >= 97:
                 grade = "A+"
                 points = 4
@@ -207,9 +207,9 @@ def test_elif_with_variable_assignments(sandbox):
                 grade = "C"
                 points = 2
                 message = "Needs improvement"
-            
+
             return {"grade": grade, "points": points, "message": message}
-        
+
         result_a_plus = calculate_grade(98)
         result_a = calculate_grade(95)
         result_b_plus = calculate_grade(88)
@@ -250,7 +250,7 @@ def test_elif_with_early_return(sandbox):
     code = textwrap.dedent("""
         def test_early_return(x: int) -> dict:
             executed_branch = ""
-            
+
             if x == 1:
                 executed_branch = "branch1"
                 return {"result": "first", "branch": executed_branch}
@@ -260,10 +260,10 @@ def test_elif_with_early_return(sandbox):
             elif x == 3:
                 executed_branch = "branch3"
                 return {"result": "third", "branch": executed_branch}
-            
+
             executed_branch = "default"
             return {"result": "default", "branch": executed_branch}
-        
+
         result1 = test_early_return(2)
         result2 = test_early_return(4)
     """)
@@ -287,7 +287,7 @@ def test_elif_chain_with_loops(sandbox):
     code = textwrap.dedent("""
         def process_numbers(numbers: list, operation: str) -> list:
             result = []
-            
+
             if operation == "double":
                 for num in numbers:
                     result.append(num * 2)
@@ -303,11 +303,11 @@ def test_elif_chain_with_loops(sandbox):
                     result.append(numbers[i] + numbers[i + 1])
             else:
                 result = numbers[:]
-            
+
             return result
-        
+
         input_numbers = [1, 2, 3, 4, 5, 6]
-        
+
         doubled = process_numbers(input_numbers, "double")
         squared = process_numbers(input_numbers, "square")
         evens = process_numbers(input_numbers, "filter_even")
@@ -331,13 +331,13 @@ def test_elif_with_function_calls(sandbox):
     code = textwrap.dedent("""
         def add_numbers(a: int, b: int) -> int:
             return a + b
-        
+
         def multiply_numbers(a: int, b: int) -> int:
             return a * b
-        
+
         def subtract_numbers(a: int, b: int) -> int:
             return a - b
-        
+
         def calculate(x: int, y: int, operation: str) -> int:
             if operation == "add":
                 return add_numbers(x, y)
@@ -355,7 +355,7 @@ def test_elif_with_function_calls(sandbox):
                     return x
             else:
                 return 0
-        
+
         result_add = calculate(5, 3, "add")
         result_multiply = calculate(5, 3, "multiply")
         result_subtract = calculate(5, 3, "subtract")
@@ -389,12 +389,12 @@ def test_elif_execution_order(sandbox):
                 return "greater than 1"
             else:
                 return "1 or less"
-        
+
         result_6 = test_order(6)   # Should be "greater than 5", not "greater than 3"
         result_4 = test_order(4)   # Should be "greater than 3"
         result_2 = test_order(2)   # Should be "greater than 1"
         result_0 = test_order(0)   # Should be "1 or less"
-        
+
         # Test with overlapping ranges to ensure first match wins
         def test_overlapping(score: int) -> str:
             if score >= 90:
@@ -405,7 +405,7 @@ def test_elif_execution_order(sandbox):
                 return "C"
             else:
                 return "F"
-        
+
         result_95 = test_overlapping(95)  # Should be "A"
         result_85 = test_overlapping(85)  # Should be "B", not "A"
         result_75 = test_overlapping(75)  # Should be "C", not "B"

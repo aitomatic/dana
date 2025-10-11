@@ -1,6 +1,6 @@
 from workflows import final_workflow
-from common import RetrievalPackage
-from common import PLAN_PROMPT
+from dana_lang.common import RetrievalPackage
+from dana_lang.common import PLAN_PROMPT
 from all_resources import knowledge
 from all_resources import doc
 
@@ -18,9 +18,9 @@ def (self : Sofia) solve(query: str) -> str:
     final_prompt = f"""
     Using only the information in **Context**, write one concise paragraph (≤120 words) that fully answers the **Question**, including every critical number, date, and fact.
 
-    Context: 
+    Context:
     {context}
-    Question: 
+    Question:
     {query}
     """
     return reason(final_prompt, temperature=0.1)

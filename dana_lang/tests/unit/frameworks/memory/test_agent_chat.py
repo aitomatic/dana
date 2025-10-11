@@ -2,13 +2,13 @@
 Unit tests for agent chat functionality with conversation memory.
 """
 
+from pathlib import Path
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.core.agent import AgentInstance, AgentType
-from dana.core.lang.sandbox_context import SandboxContext
+from dana_lang.core.agent import AgentInstance, AgentType
+from dana_lang.core.lang.sandbox_context import SandboxContext
 
 
 class TestAgentChat(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestAgentChat(unittest.TestCase):
         # Patch the timeline initialization to use temp directory
         def mock_init(agent_self):
             if agent_self.state.timeline is None:
-                from dana.core.agent.timeline.timeline import Timeline
+                from dana_lang.core.agent.timeline.timeline import Timeline
 
                 # Use temp directory for timeline persistence
                 agent_name = getattr(agent_self.agent_type, "name", "agent")

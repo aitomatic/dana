@@ -4,13 +4,13 @@ Simple tests for Retriever class.
 
 from unittest.mock import Mock
 
-import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
+import pytest
 
-from dana.common.exceptions import EmbeddingError
-from dana.common.sys_resource.embedding.embedding_utils import has_embedding_api_keys
-from dana.common.sys_resource.rag.pipeline.retriever import Retriever
+from dana_lang.common.exceptions import EmbeddingError
+from dana_lang.common.sys_resource.embedding.embedding_utils import has_embedding_api_keys
+from dana_lang.common.sys_resource.rag.pipeline.retriever import Retriever
 
 
 class TestRetriever:
