@@ -507,7 +507,7 @@ class PromptEngineer:
                     timeline_lines.append(f"<ENTRY>{entry.to_string()}</ENTRY>")
                 timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
                 timeline_content = "\n".join(timeline_lines)
-                messages.append(LLMMessage(role="assistant", content=timeline_content))
+                messages.append(LLMMessage(role="system", content=timeline_content))
 
             # Add latest user message as separate user message, and mark it as not latest
             latest_user_entry = next((entry for entry in timeline.timeline if entry.is_latest_user_message), None)

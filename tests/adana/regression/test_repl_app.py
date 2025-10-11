@@ -24,11 +24,11 @@ class TestREPLAppInitialization:
             # Set environment variables to avoid console issues in CI/CD
             original_term = os.environ.get("TERM")
             original_wt_session = os.environ.get("WT_SESSION")
-            
+
             # Simulate CI/CD environment that might cause console issues
             if not os.environ.get("WT_SESSION"):
                 os.environ["TERM"] = "xterm-256color"
-        
+
         try:
             app = AdanaREPLApp()
             assert app is not None
