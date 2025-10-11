@@ -13,7 +13,6 @@ def main():
     """Main entry point for the Dana conversational agent."""
     try:
         # Import main package to trigger __init__.py (loads .env files)
-        import dana_agent
 
         from apps.dana.dana_app import DanaApp
 

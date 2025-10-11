@@ -180,8 +180,8 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dana_lang.*"]
-exclude = ["tests*", "examples*", "docs*", "tmp*"]
+include = ["dana_lang*"]
+exclude = ["tests*", "examples*", "docs*", "tmp*", "dana_lang/libs/stdlib/domain_packs*"]
 
 [tool.setuptools.package-data]
 "*" = [
@@ -322,6 +322,60 @@ module = "core.lang.interpreter.*"
 disallow_untyped_defs = true
 
 # Database Migration Tool FOR DANA STUDIO
+# =============================================================================
+# Testing Configuration (pytest)
+# =============================================================================
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests"]
+python_functions = ["test_*"]
+minversion = "7.0"
+
+addopts = [
+    "-v",
+    "-m", "not live and not deep and not real_api and not windows_console",
+    "--tb=short",
+    "--log-level=CRITICAL",
+]
+
+# Markers
+markers = [
+    "live: mark test as requiring external services (deselect with '-m \"not live\"')",
+    "unit: mark test as a unit test (run with '-m unit')",
+    "na_file: mark tests that execute .na files (may need real LLM)",
+    "fast: mark test as a fast regression test (suitable for CI)",
+    "deep: mark test as a comprehensive/integration test (run locally)",
+    "slow: mark test as potentially slow (alias for deep)",
+    "integration: mark test as an integration test",
+    "poet: mark test as POET-related functionality (deselect with '-m \"not poet\"')",
+    "dana: mark test as Dana language functionality (run with '-m dana')",
+    "real_api: mark test as using real API keys and making actual API calls (run with '-m real_api')",
+    "windows_console: mark test as requiring Windows console (may fail in CI/CD)",
+]
+
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# Log configuration
+log_cli = false
+log_cli_level = "CRITICAL"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+log_level = "CRITICAL"
+
+filterwarnings = [
+    "ignore::DeprecationWarning:websockets.legacy",
+    "ignore::DeprecationWarning:lark.utils",
+    "ignore::DeprecationWarning:.*swigvarlink.*",
+]
+
+# =============================================================================
+# Database Migration Tool
+# =============================================================================
+
 [tool.alembic]
 
 # path to migration scripts.

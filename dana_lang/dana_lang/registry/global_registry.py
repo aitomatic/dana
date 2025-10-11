@@ -11,7 +11,6 @@ from typing import Any, Optional
 
 from .agent_registry import AgentRegistry
 from .function_registry import FunctionRegistry
-from .instance_registry import StructRegistry
 from .module_registry import ModuleRegistry
 from .resource_registry import ResourceRegistry
 from .struct_function_registry import StructFunctionRegistry

@@ -12,7 +12,7 @@ from dana_lang.core.lang.sandbox_context import SandboxContext
 from dana_lang.core.workflow.workflow_system import WorkflowInstance
 
 if TYPE_CHECKING:
-    from dana_lang.core.agent.agent_instance import AgentInstance
+    pass
 
 
 # --- Response and IO Types ---

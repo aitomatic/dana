@@ -15,11 +15,12 @@ from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.workflow.base_workflow import BaseWorkflow, WorkflowStep
 from dana_agent.core.workflow.workflow_executor import WorkflowExecutor
+
 from .resources import (
-    _resources_for_workflows,
     FetchResource,
-    FormatResource,
+    _resources_for_workflows,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class SingleSourceDeepDiveWorkflow(BaseWorkflow):
 
         # Get resources for lambda usage
         fetch: FetchResource = _resources_for_workflows.get("fetch")
-        format: FormatResource = _resources_for_workflows.get("format")
+        _resources_for_workflows.get("format")
 
         # Define predetermined steps using WorkflowStep dataclass
         steps = [

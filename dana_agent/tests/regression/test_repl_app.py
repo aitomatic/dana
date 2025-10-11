@@ -5,8 +5,8 @@ Tests basic functionality of the REPL application without network access.
 """
 
 import os
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import Mock, patch
 
 import pytest

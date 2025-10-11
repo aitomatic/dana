@@ -6,7 +6,6 @@ This module provides the FastAPI server for the Dana Studio web interface.
 """
 
 import sys
-from pathlib import Path
 
 
 def main():

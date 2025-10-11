@@ -4,11 +4,10 @@ Regression tests for Dana conversational agent app.
 Tests basic functionality of the Dana app without network access (no LLM calls).
 """
 
-from pathlib import Path
-from unittest.mock import patch
-
 import os
+from pathlib import Path
 import sys
+from unittest.mock import patch
 
 import pytest
 

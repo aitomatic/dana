@@ -104,7 +104,7 @@ def main():
 
     # Add a pattern
     signature_matcher.add_pattern("network_issue", {"keywords": ["network", "connection", "timeout"], "category": "connectivity"})
-    print(f"✅ Added signature pattern")
+    print("✅ Added signature pattern")
 
     # Test pattern matching
     score, match = signature_matcher.match("I have a network connection timeout", {})

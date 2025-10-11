@@ -4,15 +4,16 @@ SearchComponents - Finding information through web searches.
 Provides reusable search operations that can be composed into workflows.
 """
 
-import logging
 from datetime import datetime
+import logging
 from urllib.parse import urlparse
 
 from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.resource.base_resource import BaseResource
-from dana_agent.lib.agents.web_research.workflows.resources.components import _web_fetcher
 from dana_agent.core.workflow.workflow_executor import observable
+from dana_agent.lib.agents.web_research.workflows.resources.components import _web_fetcher
+
 
 logger = logging.getLogger(__name__)
 

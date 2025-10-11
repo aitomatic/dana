@@ -105,7 +105,7 @@ class ModifyTreeTool(BaseTool):
                 content = f"❌ Invalid operation '{operation}'. Supported: init, bulk"
                 content = self._build_structured_response(user_message, operation, content)
             if self.notifier:
-                await self.notifier("modify_tree", f"Tree is modified", "in_progress", 0.0)
+                await self.notifier("modify_tree", "Tree is modified", "in_progress", 0.0)
 
             return ToolResult(name="modify_tree", result=content, require_user=False)
 

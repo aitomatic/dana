@@ -22,8 +22,10 @@ def _load_env():
 _load_env()
 
 # Import main components
-from common import LLM, LLMMessage, LLMResponse
-from core import STARAgent
+from dana_agent.common import LLM, LLMMessage, LLMResponse
+
+from dana_agent.core import STARAgent
+
 
 __version__ = "0.6.0.1rc3"
 __author__ = "Christopher Nguyen"

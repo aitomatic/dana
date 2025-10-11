@@ -8,12 +8,13 @@ Langfuse tracking can be disabled by setting the LANGFUSE_ENABLED environment
 variable to 'false' (default). Set to 'true', '1', or 'yes' to enable tracking.
 """
 
+from collections.abc import Callable
 import functools
 import os
-from collections.abc import Callable
 
 from langfuse import Langfuse
 from langfuse import observe as langfuse_observe
+
 
 # Check if Langfuse should be enabled
 LANGFUSE_ENABLED = os.getenv("LANGFUSE_ENABLED", "false").lower() in ("true", "1", "yes")

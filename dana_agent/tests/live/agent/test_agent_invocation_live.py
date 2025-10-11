@@ -115,7 +115,7 @@ class TestAgentInvocationLive:
         """Test agent call with invalid agent ID."""
         try:
             coordinator = CoordinatorAgent()
-            research_agent = ResearchAgent()
+            ResearchAgent()
 
             tool_caller = coordinator._tool_caller
 
@@ -213,8 +213,8 @@ class TestAgentInvocationLive:
         try:
             # Create agents
             coordinator = CoordinatorAgent()
-            research_agent = ResearchAgent()
-            analysis_agent = AnalysisAgent()
+            ResearchAgent()
+            AnalysisAgent()
 
             # Test coordinator delegating to research agent
             # This should trigger the coordinator to make a call_agent tool call
@@ -243,7 +243,7 @@ class TestAgentInvocationLive:
         """Test that agent call responses are properly propagated through the STAR loop."""
         try:
             coordinator = CoordinatorAgent()
-            research_agent = ResearchAgent()
+            ResearchAgent()
 
             # Test that the coordinator can call the research agent and get a meaningful response
             result = coordinator.query(message="Please research the latest developments in quantum computing and provide a summary.")
@@ -278,8 +278,8 @@ class TestAgentInvocationLive:
         """Test a chain of agent delegations (coordinator -> research -> analysis)."""
         try:
             coordinator = CoordinatorAgent()
-            research_agent = ResearchAgent()
-            analysis_agent = AnalysisAgent()
+            ResearchAgent()
+            AnalysisAgent()
 
             # Test coordinator delegating to research agent
             research_result = coordinator.query(message="Research the latest trends in artificial intelligence and machine learning.")
