@@ -245,7 +245,7 @@ class ChatService:
 
             # Import agent test functionality
             from dana.__init__ import initialize_module_system, reset_module_system
-            from dana.api.routers.agent_test import AgentTestRequest, test_agent
+            from dana.api.routers.v1.agent_test import AgentTestRequest, test_agent
 
             # Initialize module system
             initialize_module_system()
@@ -286,7 +286,7 @@ class ChatService:
         try:
             # Import agent test functionality
             from dana.__init__ import initialize_module_system, reset_module_system
-            from dana.api.routers.agent_test import AgentTestRequest, test_agent
+            from dana.api.routers.v1.agent_test import AgentTestRequest, test_agent
 
             # Initialize module system
             initialize_module_system()

@@ -366,7 +366,7 @@ check-dist: ## Validate built distribution files
 publish: check-dist ## Upload to PyPI
 	@echo "🚀 Publishing to PyPI..."
 	$(UV_CMD) run twine upload --verbose dist/*
-run: dana ## Alias for 'dana' command 
+run: dana ## Alias for 'dana' command
 
 build-frontend: ## Build the frontend (Vite React app) and copy to backend static
 	cd dana/contrib/ui && npm i && npm run build

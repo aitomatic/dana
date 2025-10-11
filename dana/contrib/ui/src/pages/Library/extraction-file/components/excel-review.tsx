@@ -234,7 +234,7 @@ export const ExcelReview = ({ blobUrl, currentPage, setCurrentPage }: ExcelRevie
       </div>
 
       {/* Excel data */}
-      <div className="overflow-auto flex-1 p-4 scrollbar-hide">
+      <div className="overflow-auto flex-1 p-4 ">
         {activeSheetData.length > 0 ? (
           <div className="overflow-hidden rounded-lg border border-gray-200 shadow-xs bg-background">
             <div className="overflow-x-auto">

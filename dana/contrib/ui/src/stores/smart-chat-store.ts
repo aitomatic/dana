@@ -6,6 +6,7 @@ export type SmartChatMessage = {
   text: string;
   timestamp?: number;
   id?: string;
+  hasActiveButtons?: boolean;
 };
 
 interface SmartChatState {
@@ -17,6 +18,11 @@ interface SmartChatState {
   setMessages: (msgs: SmartChatMessage[]) => void;
   updateMessage: (index: number, msg: Partial<SmartChatMessage>) => void;
   getMessageCount: () => number;
+  
+  // Button state management
+  setMessageButtonsActive: (messageId: string) => void;
+  deactivateAllButtons: () => void;
+  deactivatePreviousButtons: () => void;
 }
 
 // Factory function to create agent-specific stores
@@ -58,6 +64,35 @@ export const createSmartChatStore = (agentId: string) => {
             messages: state.messages.map((m, i) => (i === index ? { ...m, ...msg } : m)),
           })),
         getMessageCount: () => get().messages.length,
+        
+        // Button state management methods
+        setMessageButtonsActive: (messageId) =>
+          set((state) => ({
+            messages: state.messages.map((msg) => ({
+              ...msg,
+              hasActiveButtons: msg.id === messageId,
+            })),
+          })),
+        deactivateAllButtons: () =>
+          set((state) => ({
+            messages: state.messages.map((msg) => ({
+              ...msg,
+              hasActiveButtons: false,
+            })),
+          })),
+        deactivatePreviousButtons: () =>
+          set((state) => {
+            // Find the latest agent message with buttons
+            const agentMessages = state.messages.filter((msg) => msg.sender === 'agent');
+            const latestAgentMessage = agentMessages[agentMessages.length - 1];
+            
+            return {
+              messages: state.messages.map((msg) => ({
+                ...msg,
+                hasActiveButtons: msg.id === latestAgentMessage?.id && msg.sender === 'agent',
+              })),
+            };
+          }),
       }),
       {
         name: `smart-chat-storage-${agentId}`,
@@ -105,6 +140,35 @@ export const useSmartChatStore = create<SmartChatState>()(
           messages: state.messages.map((m, i) => (i === index ? { ...m, ...msg } : m)),
         })),
       getMessageCount: () => get().messages.length,
+      
+      // Button state management methods
+      setMessageButtonsActive: (messageId) =>
+        set((state) => ({
+          messages: state.messages.map((msg) => ({
+            ...msg,
+            hasActiveButtons: msg.id === messageId,
+          })),
+        })),
+      deactivateAllButtons: () =>
+        set((state) => ({
+          messages: state.messages.map((msg) => ({
+            ...msg,
+            hasActiveButtons: false,
+          })),
+        })),
+      deactivatePreviousButtons: () =>
+        set((state) => {
+          // Find the latest agent message with buttons
+          const agentMessages = state.messages.filter((msg) => msg.sender === 'agent');
+          const latestAgentMessage = agentMessages[agentMessages.length - 1];
+          
+          return {
+            messages: state.messages.map((msg) => ({
+              ...msg,
+              hasActiveButtons: msg.id === latestAgentMessage?.id && msg.sender === 'agent',
+            })),
+          };
+        }),
     }),
     {
       name: 'smart-chat-storage',

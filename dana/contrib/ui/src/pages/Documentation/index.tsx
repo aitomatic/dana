@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo } from 'react';
 import { Play, ChatBubble, Code, HelpCircle, Brain, Page, Search, X } from 'iconoir-react';
+import { useDanaAnalytics } from '@/hooks/useAnalytics';
 
 // Helper component for actual screenshots
 // Usage: <Screenshot src="/screenshots/filename.png" alt="Description" caption="Optional caption" />
@@ -86,6 +87,7 @@ const HighlightContent: React.FC<{
 
 const DocumentationPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { trackError } = useDanaAnalytics();
 
   const documentationSections = [
     {
@@ -771,7 +773,17 @@ const DocumentationPage: React.FC = () => {
             </p>
             <div className="flex flex-col gap-4 justify-center sm:flex-row">
               <button
-                onClick={() => window.open('mailto:support@aitomatic.com', '_blank')}
+                onClick={() => {
+                  try {
+                    window.open('mailto:support@aitomatic.com', '_blank');
+                  } catch (error) {
+                    trackError(
+                      'support_link_failed',
+                      error instanceof Error ? error.message : 'Unknown error',
+                      'documentation_support',
+                    );
+                  }
+                }}
                 className="px-6 py-3 font-semibold text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
               >
                 Contact Support

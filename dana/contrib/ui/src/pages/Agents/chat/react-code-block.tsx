@@ -2,8 +2,8 @@ import { IconChartLine } from '@tabler/icons-react';
 import { useState } from 'react';
 
 const ReactCodeBlock = ({ content }: { content: string }) => {
-  const [_, setIsSplitScreen] = useState(false);
-  const [__, setReactCode] = useState('');
+  const [, setIsSplitScreen] = useState(false);
+  const [, setReactCode] = useState('');
   const blockId = `react-code-${Math.random().toString(36).substring(2, 8)}`;
 
   // Extract meaningful name from the component content

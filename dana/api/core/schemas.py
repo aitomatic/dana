@@ -2,9 +2,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Union, Annotated
 import re
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, BeforeValidator
+from enum import Enum
+
+
+class SenderRole(Enum):
+    USER = "user"
+    AGENT = "agent"
+    ASSISTANT = "assistant"  # Maintain backward compatibility because we have both agent and assistant
+    BOT = "bot"
 
 
 class AgentBase(BaseModel):
@@ -15,6 +23,19 @@ class AgentBase(BaseModel):
 
 class AgentCreate(AgentBase):
     pass
+
+
+class Specialization(BaseModel):
+    # Decide specialization in a specific domain
+    domain: str
+    role: str
+    task: str
+
+
+class AgentUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    config: dict[str, Any] | None = None
 
 
 class AgentDeployRequest(BaseModel):
@@ -87,15 +108,34 @@ class DocumentCreate(DocumentBase):
 
 
 class DocumentRead(DocumentBase):
-    id: int
+    id: int | None = None
     filename: str
     file_size: int
     mime_type: str
     source_document_id: int | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    metadata: dict[str, Any] | None = Field(default_factory=dict, validation_alias=AliasChoices("doc_metadata", "metadata"))
+
+    # Additional computed metadata fields
+    file_extension: str | None = None
+    file_size_mb: float | None = None
+    is_extraction_file: bool = False
+    days_since_created: int | None = None
+    days_since_updated: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentListResponse(BaseModel):
+    """Response schema for document list endpoint with metadata."""
+
+    documents: list[DocumentRead]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class DocumentUpdate(BaseModel):
@@ -125,7 +165,9 @@ class RunNAFileResponse(BaseModel):
 
 class ConversationBase(BaseModel):
     title: str
-    agent_id: int
+    agent_id: int | None = None
+    kp_id: int | None = None
+    type: str | None = None
 
 
 class ConversationCreate(ConversationBase):
@@ -141,8 +183,13 @@ class ConversationRead(ConversationBase):
 
 
 class MessageBase(BaseModel):
-    sender: str
+    sender: SenderRole = Field(default=SenderRole.USER)
     content: str
+    require_user: bool = False
+    treat_as_tool: bool = False
+    metadata: dict = {}
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class MessageCreate(MessageBase):
@@ -206,10 +253,12 @@ class ChatResponse(BaseModel):
 class MessageData(BaseModel):
     """Schema for a single message in conversation"""
 
-    role: str  # 'user' or 'assistant'
+    role: SenderRole  # 'user' or 'assistant'
     content: str
     require_user: bool = False
     treat_as_tool: bool = False
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class AgentGenerationRequest(BaseModel):
@@ -548,6 +597,12 @@ class RevertDomainKnowledgeRequest(BaseModel):
     version_id: int
 
 
+class DeleteTopicKnowledgeRequest(BaseModel):
+    """Request to delete topic knowledge content"""
+
+    topic_parts: list[str]
+
+
 class ChatWithIntentRequest(BaseModel):
     """Extended chat request with intent detection"""
 
@@ -673,3 +728,58 @@ class WorkflowExecutionControlResponse(BaseModel):
     error: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgePackOutput(BaseModel):
+    id: int
+    folder_path: Annotated[str, BeforeValidator(lambda v: str(v))]
+    kp_metadata: dict = {}
+    created_at: datetime
+    updated_at: datetime
+
+    def get_specialization_info(self) -> Specialization:
+        return Specialization(
+            domain=self.kp_metadata.get("domain", "General"),
+            role=self.kp_metadata.get("role", "Domain Expert"),
+            task=self.kp_metadata.get("task", "Answer Questions"),
+        )
+
+
+class PaginationInfo(BaseModel):
+    """Pagination metadata for list endpoints"""
+
+    page: int
+    per_page: int
+    total: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+    next_page: int | None
+    previous_page: int | None
+
+
+class PaginatedKnowledgePackResponse(BaseModel):
+    """Paginated response for knowledge pack listings"""
+
+    data: list[KnowledgePackOutput]
+    pagination: PaginationInfo
+
+
+class KnowledgePackCreateRequest(BaseModel):
+    kp_metadata: Specialization
+
+
+class KnowledgePackUpdateRequest(KnowledgePackCreateRequest):
+    kp_id: int
+
+
+class KnowledgePackUpdateResponse(DomainKnowledgeUpdateResponse):
+    pass
+
+
+class KnowledgePackSmartChatResponse(BaseModel):
+    success: bool
+    is_tree_modified: bool = False
+    agent_response: str
+    internal_conversation: list[MessageData] = []
+    error: str | None = None

@@ -4,6 +4,7 @@ from multiprocessing import cpu_count
 from llama_index.core import Document
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.file.base import _DefaultFileMetadataFunc
+from aicapture.cache import HashUtils
 
 from .abstract_loader import AbstractLoader
 
@@ -12,6 +13,7 @@ class LocalFileMetadataFunc(_DefaultFileMetadataFunc):
     def __call__(self, file_path: str) -> dict:
         metadata = super().__call__(file_path)
         metadata["source"] = file_path
+        metadata["file_hash"] = HashUtils.calculate_file_hash(file_path)
         return metadata
 
 

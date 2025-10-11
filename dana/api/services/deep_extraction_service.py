@@ -60,8 +60,15 @@ class DeepExtractionService:
         if config is None:
             config = {}
 
+        try:
+            from aicapture.vision_models import AutoDetectVisionModel
+
+            model = AutoDetectVisionModel()
+        except ImportError:
+            model = None
+
         return VisionParser(
-            vision_model=config.get("vision_model", None),
+            vision_model=config.get("vision_model", model),
             cache_dir=config.get("cache_dir", None),
             max_concurrent_tasks=config.get("max_concurrent_tasks", MAX_CONCURRENT_TASKS),
             image_quality=config.get("image_quality", ImageQuality.DEFAULT),
@@ -213,6 +220,8 @@ class DeepExtractionService:
             result = self._convert_aicapture_response(aicapture_result, file_path, prompt)
 
             logger.info("Successfully processed file: %s", file_path)
+
+            result.file_object.file_full_path = str(Path(file_path).absolute())
             return result
 
         except ImportError as e:

@@ -13,7 +13,6 @@ interface LibraryTableProps {
   onViewItem?: (item: LibraryItem) => void;
   onEditItem?: (item: LibraryItem) => void;
   onDeleteItem?: (item: LibraryItem) => void;
-  onDownloadItem?: (item: LibraryItem) => void;
   allLibraryItems?: LibraryItem[]; // Add prop for all library items
 }
 
@@ -27,7 +26,6 @@ export function LibraryTable({
   onViewItem,
   onEditItem,
   onDeleteItem,
-  onDownloadItem,
   allLibraryItems, // Add to destructuring
 }: LibraryTableProps) {
   // Get appropriate columns based on mode
@@ -44,7 +42,6 @@ export function LibraryTable({
         onViewItem || (() => {}),
         onEditItem || (() => {}),
         onDeleteItem || (() => {}),
-        onDownloadItem,
       );
     }
   }, [
@@ -56,7 +53,6 @@ export function LibraryTable({
     onViewItem,
     onEditItem,
     onDeleteItem,
-    onDownloadItem,
   ]);
 
   return (
@@ -65,6 +61,7 @@ export function LibraryTable({
       data={data}
       loading={loading}
       handleRowClick={onRowClick ? (row) => onRowClick(row.original) : undefined}
+      defaultSorting={[{ id: 'lastModified', desc: true }]}
     />
   );
 }

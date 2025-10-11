@@ -94,6 +94,62 @@ Usage:
         required_args = self.tool_information.input_schema.required
         return {arg.name: (True if arg.name in required_args else False, arg) for arg in self.tool_information.input_schema.properties}
 
+    def _eval_result(self, result: str, arg: BaseArgument) -> Any:
+        try:
+            if arg.type in ["array", "list"]:
+                result = result.replace("\n", "")
+                result = literal_eval(result)
+            elif "str" not in arg.type:
+                result = literal_eval(result)
+        except Exception as _:
+            if len(result) > 200:
+                sample_result = result[:100] + "..." + result[-100:]
+            else:
+                sample_result = result
+            raise ValueError(f"Failed to parse argument {arg.name} to {arg.type} from XML string: \n```xml\n{sample_result}\n```")
+        return result
+
+    def parse_arguments_from_xml_string_without_closing_tags(self, xml_string: str) -> dict[str, Any]:
+        arguments = self.get_arguments()
+        start_parts = []
+        end_parts = []
+        for arg_name in arguments.keys():
+            start_parts.append(f"<{arg_name}>")
+            end_parts.append(f"</{arg_name}>")
+        full_argument_regex = rf"({'|'.join(start_parts + end_parts)})"
+        full_argument_regex = re.compile(full_argument_regex, re.DOTALL)
+        split_xml_string = re.split(full_argument_regex, xml_string)
+        kwargs = {}
+        current_block = None
+        current_content = []
+        for block in split_xml_string:
+            if block in end_parts:
+                continue
+            if block in start_parts:
+                if current_block is not None:
+                    required, arg = arguments[current_block]
+                    result = "\n".join(current_content)
+                    kwargs[current_block] = self._eval_result(result, arg)
+                current_block = block.strip("<").strip(">")
+                current_content = []
+            else:
+                if block.strip():
+                    current_content.append(block)
+        if current_block and current_block not in kwargs:
+            required, arg = arguments[current_block]
+            if required:
+                if not current_content:
+                    raise ValueError(f"Required argument {current_block} not found in XML string")
+            result = "\n".join(current_content)
+            kwargs[current_block] = self._eval_result(result, arg)
+
+        for arg_name, (required, _) in arguments.items():
+            if arg_name not in kwargs:
+                if required:
+                    raise ValueError(f"Required argument {arg_name} not found in XML string")
+
+        return kwargs
+
     def parse_arguments_from_xml_string(self, xml_string: str) -> dict[str, Any]:
         """
         Get the arguments from an XML string.
@@ -106,33 +162,35 @@ Usage:
                 "input": "value"
             }
         """
-        arguments = self.get_arguments()
-        kwargs = {}
-        for arg_name, (required, arg) in arguments.items():
-            arg_string = f"<{arg_name}.*?>(.*?)</{arg_name}>"
-            match = re.search(arg_string, xml_string, re.DOTALL)
-            result = None
+        try:
+            arguments = self.get_arguments()
+            kwargs = {}
+            for arg_name, (required, arg) in arguments.items():
+                arg_string = f"<{arg_name}.*?>(.*?)</{arg_name}>"
+                match = re.search(arg_string, xml_string, re.DOTALL)
+                result = None
+                try:
+                    result = match.group(1)
+                except Exception as _:
+                    # If the argument is required and not found, raise an error
+                    if required:
+                        error_msg = f"Required argument {arg_name} not found in XML string"
+                        open_tag = f"<{arg_name}>"
+                        close_tag = f"</{arg_name}>"
+                        if open_tag in xml_string:
+                            if close_tag not in xml_string:
+                                error_msg += f". {open_tag} exists but {close_tag} not found"
+                        raise ValueError(error_msg)
+                    else:
+                        continue
+                result = self._eval_result(result, arg)
+                kwargs[arg_name] = result
+            return kwargs
+        except Exception as first_error:
             try:
-                result = match.group(1)
-            except Exception as _:
-                # If the argument is required and not found, raise an error
-                if required:
-                    error_msg = f"Required argument {arg_name} not found in XML string: {xml_string}"
-                    open_tag = f"<{arg_name}>"
-                    close_tag = f"</{arg_name}>"
-                    if open_tag in xml_string:
-                        if close_tag not in xml_string:
-                            error_msg += f". {open_tag} exists but {close_tag} not found"
-                    raise ValueError(error_msg)
-                else:
-                    continue
-            try:
-                if "str" not in arg.type:
-                    result = literal_eval(result)
-            except Exception as _:
-                raise ValueError(f"Failed to parse argument {arg_name} to {arg.type} from XML string: `{xml_string}`")
-            kwargs[arg_name] = result
-        return kwargs
+                return self.parse_arguments_from_xml_string_without_closing_tags(xml_string)
+            except Exception as second_error:
+                raise ValueError(f"Failed to parse arguments from XML string: \n{second_error} \n{first_error}")
 
 
 if __name__ == "__main__":

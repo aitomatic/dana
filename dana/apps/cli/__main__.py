@@ -349,6 +349,10 @@ def handle_start_command(args):
         reload = args.reload
         log_level = args.log_level or "info"
 
+        os.environ["STUDIO_RAG"] = "true"
+
+        print(f"{colors.accent('✅ Enable STUDIO_RAG')}")
+
         print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
         print(f"📊 Health check: http://{host}:{port}/health")
         print(f"🔗 Root endpoint: http://{host}:{port}/")
