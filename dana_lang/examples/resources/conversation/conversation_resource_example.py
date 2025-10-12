@@ -14,10 +14,10 @@ Usage:
 import asyncio
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 import dana
 from dana.lib.resources.conversation import ConversationResource
+from dotenv import load_dotenv
+
 
 # Load environment variables
 load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env", verbose=True, override=True)
