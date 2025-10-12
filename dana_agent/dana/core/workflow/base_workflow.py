@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -44,6 +46,8 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
         workflow_id: str | None = None,
         auto_register: bool = True,
         registry=None,
+        composite_left: BaseWorkflow | None = None,
+        composite_right: BaseWorkflow | None = None,
         **kwargs,
     ):
         """
@@ -103,6 +107,9 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
         if auto_register:
             self._register_self()
 
+        self.composite_left = composite_left
+        self.composite_right = composite_right
+
     @staticmethod
     def _get_nested_value(data: DictParams, path: str) -> any:
         """
@@ -153,6 +160,12 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
 
         Returns:
             A callable that updates the input dict in-place
+
+        Resolution logic:
+            - Simple keys (no dots): Check result.{key} first, then top-level
+              Example: "url=url" tries kwargs["result"]["url"], then kwargs["url"]
+            - Explicit paths (with dots): Use exact path only
+              Example: "url=result.url" only tries kwargs["result"]["url"]
         """
         # Parse the spec: split by comma to get individual mappings
         mappings = []
@@ -175,9 +188,22 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
                 # Try each path until one succeeds
                 value = None
                 for path in source_paths:
-                    value = BaseWorkflow._get_nested_value(data, path)
-                    if value is not None:
-                        break
+                    # Simple key (no dots) - check result first, then top-level
+                    if "." not in path:
+                        # Try result.{key} first
+                        if "result" in data and isinstance(data["result"], dict):
+                            value = data["result"].get(path)
+                            if value is not None:
+                                break
+                        # Fallback to top-level
+                        if path in data:
+                            value = data[path]
+                            break
+                    else:
+                        # Explicit path - use exact nested lookup
+                        value = BaseWorkflow._get_nested_value(data, path)
+                        if value is not None:
+                            break
 
                 # Update with the found value (or None if all paths failed)
                 data[target_key] = value if value is not None else ""
@@ -214,15 +240,15 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
             result: The result (DictParams or str) of the workflow.
         """
         # Check if this is a composite workflow
-        if hasattr(self, "left") and hasattr(self, "right"):
+        if self.composite_left and self.composite_right:
             # Execute left workflow
-            left_result: DictParams = self.left.execute(**kwargs)
+            left_result: DictParams = self.composite_left.execute(**kwargs)
 
             # Merge results into kwargs for right workflow
             combined_kwargs = {**kwargs, **left_result}
 
             # Execute right workflow
-            right_result: DictParams = self.right.execute(**combined_kwargs)
+            right_result: DictParams = self.composite_right.execute(**combined_kwargs)
 
             # Return combined results
             result = {**left_result, **right_result}
@@ -327,26 +353,53 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
     # WORKFLOW COMPOSITION
     # ============================================================================
 
-    def __or__(self, other: "BaseWorkflow") -> "BaseWorkflow":
+    def __or__(self, other: BaseWorkflow | Callable) -> BaseWorkflow:
         """Override the | operator to compose workflows.
 
+        Allows composing workflows with other workflows or with callable functions.
+        When a callable is provided, it is automatically wrapped in a CallableWorkflow
+        that extracts parameters from the previous workflow's result.
+
         Args:
-            other: Another workflow to compose with this one
+            other: Another workflow or a callable to compose with this one.
+                  If a callable, its parameters will be extracted from the
+                  "result" field of the previous workflow's output.
 
         Returns:
             A new composite workflow that executes both workflows in sequence
+
+        Example:
+            ```python
+            # Compose workflows
+            composed = workflow1 | workflow2
+
+            # Compose workflow with callable
+            def transform(data):
+                return data.upper()
+
+            composed = workflow | transform
+
+            # Chain multiple compositions
+            pipeline = workflow | process_data | format_output
+            ```
         """
-        if not isinstance(other, BaseWorkflow):
-            raise TypeError(f"Can only compose workflows with other workflows, got {type(other)}")
+        # Import here to avoid circular dependency
+        from dana.core.workflow.callable_workflow import CallableWorkflow
+
+        # If other is a Callable (but not already a workflow), wrap it in CallableWorkflow
+        if callable(other) and not isinstance(other, BaseWorkflow):
+            other = CallableWorkflow(other)
+        elif not isinstance(other, BaseWorkflow):
+            raise TypeError(f"Can only compose workflows with other workflows or callables, got {type(other)}")
 
         # Create a composite workflow by setting left and right
-        composite = BaseWorkflow(workflow_type=f"{self.workflow_type}|{other.workflow_type}", auto_register=False)
-        composite.left = self
-        composite.right = other
+        composite = BaseWorkflow(
+            workflow_type=f"{self.workflow_type}|{other.workflow_type}", auto_register=False, composite_left=self, composite_right=other
+        )
         return composite
 
     def __repr__(self) -> str:
         """Get string representation of the workflow."""
-        if hasattr(self, "left") and hasattr(self, "right"):
+        if self.composite_left and self.composite_right:
             return f"<CompositeWorkflow '{self.workflow_type}'>"
         return f"<{self.__class__.__name__} workflow_type='{self.workflow_type}' workflow_id='{self.workflow_id}'>"

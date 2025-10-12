@@ -8,7 +8,6 @@ from datetime import datetime
 import logging
 
 from dana.common.protocols import DictParams
-from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
 
 
@@ -22,7 +21,6 @@ class FormatResource(BaseResource):
         """Initialize format components."""
         super().__init__(**kwargs)
 
-    @tool_use
     def format_with_citations(self, content: str, sources: list[DictParams], citation_style: str = "numbered") -> DictParams:
         """
         Format content with proper citations.
@@ -98,7 +96,6 @@ class FormatResource(BaseResource):
             # Default: no special formatting
             return {"formatted_content": content, "citations": [], "bibliography": "", "citation_count": 0}
 
-    @tool_use
     def format_as_table(self, data: list[dict] | dict, columns: list[str] | None = None, format_type: str = "markdown") -> str:
         """
         Format data as table.
@@ -198,7 +195,6 @@ class FormatResource(BaseResource):
         else:
             return "Error: Unknown format type"
 
-    @tool_use
     def format_as_bullet_points(self, items: list[str] | list[dict], indent_level: int = 0, marker: str = "-") -> str:
         """
         Format items as bullet points.
@@ -229,7 +225,6 @@ class FormatResource(BaseResource):
 
         return "\n".join(lines)
 
-    @tool_use
     def format_with_metadata(self, content: str, metadata: DictParams, include_timestamp: bool = True) -> str:
         """
         Format content with metadata header.
@@ -307,7 +302,6 @@ class FormatResource(BaseResource):
 
         return self.format_as_table({"headers": headers, "rows": rows}, format_type=format_type)
 
-    @tool_use
     def format_timeline(self, timeline_data: list[dict], format_type: str = "markdown") -> str:
         """
         Format timeline data.
@@ -347,7 +341,6 @@ class FormatResource(BaseResource):
 
             return "\n".join(lines)
 
-    @tool_use
     def format_summary_with_sections(self, sections: list[dict], title: str | None = None) -> str:
         """
         Format content with clear sections.
@@ -378,7 +371,6 @@ class FormatResource(BaseResource):
 
         return "\n".join(lines)
 
-    @tool_use
     def format_code_blocks(self, code_blocks: list[dict], include_language: bool = True) -> str:
         """
         Format code blocks with syntax highlighting markers.

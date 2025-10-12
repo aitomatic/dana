@@ -12,7 +12,8 @@ from dana.common.protocols import DictParams
 from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
 from dana.core.workflow.workflow_executor import observable
-from dana.lib.resources.components import WebFetcher
+
+from .web_fetcher import WebFetcher
 
 
 logger = logging.getLogger(__name__)
@@ -90,8 +91,8 @@ class SearchResource(BaseResource):
             return any(auth in domain for auth in authoritative_domains)
 
         # Partition into authoritative and non-authoritative
-        authoritative = [r for r in results if is_authoritative(r["url"])]
-        non_authoritative = [r for r in results if not is_authoritative(r["url"])]
+        authoritative = [r for r in results if is_authoritative(r.get("url", ""))]
+        non_authoritative = [r for r in results if not is_authoritative(r.get("url", ""))]
 
         return authoritative + non_authoritative
 

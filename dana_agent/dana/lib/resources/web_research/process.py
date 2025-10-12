@@ -7,9 +7,9 @@ Provides reusable processing operations that can be composed into workflows.
 import logging
 
 from dana.common.protocols import DictParams
-from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
-from dana.lib.resources.components import ContentExtractor
+
+from .content_extractor import ContentExtractor
 
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,6 @@ class ProcessResource(BaseResource):
 
         return high_quality
 
-    @tool_use
     def extract_key_points(self, content_text: str, max_points: int = 5) -> DictParams:
         """
         Extract key points from content using LLM reasoning.
@@ -209,7 +208,6 @@ class ProcessResource(BaseResource):
         # Fallback
         return {"headers": ["Value"], "rows": [[str(item)] for item in items], "total_rows": len(items)}
 
-    @tool_use
     def deduplicate_content(self, extractions: list[DictParams], similarity_threshold: float = 0.8) -> list[DictParams]:
         """
         Remove duplicate or highly similar content.
@@ -243,7 +241,7 @@ class ProcessResource(BaseResource):
                 seen_titles.add(fingerprint)
                 # Ensure URL information is preserved
                 if "url" not in extraction:
-                    extraction["url"] = "unknown"
+                    extraction.update({"url": "unknown"})
                 unique.append(extraction)
             else:
                 # For duplicates, we could optionally merge URL information

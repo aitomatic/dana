@@ -11,7 +11,8 @@ from dana.common.protocols import DictParams
 from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
 from dana.core.workflow.workflow_executor import observable
-from dana.lib.resources.components import WebFetcher
+
+from .web_fetcher import WebFetcher
 
 
 logger = logging.getLogger(__name__)
@@ -336,7 +337,6 @@ class FetchResource(BaseResource):
 
         return successful_extractions
 
-    @tool_use
     def fetch_and_extract_single(
         self, url: str, purpose: str = "general analysis", extract_code: bool = False, max_key_points: int = 5
     ) -> DictParams:

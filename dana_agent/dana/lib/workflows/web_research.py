@@ -8,108 +8,57 @@ from dana.lib.resources.web_research.search import SearchResource
 from dana.lib.resources.web_research.synthesize import SynthesizeResource
 
 
-_search_resource = SearchResource()
-_fetch_resource = FetchResource()
-_extract_resource = ExtractResource()
-_format_resource = FormatResource()
-_synthesize_resource = SynthesizeResource()
+_searcher = SearchResource()
+_fetcher = FetchResource()
+_extractor = ExtractResource()
+_formatter = FormatResource()
+_synthesizer = SynthesizeResource()
 
 
 # ============================================================================
-# Internal Helper Workflows (not exported)
+# Internal Helper Functions (using new callable workflow feature)
 # ============================================================================
 
 
-class _RankResultsWorkflow(BaseWorkflow):
-    """Internal workflow to rank search results by relevance."""
+def _synthesize(extractions, topic, synthesis_type="themes"):
+    """
+    Synthesize content from multiple extractions.
 
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Rank search results by relevance.
+    Dynamically selects synthesis method based on synthesis_type.
 
-        Args:
-            query (str): Search query
-            results (list): Search results to rank
-            criteria (str): Ranking criteria (default "relevance")
+    Args:
+        extractions (list): List of content extractions
+        topic (str): Research topic
+        synthesis_type (str): Type of synthesis - "themes" or "timeline"
 
-        Returns:
-            Dict with ranked_results
-        """
-        return _search_resource.rank_by_relevance(
-            query=kwargs.get("query", ""), results=kwargs.get("results", []), criteria=kwargs.get("criteria", "relevance")
-        )
+    Returns:
+        Dict with synthesis results
+    """
+    method = getattr(_synthesizer, f"synthesize_by_{synthesis_type}")
+    return method(extractions=extractions, topic=topic)
 
 
-class _FetchMultipleWorkflow(BaseWorkflow):
-    """Internal workflow to fetch and extract multiple URLs."""
+def _select_top_urls(ranked_results, max_sources=5):
+    """
+    Extract top N URLs from ranked search results.
 
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Fetch and extract content from multiple URLs.
+    Args:
+        ranked_results (list): Ranked search results
+        max_sources (int): Maximum number of URLs to extract (default 5)
 
-        Args:
-            urls (list): List of URLs to fetch
-            max_workers (int): Max parallel workers (default 3)
-            deduplicate (bool): Remove duplicate content (default True)
-
-        Returns:
-            Dict with extraction results
-        """
-        return _fetch_resource.fetch_and_extract(
-            urls=kwargs.get("urls", []), max_workers=kwargs.get("max_workers", 3), deduplicate=kwargs.get("deduplicate", True)
-        )
+    Returns:
+        Dict with urls list
+    """
+    urls = [result.get("url") for result in ranked_results[:max_sources] if result.get("url")]
+    return {"urls": urls, "count": len(urls)}
 
 
-class _SynthesizeWorkflow(BaseWorkflow):
-    """Internal workflow to synthesize content from multiple sources."""
-
-    @validate_input(
-        extractions={"required": True, "type": list, "min_length": 1},
-        topic={"required": True, "type": str, "min_length": 1},
-        synthesis_type={"type": str, "enum": ["themes", "timeline"], "default": "themes"},
-    )
-    @validate_output(success={"required": True, "type": bool})
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Synthesize content from multiple extractions.
-
-        Args:
-            extractions (list): List of content extractions (Required, min 1 item)
-            topic (str): Research topic (Required, min length 1)
-            synthesis_type (str): Type of synthesis - themes|timeline (default "themes")
-
-        Returns:
-            Dict with synthesis results containing success field
-        """
-        synthesis_type = kwargs["synthesis_type"]
-        synthesize_method = getattr(_synthesize_resource, f"synthesize_by_{synthesis_type}")
-        return synthesize_method(extractions=kwargs["extractions"], topic=kwargs["topic"])
+# ============================================================================
+# Public Workflows
+# ============================================================================
 
 
-class _SelectTopUrlsWorkflow(BaseWorkflow):
-    """Internal workflow to extract top N URLs from ranked results."""
-
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Extract top N URLs from ranked search results.
-
-        Args:
-            ranked_results (list): Ranked search results
-            max_sources (int): Maximum number of URLs to extract (default 5)
-
-        Returns:
-            Dict with urls list
-        """
-        ranked_results = kwargs.get("ranked_results", [])
-        max_sources = kwargs.get("max_sources", 5)
-
-        # Extract URLs from top N results
-        urls = [result.get("url") for result in ranked_results[:max_sources] if result.get("url")]
-
-        return {"urls": urls, "count": len(urls)}
-
-
-class _SearchWorkflow(BaseWorkflow):
+class SearchWorkflow(BaseWorkflow):
     @validate_input(
         query={"required": True, "type": str, "min_length": 1},
         max_results={"type": int, "min_value": 1, "max_value": 100, "default": 10},
@@ -148,96 +97,7 @@ class _SearchWorkflow(BaseWorkflow):
             >>> print(result["results"][0]["title"])
             'Python.org'
         """
-        return _search_resource.search_web(query=kwargs["query"], max_results=kwargs["max_results"])
-
-
-# ============================================================================
-# Public Workflows
-# ============================================================================
-
-
-class FetchResultWorkflow(BaseWorkflow):
-    def __init__(self, workflow_id: str | None = None, **kwargs):
-        """
-        Initialize FetchResultWorkflow.
-        """
-        super().__init__(workflow_id=workflow_id or "fetch-result", **kwargs)
-
-    @validate_input(
-        url={"required": True, "type": str, "min_length": 1},
-        purpose={"type": str, "default": "general analysis"},
-    )
-    @validate_output(
-        success={"required": True, "type": bool},
-        content_text={"required": True, "type": str},
-        metadata={"required": True, "type": dict},
-    )
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Fetch and extract content from a single URL.
-
-        Args:
-            **kwargs: Input parameters, should contain:
-                url (str): The URL to fetch. (Required, min length 1)
-                purpose (str, optional): The purpose of the fetch (e.g., "general analysis"). Defaults to "general analysis".
-
-        Returns:
-            DictParams: A dictionary with the fetch and extraction results containing:
-                success (bool): Whether the fetch and extraction succeeded.
-                url (str): Final URL (after redirects).
-                title (str): Page title.
-                content_text (str): Extracted text content.
-                content_markdown (str): Extracted markdown content.
-                word_count (int): Number of words in content.
-                reading_time_minutes (int): Estimated reading time in minutes.
-                metadata (dict): Page metadata (author, date, etc.).
-                quality (dict): Quality assessment with quality_score and is_sufficient.
-                sufficient (bool): Whether content is sufficient for the purpose.
-                key_points (list[str]): List of key points extracted from content.
-                summary (str): Brief summary of the content.
-                code_blocks (list[dict]): List of code blocks (if any), each with:
-                    language (str | None): Programming language.
-                    code (str): Code content.
-                    index (int): Block index.
-                error (str | None): Error message if success is False.
-
-        Example:
-            >>> workflow = FetchResultWorkflow()
-            >>> result = workflow._do_execute(url="https://example.com", purpose="research")
-            >>> print(result["title"])
-            'Example Page'
-        """
-        return _fetch_resource.fetch_and_extract_single(url=kwargs["url"], purpose=kwargs["purpose"])
-
-
-class ExtractAnswerWorkflow(BaseWorkflow):
-    def __init__(self, workflow_id: str | None = None, **kwargs):
-        """
-        Initialize ExtractAnswerWorkflow.
-        """
-        super().__init__(workflow_id=workflow_id or "extract-answer", **kwargs)
-
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Extract answer from search results (snippet/title).
-
-        Args:
-            **kwargs: Input parameters, should contain:
-                results (list): List of search results from SearchWorkflow.
-
-        Returns:
-            DictParams: A dictionary with the extraction results containing:
-                success (bool): Whether extraction was successful.
-                answer (str): The extracted answer (snippet or title).
-                source (str): The source URL.
-
-        Example:
-            >>> workflow = ExtractAnswerWorkflow()
-            >>> result = workflow._do_execute(results=[{"snippet": "Python was created in 1991", "url": "..."}])
-            >>> print(result["answer"])
-            'Python was created in 1991'
-        """
-        return _extract_resource.extract_answer_from_search(results=kwargs.get("results", []))
+        return _searcher.search_web(query=kwargs["query"], max_results=kwargs["max_results"])
 
 
 class GoogleLookupWorkflow(BaseWorkflow):
@@ -282,82 +142,9 @@ class GoogleLookupWorkflow(BaseWorkflow):
             >>> result = workflow._do_execute(query="When was Python created?")
             >>> print(result["answer"])
         """
-        workflow = _SearchWorkflow() | ExtractAnswerWorkflow("results=result.results")
+        # Use direct method composition - no wrapper workflow needed!
+        workflow = SearchWorkflow() | _extractor.extract_answer_from_search
         return workflow.execute(**kwargs)
-
-
-class ExtractFactWorkflow(BaseWorkflow):
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Extract factual information from content based on a query.
-
-        Args:
-            **kwargs: Input parameters, should contain:
-                content (str, optional): The text content to extract facts from.
-                query (str, optional): The query to guide fact extraction.
-
-        Returns:
-            DictParams: A dictionary with the extraction results containing:
-                fact (str): The extracted fact.
-                confidence (float): Confidence score (0.0 to 1.0).
-                context (str): Surrounding context for the fact.
-
-        Example:
-            >>> workflow = ExtractFactWorkflow()
-            >>> result = workflow._do_execute(
-            ...     content="Python was created by Guido van Rossum in 1991.",
-            ...     query="When was Python created?"
-            ... )
-            >>> print(result["fact"])
-            'Python was created by Guido van Rossum in 1991.'
-        """
-        return _extract_resource.extract_fact(content=kwargs.get("content"), query=kwargs.get("query"))
-
-
-class FormatWorkflow(BaseWorkflow):
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Format content with metadata header.
-
-        Args:
-            **kwargs: Input parameters, should contain:
-                content (str, optional): Main content to format. Defaults to "".
-                metadata (dict, optional): Metadata to include in header. Defaults to {}.
-                    Supported metadata fields:
-                        title (str): Document title.
-                        topic (str): Topic or subject.
-                        sources_count (int): Number of sources.
-                        workflow (str): Workflow name.
-                        synthesis_type (str): Type of synthesis.
-                        timestamp (str): Generation timestamp.
-
-        Returns:
-            DictParams: A dictionary with the formatted text containing:
-                formatted_text (str): The formatted text.
-                    - Title (if provided in metadata)
-                    - Metadata block with key-value pairs
-                    - Main content
-
-        Example:
-            >>> workflow = FormatWorkflow()
-            >>> result = workflow._do_execute(
-            ...     content="Main content here.",
-            ...     metadata={"title": "Report", "topic": "Research", "sources_count": 3}
-            ... )
-            >>> print(result["formatted_text"])
-            # Report
-            <BLANKLINE>
-            ---
-            **Topic:** Research
-            **Sources:** 3
-            **Generated:** 2024-01-01 12:00:00
-            ---
-            <BLANKLINE>
-            Main content here.
-        """
-        return {
-            "formatted_text": _format_resource.format_with_metadata(content=kwargs.get("content", ""), metadata=kwargs.get("metadata", {}))
-        }
 
 
 class FactFindingWorkflow(BaseWorkflow):
@@ -390,55 +177,17 @@ class FactFindingWorkflow(BaseWorkflow):
         Returns:
             DictParams: Dictionary with formatted answer and metadata.
         """
+
+        # Use CallableWorkflow with args_transform for clean parameter mapping!
+        from dana.core.workflow.callable_workflow import CallableWorkflow
+
         workflow = (
-            _SearchWorkflow()
-            | FetchResultWorkflow("url=result.results.0.url|url, purpose=query -> fetch_result")
-            | ExtractFactWorkflow("content=fetch_result.content_text")
-            | FormatWorkflow("content=result.fact, metadata=fetch_result.metadata")
+            SearchWorkflow()
+            | CallableWorkflow(_fetcher.fetch_and_extract_single, "url=result.results.0.url|url, purpose=query -> fetch_result")
+            | CallableWorkflow(_extractor.extract_fact, "content=fetch_result.content_text, query=query")
+            | CallableWorkflow(_formatter.format_with_metadata, "content=result.fact, metadata=fetch_result.metadata")
         )
         return workflow.execute(**kwargs)
-
-
-class SingleSourceDeepDiveWorkflow(BaseWorkflow):
-    """
-    Thorough analysis of a single document or webpage.
-
-    USE FOR: Specific documents, deep analysis, technical content
-    EXAMPLES: "Analyze this research paper", "Summarize this report"
-    AVOID: Simple facts, multiple sources, structured data
-    STEPS: Fetch → Extract
-    """
-
-    @validate_input(
-        url={"required": True, "type": str, "min_length": 1},
-        purpose={"type": str, "default": "general analysis"},
-        extract_code={"type": bool, "default": False},
-        max_key_points={"type": int, "min_value": 1, "max_value": 20, "default": 5},
-    )
-    @validate_output(
-        success={"required": True, "type": bool},
-        content_text={"required": True, "type": str},
-        metadata={"required": True, "type": dict},
-    )
-    def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Deep analysis of a single document.
-
-        Args:
-            url (str): URL to analyze (Required)
-            purpose (str): Analysis purpose (default "general analysis")
-            extract_code (bool): Extract code blocks (default False)
-            max_key_points (int): Maximum key points to extract (default 5, range 1-20)
-
-        Returns:
-            Dict with content, summary, key_points, metadata
-        """
-        return _fetch_resource.fetch_and_extract_single(
-            url=kwargs["url"],
-            purpose=kwargs["purpose"],
-            extract_code=kwargs["extract_code"],
-            max_key_points=kwargs["max_key_points"],
-        )
 
 
 class ResearchSynthesisWorkflow(BaseWorkflow):
@@ -474,13 +223,13 @@ class ResearchSynthesisWorkflow(BaseWorkflow):
         def adjust_max_results(params):
             params["max_results"] = params.get("max_sources", 5) * 2
 
-        # Compose workflows declaratively with pre_callable for dynamic calculation
+        # Compose workflows using direct methods and callables
         workflow = (
-            _SearchWorkflow(pre_callable=adjust_max_results)
-            | _RankResultsWorkflow("results=result.results")
-            | _SelectTopUrlsWorkflow("ranked_results=result.ranked_results, max_sources=max_sources")
-            | _FetchMultipleWorkflow("urls=result.urls")
-            | _SynthesizeWorkflow("extractions=result.result, topic=query")
+            SearchWorkflow(pre_callable=adjust_max_results)
+            | _searcher.rank_by_relevance
+            | _select_top_urls
+            | _fetcher.fetch_and_extract
+            | _synthesize
         )
 
         return workflow.execute(**kwargs)
@@ -540,7 +289,7 @@ class StructuredDataNavigationWorkflow(BaseWorkflow):
                 "statistics": {},
             }
 
-        return _extract_resource.navigate_and_extract_structured(
+        return _extractor.navigate_and_extract_structured(
             start_url=url,
             query=query,
             max_pages=kwargs["max_pages"],

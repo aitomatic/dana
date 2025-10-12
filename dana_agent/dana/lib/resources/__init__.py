@@ -1,3 +1,4 @@
+from .conversation import ConversationResource
 from .ping import PingResource
 from .web_research import ExtractResource, FetchResource, FormatResource, ProcessResource, SearchResource, SynthesizeResource
 from .workflow_selector import WorkflowSelectorResource
@@ -12,4 +13,5 @@ __all__ = [
     "SearchResource",
     "SynthesizeResource",
     "WorkflowSelectorResource",
+    "ConversationResource",
 ]
