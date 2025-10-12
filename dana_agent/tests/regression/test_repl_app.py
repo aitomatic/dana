@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.apps.repl.repl_app import AdanaREPLApp
+from dana.apps.repl.repl_app import AdanaREPLApp
 
 
 class TestREPLAppInitialization:
@@ -45,11 +45,11 @@ class TestREPLAppInitialization:
                     del os.environ["WT_SESSION"]
 
     @pytest.mark.windows_console
-    @patch("dana_agent.apps.repl.repl_app.PROMPT_TOOLKIT_AVAILABLE", True)
-    @patch("dana_agent.apps.repl.repl_app.FileHistory")
-    @patch("dana_agent.apps.repl.repl_app.PromptSession")
-    @patch("dana_agent.apps.repl.repl_app.PygmentsLexer")
-    @patch("dana_agent.apps.repl.repl_app.PythonLexer")
+    @patch("dana.apps.repl.repl_app.PROMPT_TOOLKIT_AVAILABLE", True)
+    @patch("dana.apps.repl.repl_app.FileHistory")
+    @patch("dana.apps.repl.repl_app.PromptSession")
+    @patch("dana.apps.repl.repl_app.PygmentsLexer")
+    @patch("dana.apps.repl.repl_app.PythonLexer")
     def test_repl_app_with_prompt_toolkit(self, mock_python_lexer, mock_pygments_lexer, mock_prompt_session, mock_file_history):
         """Test REPL app initialization with prompt_toolkit available."""
         # Mock the imports to return mock objects
@@ -217,8 +217,8 @@ class TestREPLAppNamespace:
         app = AdanaREPLApp()
 
         # Check for Adana framework classes
-        from dana_agent.core.agent.base_agent import BaseAgent
-        from dana_agent.core.agent.star_agent import STARAgent
+        from dana.core.agent.base_agent import BaseAgent
+        from dana.core.agent.star_agent import STARAgent
 
         assert app.namespace.get("STARAgent") is STARAgent
         assert app.namespace.get("BaseAgent") is BaseAgent
@@ -253,7 +253,7 @@ class TestREPLAppRegression:
     def test_repl_app_works_without_prompt_toolkit(self):
         """Regression: REPL should work even without prompt_toolkit."""
         # Mock PROMPT_TOOLKIT_AVAILABLE before importing
-        with patch("dana_agent.apps.repl.repl_app.PROMPT_TOOLKIT_AVAILABLE", False):
+        with patch("dana.apps.repl.repl_app.PROMPT_TOOLKIT_AVAILABLE", False):
             # Need to reload or create a new app with patched value
             app = AdanaREPLApp()
             # Should still create app successfully

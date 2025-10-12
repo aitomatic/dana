@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dana_agent.common.llm.llm import LLM
-from dana_agent.common.llm.types import LLMMessage, LLMProvider, LLMResponse
+from dana.common.llm.llm import LLM
+from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse
 
 
 class MockOpenAIProvider(LLMProvider):
@@ -76,7 +76,7 @@ class TestLLMFunctional:
     @pytest.mark.asyncio
     async def test_complete_conversation_workflow(self, mock_openai_provider):
         """Test complete conversation workflow from start to finish"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = mock_openai_provider
 
             # Initialize LLM
@@ -103,7 +103,7 @@ class TestLLMFunctional:
     @pytest.mark.asyncio
     async def test_provider_switching_workflow(self, mock_openai_provider, mock_anthropic_provider):
         """Test complete workflow with provider switching"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             # Start with OpenAI
             mock_create.return_value = mock_openai_provider
             llm = LLM(provider="openai", model="gpt-4")
@@ -132,7 +132,7 @@ class TestLLMFunctional:
         """Test complete streaming workflow"""
         streaming_provider = ConfigurableMockProvider(response_content="This is a streaming response.")
 
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = streaming_provider
             llm = LLM(provider="openai", model="gpt-4")
 
@@ -151,7 +151,7 @@ class TestLLMFunctional:
         error_provider = ConfigurableMockProvider(should_raise=True)
         working_provider = ConfigurableMockProvider(response_content="Anthropic response")
 
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             # Start with provider that will fail
             mock_create.return_value = error_provider
             llm = LLM(provider="openai", model="gpt-4")
@@ -171,7 +171,7 @@ class TestLLMFunctional:
     @pytest.mark.asyncio
     async def test_static_methods_workflow(self):
         """Test static methods workflow"""
-        with patch("dana_agent.common.llm.llm.config_manager") as mock_config:
+        with patch("dana.common.llm.llm.config_manager") as mock_config:
             mock_config.get_available_providers.return_value = ["openai", "anthropic", "groq", "ollama"]
             mock_config.is_provider_available.side_effect = lambda provider: provider != "unknown"
             mock_config.get_provider_models.return_value = {"gpt-4": "GPT-4", "gpt-3.5-turbo": "GPT-3.5 Turbo"}
@@ -201,7 +201,7 @@ class TestLLMFunctional:
     @pytest.mark.asyncio
     async def test_mixed_provider_workflow(self, mock_openai_provider, mock_anthropic_provider):
         """Test workflow using different providers for different tasks"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             # Use OpenAI for general questions
             mock_create.return_value = mock_openai_provider
             llm1 = LLM(provider="openai", model="gpt-4")
@@ -220,7 +220,7 @@ class TestLLMFunctional:
     @pytest.mark.asyncio
     async def test_complex_conversation_workflow(self, mock_openai_provider):
         """Test complex conversation with multiple interactions"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = mock_openai_provider
             llm = LLM(provider="openai", model="gpt-4")
 

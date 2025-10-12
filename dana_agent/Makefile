@@ -1,6 +1,9 @@
 # Makefile - Dana Agent Development Commands
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
+# UV command helper - use system uv if available, otherwise fallback to ~/.local/bin/uv
+UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
+
 .PHONY: help test test-unit test-integration test-live test-cov lint format fix clean
 
 # Default target
@@ -27,23 +30,23 @@ help: ## Show available commands
 
 test: ## Run all tests (excludes live/deep/windows_console)
 	@echo "🤖 Running dana_agent tests..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false pytest tests/ -v --maxfail=10
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/ -v --maxfail=10
 
 test-unit: ## Run only unit tests
 	@echo "🧪 Running unit tests..."
-	DANA_MOCK_LLM=true pytest tests/ -m unit -v
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m unit -v
 
 test-integration: ## Run only integration tests
 	@echo "🔗 Running integration tests..."
-	DANA_MOCK_LLM=true pytest tests/ -m integration -v
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m integration -v
 
 test-live: ## Run live tests (requires API keys)
 	@echo "🌐 Running live tests..."
-	pytest tests/ -m live -v
+	$(UV_CMD) run pytest tests/ -m live -v
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	DANA_MOCK_LLM=true pytest tests/ --cov=dana_agent --cov-report=html --cov-report=term
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_agent --cov-report=html --cov-report=term
 	@echo "📈 Coverage report: htmlcov/index.html"
 
 # =============================================================================
@@ -52,16 +55,16 @@ test-cov: ## Run tests with coverage report
 
 lint: ## Check code style and quality
 	@echo "🔍 Linting dana_agent..."
-	ruff check .
+	$(UV_CMD) run ruff check .
 
 format: ## Format code automatically
 	@echo "✨ Formatting dana_agent..."
-	ruff format .
+	$(UV_CMD) run ruff format .
 
 fix: ## Auto-fix code issues
 	@echo "🔧 Auto-fixing dana_agent..."
-	ruff check --fix .
-	ruff format .
+	$(UV_CMD) run ruff check --fix .
+	$(UV_CMD) run ruff format .
 
 clean: ## Clean build artifacts and caches
 	@echo "🧹 Cleaning dana_agent..."

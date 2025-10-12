@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.common.llm.providers.factory import create_provider
-from dana_agent.common.llm.types import ConfigurationError
+from dana.common.llm.providers.factory import create_provider
+from dana.common.llm.types import ConfigurationError
 
 
 class TestCreateProvider:

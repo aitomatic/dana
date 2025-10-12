@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana_agent.apps.dana.dana_app import DanaApp
+from dana.apps.dana.dana_app import DanaApp
 
 
 @pytest.mark.requires_api_keys
@@ -86,7 +86,7 @@ class TestDanaAppInitialization:
 class TestDanaAppCommands:
     """Test Dana app command handling."""
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_help_command(self, mock_dana_agent_class, capsys):
         """Test /help command."""
         # Mock the DanaAgent class
@@ -104,7 +104,7 @@ class TestDanaAppCommands:
         captured = capsys.readouterr()
         assert "Dana Commands" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_agents_command(self, mock_dana_agent_class, capsys):
         """Test /agents command."""
         # Mock the DanaAgent class
@@ -122,7 +122,7 @@ class TestDanaAppCommands:
         captured = capsys.readouterr()
         assert "Available Agents" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_resources_command(self, mock_dana_agent_class, capsys):
         """Test /resources command."""
         # Mock the DanaAgent class
@@ -140,7 +140,7 @@ class TestDanaAppCommands:
         captured = capsys.readouterr()
         assert "Available Resources" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_workflows_command(self, mock_dana_agent_class, capsys):
         """Test /workflows command."""
         # Mock the DanaAgent class
@@ -158,7 +158,7 @@ class TestDanaAppCommands:
         captured = capsys.readouterr()
         assert "Available Workflows" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_thoughts_command_toggle(self, mock_dana_agent_class, capsys):
         """Test /thoughts command toggle."""
         # Mock the DanaAgent class
@@ -176,7 +176,7 @@ class TestDanaAppCommands:
         captured = capsys.readouterr()
         assert "enabled" in captured.out or "disabled" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_invalid_command(self, mock_dana_agent_class, capsys):
         """Test invalid command."""
         # Mock the DanaAgent class
@@ -198,7 +198,7 @@ class TestDanaAppCommands:
 class TestDanaAppConversation:
     """Test Dana app conversation functionality."""
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_converse_with_response(
         self,
         mock_dana_agent_class,
@@ -220,7 +220,7 @@ class TestDanaAppConversation:
         captured = capsys.readouterr()
         assert "Hello! How can I help you today?" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_converse_clears_thoughts(self, mock_dana_agent_class):
         """Test that conversation clears thoughts after processing."""
         # Mock the DanaAgent class
@@ -238,7 +238,7 @@ class TestDanaAppConversation:
         # Check that thoughts were cleared
         assert app.thought_logger is not None
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_converse_with_error(self, mock_dana_agent_class, capsys):
         """Test conversation with an error."""
         # Mock the DanaAgent class
@@ -256,7 +256,7 @@ class TestDanaAppConversation:
         captured = capsys.readouterr()
         assert "Test error" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_converse_with_no_response_key(self, mock_dana_agent_class, capsys):
         """Test conversation with no response key."""
         # Mock the DanaAgent class
@@ -280,7 +280,7 @@ class TestDanaAppConversation:
 class TestDanaAppRegression:
     """Regression tests for known issues."""
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_dana_app_does_not_crash_on_empty_input(
         self,
         mock_dana_agent_class,
@@ -306,7 +306,7 @@ class TestDanaAppRegression:
         # Test whitespace-only input
         app._converse("   ")
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_dana_app_handles_unicode(self, mock_dana_agent_class, capsys):
         """Test that Dana app handles unicode characters."""
         # Mock the DanaAgent class
@@ -324,7 +324,7 @@ class TestDanaAppRegression:
         captured = capsys.readouterr()
         assert "Unicode test: 🚀" in captured.out
 
-    @patch("dana_agent.apps.dana.dana_agent.DanaAgent")
+    @patch("dana.apps.dana.dana_agent.DanaAgent")
     def test_dana_app_works_without_prompt_toolkit(self, mock_dana_agent_class):
         """Test that Dana app works without prompt toolkit."""
         # Mock the DanaAgent class
@@ -336,7 +336,7 @@ class TestDanaAppRegression:
         app = DanaApp()
         assert app is not None
 
-    @patch("dana_agent.apps.dana.dana_app.DanaAgent")
+    @patch("dana.apps.dana.dana_app.DanaAgent")
     def test_dana_app_thought_logger_state_persistence(self, mock_dana_agent_class):
         """Test that thought logger state persists across conversations."""
         # Mock the DanaAgent class

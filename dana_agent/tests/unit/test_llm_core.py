@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from dana_agent.common.llm.llm import LLM
-from dana_agent.common.llm.types import LLMMessage, LLMProvider, LLMResponse, ProviderError
+from dana.common.llm.llm import LLM
+from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse, ProviderError
 
 
 class MockProvider(LLMProvider):

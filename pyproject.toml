@@ -5,8 +5,7 @@
 # Monorepo Workspace - Virtual Root (Not a Package)
 # =============================================================================
 # This is a virtual workspace root that coordinates the Dana packages:
-#   - dana (backward compat shim → dana_lang)
-#   - dana_agent
+#   - dana
 #   - dana_lang
 #   - dana_studio
 #
@@ -20,8 +19,7 @@ description = "Dana Monorepo Workspace - Virtual Root"
 requires-python = ">=3.12"
 dependencies = [
     # Workspace members
-    "dana",  # Backward compat shim
-    "dana_agent",
+    "dana",
     "dana_lang",
     "dana_studio",
     # Common dev tools
@@ -49,8 +47,8 @@ docs = [
 
 # Command-line entry points
 [project.scripts]
-dana-agent = "dana_agent.apps.dana.__main__:main"
-dana-agent-repl = "dana_agent.apps.repl.__main__:main"
+dana-agent = "dana.apps.dana.__main__:main"
+dana-agent-repl = "dana.apps.repl.__main__:main"
 dana-lang = "dana_lang.apps.cli.__main__:main"
 dana-lsp = "dana_lang.core.lang.lsp.server:main"
 
@@ -69,7 +67,6 @@ compile-bytecode = true              # Pre-compile .pyc files for performance
 # Workspace configuration
 [tool.uv.workspace]
 members = [
-    "dana",
     "dana_agent",
     "dana_lang",
     "dana_studio",
@@ -78,7 +75,6 @@ members = [
 [tool.uv.sources]
 # Workspace member sources
 dana = { workspace = true }
-dana_agent = { workspace = true }
 dana_lang = { workspace = true }
 dana_studio = { workspace = true }
 

@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.common.llm.types import LLMMessage, LLMResponse
+from dana.common.llm.types import LLMMessage, LLMResponse
 
 
 class TestOpenAIProvider:
@@ -16,7 +16,7 @@ class TestOpenAIProvider:
     def provider(self):
         """Create OpenAIProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.openai.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.openai import OpenAIProvider
+            from dana.common.llm.providers.openai import OpenAIProvider
 
             return OpenAIProvider(api_key="test-key", model="gpt-4")
 
@@ -71,7 +71,7 @@ class TestAnthropicProvider:
     def provider(self):
         """Create AnthropicProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.anthropic.anthropic"):
-            from dana_agent.common.llm.providers.anthropic import AnthropicProvider
+            from dana.common.llm.providers.anthropic import AnthropicProvider
 
             return AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
 
@@ -125,7 +125,7 @@ class TestAzureProvider:
     def provider(self):
         """Create AzureProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.azure.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.azure import AzureProvider
+            from dana.common.llm.providers.azure import AzureProvider
 
             return AzureProvider(
                 api_key="test-key", base_url="https://test.openai.azure.com/", api_version="2024-02-15-preview", model="gpt-35-turbo"
@@ -184,7 +184,7 @@ class TestGroqProvider:
     def provider(self):
         """Create GroqProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.groq.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.groq import GroqProvider
+            from dana.common.llm.providers.groq import GroqProvider
 
             return GroqProvider(api_key="test-key", model="llama3-8b-8192")
 
@@ -239,7 +239,7 @@ class TestOllamaProvider:
     def provider(self):
         """Create OllamaProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.ollama.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.ollama import OllamaProvider
+            from dana.common.llm.providers.ollama import OllamaProvider
 
             return OllamaProvider(base_url="http://localhost:11434", model="llama2")
 
@@ -297,7 +297,7 @@ class TestHuggingFaceProvider:
     def provider(self):
         """Create HuggingFaceProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.huggingface.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.huggingface import HuggingFaceProvider
+            from dana.common.llm.providers.huggingface import HuggingFaceProvider
 
             return HuggingFaceProvider(api_key="test-key", model="microsoft/DialoGPT-medium")
 
@@ -355,7 +355,7 @@ class TestMoonshotProvider:
     def provider(self):
         """Create MoonshotProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.moonshot.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.moonshot import MoonshotProvider
+            from dana.common.llm.providers.moonshot import MoonshotProvider
 
             return MoonshotProvider(api_key="test-key", model="moonshot-v1-8k")
 
@@ -410,7 +410,7 @@ class TestQwenProvider:
     def provider(self):
         """Create QwenProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.qwen.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.qwen import QwenProvider
+            from dana.common.llm.providers.qwen import QwenProvider
 
             return QwenProvider(api_key="test-key", model="qwen-turbo")
 
@@ -465,7 +465,7 @@ class TestDeepSeekProvider:
     def provider(self):
         """Create DeepSeekProvider instance for testing"""
         with patch("openai.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.deepseek import DeepSeekProvider
+            from dana.common.llm.providers.deepseek import DeepSeekProvider
 
             return DeepSeekProvider(api_key="test-key", model="deepseek-chat")
 
@@ -535,7 +535,7 @@ class TestOpenRouterProvider:
     def provider(self):
         """Create OpenRouterProvider instance for testing"""
         with patch("dana_agent.common.llm.providers.openrouter.AsyncOpenAI"):
-            from dana_agent.common.llm.providers.openrouter import OpenRouterProvider
+            from dana.common.llm.providers.openrouter import OpenRouterProvider
 
             return OpenRouterProvider(api_key="test-key", model="openai/gpt-3.5-turbo")
 

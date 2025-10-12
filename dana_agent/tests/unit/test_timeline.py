@@ -6,8 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from dana_agent.common.llm.types import LLMMessage
-from dana_agent.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
+from dana.common.llm.types import LLMMessage
+from dana.core.agent.timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
 class TestTimelineEntry:

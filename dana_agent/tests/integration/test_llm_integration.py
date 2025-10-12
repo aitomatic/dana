@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from dana_agent.common.llm.llm import LLM
-from dana_agent.common.llm.types import LLMMessage, LLMProvider, LLMResponse
+from dana.common.llm.llm import LLM
+from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse
 
 
 class MockProvider(LLMProvider):
@@ -51,7 +51,7 @@ class TestLLMIntegration:
         mock_provider.chat.return_value = LLMResponse(content="Integration test response", model="test-model")
         mock_provider.model = "test-model"
 
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = mock_provider
 
             llm = LLM(provider="openai", model="gpt-4")
@@ -90,7 +90,7 @@ class TestLLMIntegration:
             content="New provider response", model="new-model", usage={"prompt_tokens": 5, "completion_tokens": 3}, finish_reason="stop"
         )
 
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = new_provider
             llm.switch_provider("anthropic", model="claude-3")
 
@@ -140,7 +140,7 @@ class TestLLMIntegration:
 
     def test_llm_static_methods_integration(self):
         """Test static methods integration with config manager"""
-        with patch("dana_agent.common.llm.llm.config_manager") as mock_config:
+        with patch("dana.common.llm.llm.config_manager") as mock_config:
             mock_config.get_available_providers.return_value = ["openai", "anthropic", "groq"]
             mock_config.get_provider_config.return_value = {"api_key_env": "OPENAI_API_KEY"}
             mock_config.is_provider_available.return_value = True
@@ -183,7 +183,7 @@ class TestLLMIntegration:
         mock_provider.chat.return_value = LLMResponse(content="Integration test response", model="test-model")
         mock_provider.model = "test-model"
 
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = mock_provider
 
             response = await LLM.ask_question("Static question", provider="openai", model="gpt-4")

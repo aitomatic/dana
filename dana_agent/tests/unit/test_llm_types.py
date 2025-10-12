@@ -4,7 +4,7 @@ Unit tests for LLM types module
 
 import pytest
 
-from dana_agent.common.llm.types import LLMMessage, LLMProvider, LLMResponse
+from dana.common.llm.types import LLMMessage, LLMProvider, LLMResponse
 
 
 class TestLLMMessage:

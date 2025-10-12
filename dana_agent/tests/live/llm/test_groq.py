@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from dana_agent.common.llm.llm import LLM
+from dana.common.llm.llm import LLM
 
 
 class TestGroqLive:
@@ -54,7 +54,7 @@ class TestGroqLive:
     def test_groq_conversation(self):
         """Test Groq conversation with stateless approach."""
         try:
-            from dana_agent.common.llm.types import LLMMessage
+            from dana.common.llm.types import LLMMessage
 
             llm = LLM(provider="groq")
 

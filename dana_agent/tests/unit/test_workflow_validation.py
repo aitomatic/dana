@@ -2,9 +2,9 @@
 Unit tests for workflow validation decorators.
 """
 
-from dana_agent.common.protocols import DictParams
-from dana_agent.core.workflow.base_workflow import BaseWorkflow
-from dana_agent.core.workflow.validation import validate_input, validate_output
+from dana.common.protocols import DictParams
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
 
 
 class TestValidateInput:

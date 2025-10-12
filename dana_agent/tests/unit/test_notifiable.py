@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.common.protocols import DictParams, Notifiable, Notifier
+from dana.common.protocols import DictParams, Notifiable, Notifier
 
 
 class TestNotifiable:

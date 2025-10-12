@@ -13,7 +13,7 @@ Usage:
 
 import argparse
 
-from adana.core.agent.star_agent import STARAgent
+from dana.core.agent.star_agent import STARAgent
 
 
 class DemoSTARAgent(STARAgent):

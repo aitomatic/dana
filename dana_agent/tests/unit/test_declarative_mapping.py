@@ -2,8 +2,8 @@
 
 import pytest
 
-from dana_agent.common.protocols import DictParams
-from dana_agent.core.workflow.base_workflow import BaseWorkflow
+from dana.common.protocols import DictParams
+from dana.core.workflow.base_workflow import BaseWorkflow
 
 
 class SimpleWorkflow(BaseWorkflow):

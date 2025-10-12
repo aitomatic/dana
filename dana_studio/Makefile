@@ -1,6 +1,9 @@
 # Makefile - Dana Studio Development Commands
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
+# UV command helper - use system uv if available, otherwise fallback to ~/.local/bin/uv
+UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
+
 .PHONY: help test test-unit test-integration test-cov lint format fix clean server
 
 # Default target
@@ -30,7 +33,7 @@ help: ## Show available commands
 
 server: ## Start Dana Studio server
 	@echo "🎨 Starting Dana Studio server..."
-	python -m dana_studio.server
+	$(UV_CMD) run python -m dana_studio.server
 
 # =============================================================================
 # Testing
@@ -38,19 +41,19 @@ server: ## Start Dana Studio server
 
 test: ## Run all tests
 	@echo "🎨 Running dana-studio tests..."
-	pytest tests/ -v --maxfail=10 || echo "⚠️  No tests found yet"
+	$(UV_CMD) run pytest tests/ -v --maxfail=10 || echo "⚠️  No tests found yet"
 
 test-unit: ## Run only unit tests
 	@echo "🧪 Running unit tests..."
-	pytest tests/ -m unit -v || echo "⚠️  No tests found yet"
+	$(UV_CMD) run pytest tests/ -m unit -v || echo "⚠️  No tests found yet"
 
 test-integration: ## Run only integration tests
 	@echo "🔗 Running integration tests..."
-	pytest tests/ -m integration -v || echo "⚠️  No tests found yet"
+	$(UV_CMD) run pytest tests/ -m integration -v || echo "⚠️  No tests found yet"
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	pytest tests/ --cov=dana_studio --cov-report=html --cov-report=term || echo "⚠️  No tests found yet"
+	$(UV_CMD) run pytest tests/ --cov=dana_studio --cov-report=html --cov-report=term || echo "⚠️  No tests found yet"
 	@echo "📈 Coverage report: htmlcov/index.html"
 
 # =============================================================================
@@ -59,16 +62,16 @@ test-cov: ## Run tests with coverage report
 
 lint: ## Check code style and quality
 	@echo "🔍 Linting dana-studio..."
-	ruff check .
+	$(UV_CMD) run ruff check .
 
 format: ## Format code automatically
 	@echo "✨ Formatting dana-studio..."
-	ruff format .
+	$(UV_CMD) run ruff format .
 
 fix: ## Auto-fix code issues
 	@echo "🔧 Auto-fixing dana-studio..."
-	ruff check --fix .
-	ruff format .
+	$(UV_CMD) run ruff check --fix .
+	$(UV_CMD) run ruff format .
 
 clean: ## Clean build artifacts and caches
 	@echo "🧹 Cleaning dana-studio..."

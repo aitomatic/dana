@@ -13,9 +13,9 @@ Usage:
 
 import argparse
 
-from adana.common.protocols import DictParams, Notifiable
-from adana.core.agent.star_agent import STARAgent
-from adana.core.agent.timeline import TimelineEntryType
+from dana.common.protocols import DictParams, Notifiable
+from dana.core.agent.star_agent import STARAgent
+from dana.core.agent.timeline import TimelineEntryType
 
 # from adana.core.resource.todo_resource import ToDoResource
 
