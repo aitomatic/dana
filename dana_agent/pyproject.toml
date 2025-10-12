@@ -229,6 +229,11 @@ ignore_errors = true
 module = "dana.core.lang.interpreter.*"
 disallow_untyped_defs = true
 
+[tool.pytest.ini_options]
+markers = [
+    "windows_console: marks tests that require Windows console features (deselect with '-m \"not windows_console\"')",
+]
+
 [dependency-groups]
 dev = [
     "langfuse>=3.5.1",
