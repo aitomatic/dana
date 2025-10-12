@@ -4,7 +4,6 @@ from .workflows.web_research import (
     FactFindingWorkflow,
     GoogleLookupWorkflow,
     ResearchSynthesisWorkflow,
-    SingleSourceDeepDiveWorkflow,
     StructuredDataNavigationWorkflow,
 )
 
@@ -14,7 +13,6 @@ __all__ = [
     "PingResource",
     "FactFindingWorkflow",
     "GoogleLookupWorkflow",
-    "SingleSourceDeepDiveWorkflow",
     "ResearchSynthesisWorkflow",
     "StructuredDataNavigationWorkflow",
 ]

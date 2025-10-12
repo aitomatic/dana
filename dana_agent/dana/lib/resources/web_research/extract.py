@@ -8,9 +8,9 @@ import logging
 
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
-from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
-from dana.lib.resources.components import ContentExtractor
+
+from .content_extractor import ContentExtractor
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ class ExtractResource(BaseResource):
         super().__init__(**kwargs)
         self.content_extractor = ContentExtractor()
 
-    @tool_use
     @observable
     def extract_answer_from_search(self, results: list) -> DictParams:
         """
@@ -58,7 +57,6 @@ class ExtractResource(BaseResource):
             "source": source,
         }
 
-    @tool_use
     @observable
     def extract_fact(self, content: str, query: str) -> DictParams:
         """
@@ -104,7 +102,6 @@ class ExtractResource(BaseResource):
         """
         return self.content_extractor.extract_main_content(html, base_url)
 
-    @tool_use
     def extract_metadata(self, html: str) -> DictParams:
         """
         Extract metadata from HTML (meta tags, Open Graph, etc.).
@@ -143,7 +140,6 @@ class ExtractResource(BaseResource):
         """
         return self.content_extractor.extract_links(html, base_url, filter_external)
 
-    @tool_use
     def extract_code_blocks(self, html: str) -> DictParams:
         """
         Extract code blocks from HTML (pre, code tags).
@@ -200,7 +196,6 @@ class ExtractResource(BaseResource):
         except Exception as e:
             return {"success": False, "error": f"Code block extraction failed: {str(e)}"}
 
-    @tool_use
     def extract_from_multiple(self, fetch_results: list[DictParams], base_urls: list[str] | None = None) -> list[DictParams]:
         """
         Extract content from multiple fetch results.
@@ -227,7 +222,7 @@ class ExtractResource(BaseResource):
             html = fetch_result.get("content", "")
             base_url = base_urls[i] or fetch_result.get("url")  # type: ignore
 
-            extraction = self.content_extractor.extract_main_content(html, base_url)
+            extraction: DictParams = self.content_extractor.extract_main_content(html, base_url)
 
             # Add URL information to the extraction result
             if extraction.get("success"):
@@ -239,7 +234,6 @@ class ExtractResource(BaseResource):
 
         return extraction_results
 
-    @tool_use
     def extract_structured_data(self, html: str, base_url: str) -> DictParams:
         """
         Extract all structured data from HTML (tables, lists, metadata).
@@ -302,7 +296,6 @@ class ExtractResource(BaseResource):
         except Exception as e:
             return {"success": False, "error": f"Structured data extraction failed: {str(e)}"}
 
-    @tool_use
     def extract_with_quality_check(self, html: str, base_url: str, purpose: str) -> DictParams:
         """
         Extract content and assess quality for purpose.
@@ -330,7 +323,6 @@ class ExtractResource(BaseResource):
 
         return {"content": content, "quality": quality, "sufficient": quality.get("is_sufficient", False), "error": None}
 
-    @tool_use
     def extract_navigation_links(self, html: str, base_url: str, link_patterns: list[str] | None = None) -> DictParams:
         """
         Extract navigation links for multi-page workflows.
@@ -393,7 +385,6 @@ class ExtractResource(BaseResource):
         except Exception:
             return False
 
-    @tool_use
     @observable
     def navigate_and_extract_structured(
         self,
@@ -453,7 +444,7 @@ class ExtractResource(BaseResource):
                 return {"success": False, "error": "Search failed or no results found"}
 
             # Use intelligent ranking instead of arbitrary first result
-            from dana.lib.resources.components.web_fetcher import WebFetcher
+            from .web_fetcher import WebFetcher
 
             web_fetcher = WebFetcher()
 

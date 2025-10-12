@@ -8,6 +8,7 @@ workflows that can be executed by agents.
 from dana.common.protocols.war import tool_use
 
 from .base_workflow import BaseWorkflow
+from .callable_workflow import CallableWorkflow
 
 
-__all__ = ["BaseWorkflow", "tool_use"]
+__all__ = ["BaseWorkflow", "CallableWorkflow", "tool_use"]

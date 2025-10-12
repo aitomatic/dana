@@ -88,7 +88,6 @@ class Notifier(ABC):
         Args:
             message: The notification message to send
         """
-        print(f"Broadcasting message to {len(self._notifiables)} notifiables")
         for notifiable in self._notifiables:
             if notifiable is not None:
                 try:

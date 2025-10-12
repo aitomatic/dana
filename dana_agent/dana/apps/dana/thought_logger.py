@@ -91,7 +91,7 @@ class ThoughtLogger(Notifiable):
         if self.verbose and trace_outputs:
             tool_calls = trace_outputs.get("tool_calls", [])
             if tool_calls and len(tool_calls) > 0:
-                tool_names = [tc.get("name", "unknown") for tc in tool_calls]
+                tool_names = [f"{tc.get('function', 'unknown')} {tc.get('arguments', {}).get('method', '')}" for tc in tool_calls]
                 self._display_phase(agent_id, "⚡ ACT", f"Calling: {', '.join(tool_names)}")
 
         # REFLECT phase - learning
