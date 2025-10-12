@@ -6,9 +6,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.common.protocols import DictParams, Notifiable
-from dana_agent.core.agent import BaseAgent, BaseSTARAgent, STARAgent
-from dana_agent.core.agent.components.state import State
+from dana.common.protocols import DictParams, Notifiable
+from dana.core.agent import BaseAgent, BaseSTARAgent, STARAgent
+from dana.core.agent.components.state import State
 
 
 class TestBaseAgent:
@@ -64,7 +64,7 @@ class TestBaseAgent:
 
     def test_base_agent_resource_management(self):
         """Test BaseAgent resource management."""
-        from dana_agent.core.resource import BaseResource
+        from dana.core.resource import BaseResource
 
         agent = BaseAgent(agent_type="test_agent")
         resource = BaseResource(resource_type="test", resource_id="test-resource-123")
@@ -75,8 +75,9 @@ class TestBaseAgent:
         assert len(agent.available_resources) == 1
         assert agent.available_resources[0] == resource
 
-        # Test individual management
-        agent.add_resource(resource)
+        # Test individual management with a different resource
+        resource2 = BaseResource(resource_type="test", resource_id="test-resource-456")
+        agent.add_resource(resource2)
         assert len(agent.available_resources) == 2
 
         # Test removal
@@ -86,7 +87,7 @@ class TestBaseAgent:
 
     def test_base_agent_agent_management(self):
         """Test BaseAgent agent management."""
-        from dana_agent.core.agent import BaseAgent
+        from dana.core.agent import BaseAgent
 
         agent = BaseAgent(agent_type="test_agent")
         other_agent = BaseAgent(agent_type="other_agent", agent_id="other-agent-456")
@@ -97,8 +98,9 @@ class TestBaseAgent:
         assert len(agent.available_agents) == 1
         assert agent.available_agents[0] == other_agent
 
-        # Test individual management
-        agent.add_agent(other_agent)
+        # Test individual management with a different agent
+        another_agent = BaseAgent(agent_type="another_agent", agent_id="another-agent-789")
+        agent.add_agent(another_agent)
         assert len(agent.available_agents) == 2
 
         # Test removal
@@ -108,7 +110,7 @@ class TestBaseAgent:
 
     def test_base_agent_workflow_management(self):
         """Test BaseAgent workflow management."""
-        from dana_agent.lib.workflows import GoogleLookupWorkflow
+        from dana.lib.workflows import GoogleLookupWorkflow
 
         agent = BaseAgent(agent_type="test_agent")
         workflow = GoogleLookupWorkflow(workflow_id="test-workflow-123")
@@ -119,8 +121,9 @@ class TestBaseAgent:
         assert len(agent.available_workflows) == 1
         assert agent.available_workflows[0] == workflow
 
-        # Test individual management
-        agent.add_workflow(workflow)
+        # Test individual management with a different workflow
+        workflow2 = GoogleLookupWorkflow(workflow_id="test-workflow-456")
+        agent.add_workflow(workflow2)
         assert len(agent.available_workflows) == 2
 
         # Test removal
@@ -239,12 +242,12 @@ class TestSTARAgent:
     @pytest.fixture
     def agent(self):
         """Create a test agent."""
-        with patch("dana_agent.core.agent.star_agent.LLM"):
+        with patch("dana.core.agent.star_agent.LLM"):
             return STARAgent(agent_type="test_agent", auto_register=False)
 
     def test_agent_initialization(self):
         """Test agent initialization."""
-        with patch("dana_agent.core.agent.star_agent.LLM"):
+        with patch("dana.core.agent.star_agent.LLM"):
             agent = STARAgent(agent_type="test_agent", auto_register=False)
 
         assert agent.agent_type == "test_agent"
@@ -258,7 +261,7 @@ class TestSTARAgent:
         class TestSTARAgent(STARAgent):
             pass
 
-        with patch("dana_agent.core.agent.star_agent.LLM"):
+        with patch("dana.core.agent.star_agent.LLM"):
             agent = TestSTARAgent(agent_type="test", auto_register=False)
 
         assert agent.agent_type == "test"
