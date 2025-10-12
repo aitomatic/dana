@@ -1,12 +1,20 @@
 from .agents import WebResearchAgent
-from .agents.web_research.workflows import ResearchSynthesisWorkflow, SingleSourceDeepDiveWorkflow, StructuredDataNavigationWorkflow
 from .resources import PingResource
+from .workflows.web_research import (
+    FactFindingWorkflow,
+    GoogleLookupWorkflow,
+    ResearchSynthesisWorkflow,
+    SingleSourceDeepDiveWorkflow,
+    StructuredDataNavigationWorkflow,
+)
 
 
 __all__ = [
     "WebResearchAgent",
     "PingResource",
-    "ResearchSynthesisWorkflow",
+    "FactFindingWorkflow",
+    "GoogleLookupWorkflow",
     "SingleSourceDeepDiveWorkflow",
+    "ResearchSynthesisWorkflow",
     "StructuredDataNavigationWorkflow",
 ]

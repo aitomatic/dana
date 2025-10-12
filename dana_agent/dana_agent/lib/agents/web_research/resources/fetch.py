@@ -11,8 +11,7 @@ from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.resource.base_resource import BaseResource
 from dana_agent.core.workflow.workflow_executor import observable
-
-from .components import _web_fetcher
+from dana_agent.lib.resources.components import _web_fetcher
 
 
 logger = logging.getLogger(__name__)
@@ -304,8 +303,8 @@ class FetchResource(BaseResource):
             - metadata: Extraction metadata
         """
         # Import here to avoid circular dependency
-        from dana_agent.lib.agents.web_research.workflows.resources.extract import ExtractResource
-        from dana_agent.lib.agents.web_research.workflows.resources.process import ProcessResource
+        from .extract import ExtractResource
+        from .process import ProcessResource
 
         logger.info(f"Starting fetch_and_extract for {len(urls)} URLs")
 
@@ -370,8 +369,8 @@ class FetchResource(BaseResource):
             - error: Error message if failed
         """
         # Import here to avoid circular dependency
-        from dana_agent.lib.agents.web_research.workflows.resources.extract import ExtractResource
-        from dana_agent.lib.agents.web_research.workflows.resources.process import ProcessResource
+        from .extract import ExtractResource
+        from .process import ProcessResource
 
         logger.info(f"Starting fetch_and_extract_single for: {url}")
 

@@ -1,13 +1,33 @@
 """
-Example workflow implementations for the Adana framework.
+Example workflow implementations for the Dana framework.
 
 This module provides example workflows that demonstrate how to create
 and use workflows with agents.
 """
 
-from .google_lookup import GoogleLookupWorkflow
+from .web_research import (
+    ExtractAnswerWorkflow,
+    ExtractFactWorkflow,
+    FactFindingWorkflow,
+    FetchResultWorkflow,
+    FormatWorkflow,
+    GoogleLookupWorkflow,
+    ResearchSynthesisWorkflow,
+    SearchWorkflow,
+    SingleSourceDeepDiveWorkflow,
+    StructuredDataNavigationWorkflow,
+)
 
 
-google_lookup_workflow = GoogleLookupWorkflow(workflow_id="google-lookup")
-
-__all__ = ["GoogleLookupWorkflow", "google_lookup_workflow"]
+__all__ = [
+    "SearchWorkflow",
+    "FetchResultWorkflow",
+    "ExtractAnswerWorkflow",
+    "GoogleLookupWorkflow",
+    "ExtractFactWorkflow",
+    "FormatWorkflow",
+    "FactFindingWorkflow",
+    "SingleSourceDeepDiveWorkflow",
+    "ResearchSynthesisWorkflow",
+    "StructuredDataNavigationWorkflow",
+]

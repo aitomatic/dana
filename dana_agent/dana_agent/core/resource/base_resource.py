@@ -1,9 +1,9 @@
-from dana_agent.common.base_wr import BaseWR
+from dana_agent.common.base_war import BaseWAR
 from dana_agent.common.protocols import ResourceProtocol
 from dana_agent.core.global_registry import get_resource_registry
 
 
-class BaseResource(BaseWR, ResourceProtocol):
+class BaseResource(BaseWAR, ResourceProtocol):
     """This docstring is the public description of the resource.
     Here we place all the public descriptions an agent would need to know
     do use the resource effectively. This will go into the RESOURCE_DESCRIPTIONS

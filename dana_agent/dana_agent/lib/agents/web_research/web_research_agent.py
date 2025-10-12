@@ -8,16 +8,9 @@ to perform web research tasks.
 from dana_agent.core.agent.star_agent import STARAgent
 from dana_agent.lib.resources import (
     WorkflowSelectorResource,
-    _google_searcher,
+    _web_searcher,
 )
-from dana_agent.lib.workflows import google_lookup_workflow
-
-from .workflows import (
-    FactFindingWorkflow,
-    ResearchSynthesisWorkflow,
-    SingleSourceDeepDiveWorkflow,
-    StructuredDataNavigationWorkflow,
-)
+from dana_agent.lib.workflows.web_research import FactFindingWorkflow, GoogleLookupWorkflow
 
 
 class WebResearchAgent(STARAgent):
@@ -39,17 +32,14 @@ class WebResearchAgent(STARAgent):
         # Initialize resources for agent
         resources = {
             # "todo": ToDoResource(resource_id="todo-123"),
-            "google_search": _google_searcher,
+            "google_search": _web_searcher,
             "workflow_selector": WorkflowSelectorResource(resource_id="workflow-selector"),
         }
 
         # Initialize workflows for agent
         workflows = {
-            "google_lookup": google_lookup_workflow,
+            "google_lookup": GoogleLookupWorkflow(workflow_id="google-lookup"),
             "fact_finding": FactFindingWorkflow(workflow_id="fact-finding"),
-            "single_source": SingleSourceDeepDiveWorkflow(workflow_id="single-source-deep-dive"),
-            "research": ResearchSynthesisWorkflow(workflow_id="research-synthesis"),
-            "structured_data": StructuredDataNavigationWorkflow(workflow_id="structured-data-navigation"),
         }
 
         self.with_workflows(*workflows.values()).with_resources(*resources.values())

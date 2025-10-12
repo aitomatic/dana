@@ -55,8 +55,8 @@ dependencies = [
 
 # Command-line entry points
 [project.scripts]
-dana_agent = "dana_agent.apps.dana.__main__:main"
-dana_agent_repl = "dana_agent.apps.repl.__main__:main"
+dana-agent = "dana_agent.apps.dana.__main__:main"
+dana-agent-repl = "dana_agent.apps.repl.__main__:main"
 
 # Optional dependency groups
 [project.optional-dependencies]

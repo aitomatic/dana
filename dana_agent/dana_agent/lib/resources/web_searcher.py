@@ -18,13 +18,13 @@ from dana_agent.common.observable import observable
 from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.resource.base_resource import BaseResource
-from dana_agent.lib.agents.web_research.workflows.resources.search import SearchResource
+from dana_agent.lib.agents.web_research.resources.search import SearchResource
 
 
 logger = logging.getLogger(__name__)
 
 
-class GoogleSearcherResource(BaseResource):
+class WebSearcherResource(BaseResource):
     """
     Lightweight interface for direct Google searches.
 

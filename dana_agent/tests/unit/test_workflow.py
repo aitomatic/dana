@@ -19,7 +19,7 @@ class ConcreteWorkflow(BaseWorkflow):
             kwargs["workflow_type"] = "test"
         super().__init__(**kwargs)
 
-    def execute(self, **kwargs) -> DictParams:
+    def _do_execute(self, **kwargs) -> DictParams:
         """Execute the test workflow."""
         return {"result": "test_execution", "kwargs": kwargs}
 

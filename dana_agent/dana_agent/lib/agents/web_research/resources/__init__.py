@@ -1,6 +1,21 @@
-"""
-Workflow Components - Reusable building blocks for composing workflows.
+from dana_agent.core.resource.base_resource import BaseResource
 
-These components provide the functional primitives that can be composed
-to create situation-specific workflows.
-"""
+from .extract import ExtractResource
+from .fetch import FetchResource
+from .format import FormatResource
+from .process import ProcessResource
+from .search import SearchResource
+from .synthesize import SynthesizeResource
+
+
+_resources_for_workflows: dict[str, BaseResource] = {
+    "search": SearchResource(resource_id="search"),
+    "fetch": FetchResource(resource_id="fetch"),
+    "extract": ExtractResource(resource_id="extract"),
+    "process": ProcessResource(resource_id="process"),
+    "synthesize": SynthesizeResource(resource_id="synthesize"),
+    "format": FormatResource(resource_id="format"),
+}
+
+
+__all__ = ["ExtractResource", "FetchResource", "FormatResource", "ProcessResource", "SynthesizeResource", "SearchResource"]

@@ -80,16 +80,16 @@ class PromptEngineer:
 
     def _find_project_root(self) -> str:
         """Find project root by looking for pyproject.toml or setup.py."""
-        module_name = self._agent.__class__.__module__
+        module_name = self.__class__.__module__
+        depth = module_name.count(".")
+
         module = sys.modules[module_name]
         module_file = module.__file__
         if module_file is None:
             return os.getcwd()
         current_dir = os.path.dirname(module_file)
 
-        while current_dir != os.path.dirname(current_dir):  # Not at filesystem root
-            if os.path.exists(os.path.join(current_dir, "pyproject.toml")):
-                return current_dir
+        for _ in range(depth - 1):
             current_dir = os.path.dirname(current_dir)
 
         return current_dir

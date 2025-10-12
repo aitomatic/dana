@@ -1,9 +1,15 @@
-from .google_searcher import GoogleSearcherResource
 from .ping_resource import PingResource
+from .web_searcher import WebSearcherResource
 from .workflow_selector import WorkflowSelectorResource
 
 
-_google_searcher = GoogleSearcherResource()
-_workflow_select = WorkflowSelectorResource()
+_web_searcher = WebSearcherResource()
+_workflow_selector = WorkflowSelectorResource()
 
-__all__ = ["PingResource", "GoogleSearcherResource", "_google_searcher", "WorkflowSelectorResource", "_workflow_select"]
+__all__ = [
+    "PingResource",
+    "WebSearcherResource",
+    "_web_searcher",
+    "WorkflowSelectorResource",
+    "_workflow_selector",
+]
