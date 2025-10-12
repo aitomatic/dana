@@ -170,7 +170,7 @@ class TestToolCallerAgentCalls:
         """Create a ToolCaller instance."""
         return ToolCaller(mock_agent)
 
-    @patch("dana_agent.core.agent.components.tool_caller.get_debug_logger")
+    @patch("dana.core.agent.components.tool_caller.get_debug_logger")
     def test_execute_agent_call_success(self, mock_debug_logger, tool_caller):
         """Test successful agent call execution."""
         arguments = {"object_id": "target-agent-456", "message": "Hello target agent"}

@@ -192,7 +192,7 @@ class TestNotifier:
         # Second notifiable should still be called
         mock_notifiable2.notify.assert_called_once_with(notifier, test_message)
 
-    @patch("dana_agent.common.protocols.notifiable.logger")
+    @patch("dana.common.protocols.notifiable.logger")
     def test_send_notification_logs_errors(self, mock_logger):
         """Test that notification errors are logged."""
         notifier = Notifier()
