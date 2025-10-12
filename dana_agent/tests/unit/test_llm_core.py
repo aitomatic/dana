@@ -44,7 +44,7 @@ class TestLLMCore:
 
     def test_init_with_provider_string(self):
         """Test LLM initialization with provider string"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_provider = Mock()
             mock_create.return_value = mock_provider
 
@@ -60,7 +60,7 @@ class TestLLMCore:
 
     def test_init_with_default_provider(self):
         """Test LLM initialization with default provider"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_provider = Mock()
             mock_create.return_value = mock_provider
 
@@ -106,7 +106,7 @@ class TestLLMCore:
 
     def test_switch_provider(self, llm):
         """Test switch_provider method"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             new_provider = Mock()
             mock_create.return_value = new_provider
 
@@ -118,7 +118,7 @@ class TestLLMCore:
     @pytest.mark.asyncio
     async def test_ask_question_static(self, mock_provider):
         """Test static ask_question method"""
-        with patch("dana_agent.common.llm.llm.create_provider") as mock_create:
+        with patch("dana.common.llm.llm.create_provider") as mock_create:
             mock_create.return_value = mock_provider
 
             response = await LLM.ask_question("Hello", provider="openai")
@@ -128,7 +128,7 @@ class TestLLMCore:
 
     def test_get_available_providers(self):
         """Test get_available_providers static method"""
-        with patch("dana_agent.common.llm.llm.config_manager") as mock_config:
+        with patch("dana.common.llm.llm.config_manager") as mock_config:
             mock_config.get_available_providers.return_value = ["openai", "anthropic"]
 
             providers = LLM.get_available_providers()
@@ -138,7 +138,7 @@ class TestLLMCore:
 
     def test_is_provider_available(self):
         """Test is_provider_available static method"""
-        with patch("dana_agent.common.llm.llm.config_manager") as mock_config:
+        with patch("dana.common.llm.llm.config_manager") as mock_config:
             mock_config.is_provider_available.return_value = True
 
             is_available = LLM.is_provider_available("openai")
@@ -148,7 +148,7 @@ class TestLLMCore:
 
     def test_get_provider_models(self):
         """Test get_provider_models static method"""
-        with patch("dana_agent.common.llm.llm.config_manager") as mock_config:
+        with patch("dana.common.llm.llm.config_manager") as mock_config:
             mock_config.get_provider_models.return_value = {"gpt-4": "GPT-4", "gpt-3.5-turbo": "GPT-3.5 Turbo"}
 
             models = LLM.get_provider_models("openai")
