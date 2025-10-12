@@ -15,7 +15,7 @@ class TestOpenAIProvider:
     @pytest.fixture
     def provider(self):
         """Create OpenAIProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.openai.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.openai.AsyncOpenAI"):
             from dana.common.llm.providers.openai import OpenAIProvider
 
             return OpenAIProvider(api_key="test-key", model="gpt-4")
@@ -70,7 +70,7 @@ class TestAnthropicProvider:
     @pytest.fixture
     def provider(self):
         """Create AnthropicProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.anthropic.anthropic"):
+        with patch("dana.common.llm.providers.anthropic.anthropic"):
             from dana.common.llm.providers.anthropic import AnthropicProvider
 
             return AnthropicProvider(api_key="test-key", model="claude-3-sonnet")
@@ -124,7 +124,7 @@ class TestAzureProvider:
     @pytest.fixture
     def provider(self):
         """Create AzureProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.azure.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.azure.AsyncOpenAI"):
             from dana.common.llm.providers.azure import AzureProvider
 
             return AzureProvider(
@@ -183,7 +183,7 @@ class TestGroqProvider:
     @pytest.fixture
     def provider(self):
         """Create GroqProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.groq.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.groq.AsyncOpenAI"):
             from dana.common.llm.providers.groq import GroqProvider
 
             return GroqProvider(api_key="test-key", model="llama3-8b-8192")
@@ -238,7 +238,7 @@ class TestOllamaProvider:
     @pytest.fixture
     def provider(self):
         """Create OllamaProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.ollama.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.ollama.AsyncOpenAI"):
             from dana.common.llm.providers.ollama import OllamaProvider
 
             return OllamaProvider(base_url="http://localhost:11434", model="llama2")
@@ -296,7 +296,7 @@ class TestHuggingFaceProvider:
     @pytest.fixture
     def provider(self):
         """Create HuggingFaceProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.huggingface.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.huggingface.AsyncOpenAI"):
             from dana.common.llm.providers.huggingface import HuggingFaceProvider
 
             return HuggingFaceProvider(api_key="test-key", model="microsoft/DialoGPT-medium")
@@ -354,7 +354,7 @@ class TestMoonshotProvider:
     @pytest.fixture
     def provider(self):
         """Create MoonshotProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.moonshot.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.moonshot.AsyncOpenAI"):
             from dana.common.llm.providers.moonshot import MoonshotProvider
 
             return MoonshotProvider(api_key="test-key", model="moonshot-v1-8k")
@@ -409,7 +409,7 @@ class TestQwenProvider:
     @pytest.fixture
     def provider(self):
         """Create QwenProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.qwen.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.qwen.AsyncOpenAI"):
             from dana.common.llm.providers.qwen import QwenProvider
 
             return QwenProvider(api_key="test-key", model="qwen-turbo")
@@ -534,7 +534,7 @@ class TestOpenRouterProvider:
     @pytest.fixture
     def provider(self):
         """Create OpenRouterProvider instance for testing"""
-        with patch("dana_agent.common.llm.providers.openrouter.AsyncOpenAI"):
+        with patch("dana.common.llm.providers.openrouter.AsyncOpenAI"):
             from dana.common.llm.providers.openrouter import OpenRouterProvider
 
             return OpenRouterProvider(api_key="test-key", model="openai/gpt-3.5-turbo")
