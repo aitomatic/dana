@@ -8,7 +8,7 @@ resources, and workflows through natural language interaction.
 from dana_agent.apps.dana.thought_logger import ThoughtLogger
 from dana_agent.core.agent.star_agent import STARAgent
 from dana_agent.lib.agents import WebResearchAgent
-from dana_agent.lib.resources import _google_searcher
+from dana_agent.lib.resources import _web_searcher
 from dana_agent.lib.workflows import google_lookup_workflow
 
 
@@ -22,7 +22,7 @@ class DanaAgent(STARAgent):
         ).with_workflows(
             google_lookup_workflow,
         ).with_resources(
-            _google_searcher,
+            _web_searcher,
         ).with_notifiable(
             thought_logger,
         )

@@ -10,7 +10,7 @@ from dana_agent.common.observable import observable
 from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import tool_use
 from dana_agent.core.resource.base_resource import BaseResource
-from dana_agent.lib.agents.web_research.workflows.resources.components import _content_extractor
+from dana_agent.lib.resources.components import _content_extractor
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,71 @@ class ExtractResource(BaseResource):
         """
         super().__init__(**kwargs)
         self.content_extractor = _content_extractor
+
+    @tool_use
+    @observable
+    def extract_answer_from_search(self, results: list) -> DictParams:
+        """
+        Extract answer from search results (snippet/title).
+
+        Args:
+            results: List of search results from SearchResource
+
+        Returns:
+            Dictionary with success, answer, and source
+        """
+        if not results:
+            return {
+                "success": False,
+                "answer": "No results found",
+                "source": "Google Search",
+            }
+
+        # Get the first result
+        first_result = results[0]
+
+        # Extract snippet or title as answer
+        answer = first_result.get("snippet", first_result.get("title", "No answer available"))
+        source = first_result.get("url", "Unknown source")
+
+        return {
+            "success": True,
+            "answer": answer,
+            "source": source,
+        }
+
+    @tool_use
+    @observable
+    def extract_fact(self, content: str, query: str) -> DictParams:
+        """
+        Extract factual information from content based on query.
+
+        Args:
+            content: The text content to extract from
+            query: The original query to guide extraction
+
+        Returns:
+            Dictionary with fact, confidence, and context
+        """
+        if not content:
+            return {"fact": "No content provided", "confidence": 0.0, "context": ""}
+
+        # Simple fact extraction logic
+        # In a real implementation, this could use NLP/LLM for better extraction
+        lines = [line.strip() for line in content.split("\n") if line.strip()]
+
+        # Look for numerical data if query suggests it
+        if any(keyword in query.lower() for keyword in ["rate", "price", "cost", "value", "exchange", "number", "how many", "when"]):
+            for line in lines:
+                if any(char.isdigit() for char in line):
+                    return {"fact": line, "confidence": 0.8, "context": content[:200]}
+
+        # Fallback: return first meaningful line
+        for line in lines:
+            if len(line) > 10 and not line.startswith("#"):
+                return {"fact": line, "confidence": 0.6, "context": content[:200]}
+
+        return {"fact": "No specific fact found", "confidence": 0.3, "context": content[:200]}
 
     def extract_main_content(self, html: str, base_url: str | None = None) -> DictParams:
         """
@@ -367,8 +432,8 @@ class ExtractResource(BaseResource):
         import time
 
         # Import here to avoid circular dependency
-        from dana_agent.lib.agents.web_research.workflows.resources.fetch import FetchResource
-        from dana_agent.lib.agents.web_research.workflows.resources.search import SearchResource
+        from .fetch import FetchResource
+        from .search import SearchResource
 
         logger.info("Starting navigate_and_extract_structured")
 
@@ -388,7 +453,7 @@ class ExtractResource(BaseResource):
                 return {"success": False, "error": "Search failed or no results found"}
 
             # Use intelligent ranking instead of arbitrary first result
-            from dana_agent.lib.agents.web_research.workflows.resources.components.web_fetcher import WebFetcher
+            from dana_agent.lib.resources.components.web_fetcher import WebFetcher
 
             web_fetcher = WebFetcher()
 

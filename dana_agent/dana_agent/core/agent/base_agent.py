@@ -10,13 +10,13 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from dana_agent.common.base_war import BaseWAR
+from dana_agent.common.base_a import BaseA
 from dana_agent.common.protocols import DictParams
 from dana_agent.common.protocols.war import AgentProtocol, ResourceProtocol, WorkflowProtocol
 from dana_agent.core.global_registry import get_agent_registry
 
 
-class BaseAgent(BaseWAR, AgentProtocol):
+class BaseAgent(BaseA, AgentProtocol):
     """
     Base class for all agents with common functionality.
 
@@ -43,164 +43,11 @@ class BaseAgent(BaseWAR, AgentProtocol):
         super().__init__(**kwargs)
         self.agent_type = agent_type or self.__class__.__name__
         self._created_at = datetime.now().isoformat()
-        self._resources: list[ResourceProtocol] = []
-        self._agents: list[AgentProtocol] = []
-        self._workflows: list[WorkflowProtocol] = []
 
         # Handle agent registration at the base level
         self._registry = registry or get_agent_registry()
         if auto_register:
             self._register_self()
-
-    # ============================================================================
-    # RESOURCE MANAGEMENT
-    # ============================================================================
-
-    def with_resources(self, *resources: ResourceProtocol) -> "BaseAgent":
-        """
-        Add resources to this agent using fluent interface.
-
-        Args:
-            *resources: Variable number of ResourceProtocol instances to add
-
-        Returns:
-            Self for method chaining
-
-        Example:
-            agent = BaseAgent("coordinator").with_resources(
-                ToDoResource(),
-                DatabaseResource(),
-                WebSearchResource()
-            )
-        """
-        self._resources.extend(resources)
-        return self
-
-    def add_resource(self, resource: ResourceProtocol) -> None:
-        """
-        Add a single resource to this agent.
-
-        Args:
-            resource: ResourceProtocol instance to add
-        """
-        self._resources.append(resource)
-
-    def remove_resource(self, resource_id: str) -> bool:
-        """
-        Remove a resource by its ID.
-
-        Args:
-            resource_id: ID of the resource to remove
-
-        Returns:
-            True if resource was found and removed, False otherwise
-        """
-        for i, resource in enumerate(self._resources):
-            if hasattr(resource, "object_id") and resource.object_id == resource_id:
-                self._resources.pop(i)
-                return True
-        return False
-
-    # ============================================================================
-    # AGENT MANAGEMENT
-    # ============================================================================
-
-    def with_agents(self, *agents: AgentProtocol) -> "BaseAgent":
-        """
-        Add agents to this agent using fluent interface.
-
-        Args:
-            *agents: Variable number of AgentProtocol instances to add
-
-        Returns:
-            Self for method chaining
-
-        Example:
-            agent = BaseAgent("coordinator").with_agents(
-                ResearchAgent(),
-                AnalysisAgent(),
-                VerifierAgent()
-            )
-        """
-        self._agents.extend(agents)
-        return self
-
-    def add_agent(self, agent: AgentProtocol) -> None:
-        """
-        Add a single agent to this agent.
-
-        Args:
-            agent: AgentProtocol instance to add
-        """
-        self._agents.append(agent)
-
-    def remove_agent(self, agent_id: str) -> bool:
-        """
-        Remove an agent by its ID.
-
-        Args:
-            agent_id: ID of the agent to remove
-
-        Returns:
-            True if agent was found and removed, False otherwise
-        """
-        for i, agent in enumerate(self._agents):
-            if hasattr(agent, "object_id") and agent.object_id == agent_id:
-                self._agents.pop(i)
-                return True
-        return False
-
-    # ============================================================================
-    # WORKFLOW MANAGEMENT
-    # ============================================================================
-
-    def with_workflows(self, *workflows: WorkflowProtocol) -> "BaseAgent":
-        """
-        Add workflows to this agent using fluent interface.
-
-        Args:
-            *workflows: Variable number of WorkflowProtocol instances to add
-
-        Returns:
-            Self for method chaining
-
-        Example:
-            agent = BaseAgent("coordinator").with_workflows(
-                ExampleWorkflow(),
-                DataProcessingWorkflow(),
-                ValidationWorkflow()
-            )
-        """
-        self._workflows.extend(workflows)
-        # IMPORTANT: assign the calling agent to the workflows
-        for workflow in workflows:
-            workflow.agent = self
-        return self
-
-    def add_workflow(self, workflow: WorkflowProtocol) -> None:
-        """
-        Add a single workflow to this agent.
-
-        Args:
-            workflow: WorkflowProtocol instance to add
-        """
-        self._workflows.append(workflow)
-
-    def remove_workflow(self, workflow_id: str) -> bool:
-        """
-        Remove a workflow by its ID.
-
-        Args:
-            workflow_id: ID of the workflow to remove
-
-        Returns:
-            True if workflow was found and removed, False otherwise
-        """
-        for i, workflow in enumerate(self._workflows):
-            if hasattr(workflow, "object_id") and workflow.object_id == workflow_id:
-                self._workflows.pop(i)
-                return True
-        return False
 
     # ============================================================================
     # BASIC AGENT IDENTITY

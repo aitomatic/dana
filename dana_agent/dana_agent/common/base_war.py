@@ -1,5 +1,5 @@
 """
-Base WAR (Workflow, Agent, Resource) class with common functionality.
+Common functionality for all first-class types: Agent, Workflow, Resource.
 """
 
 import inspect
@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 from .llm import LLM
 from .protocols import Notifier
 from .protocols.types import DictParams, Identifiable
-from .protocols.war import IS_TOOL_USE, WARProtocol
+from .protocols.war import IS_TOOL_USE, ResourceProtocol, WARProtocol
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,38 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
         super().__init__(**kwargs)
         self._public_description = None
         self._llm_client = kwargs.get("llm_client")
+        self._resources: list[ResourceProtocol] = kwargs.get("resources") or []
+
+    def with_resources(self, *resources: ResourceProtocol) -> "BaseWAR":
+        """
+        Any of Agent, Workflow, Resource can add resources to itself.
+
+        Args:
+            *resources: Variable number of ResourceProtocol instances to add
+
+        Returns:
+            Self for method chaining
+        """
+        # Extend with replacement
+        if resources and len(resources) > 0:
+            for resource in resources:
+                if resource not in self._resources:
+                    self._resources.append(resource)
+        return self
+
+    def query(self, **kwargs) -> DictParams:
+        """Default query implementation.
+
+        This method provides a default implementation for querying WAR objects.
+        Subclasses can override this method to provide specific query functionality.
+
+        Args:
+            **kwargs: The arguments to the query method.
+
+        Returns:
+            A dictionary with the query results.
+        """
+        return {}
 
     @property
     def llm_client(self) -> LLM:
@@ -445,6 +477,11 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
         if self.object_id not in self._get_registry()._items:
             self._register_self()
         return self
+
+    @property
+    def public_description(self) -> str:
+        """Get the public description of the object."""
+        return self._get_public_description()
 
     def _get_public_description(self, only_specific_method: str | None = None, format: str = "xml") -> str:
         """Get the public description including available tool methods.

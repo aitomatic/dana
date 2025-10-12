@@ -5,15 +5,15 @@ These tests verify that unsupported functions are properly blocked with
 appropriate error messages and security rationales.
 """
 
+import pytest
+
 from dana_lang.common.exceptions import SandboxError
+from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana_lang.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana_lang.core.lang.sandbox_context import SandboxContext
 from dana_lang.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
 from dana_lang.libs.corelib.py_builtins.register_py_builtins import UnsupportedReason
 from dana_lang.registry.function_registry import FunctionRegistry
-import pytest
-
-from dana_lang.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
 
 class TestUnsupportedFunctions:
