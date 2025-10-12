@@ -12,12 +12,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana_agent.common.llm.types import LLMResponse
-from dana_agent.core.agent.components.tool_caller import (
+from dana.common.llm.types import LLMResponse
+from dana.core.agent.components.tool_caller import (
     ToolCaller,
     WARCaller,
 )
-from dana_agent.core.agent.star_agent import STARAgent
+from dana.core.agent.star_agent import STARAgent
 
 
 class TestToolCallerArchitecture:

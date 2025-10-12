@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from dana_agent.common.protocols import AgentProtocol, DictParams, Notifiable
-from dana_agent.core.workflow import BaseWorkflow
+from dana.common.protocols import AgentProtocol, DictParams, Notifiable
+from dana.core.workflow import BaseWorkflow
 
 
 class ConcreteWorkflow(BaseWorkflow):

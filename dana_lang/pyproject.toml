@@ -33,7 +33,7 @@ maintainers = [
 # Core dependencies organized by functionality
 dependencies = [
     # Cross-project dependency (workspace member)
-    "dana_agent",
+    "dana",
     # AI/LLM Integration (temporarily without anthropic due to version conflict)
     "aisuite[azure,groq,huggingface,ollama,openai]>=0.1.11",
     "google-cloud-aiplatform",

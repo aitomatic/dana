@@ -9,7 +9,7 @@ Run with: pytest tests/live/agent/test_agent_invocation_live.py --live
 
 import pytest
 
-from dana_agent.core.agent.star_agent import STARAgent
+from dana.core.agent.star_agent import STARAgent
 
 
 class ResearchAgent(STARAgent):

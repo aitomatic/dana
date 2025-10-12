@@ -32,7 +32,7 @@ maintainers = [
 dependencies = [
     # Cross-project dependencies
     "dana_lang",
-    "dana_agent",
+    "dana",
     # Web framework
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",

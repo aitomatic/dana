@@ -1,6 +1,9 @@
 # Makefile - Dana Lang Development Commands
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
+# UV command helper - use system uv if available, otherwise fallback to ~/.local/bin/uv
+UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
+
 .PHONY: help test test-unit test-integration test-functional test-live test-cov lint format fix clean
 
 # Default target
@@ -27,31 +30,31 @@ help: ## Show available commands
 
 test: ## Run all tests (excludes live/deep/real_api)
 	@echo "📝 Running dana-lang tests..."
-	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false pytest tests/ -v --maxfail=10
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest tests/ -v --maxfail=10
 
 test-unit: ## Run only unit tests
 	@echo "🧪 Running unit tests..."
-	DANA_MOCK_LLM=true pytest tests/ -m unit -v
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m unit -v
 
 test-integration: ## Run only integration tests
 	@echo "🔗 Running integration tests..."
-	DANA_MOCK_LLM=true pytest tests/ -m integration -v
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ -m integration -v
 
 test-functional: ## Run only functional tests
 	@echo "⚙️  Running functional tests..."
-	DANA_MOCK_LLM=true pytest tests/functional/ -v
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/functional/ -v
 
 test-live: ## Run live tests (requires API keys)
 	@echo "🌐 Running live tests..."
-	pytest tests/ -m live -v
+	$(UV_CMD) run pytest tests/ -m live -v
 
 test-deep: ## Run deep/comprehensive tests
 	@echo "🔬 Running deep tests..."
-	pytest tests/ -m deep -v
+	$(UV_CMD) run pytest tests/ -m deep -v
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	DANA_MOCK_LLM=true pytest tests/ --cov=dana_lang --cov-report=html --cov-report=term
+	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/ --cov=dana_lang --cov-report=html --cov-report=term
 	@echo "📈 Coverage report: htmlcov/index.html"
 
 # =============================================================================
@@ -60,16 +63,16 @@ test-cov: ## Run tests with coverage report
 
 lint: ## Check code style and quality
 	@echo "🔍 Linting dana-lang..."
-	ruff check . --exclude contrib
+	$(UV_CMD) run ruff check . --exclude contrib
 
 format: ## Format code automatically
 	@echo "✨ Formatting dana-lang..."
-	ruff format . --exclude contrib
+	$(UV_CMD) run ruff format . --exclude contrib
 
 fix: ## Auto-fix code issues
 	@echo "🔧 Auto-fixing dana-lang..."
-	ruff check --fix . --exclude contrib
-	ruff format . --exclude contrib
+	$(UV_CMD) run ruff check --fix . --exclude contrib
+	$(UV_CMD) run ruff format . --exclude contrib
 
 clean: ## Clean build artifacts and caches
 	@echo "🧹 Cleaning dana-lang..."

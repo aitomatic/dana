@@ -4,11 +4,11 @@ Unit tests for web research workflows.
 
 from unittest.mock import patch
 
-from dana_agent.lib.workflows.web_research import (
+from dana.lib.workflows.web_research import (
     ExtractFactWorkflow,
     FetchResultWorkflow,
     FormatWorkflow,
-    SearchWorkflow,
+    _SearchWorkflow,
 )
 
 
@@ -17,7 +17,7 @@ class TestSearchWorkflow:
 
     def test_search_workflow_initialization(self):
         """Test SearchWorkflow initialization."""
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         assert workflow is not None
         assert hasattr(workflow, "_do_execute")
         assert callable(workflow.execute)
@@ -48,7 +48,7 @@ class TestSearchWorkflow:
             "search_time_ms": 150,
         }
 
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         result = workflow._do_execute(query="Python programming", max_results=10)
 
         # Verify the search_web method was called
@@ -72,7 +72,7 @@ class TestSearchWorkflow:
             "search_time_ms": 100,
         }
 
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         workflow._do_execute(query="test query")
 
         # Should use default max_results=10
@@ -90,7 +90,7 @@ class TestSearchWorkflow:
             "search_time_ms": 50,
         }
 
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         result = workflow._do_execute(query="test", custom_field="custom_value")
 
         # Should return the search result directly
@@ -111,7 +111,7 @@ class TestSearchWorkflow:
             "total_results": 0,
         }
 
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         result = workflow._do_execute(query="test query")
 
         assert result["success"] is False
@@ -131,7 +131,7 @@ class TestSearchWorkflow:
             "search_time_ms": 200,
         }
 
-        workflow = SearchWorkflow()
+        workflow = _SearchWorkflow()
         result = workflow._do_execute(query="test", max_results=5)
 
         mock_search_resource.search_web.assert_called_once_with(query="test", max_results=5)
@@ -151,7 +151,7 @@ class TestSearchWorkflow:
                 "search_time_ms": 100,
             }
 
-            workflow = SearchWorkflow()
+            workflow = _SearchWorkflow()
             result = workflow._do_execute(query="Python", extra_param="test")
 
             # Verify the direct search result structure

@@ -7,8 +7,8 @@ initialization, protocol compliance, and resource management.
 
 from unittest.mock import Mock
 
-from dana_agent.common.protocols import DictParams, Identifiable, Notifiable, ResourceProtocol
-from dana_agent.core.resource import BaseResource
+from dana.common.protocols import DictParams, Identifiable, Notifiable, ResourceProtocol
+from dana.core.resource import BaseResource
 
 
 class TestBaseResource:
@@ -173,7 +173,7 @@ class TestBaseResourceIntegration:
 
     def test_resource_with_tool_methods(self):
         """Test resource with tool-usable methods."""
-        from dana_agent.common.protocols.war import tool_use
+        from dana.common.protocols.war import tool_use
 
         class TestBaseResource(BaseResource):
             @tool_use
@@ -204,7 +204,7 @@ class TestPingResource:
 
     def test_ping_resource_initialization(self):
         """Test PingResource initialization."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
 
@@ -215,7 +215,7 @@ class TestPingResource:
 
     def test_ping_resource_query_default(self):
         """Test PingResource query with default message."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
         result = resource.query()
@@ -226,7 +226,7 @@ class TestPingResource:
 
     def test_ping_resource_query_custom_message(self):
         """Test PingResource query with custom message."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
         result = resource.query(message="Hello")
@@ -237,7 +237,7 @@ class TestPingResource:
 
     def test_ping_resource_query_with_kwargs(self):
         """Test PingResource query with kwargs."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
         result = resource.query(message="Test message")
@@ -248,7 +248,7 @@ class TestPingResource:
 
     def test_ping_resource_notification_integration(self):
         """Test PingResource notification functionality."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
 
@@ -269,7 +269,7 @@ class TestPingResource:
 
     def test_ping_resource_query_with_notifications(self):
         """Test PingResource query with notification support."""
-        from dana_agent.lib.resources import PingResource
+        from dana.lib.resources import PingResource
 
         resource = PingResource()
 

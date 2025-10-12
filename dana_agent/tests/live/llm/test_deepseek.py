@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from dana_agent.common.llm.llm import LLM
+from dana.common.llm.llm import LLM
 
 
 class TestDeepSeekLive:

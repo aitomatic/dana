@@ -9,8 +9,8 @@ import asyncio
 
 import pytest
 
-from dana_agent.common.config import config_manager
-from dana_agent.common.llm.llm import LLM
+from dana.common.config import config_manager
+from dana.common.llm.llm import LLM
 
 
 class TestProviderLive:
@@ -131,7 +131,7 @@ class TestProviderLive:
     def test_stateless_conversation(self):
         """Test stateless conversation functionality with explicit context."""
         try:
-            from dana_agent.common.llm.types import LLMMessage
+            from dana.common.llm.types import LLMMessage
 
             llm = LLM()
 

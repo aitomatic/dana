@@ -11,7 +11,7 @@ import os
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-from adana.lib.agents.web_research.web_research_agent import WebResearchAgent
+from dana.lib.agents.web_research import WebResearchAgent
 
 
 def example_natural_language_query():
