@@ -22,7 +22,7 @@ class TestSearchWorkflow:
         assert hasattr(workflow, "_do_execute")
         assert callable(workflow.execute)
 
-    @patch("dana_agent.lib.workflows.web_research._search_resource")
+    @patch("dana.lib.workflows.web_research._search_resource")
     def test_do_execute_with_query(self, mock_search_resource):
         """Test SearchWorkflow.do_execute with a query."""
         # Mock the search_web method
@@ -60,7 +60,7 @@ class TestSearchWorkflow:
         assert len(result["results"]) == 2
         assert result["results"][0]["title"] == "Python.org"
 
-    @patch("dana_agent.lib.workflows.web_research._search_resource")
+    @patch("dana.lib.workflows.web_research._search_resource")
     def test_do_execute_with_default_max_results(self, mock_search_resource):
         """Test SearchWorkflow.do_execute with default max_results."""
         mock_search_resource.search_web.return_value = {
@@ -78,7 +78,7 @@ class TestSearchWorkflow:
         # Should use default max_results=10
         mock_search_resource.search_web.assert_called_once_with(query="test query", max_results=10)
 
-    @patch("dana_agent.lib.workflows.web_research._search_resource")
+    @patch("dana.lib.workflows.web_research._search_resource")
     def test_do_execute_returns_search_result(self, mock_search_resource):
         """Test that do_execute returns the search result directly."""
         mock_search_resource.search_web.return_value = {
@@ -100,7 +100,7 @@ class TestSearchWorkflow:
         # Note: input kwargs are NOT preserved in do_execute() return value
         assert "custom_field" not in result
 
-    @patch("dana_agent.lib.workflows.web_research._search_resource")
+    @patch("dana.lib.workflows.web_research._search_resource")
     def test_do_execute_with_search_failure(self, mock_search_resource):
         """Test SearchWorkflow.do_execute when search fails."""
         mock_search_resource.search_web.return_value = {
@@ -117,7 +117,7 @@ class TestSearchWorkflow:
         assert result["success"] is False
         assert "error" in result
 
-    @patch("dana_agent.lib.workflows.web_research._search_resource")
+    @patch("dana.lib.workflows.web_research._search_resource")
     def test_do_execute_with_custom_max_results(self, mock_search_resource):
         """Test SearchWorkflow.do_execute with custom max_results."""
         mock_search_resource.search_web.return_value = {
@@ -139,7 +139,7 @@ class TestSearchWorkflow:
 
     def test_do_execute_output_structure(self):
         """Test that do_execute returns the expected output structure."""
-        with patch("dana_agent.lib.workflows.web_research._search_resource") as mock_resource:
+        with patch("dana.lib.workflows.web_research._search_resource") as mock_resource:
             mock_resource.search_web.return_value = {
                 "success": True,
                 "query": "Python",
@@ -182,7 +182,7 @@ class TestFetchResultWorkflow:
         assert hasattr(workflow, "_do_execute")
         assert callable(workflow.execute)
 
-    @patch("dana_agent.lib.workflows.web_research._fetch_resource")
+    @patch("dana.lib.workflows.web_research._fetch_resource")
     def test_do_execute_with_url_and_purpose(self, mock_fetch_resource):
         """Test FetchResultWorkflow.do_execute with url and purpose."""
         mock_fetch_resource.fetch_and_extract_single.return_value = {
@@ -213,7 +213,7 @@ class TestFetchResultWorkflow:
         assert result["url"] == "https://example.com"
         assert result["title"] == "Example Page"
 
-    @patch("dana_agent.lib.workflows.web_research._fetch_resource")
+    @patch("dana.lib.workflows.web_research._fetch_resource")
     def test_do_execute_with_empty_url(self, mock_fetch_resource):
         """Test FetchResultWorkflow.do_execute with missing/empty url - validation should catch it."""
         workflow = FetchResultWorkflow()
@@ -232,7 +232,7 @@ class TestFetchResultWorkflow:
         assert "length" in result["message"].lower()
         mock_fetch_resource.fetch_and_extract_single.assert_not_called()
 
-    @patch("dana_agent.lib.workflows.web_research._fetch_resource")
+    @patch("dana.lib.workflows.web_research._fetch_resource")
     def test_do_execute_returns_fetch_result(self, mock_fetch_resource):
         """Test that do_execute returns the fetch result directly."""
         mock_fetch_resource.fetch_and_extract_single.return_value = {
@@ -258,7 +258,7 @@ class TestFetchResultWorkflow:
         # Note: input kwargs are NOT preserved in do_execute() return value
         assert "custom_field" not in result
 
-    @patch("dana_agent.lib.workflows.web_research._fetch_resource")
+    @patch("dana.lib.workflows.web_research._fetch_resource")
     def test_do_execute_output_structure(self, mock_fetch_resource):
         """Test that do_execute returns the expected output structure."""
         mock_fetch_resource.fetch_and_extract_single.return_value = {
@@ -309,7 +309,7 @@ class TestExtractFactWorkflow:
         assert hasattr(workflow, "_do_execute")
         assert callable(workflow.execute)
 
-    @patch("dana_agent.lib.workflows.web_research._extract_resource")
+    @patch("dana.lib.workflows.web_research._extract_resource")
     def test_do_execute_with_content_and_query(self, mock_extract_resource):
         """Test ExtractFactWorkflow.do_execute with content and query."""
         mock_extract_resource.extract_fact.return_value = {
@@ -332,7 +332,7 @@ class TestExtractFactWorkflow:
         assert result["fact"] == "Python was created in 1991"
         assert result["confidence"] == 0.9
 
-    @patch("dana_agent.lib.workflows.web_research._extract_resource")
+    @patch("dana.lib.workflows.web_research._extract_resource")
     def test_do_execute_with_none_values(self, mock_extract_resource):
         """Test ExtractFactWorkflow.do_execute with None values."""
         mock_extract_resource.extract_fact.return_value = {
@@ -347,7 +347,7 @@ class TestExtractFactWorkflow:
         # Should pass None values
         mock_extract_resource.extract_fact.assert_called_once_with(content=None, query=None)
 
-    @patch("dana_agent.lib.workflows.web_research._extract_resource")
+    @patch("dana.lib.workflows.web_research._extract_resource")
     def test_do_execute_returns_extracted_fact(self, mock_extract_resource):
         """Test that do_execute returns the extracted fact directly."""
         mock_extract_resource.extract_fact.return_value = {
@@ -365,7 +365,7 @@ class TestExtractFactWorkflow:
         # Note: input kwargs are NOT preserved in do_execute() return value
         assert "extra" not in result
 
-    @patch("dana_agent.lib.workflows.web_research._extract_resource")
+    @patch("dana.lib.workflows.web_research._extract_resource")
     def test_do_execute_output_structure(self, mock_extract_resource):
         """Test that do_execute returns the expected output structure."""
         mock_extract_resource.extract_fact.return_value = {
@@ -396,7 +396,7 @@ class TestFormatWorkflow:
         assert hasattr(workflow, "_do_execute")
         assert callable(workflow.execute)
 
-    @patch("dana_agent.lib.workflows.web_research._format_resource")
+    @patch("dana.lib.workflows.web_research._format_resource")
     def test_do_execute_with_content_and_metadata(self, mock_format_resource):
         """Test FormatWorkflow.do_execute with content and metadata."""
         mock_format_resource.format_with_metadata.return_value = """# Test Title
@@ -422,7 +422,7 @@ This is the main content."""
         assert "formatted_text" in result
         assert "# Test Title" in result["formatted_text"]
 
-    @patch("dana_agent.lib.workflows.web_research._format_resource")
+    @patch("dana.lib.workflows.web_research._format_resource")
     def test_do_execute_with_empty_content(self, mock_format_resource):
         """Test FormatWorkflow.do_execute with empty content."""
         mock_format_resource.format_with_metadata.return_value = "---\n---\n"
@@ -433,7 +433,7 @@ This is the main content."""
         # Should use empty defaults
         mock_format_resource.format_with_metadata.assert_called_once_with(content="", metadata={})
 
-    @patch("dana_agent.lib.workflows.web_research._format_resource")
+    @patch("dana.lib.workflows.web_research._format_resource")
     def test_do_execute_returns_formatted_dict(self, mock_format_resource):
         """Test that do_execute returns a dict with formatted_text key."""
         mock_format_resource.format_with_metadata.return_value = "Formatted content"
@@ -445,7 +445,7 @@ This is the main content."""
         assert isinstance(result, dict)
         assert result["formatted_text"] == "Formatted content"
 
-    @patch("dana_agent.lib.workflows.web_research._format_resource")
+    @patch("dana.lib.workflows.web_research._format_resource")
     def test_do_execute_output_structure(self, mock_format_resource):
         """Test that do_execute returns the expected output structure."""
         formatted_output = """# Research Report

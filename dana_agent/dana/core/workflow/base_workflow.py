@@ -340,7 +340,7 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
             raise TypeError(f"Can only compose workflows with other workflows, got {type(other)}")
 
         # Create a composite workflow by setting left and right
-        composite = BaseWorkflow(workflow_type=f"{self.workflow_type}|{other.workflow_type}", auto_register=False, agent=self.agent)
+        composite = BaseWorkflow(workflow_type=f"{self.workflow_type}|{other.workflow_type}", auto_register=False)
         composite.left = self
         composite.right = other
         return composite

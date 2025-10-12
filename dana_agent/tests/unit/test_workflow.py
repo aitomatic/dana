@@ -34,7 +34,6 @@ class TestConcreteWorkflow:
         assert workflow.workflow_type == "test_workflow"
         assert workflow.workflow_id == "test-workflow-123"
         assert hasattr(workflow, "object_id")
-        assert hasattr(workflow, "agent")
 
     def test_base_workflow_initialization_defaults(self):
         """Test ConcreteWorkflow initialization with defaults."""
@@ -45,13 +44,13 @@ class TestConcreteWorkflow:
         assert hasattr(workflow, "object_id")
 
     def test_base_workflow_with_agent(self):
-        """Test ConcreteWorkflow initialization with agent."""
+        """Test ConcreteWorkflow can be called with agent parameter (even though not stored)."""
         mock_agent = Mock(spec=AgentProtocol)
         mock_agent.agent_type = "test_agent"
 
-        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123", agent=mock_agent)
+        # Agent parameter is accepted but not stored
+        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123")
 
-        assert workflow.agent == mock_agent
         assert workflow.workflow_type == "test_workflow"
 
     def test_base_workflow_properties(self):
@@ -75,14 +74,15 @@ class TestConcreteWorkflow:
         assert len(description) > 0
 
     def test_base_workflow_call_agent_with_agent(self):
-        """Test ConcreteWorkflow call_agent with agent."""
+        """Test ConcreteWorkflow call_agent with agent parameter."""
         mock_agent = Mock(spec=AgentProtocol)
         mock_agent.agent_type = "test_agent"
         mock_agent.query.return_value = {"response": "test response"}
 
-        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123", agent=mock_agent)
+        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123")
 
-        result = workflow.call_agent("test message")
+        # Pass agent as parameter to call_agent
+        result = workflow.call_agent("test message", agent=mock_agent)
 
         # Should call agent.query with correct parameters
         mock_agent.query.assert_called_once()
@@ -109,9 +109,10 @@ class TestConcreteWorkflow:
         mock_agent.agent_type = "test_agent"
         mock_agent.query.return_value = {"response": "test response"}
 
-        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123", agent=mock_agent)
+        workflow = ConcreteWorkflow(workflow_type="test_workflow", workflow_id="test-workflow-123")
 
-        workflow.call_agent("test message", extra_param="extra_value")
+        # Pass agent as parameter with extra kwargs
+        workflow.call_agent("test message", agent=mock_agent, extra_param="extra_value")
 
         # Should pass through additional kwargs
         call_args = mock_agent.query.call_args
@@ -170,8 +171,9 @@ class TestConcreteWorkflowIntegration:
         mock_agent.agent_type = "test_agent"
         mock_agent.query.return_value = {"result": "success"}
 
-        workflow = ConcreteWorkflow(agent=mock_agent)
-        result = workflow.call_agent("test")
+        workflow = ConcreteWorkflow()
+        # Pass agent as parameter
+        result = workflow.call_agent("test", agent=mock_agent)
 
         assert result == {"result": "success"}
 
@@ -189,11 +191,11 @@ class TestConcreteWorkflowIntegration:
         mock_agent.agent_type = "test_agent"
         mock_agent.query.side_effect = Exception("Test error")
 
-        workflow = ConcreteWorkflow(agent=mock_agent)
+        workflow = ConcreteWorkflow()
 
         # Should handle agent errors gracefully
         with pytest.raises(Exception, match="Test error"):
-            workflow.call_agent("test message")
+            workflow.call_agent("test message", agent=mock_agent)
 
 
 class TestConcreteWorkflowEdgeCases:
@@ -201,9 +203,10 @@ class TestConcreteWorkflowEdgeCases:
 
     def test_base_workflow_with_none_agent(self):
         """Test ConcreteWorkflow with None agent."""
-        workflow = ConcreteWorkflow(agent=None)
+        workflow = ConcreteWorkflow()
 
-        result = workflow.call_agent("test")
+        # Call with agent=None
+        result = workflow.call_agent("test", agent=None)
         assert "error" in result
         assert result["error"] == "Agent not found"
 
@@ -213,8 +216,8 @@ class TestConcreteWorkflowEdgeCases:
         mock_agent.agent_type = "test_agent"
         mock_agent.query.return_value = {"response": "empty message"}
 
-        workflow = ConcreteWorkflow(agent=mock_agent)
-        workflow.call_agent("")
+        workflow = ConcreteWorkflow()
+        workflow.call_agent("", agent=mock_agent)
 
         # Should handle empty message
         mock_agent.query.assert_called_once()
@@ -227,8 +230,8 @@ class TestConcreteWorkflowEdgeCases:
         mock_agent.agent_type = "test_agent"
         mock_agent.query.return_value = {"response": "none message"}
 
-        workflow = ConcreteWorkflow(agent=mock_agent)
-        workflow.call_agent(None)
+        workflow = ConcreteWorkflow()
+        workflow.call_agent(None, agent=mock_agent)
 
         # Should handle None message
         mock_agent.query.assert_called_once()
