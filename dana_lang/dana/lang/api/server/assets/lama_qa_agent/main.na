@@ -1,0 +1,20 @@
+from workflows import final_workflow
+from common import QueryPackage, PROBLEM_STATEMENT_IDENTIFIER_PROMPT
+from datetime.py import datetime
+
+# ENABLE OR DISABLE THIS TO TEST AGENT WITH/WITHOUT KNOWLEDGES
+USE_KNOWLEDGE= True
+
+agent_blueprint Lama:
+    name: str = "Lama"
+    description: str = "Q&A Agent"
+
+def (self: Lama) solve(query: str) -> str:
+    problem_statement = self.chat(PROBLEM_STATEMENT_IDENTIFIER_PROMPT.format(query=query))
+    package = QueryPackage(query=f"{query} {problem_statement}", use_knows=USE_KNOWLEDGE)
+    return final_workflow(package)
+
+this_agent = Lama()
+
+def _main_(query: str) -> str:
+    return this_agent.solve(query)

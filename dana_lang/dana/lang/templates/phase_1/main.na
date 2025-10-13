@@ -1,0 +1,12 @@
+from workflows import workflow
+from common import RetrievalPackage
+
+agent GeorgiaFinanceExpertAgent:
+    name: str = "Georgia Finance Expert Agent"
+    description: str = "Georgia is a specialized agent designed to provide expert advice on financial planning, investment strategies, and compliance with U.S. FinCEN regulations, including AML/BSA content and RIA SAR requirements."
+
+def solve(self : GeorgiaFinanceExpertAgent, query: str) -> str:
+    package = RetrievalPackage(query=query)
+    return workflow(package)
+
+this_agent = GeorgiaFinanceExpertAgent()

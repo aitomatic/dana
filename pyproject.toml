@@ -121,6 +121,10 @@ ignore = [
     "UP035", # deprecated import
 ]
 
+extend-select = [
+    "I"
+]
+
 exclude = [
     "*.na",
     ".git",

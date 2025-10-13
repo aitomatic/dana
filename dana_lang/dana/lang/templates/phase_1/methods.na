@@ -1,0 +1,25 @@
+from knowledges import rag_resource
+from common import QUERY_GENERATION_PROMPT
+from common import QUERY_DECISION_PROMPT
+from common import ANSWER_PROMPT
+from common import RetrievalPackage
+
+def search_document(package: RetrievalPackage) -> RetrievalPackage:
+    query = package.query
+    if package.refined_query != "":
+        query = package.refined_query
+    package.retrieval_result = str(rag_resource.query(query))
+    return package
+
+def refine_query(package: RetrievalPackage) -> RetrievalPackage:
+    if package.should_use_rag:
+        package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query))
+    return package
+
+def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
+    package.should_use_rag = reason(QUERY_DECISION_PROMPT.format(user_input=package.query))
+    return package
+
+def get_answer(package: RetrievalPackage) -> str:
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
+    return reason(prompt)
