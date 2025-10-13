@@ -32,7 +32,7 @@ maintainers = [
 dependencies = [
     # Core LLM Integration
     "openai>=1.55.3",
-    "anthropic>=0.67.0",
+    "anthropic",
     # HTTP client for API calls
     "httpx>=0.27.0",
     # Configuration management

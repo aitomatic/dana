@@ -1,0 +1,89 @@
+import * as React from 'react';
+import { Book, Box3dCenter, HelpCircle, ChatBubble } from 'iconoir-react';
+import { useLocation } from 'react-router-dom';
+
+import { NavMain } from '@/components/nav-main';
+import { TeamSwitcher } from '@/components/team-switcher';
+import { VersionStatus } from '@/components/version-status';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarRail,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+import { useSidebar } from '@/hooks/use-sidebar';
+
+// Import logo as a module
+import logo from '/logo.svg';
+
+// DXA DANA configuration data
+const data = {
+  user: {
+    name: 'Username',
+    email: 'user@example.com',
+    avatar: '',
+  },
+  teams: [
+    {
+      name: 'Aitomatic',
+      logo: () => <img src={logo} alt="Aitomatic" className="rounded-md size-8" />,
+      plan: 'Dana Agent Studio',
+    },
+  ],
+  navMain: [
+    {
+      title: 'Dana Expert Agents',
+      url: '/agents',
+      icon: Box3dCenter,
+    },
+    {
+      title: 'Library',
+      url: '/library',
+      icon: Book,
+    },
+    {
+      title: 'separator',
+      url: '',
+      isSeparator: true,
+    },
+    {
+      title: 'Documentation',
+      url: '/documentation',
+      icon: HelpCircle,
+    },
+    {
+      title: 'Support',
+      url: '/support',
+      icon: ChatBubble,
+    },
+  ],
+};
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const location = useLocation();
+  const { state } = useSidebar();
+
+  // Create navigation items with dynamic active state
+  const navItems = React.useMemo(() => {
+    return data.navMain.map((item) => ({
+      ...item,
+      isActive: location.pathname === item.url,
+    }));
+  }, [location.pathname]);
+
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <TeamSwitcher teams={data.teams} />
+      </SidebarHeader>
+      <SidebarContent className="flex-1">
+        <NavMain items={navItems} />
+      </SidebarContent>
+      <SidebarFooter className="flex flex-col gap-2 p-4 border-t">
+        <VersionStatus className="justify-start" compact={state === 'collapsed'} />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  );
+}

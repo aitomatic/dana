@@ -1,0 +1,28 @@
+from workflows import final_workflow
+from methods import plan_ahead
+from methods import classify_complexity
+from common import State
+from common import FINAL_ANSWER_PROMPT
+
+agent_blueprint Jordan:
+    name: str = "Jordan"
+    description: str = "Financial Analysis Expert with a focus on behavioral finance, technical analysis, and risk management."
+    max_iteration: int = 10
+
+def (self : Jordan) solve(query: str) -> str:
+    complexity = classify_complexity(query)
+    # print(complexity)
+    if complexity["level"] != "COMPLEX":
+        data = State(original_problem=query, current_step=query, steps=[])
+        data = final_workflow(data)
+    else:
+        data = plan_ahead(State(original_problem=query))
+        for step in data.steps:
+            data.current_step = step
+            data = final_workflow(data)
+    return reason(FINAL_ANSWER_PROMPT.format(question=data.original_problem, context=data.context), temperature=0)
+
+this_agent = Jordan()
+
+def _main_(query: str) -> str:
+    return this_agent.solve(query)

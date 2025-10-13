@@ -18,6 +18,7 @@ repos:
       - id: check-yaml
         exclude: ^mkdocs\.yml$
       - id: check-added-large-files
+        exclude: ^dana_lang/dana/lang/contrib/ui/public/screenshots/.*|^dana_lang/dana/lang/api/server/static/.*$
       # - id: check-ast
       - id: check-json
         exclude: ^dana/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
@@ -45,9 +46,11 @@ repos:
         stages: [post-checkout, post-merge, post-rewrite]
       - id: ruff-critical
         name: Critical lint checks (E722, F821)
-        entry: uv run ruff check --select=E722,F821 --exclude=dana/contrib
+        entry: uv run ruff check --select=E722,F821
         language: system
         types: [python]
+        pass_filenames: true
+        exclude: '(\.archived/|dana_lang/dana/lang/contrib/)'
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.

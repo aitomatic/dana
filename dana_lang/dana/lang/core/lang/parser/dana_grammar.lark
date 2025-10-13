@@ -1,0 +1,471 @@
+//
+// Copyright © 2025 Aitomatic, Inc.
+//
+// This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+//
+// DANA language grammar definition
+//
+// This grammar follows KISS/YAGNI principles for maximum LALR parser compatibility.
+// It provides security scopes with colon syntax and property access via dot notation.
+
+%import common.WS_INLINE
+%import common.NUMBER
+%import common.ESCAPED_STRING -> REGULAR_STRING
+%import common.WS
+%declare _INDENT _DEDENT
+
+// Add single-quoted string support  
+SINGLE_QUOTED_STRING: /'([^'\\]|\\.)*'/
+
+// ===== PROGRAM STRUCTURE =====
+// The program is the top-level structure, consisting of a sequence of statements
+// Optional newlines at the beginning and end make the grammar more forgiving
+
+program: _NL* statements _NL*
+
+// A sequence of one or more statements, allowing empty lines
+statements: statement+
+
+// A statement can be either compound (with block) or simple (single line)
+// Allow optional additional newlines between statements and inline comments
+statement: compound_stmt _NL* | simple_stmt [COMMENT] _NL _NL*
+
+// ===== COMPOUND STATEMENTS =====
+compound_stmt: if_stmt
+             | while_stmt
+             | for_stmt
+             | function_def
+             | sync_function_def
+             | try_stmt
+             | with_stmt
+             | definition
+             | singleton_agent_def
+
+block: _NL _INDENT statements _DEDENT
+
+// ===== COMPOUND STATEMENT TYPES =====
+// Simplified if statement structure to avoid LALR conflicts
+// Allow optional comments after colons
+if_stmt: "if" expr ":" [COMMENT] block
+       | "if" expr ":" [COMMENT] block "else" ":" [COMMENT] block
+       | "if" expr ":" [COMMENT] block elif_stmts
+       | "if" expr ":" [COMMENT] block elif_stmts "else" ":" [COMMENT] block
+
+elif_stmts: elif_stmt+
+elif_stmt: "elif" expr ":" [COMMENT] block
+
+// Other compound statements
+while_stmt: "while" expr ":" [COMMENT] block
+for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
+function_def: [decorators] "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+sync_function_def: [decorators] "sync" "def" [receiver_spec] NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+receiver_spec: "(" typed_parameter ")"
+
+try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
+
+// Exception handling clauses
+except_clause: "except" [except_spec] ":" [COMMENT] block
+except_spec: exception_type ["as" NAME] | "as" NAME
+exception_type: expr
+
+with_stmt: "with" (with_context_manager | NAME "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
+definition: (STRUCT | RESOURCE | AGENT_BLUEPRINT | INTERFACE | WORKFLOW) NAME ":" [COMMENT] definition_block -> definition
+singleton_agent_def: AGENT [NAME] "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
+
+docstring: MULTILINE_STRING _NL
+fields_and_functions: (field | function_def | sync_function_def)+
+
+field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
+
+struct_block: _NL _INDENT [docstring] fields_and_functions _DEDENT
+
+// Interface-specific block structure
+interface_block: _NL _INDENT [docstring] interface_members _DEDENT
+
+interface_members: interface_member+
+interface_member: interface_method | embedded_interface | interface_comment
+
+// Interface methods include both behavioral methods and property accessors
+interface_method: NAME "(" [parameters] ")" ["->" basic_type] [COMMENT] _NL
+embedded_interface: NAME [COMMENT] _NL  // For interface embedding
+interface_comment: COMMENT _NL  // Allow standalone comments in interface blocks
+
+definition_block: struct_block | interface_block
+
+singleton_agent_block: _NL _INDENT [docstring] [singleton_agent_fields] _DEDENT
+singleton_agent_fields: singleton_agent_field+
+singleton_agent_field: NAME "=" expr [COMMENT] _NL -> singleton_agent_field
+
+with_context_manager: expr
+mixed_arguments: with_arg ("," with_arg)*
+
+with_arg: kw_arg
+        | expr
+
+kw_arg: NAME "=" expr
+
+// Function parameters
+parameters: typed_parameter ("," [COMMENT] typed_parameter)*
+typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
+
+// ===== TYPE ANNOTATIONS =====
+// Basic type annotation support for KISS implementation with union types
+basic_type: union_type
+
+union_type: single_type (PIPE single_type)*
+
+single_type: generic_type | simple_type
+
+generic_type: simple_type "[" type_argument_list "]"
+
+simple_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE | NAME
+
+type_argument_list: basic_type ("," basic_type)*
+
+// Type tokens - must be defined before NAME for precedence
+INT_TYPE: "int"
+FLOAT_TYPE: "float"
+STR_TYPE: "str"
+BOOL_TYPE: "bool"
+LIST_TYPE: "list"
+DICT_TYPE: "dict"
+TUPLE_TYPE: "tuple"
+SET_TYPE: "set"
+NONE_TYPE: "None"
+ANY_TYPE: "any"
+
+// ===== SIMPLE STATEMENTS =====
+simple_stmt: assignment
+           | declarative_function_assignment
+           | expr_stmt
+           | return_stmt
+           | break_stmt
+           | continue_stmt
+           | pass_stmt
+           | import_stmt
+           | raise_stmt
+           | assert_stmt
+           | comment_stmt
+           | agent_alias
+           | agent_base
+
+comment_stmt: COMMENT
+
+// Agent statements
+agent_alias: AGENT NAME "(" NAME ")" -> agent_alias_def
+agent_base: AGENT NAME -> agent_base_def
+
+// Keywords
+EXPORT.2: "export"
+IMPORT.2: "import"
+FROM.2: "from"
+DEF.2: "def"
+STRUCT.2: "struct"
+RETURN.2: "return"
+SYNC.2: "sync"
+PASS.2: "pass"
+BREAK.2: "break"
+CONTINUE.2: "continue"
+RAISE.2: "raise"
+ASSERT.2: "assert"
+RESOURCE.2: "resource"
+AGENT.2: "agent"
+AGENT_BLUEPRINT.2: "agent_blueprint"
+INTERFACE.2: "interface"
+WORKFLOW.2: "workflow"
+AS.2: "as"
+PRIVATE.2: "private"
+PUBLIC.2: "public"
+LOCAL.2: "local"
+SYSTEM.2: "system"
+
+// Export statement for module exports
+export_stmt: "export" export_names -> export_list
+
+export_names: NAME ("," NAME)*
+
+assignment: target [":" basic_type] "=" expr [COMMENT] | compound_assignment
+declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
+compound_assignment: target compound_op expr
+
+compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
+
+expr_stmt: expr
+return_stmt: "return" [expr]
+break_stmt: "break"
+continue_stmt: "continue"
+pass_stmt: "pass"
+import_stmt: simple_import | from_import
+raise_stmt: "raise" [expr ["from" expr]]
+assert_stmt: "assert" expr ["," expr]
+
+// Module paths for imports
+module_path: NAME ("." NAME)*
+
+// Relative module paths for package imports (e.g., .submodule, ..parent.module)
+relative_module_path: DOT+ [module_path]
+
+// Add DOT token for relative imports
+DOT: "."
+
+// ===== VARIABLES AND ACCESS =====
+// Variable with optional scope prefix
+variable: scoped_var    // Variable with explicit scope (private:x)
+        | simple_name   // Variable with implicit local scope (x)
+        | dotted_access // Property access chain (obj.prop.field)
+
+// Simple variable name (without dots)
+simple_name: NAME
+
+// Property access chain
+dotted_access: simple_name ("." NAME)+
+
+// Scoped variable
+scoped_var: scope_prefix ":" simple_name
+
+// Scope prefixes
+scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
+
+// Assignment targets
+target: atom
+
+// ===== EXPRESSIONS =====
+expr: pipe_expr
+
+pipe_expr: conditional_expr (PIPE conditional_expr)*
+
+// Conditional expressions (ternary operator): expr if condition else expr
+conditional_expr: or_expr ["if" or_expr "else" conditional_expr]
+
+// ===== FUNCTION COMPOSITION EXPRESSIONS =====
+// Only allowed in declarative function definitions
+function_composition_expr: function_pipe_expr
+
+// Function pipe expressions: f1 | f2 | f3
+function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
+
+// Pipeline stages: function expressions with optional named capture
+pipeline_stage: function_expr ["as" NAME]
+
+// Function expressions: function names, function calls, and list literals
+function_expr: function_name | function_call | function_list_literal
+
+// Function name: just a name
+function_name: NAME
+
+// Function call: name with arguments
+function_call: NAME "(" [arguments] ")"
+
+// Function list literal: [f1, f2, f3] for parallel composition
+function_list_literal: "[" [function_expr ("," function_expr)*] "]"
+
+
+
+or_expr: and_expr ("or" and_expr)*
+
+and_expr: not_expr ("and" not_expr)*
+
+not_expr: NOT_OP not_expr | comparison
+
+comparison: sum_expr (comp_op sum_expr)*
+
+comp_op: LT_OP | GT_OP | EQ_OP | GE_OP | LE_OP | NE_OP
+       | IN_OP | NOT_IN_OP | IS_OP | IS_NOT_OP
+
+LT_OP: "<"
+GT_OP: ">"
+EQ_OP: "=="
+GE_OP: ">="
+LE_OP: "<="
+NE_OP: "!="
+IN_OP: "in"
+NOT_IN_OP.3: /\bnot\s+in\b/
+IS_OP: /\bis\b/
+IS_NOT_OP: /\bis\s+not\b/
+
+// Define token patterns with explicit priorities (lexer specific)
+// IMPORTANT: Define longer tokens first to avoid conflicts
+// Compound assignment operators must come before basic operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
+
+// Basic operators after compound operators
+POW: "**"  // Define POW as a distinct token separate from MUL
+ADD: "+" 
+SUB: "-"
+MUL: "*"
+DIV: "/"
+FDIV: "//"
+MOD: "%"
+PIPE: "|"
+DOLLAR_DOLLAR: "$$"
+
+// Expression precedence structure (lowest to highest)
+sum_expr: product ((ADD | SUB) product)*
+product: power ((MUL | DIV | FDIV | MOD) power)*
+
+// Power is right-associative, so use recursion on the right side 
+power: factor (POW power)?
+factor: (ADD | SUB) factor | atom trailer*
+
+trailer: "(" [arguments] ")"    // Function call
+       | "[" slice_list "]"     // Indexing or slicing (single or multi-dimensional)
+       | "." NAME               // Property access
+
+slice_list: slice_or_index ("," slice_or_index)*
+
+slice_or_index: slice_expr | expr
+
+slice_expr: slice_start_only 
+          | slice_stop_only
+          | slice_start_stop
+          | slice_start_stop_step
+          | slice_all
+          | slice_step_only
+
+slice_start_only: expr ":"                    // [start:]
+slice_stop_only: ":" expr                     // [:stop]  
+slice_start_stop: expr ":" expr               // [start:stop]
+slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
+slice_all: ":"                               // [:]
+slice_step_only: "::" expr                   // [::step]
+
+arguments: argument ("," [COMMENT] argument)* [","]
+
+argument: (kw_arg | expr) [COMMENT]
+
+// ===== PLACEHOLDER =====
+placeholder: DOLLAR_DOLLAR -> placeholder_expression
+
+// ===== STRING LITERALS =====
+// Regular string literals, referenced from common
+// any_string: REGULAR_STRING
+//           | fstring
+//           | raw_string
+//           | multiline_string
+
+// Special handling for f-strings - must be before NAME and MULTILINE_STRING to get precedence
+F_STRING_TOKEN.10: /[fF]""".*?"""/s
+                 | /[fF]'''.*?'''/s
+                 | /[fF]["](([^"\\]|\\.|\{[^}]*\})*)["]/ 
+                 | /[fF]['](([^'\\]|\\.|\{[^}]*\})*)[']/ 
+
+// Raw string token - must have higher priority than NAME to match r"string" patterns
+RAW_STRING.4: /[rR]""".*?"""/s
+            | /[rR]'''.*?'''/s
+            | /[rR]["](([^"\\]|\\.)*)["]/
+            | /[rR]['](([^'\\]|\\.)*)[']/
+
+// Multiline string token - must be after F_STRING_TOKEN and RAW_STRING
+MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
+
+// Define the NAME token with higher priority than keywords to handle identifiers containing keywords
+// Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|sync|if|else|elif|while|for|def|struct|resource|workflow|interface|try|except|finally|raise|assert|import|from|with|agent|agent_blueprint|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+
+// Basic string literals with f-strings
+string_literal: REGULAR_STRING
+              | SINGLE_QUOTED_STRING
+              | F_STRING_TOKEN
+              | RAW_STRING
+              | MULTILINE_STRING
+
+// F-string rule used by the transformer
+fstring: F_STRING_TOKEN
+
+// These rules are for parser transformer
+fstring_expr: "{" expr "}"
+fstring_text: /[^{}"']+/
+ESCAPED_BRACE: "{{" | "}}"
+
+// These rules are for transformer references
+raw_string: RAW_STRING
+multiline_string: MULTILINE_STRING
+
+// ===== BASIC VALUES =====
+atom: variable trailer*
+    | NUMBER
+    | string_literal
+    | TRUE
+    | FALSE
+    | NONE
+    | collection
+    | placeholder
+    | lambda_expr
+    | "(" expr ")"
+
+// ===== COLLECTIONS =====
+collection: list | set | dict | tuple
+
+list: "[" [list_items] "]"
+    | list_comprehension
+dict: dict_comprehension
+    | "{" [dict_items] "}"
+tuple: "(" ")"
+     | "(" expr "," [list_items] ")"
+set: set_comprehension
+    | "{" list_items"}"
+
+list_items: expr [COMMENT] ("," [COMMENT] expr [COMMENT])* [","]
+dict_items: key_value_pair [COMMENT] ("," [COMMENT] key_value_pair [COMMENT])* [","]
+key_value_pair: expr ":" expr [COMMENT]
+
+// ===== COMPREHENSIONS =====
+list_comprehension: "[" comprehension_body "]"
+set_comprehension: "{" comprehension_body "}"
+dict_comprehension: "{" dict_comprehension_body "}"
+comprehension_body: or_expr "for" for_targets "in" or_expr [comprehension_if]
+dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_expr [comprehension_if]
+
+
+comprehension_if: "if" or_expr
+
+// ===== FOR LOOP TARGETS =====
+for_targets: NAME ("," NAME)* | "(" for_target_list ")"
+for_target_list: NAME ("," NAME)*
+
+
+
+
+
+// ===== LAMBDA EXPRESSIONS =====
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
+lambda_receiver: "(" NAME ":" basic_type ")"
+lambda_params: NAME [":" basic_type] ["=" expr] ("," NAME [":" basic_type] ["=" expr])*
+
+// ===== WHITESPACE AND COMMENTS =====
+// Modified to handle comments and newlines better
+// Include comments in the newline pattern to handle them together
+_NL: /(\r?\n[\t ]*)+/
+
+%ignore WS_INLINE
+%ignore /[ \t\f]+/
+// Don't ignore comments - handle them explicitly
+// %ignore /#[^\n]*/
+COMMENT: /#[^\n]*/
+
+// TRUE, FALSE, NONE tokens must be defined above NAME for precedence
+TRUE.2: "True" | "true" | "TRUE"
+FALSE.2: "False" | "false" | "FALSE"
+NONE.2: "None" | "none" | "NONE" | "null" | "NULL"
+
+NOT_OP.2: "not"
+
+// AS token for import statements - already defined above with priority 2
+
+// AT token for decorators
+AT: "@"
+
+simple_import: "import" module_path [AS NAME] [COMMENT]
+from_import: "from" (relative_module_path | module_path) "import" (import_name_list | STAR) [COMMENT]
+import_name_list: import_name ("," import_name)*
+import_name: NAME [AS NAME]
+
+// Star token for star imports
+STAR: "*"
+
+// ===== DECORATORS =====
+decorators: decorator+
+decorator: AT NAME ["(" [arguments] ")"] _NL*

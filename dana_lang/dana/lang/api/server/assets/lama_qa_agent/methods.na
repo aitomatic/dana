@@ -1,0 +1,26 @@
+from all_resources import knows
+from all_resources import docs
+from common import QueryPackage
+from datetime.py import datetime
+from common import QUERY_GENERATION_PROMPT, SYSTEM_PROMPT, ANSWER_PROMPT
+
+def refine_query(package: QueryPackage) -> QueryPackage:
+    package.refined_query = reason(QUERY_GENERATION_PROMPT.format(query=package.query), temperature=0.1)
+    return package
+
+def query_document(data : QueryPackage) -> QueryPackage:
+    chunks = docs.query(f"{data.query} {data.refined_query}")
+    data.chunks = chunks
+    return data
+
+def query_knowledge(data : QueryPackage) -> QueryPackage:
+    if data.use_knows == True:
+        knowledges = knows.query(f"{data.query} {data.refined_query}")
+    else:
+        knowledges = ""
+    data.knowledges = knowledges
+    return data
+
+def final_answer(data : QueryPackage) -> QueryPackage:
+    return reason(ANSWER_PROMPT.format(current_time=datetime.now().date(), system_prompt=SYSTEM_PROMPT, context_str=data.chunks, knowledge_str=data.knowledges, query=data.query))
+    
