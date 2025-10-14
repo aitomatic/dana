@@ -37,23 +37,36 @@ class AnthropicProvider(LLMProvider):
             api_key_env = config.get("api_key_env") if config else "ANTHROPIC_API_KEY"
             raise ValueError(f"Anthropic API key not found. Set {api_key_env} environment variable.")
 
-        # Use official Anthropic client
-        self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
+        # Use official Anthropic client with prompt caching beta header
+        self.client = anthropic.AsyncAnthropic(api_key=self.api_key, default_headers={"anthropic-beta": "prompt-caching-2024-07-31"})
 
     async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """Send messages to Anthropic and get a response."""
         try:
             # Convert our message format to Anthropic format
             system_message = None
+            system_cache_control = None
             anthropic_messages = []
 
             for msg in messages:
                 if msg.role == "system":
                     system_message = msg.content
+                    system_cache_control = msg.cache_control
                 elif msg.role == "user":
-                    anthropic_messages.append({"role": "user", "content": msg.content})
+                    if msg.cache_control:
+                        user_msg = {"role": "user", "content": [{"type": "text", "text": msg.content, "cache_control": msg.cache_control}]}
+                    else:
+                        user_msg = {"role": "user", "content": msg.content}
+                    anthropic_messages.append(user_msg)
                 elif msg.role == "assistant":
-                    anthropic_messages.append({"role": "assistant", "content": msg.content})
+                    if msg.cache_control:
+                        assistant_msg = {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg.content, "cache_control": msg.cache_control}],
+                        }
+                    else:
+                        assistant_msg = {"role": "assistant", "content": msg.content}
+                    anthropic_messages.append(assistant_msg)
 
             # Prepare request parameters
             request_kwargs = {
@@ -62,9 +75,12 @@ class AnthropicProvider(LLMProvider):
                 "max_tokens": kwargs.get("max_tokens", 1000),
             }
 
-            # Add system message if present
+            # Add system message if present (with cache_control support)
             if system_message:
-                request_kwargs["system"] = system_message
+                if system_cache_control:
+                    request_kwargs["system"] = [{"type": "text", "text": system_message, "cache_control": system_cache_control}]
+                else:
+                    request_kwargs["system"] = system_message
 
             # Call Anthropic API
             response = await self.client.messages.create(**request_kwargs)

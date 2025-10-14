@@ -121,3 +121,101 @@ class HuggingFaceProvider(LLMProvider):
         except Exception as e:
             logger.error("Hugging Face API error", error=str(e), error_type=type(e).__name__)
             raise
+
+    async def chat_tgi(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
+        """Send messages to Hugging Face using TGI native endpoint with cache_prompt support.
+
+        Note: Only works with self-hosted TGI or dedicated HF Inference Endpoints.
+        Most providers (including Fireworks) only expose OpenAI-compatible API.
+        """
+        import httpx
+
+        try:
+            # Convert messages to a single prompt string (TGI native format)
+            prompt_parts = []
+            for msg in messages:
+                if msg.role == "system":
+                    prompt_parts.append(f"System: {msg.content}")
+                elif msg.role == "user":
+                    prompt_parts.append(f"User: {msg.content}")
+                elif msg.role == "assistant":
+                    prompt_parts.append(f"Assistant: {msg.content}")
+
+            prompt = "\n\n".join(prompt_parts)
+            if not prompt.endswith("Assistant:"):
+                prompt += "\n\nAssistant:"
+
+            # Build TGI native request
+            # Base URL should be without /v1 suffix for native endpoint
+            base_url = self.base_url.rstrip("/v1") if self.base_url else ""
+            endpoint = f"{base_url}/generate"
+
+            request_data = {
+                "inputs": prompt,
+                "parameters": {
+                    "max_new_tokens": kwargs.get("max_tokens", 1000),
+                    "temperature": kwargs.get("temperature", 0.7),
+                    "top_p": kwargs.get("top_p", 0.9),
+                    "do_sample": kwargs.get("temperature", 0.7) > 0,
+                },
+            }
+
+            # Add cache_prompt if specified
+            if kwargs.get("cache_prompt", False):
+                request_data["parameters"]["cache_prompt"] = True
+
+            # Make direct HTTP request to TGI native endpoint
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    endpoint,
+                    json=request_data,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                )
+                response.raise_for_status()
+                result = response.json()
+
+            # Parse TGI response
+            # TGI returns: {"generated_text": "...", "details": {...}}
+            if isinstance(result, dict):
+                content = result.get("generated_text", "")
+                details = result.get("details", {})
+
+                # Extract usage if available
+                usage = None
+                if details:
+                    usage = {
+                        "prompt_tokens": details.get("prefill", [{}])[0].get("length", 0) if details.get("prefill") else 0,
+                        "completion_tokens": details.get("generated_tokens", 0),
+                        "total_tokens": (
+                            details.get("prefill", [{}])[0].get("length", 0) + details.get("generated_tokens", 0)
+                            if details.get("prefill")
+                            else details.get("generated_tokens", 0)
+                        ),
+                    }
+
+                return LLMResponse(
+                    content=content,
+                    model=self.model,
+                    usage=usage,
+                    finish_reason=details.get("finish_reason"),
+                    tool_calls=None,
+                )
+            else:
+                # Fallback for unexpected response format
+                return LLMResponse(
+                    content=str(result),
+                    model=self.model,
+                    usage=None,
+                    finish_reason=None,
+                    tool_calls=None,
+                )
+
+        except httpx.HTTPStatusError as e:
+            logger.error("TGI native API HTTP error", status_code=e.response.status_code, error=str(e))
+            raise
+        except Exception as e:
+            logger.error("TGI native API error", error=str(e), error_type=type(e).__name__)
+            raise
