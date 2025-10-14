@@ -596,7 +596,70 @@ class StructuredDataNavigationWorkflow(BaseWorkflow):
 
 ## Resource Integration Patterns
 
-### Pattern 11: Module-Level Resource Instantiation
+### Pattern 11: Workflow Result Unwrapping
+
+**Intent**: Properly access results when composing workflows
+
+**Problem**: `workflow.execute()` wraps return value in `{"result": {...}}` structure
+
+**Structure**:
+```python
+class OrchestrationWorkflow(BaseWorkflow):
+    def _do_execute(self, **kwargs):
+        # Execute sub-workflow
+        result = SubWorkflow().execute(**kwargs)
+
+        # MUST unwrap the nested result
+        inner_result = result.get("result", {})
+
+        # Now access the actual data
+        if inner_result.get("success"):
+            data = inner_result.get("data", [])
+            # Process data...
+```
+
+**Real Example**: BatchOrchestrationWorkflow
+```python
+class BatchOrchestrationWorkflow(BaseWorkflow):
+    def _do_execute(self, **kwargs):
+        for province in provinces:
+            # Execute discovery workflow
+            discovery_result = self.discovery_workflow.execute(province=province)
+
+            # UNWRAP: workflow.execute() returns {"result": {...}}
+            inner_result = discovery_result.get("result", {})
+
+            # Access actual result data
+            if inner_result.get("success"):
+                companies = inner_result.get("companies", [])
+                all_discovered.extend(companies)
+```
+
+**Key Points**:
+- `workflow.execute()` always wraps `_do_execute()` return in `{"result": ...}`
+- This enables middleware, logging, and error tracking
+- When composing workflows, always unwrap with `.get("result", {})`
+- Agent convenience methods should also unwrap before returning to user
+
+**Safe Unwrapping Helper**:
+```python
+def unwrap_workflow_result(result: dict) -> dict:
+    """Safely unwrap the nested result from workflow.execute()."""
+    return result.get("result", {})
+
+# Usage:
+result = SubWorkflow().execute(**kwargs)
+inner = unwrap_workflow_result(result)
+```
+
+**When to Use**:
+- Always when calling `workflow.execute()` from within another workflow
+- In agent convenience methods that wrap workflow execution
+- Never needed within `_do_execute()` itself (no wrapping at that level)
+
+---
+
+### Pattern 12: Module-Level Resource Instantiation
 
 **Intent**: Share resource instances across workflows in same module
 
@@ -654,7 +717,7 @@ class GoogleLookupWorkflow(BaseWorkflow):
 
 ---
 
-### Pattern 12: Instance-Level Resource Ownership
+### Pattern 13: Instance-Level Resource Ownership
 
 **Intent**: Workflow owns and manages its resources internally
 
@@ -701,7 +764,7 @@ class ExpertInterviewWorkflow(BaseWorkflow):
 
 ## Performance Patterns
 
-### Pattern 13: Fast Path Optimization
+### Pattern 14: Fast Path Optimization
 
 **Intent**: Optimize for common, simple cases
 
@@ -741,7 +804,7 @@ def _do_execute(self, **kwargs):
 
 ---
 
-### Pattern 14: Batch Operations
+### Pattern 15: Batch Operations
 
 **Intent**: Process multiple items efficiently
 
@@ -878,8 +941,12 @@ def _do_execute(self, **kwargs):
 | Pre/Post Hooks | Transform inputs/outputs | `pre_callable`, `post_callable` |
 | Input Validation | Enforce contracts | `@validate_input` decorator |
 | Graceful Degradation | Handle failures | try/except with fallbacks |
+| Custom Validation | Complex conditions | Structured error responses |
+| **Result Unwrapping** | **Compose workflows** | **`.get("result", {})`** |
 | Module-Level Resources | Share resources | Instantiate at module level |
+| Instance-Level Resources | Stateful resources | Store as instance attributes |
 | Fast Path | Optimize common cases | Early return for simple cases |
+| Batch Operations | Process multiple items | Batch processing |
 
 ---
 

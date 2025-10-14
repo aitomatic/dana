@@ -540,4 +540,5 @@ After completing the design:
 - [Agent Design Patterns](./agent_design_patterns.md) - Practical patterns from successful agents
 - [Workflow Design Patterns](./workflow_design_patterns.md) - Workflow orchestration techniques
 - [Resource Design Patterns](./resource_design_patterns.md) - Resource design best practices
+- [Implementation Pitfalls](./implementation_pitfalls.md) - Common mistakes and fixes from real implementations
 - [Examples](./examples/) - Worked examples applying this methodology

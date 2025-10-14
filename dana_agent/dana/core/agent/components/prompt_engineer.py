@@ -60,26 +60,67 @@ class PromptEngineer:
 
     def _get_lib_prompt_file(self, class_name: str) -> str:
         """Get lib/prompts file path."""
-        project_root = self._find_project_root()
+        project_root = self._find_library_root()
         return os.path.join(project_root, "lib", "prompts", f"{class_name}.xml")
 
     def _get_core_prompt_file(self, class_name: str) -> str:
         """Get core/prompts file path."""
-        project_root = self._find_project_root()
+        project_root = self._find_library_root()
         return os.path.join(project_root, "core", "prompts", f"{class_name}.xml")
 
     def _get_co_located_prompt_file(self, class_name: str) -> str:
-        """Get co-located prompt file path."""
+        """Get co-located prompt file path - searches multiple locations relative to agent file."""
         module_name = self._agent.__class__.__module__
         module = sys.modules[module_name]
         module_file = module.__file__
         if module_file is None:
             return ""
-        module_dir = os.path.dirname(module_file)
-        return os.path.join(module_dir, f"{class_name}.xml")
 
-    def _find_project_root(self) -> str:
-        """Find project root by looking for pyproject.toml or setup.py."""
+        module_dir = os.path.dirname(module_file)
+
+        # Try multiple extensions
+        extensions = [".xml", ".prt"]
+
+        # Priority 1: Same directory as agent .py
+        for ext in extensions:
+            path = os.path.join(module_dir, f"{class_name}{ext}")
+            if os.path.exists(path):
+                return path
+
+        # Priority 2: Under prompts/ subdirectory
+        for ext in extensions:
+            path = os.path.join(module_dir, "prompts", f"{class_name}{ext}")
+            if os.path.exists(path):
+                return path
+
+        # Priority 3+: Walk up directories looking for prompts/ folder
+        # Stop at project root (look for pyproject.toml, setup.py, or git root)
+        current_dir = module_dir
+        for _ in range(10):  # Max 10 levels up
+            parent_dir = os.path.dirname(current_dir)
+            if parent_dir == current_dir:  # Reached filesystem root
+                break
+
+            # Check for prompts/ in parent
+            for ext in extensions:
+                path = os.path.join(parent_dir, "prompts", f"{class_name}{ext}")
+                if os.path.exists(path):
+                    return path
+
+            # Stop if we hit a project root marker
+            if (
+                os.path.exists(os.path.join(parent_dir, "pyproject.toml"))
+                or os.path.exists(os.path.join(parent_dir, "setup.py"))
+                or os.path.exists(os.path.join(parent_dir, ".git"))
+            ):
+                break
+
+            current_dir = parent_dir
+
+        return ""
+
+    def _find_library_root(self) -> str:
+        """Find dana library root (not agent project root) by looking for pyproject.toml or setup.py."""
         module_name = self.__class__.__module__
         depth = module_name.count(".")
 

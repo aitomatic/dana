@@ -8,7 +8,8 @@ Main workflow that coordinates:
 """
 
 from dana.common.protocols.types import DictParams
-from dana.core.workflow.base_workflow import BaseWorkflow, validate_input, validate_output
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
 
 
 class BatchOrchestrationWorkflow(BaseWorkflow):
@@ -23,16 +24,27 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
     Provides incremental output after each batch.
     """
 
-    def __init__(self, workflow_id: str | None = None, **kwargs):
+    def __init__(self, workflow_id: str | None = None, approval_callback=None, **kwargs):
+        """
+        Initialize BatchOrchestrationWorkflow.
+
+        Args:
+            workflow_id: Unique workflow identifier
+            approval_callback: Optional function(gate_data: dict) -> bool
+                Called at each gate. Returns True to proceed, False to abort.
+                Gate types: "discovery", "enrichment", "final"
+            **kwargs: Additional workflow parameters
+        """
         super().__init__(workflow_id=workflow_id or "batch-orchestration", **kwargs)
 
-        from .company_discovery import CompanyDiscoveryWorkflow
-        from .company_enrichment import CompanyEnrichmentWorkflow
-        from .mece_validation import MECEValidationWorkflow
+        from workflows.company_discovery import CompanyDiscoveryWorkflow
+        from workflows.company_enrichment import CompanyEnrichmentWorkflow
+        from workflows.mece_validation import MECEValidationWorkflow
 
         self.discovery_workflow = CompanyDiscoveryWorkflow()
         self.enrichment_workflow = CompanyEnrichmentWorkflow()
         self.validation_workflow = MECEValidationWorkflow()
+        self.approval_callback = approval_callback
 
     @validate_input(
         provinces={"required": True, "type": list, "min_length": 1},
@@ -80,12 +92,26 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
             for province in provinces:
                 discovery_result = self.discovery_workflow.execute(province=province, max_results=max_per_province or 100)
 
-                if discovery_result["success"]:
-                    companies = discovery_result["result"]["companies"]
+                # Unwrap the result
+                inner_result = discovery_result.get("result", {})
+                if inner_result.get("success"):
+                    companies = inner_result.get("companies", [])
                     all_discovered.extend(companies)
 
             if not all_discovered:
                 return {"success": False, "error": "No companies discovered", "batches": [], "summary": {}}
+
+            # >>> GATE 1: DISCOVERY APPROVAL <<<
+            if self.approval_callback:
+                gate_data = {
+                    "gate": "discovery",
+                    "total_companies": len(all_discovered),
+                    "provinces": provinces,
+                    "sample": all_discovered[:10],  # Show first 10 companies
+                }
+                approved = self.approval_callback(gate_data)
+                if not approved:
+                    return {"success": False, "aborted_at": "discovery", "batches": [], "summary": {}}
 
             # Phase 2: Enrichment (batched)
             enriched_batches = []
@@ -103,18 +129,71 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
                         company_name=company["name"], tax_id=company["tax_id"], province=company["province"]
                     )
 
-                    if enrich_result["success"]:
-                        enriched_company = enrich_result["result"]["enriched_company"]
+                    # Unwrap the result
+                    inner_result = enrich_result.get("result", {})
+                    if inner_result.get("success"):
+                        enriched_company = inner_result.get("enriched_company", {})
                         enriched_batch.append(enriched_company)
                         all_enriched.append(enriched_company)
 
                 # Store batch
                 enriched_batches.append({"batch_number": batch_number, "companies": enriched_batch, "count": len(enriched_batch)})
 
+                # >>> GATE 2: ENRICHMENT PROGRESS REVIEW (every 5 batches) <<<
+                if self.approval_callback and batch_number % 5 == 0:
+                    quality_preview = self._compute_quality_preview(all_enriched)
+                    gate_data = {
+                        "gate": "enrichment",
+                        "batch_number": batch_number,
+                        "total_batches": (len(all_discovered) + batch_size - 1) // batch_size,  # Ceiling division
+                        "enriched_so_far": len(all_enriched),
+                        "total_to_enrich": len(all_discovered),
+                        "sample": enriched_batch[:5],  # Show 5 from latest batch
+                        "quality_preview": quality_preview,
+                    }
+                    approved = self.approval_callback(gate_data)
+                    if not approved:
+                        return {
+                            "success": False,
+                            "aborted_at": f"enrichment_batch_{batch_number}",
+                            "batches": enriched_batches,
+                            "summary": {
+                                "total_companies": len(all_enriched),
+                                "provinces": provinces,
+                                "batches_created": len(enriched_batches),
+                            },
+                        }
+
             # Phase 3: Validation
             validation_result = self.validation_workflow.execute(companies=all_enriched, expected_provinces=provinces)
 
-            mece_report = validation_result["result"]["mece_report"] if validation_result["success"] else {}
+            # Unwrap the result
+            inner_result = validation_result.get("result", {})
+            mece_report = inner_result.get("mece_report", {}) if inner_result.get("success") else {}
+
+            # >>> GATE 3: FINAL APPROVAL <<<
+            if self.approval_callback:
+                quality_report = self._compute_quality_preview(all_enriched)
+                gate_data = {
+                    "gate": "final",
+                    "total_companies": len(all_enriched),
+                    "provinces": provinces,
+                    "mece_report": mece_report,
+                    "quality_report": quality_report,
+                }
+                approved = self.approval_callback(gate_data)
+                if not approved:
+                    return {
+                        "success": False,
+                        "aborted_at": "final_review",
+                        "batches": enriched_batches,
+                        "summary": {
+                            "total_companies": len(all_enriched),
+                            "provinces": provinces,
+                            "batches_created": len(enriched_batches),
+                            "mece_report": mece_report,
+                        },
+                    }
 
             return {
                 "success": True,
@@ -129,3 +208,37 @@ class BatchOrchestrationWorkflow(BaseWorkflow):
 
         except Exception as e:
             return {"success": False, "error": str(e), "batches": [], "summary": {}}
+
+    def _compute_quality_preview(self, companies: list[dict]) -> dict:
+        """
+        Compute quality distribution for enriched companies.
+
+        Args:
+            companies: List of enriched company dictionaries
+
+        Returns:
+            {
+                "high": int,    # confidence >= 0.8
+                "medium": int,  # 0.5 <= confidence < 0.8
+                "low": int,     # confidence < 0.5
+                "high_pct": float,
+                "medium_pct": float,
+                "low_pct": float
+            }
+        """
+        if not companies:
+            return {"high": 0, "medium": 0, "low": 0, "high_pct": 0.0, "medium_pct": 0.0, "low_pct": 0.0}
+
+        high = sum(1 for c in companies if c.get("confidence", 0) >= 0.8)
+        medium = sum(1 for c in companies if 0.5 <= c.get("confidence", 0) < 0.8)
+        low = sum(1 for c in companies if c.get("confidence", 0) < 0.5)
+        total = len(companies)
+
+        return {
+            "high": high,
+            "medium": medium,
+            "low": low,
+            "high_pct": (high / total * 100) if total > 0 else 0,
+            "medium_pct": (medium / total * 100) if total > 0 else 0,
+            "low_pct": (low / total * 100) if total > 0 else 0,
+        }
