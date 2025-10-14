@@ -32,6 +32,7 @@ class LLMMessage:
 
     content: str
     role: str  # "system", "user", "assistant"
+    cache_control: dict | None = None  # For Anthropic prompt caching
 
 
 @dataclass
@@ -40,6 +41,7 @@ class SystemLLMMessage(LLMMessage):
 
     content: str
     role: str = "system"  # Hard-coded role
+    cache_control: dict | None = None  # For Anthropic prompt caching
 
 
 @dataclass

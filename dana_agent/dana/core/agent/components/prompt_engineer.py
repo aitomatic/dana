@@ -272,7 +272,6 @@ class PromptEngineer:
         3. DECISION_TREE - How to decide actions
         4. EXAMPLES - Learn by demonstration (middle for max impact)
         6. AVAILABLE_TARGETS - Unified registry
-        7. STATE_INFO - Current environment (recency)
         """
         return f"""
 {self._get_preamble_section()}
@@ -286,8 +285,6 @@ class PromptEngineer:
 {self._get_examples_section()}
 
 {self._get_available_targets_section()}
-
-{self._get_state_info_section()}
 
 {self._get_postscript_section()}
 """.strip()

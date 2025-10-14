@@ -1,0 +1,121 @@
+"""
+Resource Template
+
+Copy this template to create a new resource.
+Replace all [PLACEHOLDER] text with your specific implementation.
+"""
+
+from dana.core.resource.base_resource import BaseResource
+from dana.common.protocols import DictParams
+from dana.common.protocols.war import tool_use
+from dana.common.observable import observable
+
+
+class [ResourceName]Resource(BaseResource):
+    """
+    <PUBLIC_DESCRIPTION>
+    [Describe what this resource does - appears in agent system prompts]
+
+    Provides methods for:
+    - **method1**: [What it does]
+    - **method2**: [What it does]
+
+    USE CASES:
+    - [Use case 1]
+    - [Use case 2]
+
+    FEATURES:
+    - [Feature 1]
+    - [Feature 2]
+    </PUBLIC_DESCRIPTION>
+    """
+
+    def __init__(self, resource_id: str | None = None, **kwargs):
+        """
+        Initialize [ResourceName]Resource.
+
+        Args:
+            resource_id: Resource identifier (default: "[resource-id]")
+            **kwargs: Additional arguments for BaseResource
+        """
+        super().__init__(resource_id=resource_id or "[resource-id]", **kwargs)
+
+        # Initialize any clients, connections, or state here
+        # self.client = SomeClient()
+
+    @tool_use
+    @observable
+    def method1(self, param1: str, param2: int = 10, **kwargs) -> DictParams:
+        """
+        [Method description]
+
+        Args:
+            param1: [Description]
+            param2: [Description] (default: 10)
+            **kwargs: Additional parameters
+
+        Returns:
+            Dictionary with:
+            - success: bool
+            - result: [result type and description]
+            - error: str (if failed)
+        """
+        try:
+            # Implement your logic here
+            result = self._do_work(param1, param2)
+
+            return {
+                "success": True,
+                "result": result,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "result": None,
+            }
+
+    @tool_use
+    @observable
+    def method2(self, data: dict, **kwargs) -> DictParams:
+        """
+        [Method description]
+
+        Args:
+            data: [Description]
+            **kwargs: Additional parameters
+
+        Returns:
+            Dictionary with results
+        """
+        try:
+            processed = self._process(data)
+
+            return {
+                "success": True,
+                "processed_data": processed,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+    # Private helper methods (no decorators)
+    def _do_work(self, param1: str, param2: int):
+        """Internal helper method"""
+        # Implementation
+        return f"Processed {param1} with {param2}"
+
+    def _process(self, data: dict):
+        """Internal processing"""
+        # Implementation
+        return data
+
+
+# Example usage:
+# resource = [ResourceName]Resource()
+# result = resource.method1("test", 20)
+# print(result)

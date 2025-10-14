@@ -1,0 +1,92 @@
+"""
+Workflow Template
+
+Copy this template to create a new workflow.
+Replace all [PLACEHOLDER] text with your specific implementation.
+"""
+
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
+from dana.common.protocols import DictParams
+
+
+class [WorkflowName]Workflow(BaseWorkflow):
+    """
+    [Brief description of what this workflow does]
+
+    USE FOR: [When to use this workflow]
+    STEPS: [Step1] → [Step2] → [Step3]
+    """
+
+    def __init__(self, workflow_id: str | None = None, **kwargs):
+        """
+        Initialize [WorkflowName]Workflow.
+
+        Args:
+            workflow_id: Workflow identifier (default: "[workflow-id]")
+            **kwargs: Additional arguments for BaseWorkflow
+        """
+        super().__init__(workflow_id=workflow_id or "[workflow-id]", **kwargs)
+
+        # Initialize any resources needed
+        # self.resource = SomeResource()
+
+    @validate_input(
+        param1={"required": True, "type": str, "min_length": 1},
+        param2={"type": int, "min_value": 1, "max_value": 100, "default": 10},
+    )
+    @validate_output(
+        success={"required": True, "type": bool},
+        result={"required": True},
+    )
+    def _do_execute(self, **kwargs) -> DictParams:
+        """
+        Execute the workflow.
+
+        Args:
+            **kwargs: Input parameters containing:
+                param1 (str): [Description] (required)
+                param2 (int): [Description] (default: 10)
+
+        Returns:
+            DictParams: Dictionary with:
+                - success: bool
+                - result: [result description]
+                - [other keys]
+        """
+        param1 = kwargs["param1"]
+        param2 = kwargs["param2"]
+
+        # Implement your workflow logic here
+        # Step 1: [Description]
+        step1_result = self._step1(param1)
+
+        # Step 2: [Description]
+        step2_result = self._step2(step1_result, param2)
+
+        # Step 3: [Description]
+        final_result = self._step3(step2_result)
+
+        return {
+            "success": True,
+            "result": final_result,
+        }
+
+    # Private helper methods for steps
+    def _step1(self, param1: str):
+        """Step 1 logic"""
+        return f"Step1: {param1}"
+
+    def _step2(self, step1_result: str, param2: int):
+        """Step 2 logic"""
+        return f"Step2: {step1_result} with {param2}"
+
+    def _step3(self, step2_result: str):
+        """Step 3 logic"""
+        return f"Final: {step2_result}"
+
+
+# Example usage:
+# workflow = [WorkflowName]Workflow()
+# result = workflow.execute(param1="test", param2=20)
+# print(result)
