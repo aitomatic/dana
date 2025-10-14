@@ -7,7 +7,8 @@ and extracting structured data.
 """
 
 from dana.common.protocols.types import DictParams
-from dana.core.workflow.base_workflow import BaseWorkflow, validate_input, validate_output
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
 
 
 class CompanyEnrichmentWorkflow(BaseWorkflow):
@@ -40,12 +41,12 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         super().__init__(workflow_id=workflow_id or "company-enrichment", **kwargs)
 
         # Import resources
+        from resources.company_data_structuring import CompanyDataStructuringResource
+        from resources.source_provenance import SourceProvenanceResource
+        from resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
+
         from dana.lib.resources.web_research.fetch import FetchResource
         from dana.lib.resources.web_research.search import SearchResource
-
-        from ..resources.company_data_structuring import CompanyDataStructuringResource
-        from ..resources.source_provenance import SourceProvenanceResource
-        from ..resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
 
         self.fetch_resource = FetchResource()
         self.search_resource = SearchResource()
@@ -224,15 +225,43 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         Uses CompanyDataStructuringResource to extract structured data
         from unstructured text.
         """
-        # Define enrichment schema
+        # Define enrichment schema (enhanced)
         schema = {
-            "product_category": {"type": "string", "description": "Product categories (comma-separated)", "required": False},
+            "product_category": {
+                "type": "string",
+                "description": "Detailed product categories: Robusta, Arabica (green, roasted, packaged)",
+                "required": False,
+            },
+            "volume_tons": {
+                "type": "string",
+                "description": "Production volume in tons per year, format as range '100-120' or approximate '~35'",
+                "required": False,
+            },
             "export_status": {"type": "bool", "description": "Whether company exports (true/false)", "required": False},
+            "key_markets": {
+                "type": "string",
+                "description": "Export destination markets (comma-separated): US, EU, KR, Japan, etc.",
+                "required": False,
+            },
             "revenue": {"type": "int", "description": "Annual revenue in VND (number only)", "required": False},
             "years_incorporated": {"type": "int", "description": "Number of years in business", "required": False},
-            "certifications": {"type": "list", "description": "List of certifications (e.g., Fair Trade, Organic)", "required": False},
+            "certifications": {
+                "type": "list",
+                "description": "List of certifications: Fair Trade, Organic, Rainforest Alliance, 4C, UTZ, etc.",
+                "required": False,
+            },
             "full_address": {"type": "string", "description": "Complete street address", "required": False},
             "pic": {"type": "string", "description": "Person in charge / Director name", "required": False},
+            "pic_title": {
+                "type": "string",
+                "description": "Title of person in charge: Sales Dir., Chair, Founder, CEO, Manager, etc.",
+                "required": False,
+            },
+            "affiliate": {
+                "type": "string",
+                "description": "Parent company, group or network affiliation",
+                "required": False,
+            },
         }
 
         # Extract from registry data (higher confidence)
@@ -257,13 +286,23 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
                 merged["district"] = components.get("district")
                 # Province from input (more reliable)
 
-        # Build enriched company record
+        # Classify entity type
+        entity_type = self._classify_entity_type(company_name, merged.get("product_category"))
+
+        # Convert revenue from VND to USD (approximate 1 USD = 25,000 VND)
+        revenue_vnd = merged.get("revenue")
+        revenue_usd = int(revenue_vnd / 25000) if revenue_vnd else None
+
+        # Build enriched company record (enhanced)
         enriched = {
             "name": company_name,
             "tax_id": tax_id,
+            "entity_type": entity_type,
             "product_category": merged.get("product_category"),
+            "volume_tons": merged.get("volume_tons"),
             "export_status": merged.get("export_status"),
-            "revenue": merged.get("revenue"),
+            "key_markets": merged.get("key_markets") if merged.get("export_status") else None,
+            "revenue": revenue_usd,
             "revenue_source": merged.get("revenue_source", "Estimate"),
             "years_incorporated": merged.get("years_incorporated"),
             "certifications": merged.get("certifications") or [],
@@ -271,7 +310,8 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
             "district": merged.get("district"),
             "province": province,
             "pic": merged.get("pic"),
-            "affiliate": None,  # Would extract from registry if available
+            "pic_title": merged.get("pic_title"),
+            "affiliate": merged.get("affiliate"),
             "sources": merged.get("sources", {}),
             "field_confidences": merged.get("field_confidences", {}),
         }
@@ -326,33 +366,93 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
     # DERIVED FIELDS
     # ============================================================================
 
+    def _classify_entity_type(self, company_name: str, product_category: str | None) -> str:
+        """
+        Classify entity type based on company name and structure.
+
+        Uses patterns from Appendix B of design.md.
+        """
+        name_lower = company_name.lower()
+
+        # Cooperative
+        if "htx" in name_lower or "hợp tác xã" in name_lower or "cooperative" in name_lower:
+            return "Cooperative"
+
+        # Export company
+        if "export" in name_lower or "xuất khẩu" in name_lower:
+            return "Export Co"
+
+        # Farm
+        if "farm" in name_lower or "nông trại" in name_lower:
+            return "SME/Farm"
+
+        # Trading company
+        if "thương mại" in name_lower or " tm " in name_lower:
+            return "SME/Trade"
+
+        # Check product category for classification hints
+        if product_category:
+            product_lower = product_category.lower()
+
+            # Private roaster (large scale, branded)
+            if "sản xuất" in name_lower and ("roasted" in product_lower or "packaged" in product_lower):
+                return "Private Roaster"
+
+            # Processor
+            if "processing" in product_lower or "chế biến" in product_lower:
+                return "SME/Processor"
+
+            # Roaster
+            if "roasted" in product_lower or "rang" in product_lower:
+                return "SME/Roaster"
+
+        # Default: SME/Processor
+        return "SME/Processor"
+
     def _compute_derived_fields(self, enriched: dict) -> dict:
         """
-        Compute priority_score and overall_confidence.
+        Compute priority_score (0-5 scale), notes, and overall_confidence.
 
-        Priority Score (0-100):
-        - Revenue weight: 50%
-        - Export status: 30%
-        - Certifications: 20%
+        Priority Score Components:
+        - Revenue: 40% (0-5 based on brackets)
+        - Export: 30% (5 if exports, 0 otherwise)
+        - Certifications: 20% (1 point per cert, max 5)
+        - Volume: 10% (0-5 based on production scale)
         """
-        # Priority score
+        # Revenue score (0-5 scale)
         revenue_score = 0.0
-        if enriched.get("revenue"):
-            # Score based on revenue (logarithmic scale)
-            # 1B VND = 20, 10B = 40, 100B = 60, 1000B = 80, 10000B+ = 100
-            import math
+        revenue_usd = enriched.get("revenue") or 0
+        if revenue_usd > 0:
+            # Revenue brackets (USD):
+            # < 50k: 1, 50k-100k: 2, 100k-200k: 3, 200k-400k: 4, 400k+: 5
+            if revenue_usd >= 400000:
+                revenue_score = 5.0
+            elif revenue_usd >= 200000:
+                revenue_score = 4.0
+            elif revenue_usd >= 100000:
+                revenue_score = 3.0
+            elif revenue_usd >= 50000:
+                revenue_score = 2.0
+            else:
+                revenue_score = 1.0
 
-            revenue_bn = enriched["revenue"] / 1_000_000_000
-            if revenue_bn > 0:
-                revenue_score = min(100, 20 * math.log10(revenue_bn + 1))
+        # Export score (0-5 scale)
+        export_score = 5.0 if enriched.get("export_status") else 0.0
 
-        export_score = 30 if enriched.get("export_status") else 0
-
+        # Certification score (0-5 scale)
         cert_count = len(enriched.get("certifications", []))
-        cert_score = min(20, cert_count * 7)  # Max 20 points for 3+ certs
+        cert_score = min(5.0, cert_count * 1.0)  # 1 point per cert, max 5
 
-        priority_score = revenue_score * 0.5 + export_score + cert_score
+        # Volume score (0-5 scale)
+        volume_score = self._score_volume(enriched.get("volume_tons"))
+
+        # Weighted priority score (0-5 scale)
+        priority_score = min(5.0, revenue_score * 0.40 + export_score * 0.30 + cert_score * 0.20 + volume_score * 0.10)
+
         enriched["priority_score"] = round(priority_score, 2)
+
+        # Generate notes (business intelligence commentary)
+        enriched["notes"] = self._generate_notes(enriched)
 
         # Overall confidence (average of field confidences)
         confidences = enriched.get("field_confidences", {})
@@ -365,6 +465,95 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         enriched["confidence"] = round(overall_conf, 2)
 
         return enriched
+
+    def _score_volume(self, volume_tons: str | None) -> float:
+        """
+        Score production volume on 0-5 scale.
+
+        Handles ranges like "100-120" and approximates like "~35".
+        """
+        if not volume_tons:
+            return 0.0
+
+        # Extract numeric value
+        import re
+
+        numbers = re.findall(r"\d+", volume_tons)
+        if not numbers:
+            return 0.0
+
+        # Use average of range or single value
+        avg_volume = sum(int(n) for n in numbers) / len(numbers)
+
+        # Volume brackets (tons):
+        # < 20: 1, 20-50: 2, 50-100: 3, 100-200: 4, 200+: 5
+        if avg_volume >= 200:
+            return 5.0
+        elif avg_volume >= 100:
+            return 4.0
+        elif avg_volume >= 50:
+            return 3.0
+        elif avg_volume >= 20:
+            return 2.0
+        elif avg_volume > 0:
+            return 1.0
+        else:
+            return 0.0
+
+    def _generate_notes(self, enriched: dict) -> str:
+        """
+        Generate 1-2 sentence business intelligence notes.
+
+        Highlights: scale, certifications, market position, export strength.
+        """
+        notes_parts = []
+
+        # Entity classification
+        entity_type = enriched.get("entity_type", "Company")
+
+        # Scale/Volume
+        volume_tons = enriched.get("volume_tons")
+        if volume_tons:
+            notes_parts.append(f"{entity_type} with {volume_tons} tons production")
+        else:
+            notes_parts.append(entity_type)
+
+        # Export capability
+        if enriched.get("export_status"):
+            markets = enriched.get("key_markets")
+            if markets:
+                notes_parts.append(f"exports to {markets}")
+            else:
+                notes_parts.append("active exporter")
+
+        # Certifications
+        certs = enriched.get("certifications", [])
+        if len(certs) >= 3:
+            notes_parts.append(f"highly certified ({len(certs)} certs)")
+        elif len(certs) >= 1:
+            notes_parts.append(f"certified ({', '.join(certs[:2])})")
+
+        # Years in business (stability)
+        years = enriched.get("years_incorporated")
+        if years and years >= 15:
+            notes_parts.append(f"established {years}+ years")
+        elif years and years >= 10:
+            notes_parts.append("strong track record")
+
+        # Affiliate/Group membership
+        affiliate = enriched.get("affiliate")
+        if affiliate and affiliate.lower() != "none":
+            notes_parts.append(f"member of {affiliate}")
+
+        # Combine into 1-2 sentences
+        if len(notes_parts) <= 3:
+            return ". ".join(notes_parts[:3]) + "."
+        else:
+            # First sentence: type + scale/export
+            sentence1 = ". ".join(notes_parts[:2])
+            # Second sentence: certs + additional
+            sentence2 = ". ".join(notes_parts[2:4])
+            return f"{sentence1}. {sentence2}."
 
     def _record_provenance(self, enriched: dict, tax_id: str):
         """Record provenance for all fields."""
@@ -397,18 +586,24 @@ class CompanyEnrichmentWorkflow(BaseWorkflow):
         return {
             "name": name,
             "tax_id": tax_id,
-            "province": province,
+            "entity_type": "SME/Processor",  # Default classification
             "product_category": None,
+            "volume_tons": None,
             "export_status": None,
+            "key_markets": None,
             "revenue": None,
             "revenue_source": "Unknown",
             "years_incorporated": None,
             "certifications": [],
             "address": None,
             "district": None,
+            "province": province,
             "pic": None,
+            "pic_title": None,
             "affiliate": None,
             "priority_score": 0.0,
+            "notes": "Limited data available.",
             "confidence": 0.2,
             "sources": {},
+            "field_confidences": {},
         }

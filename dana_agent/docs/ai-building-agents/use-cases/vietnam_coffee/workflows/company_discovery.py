@@ -11,7 +11,8 @@ would integrate with actual Vietnamese government APIs and web scraping.
 """
 
 from dana.common.protocols.types import DictParams
-from dana.core.workflow.base_workflow import BaseWorkflow, validate_input, validate_output
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
 
 
 class CompanyDiscoveryWorkflow(BaseWorkflow):
@@ -40,10 +41,10 @@ class CompanyDiscoveryWorkflow(BaseWorkflow):
         super().__init__(workflow_id=workflow_id or "company-discovery", **kwargs)
 
         # Import resources dynamically to avoid circular imports
+        from resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
+
         from dana.lib.resources.web_research.fetch import FetchResource
         from dana.lib.resources.web_research.search import SearchResource
-
-        from ..resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
 
         self.search_resource = SearchResource()
         self.fetch_resource = FetchResource()

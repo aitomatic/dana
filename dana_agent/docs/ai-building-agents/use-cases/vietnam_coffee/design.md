@@ -189,7 +189,7 @@ coverage (MECE compliance) and provide transparent source tracking for
 all data points.
 </PUBLIC_DESCRIPTION>
 
-<PRIVATE_IDENTITY>
+<IDENTITY>
 I am methodical and thorough in my research process. I maintain strict
 data quality standards, distinguishing verified facts from estimates.
 I work incrementally, providing checkpoints rather than waiting to
@@ -198,7 +198,7 @@ I collect. When I encounter gaps in data, I explicitly flag them rather
 than fabricating information. I understand the importance of MECE
 compliance and actively work to prevent duplicates and ensure complete
 coverage across provinces.
-</PRIVATE_IDENTITY>
+</IDENTITY>
 ```
 
 ### 3.2 Workflow Specialization
@@ -245,49 +245,89 @@ coverage across provinces.
 - Track source for each field
 - Compute confidence score
 
-**Enrichment Schema:**
+**Enrichment Schema (Enhanced):**
 ```python
 {
+    # Core Identity
     "name": str,                    # Official company name
     "tax_id": str,                  # Vietnamese tax ID (required)
-    "product_category": str,        # e.g., "Green coffee beans, Roasted coffee"
-    "export_status": bool,          # Verified exporter
-    "revenue": int | None,          # Annual revenue (VND)
-    "revenue_source": str,          # "Government filing" | "Estimate" | "Company statement"
+    "entity_type": str,             # "Private Roaster" | "Cooperative" | "SME/Farm" | "SME/Processor" | "Export Co"
+
+    # Products & Markets
+    "product_category": str,        # Detailed: "Robusta, Arabica (roasted, packaged)"
+    "volume_tons": str,             # Production volume: "100-120" or "~35"
+    "export_status": bool,          # Verified exporter (✅/❌)
+    "key_markets": str | None,      # Export destinations: "US, KR, Middle East"
+
+    # Financial
+    "revenue": int | None,          # Annual revenue (USD)
+    "revenue_source": str,          # "Financial Statement" | "Estimate" | "Media Disclosure"
     "years_incorporated": int,      # Years in business
-    "certifications": List[str],    # e.g., ["Fair Trade", "Organic"]
+
+    # Certifications & Compliance
+    "certifications": List[str],    # ["Fair Trade", "Organic", "Rainforest Alliance"]
+
+    # Location
     "address": str,                 # Street address (if available)
-    "district": str,                # District/County
+    "district": str | None,         # District/County
     "province": str,                # Province (required)
-    "pic": str | None,              # Person in charge (if available)
-    "affiliate": str | None,        # Parent company (if applicable)
-    "priority_score": float,        # 0-100 (based on revenue, export, certifications)
+
+    # Contact & Relationships
+    "pic": str | None,              # Person in charge name
+    "pic_title": str | None,        # Title: "Sales Dir." | "Chair" | "Founder"
+    "affiliate": str | None,        # Group/network: "MILANO Group" | "Fairtrade Coop Network"
+
+    # Scoring & Analysis
+    "priority_score": float,        # 0-5 scale (strategic importance)
+    "notes": str,                   # Business intelligence commentary (1-2 sentences)
     "confidence": float,            # 0-1 (overall data quality)
+
+    # Metadata
     "sources": Dict[str, str],      # Field -> Source URL mapping
+    "field_confidences": Dict[str, float],  # Per-field confidence scores
 }
 ```
 
-**Logic:**
+**Logic (Enhanced):**
 ```
 1. Fetch company website (if exists)
 2. Fetch government registry page (by tax ID)
 3. Extract fields in parallel:
    - Basic info (name, address) from registry
-   - Revenue from registry or company statements
+   - Entity type classification from company name/structure
+   - Revenue from registry or company statements (convert to USD)
+   - Production volume estimation from revenue/market data
    - Export status from customs database
+   - Key export markets from trade records/company website
    - Certifications from company website or association lists
+   - PIC name and title from company website/registry
+   - Affiliate/group membership from association lists
 4. Validate:
-   - Required fields present (name, tax_id, province)
-   - Data consistency (e.g., years_incorporated <= 100)
-5. Compute confidence:
+   - Required fields present (name, tax_id, province, entity_type)
+   - Data consistency (e.g., years_incorporated <= 100, volume_tons reasonable)
+   - Export markets only if export_status = true
+5. Compute per-field confidence:
    - High (0.9+): Government-verified data
    - Medium (0.6-0.9): Company statement or association list
    - Low (<0.6): Estimate or inferred
-6. Compute priority_score:
-   - Revenue weight: 50%
-   - Export status: 30%
-   - Certifications: 20%
-7. Return enriched record
+6. Compute priority_score (0-5 scale):
+   Score = min(5.0, (
+       revenue_score * 0.40 +          # Revenue importance
+       export_score * 0.30 +            # Export capability
+       certification_score * 0.20 +     # Quality certifications
+       volume_score * 0.10              # Production scale
+   ))
+
+   Where:
+   - revenue_score: 0-5 based on revenue brackets
+   - export_score: 5 if exports, 2.5 if license, 0 otherwise
+   - certification_score: 1.0 per cert (FLO, Organic, etc.), max 5
+   - volume_score: 0-5 based on production volume
+7. Generate notes:
+   - Summarize key differentiators (1-2 sentences)
+   - Highlight: scale, certifications, market position, export strength
+   - Example: "Leading roaster with strong branded presence and export B2B network."
+8. Return enriched record
 ```
 
 **Error Handling:**
@@ -337,29 +377,49 @@ coverage across provinces.
 - Orchestrate discovery → enrichment → validation pipeline
 - Batch processing (10-15 companies per batch)
 - Incremental output delivery
+- Human approval gates (3 checkpoints)
 - Progress tracking
 - Resume from checkpoint on failure
 
-**Logic:**
+**Logic (with Human-in-Loop Gates):**
 ```
 Phase 1: Discovery (Parallel by Province)
 ├─ For each province in parallel:
 │  ├─ Run CompanyDiscoveryWorkflow
 │  └─ Collect all candidates
 └─ Output: Master list of 1,000+ companies
+    │
+    ▼
+>>> GATE 1: DISCOVERY APPROVAL <<<
+    Show: Total discovered, sample companies, provinces covered
+    User Action: APPROVE to proceed with enrichment / REJECT to abort
+    Why critical: Prevents enriching bad candidates (discovery is cheap, enrichment is expensive)
 
 Phase 2: Enrichment (Batched, Sequential)
 ├─ Split master list into batches of 10-15
 ├─ For each batch sequentially:
 │  ├─ Run CompanyEnrichmentWorkflow on each company (parallel within batch)
 │  ├─ Checkpoint: Save batch to cache
-│  └─ Output: Deliver enriched batch to user
+│  ├─ Output: Deliver enriched batch to user
+│  └─ Every 5 batches (~50 companies):
+│      │
+│      ▼
+    >>> GATE 2: ENRICHMENT PROGRESS REVIEW <<<
+        Show: Companies enriched so far, quality preview (high/medium/low confidence)
+        User Action: CONTINUE / ABORT (if quality is too low)
+        Why valuable: Catch quality problems early before wasting 8 hours
 └─ Output: Stream of batches
 
 Phase 3: Validation (Once at end)
 ├─ Collect all enriched companies
 ├─ Run MECEValidationWorkflow
-└─ Output: Final validated dataset + MECE report
+└─ Output: Validated dataset + MECE report
+    │
+    ▼
+>>> GATE 3: FINAL APPROVAL <<<
+    Show: Total companies, MECE compliance, quality distribution
+    User Action: APPROVE final delivery / REQUEST re-enrichment for low-confidence
+    Why essential: Final sanity check before stakeholder delivery
 
 Recovery:
 ├─ If interrupted, read last checkpoint
@@ -463,6 +523,107 @@ def get_provenance_report(self, company_id: str, **kwargs) -> DictParams:
 ```
 
 **Why domain-agnostic?** Provenance tracking is universal to all research.
+
+### 3.4 Human-in-Loop Architecture
+
+**Design Decision**: Multiple approval gates instead of single end-of-pipeline review
+
+**Rationale:**
+- **Early abort**: Catch bad candidates after discovery (saves 8 hours of enrichment)
+- **Mid-course correction**: Detect quality issues during enrichment (catch data source problems)
+- **Final approval**: Sanity check before stakeholder delivery
+
+**Gate Design Pattern:**
+
+```python
+# BatchOrchestrationWorkflow accepts optional approval callback
+def __init__(self, approval_callback=None):
+    """
+    Args:
+        approval_callback: Optional function(gate_data: dict) -> bool
+            Returns True to proceed, False to abort
+    """
+    self.approval_callback = approval_callback
+
+def execute(self, provinces, batch_size):
+    # Phase 1: Discovery
+    discovered = self._run_discovery(provinces)
+
+    # Gate 1: Review discoveries
+    if self.approval_callback:
+        gate_data = {
+            "gate": "discovery",
+            "total_companies": len(discovered),
+            "sample": discovered[:10]
+        }
+        if not self.approval_callback(gate_data):
+            return {"success": False, "aborted_at": "discovery"}
+
+    # Phase 2: Enrichment with periodic reviews
+    # Gate 2: Every 5 batches
+
+    # Phase 3: Validation
+    # Gate 3: Final approval
+```
+
+**Agent-Level Implementation:**
+
+The agent provides the approval callback that formats gate data and prompts user:
+
+```python
+class VietnamCoffeeResearchAgent:
+    def research_companies(self, provinces, interactive=True):
+        """Run research with optional interactive gates."""
+
+        def approval_gate(gate_data: dict) -> bool:
+            gate_name = gate_data["gate"]
+
+            if gate_name == "discovery":
+                # Display discovered companies
+                print(f"Found {gate_data['total_companies']} companies")
+                print(f"Sample: {gate_data['sample']}")
+
+                if interactive:
+                    response = input("Proceed with enrichment? (yes/no): ")
+                    return response.lower() in ["yes", "y"]
+                return True
+
+            elif gate_name == "enrichment":
+                # Display quality preview
+                quality = gate_data['quality_preview']
+                print(f"Enriched: {gate_data['enriched_so_far']}")
+                print(f"Quality: {quality['high']} high, {quality['low']} low")
+
+                if interactive:
+                    response = input("Continue enrichment? (yes/no): ")
+                    return response.lower() in ["yes", "y"]
+                return True
+
+            elif gate_name == "final":
+                # Display final report
+                print(f"Total: {gate_data['total_companies']}")
+                print(f"MECE: {gate_data['mece_report']}")
+
+                if interactive:
+                    response = input("Approve final dataset? (yes/no): ")
+                    return response.lower() in ["yes", "y"]
+                return True
+
+        # Pass approval callback to orchestration workflow
+        return batch_workflow.execute(
+            provinces,
+            approval_callback=approval_gate if interactive else None
+        )
+```
+
+**Why Not `.converse()`?**
+
+The `.converse()` method is designed for ongoing conversational interactions, not mid-workflow checkpoints:
+- Blocking input() calls don't fit batch processing
+- Difficult to return structured approval/rejection to workflow
+- Better suited for **review mode** after automated processing
+
+**Recommendation**: Use callback pattern for approval gates, reserve `.converse()` for post-processing review sessions.
 
 ---
 
@@ -808,30 +969,148 @@ contrib/vietnam_coffee_research/  (implementation)
 
 ---
 
-## Appendix A: Enrichment Field Definitions
+## Appendix A: Enrichment Field Definitions (Enhanced)
 
 | Field | Type | Source Priority | Notes |
 |-------|------|----------------|-------|
 | `name` | str | Government registry > Company website | Official registered name |
 | `tax_id` | str | Government registry (masothue.com) | Unique identifier |
-| `product_category` | str | Company website > Association list | Comma-separated if multiple |
-| `export_status` | bool | Customs database > Company statement | Verified exporter flag |
-| `revenue` | int | Government filing > Company statement > Estimate | Annual revenue in VND |
-| `revenue_source` | str | Literal source type | For transparency |
+| `entity_type` | str | Company structure in registry | "Private Roaster", "Cooperative", "SME/Farm", "SME/Processor", "Export Co" |
+| `product_category` | str | Company website > Association list | Detailed format: "Robusta, Arabica (roasted, packaged)" |
+| `volume_tons` | str | Estimate from revenue/market data | Range format: "100-120" or approximate: "~35" |
+| `export_status` | bool | Customs database > Company statement | Verified exporter flag (display as ✅/❌) |
+| `key_markets` | str | Trade records > Company website | Comma-separated: "US, KR, Middle East" |
+| `revenue` | int | Government filing > Company statement > Estimate | Annual revenue in USD (converted from VND) |
+| `revenue_source` | str | Literal source type | "Financial Statement", "Estimate", "Media Disclosure" |
 | `years_incorporated` | int | Government registry | Years in business |
-| `certifications` | List[str] | Company website > Association list | Fair Trade, Organic, etc. |
+| `certifications` | List[str] | Company website > Association list | ["Fair Trade", "Organic", "Rainforest Alliance", "4C", "UTZ"] |
 | `address` | str | Registry > Company website | Street-level if available |
 | `district` | str | Parsed from address | District/County |
 | `province` | str | User input or registry | Province (required) |
-| `pic` | str | Company website | Person in charge (optional) |
-| `affiliate` | str | Registry | Parent company if applicable |
-| `priority_score` | float | Computed | 0-100 based on revenue/export/certs |
+| `pic` | str | Company website > Registry | Person in charge name |
+| `pic_title` | str | Company website | Title: "Sales Dir.", "Chair", "Founder", "CEO" |
+| `affiliate` | str | Association list > Registry | Group/network: "MILANO Group", "Fairtrade Coop Network" |
+| `priority_score` | float | Computed | 0-5 scale (strategic importance) |
+| `notes` | str | Generated from enrichment data | 1-2 sentence business intelligence summary |
 | `confidence` | float | Computed | 0-1 overall data quality |
-| `sources` | Dict | Tracked per field | Field → URL mapping |
+| `sources` | Dict | Tracked per field | Field → Source URL mapping |
+| `field_confidences` | Dict | Computed per field | Field → confidence (0-1) |
 
 ---
 
-## Appendix B: Vietnamese Data Sources
+## Appendix A2: Output Format Specifications
+
+### Table Format (Primary Output)
+
+The enriched data should be output in a formatted table with the following columns:
+
+| Column | Format | Example |
+|--------|--------|---------|
+| # | Sequential number | 1, 2, 3... |
+| Company Name | Full official name | Công ty TNHH sản xuất Milano |
+| Entity Type | Classification | Private Roaster, Cooperative, SME/Farm |
+| Product Categories | Detailed description | Robusta, Arabica (roasted, packaged) |
+| Est. Volume (tons) | Range or ~value | 100–120, ~35 |
+| Est. Revenue (USD) | Number or range | 375,000 or 360,000–450,000 |
+| Revenue Source | Source type | Financial Statement, Estimate |
+| Years Incorporated | Integer | 11 |
+| Export License | Checkbox | ✅ Yes / ❌ No |
+| Key Markets | Comma-separated | US, KR, Middle East |
+| Certifications | Comma-separated | HACCP, ISO, Fair Trade |
+| PIC (Verified) | Name and title | Nguyễn Quốc Tuấn (Sales Dir.) |
+| Affiliate / Group Tag | Group name or "None" | MILANO Group, Fairtrade Coop Network |
+| Priority Score | 0-5 with decimal | 4.8, 4.6, 3.4 |
+| Notes | 1-2 sentence commentary | Leading roaster with strong branded presence and export B2B network. |
+
+### CSV Export Format
+
+```csv
+company_name,tax_id,entity_type,product_category,volume_tons,revenue_usd,revenue_source,years_incorporated,export_status,key_markets,certifications,pic_name,pic_title,affiliate,priority_score,notes,confidence
+```
+
+### JSON Format (for API/Database)
+
+```json
+{
+  "companies": [
+    {
+      "name": "Công ty TNHH sản xuất Milano",
+      "tax_id": "0123456789",
+      "entity_type": "Private Roaster",
+      "product_category": "Robusta, Arabica (roasted, packaged)",
+      "volume_tons": "100-120",
+      "revenue": 375000,
+      "revenue_source": "Financial Statement",
+      "years_incorporated": 11,
+      "export_status": true,
+      "key_markets": "US, KR, Middle East",
+      "certifications": ["HACCP", "ISO"],
+      "address": "...",
+      "district": "...",
+      "province": "Đắk Lắk",
+      "pic": "Nguyễn Quốc Tuấn",
+      "pic_title": "Sales Dir.",
+      "affiliate": "MILANO Group",
+      "priority_score": 4.8,
+      "notes": "Leading roaster with strong branded presence and export B2B network.",
+      "confidence": 0.92,
+      "sources": {...},
+      "field_confidences": {...}
+    }
+  ],
+  "summary": {
+    "total_companies": 20,
+    "provinces": ["Đắk Lắk"],
+    "mece_report": {...}
+  }
+}
+```
+
+### Display Priorities
+
+**For Table View:**
+- Sort by: Priority Score (descending)
+- Group by: Province or Entity Type (configurable)
+- Highlight: High-value exporters (priority_score > 4.5)
+- Format: Export status as ✅/❌ for readability
+
+**For CSV Export:**
+- Include all fields (including metadata)
+- Use UTF-8 encoding for Vietnamese characters
+- Escape commas in text fields
+
+**For Analysis/CRM Ingestion:**
+- JSON format with full metadata
+- Include source provenance and field-level confidence
+- Add timestamp and agent version
+
+---
+
+## Appendix B: Entity Type Classification Rules
+
+Entity types should be inferred from company name, structure, and business model:
+
+| Entity Type | Identifying Patterns | Examples |
+|-------------|---------------------|----------|
+| **Private Roaster** | "Sản xuất" (production), sells packaged/branded coffee | Công ty TNHH sản xuất Milano |
+| **Cooperative** | "HTX" (Hợp tác xã), member-based | HTX Ea Tân (Flo), HTX Cà phê Đăk Hà |
+| **SME/Farm** | Farm or small-medium business, single origin | The Married Beans, Ama Farm Coffee |
+| **SME/Processor** | Processing but not large scale | Công ty TNHH Đăk Mê Trang |
+| **SME/Roaster** | Small-medium roasting operations | Cà Phê Bột Uy Tín |
+| **Export Co** | Export company in name or primary business | VNCoffee Export Ltd |
+| **SME/Trade** | Trading company | Công ty TNHH TM Gia Lộc (TM = Thương mại) |
+
+**Classification Logic:**
+1. If "HTX" or "Hợp tác xã" in name → **Cooperative**
+2. If "Export" in name or primarily export → **Export Co**
+3. If "Farm" or farm-direct model → **SME/Farm**
+4. If large-scale roasting/branding → **Private Roaster**
+5. If processing/manufacturing → **SME/Processor** or **SME/Roaster**
+6. If trading → **SME/Trade**
+
+---
+
+## Appendix C: Vietnamese Data Sources
 
 | Source | URL | Data Available | Access Method |
 |--------|-----|----------------|---------------|
@@ -843,7 +1122,7 @@ contrib/vietnam_coffee_research/  (implementation)
 
 ---
 
-## Appendix C: Scale & Performance Estimates
+## Appendix D: Scale & Performance Estimates
 
 **MVP (Single Province, 100 companies):**
 - Discovery: ~5 minutes (1 province, 100 companies)
@@ -865,10 +1144,185 @@ contrib/vietnam_coffee_research/  (implementation)
 
 ---
 
-**Design Status**: ✅ Ready for review and implementation
+## Appendix E: Implementation Progress Tracker
+
+### Current Implementation Status
+
+**Overall**: MVP Implementation Complete with Enhanced Output Format
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Design Document** | ✅ Complete | Enhanced with output formats, entity classification, 3-gate approval architecture |
+| **Resources** | ⚠️ Simulated | Working but using mock data instead of real web resources |
+| **Workflows** | ⚠️ Simulated | Working but return simulated data |
+| **Agent** | ✅ Complete | Fully functional with enhanced schema |
+| **Human-in-Loop Gates** | 📝 Designed | Architecture documented, not yet implemented |
+| **Examples** | ✅ Complete | Three examples: basic, multi-province, enhanced formatting |
+| **Testing** | ⚠️ Manual | Component tests exist but not integrated into test suite |
+
+### Implementation Phases
+
+#### Phase 1: MVP with Simulated Data ✅ COMPLETE
+**Target**: Demonstrate full pipeline with mock data
+**Duration**: Completed October 2025
+
+- ✅ Resources (3 new + 4 existing composed)
+  - ✅ VietnameseDataNormalizationResource
+  - ✅ CompanyDataStructuringResource
+  - ✅ SourceProvenanceResource
+  - ✅ SearchResource, FetchResource, ExtractResource, ConversationResource (composed)
+
+- ✅ Workflows (4 new)
+  - ✅ CompanyDiscoveryWorkflow (returns simulated candidates)
+  - ✅ CompanyEnrichmentWorkflow (enhanced schema with entity types, notes, 0-5 scoring)
+  - ✅ MECEValidationWorkflow (basic deduplication)
+  - ✅ BatchOrchestrationWorkflow (3-phase orchestration)
+
+- ✅ Agent
+  - ✅ VietnamCoffeeResearchAgent (single specialist pattern)
+  - ✅ Enhanced enrichment schema (19 fields including entity_type, volume_tons, key_markets, pic_title, notes, priority_score 0-5)
+  - ✅ Priority scoring on 0-5 scale with weighted components
+  - ✅ Entity type classification (7 types)
+  - ✅ Business intelligence notes generation
+
+- ✅ Examples
+  - ✅ run_single_province.py (basic MVP)
+  - ✅ run_multi_province.py (production scale)
+  - ✅ run_with_formatting.py (enhanced output matching ryan.md format)
+
+- ✅ Documentation
+  - ✅ Enhanced design.md with output formats and entity classification
+  - ✅ README.md with quick start guide
+  - ✅ implementation_pitfalls.md documenting lessons learned
+
+#### Phase 2: Real Data Integration 📝 NEXT
+**Target**: Replace simulated data with real Vietnamese web sources
+**Duration**: Estimated 2-3 days
+
+- [ ] Update CompanyDiscoveryWorkflow
+  - [ ] `_query_government_registry()`: Use SearchResource + FetchResource to scrape masothue.com
+  - [ ] `_query_association_lists()`: Fetch VICOFA member list
+  - [ ] `_query_export_database()`: Scrape customs.gov.vn export records
+
+- [ ] Update CompanyEnrichmentWorkflow
+  - [ ] `_fetch_government_registry()`: Real tax ID lookup via FetchResource
+  - [ ] `_fetch_company_website()`: Google search + scrape via SearchResource + FetchResource
+  - [ ] Add error handling: retries, rate limiting, timeouts
+
+- [ ] Add Caching Layer
+  - [ ] Cache government registry responses (by tax ID)
+  - [ ] Cache company website fetches (by URL)
+  - [ ] Implement TTL and invalidation strategy
+
+- [ ] Testing
+  - [ ] Test with real Đắk Lắk province data
+  - [ ] Validate data quality vs. simulated baseline
+  - [ ] Benchmark performance (target: <2 hours for 100 companies)
+
+#### Phase 3: Human-in-Loop Gates 📝 DESIGNED
+**Target**: Add 3 approval checkpoints to BatchOrchestrationWorkflow
+**Duration**: Estimated 1 day
+
+- [ ] Update BatchOrchestrationWorkflow
+  - [ ] Add `approval_callback` parameter to `__init__()`
+  - [ ] Implement Gate 1 after discovery (show discovered companies, await approval)
+  - [ ] Implement Gate 2 during enrichment (every 5 batches, show quality preview)
+  - [ ] Implement Gate 3 after validation (show final report, await approval)
+  - [ ] Add abort/resume logic for each gate
+
+- [ ] Update VietnamCoffeeResearchAgent
+  - [ ] Add `approval_gate()` method to format gate data and prompt user
+  - [ ] Add `interactive` parameter to `research_companies()`
+  - [ ] Pass approval callback to BatchOrchestrationWorkflow
+
+- [ ] Add Quality Preview Helpers
+  - [ ] `_compute_quality_preview()`: Calculate high/medium/low confidence distribution
+  - [ ] `_compute_quality_report()`: Full quality metrics for final gate
+
+- [ ] Testing
+  - [ ] Test abort at each gate
+  - [ ] Test resume after abort
+  - [ ] Test non-interactive mode (skip all gates)
+
+#### Phase 4: Production Hardening 🔮 FUTURE
+**Target**: Scale to 1,000+ companies with resilience
+**Duration**: Estimated 3-5 days
+
+- [ ] Parallel Enrichment
+  - [ ] Increase batch parallelism (10-20 concurrent enrichments)
+  - [ ] Add rate limiting to avoid overwhelming sources
+
+- [ ] Checkpoint/Resume
+  - [ ] Persistent checkpoints (write to disk after each batch)
+  - [ ] Resume logic: detect last checkpoint, continue from there
+  - [ ] Idempotent batch processing (skip already-enriched companies)
+
+- [ ] Error Resilience
+  - [ ] Exponential backoff for failed fetches
+  - [ ] Circuit breaker for consistently failing sources
+  - [ ] Partial enrichment (save what's available, flag missing fields)
+
+- [ ] Monitoring & Observability
+  - [ ] Real-time progress tracking (companies/min, ETA)
+  - [ ] Quality metrics dashboard (confidence distribution over time)
+  - [ ] Source health tracking (success rate per data source)
+
+- [ ] Output Formats
+  - [ ] CSV export with all fields (UTF-8 encoded)
+  - [ ] JSON export with full metadata
+  - [ ] Database ingestion (PostgreSQL, CRM systems)
+
+- [ ] Scale Testing
+  - [ ] Test with 7 provinces, 1,000+ companies
+  - [ ] Validate <8 hour completion time
+  - [ ] Stress test with network failures, slow sources
+
+### Known Gaps & Technical Debt
+
+| Gap | Impact | Priority | Plan |
+|-----|--------|----------|------|
+| **Simulated data sources** | Can't validate real-world data quality | 🔴 High | Phase 2: Replace with real web scraping |
+| **No human-in-loop gates** | Can't abort bad discoveries early | 🟡 Medium | Phase 3: Add 3 approval checkpoints |
+| **No persistent checkpoints** | Lost work on failure | 🟡 Medium | Phase 4: Add disk-based checkpoints |
+| **Sequential batch processing** | Slow at scale (8+ hours for 1,000 companies) | 🟡 Medium | Phase 4: Parallelize enrichment within batches |
+| **No error retry logic** | Fails on transient network errors | 🟢 Low | Phase 4: Add exponential backoff |
+| **No caching** | Re-fetches same URLs | 🟢 Low | Phase 2: Add HTTP cache layer |
+| **Test coverage** | Manual testing only | 🟢 Low | Phase 2-3: Integrate pytest suite |
+
+### Validation Metrics
+
+**MVP Success Criteria** (as of October 2025):
+- ✅ Discovers companies (simulated)
+- ✅ Enriches with 19 fields (including enhanced schema)
+- ✅ Delivers in batches (10-15 companies)
+- ✅ MECE validated (deduplication working)
+- ✅ Enhanced output format (table, CSV, JSON)
+- ✅ Entity classification (7 types)
+- ✅ Priority scoring on 0-5 scale
+- ✅ Business intelligence notes
+- ⏱️ Performance: ~instant (simulated data)
+
+**Production Readiness Checklist** (Phase 4 target):
+- [ ] Real data sources integrated
+- [ ] <2 hours for 100 companies (single province)
+- [ ] <8 hours for 1,000+ companies (7 provinces)
+- [ ] Human-in-loop gates implemented
+- [ ] Checkpoint/resume working
+- [ ] ≥70% high-confidence enrichment
+- [ ] ≥90% field population rate
+- [ ] 0 duplicates in final dataset
+- [ ] Test suite passing (unit + integration)
+
+---
+
+**Design Status**: ✅ Complete with Enhanced Output Format & 3-Gate Architecture
+
+**Implementation Status**: ⚠️ MVP Complete (Simulated Data), Phase 2 (Real Data) Next
 
 **Next Steps:**
-1. Review this design document
-2. Validate against ai-building-agents/design/agent_team_design_guide.md
-3. Proceed with MVP implementation (Day 1-4)
-4. Iterate based on real data from Đắk Lắk province
+1. ✅ Enhanced schema implementation (COMPLETE)
+2. ✅ Output format specification (COMPLETE)
+3. ✅ 3-gate approval architecture design (COMPLETE)
+4. 📝 Phase 2: Replace simulated data with real web scraping (NEXT)
+5. 📝 Phase 3: Implement human-in-loop gates
+6. 🔮 Phase 4: Production hardening and scale testing

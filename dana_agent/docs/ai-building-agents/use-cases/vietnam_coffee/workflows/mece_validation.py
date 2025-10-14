@@ -7,7 +7,8 @@ Validates that the dataset:
 """
 
 from dana.common.protocols.types import DictParams
-from dana.core.workflow.base_workflow import BaseWorkflow, validate_input, validate_output
+from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.validation import validate_input, validate_output
 
 
 class MECEValidationWorkflow(BaseWorkflow):
@@ -23,7 +24,7 @@ class MECEValidationWorkflow(BaseWorkflow):
     def __init__(self, workflow_id: str | None = None, **kwargs):
         super().__init__(workflow_id=workflow_id or "mece-validation", **kwargs)
 
-        from ..resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
+        from resources.vietnamese_data_normalization import VietnameseDataNormalizationResource
 
         self.vietnamese_norm = VietnameseDataNormalizationResource()
 

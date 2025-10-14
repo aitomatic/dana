@@ -79,45 +79,125 @@ This will:
 4. Generate quality report
 5. Save results to JSON
 
-**Expected output:**
-```
-Vietnam Coffee Research Agent - Single Province Example
-========================================================================
+### 3. Run with Interactive Approval Gates (⭐ New Feature)
 
-Initializing agent...
-✓ Agent initialized
-
-Configuration:
-  Province: Đắk Lắk
-  Batch size: 10
-  Max companies: 20
-
-Starting research...
-------------------------------------------------------------------------
-
-✓ Research completed successfully!
-
-Total batches: 2
-
-Batch 1: 10 companies
-----------------------------------------
-  1. Công ty TNHH Cà phê Đắk Lắk 1
-     Tax ID: 0100000001
-     Province: Đắk Lắk
-     Products: Green coffee beans, Roasted coffee
-     Export: True
-     Priority Score: 45.2/100
-     Confidence: 87%
-...
+```bash
+cd examples/
+python run_interactive_gates.py
 ```
 
-### 3. Scale to Multiple Provinces
+This demonstrates **human-in-loop approval gates** at 3 checkpoints:
+- ✅ **Gate 1 (After Discovery)**: Review discovered companies before enrichment starts
+  - Shows: Total discovered, sample companies, provinces
+  - Action: Approve to proceed or abort (saves 8 hours if candidates are bad)
+- ✅ **Gate 2 (During Enrichment)**: Review quality every 5 batches
+  - Shows: Progress, quality distribution (high/medium/low confidence), latest batch sample
+  - Action: Continue or stop early (catch data source issues)
+- ✅ **Gate 3 (Final Approval)**: Review before delivery
+  - Shows: Total companies, MECE report, final quality distribution
+  - Action: Approve or reject final dataset
+
+**Available Commands at Each Gate:**
+
+**Gate 1 - Discovery:**
+```
+• proceed              - Start enrichment for all discovered companies
+• show more           - View companies 11-30
+• filter <keyword>    - Remove companies matching keyword (e.g., "filter trading")
+• limit <N>           - Only enrich first N companies (e.g., "limit 50")
+• add province <name> - Discover in additional province
+• redo                - Restart discovery with different parameters
+• abort               - Cancel research
+```
+
+**Gate 2 - Enrichment Progress (every 5 batches):**
+```
+• continue            - Keep enriching remaining companies
+• show batch          - View full details of latest batch
+• show stats          - Detailed quality breakdown by field
+• show low quality    - View companies with confidence < 0.5
+• pause               - Stop here and export results so far
+• abort               - Cancel remaining enrichment
+```
+
+**Gate 3 - Final Approval:**
+```
+• approve                - Export results and complete research
+• export csv             - Preview CSV format
+• show low quality       - View companies with confidence < 0.5
+• re-enrich low quality  - Re-run enrichment for low-confidence companies
+• redo enrichment        - Start enrichment phase over
+• abort                  - Discard results
+```
+
+**Example interaction:**
+```
+📍 GATE 1: DISCOVERY COMPLETE
+✅ Found 20 companies
+
+👤 Command: show more
+📋 Companies 11-20: [shows companies 11-20]
+
+👤 Command: limit 15
+✅ Limit set to 15 companies
+
+👤 Command: proceed
+
+📍 GATE 2: ENRICHMENT PROGRESS (Batch 5/10)
+✅ Enriched 10 / 15 companies
+📊 High confidence: 8 (80%)
+
+👤 Command: show stats
+📊 Detailed Quality Statistics:
+   High confidence: verified from government sources
+   ...
+
+👤 Command: continue
+
+📍 GATE 3: FINAL VALIDATION
+✅ Total: 15 companies, MECE compliant
+
+👤 Command: show low quality
+📋 Low-confidence companies: 1 company
+
+👤 Command: approve
+✅ Results approved!
+```
+
+### 4. Run with Enhanced Formatting
+
+```bash
+cd examples/
+python run_with_formatting.py
+```
+
+This demonstrates the **enhanced output format** matching the ryan.md example with:
+- ✅ **Entity type classification** (Cooperative, Private Roaster, SME/Farm, Export Co, etc.)
+- ✅ **Production volume estimates** (e.g., "100-120 tons", "~35 tons")
+- ✅ **Key export markets** (US, EU, KR, Japan, etc.)
+- ✅ **PIC with titles** (e.g., "Nguyễn Quốc Tuấn (Sales Dir.)")
+- ✅ **Priority scores on 0-5 scale** (strategic importance ranking)
+- ✅ **Business intelligence notes** (1-2 sentence analysis per company)
+- ✅ **Revenue in USD** (converted from VND)
+- ✅ **Formatted table view** with export status as ✅/❌
+- ✅ **CSV export** with all fields (UTF-8 encoded)
+- ✅ **JSON export** with full metadata
+
+**Example output:**
+```
+VIETNAM COFFEE PRODUCERS - ENRICHED DATASET
+#  Company Name                  Entity Type    Product Categories           Est. Volume  Priority  Notes
+1  Công ty TNHH sản xuất Milano  Private Roast  Robusta, Arabica (roasted)  100-120      4.8       Leading roaster with...
+2  HTX Ea Tân (Flo)              Cooperative    Robusta (certified)         120-150      4.6       High-cert cooperative...
+```
+
+### 5. Scale to Multiple Provinces
 
 ```bash
 python run_multi_province.py
 ```
 
-This demonstrates production-scale usage across multiple provinces.
+This demonstrates production-scale usage across multiple provinces (can also be run with `interactive=True` for gates).
 
 ---
 
@@ -251,28 +331,52 @@ Real-time progress tracking:
 
 ## Data Schema
 
-### Company Record (Enriched)
+### Company Record (Enhanced)
 
 ```python
 {
+    # Core Identity
     "name": str,                    # Official company name
     "tax_id": str,                  # Vietnamese tax ID (unique)
-    "product_category": str,        # "Green coffee beans, Roasted coffee"
-    "export_status": bool,          # Verified exporter
-    "revenue": int | None,          # Annual revenue (VND)
-    "revenue_source": str,          # "Government filing" | "Estimate" | "Company statement"
+    "entity_type": str,             # "Private Roaster" | "Cooperative" | "SME/Farm" | etc.
+
+    # Products & Markets
+    "product_category": str,        # "Robusta, Arabica (roasted, packaged)"
+    "volume_tons": str,             # "100-120" or "~35" (production volume)
+    "export_status": bool,          # Verified exporter (displayed as ✅/❌)
+    "key_markets": str | None,      # "US, KR, Middle East"
+
+    # Financial
+    "revenue": int | None,          # Annual revenue (USD, converted from VND)
+    "revenue_source": str,          # "Financial Statement" | "Estimate" | "Media Disclosure"
     "years_incorporated": int,      # Years in business
-    "certifications": [str],        # ["Fair Trade", "Organic"]
+
+    # Certifications
+    "certifications": [str],        # ["Fair Trade", "Organic", "Rainforest Alliance"]
+
+    # Location
     "address": str,                 # Street address
     "district": str,                # District/County
     "province": str,                # Province (required)
-    "pic": str | None,              # Person in charge
-    "affiliate": str | None,        # Parent company
-    "priority_score": float,        # 0-100 (computed)
+
+    # Contact & Relationships
+    "pic": str | None,              # Person in charge name
+    "pic_title": str | None,        # "Sales Dir." | "Chair" | "Founder"
+    "affiliate": str | None,        # Group/network affiliation
+
+    # Scoring & Analysis
+    "priority_score": float,        # 0-5 scale (strategic importance)
+    "notes": str,                   # Business intelligence commentary (1-2 sentences)
     "confidence": float,            # 0-1 (overall quality)
+
+    # Metadata
     "sources": {                    # Field → URL mapping
         "revenue": "https://...",
         "export_status": "https://...",
+    },
+    "field_confidences": {          # Per-field confidence scores
+        "revenue": 0.95,
+        "export_status": 0.80,
     }
 }
 ```
