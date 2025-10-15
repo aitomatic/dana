@@ -97,7 +97,7 @@ class SearchWorkflow(BaseWorkflow):
             >>> print(result["results"][0]["title"])
             'Python.org'
         """
-        return _searcher.search_web(query=kwargs["query"], max_results=kwargs["max_results"])
+        return _searcher.search(query=kwargs["query"], max_results=kwargs["max_results"])
 
 
 class GoogleLookupWorkflow(BaseWorkflow):

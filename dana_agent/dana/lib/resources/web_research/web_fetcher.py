@@ -217,7 +217,7 @@ class WebFetcher(BaseResource):
         except Exception as e:
             return {"success": False, "error": f"Fetch error: {str(e)}"}
 
-    def search_web(self, query: str, max_results: int = 5, search_engine: str = "google") -> DictParams:
+    def search(self, query: str, max_results: int = 5, search_engine: str = "google") -> DictParams:
         """
         Search the web using Google Custom Search API.
 

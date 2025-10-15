@@ -31,7 +31,7 @@ class SearchResource(BaseResource):
 
     @tool_use
     @observable
-    def search_web(self, query: str, max_results: int = 5) -> DictParams:
+    def search(self, query: str, max_results: int = 5) -> DictParams:
         """
         Perform web search and return results.
 
@@ -56,7 +56,7 @@ class SearchResource(BaseResource):
                 "total_results": 0,
             }
 
-        return self.web_fetcher.search_web(query, max_results, "google")
+        return self.web_fetcher.search(query, max_results, "google")
 
     def filter_by_domain_authority(self, results: list[DictParams], authoritative_domains: list[str] | None = None) -> list[DictParams]:
         """
@@ -172,7 +172,7 @@ class SearchResource(BaseResource):
         seen_urls = set()
 
         for query in queries:
-            search_result = self.web_fetcher.search_web(query, max_results=max_results)
+            search_result = self.web_fetcher.search(query, max_results=max_results)
 
             if search_result.get("success"):
                 for result in search_result.get("results", []):
@@ -209,7 +209,7 @@ class SearchResource(BaseResource):
         current_year = datetime.now().year
         query_with_date = f"{query} {current_year}"
 
-        search_result = self.web_fetcher.search_web(
+        search_result = self.web_fetcher.search(
             query_with_date,
             max_results=max_results * 2,  # Get more to compensate for filtering
         )
@@ -241,7 +241,7 @@ class SearchResource(BaseResource):
         # Add documentation-specific keywords
         query = f"{topic} documentation official"
 
-        search_result = self.web_fetcher.search_web(query, max_results=max_results * 2)
+        search_result = self.web_fetcher.search(query, max_results=max_results * 2)
 
         if not search_result["success"]:
             return search_result
@@ -288,7 +288,7 @@ class SearchResource(BaseResource):
         seen_urls = set()
 
         for query in queries:
-            search_result = self.web_fetcher.search_web(query, max_results=max_results)
+            search_result = self.web_fetcher.search(query, max_results=max_results)
 
             if search_result["success"]:
                 for result in search_result["results"]:

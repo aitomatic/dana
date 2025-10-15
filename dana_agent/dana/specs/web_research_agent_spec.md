@@ -1087,7 +1087,7 @@ I always cite my sources with URLs and indicate when information might be outdat
 or uncertain.
 </PUBLIC_DESCRIPTION>
 
-<PRIVATE_IDENTITY>
+<IDENTITY>
 # IDENTITY
 
 You are a **Web Research Agent** specializing in finding, analyzing, and synthesizing web information.
@@ -1340,7 +1340,7 @@ Before responding to user, verify:
 ---
 
 **Remember:** You are a specialized web browsing agent. Your job is to be **thorough, accurate, and transparent** about what you find, what you can't find, and how you're approaching each task.
-</PRIVATE_IDENTITY>
+</IDENTITY>
 ```
 
 ### Agent Capabilities
@@ -1851,7 +1851,7 @@ Implementation will be incremental, with each phase enabling specific use cases:
 |---------|------|--------|---------|
 | 1.0 | 2025-09-29 | Claude + CTN | Initial specification |
 | 1.1 | 2025-09-29 | Claude + CTN | Added 3 driving use cases (simple to complex), use case coverage matrix, use case-driven implementation phases, and use case-based success criteria |
-| 2.0 | 2025-09-29 | Claude + CTN | **Complete architecture**: Added situation-specific workflows, BaseWAR.reason() integration, WorkflowSelectorResource, complete system prompt (PRIVATE_IDENTITY), LLM reasoning patterns, and workflow taxonomy. Changed from single-resource to multi-resource + multi-workflow + LLM-augmented pattern. |
+| 2.0 | 2025-09-29 | Claude + CTN | **Complete architecture**: Added situation-specific workflows, BaseWAR.reason() integration, WorkflowSelectorResource, complete system prompt (IDENTITY), LLM reasoning patterns, and workflow taxonomy. Changed from single-resource to multi-resource + multi-workflow + LLM-augmented pattern. |
 
 ---
 
@@ -1860,7 +1860,7 @@ Implementation will be incremental, with each phase enabling specific use cases:
 **Key Design Principles:**
 1. **Situation-Specific Workflows**: Different execution patterns for different request types (10 workflows across 3 categories)
 2. **LLM-Augmented Resources**: Resources use `BaseWAR.reason()` for intelligent decisions (workflow selection, content quality assessment, result ranking)
-3. **Declarative Orchestration**: System prompt (PRIVATE_IDENTITY) provides high-level logic, Python code provides STAR loop and capabilities
+3. **Declarative Orchestration**: System prompt (IDENTITY) provides high-level logic, Python code provides STAR loop and capabilities
 4. **Hybrid Intelligence**: Workflows provide structure, LLM provides flexibility, rules provide fallback
 
 **Architecture Pattern:**

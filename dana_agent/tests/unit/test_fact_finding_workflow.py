@@ -30,7 +30,7 @@ class TestFactFindingWorkflow:
     def test_fact_finding_workflow_execute_success(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test FactFindingWorkflow execute with successful results."""
         # Setup mocks
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "What is the capital of France?",
             "results": [
@@ -72,7 +72,7 @@ class TestFactFindingWorkflow:
         assert isinstance(result["result"], dict)
 
         # Verify resource calls
-        mock_search.search_web.assert_called_once_with(query="What is the capital of France?", max_results=5)
+        mock_search.search.assert_called_once_with(query="What is the capital of France?", max_results=5)
         mock_extract.extract_fact.assert_called_once()
         mock_format.format_with_metadata.assert_called_once()
 
@@ -82,7 +82,7 @@ class TestFactFindingWorkflow:
     @patch("dana.lib.workflows.web_research._formatter")
     def test_fact_finding_workflow_execute_with_defaults(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test FactFindingWorkflow execute with default parameters."""
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "test query",
             "results": [{"url": "https://test.com"}],
@@ -102,7 +102,7 @@ class TestFactFindingWorkflow:
         result = workflow.execute(query="test query")
 
         # Verify default max_results is used (5 for FactFindingWorkflow)
-        mock_search.search_web.assert_called_once_with(query="test query", max_results=5)
+        mock_search.search.assert_called_once_with(query="test query", max_results=5)
         # Verify result contains expected data
         assert "result" in result
 
@@ -112,7 +112,7 @@ class TestFactFindingWorkflow:
     @patch("dana.lib.workflows.web_research._formatter")
     def test_fact_finding_workflow_search_failure(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test FactFindingWorkflow when search fails."""
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": False,
             "error": "API key not configured",
             "results": [],
@@ -142,7 +142,7 @@ class TestFactFindingWorkflow:
     @patch("dana.lib.workflows.web_research._formatter")
     def test_fact_finding_workflow_fetch_failure(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test FactFindingWorkflow when fetch fails."""
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "test",
             "results": [{"url": "https://example.com"}],
@@ -180,7 +180,7 @@ class TestSearchWorkflow:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_search_workflow_execute(self, mock_search):
         """Test SearchWorkflow execute."""
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "test query",
             "results": [{"title": "Test", "url": "https://test.com"}],
@@ -191,18 +191,18 @@ class TestSearchWorkflow:
 
         assert "result" in result
         assert result["result"]["success"] is True
-        mock_search.search_web.assert_called_once_with(query="test query", max_results=5)
+        mock_search.search.assert_called_once_with(query="test query", max_results=5)
 
     @patch("dana.lib.workflows.web_research._searcher")
     def test_search_workflow_with_default_max_results(self, mock_search):
         """Test SearchWorkflow with default max_results."""
-        mock_search.search_web.return_value = {"success": True, "results": []}
+        mock_search.search.return_value = {"success": True, "results": []}
 
         workflow = SearchWorkflow()
         workflow.execute(query="test")
 
         # Default max_results should be 10
-        mock_search.search_web.assert_called_once_with(query="test", max_results=10)
+        mock_search.search.assert_called_once_with(query="test", max_results=10)
 
 
 # Note: FetchResultWorkflow, ExtractFactWorkflow, and FormatWorkflow have been removed
@@ -218,7 +218,7 @@ class TestWorkflowComposition:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_workflow_composition_operator(self, mock_search):
         """Test composing workflows with | operator."""
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "test",
             "results": [{"url": "https://test.com"}],
@@ -236,12 +236,12 @@ class TestWorkflowComposition:
         # Both stages should have executed
         assert "result" in result
         assert result["result"] == "https://test.com"
-        mock_search.search_web.assert_called_once()
+        mock_search.search.assert_called_once()
 
     @patch("dana.lib.workflows.web_research._searcher")
     def test_workflow_composition_chaining(self, mock_search):
         """Test chaining multiple workflows and callables."""
-        mock_search.search_web.return_value = {"success": True, "query": "test", "results": [{"title": "Test"}, {"title": "Example"}]}
+        mock_search.search.return_value = {"success": True, "query": "test", "results": [{"title": "Test"}, {"title": "Example"}]}
 
         # Chain search workflow with a simple transformation callable
         def add_count(success, query, results):
@@ -254,7 +254,7 @@ class TestWorkflowComposition:
         # Workflow should have executed and callable added count
         assert "result" in result
         assert result["result"]["count"] == 2
-        mock_search.search_web.assert_called_once()
+        mock_search.search.assert_called_once()
 
     def test_workflow_composition_type_error(self):
         """Test that composing with non-workflow/non-callable raises TypeError."""
@@ -274,7 +274,7 @@ class TestFactFindingWorkflowIntegration:
     def test_fact_finding_workflow_full_pipeline(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test complete FactFindingWorkflow pipeline."""
         # Setup complete mock pipeline
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "query": "When was Python created?",
             "results": [
@@ -313,7 +313,7 @@ class TestFactFindingWorkflowIntegration:
 
         # Verify all resources were called in order
         # Note: fetch, extract, and format should be called if the search returns results with URLs
-        mock_search.search_web.assert_called_once()
+        mock_search.search.assert_called_once()
         # These may or may not be called depending on workflow composition logic
         if mock_fetch.fetch_and_extract_single.call_count > 0:
             mock_extract.extract_fact.assert_called_once()
@@ -326,7 +326,7 @@ class TestFactFindingWorkflowIntegration:
     def test_fact_finding_workflow_data_flow(self, mock_format, mock_extract, mock_fetch, mock_search):
         """Test that data flows correctly through the workflow pipeline."""
         # Setup mocks
-        mock_search.search_web.return_value = {
+        mock_search.search.return_value = {
             "success": True,
             "results": [{"url": "https://test.com"}],
         }
@@ -343,7 +343,7 @@ class TestFactFindingWorkflowIntegration:
         result = workflow.execute(query="test query")
 
         # Verify search was called (entry point of pipeline)
-        mock_search.search_web.assert_called_once()
+        mock_search.search.assert_called_once()
 
         # Verify workflow completed and returned a result
         assert isinstance(result, dict)
@@ -364,7 +364,7 @@ class TestWorkflowEdgeCases:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_workflow_with_none_values(self, mock_search):
         """Test workflow with None values."""
-        mock_search.search_web.return_value = {"success": True, "results": []}
+        mock_search.search.return_value = {"success": True, "results": []}
 
         workflow = SearchWorkflow()
         result = workflow.execute(query=None, max_results=None)
@@ -375,7 +375,7 @@ class TestWorkflowEdgeCases:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_workflow_exception_handling(self, mock_search):
         """Test workflow handles exceptions from resources."""
-        mock_search.search_web.side_effect = Exception("Test error")
+        mock_search.search.side_effect = Exception("Test error")
 
         workflow = SearchWorkflow()
 

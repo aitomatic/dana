@@ -12,6 +12,7 @@ Built on Dana's conversation and analysis resources.
 
 import asyncio
 
+from dana.common.llm.llm import LLM, LLMMessage
 from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input
@@ -61,6 +62,7 @@ class ExpertInterviewWorkflow(BaseWorkflow):
         self.conversation = ConversationResource()
         self.insight_analyzer = ExpertInsightAnalyzer()
         self.gap_detector = KnowledgeGapDetector()
+        self.llm = LLM(provider="anthropic")
 
         # Store configuration
         self.reference_materials = reference_materials or []
@@ -150,24 +152,84 @@ class ExpertInterviewWorkflow(BaseWorkflow):
 
     def _generate_next_question(self, topics: dict, insights: dict, gaps: dict, conversation_history: list) -> str:
         """
-        Generate contextual follow-up question.
+        Generate contextual follow-up question using LLM for natural conversation flow.
 
-        Simple rule-based generation for now. Could be replaced with LLM.
+        Analyzes conversation context to:
+        - Detect if expert wants to end conversation
+        - Generate varied, natural questions
+        - Avoid repetition
+        - Follow up on interesting points
         """
-        # Priority 1: Ask about identified gaps
+        # Get last expert message
+        last_message = conversation_history[-1]["content"] if conversation_history else ""
+
+        # Build context for LLM
+        recent_history = ""
+        if len(conversation_history) > 1:
+            # Show last 3 exchanges
+            for msg in conversation_history[-6:]:
+                role = "Expert" if msg.get("role") == "user" else "Interviewer"
+                recent_history += f"{role}: {msg.get('content', '')[:200]}\n"
+
+        # Format gaps if present
+        gaps_text = ""
         if gaps and gaps.get("gaps"):
-            first_gap = gaps["gaps"][0]
-            return f"You mentioned {first_gap.get('source1_quote', '...')}. Can you elaborate on that?"
+            gaps_text = "\nKnowledge gaps identified:\n"
+            for gap in gaps["gaps"][:2]:
+                gaps_text += f"- {gap.get('description', '')}[:100]\n"
 
-        # Priority 2: Dig deeper into current focus
-        if topics.get("current_focus"):
-            focus = topics["current_focus"]
-            return f"Can you tell me more about {focus}?"
+        # Format insights
+        insights_text = ""
+        if insights.get("expert_insights_original"):
+            insights_text = "\nKey insights from last response:\n"
+            for insight in insights["expert_insights_original"][:2]:
+                insights_text += f"- {insight.get('original_quote', '')[:100]}\n"
 
-        # Priority 3: Explore terminology
-        if topics.get("terminology"):
-            term = topics["terminology"][0]
-            return f"You mentioned '{term}'. What's the significance of that?"
+        prompt = f"""You are an expert interviewer conducting a professional knowledge capture interview.
 
-        # Default: Open-ended
-        return "What else is important about this topic?"
+RECENT CONVERSATION:
+{recent_history if recent_history else "This is the first exchange."}
+
+EXPERT'S LAST MESSAGE: "{last_message}"
+
+CURRENT TOPIC: {topics.get('current_focus', 'Unknown')}
+{insights_text}
+{gaps_text}
+
+TASK: Generate the next interviewer question. Consider:
+1. Is the expert signaling they want to end? (e.g., "that's enough", "quit", "I'm done")
+2. Did they just answer your question? Don't repeat it!
+3. Are there interesting details to explore?
+4. Vary your question style - don't always ask "tell me more about X"
+
+RULES:
+- If expert wants to end or is frustrated, output: END_INTERVIEW
+- If they gave a short/dismissive answer to your last question, try a different angle or topic
+- Be conversational and natural
+- Don't ask about the same thing twice in a row
+- Ask open-ended questions that encourage detailed responses
+
+OUTPUT: Just the next question (or "END_INTERVIEW" if conversation should end). No explanation."""
+
+        try:
+            response = asyncio.run(self.llm.chat_response(
+                messages=[LLMMessage(role="user", content=prompt)],
+                system_message="You are a skilled professional interviewer. Generate natural, context-aware questions.",
+                max_tokens=150,
+                temperature=0.7
+            ))
+
+            question = response.content if hasattr(response, "content") else str(response)
+            question = question.strip().strip('"\'')
+
+            # Check if interview should end
+            if "END_INTERVIEW" in question:
+                return "Thank you for sharing your expertise. Is there anything else you'd like to add before we wrap up?"
+
+            return question
+
+        except Exception as e:
+            # Fallback to simple question if LLM fails
+            if topics.get("current_focus"):
+                return f"Could you elaborate on {topics['current_focus']}?"
+            return "What else would you like to share?"

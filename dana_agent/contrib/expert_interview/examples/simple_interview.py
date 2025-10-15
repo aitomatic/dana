@@ -12,14 +12,57 @@ Usage:
 
 import argparse
 import json
+import logging
+import os
 from pathlib import Path
 import sys
+import threading
+import time
 
 
 # Add parent directories to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
+# Configure logging early (before importing Dana modules)
+# Check if quiet mode requested via environment variable
+if os.getenv("EXPERT_INTERVIEW_QUIET", "").lower() in ["1", "true", "yes"]:
+    logging.basicConfig(level=logging.CRITICAL, force=True)
+    os.environ["STRUCTLOG_LEVEL"] = "CRITICAL"
+
 from contrib.expert_interview import ExpertInterviewWorkflow
+
+
+class ProgressSpinner:
+    """Simple progress spinner for long-running operations"""
+
+    def __init__(self, message: str = "Processing"):
+        self.message = message
+        self.running = False
+        self.thread = None
+
+    def _spin(self):
+        """Spinner animation"""
+        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        idx = 0
+        while self.running:
+            char = spinner_chars[idx % len(spinner_chars)]
+            print(f"\r{char} {self.message}...", end="", flush=True)
+            idx += 1
+            time.sleep(0.1)
+
+    def start(self):
+        """Start the spinner"""
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        """Stop the spinner"""
+        self.running = False
+        if self.thread:
+            self.thread.join(timeout=0.5)
+        print("\r" + " " * (len(self.message) + 20), end="", flush=True)
+        print("\r", end="", flush=True)
 
 
 class InterviewSession:
@@ -61,24 +104,32 @@ class InterviewSession:
         """Ask a question to the expert"""
         print(f"\n🤔 Interviewer: {question}")
 
-    def process_expert_response(self, response: str) -> dict:
+    def process_expert_response(self, response: str, show_spinner: bool = True) -> dict:
         """
         Process expert's response through the workflow.
 
         Args:
             response: Expert's message
+            show_spinner: Whether to show progress spinner (default: True)
 
         Returns:
             Analysis results
         """
-        print("\n⏳ Analyzing response...")
+        spinner = None
+        if show_spinner:
+            spinner = ProgressSpinner("Analyzing response")
+            spinner.start()
 
-        result = self.workflow.execute(expert_message=response, conversation_history=self.conversation_history)
+        try:
+            # Update conversation history BEFORE processing (fixes depth counter)
+            self.conversation_history.append({"role": "user", "content": response})
 
-        # Update conversation history
-        self.conversation_history.append({"role": "user", "content": response})
+            result = self.workflow.execute(expert_message=response, conversation_history=self.conversation_history)
 
-        return result["result"]
+            return result["result"]
+        finally:
+            if spinner:
+                spinner.stop()
 
     def display_analysis(self, analysis: dict):
         """Display analysis results"""
@@ -108,11 +159,15 @@ class InterviewSession:
         """Show conversation summary"""
         from dana.lib.workflows.conversation import SummarizeConversationWorkflow
 
-        print("\n📝 Generating summary...")
+        spinner = ProgressSpinner("Generating summary")
+        spinner.start()
 
-        summary_workflow = SummarizeConversationWorkflow()
-        result = summary_workflow.execute(conversation_history=self.conversation_history)
-        summary = result["result"]
+        try:
+            summary_workflow = SummarizeConversationWorkflow()
+            result = summary_workflow.execute(conversation_history=self.conversation_history)
+            summary = result["result"]
+        finally:
+            spinner.stop()
 
         print("\n" + "=" * 70)
         print("CONVERSATION SUMMARY")
@@ -157,8 +212,23 @@ def main():
     parser.add_argument("--role", help="Expert's role")
     parser.add_argument("--domain", help="Expert's domain")
     parser.add_argument("--years-experience", type=int, help="Years of experience")
+    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress debug logs")
 
     args = parser.parse_args()
+
+    # Configure logging based on quiet flag
+    if args.quiet:
+        # Suppress all but critical logs
+        logging.basicConfig(level=logging.CRITICAL, force=True)
+        # Also suppress logs from structlog (used by Dana)
+        logging.getLogger().setLevel(logging.CRITICAL)
+        for logger_name in ["dana", "anthropic", "openai", "httpx"]:
+            logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+        # Suppress structlog output
+        import structlog
+        structlog.configure(
+            wrapper_class=structlog.make_filtering_bound_logger(logging.CRITICAL),
+        )
 
     # Build expert profile
     expert_profile = {}

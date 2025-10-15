@@ -68,9 +68,15 @@ class ThoughtLogger(Notifiable):
         # SEE phase - percepts
         trace_percepts = message.get("trace_percepts", {})
         if self.verbose and trace_percepts:
+            # Initial perception: caller message
             caller_message = trace_percepts.get("caller_message")
             if caller_message:
                 self._display_phase(agent_id, "👁️  SEE", f"Received: {caller_message}")
+
+            # Subsequent perception: tool results
+            perception = trace_percepts.get("perception")
+            if perception and not caller_message:  # Don't show both
+                self._display_phase(agent_id, "👁️  SEE", perception)
 
         # THINK phase - thoughts
         trace_thoughts = message.get("trace_thoughts", {})
@@ -101,6 +107,28 @@ class ThoughtLogger(Notifiable):
             if learning_note:
                 phase = trace_learning.get("phase", "unknown")
                 self._display_phase(agent_id, "🔄 REFLECT", f"[{phase}] {learning_note}")
+
+        # Workflow progress - show workflow thinking
+        workflow_progress = message.get("workflow_progress", {})
+        if self.verbose and workflow_progress:
+            workflow_id = workflow_progress.get("workflow_id", "unknown")
+            workflow_message = workflow_progress.get("message", "")
+            phase = workflow_progress.get("phase", "unknown")
+
+            # Use different emoji for different workflow phases
+            phase_emoji = {
+                "start": "🔧",
+                "classify": "🔍",
+                "llm_classify": "🤖",
+                "complete": "✅",
+                "extract": "📄",
+                "themes": "🏷️",
+                "overview": "📝",
+                "gaps": "🔍",
+                "confidence": "📊",
+            }.get(phase, "⚙️")
+
+            self._display_phase(workflow_id, f"{phase_emoji} WORKFLOW", workflow_message)
 
         # Note: We skip timeline entries to avoid duplication since
         # the STAR phases above already show the relevant information

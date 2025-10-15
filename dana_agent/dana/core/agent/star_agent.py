@@ -160,6 +160,36 @@ class STARAgent(BaseSTARAgent):
         """Interactive conversation loop with a human user."""
         self._communicator.converse(initial_message=initial_message)
 
+    def __getattr__(self, name: str):
+        """
+        Magic function: Convert unknown method calls to natural language and call converse.
+
+        Examples:
+            agent.hi_how_are_you() -> converse("hi how are you")
+            agent.research_coffee_companies() -> converse("research coffee companies")
+            agent.find_exporters_in_dak_lak() -> converse("find exporters in dak lak")
+        """
+
+        def magic_method(*args, **kwargs):
+            # Convert method name to natural language
+            # Replace underscores with spaces and clean up
+            natural_language = name.replace("_", " ").strip()
+
+            # Add any positional arguments as additional context
+            if args:
+                args_str = " ".join(str(arg) for arg in args)
+                natural_language += f" {args_str}"
+
+            # Add any keyword arguments as additional context
+            if kwargs:
+                kwargs_str = " ".join(f"{k}={v}" for k, v in kwargs.items())
+                natural_language += f" {kwargs_str}"
+
+            # Call converse with the natural language message (starts interactive conversation)
+            return self.converse(initial_message=natural_language)
+
+        return magic_method
+
     # ============================================================================
     # STAR PATTERN IMPLEMENTATION (BaseSTARAgent abstract methods)
     # ============================================================================
@@ -193,7 +223,13 @@ class STARAgent(BaseSTARAgent):
 
         previous_tool_calls: list[DictParams] = trace_inputs.get("tool_calls", None)
         if previous_tool_calls:
-            # This is a subsequent loop
+            # This is a subsequent loop - perceiving tool results
+            tool_results = trace_inputs.get("tool_results", [])
+            num_results = len(tool_results) if isinstance(tool_results, list) else 0
+
+            # Add perception message for notification visibility
+            trace_inputs["perception"] = f"Perceived {num_results} tool result(s)"
+
             del trace_inputs["response"]
             del trace_inputs["tool_calls"]
             del trace_inputs["tool_results"]
@@ -209,14 +245,11 @@ class STARAgent(BaseSTARAgent):
                 new_entry = TimelineEntry(entry_type=TimelineEntryType.CALLER_MESSAGE, content=caller_message, is_latest_user_message=True)
                 self._timeline.add_entry(new_entry)
 
-            # Do not leak message/caller_message to subsequent phases and loops
-            trace_inputs.pop("caller_message", None)
-            trace_inputs.pop("message", None)
-            # trace_inputs |= {
-            #    "caller_message": caller_message,
-            #    "caller_type": caller_type,
-            #    "caller_id": caller_id,
-            # }
+            # Preserve caller_message for notifications but remove original keys
+            trace_inputs.pop("message", None)  # Remove 'message' alias
+            # Keep caller_message in trace_inputs for notification
+            if "caller_message" not in trace_inputs:
+                trace_inputs["caller_message"] = caller_message
 
         trace_inputs |= {"timeline": self._timeline}
 
@@ -346,6 +379,16 @@ class STARAgent(BaseSTARAgent):
                             content=tool_result.get("result", "Unknown tool result"),
                         )
                     )
+
+            # Add a synthetic user message to prompt the agent to respond based on tool results
+            # This ensures the next THINK phase has a user message to respond to
+            self._timeline.add_entry(
+                TimelineEntry(
+                    entry_type=TimelineEntryType.CALLER_MESSAGE,
+                    content="Please provide a response based on the tool results above.",
+                    is_latest_user_message=True,
+                )
+            )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
