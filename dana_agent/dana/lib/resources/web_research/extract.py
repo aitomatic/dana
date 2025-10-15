@@ -438,7 +438,7 @@ class ExtractResource(BaseResource):
 
             logger.debug(f"Searching for: {query}")
             searcher = SearchResource()
-            search_result = searcher.search_web(query, max_results=5)
+            search_result = searcher.search(query, max_results=5)
 
             if not search_result.get("success") or not search_result.get("results"):
                 return {"success": False, "error": "Search failed or no results found"}

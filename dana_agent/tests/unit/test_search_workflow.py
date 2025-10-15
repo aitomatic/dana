@@ -20,8 +20,8 @@ class TestSearchWorkflow:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_do_execute_with_query(self, mock_searcher):
         """Test SearchWorkflow.do_execute with a query."""
-        # Mock the search_web method
-        mock_searcher.search_web.return_value = {
+        # Mock the search method
+        mock_searcher.search.return_value = {
             "success": True,
             "query": "Python programming",
             "search_engine": "google",
@@ -46,8 +46,8 @@ class TestSearchWorkflow:
         workflow = SearchWorkflow()
         result = workflow._do_execute(query="Python programming", max_results=10)
 
-        # Verify the search_web method was called
-        mock_searcher.search_web.assert_called_once_with(query="Python programming", max_results=10)
+        # Verify the search method was called
+        mock_searcher.search.assert_called_once_with(query="Python programming", max_results=10)
 
         # Verify the result structure
         assert result["success"] is True
@@ -58,7 +58,7 @@ class TestSearchWorkflow:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_do_execute_with_default_max_results(self, mock_searcher):
         """Test SearchWorkflow.do_execute with default max_results."""
-        mock_searcher.search_web.return_value = {
+        mock_searcher.search.return_value = {
             "success": True,
             "query": "test query",
             "search_engine": "google",
@@ -71,12 +71,12 @@ class TestSearchWorkflow:
         workflow._do_execute(query="test query")
 
         # Should use default max_results=10
-        mock_searcher.search_web.assert_called_once_with(query="test query", max_results=10)
+        mock_searcher.search.assert_called_once_with(query="test query", max_results=10)
 
     @patch("dana.lib.workflows.web_research._searcher")
     def test_do_execute_returns_search_result(self, mock_searcher):
         """Test that do_execute returns the search result directly."""
-        mock_searcher.search_web.return_value = {
+        mock_searcher.search.return_value = {
             "success": True,
             "query": "test",
             "search_engine": "google",
@@ -98,7 +98,7 @@ class TestSearchWorkflow:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_do_execute_with_search_failure(self, mock_searcher):
         """Test SearchWorkflow.do_execute when search fails."""
-        mock_searcher.search_web.return_value = {
+        mock_searcher.search.return_value = {
             "success": False,
             "error": "API key not found",
             "query": "test query",
@@ -115,7 +115,7 @@ class TestSearchWorkflow:
     @patch("dana.lib.workflows.web_research._searcher")
     def test_do_execute_with_custom_max_results(self, mock_searcher):
         """Test SearchWorkflow.do_execute with custom max_results."""
-        mock_searcher.search_web.return_value = {
+        mock_searcher.search.return_value = {
             "success": True,
             "query": "test",
             "search_engine": "google",
@@ -129,13 +129,13 @@ class TestSearchWorkflow:
         workflow = SearchWorkflow()
         result = workflow._do_execute(query="test", max_results=5)
 
-        mock_searcher.search_web.assert_called_once_with(query="test", max_results=5)
+        mock_searcher.search.assert_called_once_with(query="test", max_results=5)
         assert len(result["results"]) == 5
 
     def test_do_execute_output_structure(self):
         """Test that do_execute returns the expected output structure."""
         with patch("dana.lib.workflows.web_research._searcher") as mock_resource:
-            mock_resource.search_web.return_value = {
+            mock_resource.search.return_value = {
                 "success": True,
                 "query": "Python",
                 "search_engine": "google",

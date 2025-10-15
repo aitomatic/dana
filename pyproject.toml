@@ -45,12 +45,10 @@ docs = [
     "mkdocs-material",
 ]
 
-# Command-line entry points
-[project.scripts]
-dana-agent = "dana.apps.dana.__main__:main"
-dana-agent-repl = "dana.apps.repl.__main__:main"
-dana-lang = "dana_lang.apps.cli.__main__:main"
-dana-lsp = "dana_lang.core.lang.lsp.server:main"
+# Command-line entry points are defined in individual packages:
+# - dana_agent: dana-agent, dana-agent-repl
+# - dana_lang: dana-lang, dana-lsp
+# - dana_studio: (if any)
 
 # =============================================================================
 # Package Manager Configuration (uv)

@@ -451,21 +451,31 @@ class ToolCaller(WARCaller):
         tool_calls = []
 
         try:
-            # Find all tool_call elements using regex (since we need to handle multiple)
-            matches = re.findall(r"<tool_call>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
+            # Find all tool_call elements using regex (handle attributes on opening tag)
+            matches = re.findall(r"<tool_call\s*([^>]*)>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
 
             if not matches:
                 # Try tolerant parsing for unbalanced tags
                 tool_call_content = self._extract_content_between_xml_tags(tool_calls_xml, "tool_call")
                 if tool_call_content:
-                    matches = [tool_call_content]
+                    matches = [("", tool_call_content)]
 
-            for tool_call_content in matches:
-                # Extract target (function name) - handle self-closing tags
-                target_match = re.search(r"<target\s+([^>]+)/?>", tool_call_content)
-                if not target_match:
+            for attrs_str, tool_call_content in matches:
+                # Extract function name from attributes (type and id) or from <target> tag
+                function_name = None
+
+                # First try: extract from attributes on <tool_call> tag
+                if attrs_str:
+                    function_name = attrs_str.strip()
+
+                # Second try: extract from <target> tag
+                if not function_name:
+                    target_match = re.search(r"<target\s+([^>]+)/?>", tool_call_content)
+                    if target_match:
+                        function_name = target_match.group(1).strip()
+
+                if not function_name:
                     continue
-                function_name = target_match.group(1).strip()
 
                 # Extract method
                 method = self._extract_content_between_xml_tags(tool_call_content, "method")
