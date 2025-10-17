@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from dana.common.base_wa import BaseWA
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, WorkflowProtocol
 from dana.common.protocols.war import tool_use
 from dana.core.global_registry import get_workflow_registry
+
+
+if TYPE_CHECKING:
+    from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 
 @dataclass
@@ -71,6 +76,7 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
             agent: The agent associated with this workflow
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
+            agent: The agent associated with this workflow
             **kwargs: Additional arguments passed to parent classes
         """
         # Call super().__init__ to properly initialize all parent classes
@@ -109,6 +115,19 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
 
         self.composite_left = composite_left
         self.composite_right = composite_right
+
+        self._workflow_step_agent = None
+
+    @property
+    def workflow_step_agent(self) -> "WorkflowStepAgent":
+        """Get the orchestrator agent for this workflow."""
+        if self._workflow_step_agent is None:
+            id = f"{self.workflow_id}-workflow-agent"
+
+            from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
+
+            self._workflow_step_agent = WorkflowStepAgent(agent_id=id)
+        return self._workflow_step_agent
 
     @staticmethod
     def _get_nested_value(data: DictParams, path: str) -> any:

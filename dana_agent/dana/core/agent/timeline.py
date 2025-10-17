@@ -27,15 +27,15 @@ class TimelineEntryType(Enum):
 
 # Static mapping of entry types to (role, label) tuples
 ENTRY_CONFIG: Final = {
-    TimelineEntryType.CALLER_MESSAGE: ("user", "User/Caller Message"),
-    TimelineEntryType.MY_RESPONSE: ("assistant", "My Response"),
-    TimelineEntryType.MY_THOUGHTS: ("system", "My Thoughts"),
-    TimelineEntryType.MY_LEARNING: ("system", "My Learning"),
-    TimelineEntryType.AGENT_RESPONSE: ("system", "Tool Response (Agent)"),
-    TimelineEntryType.RESOURCE_RESULT: ("system", "Tool Response (Resource)"),
-    TimelineEntryType.WORKFLOW_RESULT: ("system", "Tool Response (Workflow)"),
-    TimelineEntryType.UNKNOWN_TOOL_CALL: ("system", "Tool Response (Unknown)"),
-    TimelineEntryType.TOOL_CALL: ("system", "Tool Call"),
+    TimelineEntryType.CALLER_MESSAGE: ("user", "User Message"),
+    TimelineEntryType.MY_RESPONSE: ("user", "Assistant Response"),
+    TimelineEntryType.MY_THOUGHTS: ("user", "Assistant Thoughts"),
+    TimelineEntryType.MY_LEARNING: ("user", "Assistant Learning"),
+    TimelineEntryType.AGENT_RESPONSE: ("user", "Tool Response (Agent)"),
+    TimelineEntryType.RESOURCE_RESULT: ("user", "Tool Response (Resource)"),
+    TimelineEntryType.WORKFLOW_RESULT: ("user", "Tool Response (Workflow)"),
+    TimelineEntryType.UNKNOWN_TOOL_CALL: ("user", "Tool Response (Unknown)"),
+    TimelineEntryType.TOOL_CALL: ("user", "Assistant Tool Call"),
 }
 
 

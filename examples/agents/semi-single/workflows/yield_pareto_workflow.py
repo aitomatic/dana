@@ -10,6 +10,7 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
+from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.test_data_resource import TestDataResource
 
@@ -39,15 +40,26 @@ class YieldParetoWorkflow(BaseWorkflow):
             **kwargs
         )
 
-        # LLM for intelligent pattern recognition
-        self.conversation = ConversationResource(
-            resource_id="llm-reasoning",
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
-        )
+        # Store config for step agent resources
+        self._llm_provider = llm_provider
+        self._model = model or "claude-3-5-sonnet-20241022"
+        self._step_agent_configured = False
 
         # Test data access
         self.test_data = TestDataResource(resource_id="test-data")
+
+    def _ensure_step_agent_configured(self):
+        """Ensure workflow_step_agent is configured with necessary resources."""
+        if not self._step_agent_configured:
+            # Give step agent access to resources it needs
+            self.workflow_step_agent.with_resources(
+                ConversationResource(
+                    resource_id=f"{self.workflow_id}-llm",
+                    llm_provider=self._llm_provider,
+                    model=self._model
+                )
+            )
+            self._step_agent_configured = True
 
     @validate_input(
         wafer_id={"required": False, "type": str},
@@ -196,92 +208,218 @@ class YieldParetoWorkflow(BaseWorkflow):
 
     def _classify_failure_patterns(self, pareto_bins: list, test_results: dict) -> dict:
         """
-        Use LLM to classify failure patterns (systematic vs random).
+        Use ULTIMATE WorkflowStepAgent with Resources and Workflows to classify patterns.
+
+        This is ULTIMATE Deterministic Autonomy:
+        - WorkflowStepAgent is equipped with Resources and Workflows
+        - Given high-level OBJECTIVE (not step-by-step instructions)
+        - Agent autonomously decides which tools to use and in what order
+        - Agent synthesizes multi-source evidence into structured result
 
         Args:
             pareto_bins: Top failing bins from Pareto analysis
             test_results: Full test results with spatial pattern info
 
         Returns:
-            dict: Pattern classifications with LLM reasoning
+            dict: Pattern classifications with high-confidence, evidence-based data
         """
-        # Prepare context for LLM
+        # Prepare context
+        wafer_id = test_results.get("wafer_id", "unknown")
         bins_summary = "\n".join([
             f"- {bin['bin_id']}: {bin['description']} ({bin['count']} failures, "
             f"{bin['percent_of_total']}%, spatial pattern: {bin.get('spatial_pattern', 'unknown')})"
             for bin in pareto_bins
         ])
 
-        prompt = f"""Analyze these semiconductor test failure patterns:
+        try:
+            # Ensure step agent has basic resources
+            self._ensure_step_agent_configured()
 
+            # ULTIMATE PATTERN: Equip agent with powerful Resources
+            print("\n🔧 ULTIMATE PATTERN: Equipping WorkflowStepAgent with Resources...")
+            from resources.wafer_map_resource import WaferMapResource
+            from resources.statistical_analysis_resource import StatisticalAnalysisResource
+            from resources.historical_pattern_resource import HistoricalPatternResource
+
+            self.workflow_step_agent.with_resources(
+                WaferMapResource(resource_id="wafer-map"),
+                StatisticalAnalysisResource(resource_id="stats"),
+                HistoricalPatternResource(resource_id="historical-patterns")
+            )
+            print("  ✓ Added: WaferMapResource, StatisticalAnalysisResource, HistoricalPatternResource")
+
+            # ULTIMATE PATTERN: Equip agent with analysis Workflows
+            from workflows.spatial_clustering_workflow import SpatialClusteringWorkflow
+            from workflows.statistical_test_workflow import StatisticalTestWorkflow
+
+            self.workflow_step_agent.with_workflows(
+                SpatialClusteringWorkflow(),
+                StatisticalTestWorkflow()
+            )
+            print("  ✓ Added: SpatialClusteringWorkflow, StatisticalTestWorkflow")
+            print("🔧 WorkflowStepAgent now equipped with 3 Resources + 2 Workflows")
+            print()
+
+            # ULTIMATE PATTERN: Give agent OBJECTIVE (not simple prompt)
+            objective = f"""OBJECTIVE: Determine if failure patterns for bins {[b['bin_id'] for b in pareto_bins]}
+are SYSTEMATIC or RANDOM, with HIGH CONFIDENCE (>0.9).
+
+CONTEXT:
+- Wafer ID: {wafer_id}
+- Top failing bins:
 {bins_summary}
 
-For each bin, classify the failure pattern:
+MUST PROVIDE:
+- pattern_type: SYSTEMATIC|RANDOM for each bin
+- confidence: 0.0-1.0 (must be >0.9 for high confidence)
+- evidence: Statistical tests, spatial analysis, historical matches
+- reasoning: Why you reached this conclusion
 
-1. **Systematic vs Random:**
-   - Systematic: Clustered spatial pattern, suggests process/design issue (fixable)
-   - Random: Randomly distributed, suggests random defects (harder to fix)
+AVAILABLE TOOLS (use autonomously):
+1. WaferMapResource:
+   - get_spatial_data(wafer_id, bin_id): Get spatial defect distribution maps
 
-2. **Root Cause Category:**
-   - Process-related (etch, implant, deposition, etc.)
-   - Design-related (timing, margin, functionality)
-   - Package/Assembly-related
-   - Random defects
+2. StatisticalAnalysisResource:
+   - morans_i_test(spatial_data): Spatial autocorrelation test (detects clustering)
+   - getis_ord_gi_star(spatial_data): Hot spot analysis
+   - chi_square_test(observed, expected): Goodness of fit test
 
-3. **Priority for Investigation:**
-   - HIGH: Systematic, high volume, likely process-related (easy to fix)
-   - MEDIUM: Systematic but complex root cause
-   - LOW: Random, low volume, hard to improve
+3. HistoricalPatternResource:
+   - find_similar_patterns(pattern_signature): Compare with known systematic/random patterns
+   - get_systematic_pattern_library(): Get library of known systematic defect patterns
 
-Provide classification for each bin in structured format."""
+4. SpatialClusteringWorkflow:
+   - execute(spatial_data): Run DBSCAN/K-means clustering analysis
 
-        try:
-            # Use LLM for intelligent pattern classification
-            llm_response = self.conversation.send_message(
-                message=prompt,
-                conversation_history=[]
-            )
+5. StatisticalTestWorkflow:
+   - execute({{"test_type": "comprehensive", "spatial_data": ..., "resource": StatisticalAnalysisResource}}):
+     Run comprehensive statistical tests and synthesize results
 
-            reasoning = llm_response.get("response", "")
+METHODOLOGY:
+You are AUTONOMOUS - decide which tools to use and in what order. Recommended approach:
+1. Get spatial data for each bin using WaferMapResource
+2. Analyze clustering using SpatialClusteringWorkflow
+3. Run statistical tests using StatisticalTestWorkflow or direct resource calls
+4. Compare with historical patterns using HistoricalPatternResource
+5. Synthesize all evidence into high-confidence classification
 
-            # Parse LLM response and structure it
-            # For simplicity, we'll also add structured data based on spatial patterns
-            classifications = {}
+REQUIREMENTS:
+- Use multiple sources of evidence for each bin
+- Provide statistical significance (p-values) where applicable
+- Include confidence score (0.0-1.0)
+- Return structured JSON (no markdown)
 
-            for bin_info in pareto_bins:
-                bin_id = bin_info["bin_id"]
-                spatial_pattern = bin_info.get("spatial_pattern", "unknown")
+Return JSON with this EXACT structure:
+{{
+    "classifications": {{
+        "BIN_X": {{
+            "pattern_type": "SYSTEMATIC|RANDOM",
+            "confidence": 0.95,
+            "fixability": "HIGH|MEDIUM|LOW",
+            "investigation_priority": "HIGH|MEDIUM|LOW",
+            "root_cause_category": "process|design|package|random",
+            "evidence": {{
+                "spatial_clustering": {{"method": "...", "result": "..."}},
+                "statistical_tests": {{"morans_i": 0.87, "p_value": 0.001}},
+                "historical_match": {{"case_id": "...", "similarity": 0.91}},
+                "defect_morphology": {{"type": "...", "confidence": 0.92}}
+            }},
+            "reasoning": "Detailed explanation with evidence"
+        }}
+    }},
+    "overall_assessment": "Summary with confidence statement",
+    "has_systematic_patterns": true|false,
+    "tools_used": ["list", "of", "tools", "called"]
+}}
+"""
 
-                # Heuristic classification based on spatial pattern
-                if spatial_pattern in ["clustered", "systematic"]:
-                    pattern_type = "SYSTEMATIC"
-                    fixability = "HIGH"
-                    priority = "HIGH" if bin_info["percent_of_total"] > 10.0 else "MEDIUM"
-                elif spatial_pattern == "random":
-                    pattern_type = "RANDOM"
-                    fixability = "LOW"
-                    priority = "LOW"
-                else:
-                    pattern_type = "UNKNOWN"
-                    fixability = "MEDIUM"
-                    priority = "MEDIUM"
+            # Agent autonomously accomplishes objective using available tools
+            print("📤 Sending OBJECTIVE to WorkflowStepAgent...")
+            print(f"   Objective length: {len(objective)} chars")
 
-                classifications[bin_id] = {
-                    "pattern_type": pattern_type,
-                    "fixability": fixability,
-                    "investigation_priority": priority,
-                    "reasoning": f"Spatial pattern: {spatial_pattern}"
+            # DEBUG: Print what resources/workflows the agent has
+            print(f"\n🔍 Agent has {len(self.workflow_step_agent.available_resources)} resources:")
+            for r in self.workflow_step_agent.available_resources:
+                desc = r.public_description[:100] if len(r.public_description) > 100 else r.public_description
+                print(f"   - {r.object_id}: {desc}")
+
+            print(f"\n🔍 Agent has {len(self.workflow_step_agent.available_workflows)} workflows:")
+            for w in self.workflow_step_agent.available_workflows:
+                desc = w.public_description[:100] if len(w.public_description) > 100 else w.public_description
+                print(f"   - {w.object_id}: {desc}")
+            print()
+
+            result = self.workflow_step_agent.query(caller_message=objective)
+
+            # Extract response content
+            import json
+            response_text = result.get("response", "{}")
+
+            print(f"📥 Agent response received: {len(response_text)} chars")
+            print("📋 Agent response preview:")
+            print("-" * 80)
+            print(response_text[:500] if len(response_text) > 500 else response_text)
+            print("-" * 80)
+            print()
+
+            # Try to parse JSON response
+            try:
+                # Clean up any markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0].strip()
+
+                classifications_data = json.loads(response_text)
+
+                return {
+                    "classifications": classifications_data.get("classifications", {}),
+                    "overall_assessment": classifications_data.get("overall_assessment", ""),
+                    "has_systematic_patterns": classifications_data.get("has_systematic_patterns", False),
+                }
+            except json.JSONDecodeError:
+                # Fallback: build structured data from spatial patterns
+                classifications = {}
+                has_systematic = False
+
+                for bin_info in pareto_bins:
+                    bin_id = bin_info["bin_id"]
+                    spatial_pattern = bin_info.get("spatial_pattern", "unknown")
+
+                    # Heuristic classification based on spatial pattern
+                    if spatial_pattern in ["clustered", "systematic"]:
+                        pattern_type = "SYSTEMATIC"
+                        fixability = "HIGH"
+                        priority = "HIGH" if bin_info["percent_of_total"] > 10.0 else "MEDIUM"
+                        has_systematic = True
+                    elif spatial_pattern == "random":
+                        pattern_type = "RANDOM"
+                        fixability = "LOW"
+                        priority = "LOW"
+                    else:
+                        pattern_type = "UNKNOWN"
+                        fixability = "MEDIUM"
+                        priority = "MEDIUM"
+
+                    classifications[bin_id] = {
+                        "pattern_type": pattern_type,
+                        "fixability": fixability,
+                        "investigation_priority": priority,
+                        "reasoning": f"Spatial pattern: {spatial_pattern}"
+                    }
+
+                return {
+                    "classifications": classifications,
+                    "overall_assessment": "Fallback classification based on spatial patterns",
+                    "has_systematic_patterns": has_systematic,
+                    "agent_response": response_text,  # Include raw response for debugging
                 }
 
-            return {
-                "classifications": classifications,
-                "llm_analysis": reasoning,
-            }
-
         except Exception as e:
-            # Fallback if LLM fails
+            # Fallback if agent fails
             return {
                 "classifications": {},
-                "llm_analysis": f"LLM analysis failed: {str(e)}",
+                "overall_assessment": f"Agent analysis failed: {str(e)}",
+                "has_systematic_patterns": False,
                 "error": str(e)
             }
