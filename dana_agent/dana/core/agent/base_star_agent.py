@@ -241,24 +241,18 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     trace_thoughts = self._think(trace_percepts.get("trace_percepts", {}))
                     trace_outputs = self._act(trace_thoughts.get("trace_thoughts", {}))
-                    # trace_learning = self._reflect(trace_outputs["trace_outputs"], continue_flag)
-                    # trace_episode[datetime.now().isoformat()] = trace_learning
+                    #trace_learning = self._reflect(trace_outputs["trace_outputs"])
 
-                    outputs = trace_outputs.get("trace_outputs", {})
-
-                    # On next loop, agent will continue reasoning on the outputs (and any timeline)
-                    trace_inputs["trace_inputs"] = outputs
-
-                    if self._do_exit_star_loop(outputs):
+                    if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break
 
                 except Exception as e:
-                    # print(f"Error in STAR loop: {e}")
-                    # break
-                    raise e
+                    print(f"Error in query: {e}")
+                    trace_outputs = {"trace_outputs": {"error": e}}
+                    break
 
-            # trace_episode["phase"] = LearningPhase.EPISODIC
-            # _trace_trajectory = self._reflect(do_continue, trace_episode)
+            # _trace_episode["phase"] = LearningPhase.EPISODIC
+            # trace_learning = self._reflect(trace_outputs)
 
             return trace_outputs
 
