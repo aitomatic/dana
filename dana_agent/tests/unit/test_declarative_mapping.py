@@ -24,7 +24,7 @@ class TestDeclarativeMapping:
         result = workflow.execute(source={"value": "test_value"})
 
         # The input mapping should have extracted source.value and set input_data
-        assert result["result"]["data"] == "test_value"
+        assert result["data"] == "test_value"
 
     def test_input_mapping_with_fallback(self):
         """Test input mapping with fallback paths."""
@@ -32,11 +32,11 @@ class TestDeclarativeMapping:
 
         # Test with primary path available
         result = workflow.execute(primary={"value": "from_primary"}, backup="from_backup")
-        assert result["result"]["data"] == "from_primary"
+        assert result["data"] == "from_primary"
 
         # Test with only fallback path available
         result = workflow.execute(backup="from_backup")
-        assert result["result"]["data"] == "from_backup"
+        assert result["data"] == "from_backup"
 
     def test_input_mapping_array_indexing(self):
         """Test input mapping with array indexing."""
@@ -44,7 +44,7 @@ class TestDeclarativeMapping:
 
         result = workflow.execute(items=[{"name": "first"}, {"name": "second"}])
 
-        assert result["result"]["data"] == "first"
+        assert result["data"] == "first"
 
     def test_input_mapping_multiple_fields(self):
         """Test input mapping with multiple field mappings."""
@@ -57,29 +57,27 @@ class TestDeclarativeMapping:
 
         result = workflow.execute(source={"x": "value1", "y": "value2"})
 
-        assert result["result"]["field1"] == "value1"
-        assert result["result"]["field2"] == "value2"
+        assert result["field1"] == "value1"
+        assert result["field2"] == "value2"
 
     def test_output_mapping(self):
-        """Test output key renaming."""
+        """Test output key namespacing."""
         workflow = SimpleWorkflow("-> custom_result")
 
         result = workflow.execute(input_data="test")
 
-        # Should have renamed "result" to "custom_result"
+        # Should have namespaced output under "custom_result"
         assert "custom_result" in result
-        assert "result" not in result
         assert result["custom_result"]["data"] == "test"
 
     def test_output_mapping_default(self):
-        """Test that output defaults to 'result'."""
+        """Test that output is flat by default (no wrapping)."""
         workflow = SimpleWorkflow()
 
         result = workflow.execute(input_data="test")
 
-        # Should keep the default "result" key
-        assert "result" in result
-        assert result["result"]["data"] == "test"
+        # Should have flat output by default
+        assert result["data"] == "test"
 
     def test_combined_input_output_mapping(self):
         """Test using both input and output mapping together."""
@@ -87,9 +85,8 @@ class TestDeclarativeMapping:
 
         result = workflow.execute(source={"nested": {"value": "nested_value"}}, fallback="backup")
 
-        # Should have mapped input and renamed output
+        # Should have mapped input and namespaced output
         assert "custom_output" in result
-        assert "result" not in result
         assert result["custom_output"]["data"] == "nested_value"
 
     def test_input_mapping_missing_path(self):
@@ -99,7 +96,7 @@ class TestDeclarativeMapping:
         result = workflow.execute()
 
         # Should set empty string for missing path
-        assert result["result"]["data"] == ""
+        assert result["data"] == ""
 
     def test_cannot_use_transform_with_pre_callable(self):
         """Test that using both transform and pre_callable raises an error."""
@@ -126,7 +123,7 @@ class TestDeclarativeMapping:
 
         result = composite.execute()
 
-        # Should have both outputs with correct mappings
+        # Should have both namespaced outputs with correct mappings
         assert "search_result" in result
         assert "fetch_result" in result
         assert result["fetch_result"]["fetched"] == "http://example.com"
@@ -137,17 +134,15 @@ class TestDeclarativeMapping:
 
         result = workflow.execute(input_data="test")
 
-        # Should only rename output, not transform inputs
+        # Should only namespace output, not transform inputs
         assert "renamed_output" in result
-        assert "result" not in result
         assert result["renamed_output"]["data"] == "test"
 
     def test_input_only_mapping(self):
-        """Test using only input mapping without output renaming."""
+        """Test using only input mapping without output namespacing."""
         workflow = SimpleWorkflow("input_data=source.value")
 
         result = workflow.execute(source={"value": "test"})
 
-        # Should transform input but keep default output name
-        assert "result" in result
-        assert result["result"]["data"] == "test"
+        # Should transform input and have flat output
+        assert result["data"] == "test"

@@ -67,9 +67,8 @@ class TestFactFindingWorkflow:
             max_results=5,
         )
 
-        # Verify results - workflow returns "result" key with final output
-        assert "result" in result
-        assert isinstance(result["result"], dict)
+        # Verify results - workflow returns flat dict with output merged
+        assert isinstance(result, dict)
 
         # Verify resource calls
         mock_search.search.assert_called_once_with(query="What is the capital of France?", max_results=5)
@@ -103,8 +102,8 @@ class TestFactFindingWorkflow:
 
         # Verify default max_results is used (5 for FactFindingWorkflow)
         mock_search.search.assert_called_once_with(query="test query", max_results=5)
-        # Verify result contains expected data
-        assert "result" in result
+        # Verify result is a dict
+        assert isinstance(result, dict)
 
     @patch("dana.lib.workflows.web_research._searcher")
     @patch("dana.lib.workflows.web_research._fetcher")
@@ -133,8 +132,8 @@ class TestFactFindingWorkflow:
         workflow = FactFindingWorkflow()
         result = workflow.execute(query="test query")
 
-        # Should still return result dict
-        assert "result" in result or "success" in result
+        # Should still return a dict
+        assert isinstance(result, dict)
 
     @patch("dana.lib.workflows.web_research._searcher")
     @patch("dana.lib.workflows.web_research._fetcher")
@@ -162,8 +161,8 @@ class TestFactFindingWorkflow:
         workflow = FactFindingWorkflow()
         result = workflow.execute(query="test")
 
-        # Should return results
-        assert "result" in result or "success" in result
+        # Should return a dict
+        assert isinstance(result, dict)
 
     def test_fact_finding_workflow_missing_query(self):
         """Test FactFindingWorkflow with missing query parameter."""
@@ -189,8 +188,7 @@ class TestSearchWorkflow:
         workflow = SearchWorkflow()
         result = workflow.execute(query="test query", max_results=5)
 
-        assert "result" in result
-        assert result["result"]["success"] is True
+        assert result["success"] is True
         mock_search.search.assert_called_once_with(query="test query", max_results=5)
 
     @patch("dana.lib.workflows.web_research._searcher")
@@ -234,7 +232,6 @@ class TestWorkflowComposition:
         result = composed.execute(query="test", max_results=5)
 
         # Both stages should have executed
-        assert "result" in result
         assert result["result"] == "https://test.com"
         mock_search.search.assert_called_once()
 
@@ -252,8 +249,7 @@ class TestWorkflowComposition:
         result = workflow.execute(query="test", max_results=5)
 
         # Workflow should have executed and callable added count
-        assert "result" in result
-        assert result["result"]["count"] == 2
+        assert result["count"] == 2
         mock_search.search.assert_called_once()
 
     def test_workflow_composition_type_error(self):
@@ -347,7 +343,6 @@ class TestFactFindingWorkflowIntegration:
 
         # Verify workflow completed and returned a result
         assert isinstance(result, dict)
-        assert "result" in result  # Standard workflow result key
 
 
 class TestWorkflowEdgeCases:

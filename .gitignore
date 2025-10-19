@@ -65,7 +65,7 @@ node_modules/
 .ipynb_checkpoints/
 # .cursor/
 CLAUDE.md
-
+.vscode/extensions.json
 .vscode/launch.json
 .vscode/settings.json
 .deprecated_opendxa

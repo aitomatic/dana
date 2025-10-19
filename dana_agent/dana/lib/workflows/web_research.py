@@ -1,5 +1,6 @@
 from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
+from dana.core.workflow.callable_workflow import CallableWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.web_research.extract import ExtractResource
 from dana.lib.resources.web_research.fetch import FetchResource
@@ -178,14 +179,11 @@ class FactFindingWorkflow(BaseWorkflow):
             DictParams: Dictionary with formatted answer and metadata.
         """
 
-        # Use CallableWorkflow with args_transform for clean parameter mapping!
-        from dana.core.workflow.callable_workflow import CallableWorkflow
-
         workflow = (
             SearchWorkflow()
-            | CallableWorkflow(_fetcher.fetch_and_extract_single, "url=result.results.0.url|url, purpose=query -> fetch_result")
+            | CallableWorkflow(_fetcher.fetch_and_extract_single, "url=results.0.url|url, purpose=query -> fetch_result")
             | CallableWorkflow(_extractor.extract_fact, "content=fetch_result.content_text, query=query")
-            | CallableWorkflow(_formatter.format_with_metadata, "content=result.fact, metadata=fetch_result.metadata")
+            | CallableWorkflow(_formatter.format_with_metadata, "content=fact, metadata=fetch_result.metadata")
         )
         return workflow.execute(**kwargs)
 
@@ -229,7 +227,7 @@ class ResearchSynthesisWorkflow(BaseWorkflow):
             | _searcher.rank_by_relevance
             | _select_top_urls
             | _fetcher.fetch_and_extract
-            | _synthesize
+            | CallableWorkflow(_synthesize, args_transform="extractions=extractions, topic=query, synthesis_type=synthesis_type")
         )
 
         return workflow.execute(**kwargs)
