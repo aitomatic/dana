@@ -242,7 +242,7 @@ class STARAgent(BaseSTARAgent):
             # Add caller_message to timeline with caller tracking
             if isinstance(caller_message, str):
                 # Create new entry and mark it as latest
-                new_entry = TimelineEntry(entry_type=TimelineEntryType.CALLER_MESSAGE, content=caller_message, is_latest_user_message=True)
+                new_entry = TimelineEntry(entry_type=TimelineEntryType.USER_MESSAGE, content=caller_message, is_latest_user_message=True)
                 self._timeline.add_entry(new_entry)
 
             # Preserve caller_message for notifications but remove original keys
@@ -289,7 +289,7 @@ class STARAgent(BaseSTARAgent):
             response = response if (response and len(response) > 0) else "No response generated"
             timeline.add_entry(
                 TimelineEntry(
-                    entry_type=TimelineEntryType.MY_RESPONSE,
+                    entry_type=TimelineEntryType.AGENT_RESPONSE,
                     content=response,
                 )
             )
@@ -297,7 +297,7 @@ class STARAgent(BaseSTARAgent):
             if response and len(response) > 0:
                 timeline.add_entry(
                     TimelineEntry(
-                        entry_type=TimelineEntryType.MY_THOUGHTS,
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
                         content=response,
                     )
                 )
@@ -365,7 +365,7 @@ class STARAgent(BaseSTARAgent):
                     # Determine entry type based on tool type
                     tool_type = tool_result.get("type")
                     if tool_type == "agent":
-                        entry_type = TimelineEntryType.AGENT_RESPONSE
+                        entry_type = TimelineEntryType.SUB_AGENT_RESPONSE
                     elif tool_type == "resource":
                         entry_type = TimelineEntryType.RESOURCE_RESULT
                     elif tool_type == "workflow":
@@ -384,7 +384,7 @@ class STARAgent(BaseSTARAgent):
             # This ensures the next THINK phase has a user message to respond to
             self._timeline.add_entry(
                 TimelineEntry(
-                    entry_type=TimelineEntryType.CALLER_MESSAGE,
+                    entry_type=TimelineEntryType.USER_MESSAGE,
                     content="Please provide a response based on the tool results above.",
                     is_latest_user_message=True,
                 )
@@ -450,7 +450,7 @@ class STARAgent(BaseSTARAgent):
         # Add to timeline for persistence
         self._timeline.add_entry(
             TimelineEntry(
-                entry_type=TimelineEntryType.MY_LEARNING,
+                entry_type=TimelineEntryType.AGENT_LEARNING,
                 content=f"Learning ({phase.value}): {trace_learning.get('learning_note', 'No learning note')}",
             )
         )

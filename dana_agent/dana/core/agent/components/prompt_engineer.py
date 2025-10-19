@@ -523,35 +523,42 @@ class PromptEngineer:
 
     @observable
     def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-        """Build LLM messages for the agent with simple timeline_used logic."""
+        """Build LLM messages for the agent using the Timeline's LLM conversion API."""
         messages = []
 
         # System prompt - use the sophisticated prompt from components
         system_prompt = self._get_system_prompt()
         messages.append(LLMMessage(role="system", content=system_prompt))
 
-        # Walk through timeline entries and assign roles based on is_latest_user_message
+        # Use Timeline's LLM conversion with latest user message separation
         if timeline:
-            # Build timeline content (excluding latest user message)
-            timeline_entries = [entry for entry in timeline.timeline if not entry.is_latest_user_message]
-            if timeline_entries:
-                timeline_lines = [
-                    "<CONTEXT>",
-                    self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
-                    "<TIMELINE>",
-                ]
-                for entry in timeline_entries:
-                    # Use the entry's to_string() method to include all fields
-                    timeline_lines.append(f"<ENTRY>{entry.to_string()}</ENTRY>")
-                timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
-                timeline_content = "\n".join(timeline_lines)
-                messages.append(LLMMessage(role="user", content=timeline_content))
+            # Get timeline messages with latest user separation
+            timeline_messages = timeline.to_llm_messages(separate_latest_user=True)
 
-            # Add latest user message as separate user message, and mark it as not latest
-            latest_user_entry = next((entry for entry in timeline.timeline if entry.is_latest_user_message), None)
-            if latest_user_entry:
-                messages.append(LLMMessage(role="user", content=latest_user_entry.content))
-                latest_user_entry.is_latest_user_message = False
+            # Check if we have a latest user message (last message should be user role)
+            if timeline_messages and timeline_messages[-1].role == "user":
+                # Separate context from latest user message
+                context_messages = timeline_messages[:-1]
+                latest_user_message = timeline_messages[-1]
+
+                # Wrap context in structured format if we have context
+                if context_messages:
+                    timeline_lines = [
+                        "<CONTEXT>",
+                        self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
+                        "<TIMELINE>",
+                    ]
+                    for msg in context_messages:
+                        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+                    timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
+                    timeline_content = "\n".join(timeline_lines)
+                    messages.append(LLMMessage(role="assistant", content=timeline_content))
+
+                # Add latest user message as separate user message
+                messages.append(latest_user_message)
+            else:
+                # No latest user message, use all timeline messages
+                messages.extend(timeline_messages)
 
         # Debug logging - log message building
         debug_logger = get_debug_logger()

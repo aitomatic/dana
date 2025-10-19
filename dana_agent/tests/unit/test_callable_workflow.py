@@ -63,14 +63,14 @@ class TestCallableWorkflowBasics:
 class TestCallableWorkflowExecution:
     """Test CallableWorkflow execution behavior."""
 
-    def test_callable_extracts_from_result(self):
-        """Test that callable receives parameters from result field."""
+    def test_callable_extracts_from_kwargs(self):
+        """Test that callable receives parameters from kwargs."""
 
         def process(value, count):
             return f"{value}_{count}"
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result={"value": "test", "count": 5})
+        result = workflow.execute(value="test", count=5)
 
         assert result["result"] == "test_5"
 
@@ -81,7 +81,7 @@ class TestCallableWorkflowExecution:
             return value * 2
 
         workflow = CallableWorkflow(double)
-        result = workflow.execute(result={"value": 10})
+        result = workflow.execute(value=10)
 
         assert result["result"] == 20
 
@@ -94,21 +94,21 @@ class TestCallableWorkflowExecution:
         workflow = CallableWorkflow(process)
 
         # With optional parameter provided
-        result1 = workflow.execute(result={"value": 10, "multiplier": 3})
+        result1 = workflow.execute(value=10, multiplier=3)
         assert result1["result"] == 30
 
         # Without optional parameter (uses default)
-        result2 = workflow.execute(result={"value": 10})
+        result2 = workflow.execute(value=10)
         assert result2["result"] == 20
 
     def test_callable_with_no_matching_parameters(self):
-        """Test callable when result doesn't have matching parameters."""
+        """Test callable when kwargs don't have matching parameters."""
 
         def process():
             return "no_params"
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result={"value": "ignored"})
+        result = workflow.execute(value="ignored")
 
         assert result["result"] == "no_params"
 
@@ -121,31 +121,30 @@ class TestCallableWorkflowExecution:
         workflow = CallableWorkflow(process)
 
         with pytest.raises(TypeError, match="required_param"):
-            workflow.execute(result={"other_param": "value"})
+            workflow.execute(other_param="value")
 
-    def test_callable_with_non_dict_result(self):
-        """Test callable when result is not a dict (for single param callables)."""
+    def test_callable_with_non_dict_kwargs(self):
+        """Test callable extracts from kwargs even when value is not a dict."""
 
         def process(value):
             return value + 10
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result=42)
+        result = workflow.execute(value=42)
 
         assert result["result"] == 52
 
-    def test_callable_with_non_dict_result_multiple_params(self):
-        """Test callable with multiple params when result is not a dict."""
+    def test_callable_with_missing_multiple_params(self):
+        """Test callable with multiple required params when some are missing."""
 
         def process(a, b):
             return a + b
 
         workflow = CallableWorkflow(process)
 
-        # Should be called with no args (empty dict)
-        # This should raise TypeError since both params are required
+        # Should raise TypeError since both params are required
         with pytest.raises(TypeError):
-            workflow.execute(result=42)
+            workflow.execute(a=1)  # Missing b
 
     def test_callable_preserves_kwargs_context(self):
         """Test that execution preserves the full kwargs context."""
@@ -154,7 +153,7 @@ class TestCallableWorkflowExecution:
             return value.upper()
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result={"value": "test"}, extra_key="preserved", another="context")
+        result = workflow.execute(value="test", extra_key="preserved", another="context")
 
         assert result["result"] == "TEST"
         assert result["extra_key"] == "preserved"
@@ -246,15 +245,15 @@ class TestCallableWorkflowWithPrePost:
         """Test CallableWorkflow with a pre_callable."""
 
         def pre(kwargs):
-            # Transform the result before the main callable sees it
-            if "result" in kwargs:
-                kwargs["result"]["value"] = kwargs["result"]["value"].upper()
+            # Transform kwargs before the main callable sees it
+            if "value" in kwargs:
+                kwargs["value"] = kwargs["value"].upper()
 
         def process(value):
             return value + "!"
 
         workflow = CallableWorkflow(process, pre_callable=pre)
-        result = workflow.execute(result={"value": "hello"})
+        result = workflow.execute(value="hello")
 
         # pre_callable should uppercase, then process adds !
         assert result["result"] == "HELLO!"
@@ -270,7 +269,7 @@ class TestCallableWorkflowWithPrePost:
             return value.upper()
 
         workflow = CallableWorkflow(process, post_callable=post)
-        result = workflow.execute(result={"value": "hello"})
+        result = workflow.execute(value="hello")
 
         assert result["result"] == "HELLO"
         assert result["metadata"] == "processed"
@@ -286,7 +285,7 @@ class TestCallableWorkflowEdgeCases:
             return value
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result={"value": "test"})
+        result = workflow.execute(value="test")
 
         assert result["result"] == "test"
 
@@ -297,7 +296,7 @@ class TestCallableWorkflowEdgeCases:
             return f"{value}_{len(kwargs)}"
 
         workflow = CallableWorkflow(process)
-        result = workflow.execute(result={"value": "test", "extra1": "a", "extra2": "b"})
+        result = workflow.execute(value="test", extra1="a", extra2="b")
 
         # Only "value" should be extracted and passed explicitly
         # **kwargs should not get the extras because we only pass extracted params
@@ -407,9 +406,7 @@ class TestCallableWorkflowArgsTransform:
             def _do_execute(self, **kwargs):
                 return {"fetch_result": {"content_text": "hello world"}, "query": "test query"}
 
-        workflow = SourceWorkflow() | CallableWorkflow(
-            process, args_transform="content=result.fetch_result.content_text, query=result.query"
-        )
+        workflow = SourceWorkflow() | CallableWorkflow(process, args_transform="content=fetch_result.content_text, query=query")
 
         result = workflow.execute()
         assert result["result"] == "test query: hello world"
@@ -422,9 +419,9 @@ class TestCallableWorkflowArgsTransform:
 
         class SourceWorkflow(BaseWorkflow):
             def _do_execute(self, **kwargs):
-                return {"result": {"results": [{"url": "https://example.com"}, {"url": "https://backup.com"}]}}
+                return {"results": [{"url": "https://example.com"}, {"url": "https://backup.com"}]}
 
-        workflow = SourceWorkflow() | CallableWorkflow(get_url, args_transform="url=result.result.results.0.url")
+        workflow = SourceWorkflow() | CallableWorkflow(get_url, args_transform="url=results.0.url")
 
         result = workflow.execute()
         assert result["result"] == "Fetching: https://example.com"
@@ -439,7 +436,7 @@ class TestCallableWorkflowArgsTransform:
             def _do_execute(self, **kwargs):
                 return {"backup": "fallback value"}
 
-        workflow = SourceWorkflow() | CallableWorkflow(process, args_transform="value=result.primary|result.backup")
+        workflow = SourceWorkflow() | CallableWorkflow(process, args_transform="value=primary|backup")
 
         result = workflow.execute()
         assert result["result"] == "FALLBACK VALUE"
@@ -455,7 +452,7 @@ class TestCallableWorkflowArgsTransform:
                 return {"article": {"title": "Test Article", "content": {"body": "Article body"}}, "metadata": {"author": "John Doe"}}
 
         workflow = SourceWorkflow() | CallableWorkflow(
-            combine, args_transform="title=result.article.title, body=result.article.content.body, author=result.metadata.author"
+            combine, args_transform="title=article.title, body=article.content.body, author=metadata.author"
         )
 
         result = workflow.execute()
@@ -472,7 +469,7 @@ class TestCallableWorkflowArgsTransform:
 
         # Should raise ValueError when trying to use both
         with pytest.raises(ValueError, match="Cannot specify 'transform' with 'pre_callable'"):
-            CallableWorkflow(process, args_transform="value=result", pre_callable=pre)
+            CallableWorkflow(process, args_transform="value=value", pre_callable=pre)
 
     def test_args_transform_composition_chain(self):
         """Test chaining multiple CallableWorkflows with args_transform."""
@@ -494,7 +491,7 @@ class TestCallableWorkflowArgsTransform:
         workflow = (
             FetchWorkflow()
             | CallableWorkflow(extract_content, args_transform="content_text=fetch_result.content_text")
-            | CallableWorkflow(format_result, args_transform="fact=result.fact, source=fetch_result.metadata.source")
+            | CallableWorkflow(format_result, args_transform="fact=fact, source=fetch_result.metadata.source")
         )
 
         result = workflow.execute()
@@ -502,59 +499,31 @@ class TestCallableWorkflowArgsTransform:
 
 
 class TestArgsTransformParameterResolution:
-    """Test parameter resolution logic for args_transform (result priority)."""
+    """Test parameter resolution logic for args_transform."""
 
-    def test_simple_key_prioritizes_result(self):
-        """Test that simple keys check result first, then top-level."""
-
-        def process(url):
-            return f"Processing: {url}"
-
-        workflow = CallableWorkflow(process, args_transform="url=url")
-
-        # When both exist, result.url should take priority
-        result = workflow.execute(url="top-level-url", result={"url": "result-url"})
-
-        assert result["result"] == "Processing: result-url"
-
-    def test_simple_key_fallback_to_toplevel(self):
-        """Test that simple keys fallback to top-level when not in result."""
+    def test_simple_key_extraction(self):
+        """Test that simple keys are extracted from kwargs."""
 
         def process(url):
             return f"Processing: {url}"
 
         workflow = CallableWorkflow(process, args_transform="url=url")
 
-        # When result doesn't have url, use top-level
-        result = workflow.execute(url="top-level-url", result={"other": "data"})
+        result = workflow.execute(url="test-url")
 
-        assert result["result"] == "Processing: top-level-url"
+        assert result["result"] == "Processing: test-url"
 
-    def test_simple_key_only_toplevel(self):
-        """Test simple key resolution when only top-level exists."""
-
-        def process(query):
-            return f"Query: {query}"
-
-        workflow = CallableWorkflow(process, args_transform="query=query")
-
-        # No result dict, only top-level
-        result = workflow.execute(query="test query")
-
-        assert result["result"] == "Query: test query"
-
-    def test_explicit_path_no_fallback(self):
-        """Test that explicit paths don't fallback to top-level."""
+    def test_explicit_path_extraction(self):
+        """Test that explicit paths are extracted correctly."""
 
         def process(url):
             return f"Processing: {url}"
 
-        workflow = CallableWorkflow(process, args_transform="url=result.url")
+        workflow = CallableWorkflow(process, args_transform="url=nested.url")
 
-        # Even though top-level url exists, use only result.url path
-        result = workflow.execute(url="top-level-url", result={"url": "result-url"})
+        result = workflow.execute(nested={"url": "nested-url"})
 
-        assert result["result"] == "Processing: result-url"
+        assert result["result"] == "Processing: nested-url"
 
     def test_explicit_path_not_found(self):
         """Test explicit path that doesn't exist."""
@@ -562,28 +531,15 @@ class TestArgsTransformParameterResolution:
         def process(url):
             return f"Processing: {url}"
 
-        workflow = CallableWorkflow(process, args_transform="url=result.url")
+        workflow = CallableWorkflow(process, args_transform="url=nested.url")
 
-        # result.url doesn't exist, should use empty string fallback
-        result = workflow.execute(url="top-level-url", result={"other": "data"})
+        # nested.url doesn't exist, should use empty string fallback
+        result = workflow.execute(other="data")
 
         assert result["result"] == "Processing: "
 
-    def test_mixed_simple_and_explicit(self):
-        """Test mixing simple keys and explicit paths."""
-
-        def process(url, query):
-            return f"{query}: {url}"
-
-        workflow = CallableWorkflow(process, args_transform="url=url, query=result.nested.query")
-
-        # url uses simple key (checks result first), query uses explicit path
-        result = workflow.execute(query="top-query", result={"url": "result-url", "nested": {"query": "nested-query"}})
-
-        assert result["result"] == "nested-query: result-url"
-
-    def test_priority_in_workflow_composition(self):
-        """Test parameter priority in composed workflows."""
+    def test_workflow_composition_parameter_passing(self):
+        """Test parameter passing in composed workflows."""
 
         class FirstWorkflow(BaseWorkflow):
             def _do_execute(self, **kwargs):
@@ -592,27 +548,12 @@ class TestArgsTransformParameterResolution:
         def process(url, count):
             return f"{url} (count={count})"
 
-        # Simple keys should pick up from previous workflow's result
+        # Parameters from first workflow are available to second
         workflow = FirstWorkflow() | CallableWorkflow(process, args_transform="url=url, count=count")
 
-        # Even with top-level values, result values should win
-        result = workflow.execute(url="top-level-url", count=999)
+        result = workflow.execute()
 
         assert result["result"] == "first-url (count=1)"
-
-    def test_fallback_chain_with_priority(self):
-        """Test fallback chains respect result priority."""
-
-        def process(url):
-            return f"URL: {url}"
-
-        # Fallback: try 'url' (result first, then top), then 'backup_url'
-        workflow = CallableWorkflow(process, args_transform="url=url|backup_url")
-
-        # url in result should win over backup_url anywhere
-        result = workflow.execute(backup_url="backup-url", result={"url": "result-url"})
-
-        assert result["result"] == "URL: result-url"
 
     def test_fallback_to_second_option(self):
         """Test fallback to second option when first not found."""
@@ -620,9 +561,9 @@ class TestArgsTransformParameterResolution:
         def process(url):
             return f"URL: {url}"
 
-        workflow = CallableWorkflow(process, args_transform="url=url|backup_url")
+        workflow = CallableWorkflow(process, args_transform="url=primary_url|backup_url")
 
-        # url not in result or top-level, use backup_url
-        result = workflow.execute(backup_url="backup-url", result={"other": "data"})
+        # primary_url doesn't exist, use backup_url
+        result = workflow.execute(backup_url="backup-url")
 
         assert result["result"] == "URL: backup-url"
