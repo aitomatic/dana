@@ -172,7 +172,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
 
             # Call FieldNormalizer agent
             normalization_result = self.call_agent(
-                agent=self.field_normalizer, message="Normalize extracted text to JSON", extracted_text=extracted_text
+                agent=self.field_normalizer, message=f"Normalize extracted text to JSON \n Text to be normalized:\n {extracted_text}"
             )
 
             if normalization_result.get("error", False):
@@ -212,7 +212,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
 
             # Call FraudIndicator agent
             fraud_result = self.call_agent(
-                agent=self.fraud_indicator, message="Detect fraud patterns in normalized data", normalized_data=normalized_data
+                agent=self.fraud_indicator, message=f"Detect fraud patterns in normalized data.\n Normalized data:\n {normalized_data}"
             )
 
             if fraud_result.get("error", False):
