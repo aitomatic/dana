@@ -41,9 +41,7 @@ class DeepExtractionResource(BaseResource):
     - Error handling for unsupported formats
     """
 
-    def __init__(
-        self, resource_id: str | None = None, llm_provider: str = "anthropic", model: str = "claude-3-5-sonnet-20241022", **kwargs
-    ):
+    def __init__(self, resource_id: str | None = None, llm_provider: str = "openai", model: str = "gpt-4.1-mini", **kwargs):
         """
         Initialize the DeepExtractionResource.
 

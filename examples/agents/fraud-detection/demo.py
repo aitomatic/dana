@@ -83,8 +83,8 @@ def main():
     """Main demo function."""
     parser = argparse.ArgumentParser(description="Fraud Detection Application Demo")
     parser.add_argument("file_path", nargs="?", help="Path to PDF or image file to analyze")
-    parser.add_argument("--llm-provider", default="anthropic", help="LLM provider (default: anthropic)")
-    parser.add_argument("--model", default="claude-3-5-sonnet-20241022", help="Model name")
+    parser.add_argument("--llm-provider", default="openai", help="LLM provider (default: openai)")
+    parser.add_argument("--model", default="gpt-4.1-mini", help="Model name")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
