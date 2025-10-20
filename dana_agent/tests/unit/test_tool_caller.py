@@ -517,6 +517,55 @@ class TestLLMResponseParsing:
         assert tool_calls[0]["arguments"]["request"] == "Research China's energy consumption trends and statistics for 2025"
         assert tool_calls[0]["arguments"]["target_url"] == "https://example.com/energy-data"
 
+    def test_parse_llm_response_with_json_in_arguments(self, tool_caller):
+        """Test parsing LLM response with JSON inside <arguments> tag."""
+        llm_response = LLMResponse(
+            content="""<response>
+<type>in_progress</type>
+<reasoning>Creating tasks for research.</reasoning>
+<content>Initializing research tasks.</content>
+<tool_calls>
+<tool_call>
+<target type="resource" id="todo-resource"/>
+<method>write</method>
+<arguments>
+{
+  "todos": [
+    {
+      "id": "task1",
+      "content": "Gather total primary energy consumption for China in 2025",
+      "status": "in_progress"
+    },
+    {
+      "id": "task2",
+      "content": "Collect breakdown by source",
+      "status": "pending"
+    }
+  ]
+}
+</arguments>
+</tool_call>
+</tool_calls>
+</response>""",
+            model="test-model",
+            tool_calls=[],
+        )
+
+        response_text, _reasoning, tool_calls = tool_caller.parse_llm_response(llm_response)
+
+        assert "Initializing research tasks." in response_text
+        assert len(tool_calls) == 1
+        assert 'type="resource" id="todo-resource"' in tool_calls[0]["function"]
+        assert tool_calls[0]["arguments"]["method"] == "write"
+        # Verify the JSON was correctly parsed
+        assert "todos" in tool_calls[0]["arguments"]
+        todos = tool_calls[0]["arguments"]["todos"]
+        assert len(todos) == 2
+        assert todos[0]["id"] == "task1"
+        assert todos[0]["status"] == "in_progress"
+        assert todos[1]["id"] == "task2"
+        assert todos[1]["status"] == "pending"
+
     def test_parse_llm_response_with_workflow_target_format(self, tool_caller):
         """Test parsing LLM response with workflow target/method format."""
         llm_response = LLMResponse(

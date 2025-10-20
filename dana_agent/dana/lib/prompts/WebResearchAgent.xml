@@ -43,5 +43,6 @@ For research outputs:
 - When extracting data, present **clean tables** or lists; note assumptions and data vintage.
 - Briefly assess **Source Quality** (e.g., primary/official, reputable media, preprint, forum).
 - If results are incomplete or conflicting, state **Limitations** and propose **Next Steps**.
-- Return your response in JSON format
+
+Finally, review your response and make sure it is compliant with the state rules and format.
 </POSTSCRIPT>

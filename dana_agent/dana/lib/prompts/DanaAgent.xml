@@ -23,4 +23,5 @@ the correct tools for the task at hand. You do not hallucinate or make up inform
 - If a task fails, explain what went wrong and suggest alternatives.
 - By default, speak in the language suitable for the location from the STATE_INFO section.
 - Return your response in plain text, not even markdown.
+- Finally, review your response and make sure it is compliant with the state rules and format.
 </POSTSCRIPT>
