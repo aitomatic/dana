@@ -23,6 +23,148 @@ from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
 
 
+class PromptFormatter:
+    """Formats prompt sections into different output formats (XML, Markdown, JSON)."""
+
+    @staticmethod
+    def format_section(tag: str, content: str, format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a prompt section in the specified format.
+
+        Args:
+            tag: Section tag name (e.g., "IDENTITY", "CONSTRAINT")
+            content: Section content
+            format_type: Output format - "xml", "markdown", "json", "minified_xml", "minified_json"
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted section string
+        """
+        if not content or not content.strip():
+            return ""
+
+        indent = " " * (indent_spaces * level)
+
+        if format_type == "xml":
+            return f"{indent}<{tag}>\n{content}\n{indent}</{tag}>"
+        elif format_type == "minified_xml":
+            content_single_line = " ".join(content.split())
+            return f"<{tag}>{content_single_line}</{tag}>"
+        elif format_type == "markdown":
+            # Convert tag to markdown heading
+            heading_level = min(level + 1, 6)  # Max heading level is 6
+            heading = "#" * heading_level
+            formatted_content = PromptFormatter._indent_lines(content, indent_spaces, level + 1)
+            return f"{indent}{heading} {tag}\n\n{formatted_content}"
+        elif format_type == "json":
+            # Return as dict entry (caller will assemble into JSON)
+            return content.strip()
+        elif format_type == "minified_json":
+            # Minified version - single line
+            return " ".join(content.split())
+        else:
+            # Default to XML
+            return f"{indent}<{tag}>\n{content}\n{indent}</{tag}>"
+
+    @staticmethod
+    def _indent_lines(text: str, spaces: int, level: int) -> str:
+        """Indent all lines in text by the specified amount."""
+        if not text:
+            return ""
+        indent = " " * (spaces * level)
+        lines = text.split("\n")
+        return "\n".join(f"{indent}{line}" if line.strip() else "" for line in lines)
+
+    @staticmethod
+    def format_list(items: list[str], format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a list of items in the specified format.
+
+        Args:
+            items: List of items to format
+            format_type: Output format
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted list string
+        """
+        if not items:
+            return "None"
+
+        indent = " " * (indent_spaces * level)
+
+        if format_type in ("xml", "minified_xml"):
+            return "\n".join(f"{indent}- {item}" for item in items)
+        elif format_type == "markdown":
+            return "\n".join(f"{indent}- {item}" for item in items)
+        elif format_type in ("json", "minified_json"):
+            # Return as JSON array
+            import json
+
+            minify = format_type == "minified_json"
+            separator = "" if minify else " "
+            indent_str = None if minify else indent_spaces * (level + 1)
+            return json.dumps(items, indent=indent_str, separators=("," + separator, ":" + separator))
+        else:
+            return "\n".join(f"{indent}- {item}" for item in items)
+
+    @staticmethod
+    def format_dict(data: dict, format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a dictionary in the specified format.
+
+        Args:
+            data: Dictionary to format
+            format_type: Output format
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted dictionary string
+        """
+        if not data:
+            return ""
+
+        import json
+
+        if format_type in ("json", "minified_json"):
+            minify = format_type == "minified_json"
+            separator = "" if minify else " "
+            indent_str = None if minify else indent_spaces
+            return json.dumps(data, indent=indent_str, separators=("," + separator, ":" + separator))
+        elif format_type == "markdown":
+            # Format as markdown list
+            indent = " " * (indent_spaces * level)
+            lines = []
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    lines.append(f"{indent}**{key}**:")
+                    nested = PromptFormatter.format_dict(value, format_type, indent_spaces, level + 1)
+                    lines.append(nested)
+                elif isinstance(value, list):
+                    lines.append(f"{indent}**{key}**:")
+                    nested = PromptFormatter.format_list(value, format_type, indent_spaces, level + 1)
+                    lines.append(nested)
+                else:
+                    lines.append(f"{indent}**{key}**: {value}")
+            return "\n".join(lines)
+        else:  # XML format
+            indent = " " * (indent_spaces * level)
+            lines = []
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    nested = PromptFormatter.format_dict(value, format_type, indent_spaces, level + 1)
+                    lines.append(f"{indent}<{key}>\n{nested}\n{indent}</{key}>")
+                elif isinstance(value, list):
+                    nested = PromptFormatter.format_list(value, format_type, indent_spaces, level + 1)
+                    lines.append(f"{indent}<{key}>\n{nested}\n{indent}</{key}>")
+                else:
+                    lines.append(f"{indent}<{key}>{value}</{key}>")
+            return "\n".join(lines)
+
+
 class PromptEngineer:
     """Component providing XML-based prompt files with section-level inheritance."""
 
