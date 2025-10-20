@@ -121,6 +121,9 @@ Prioritize understanding the user's intent and providing solutions that address 
 </POSTSCRIPT>
 
 <SYSTEM_LAST_WORD>
+Be sure to use XML format for your response, not JSON.
+Do not use the examples of tool-calling from the TIMELINE section.
+Follow the XML format and rules stated in the CONSTRAINT section.
 Do not use any output format with special tokens like <| |> <|channel|> etc.
 Finally, review your response and make sure it is compliant with the state rules and format.
 </SYSTEM_LAST_WORD>
