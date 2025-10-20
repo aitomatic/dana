@@ -92,12 +92,13 @@ class DeepExtractionResource(BaseResource):
             print(f"Warning: Failed to initialize vision parser: {e}")
 
     @tool_use
-    def extract(self, file_path: str, **kwargs) -> DictParams:
+    def extract(self, file_path: str, prompt: str | None = None, **kwargs) -> DictParams:
         """
         Extract text from PDF or image file using VLM or traditional methods.
 
         Args:
             file_path: Path to the PDF or image file
+            prompt: Optional custom prompt for extraction (overrides default)
             **kwargs: Additional parameters (not used)
 
         Returns:
@@ -118,7 +119,7 @@ class DeepExtractionResource(BaseResource):
 
             # Try VLM-based extraction first if parser is available
             if self.parser and AICAPTURE_AVAILABLE:
-                return self._extract_with_vision_parser(str(file_path), file_extension)
+                return self._extract_with_vision_parser(str(file_path), file_extension, prompt)
             else:
                 # Fall back to traditional methods
                 return self._extract_with_traditional_methods(str(file_path), file_extension)
@@ -126,36 +127,51 @@ class DeepExtractionResource(BaseResource):
         except Exception as e:
             return {"success": False, "extracted_text": "", "file_type": "unknown", "error": f"Extraction failed: {str(e)}"}
 
-    def _extract_with_vision_parser(self, file_path: str, file_extension: str) -> DictParams:
+    def _extract_with_vision_parser(self, file_path: str, file_extension: str, prompt: str | None = None) -> DictParams:
         """Extract text using aicapture VisionParser."""
         try:
             if self.parser is None:
                 raise ValueError("Vision parser not initialized")
 
-            if file_extension == ".pdf":
-                result = self.parser.process_pdf(file_path)  # type: ignore
-            elif file_extension in [".png", ".jpg", ".jpeg", ".tiff", ".bmp"]:
-                result = self.parser.process_image(file_path)  # type: ignore
-            else:
-                return {
-                    "success": False,
-                    "extracted_text": "",
-                    "file_type": file_extension,
-                    "error": f"Unsupported file format: {file_extension}",
-                }
+            # Store original prompt and set custom prompt if provided
+            original_prompt = getattr(self.parser, "prompt", None)
+            if prompt:
+                self.parser.prompt = prompt
 
-            # Extract text from VisionParser result
-            if result and "file_object" in result:
-                file_object = result["file_object"]
-                if "pages" in file_object:
-                    # Combine all page content
-                    extracted_text = "\n".join(page.get("page_content", "") for page in file_object["pages"])
+            try:
+                if file_extension == ".pdf":
+                    result = self.parser.process_pdf(file_path)  # type: ignore
+                elif file_extension in [".png", ".jpg", ".jpeg", ".tiff", ".bmp"]:
+                    result = self.parser.process_image(file_path)  # type: ignore
                 else:
-                    extracted_text = file_object.get("content", "")
+                    return {
+                        "success": False,
+                        "extracted_text": "",
+                        "file_type": file_extension,
+                        "error": f"Unsupported file format: {file_extension}",
+                    }
 
-                return {"success": True, "extracted_text": extracted_text.strip(), "file_type": file_extension, "error": None}
-            else:
-                return {"success": False, "extracted_text": "", "file_type": file_extension, "error": "VisionParser returned empty result"}
+                # Extract text from VisionParser result
+                if result and "file_object" in result:
+                    file_object = result["file_object"]
+                    if "pages" in file_object:
+                        # Combine all page content
+                        extracted_text = "\n".join(page.get("page_content", "") for page in file_object["pages"])
+                    else:
+                        extracted_text = file_object.get("content", "")
+
+                    return {"success": True, "extracted_text": extracted_text.strip(), "file_type": file_extension, "error": None}
+                else:
+                    return {
+                        "success": False,
+                        "extracted_text": "",
+                        "file_type": file_extension,
+                        "error": "VisionParser returned empty result",
+                    }
+            finally:
+                # Restore original prompt
+                if original_prompt is not None:
+                    self.parser.prompt = original_prompt
 
         except Exception as e:
             return {
