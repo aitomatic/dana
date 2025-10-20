@@ -80,6 +80,9 @@ class FraudDetectionWorkflow(BaseWorkflow):
         """
         file_path = kwargs.get("file_path")
 
+        print(f"File path: {file_path}")
+        # exit()
+
         if not file_path:
             return {
                 "success": False,
@@ -126,9 +129,13 @@ class FraudDetectionWorkflow(BaseWorkflow):
                 }
 
             # Call DeepExtractor agent
-            extraction_result = self.call_agent(agent=self.deep_extractor, message="Extract text from document", file_path=file_path)
+            extraction_result = self.call_agent(
+                agent=self.deep_extractor,
+                message=f"Extract text from document {file_path}",
+                file_path=file_path,
+            )
 
-            if not extraction_result.get("success", False):
+            if extraction_result.get("error", False):
                 return {
                     "success": False,
                     "extracted_text": "",
@@ -138,7 +145,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                     "error": f"Text extraction failed: {extraction_result.get('error')}",
                 }
 
-            extracted_text = extraction_result.get("extracted_text", "")
+            extracted_text = extraction_result.get("response", "")
 
             # ========================================
             # STEP 2: FIELD NORMALIZATION (Text → JSON)
@@ -168,7 +175,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                 agent=self.field_normalizer, message="Normalize extracted text to JSON", extracted_text=extracted_text
             )
 
-            if not normalization_result.get("success", False):
+            if normalization_result.get("error", False):
                 return {
                     "success": False,
                     "extracted_text": extracted_text,
@@ -178,7 +185,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                     "error": f"Text normalization failed: {normalization_result.get('error')}",
                 }
 
-            normalized_data = normalization_result.get("normalized_data", {})
+            normalized_data = normalization_result.get("response", {})
 
             # ========================================
             # STEP 3: FRAUD DETECTION (JSON → Fraud Result)
@@ -208,7 +215,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                 agent=self.fraud_indicator, message="Detect fraud patterns in normalized data", normalized_data=normalized_data
             )
 
-            if not fraud_result.get("success", False):
+            if fraud_result.get("error", False):
                 return {
                     "success": False,
                     "extracted_text": extracted_text,
@@ -218,7 +225,7 @@ class FraudDetectionWorkflow(BaseWorkflow):
                     "error": f"Fraud detection failed: {fraud_result.get('error')}",
                 }
 
-            fraud_analysis = fraud_result.get("fraud_result", {})
+            fraud_analysis = fraud_result.get("response", {})
 
             # ========================================
             # PIPELINE COMPLETION
