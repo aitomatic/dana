@@ -2,7 +2,11 @@
 Hugging Face Provider Implementation
 """
 
-from openai import AsyncOpenAI
+import ast
+import json
+import re
+
+from openai import AsyncOpenAI, BadRequestError
 import structlog
 
 from ...config import config_manager
@@ -10,6 +14,179 @@ from ..types import LLMMessage, LLMProvider, LLMResponse
 
 
 logger = structlog.get_logger()
+
+
+def parse_special_format(completion: str) -> dict | None:
+    """
+    Parse model output that uses special tokens instead of standard XML format.
+
+    Some models trained with custom special tokens may generate output like:
+        <|channel|>commentary to=<target> method=<method> <|constrain|>json<|message|>{json_data}
+        <|channel|>analysis<|message|>This is reasoning text...
+
+    This parser extracts the intent from such malformed responses to recover from
+    API 400 errors caused by these special tokens.
+
+    Args:
+        completion: The raw completion string from the model
+
+    Returns:
+        Dictionary with parsed components:
+            - channel: The channel type (e.g., "analysis", "commentary", "response")
+            - target: The target agent/workflow/resource ID (if present)
+            - method: The method to call (if present)
+            - arguments: JSON string or dict of arguments (if present)
+            - message: Extracted message content if present
+            - reasoning: Extracted reasoning text (if channel is "analysis")
+        Returns None if parsing fails or format is not recognized.
+
+    Examples:
+        >>> parse_special_format('<|channel|>commentary to=web-researcher invoke <|message|>{"query":"test"}')
+        {'channel': 'commentary', 'target': 'web-researcher', 'method': 'invoke', 'arguments': '{"query":"test"}', 'message': 'test'}
+
+        >>> parse_special_format('<|channel|>analysis<|message|>We need to call the weather API')
+        {'channel': 'analysis', 'reasoning': 'We need to call the weather API'}
+    """
+    if not completion or "<|" not in completion:
+        return None
+
+    try:
+        result = {}
+
+        # Extract channel type
+        channel_match = re.search(r"<\|channel\|>(\w+)", completion)
+        if channel_match:
+            result["channel"] = channel_match.group(1)
+
+        # If channel is "analysis", extract the message as reasoning text
+        if result.get("channel") == "analysis":
+            # Extract plain text message (non-JSON) for analysis channel
+            message_match = re.search(r"<\|message\|>(.+?)(?:<\||$)", completion, re.DOTALL)
+            if message_match:
+                reasoning_text = message_match.group(1).strip()
+                # If it's not JSON, use it as reasoning
+                if not reasoning_text.startswith("{"):
+                    result["reasoning"] = reasoning_text
+                    return result
+
+        # Extract target from "to=<target>" pattern
+        # Matches: to=web-researcher, to=google-lookup, etc.
+        target_match = re.search(r"to=([a-zA-Z0-9_-]+)", completion)
+        if target_match:
+            result["target"] = target_match.group(1)
+
+        # Extract method - try two patterns:
+        # 1. Explicit "method=<name>"
+        # 2. Implicit method name after target (e.g., "to=google-lookup execute")
+        method_match = re.search(r"method=(\w+)", completion)
+        if method_match:
+            result["method"] = method_match.group(1)
+        else:
+            # Try to find method name between target and next special token
+            implicit_method = re.search(r"to=[a-zA-Z0-9_-]+\s+(\w+)\s*<\|", completion)
+            if implicit_method:
+                result["method"] = implicit_method.group(1)
+            else:
+                # Default to 'invoke' if no method found
+                result["method"] = "invoke"
+
+        # Extract JSON from <|message|>{...} pattern
+        json_match = re.search(r"<\|message\|>(\{.*?\})", completion)
+        if json_match:
+            json_str = json_match.group(1)
+            result["arguments"] = json_str
+
+            # Try to extract a simple message field from the JSON for convenience
+            try:
+                json_data = json.loads(json_str)
+                if isinstance(json_data, dict):
+                    # Look for common message field names
+                    for key in ["message", "query", "content", "text"]:
+                        if key in json_data:
+                            result["message"] = json_data[key]
+                            break
+            except json.JSONDecodeError:
+                pass
+
+        # Return if we found reasoning OR a target
+        return result if ("reasoning" in result or "target" in result) else None
+
+    except Exception as e:
+        logger.warning("Failed to parse special format", error=str(e), completion=completion[:200])
+        return None
+
+
+def convert_special_format_to_xml(parsed: dict) -> str:
+    """
+    Convert parsed special format to standard XML response format.
+
+    Converts the parsed model output into the XML format expected by the system:
+        <response>
+            <type>in_progress</type>
+            <content>...</content>
+            <tool_calls>...</tool_calls>
+        </response>
+
+    Or for reasoning-only (analysis channel):
+        <response>
+            <type>in_progress</type>
+            <reasoning>...</reasoning>
+            <content>Analyzing the request...</content>
+        </response>
+
+    Args:
+        parsed: Dictionary from parse_special_format with target, method, arguments, or reasoning
+
+    Returns:
+        XML-formatted string in the system's expected format
+    """
+    # Check if this is a reasoning-only response (analysis channel)
+    if "reasoning" in parsed and "target" not in parsed:
+        reasoning = parsed["reasoning"]
+        xml = f"""<response>
+<type>in_progress</type>
+<reasoning>{reasoning}</reasoning>
+<content>Processing your request...</content>
+</response>"""
+        return xml
+
+    # Otherwise, it's a tool call response
+    target = parsed.get("target", "unknown")
+    method = parsed.get("method", "invoke")
+    arguments = parsed.get("arguments", "{}")
+    message = parsed.get("message", "")
+    reasoning = parsed.get("reasoning", "Recovered from special token format and converting to standard tool call.")
+
+    """ do not specify target type
+    # Determine target type based on common patterns
+    # This is a heuristic - adjust based on your system's naming conventions
+    if "workflow" in target.lower() or target in ["google-lookup"]:
+        target_type = "workflow"
+    elif "resource" in target.lower():
+        target_type = "resource"
+    else:
+        target_type = "agent"
+    <target type="{target_type}" id="{target}"/>
+    """
+
+    # Create explanation based on what we're doing
+    explanation = f"Calling {target}" + (f" - {message}" if message else "")
+
+    # Build XML response
+    xml = f"""<response>
+<type>in_progress</type>
+<reasoning>{reasoning}</reasoning>
+<content>{explanation}</content>
+<tool_calls>
+<tool_call>
+<target type="unknown" id="{target}"/>
+<method>{method}</method>
+<arguments>{arguments}</arguments>
+</tool_call>
+</tool_calls>
+</response>"""
+
+    return xml
 
 
 class HuggingFaceProvider(LLMProvider):
@@ -57,8 +234,6 @@ class HuggingFaceProvider(LLMProvider):
 
     async def chat(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """Send messages to Hugging Face and get a response."""
-        import httpx
-
         try:
             # Convert our message format to OpenAI format
             openai_messages = []
@@ -115,9 +290,61 @@ class HuggingFaceProvider(LLMProvider):
                 tool_calls=tool_calls,
             )
 
-        except httpx.HTTPStatusError as e:
-            logger.error("Hugging Face HTTP error", status_code=e.response.status_code, error=str(e))
+        except BadRequestError as e:
+            # Try to recover from 400 errors caused by special token format
+            if e.status_code == 400:
+                try:
+                    # Parse the error body - it's embedded in the exception's string representation
+                    error_str = str(e)
+                    # Extract the dict portion between 'Error code: 400 - ' and the end
+                    if "Error code: 400 - " in error_str:
+                        dict_str = error_str.split("Error code: 400 - ", 1)[1]
+                        # Use ast.literal_eval to safely parse the dict string
+                        error_body = ast.literal_eval(dict_str)
+
+                        raw_output = error_body.get("raw_output", {})
+                        completion = raw_output.get("completion", "")
+
+                        # Check if error mentions special tokens
+                        error_message = error_body.get("error", {}).get("message", "")
+                        if completion and ("unexpected tokens" in error_message or "<|" in completion):
+                            logger.warning(
+                                "Detected special token format in model output, attempting to parse",
+                                completion_preview=completion[:200],
+                                error_message=error_message,
+                            )
+
+                            # Try to parse the special format
+                            parsed = parse_special_format(completion)
+                            if parsed:
+                                # Convert to standard XML format
+                                xml_content = convert_special_format_to_xml(parsed)
+
+                                logger.info(
+                                    "Successfully recovered from special token format",
+                                    target=parsed.get("target"),
+                                    method=parsed.get("method"),
+                                )
+
+                                # Return as a valid response with the converted XML
+                                return LLMResponse(
+                                    content=xml_content,
+                                    model=self.model,
+                                    usage=None,  # Usage info not available in error
+                                    finish_reason="recovered_from_special_format",
+                                    tool_calls=None,
+                                )
+                            else:
+                                logger.warning("Failed to parse special token format, falling through to error")
+                except Exception as parse_error:
+                    logger.warning(
+                        "Error while trying to parse special format", error=str(parse_error), error_type=type(parse_error).__name__
+                    )
+
+            # If we couldn't recover, log and raise the original error
+            logger.error("Hugging Face HTTP error", status_code=e.status_code, error=str(e))
             raise
+
         except Exception as e:
             logger.error("Hugging Face API error", error=str(e), error_type=type(e).__name__)
             raise

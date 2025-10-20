@@ -266,7 +266,33 @@ class ToolCaller(WARCaller):
     # ============================================================================
 
     def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
-        """Execute a single tool call with error handling."""
+        """
+        Execute a single tool call with error handling.
+
+        FAULT-TOLERANCE STRATEGY (Phase 1):
+        This method handles multiple tool call format combinations through branching logic:
+
+        1. type + target + method: 'type="agent" id="web-researcher"/' (XML format)
+        2. target + method: {"target": "web-researcher", "method": "query"} (explicit target in args)
+        3. function-as-target: {"function": "web-researcher", "arguments": {...}} (implicit target)
+
+        Each branch extracts the necessary information (type, target, method, parameters) and
+        dispatches to the appropriate execution method.
+
+        FUTURE ENHANCEMENT (Phase 2):
+        Consider refactoring to a canonical normalization approach:
+        - Extract all format handling into _normalize_tool_call_to_canonical()
+        - Normalize all combinations to: {"type": str, "target": str, "method": str, "parameters": dict}
+        - Single dispatch based on normalized type
+        - Benefits: cleaner separation, easier to extend, better testability
+        - Challenges: type inference cost, ambiguity handling if target exists in multiple registries
+
+        Args:
+            tool_call: Dictionary with "function" and "arguments" keys
+
+        Returns:
+            Tool call result dictionary with type, target, result, and success fields
+        """
         try:
             function_name = tool_call.get("function", "")
             arguments = tool_call.get("arguments", {})
@@ -323,8 +349,14 @@ class ToolCaller(WARCaller):
                 # Check if this is a structured JSON call with target field
                 if "target" in arguments:
                     return self._handle_target_based_call(function_name, arguments)
-                else:
-                    return self._create_unknown_function_error(function_name or "unknown")
+
+                # Phase 1: Try function_name as implicit target (e.g., "web-researcher")
+                # This handles cases where LLM provides function name without explicit target field
+                if function_name:
+                    pseudo_args = {"target": function_name} | arguments
+                    return self._handle_target_based_call(function_name, pseudo_args)
+
+                return self._create_unknown_function_error(function_name or "unknown")
 
         except Exception as e:
             return self._create_execution_error(tool_call, e)
@@ -491,9 +523,17 @@ class ToolCaller(WARCaller):
                         # Use unified parser to handle XML, JSON, or plain text
                         arguments_dict[arg_name] = self._convert_function_parameter_value(arg_value.strip())
 
-                    # If no balanced arguments found, try tolerant parsing
+                    # If no XML tags found, try parsing entire content as JSON or other format
                     if not arg_matches:
-                        arguments_dict = self._parse_tool_call_arguments_with_error_recovery(arguments_xml)
+                        # Try to parse the entire arguments_xml as a value (handles JSON, nested XML, etc.)
+                        parsed_value = self._convert_function_parameter_value(arguments_xml)
+
+                        # If it parsed to a dict, merge it into arguments_dict
+                        if isinstance(parsed_value, dict):
+                            arguments_dict.update(parsed_value)
+                        else:
+                            # Fall back to tolerant XML parsing for malformed tags
+                            arguments_dict = self._parse_tool_call_arguments_with_error_recovery(arguments_xml)
 
                 # Add method to arguments if present
                 if method and method.strip():

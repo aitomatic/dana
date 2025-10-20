@@ -19,13 +19,15 @@ import sys
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
-from dana.common.protocols import DictParams
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
 
 
 class PromptEngineer:
     """Component providing XML-based prompt files with section-level inheritance."""
+
+    # Compiled regex pattern for tag extraction (performance optimization)
+    _START_TAG_PATTERN = re.compile(r"<(\w+)>")
 
     def __init__(self, agent: BaseSTARAgent):
         """
@@ -35,16 +37,18 @@ class PromptEngineer:
             agent: The agent instance this component belongs to
         """
         self._agent = agent
-        # Cache for prompt sections from files
-        self._prompt_sections_cache = None
+        # Cache for raw prompt content (text)
+        self._raw_content_cache = None
+        # Cache for extracted sections
+        self._section_cache = {}
         # File-based prompt support
         self._prompt_file_path = None
         self._file_mtime = None
 
     def reset(self) -> None:
         """Reset the prompt engineer."""
-        del self._prompt_sections_cache
-        self._prompt_sections_cache = None
+        self._raw_content_cache = None
+        self._section_cache = {}
         # Don't reset file path - let discovery happen again
         # self._prompt_file_path = None
         self._file_mtime = None
@@ -135,60 +139,56 @@ class PromptEngineer:
 
         return current_dir
 
-    def _get_file_sections(self, file_path: str) -> DictParams:
-        """Extract all sections from a single .xml file."""
+    def _load_file_content(self, file_path: str) -> str:
+        """Load raw text content from a single .xml file."""
         if not file_path or not os.path.exists(file_path):
-            return {}
+            return ""
 
         try:
             with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+                return f.read()
         except OSError:
-            return {}
+            return ""
 
-        # Same regex pattern as docstring parsing - works for XML tags!
-        result = {}
-        matches = re.findall(r"<(.*?)>(.*?)</\1>", content, re.DOTALL)
-        for match in matches:
-            tag_name = match[0]
-            content = match[1].strip()
-            result[tag_name] = content
-
-        return result
-
-    def _get_inherited_file_sections(self) -> DictParams:
-        """Get sections from all prompt files in inheritance chain with proper merging."""
+    def _load_inherited_prompt_content(self) -> str:
+        """Load and concatenate prompt files from inheritance chain (parent to child)."""
         # Get the Method Resolution Order (MRO) for inheritance support
         class_names = [cls.__name__ for cls in self._agent.__class__.__mro__ if issubclass(cls, BaseSTARAgent)]
-        result = {}
+        content_parts = []
 
-        # Process classes in REVERSE MRO order (parent -> child) so child sections override parent
+        # Process classes in REVERSE MRO order (parent -> child)
+        # Child sections will appear later in text, so searches find child version first
         for class_name in reversed(class_names):
             # Try to find a prompt file for this class (in priority order)
             user_prompt_file = self._get_user_prompt_file(class_name)
             if user_prompt_file and os.path.exists(user_prompt_file):
-                file_sections = self._get_file_sections(user_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(user_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             lib_prompt_file = self._get_lib_prompt_file(class_name)
             if lib_prompt_file and os.path.exists(lib_prompt_file):
-                file_sections = self._get_file_sections(lib_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(lib_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             core_prompt_file = self._get_core_prompt_file(class_name)
             if core_prompt_file and os.path.exists(core_prompt_file):
-                file_sections = self._get_file_sections(core_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(core_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             co_located_file = self._get_co_located_prompt_file(class_name)
             if co_located_file and os.path.exists(co_located_file):
-                file_sections = self._get_file_sections(co_located_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(co_located_file)
+                if content:
+                    content_parts.append(content)
 
-        return result
+        # Join with newlines; when searching, later sections override earlier ones
+        return "\n\n".join(content_parts)
 
     def _check_file_modified(self) -> bool:
         """Check if prompt file has been modified since last load."""
@@ -253,32 +253,98 @@ class PromptEngineer:
         }
 
     def _get_prompt_section_for_tag(self, tag: str, show_tag: bool | str = True) -> str:
-        """Extract a section from the formatted prompt for a given tag."""
-        content = self._prompt_sections.get(tag, "")
-        if len(content) == 0:
+        """
+        Extract a section by tag name using direct text search.
+        Supports nested tags automatically. Results are cached.
+        """
+        # Check cache first
+        cache_key = f"{tag}:{show_tag}"
+        if cache_key in self._section_cache:
+            return self._section_cache[cache_key]
+
+        # Extract from raw content
+        content = self._extract_section_from_text(self._prompt_content, tag)
+
+        if not content:
+            self._section_cache[cache_key] = ""
             return ""
 
+        # Format with tags if requested
         if show_tag:
             if isinstance(show_tag, str):
                 content = f"<{show_tag}>\n{content}\n</{show_tag}>"
             else:
                 content = f"<{tag}>\n{content}\n</{tag}>"
+
+        self._section_cache[cache_key] = content
         return content
 
+    def _extract_section_from_text(self, content: str, target_tag: str) -> str:
+        """
+        Extract a section by searching for start/end tags in raw text.
+        Tolerant of missing end tags (uses next tag or EOF).
+        Searches recursively for nested tags.
+        """
+        # Look for the opening tag
+        start_pattern = f"<{target_tag}>"
+        start_pos = content.rfind(start_pattern)  # Use rfind to get last occurrence (child overrides parent)
+
+        if start_pos == -1:
+            # Not found at top level - try as nested tag
+            return self._search_nested_tag(content, target_tag)
+
+        tag_start = start_pos + len(start_pattern)
+
+        # Look for matching closing tag
+        end_pattern = f"</{target_tag}>"
+        end_pos = content.find(end_pattern, tag_start)
+
+        if end_pos != -1:
+            # Found closing tag
+            return content[tag_start:end_pos].strip()
+
+        # No closing tag - find next opening tag or EOF (tolerant parsing)
+        next_tag = self._START_TAG_PATTERN.search(content, tag_start)
+        if next_tag:
+            return content[tag_start : next_tag.start()].strip()
+
+        # No more tags - take rest of content
+        return content[tag_start:].strip()
+
+    def _search_nested_tag(self, content: str, target_tag: str) -> str:
+        """
+        Search for a tag that's nested inside other tags.
+        E.g., find CONTEXT_INSTRUCTIONS inside CONTEXT.
+        """
+        # Search for target tag anywhere in content (use rfind for last occurrence)
+        pattern = f"<{target_tag}>"
+        pos = content.rfind(pattern)
+
+        if pos == -1:
+            return ""
+
+        tag_start = pos + len(pattern)
+        end_pattern = f"</{target_tag}>"
+        end_pos = content.find(end_pattern, tag_start)
+
+        if end_pos != -1:
+            return content[tag_start:end_pos].strip()
+
+        # Tolerant: find next tag
+        next_tag = self._START_TAG_PATTERN.search(content, tag_start)
+        if next_tag:
+            return content[tag_start : next_tag.start()].strip()
+
+        return content[tag_start:].strip()
+
     @property
-    def _prompt_sections(self) -> DictParams:
-        """Get the prompt sections (cached) - file-based with section-level inheritance."""
-        # Check if we need to reload (no cache or files modified)
-        if not hasattr(self, "_prompt_sections_cache") or not self._prompt_sections_cache:
-            # Load sections from all prompt files in inheritance chain
-            self._prompt_sections_cache = self._get_inherited_file_sections()
+    def _prompt_content(self) -> str:
+        """Get the raw prompt content (cached) - file-based with section-level inheritance."""
+        if self._raw_content_cache is None:
+            # Load raw text from all prompt files in inheritance chain
+            self._raw_content_cache = self._load_inherited_prompt_content()
 
-        return self._prompt_sections_cache
-
-    @_prompt_sections.setter
-    def _prompt_sections(self, value: DictParams) -> None:
-        """Set the prompt sections."""
-        self._prompt_sections_cache = value
+        return self._raw_content_cache
 
     # ============================================================================
     # PUBLIC INTERFACE PROPERTIES
@@ -315,6 +381,8 @@ class PromptEngineer:
         6. AVAILABLE_TARGETS - Unified registry
         """
         return f"""
+{self._get_system_first_word_section()}
+
 {self._get_preamble_section()}
 
 {self._get_constraint_section()}
@@ -328,11 +396,21 @@ class PromptEngineer:
 {self._get_available_targets_section()}
 
 {self._get_postscript_section()}
+
+{self._get_system_last_word_section()}
 """.strip()
 
     # ============================================================================
     # SYSTEM PROMPT SECTION METHODS
     # ============================================================================
+
+    def _get_system_first_word_section(self) -> str:
+        """Get the system first word section."""
+        return self._get_prompt_section_for_tag("SYSTEM_FIRST_WORD", show_tag=False)
+
+    def _get_system_last_word_section(self) -> str:
+        """Get the system last word section."""
+        return self._get_prompt_section_for_tag("SYSTEM_LAST_WORD", show_tag=False)
 
     def _get_preamble_section(self) -> str:
         """Get the preamble section."""

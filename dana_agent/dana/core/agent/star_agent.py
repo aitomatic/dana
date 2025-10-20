@@ -10,6 +10,8 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
+import structlog
+
 from dana.common.llm.llm import LLM
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, Notifiable, ResourceProtocol, WorkflowProtocol
@@ -21,11 +23,17 @@ from .components import Communicator, Learner, PromptEngineer, State, ToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
+logger = structlog.get_logger()
+
+
 # from dana.apps.dana.thought_logger import ThoughtLogger  # Moved to avoid circular import
 
 
 class STARAgent(BaseSTARAgent):
     """STARAgent implementation using composition-based architecture."""
+
+    # Configuration constants
+    MAX_EMPTY_RESPONSE_RETRIES = 3  # Maximum retries when LLM returns empty response with no tool calls
 
     def __init__(
         self,
@@ -281,9 +289,19 @@ class STARAgent(BaseSTARAgent):
         # Build LLM messages using PromptEngineer
         llm_messages = self._prompt_engineer.build_llm_request(timeline)
 
-        # Query LLM with agent information for logging
-        llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type)
-        response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+        # Query LLM with retry logic for empty responses
+        response, reasoning, tool_calls = None, None, None
+        for attempt in range(self.MAX_EMPTY_RESPONSE_RETRIES):
+            llm_response = self.llm_client.chat_response_sync(llm_messages, agent_id=self.object_id, agent_type=self.agent_type)
+            response, reasoning, tool_calls = self._tool_caller.parse_llm_response(llm_response)
+
+            # Retry if both response and tool_calls are empty
+            has_content = response and response.strip()
+            has_tool_calls = tool_calls and len(tool_calls) > 0
+            if has_content or has_tool_calls:
+                break
+            if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
+                logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
 
         if not tool_calls or len(tool_calls) == 0:
             response = response if (response and len(response) > 0) else "No response generated"
@@ -294,6 +312,14 @@ class STARAgent(BaseSTARAgent):
                 )
             )
         else:
+            if reasoning and len(reasoning) > 0:
+                timeline.add_entry(
+                    TimelineEntry(
+                        entry_type=TimelineEntryType.AGENT_THOUGHTS,
+                        content=reasoning,
+                    )
+                )
+
             if response and len(response) > 0:
                 timeline.add_entry(
                     TimelineEntry(
