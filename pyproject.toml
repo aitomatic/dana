@@ -160,6 +160,7 @@ known-third-party = [
     "lxml",
     "readability",
     "html2text",
+    "aicapture",
 ]
 section-order = [
     "future",
