@@ -690,24 +690,12 @@ class PromptEngineer:
 
             # Get system information
             system_info = f"{platform.system()} {platform.release()}"
-            python_version = platform.python_version()
-
-            # Get working directory
-            working_dir = os.getcwd()
 
             # Get user information
             try:
                 username = os.getenv("USER") or os.getenv("USERNAME") or "Unknown"
             except Exception:
                 username = "Unknown"
-
-            # Get additional environment info
-            try:
-                shell = os.getenv("SHELL", "Unknown")
-                home_dir = os.path.expanduser("~")
-            except Exception:
-                shell = "Unknown"
-                home_dir = "Unknown"
 
             # Get location information
             try:
@@ -729,11 +717,11 @@ class PromptEngineer:
             locale_info.append(f"Timezone: {timezone}")
             locale_info.append(f"Locale: {locale_str}")
             locale_info.append(f"System: {system_info}")
-            locale_info.append(f"Python: {python_version}")
+            # locale_info.append(f"Python: {python_version}")
             locale_info.append(f"User: {username}")
-            locale_info.append(f"Shell: {shell}")
-            locale_info.append(f"Home Directory: {home_dir}")
-            locale_info.append(f"Working Directory: {working_dir}")
+            # locale_info.append(f"Shell: {shell}")
+            # locale_info.append(f"Home Directory: {home_dir}")
+            # locale_info.append(f"Working Directory: {working_dir}")
             locale_info.append(f"Location: {location}")
 
             return "\n".join(locale_info)
@@ -779,6 +767,11 @@ class PromptEngineer:
             else:
                 # No latest user message, use all timeline messages
                 messages.extend(timeline_messages)
+
+        # Hack: put the user state/locale here for now
+        state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
+        state_info_content = "\n".join(state_info)
+        messages.append(LLMMessage(role="user", content=state_info_content))
 
         # Debug logging - log message building
         debug_logger = get_debug_logger()
