@@ -6,7 +6,7 @@ This component provides functionality for:
 - Tool call result processing
 - Tool call error handling
 """
-
+from __future__ import annotations
 import asyncio
 import json
 import re
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class WARCaller:
     """Unified caller for Workflows, Agents, and Resources with consistent behavior."""
 
-    def __init__(self, agent: "STARAgent", tool_caller=None):
+    def __init__(self, agent: "STARAgent", tool_caller: ToolCaller | None = None):
         """Initialize with agent reference."""
         self._agent = agent
         self._tool_caller = tool_caller
