@@ -467,9 +467,49 @@ class ToolCaller(WARCaller):
 
         return None
 
+    def _parse_xml_attributes(self, attrs_str: str) -> dict[str, str]:
+        """
+        Parse XML attributes from a string into a dictionary.
+
+        Args:
+            attrs_str: String containing XML attributes (e.g., 'id="foo" type="bar"')
+
+        Returns:
+            Dictionary of attribute name-value pairs
+        """
+        attributes = {}
+        # Match attribute="value" or attribute='value'
+        attr_pattern = r'(\w+)\s*=\s*["\']([^"\']*)["\']'
+        for match in re.finditer(attr_pattern, attrs_str):
+            attr_name, attr_value = match.groups()
+            attributes[attr_name] = attr_value
+        return attributes
+
+    def _extract_function_name_from_attributes(self, attrs_str: str) -> str | None:
+        """
+        Extract function name from XML attributes with preference: id > type.
+
+        Args:
+            attrs_str: String containing XML attributes
+
+        Returns:
+            Function name (id or type value), or None if neither found
+        """
+        if not attrs_str or not attrs_str.strip():
+            return None
+
+        attributes = self._parse_xml_attributes(attrs_str)
+
+        # Prefer id over type
+        return attributes.get("id") or attributes.get("type")
+
     def _extract_tool_calls_from_xml(self, tool_calls_xml: str) -> list[DictParams]:
         """
         Parse XML tool calls into dictionary format.
+
+        Supports these patterns (with id preferred over type):
+        - <tool_call id="xxx"> or <tool_call type="xxx"> or <tool_call id="xxx" type="yyy">
+        - <tool_call><target id="xxx"/> or <tool_call><target type="xxx"/> etc.
 
         Args:
             tool_calls_xml: XML string containing tool calls
@@ -484,7 +524,8 @@ class ToolCaller(WARCaller):
 
         try:
             # Find all tool_call elements using regex (handle attributes on opening tag)
-            matches = re.findall(r"<tool_call\s*([^>]*)>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
+            # Use word boundary \b to avoid matching <tool_calls> as <tool_call>
+            matches = re.findall(r"<tool_call\b\s*([^>]*)>(.*?)</tool_call>", tool_calls_xml, re.DOTALL)
 
             if not matches:
                 # Try tolerant parsing for unbalanced tags
@@ -493,19 +534,20 @@ class ToolCaller(WARCaller):
                     matches = [("", tool_call_content)]
 
             for attrs_str, tool_call_content in matches:
-                # Extract function name from attributes (type and id) or from <target> tag
+                # Extract function name: try <tool_call> attributes first, then <target> tag
                 function_name = None
 
-                # First try: extract from attributes on <tool_call> tag
+                # Strategy 1: Extract from <tool_call> tag attributes (id > type)
                 if attrs_str:
-                    function_name = attrs_str.strip()
+                    function_name = self._extract_function_name_from_attributes(attrs_str)
 
-                # Second try: extract from <target> tag
+                # Strategy 2: Extract from <target> tag attributes (id > type)
                 if not function_name:
                     target_match = re.search(r"<target\s+([^>]+)/?>", tool_call_content)
                     if target_match:
-                        function_name = target_match.group(1).strip()
+                        function_name = self._extract_function_name_from_attributes(target_match.group(1))
 
+                # Skip if no function name found
                 if not function_name:
                     continue
 
@@ -718,19 +760,100 @@ class ToolCaller(WARCaller):
         value = value.strip()
         return value.startswith("<") and value.endswith(">")
 
+    def _element_to_python(self, element) -> Any:
+        """
+        Convert an ElementTree Element to a Python object.
+
+        Conventions:
+        - Element with only text → typed value (string, int, bool, etc.)
+        - Element with children → dict or list
+        - Multiple children with same tag → list
+        - Mixed children tags → dict
+
+        Args:
+            element: xml.etree.ElementTree.Element
+
+        Returns:
+            Python object (dict, list, or primitive)
+        """
+        # If element has no children, return its text content
+        if len(element) == 0:
+            text = element.text or ""
+            return self._convert_text_to_typed_value(text.strip())
+
+        # Group children by tag name
+        children_by_tag = {}
+        for child in element:
+            tag = child.tag
+            if tag not in children_by_tag:
+                children_by_tag[tag] = []
+            children_by_tag[tag].append(child)
+
+        # Single tag type with multiple instances → list
+        if len(children_by_tag) == 1:
+            tag, children = next(iter(children_by_tag.items()))
+            if len(children) > 1:
+                return [self._element_to_python(child) for child in children]
+            else:
+                # Single child - check if parent suggests it should be a list
+                # (e.g., <todos><todo>...</todo></todos> should return a list)
+                parsed = self._element_to_python(children[0])
+                parent_tag = element.tag
+                if parent_tag.endswith("s") and not tag.endswith("s"):
+                    return [parsed]
+                return parsed
+
+        # Multiple tag types → dict
+        result = {}
+        for tag, children in children_by_tag.items():
+            if len(children) > 1:
+                result[tag] = [self._element_to_python(child) for child in children]
+            else:
+                result[tag] = self._element_to_python(children[0])
+        return result
+
     def _convert_xml_to_python_object(self, xml_str: str, parent_tag: str | None = None) -> Any:
         """
-        Parse XML string to Python objects using smart conventions:
+        Parse XML string to Python objects using smart conventions.
 
-        1. Repeated tags → list
-        2. Tags with children → dict
-        3. Tags with only text → string (with type coercion)
-        4. Empty tags → None
+        Uses hybrid approach:
+        1. Try proper XML parser (ElementTree) for well-formed XML
+        2. Fall back to regex-based tolerant parsing for malformed XML
+
+        Conventions:
+        - Repeated tags → list
+        - Tags with children → dict
+        - Tags with only text → string (with type coercion)
+        - Empty tags → None
         """
         import re
+        import xml.etree.ElementTree as ET
 
         xml_str = xml_str.strip()
 
+        # Strategy 1: Try proper XML parser (best for nested structures)
+        try:
+            # Wrap in root element if there are multiple root elements
+            # or if it's a fragment
+            wrapped_xml = f"<root>{xml_str}</root>"
+            root = ET.fromstring(wrapped_xml)
+
+            # If root has only one child, unwrap it
+            if len(root) == 1:
+                return self._element_to_python(root[0])
+            elif len(root) > 1:
+                # Multiple children at root level
+                return self._element_to_python(root)
+            else:
+                # Root has no children, just text
+                text = root.text or ""
+                return self._convert_text_to_typed_value(text.strip())
+
+        except ET.ParseError:
+            # Fall through to regex-based tolerant parsing
+            pass
+
+        # Strategy 2: Regex-based tolerant parsing (for malformed XML)
         # Handle simple single-tag case: <tag>value</tag>
         simple_match = re.match(r"^<(\w+)>(.*?)</\1>$", xml_str, re.DOTALL)
         if simple_match:
