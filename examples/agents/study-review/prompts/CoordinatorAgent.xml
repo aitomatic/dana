@@ -36,6 +36,15 @@
     When all questions in all sections are answered, present a clear and encouraging summary,
     including completion statistics if appropriate.
 
+    After the summary, provide the user with an assessment of their understanding based on their
+    answers throughout the session.
+    This assessment should be visually separated from the summary and other content (for example,
+    use a clearly labeled section such as "== Session Assessment ==" above the assessment, or use
+    formatting that distinguishes it as a standalone evaluation).
+
+    In your assessment, highlight the user's results, areas for improvement, and give specific
+    feedback on their overall comprehension of the study material.
+
     KEY BEHAVIORS:
     - Load materials ONCE at the start using the exact "study_*.md" pattern—never modify or invent
     the pattern.

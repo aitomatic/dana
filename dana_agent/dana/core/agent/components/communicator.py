@@ -12,6 +12,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
 
+# Color codes for terminal output
+USER_COLOR = "\033[96m"  # Cyan
+AGENT_COLOR = "\033[93m"  # Yellow
+RESET_COLOR = "\033[0m"
+
+# Set emoji for user and agent
+USER_EMOJI = "👤"
+AGENT_EMOJI = "🤖"
+
 
 class Communicator:
     """Component providing LLM integration and communication capabilities."""
@@ -53,19 +62,19 @@ class Communicator:
                 # Get user input (use initial_message on first iteration if provided)
                 if first_iteration and initial_message:
                     user_input = initial_message
-                    print(f"\nYou: {user_input}")
+                    print(f"\n{USER_COLOR}{USER_EMOJI} You: {user_input}{RESET_COLOR}")
                     first_iteration = False
                 else:
-                    user_input = input("\nYou: ").strip()
+                    user_input = input(f"\n{USER_COLOR}{USER_EMOJI} You: {RESET_COLOR}").strip()
 
                 # Check for exit commands
                 if user_input.lower() in ["/quit", "/exit", "/bye", "/q"]:
-                    print("\nAgent: Goodbye! Thanks for the conversation.")
+                    print(f"\n{AGENT_COLOR}{AGENT_EMOJI} Agent: Goodbye! Thanks for the conversation.{RESET_COLOR}")
                     break
 
                 # Check for help command
                 if user_input.lower() == "/help":
-                    print("\n=== AVAILABLE COMMANDS ===")
+                    print(f"\n{AGENT_COLOR}=== AVAILABLE COMMANDS ==={RESET_COLOR}")
                     print("• /quit, /exit, /bye, /q - End conversation")
                     print("• /help - Show this help")
                     print("• /timeline - Show conversation timeline")
@@ -79,12 +88,12 @@ class Communicator:
 
                 # Check for special commands
                 if user_input.lower() == "/timeline":
-                    print("\n=== CONVERSATION TIMELINE ===")
+                    print(f"\n{AGENT_COLOR}=== CONVERSATION TIMELINE ==={RESET_COLOR}")
                     print(self._agent._state.get_timeline_summary())
                     continue
 
                 if user_input.lower() == "/state":
-                    print("\n=== AGENT STATE ===")
+                    print(f"\n{AGENT_COLOR}=== AGENT STATE ==={RESET_COLOR}")
                     state = self._agent._state.get_state()
                     for key, value in state.items():
                         print(f"{key}: {value}")
@@ -92,7 +101,7 @@ class Communicator:
 
                 if user_input.lower() == "/resources":
                     resources = self._agent.available_resources
-                    print("\n=== AVAILABLE RESOURCES ===")
+                    print(f"\n{AGENT_COLOR}=== AVAILABLE RESOURCES ==={RESET_COLOR}")
                     if resources:
                         for resource in resources:
                             print(f"• {resource.resource_type} (ID: {resource.resource_id})")
@@ -102,7 +111,7 @@ class Communicator:
 
                 if user_input.lower() == "/workflows":
                     workflows = self._agent.available_workflows
-                    print("\n=== AVAILABLE WORKFLOWS ===")
+                    print(f"\n{AGENT_COLOR}=== AVAILABLE WORKFLOWS ==={RESET_COLOR}")
                     if workflows:
                         for workflow in workflows:
                             print(f"• {workflow.workflow_type} (ID: {workflow.workflow_id})")
@@ -112,7 +121,7 @@ class Communicator:
 
                 if user_input.lower() == "/agents":
                     agents = self._agent.available_agents
-                    print("\n=== AVAILABLE AGENTS ===")
+                    print(f"\n{AGENT_COLOR}=== AVAILABLE AGENTS ==={RESET_COLOR}")
                     if agents:
                         for agent in agents:
                             print(f"• {agent.agent_type} (ID: {agent.object_id})")
@@ -125,7 +134,7 @@ class Communicator:
                     # Parse @agent_name and message
                     parts = user_input[1:].split(" ", 1)
                     if len(parts) < 2:
-                        print(f"\nInvalid format: {user_input}")
+                        print(f"\n{AGENT_COLOR}Invalid format: {user_input}{RESET_COLOR}")
                         print("Use: @agent_name/@agent_id your message here")
                         continue
 
@@ -142,15 +151,15 @@ class Communicator:
                             break
 
                     if target_agent is None:
-                        print(f"\nAgent '{target_agent_name}' not found")
+                        print(f"\n{AGENT_COLOR}Agent '{target_agent_name}' not found{RESET_COLOR}")
                         print("Type '/agents' to see available agents and their IDs")
                         continue
 
                     # Send message to target agent
-                    print(f"\nSending to {target_agent.agent_type}: ", end="", flush=True)
+                    print(f"\n{AGENT_COLOR}Sending to {target_agent.agent_type}:{RESET_COLOR} ", end="", flush=True)
                     traces = target_agent.query(message=message)
                     response = traces.get("response", "No response generated")
-                    print(response)
+                    print(f"{AGENT_COLOR}{AGENT_EMOJI} {response}{RESET_COLOR}")
                     continue
 
                 # Check for unrecognized commands (start with / but not recognized)
@@ -166,7 +175,7 @@ class Communicator:
                     "/workflows",
                     "/agents",
                 ]:
-                    print(f"\nCommand not supported: {user_input}")
+                    print(f"\n{AGENT_COLOR}Command not supported: {user_input}{RESET_COLOR}")
                     print("Type '/help' for available commands")
                     continue
 
@@ -175,17 +184,17 @@ class Communicator:
                     continue
 
                 # Process the message through the agent
-                print("\nAgent: ", end="", flush=True)
+                print(f"\n{AGENT_COLOR}{AGENT_EMOJI} Agent: {RESET_COLOR}", end="", flush=True)
                 traces = self._agent.query(message=user_input)
                 response = traces.get("response", "No response generated")
-                print(response)
+                print(f"{AGENT_COLOR}{response}{RESET_COLOR}")
 
             except KeyboardInterrupt:
-                print("\n\nAgent: Conversation interrupted. Goodbye!")
+                print(f"\n\n{AGENT_COLOR}{AGENT_EMOJI} Agent: Conversation interrupted. Goodbye!{RESET_COLOR}")
                 break
             except EOFError:
-                print("\n\nAgent: Input ended. Goodbye!")
+                print(f"\n\n{AGENT_COLOR}{AGENT_EMOJI} Agent: Input ended. Goodbye!{RESET_COLOR}")
                 break
             except Exception as e:
-                print(f"\nError: {e}")
+                print(f"\n{AGENT_COLOR}Error: {e}{RESET_COLOR}")
                 print("Type '/help' for available commands or '/quit' to exit")
