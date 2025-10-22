@@ -241,7 +241,7 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     trace_thoughts = self._think(trace_percepts.get("trace_percepts", {}))
                     trace_outputs = self._act(trace_thoughts.get("trace_thoughts", {}))
-                    #trace_learning = self._reflect(trace_outputs["trace_outputs"])
+                    # _trace_learning = self._reflect(trace_outputs["trace_outputs"])
 
                     if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break

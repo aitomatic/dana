@@ -535,7 +535,7 @@ class PromptEngineer:
 
 {self._get_examples_section()}
 
-{self._get_available_targets_section()}
+{self._get_available_tools_section()}
 
 {self._get_postscript_section()}
 
@@ -620,6 +620,14 @@ class PromptEngineer:
 </AVAILABLE_WORKFLOWS>
 </WORKFLOWS>
 </AVAILABLE_TARGETS>"""
+
+    def _get_available_tools_section(self) -> str:
+        """Get the available tools section (combined agents, resources, workflows)."""
+        return f"""<AVAILABLE_TOOLS>
+{self._prt_agent_descriptions}
+{self._prt_resource_descriptions}
+{self._prt_workflow_descriptions}
+</AVAILABLE_TOOLS>"""
 
     # ============================================================================
     # TEMPLATE FORMATTING PROPERTIES

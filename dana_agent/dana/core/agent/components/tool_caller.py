@@ -984,7 +984,14 @@ class ToolCaller(WARCaller):
         # Extract target-based parameters
         target = arguments.get("target")
         method = arguments.get("method", "execute")
+
+        # Handle both nested and flat parameter structures:
+        # - Nested: arguments = {"target": "x", "method": "y", "arguments": {"param1": "value1"}}
+        # - Flat:   arguments = {"target": "x", "method": "y", "param1": "value1"}
         params = arguments.get("arguments", {})
+        if not params:
+            # Extract all non-reserved keys as parameters (flat structure from XML parsing)
+            params = {k: v for k, v in arguments.items() if k not in ["target", "method"]}
 
         # Try to find target in available objects
         try:
