@@ -93,3 +93,5 @@ experiments/
 
 # misc / other
 .bugs
+
+examples/agents/teaching/data

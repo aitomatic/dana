@@ -129,7 +129,7 @@ class RAGResourceV2(BaseSysResource):
                 for docs in document_dict.values():
                     documents.extend(docs)
                 self.vector_index = VectorStoreIndex.from_documents(
-                    documents=documents, storage_context=storage_context, embed_model=self.embed_model
+                    documents=documents, storage_context=storage_context, embed_model=self.embed_model, show_progress=True
                 )
 
     def _get_danapath(self) -> str | None:
