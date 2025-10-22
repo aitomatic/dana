@@ -67,11 +67,18 @@ class ThoughtLogger(Notifiable):
         # Check for STAR loop phases (these are the primary notifications)
         # SEE phase - percepts
         trace_percepts = message.get("trace_percepts", {})
+
         if self.verbose and trace_percepts:
+            # Display the latest timeline entry
+            timeline = trace_percepts.get("timeline")
+            if timeline and hasattr(timeline, "timeline") and len(timeline.timeline) > 0:
+                last_entry = timeline.timeline[-1]
+                self._display_phase(agent_id, "👁️  SEE", f"Received: {last_entry.content}")
+
             # Initial perception: caller message
             caller_message = trace_percepts.get("caller_message")
-            if caller_message:
-                self._display_phase(agent_id, "👁️  SEE", f"Received: {caller_message}")
+            # if caller_message:
+            #     self._display_phase(agent_id, "👁️  SEE", f"Received: {caller_message}")
 
             # Subsequent perception: tool results
             perception = trace_percepts.get("perception")
@@ -202,7 +209,7 @@ class ThoughtLogger(Notifiable):
         if self._last_thought_lines > 0:
             # Move cursor up and clear each line
             for _ in range(self._last_thought_lines):
-                sys.stdout.write(CURSOR_UP + CLEAR_LINE)
+                sys.stdout.write(CLEAR_LINE)
             sys.stdout.flush()
             self._last_thought_lines = 0
             self._current_agent = None
