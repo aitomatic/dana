@@ -44,12 +44,20 @@ def _time_to_target_minutes(T0: float, T_target: float, Tinf: float, tau_min: fl
             base_time *= difficulty_factor
         
         time_estimate = max(30.0, min(300.0, base_time))  # Higher minimum for realism
-        print(f"      Fallback calculation: {T0:.1f}°C → {T_target:.1f}°C, diff={temp_diff:.1f}°C, time={time_estimate:.0f}min")
+        # Convert to Fahrenheit for display
+        T0_F = (T0 * 9/5) + 32
+        T_target_F = (T_target * 9/5) + 32
+        temp_diff_F = temp_diff * 9/5
+        print(f"      Fallback calculation: {T0_F:.1f}°F → {T_target_F:.1f}°F, diff={temp_diff_F:.1f}°F, time={time_estimate:.0f}min")
         return time_estimate
     
     result = -tau_min * math.log(ratio)
-    print(f"      Normal calculation: {T0:.1f}°C → {T_target:.1f}°C, ratio={ratio:.3f}, time={result:.0f}min")
-    print(f"        Current: {T0:.1f}°C, Target: {T_target:.1f}°C, Tinf: {Tinf:.1f}°C")
+    # Convert to Fahrenheit for display
+    T0_F = (T0 * 9/5) + 32
+    T_target_F = (T_target * 9/5) + 32
+    Tinf_F = (Tinf * 9/5) + 32
+    print(f"      Normal calculation: {T0_F:.1f}°F → {T_target_F:.1f}°F, ratio={ratio:.3f}, time={result:.0f}min")
+    print(f"        Current: {T0_F:.1f}°F, Target: {T_target_F:.1f}°F, Tinf: {Tinf_F:.1f}°F")
     return result
 
 def _advance_temperature(T0: float, minutes: float, Tinf: float, tau_min: float) -> float:
