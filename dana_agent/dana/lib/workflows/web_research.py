@@ -119,7 +119,7 @@ class GoogleLookupWorkflow(BaseWorkflow):
 
     @validate_input(
         query={"required": True, "type": str, "min_length": 1},
-        max_results={"type": int, "min_value": 1, "max_value": 10, "default": 1},
+        max_results={"type": int, "min_value": 1, "max_value": 10, "default": 5},
     )
     @validate_output(
         success={"required": True, "type": bool},

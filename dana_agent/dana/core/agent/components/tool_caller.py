@@ -28,6 +28,7 @@ class WARCaller:
     def __init__(self, agent: "STARAgent", tool_caller=None):
         """Initialize with agent reference."""
         self._agent = agent
+        self._llm = agent.llm_client  # TODO: maintain our own LLM (maybe local?)
         self._tool_caller = tool_caller
 
     def execute_call(self, arguments: dict[str, Any], object_type: str, id_key: str, default_method: str | None = None) -> dict[str, Any]:
@@ -368,7 +369,20 @@ class ToolCaller(WARCaller):
     @observable
     def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
         """
-        Parse LLM response into response text and tool calls.
+        Parse LLM response using LLM-assisted parsing.
+
+        This method uses the LLM to recast the response into canonical XML form,
+        then parses it symbolically with high confidence.
+        """
+        return self.parse_llm_response_symbolic(llm_response)
+
+    @observable
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using pure symbolic parsing (original method).
+
+        This method uses only symbolic parsing without LLM assistance.
+        It handles both XML content and structured tool calls.
 
         Args:
             llm_response: The LLM response object containing content and tool calls
@@ -429,6 +443,148 @@ class ToolCaller(WARCaller):
             # Fall back to treating content as plain text
             if not result_response and content:
                 result_response = content
+
+        return result_response, result_reasoning, result_tool_calls
+
+    @observable
+    def parse_llm_response_assisted(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using LLM-assisted canonical XML conversion.
+
+        This method first uses the LLM to recast the response into canonical XML form,
+        then parses it symbolically with high confidence.
+
+        Args:
+            llm_response: The LLM response object containing content and tool calls
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        if not llm_response:
+            return None, None, []
+
+        # Handle structured tool calls from LLM providers (like OpenAI function calling)
+        if llm_response.tool_calls:
+            if len(llm_response.tool_calls) == 1 and llm_response.tool_calls[0].function.name == "<|constrain|>response":
+                # Special case: response passed as tool call (openai/gpt-oss-20b)
+                content = llm_response.tool_calls[0].function.arguments
+                if content:
+                    content = content.strip()
+            else:
+                # Structured tool calls - convert to our format and return
+                structured_tool_calls = self._to_tool_call_dicts(llm_response.tool_calls)
+                return llm_response.content, None, structured_tool_calls
+
+        # Work with a copy to avoid mutating the input
+        content = llm_response.content.strip()
+
+        try:
+            # Step 1: Use LLM to recast the response into canonical XML form
+            canonical_xml = self._recast_to_canonical_xml(content)
+
+            # Step 2: Parse the canonical XML symbolically with confidence
+            return self._parse_canonical_xml(canonical_xml)
+
+        except Exception as e:
+            # Fallback to symbolic parsing method if LLM-assisted parsing fails
+            print(f"Error in LLM-assisted parsing, falling back to symbolic method: {e}")
+            return self.parse_llm_response_symbolic(llm_response)
+
+    def _recast_to_canonical_xml(self, content: str) -> str:
+        """
+        Use the LLM to recast the response content into canonical XML form.
+
+        Args:
+            content: The original LLM response content
+
+        Returns:
+            Canonical XML string with proper structure
+        """
+        from dana.common.llm.types import LLMMessage
+
+        recast_prompt = f"""
+You are a response parser that converts LLM responses into canonical XML format.
+
+Convert the following response into the standard XML format with these sections:
+- <response> as the root wrapper
+- <content> for the main response text
+- <reasoning> for any reasoning or explanation (optional)
+- <tool_calls> for any tool calls with proper structure (optional)
+
+Expected XML format:
+<response>
+<content>Main response text here</content>
+<reasoning>Any reasoning or explanation</reasoning>
+<tool_calls>
+<tool_call>
+<target id="target-name"/>
+<method>method-name</method>
+<arguments>
+<param1>value1</param1>
+<param2>value2</param2>
+</arguments>
+</tool_call>
+</tool_calls>
+</response>
+
+Original response:
+{content}
+
+Please provide the canonical XML format:
+"""
+
+        try:
+            # Use the LLM to recast the content
+            messages = [
+                LLMMessage(role="system", content="You are a response parser that converts LLM responses into canonical XML format."),
+                LLMMessage(role="user", content=recast_prompt),
+            ]
+            recast_response = self._llm.chat_response_sync(messages)
+            return recast_response.content.strip()
+        except Exception as e:
+            print(f"Error recasting to canonical XML: {e}")
+            # Return original content wrapped in basic XML structure
+            return f"<content>{content}</content>"
+
+    def _parse_canonical_xml(self, canonical_xml: str) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse canonical XML with high confidence using symbolic parsing.
+
+        Args:
+            canonical_xml: The canonical XML string to parse
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        result_response = None
+        result_reasoning = None
+        result_tool_calls = []
+
+        try:
+            # Extract content section
+            content_text = self._extract_content_between_xml_tags(canonical_xml, "content")
+            if content_text:
+                result_response = content_text.strip()
+            else:
+                # Fallback: use the entire content if no content tags found
+                result_response = canonical_xml.strip()
+
+            # Extract reasoning section
+            reasoning_text = self._extract_content_between_xml_tags(canonical_xml, "reasoning")
+            if reasoning_text:
+                result_reasoning = reasoning_text.strip()
+
+            # Extract tool calls section
+            tool_calls_xml = self._extract_content_between_xml_tags(canonical_xml, "tool_calls")
+            if tool_calls_xml:
+                # Parse tool calls with high confidence since they're in canonical form
+                result_tool_calls.extend(self._extract_tool_calls_from_xml(tool_calls_xml))
+
+        except Exception as e:
+            print(f"Error parsing canonical XML: {e}")
+            # Return what we have so far
+            if not result_response:
+                result_response = canonical_xml
 
         return result_response, result_reasoning, result_tool_calls
 
