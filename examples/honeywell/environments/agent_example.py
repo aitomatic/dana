@@ -1,39 +1,87 @@
 #!/usr/bin/env python3
 """
-Example AI Agent using the HVAC API.
+Example AI Agent using the HVAC API - Testing Version
 
 This demonstrates how an AI agent would use get_env_status() and get_feedback()
-to make intelligent HVAC control decisions.
+with mocked inputs for easy testing and demonstration.
 """
 
-from hvac_api import get_env_status, get_feedback
+from hvac_api import get_feedback
 
 
-def ai_agent_decision():
+def mock_env_status(scenario="success"):
+    """
+    Mock environment status for testing.
+
+    Args:
+        scenario: "success" for achievable plan, "tight" for tight but achievable, "failed" for impossible
+    """
+    if scenario == "success":
+        # Plenty of time - 60 minutes
+        return {
+            "room_name": "Conference Room A",
+            "current_time": "14:00",
+            "indoor_temp": 86.0,
+            "outdoor_temp": 95.0,
+            "meeting_plan": [
+                {"start_time": "15:00", "end_time": "16:30"},
+                {"start_time": "17:00", "end_time": "18:00"}
+            ]
+        }
+    elif scenario == "tight":
+        # Tight schedule - 30 minutes
+        return {
+            "room_name": "Conference Room A",
+            "current_time": "14:30",
+            "indoor_temp": 86.0,
+            "outdoor_temp": 95.0,
+            "meeting_plan": [
+                {"start_time": "15:00", "end_time": "16:30"}
+            ]
+        }
+    else:  # "failed"
+        # Not enough time - 10 minutes, impossible to cool 14°F
+        return {
+            "room_name": "Conference Room A",
+            "current_time": "14:50",
+            "indoor_temp": 86.0,
+            "outdoor_temp": 95.0,
+            "meeting_plan": [
+                {"start_time": "15:00", "end_time": "16:30"}
+            ]
+        }
+
+
+def print_header(title):
+    """Print a section header."""
+    print()
+    print("=" * 80)
+    print(f"{title}")
+    print("=" * 80)
+
+
+def print_section(title):
+    """Print a subsection header."""
+    print()
+    print(title)
+    print("-" * 80)
+
+
+def ai_agent_decision(scenario="success"):
     """
     AI agent that makes intelligent HVAC decisions.
 
-    Strategy:
-    1. Get current environment status
-    2. Determine if cooling is needed based on:
-       - Current temperature
-       - Upcoming meetings
-    3. Create an optimal cooling plan
-    4. Validate the plan
-    5. Execute or adjust based on feedback
+    Args:
+        scenario: "success", "tight", or "failed" to test different time constraints
     """
-    print("=" * 80)
-    print("AI AGENT: HVAC Control Decision System")
-    print("=" * 80)
-    print()
+    print_header("AI AGENT: HVAC Control Decision System")
 
     # ========================================================================
-    # STEP 1: Get Environment Status
+    # STEP 1: Get Environment Status (Mocked)
     # ========================================================================
-    print("STEP 1: Getting environment status...")
-    print("-" * 80)
+    print_section("STEP 1: Getting environment status...")
 
-    status = get_env_status()
+    status = mock_env_status(scenario)
 
     print(f"Room: {status['room_name']}")
     print(f"Current Time: {status['current_time']}")
@@ -43,25 +91,24 @@ def ai_agent_decision():
 
     if status['meeting_plan']:
         print("\nMeeting Schedule:")
-        for i, meeting in enumerate(status['meeting_plan']):
-            print(f"  {i+1}. {meeting['start_time']} - {meeting['end_time']}")
-
-    print()
+        for i, meeting in enumerate(status['meeting_plan'], 1):
+            print(f"  {i}. {meeting['start_time']} - {meeting['end_time']}")
 
     # ========================================================================
     # STEP 2: Analyze Situation
     # ========================================================================
-    print("STEP 2: Analyzing situation...")
-    print("-" * 80)
+    print_section("STEP 2: Analyzing situation...")
 
-    COMFORT_TEMP = 72.0  # Desired comfort temperature
-    COOLING_THRESHOLD = 75.0  # Start cooling if above this
+    COMFORT_TEMP = 72.0
+    COOLING_THRESHOLD = 75.0
 
     needs_cooling = status['indoor_temp'] > COOLING_THRESHOLD
     has_meetings = len(status['meeting_plan']) > 0
 
-    print(f"Indoor temp ({status['indoor_temp']}°F) > Threshold ({COOLING_THRESHOLD}°F)? {needs_cooling}")
-    print(f"Upcoming meetings? {has_meetings}")
+    print(f"Current: {status['indoor_temp']}°F")
+    print(f"Threshold: {COOLING_THRESHOLD}°F")
+    print(f"Needs cooling? {needs_cooling}")
+    print(f"Has meetings? {has_meetings}")
 
     if not needs_cooling:
         print("\n✓ Temperature is comfortable. No action needed.")
@@ -71,35 +118,30 @@ def ai_agent_decision():
         print("\n→ No meetings scheduled. Energy-saving mode: No cooling.")
         return
 
-    print(f"\n→ Decision: Need to cool to {COMFORT_TEMP}°F for upcoming meetings")
-    print()
+    print(f"\n→ Decision: Cool to {COMFORT_TEMP}°F before meetings")
 
     # ========================================================================
     # STEP 3: Create Optimal Plan
     # ========================================================================
-    print("STEP 3: Creating optimal cooling plan...")
-    print("-" * 80)
-
-    # Strategy: Cool before each meeting
-    # Use turbo if time is tight, base mode if we have plenty of time
+    print_section("STEP 3: Creating optimal cooling plan...")
 
     first_meeting = status['meeting_plan'][0]
 
-    # Parse time to calculate time available
-    current_h, current_m = map(int, status['current_time'].split(':'))
-    meeting_h, meeting_m = map(int, first_meeting['start_time'].split(':'))
+    # Calculate time until meeting
+    def parse_time(time_str):
+        h, m = map(int, time_str.split(':'))
+        return h * 60 + m
 
-    current_minutes = current_h * 60 + current_m
-    meeting_minutes = meeting_h * 60 + meeting_m
+    current_minutes = parse_time(status['current_time'])
+    meeting_minutes = parse_time(first_meeting['start_time'])
     time_until_meeting = meeting_minutes - current_minutes
 
-    print(f"First meeting starts at: {first_meeting['start_time']}")
+    print(f"First meeting: {first_meeting['start_time']}")
     print(f"Time until meeting: {time_until_meeting} minutes")
 
-    # Decision: Use turbo if less than 30 minutes, otherwise use base mode
+    # Use turbo if less than 30 minutes available
     use_turbo = time_until_meeting < 30
-
-    print(f"Strategy: Use {'TURBO' if use_turbo else 'BASE'} mode")
+    print(f"Strategy: {'TURBO mode (faster)' if use_turbo else 'BASE mode (economical)'}")
 
     # Create the plan
     plan = [{
@@ -107,20 +149,17 @@ def ai_agent_decision():
         "time_off": first_meeting['start_time'],
         "use_turbo": use_turbo
     }]
-
     target_temps = [COMFORT_TEMP]
 
-    print(f"\nPlan:")
-    print(f"  Action 1: {plan[0]['time_on']} → {plan[0]['time_off']}")
-    print(f"    Mode: {'Turbo' if plan[0]['use_turbo'] else 'Base'}")
-    print(f"    Target: {COMFORT_TEMP}°F")
-    print()
+    print(f"\nPlan Details:")
+    print(f"  Time: {plan[0]['time_on']} → {plan[0]['time_off']}")
+    print(f"  Mode: {'Turbo (9000W)' if use_turbo else 'Base (7000W)'}")
+    print(f"  Target: {COMFORT_TEMP}°F")
 
     # ========================================================================
-    # STEP 4: Validate Plan with Feedback
+    # STEP 4: Validate Plan
     # ========================================================================
-    print("STEP 4: Validating plan with HVAC simulation...")
-    print("-" * 80)
+    print_section("STEP 4: Validating plan with HVAC simulation...")
 
     feedback = get_feedback(
         current_indoor_temp=status['indoor_temp'],
@@ -131,63 +170,172 @@ def ai_agent_decision():
         mode="cool"
     )
 
-    print(f"Validation Result: {feedback['plan_success'].upper()}")
-    print()
+    print(f"Result: {feedback['plan_success'].upper()}")
 
     # ========================================================================
-    # STEP 5: Make Final Decision
+    # STEP 5: Execute or Adjust
     # ========================================================================
-    print("STEP 5: Final decision...")
-    print("-" * 80)
+    print_section("STEP 5: Final decision...")
 
     if feedback['plan_success'] == 'success':
         action = feedback['action_results'][0]
 
-        print("✓ PLAN IS FEASIBLE - EXECUTE!")
+        print("✓ PLAN IS FEASIBLE - READY TO EXECUTE!")
         print()
-        print(f"Execution Details:")
-        print(f"  Turn on AC at: {action['time_on']}")
-        print(f"  Mode: {'Turbo (9000W)' if use_turbo else 'Base (7000W)'}")
-        print(f"  Will reach {COMFORT_TEMP}°F at: {action['reached_time']}")
-        print(f"  Turn off AC at: {action['time_off']}")
+        print("Execution Details:")
+        print(f"  • Turn on AC: {action['time_on']}")
+        print(f"  • Mode: {'Turbo (9000W)' if use_turbo else 'Base (7000W)'}")
+        print(f"  • Target reached: {action['reached_time']}")
+        print(f"  • Turn off AC: {action['time_off']}")
         print()
-        print(f"Performance:")
-        print(f"  Time needed: {action['time_needed_minutes']} minutes")
-        print(f"  Time available: {action['time_available_minutes']} minutes")
-        print(f"  Extra safety margin: {action['redundant_time_minutes']} minutes")
+        print("Performance Metrics:")
+        print(f"  • Time needed: {action['time_needed_minutes']} min")
+        print(f"  • Time available: {action['time_available_minutes']} min")
+        print(f"  • Safety margin: {action['redundant_time_minutes']} min")
         print()
-        print(f"Energy Cost:")
-        print(f"  This action: {action['cost_kwh']:.3f} kWh")
-        print(f"  Total plan: {feedback['total_cost_kwh']:.3f} kWh")
+        print("Energy Cost:")
+        print(f"  • This action: {action['cost_kwh']:.3f} kWh")
+        print(f"  • Total cost: {feedback['total_cost_kwh']:.3f} kWh")
         print()
-        print(f"Final Result:")
-        print(f"  Room will be at {feedback['final_temp_f']:.1f}°F when meeting starts")
+        print("Expected Outcome:")
+        print(f"  • Final temp: {feedback['final_temp_f']:.1f}°F")
+        print(f"  • Meeting comfort: ✓ Achieved")
 
     else:
-        print("✗ PLAN FAILED - NEED TO ADJUST!")
-        print()
-
         failed = feedback['failed_actions'][0]
         action = feedback['action_results'][0]
 
-        print(f"Problem: {failed['error']}")
+        print("✗ PLAN FAILED - ADJUSTMENTS NEEDED!")
         print()
-        print(f"Details:")
-        print(f"  Time needed: {action['time_needed_minutes']} minutes")
-        print(f"  Time available: {action['time_available_minutes']} minutes")
-        print(f"  Shortfall: {action['time_needed_minutes'] - action['time_available_minutes']} minutes")
+        print(f"Problem:")
+        print(f"  {failed['error']}")
+        print()
+        print("Analysis:")
+        print(f"  • Time needed: {action['time_needed_minutes']} min")
+        print(f"  • Time available: {action['time_available_minutes']} min")
+        print(f"  • Shortfall: {action['time_needed_minutes'] - action['time_available_minutes']} min")
+        print()
+        print("Energy Cost (Partial Cooling):")
+        print(f"  • This action: {action['cost_kwh']:.3f} kWh (HVAC ran for {action['time_available_minutes']} min)")
+        print(f"  • Total cost: {feedback['total_cost_kwh']:.3f} kWh")
+        print(f"  • Final temp: {feedback['final_temp_f']:.1f}°F (partial cooling achieved)")
         print()
 
-        # Suggest alternative
+        # Suggest alternatives
+        print("💡 Suggestions:")
         if not use_turbo:
-            print("💡 Suggestion: Try TURBO mode for faster cooling")
+            print("  1. Switch to TURBO mode for faster cooling")
         else:
-            print("💡 Suggestion: Target temperature may be too aggressive")
-            print(f"   Consider a higher target (e.g., 74°F instead of {COMFORT_TEMP}°F)")
+            print("  1. Set higher target temp (e.g., 74°F instead of 72°F)")
+            print("  2. Start cooling earlier if possible")
+        print("  3. Accept partial cooling within available time")
+
+    print()
+    print("=" * 80)
+
+
+def test_multiple_scenarios():
+    """
+    Test different scenarios with different mocked inputs.
+    """
+    print_header("TESTING MULTIPLE SCENARIOS")
+
+    scenarios = [
+        {
+            "name": "Scenario 1: Plenty of time (60 min)",
+            "status": {
+                "room_name": "Conference Room A",
+                "current_time": "14:00",
+                "indoor_temp": 86.0,
+                "outdoor_temp": 95.0,
+                "meeting_plan": [{"start_time": "15:00", "end_time": "16:00"}]
+            }
+        },
+        {
+            "name": "Scenario 2: Tight schedule (30 min)",
+            "status": {
+                "room_name": "Conference Room A",
+                "current_time": "14:30",
+                "indoor_temp": 86.0,
+                "outdoor_temp": 95.0,
+                "meeting_plan": [{"start_time": "15:00", "end_time": "16:00"}]
+            }
+        },
+        {
+            "name": "Scenario 3: Very tight schedule (15 min)",
+            "status": {
+                "room_name": "Conference Room A",
+                "current_time": "14:45",
+                "indoor_temp": 86.0,
+                "outdoor_temp": 95.0,
+                "meeting_plan": [{"start_time": "15:00", "end_time": "16:00"}]
+            }
+        }
+    ]
+
+    for scenario in scenarios:
+        print_section(scenario["name"])
+
+        status = scenario["status"]
+        first_meeting = status["meeting_plan"][0]
+
+        # Create plan
+        plan = [{
+            "time_on": status["current_time"],
+            "time_off": first_meeting["start_time"],
+            "use_turbo": True
+        }]
+
+        # Validate
+        feedback = get_feedback(
+            current_indoor_temp=status["indoor_temp"],
+            outdoor_temp=status["outdoor_temp"],
+            current_time=status["current_time"],
+            plan=plan,
+            target_temps=[72.0],
+            mode="cool"
+        )
+
+        # Show results
+        print(f"Time: {status['current_time']} → {first_meeting['start_time']}")
+        print(f"Indoor: {status['indoor_temp']}°F → Target: 72°F")
+        print(f"Result: {feedback['plan_success'].upper()}")
+
+        action = feedback['action_results'][0]
+        if feedback['plan_success'] == 'success':
+            print(f"  ✓ Reaches 72°F at {action['reached_time']}")
+            print(f"  ✓ Cost: {action['cost_kwh']:.3f} kWh")
+        else:
+            print(f"  ✗ {feedback['failed_actions'][0]['error']}")
+            print(f"  ✗ Partial cooling cost: {action['cost_kwh']:.3f} kWh (HVAC ran for {action['time_available_minutes']} min)")
 
     print()
     print("=" * 80)
 
 
 if __name__ == "__main__":
-    ai_agent_decision()
+    import sys
+
+    # Check if user wants to run a specific scenario
+    if len(sys.argv) > 1:
+        scenario = sys.argv[1]
+        if scenario in ["success", "tight", "failed"]:
+            ai_agent_decision(scenario)
+        else:
+            print("Usage: python agent_example.py [success|tight|failed]")
+            print("  success - Plenty of time (60 min)")
+            print("  tight   - Tight schedule (30 min)")
+            print("  failed  - Impossible task (10 min)")
+    else:
+        # Run all demonstrations
+
+        # Demo 1: Success scenario
+        ai_agent_decision("success")
+
+        # Demo 2: Failed scenario (to show cost even when failed)
+        print("\n\n")
+        ai_agent_decision("failed")
+
+        # Demo 3: Multiple test scenarios
+        print("\n\n")
+        test_multiple_scenarios()
