@@ -454,6 +454,30 @@ class MonomerDataResource(BaseResource):
                 "error": f"Ionic character analysis failed: {str(e)}"
             }
 
+    @tool_use
+    def get_monomer_molecular_weight(self, monomer_name: str, **kwargs) -> DictParams:
+        """
+        Get the molecular weight of a specific monomer.
+        This is a simple tool for getting basic monomer properties.
+
+        Args:
+            monomer_name: Name of monomer to look up (e.g., "PS", "Tcp", "Fdp")
+
+        Returns:
+            Dictionary with molecular weight information
+        """
+        matches = self._data[self._data['Name'].str.contains(monomer_name, case=False, na=False)]
+
+        if matches.empty:
+            return {"success": False, "results": [], "error": f"Monomer '{monomer_name}' not found"}
+
+        row = matches.iloc[0]
+        return {
+            "success": True,
+            "results": [{"name": row['Name'], "molecular_weight": ___}],
+            "error": None
+        }
+
     @property
     def is_available(self) -> bool:
         """Check if monomer data is available."""
