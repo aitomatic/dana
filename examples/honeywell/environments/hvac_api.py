@@ -67,7 +67,8 @@ def get_feedback(
     current_time: str,
     plan: list[dict],
     target_temps: list[float],
-    mode: str = "cool"
+    mode: str = "cool",
+    meeting_plan: list[dict] = None
 ) -> dict:
     """
     Validate an HVAC action plan and get detailed feedback.
@@ -128,6 +129,10 @@ def get_feedback(
         ...     for failed in feedback["failed_actions"]:
         ...         print(f"  Action {failed['action_index']}: {failed['error']}")
     """
+    # Convert target_temps to list if it's a single number
+    if isinstance(target_temps, (int, float)):
+        target_temps = [target_temps] * len(plan)
+
     # Validate inputs
     if len(plan) != len(target_temps):
         return {
@@ -156,7 +161,8 @@ def get_feedback(
         current_time=current_time,
         plan=plan,
         target_temps=target_temps,
-        mode=mode
+        mode=mode,
+        meeting_plan=meeting_plan
     )
 
     return result
