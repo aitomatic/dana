@@ -1,5 +1,5 @@
 """
-PhotoresistROCAAgent - Agent specialized in photoresist root cause analysis.
+PhotoresistChemist - Agent specialized in photoresist chemistry and materials science.
 
 This agent demonstrates the use of structured data resources for semiconductor chemistry:
 - RecipeDataResource: Access photoresist formulation data from CSV files
@@ -9,8 +9,10 @@ This agent demonstrates the use of structured data resources for semiconductor c
 The agent can perform complex photoresist analysis workflows like:
 - Hierarchical chemical composition analysis
 - Root cause analysis of performance issues
+- Molecular weight impact analysis
 - Component compatibility assessment
-- Historical pattern matching
+- Formulation optimization
+- Chemical property analysis
 """
 
 import os
@@ -31,7 +33,7 @@ from resources.monomer_data_resource import MonomerDataResource
 class BroadcastNotificationHandler(Notifiable):
     """Notification handler that prints all broadcast messages."""
 
-    def __init__(self, agent_name: str = "PhotoresistROCAAgent", verbose: bool = True):
+    def __init__(self, agent_name: str = "PhotoresistChemist", verbose: bool = True):
         """
         Initialize the notification handler.
 
@@ -92,9 +94,9 @@ class BroadcastNotificationHandler(Notifiable):
         print(f"{'=' * 80}\n")
 
 
-class PhotoresistROCAAgent(STARAgent):
+class PhotoresistChemist(STARAgent):
     """
-    Agent specialized in photoresist root cause analysis.
+    Agent specialized in photoresist chemistry and materials science.
 
     This agent has access to three structured data resources:
     1. RecipeDataResource - Access photoresist formulation data from CSV files
@@ -104,8 +106,10 @@ class PhotoresistROCAAgent(STARAgent):
     The agent can perform complex photoresist analysis workflows like:
     - Hierarchical chemical composition analysis (4-level decomposition)
     - Root cause analysis of performance issues and defects
+    - Molecular weight impact analysis and film formation studies
     - Component compatibility assessment and failure mode analysis
-    - Historical pattern matching and correlation analysis
+    - Formulation optimization and process improvement
+    - Chemical property analysis and structure-property relationships
     - Evidence-based problem diagnosis and resolution recommendations
     """
 
@@ -118,7 +122,7 @@ class PhotoresistROCAAgent(STARAgent):
         **kwargs,
     ):
         """
-        Initialize the PhotoresistROCAAgent.
+        Initialize the PhotoresistChemist.
 
         Args:
             agent_id: Unique identifier for this agent
@@ -128,8 +132,8 @@ class PhotoresistROCAAgent(STARAgent):
             **kwargs: Additional arguments passed to STARAgent
         """
         super().__init__(
-            agent_type="photoresist-roca",
-            agent_id=agent_id or "photoresist-roca-001",
+            agent_type="photoresist-chemist",
+            agent_id=agent_id or "photoresist-chemist-001",
             llm_provider=llm_provider,
             model=model,
             **kwargs,
@@ -159,7 +163,7 @@ class PhotoresistROCAAgent(STARAgent):
         )
 
         # Add notification handler
-        self.notification_handler = BroadcastNotificationHandler("PhotoresistROCAAgent")
+        self.notification_handler = BroadcastNotificationHandler("PhotoresistChemist")
         self.with_notifiable(self.notification_handler)
 
     def enable_notifications(self, verbose: bool = True) -> None:
@@ -184,19 +188,19 @@ class PhotoresistROCAAgent(STARAgent):
 
 if __name__ == "__main__":
     """
-    Demo usage of PhotoresistROCAAgent.
+    Demo usage of PhotoresistChemist.
 
     This demonstrates the agent's ability to perform comprehensive photoresist analysis
     using structured data resources.
     """
     print("=" * 80)
-    print("PhotoresistROCAAgent Demo")
+    print("PhotoresistChemist Demo")
     print("=" * 80)
     print()
 
     # Initialize the agent
-    print("🤖 Initializing PhotoresistROCAAgent with structured data resources...")
-    agent = PhotoresistROCAAgent(model="gpt-4.1-mini")
+    print("🤖 Initializing PhotoresistChemist with structured data resources...")
+    agent = PhotoresistChemist(model="gpt-4.1-mini")
 
     # Disable notifications for cleaner output in demo
     agent.enable_notifications(verbose=False)
@@ -204,10 +208,12 @@ if __name__ == "__main__":
     print("\n🔬 Available analysis capabilities:")
     print("   • Comprehensive sample analysis (4-level hierarchical decomposition)")
     print("   • Root cause analysis of performance issues")
+    print("   • Molecular weight impact analysis and film formation studies")
     print("   • Component compatibility assessment")
-    print("   • Historical pattern matching")
+    print("   • Formulation optimization and process improvement")
+    print("   • Chemical property analysis and structure-property relationships")
     print("   • Evidence-based problem diagnosis")
     print()
 
     # Interactive conversation
-    agent.converse(input("Agent: Hello! I'm your Photoresist ROCA specialist. What sample would you like me to analyze?\n\nYou: "))
+    agent.converse(input("Agent: Hello! I'm your Photoresist Chemist. What would you like me to analyze?\n\nYou: "))

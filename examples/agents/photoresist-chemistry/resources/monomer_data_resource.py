@@ -1,5 +1,5 @@
 """
-Monomer Data Resource for Photoresist ROCA Agent.
+Monomer Data Resource for Photoresist Chemist.
 
 Provides access to monomer and additive data from Excel files.
 Handles structured data queries for chemical properties and molecular information.

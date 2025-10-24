@@ -1,5 +1,5 @@
 """
-Polymer Data Resource for Photoresist ROCA Agent.
+Polymer Data Resource for Photoresist Chemist.
 
 Provides access to polymer composition data from Excel files.
 Handles structured data queries for polymer structures and monomer breakdowns.

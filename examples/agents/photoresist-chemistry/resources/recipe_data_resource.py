@@ -1,5 +1,5 @@
 """
-Recipe Data Resource for Photoresist ROCA Agent.
+Recipe Data Resource for Photoresist Chemist.
 
 Provides access to recipe/formulation data from CSV files.
 Handles structured data queries for photoresist formulations.
