@@ -683,6 +683,45 @@ def validate_plan_success(
             turbo_max_min=turbo_max_min
         )
         
+        # Find the closest meeting start time for this action
+        meeting_start_time = None
+        if meeting_plan:
+            # Find the meeting that starts closest to this action's time_off
+            time_off_min = parse_time(time_off)
+            closest_meeting = None
+            min_diff = float('inf')
+            
+            for meeting in meeting_plan:
+                meeting_start_min = parse_time(meeting["start_time"])
+                # Calculate time difference (considering day wrap-around)
+                diff = abs(meeting_start_min - time_off_min)
+                if diff > 12 * 60:  # More than 12 hours, consider next day
+                    diff = 24 * 60 - diff
+                
+                if diff < min_diff:
+                    min_diff = diff
+                    closest_meeting = meeting
+            
+            if closest_meeting:
+                meeting_start_time = closest_meeting["start_time"]
+        
+        # Check if the action reaches target before meeting starts
+        final_schedule_success = schedule_result["reached_temp"]
+        final_error = schedule_result["error"]
+        
+        if (schedule_result["reached_temp"] == "success" and 
+            meeting_start_time and 
+            schedule_result["reached_time"]):
+            
+            # Parse times to compare reached time with meeting start time
+            reached_minutes = parse_time(schedule_result["reached_time"])
+            meeting_start_minutes = parse_time(meeting_start_time)
+            
+            # If reached time is after meeting start time, mark as failed
+            if reached_minutes > meeting_start_minutes:
+                final_schedule_success = "failed"
+                final_error = f"Target reached at {schedule_result['reached_time']} but meeting starts at {meeting_start_time}"
+        
         # Store action result
         action_result = {
             "action_index": i,
@@ -691,32 +730,36 @@ def validate_plan_success(
             "use_turbo": use_turbo,
             "target_temp_f": target_temp,
             "start_temp_f": current_temp,
-            "schedule_success": schedule_result["reached_temp"],
+            "schedule_success": final_schedule_success,
             "cost_kwh": cost_result["total_cost_kwh"],
             "time_needed_minutes": schedule_result["time_needed_minutes"],
             "time_available_minutes": schedule_result["time_available_minutes"],
             "reached_time": schedule_result["reached_time"],
             "redundant_time_minutes": schedule_result["redundant_time_minutes"],
-            "error": schedule_result["error"]
+            "error": final_error
         }
+        
+        # Add meeting start time if found
+        if meeting_start_time:
+            action_result["meeting_start_time"] = meeting_start_time
         
         action_results.append(action_result)
         
         # Check if this action failed
-        if schedule_result["reached_temp"] == "failed":
+        if final_schedule_success == "failed":
             failed_actions.append({
                 "action_index": i,
                 "time_on": time_on,
                 "time_off": time_off,
                 "target_temp_f": target_temp,
-                "error": schedule_result["error"]
+                "error": final_error
             })
         
         # Update total cost
         total_cost_kwh += cost_result["total_cost_kwh"]
         
         # Update current temperature for next iteration
-        if schedule_result["reached_temp"] == "success":
+        if final_schedule_success == "success":
             # If successful, assume we reach the target temperature
             current_temp = target_temp
         else:
