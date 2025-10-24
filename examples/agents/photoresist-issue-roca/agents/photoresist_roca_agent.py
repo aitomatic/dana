@@ -1,5 +1,5 @@
 """
-PhotoresistROCAgent - Agent specialized in photoresist root cause analysis.
+PhotoresistROCAAgent - Agent specialized in photoresist root cause analysis.
 
 This agent demonstrates the use of structured data resources for semiconductor chemistry:
 - RecipeDataResource: Access photoresist formulation data from CSV files
@@ -31,7 +31,7 @@ from resources.monomer_data_resource import MonomerDataResource
 class BroadcastNotificationHandler(Notifiable):
     """Notification handler that prints all broadcast messages."""
 
-    def __init__(self, agent_name: str = "PhotoresistROCAgent", verbose: bool = True):
+    def __init__(self, agent_name: str = "PhotoresistROCAAgent", verbose: bool = True):
         """
         Initialize the notification handler.
 
@@ -92,7 +92,7 @@ class BroadcastNotificationHandler(Notifiable):
         print(f"{'=' * 80}\n")
 
 
-class PhotoresistROCAgent(STARAgent):
+class PhotoresistROCAAgent(STARAgent):
     """
     Agent specialized in photoresist root cause analysis.
 
@@ -118,7 +118,7 @@ class PhotoresistROCAgent(STARAgent):
         **kwargs,
     ):
         """
-        Initialize the PhotoresistROCAgent.
+        Initialize the PhotoresistROCAAgent.
 
         Args:
             agent_id: Unique identifier for this agent
@@ -159,7 +159,7 @@ class PhotoresistROCAgent(STARAgent):
         )
 
         # Add notification handler
-        self.notification_handler = BroadcastNotificationHandler("PhotoresistROCAgent")
+        self.notification_handler = BroadcastNotificationHandler("PhotoresistROCAAgent")
         self.with_notifiable(self.notification_handler)
 
     def enable_notifications(self, verbose: bool = True) -> None:
@@ -449,19 +449,19 @@ class PhotoresistROCAgent(STARAgent):
 
 if __name__ == "__main__":
     """
-    Demo usage of PhotoresistROCAgent.
+    Demo usage of PhotoresistROCAAgent.
 
     This demonstrates the agent's ability to perform comprehensive photoresist analysis
     using structured data resources.
     """
     print("=" * 80)
-    print("PhotoresistROCAgent Demo")
+    print("PhotoresistROCAAgent Demo")
     print("=" * 80)
     print()
 
     # Initialize the agent
-    print("🤖 Initializing PhotoresistROCAgent with structured data resources...")
-    agent = PhotoresistROCAgent(model="gpt-4.1-mini")
+    print("🤖 Initializing PhotoresistROCAAgent with structured data resources...")
+    agent = PhotoresistROCAAgent(model="gpt-4.1-mini")
 
     # Disable notifications for cleaner output in demo
     agent.enable_notifications(verbose=False)
