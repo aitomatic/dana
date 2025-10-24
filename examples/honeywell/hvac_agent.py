@@ -139,6 +139,7 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                         meeting_dt = datetime.strptime(meeting_start, "%H:%M")
                         time_diff_minutes = (meeting_dt - reached_dt).total_seconds() / 60
                         
+                        # Only show wasted energy time if it's positive (reached before meeting) and > 5 minutes
                         if time_diff_minutes > 5:
                             summary_parts.append(f"    Wasted energy time: {time_diff_minutes:.1f} min")
                     except ValueError:
@@ -240,19 +241,12 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
         summary_parts.append(f"  • Final temp: {final_temp:.1f}°F")
         summary_parts.append("")
         failed_count = len(feedback['failed_actions'])
-        if COLORAMA_AVAILABLE:
-            summary_parts.append(f"  {Fore.RED}Failed actions ({failed_count}):{Style.RESET_ALL}")
-        else:
-            summary_parts.append(f"  \033[91mFailed actions ({failed_count}):\033[0m")
+        summary_parts.append(f"  Failed actions ({failed_count}):")
         for failed in feedback['failed_actions']:
             action_idx = failed['action_index']
             time_range = f"{failed['time_on']} → {failed['time_off']}"
-            if COLORAMA_AVAILABLE:
-                summary_parts.append(f"    • Action {action_idx}: {time_range}")
-                summary_parts.append(f"      {Fore.RED}{failed['error']}{Style.RESET_ALL}")
-            else:
-                summary_parts.append(f"    • Action {action_idx}: {time_range}")
-                summary_parts.append(f"      \033[91m{failed['error']}\033[0m")
+            summary_parts.append(f"    • Action {action_idx}: {time_range}")
+            summary_parts.append(f"      {failed['error']}")
         summary_parts.append("")
         summary_parts.append("  Action Summary:")
         for i, action in enumerate(feedback['action_results']):
@@ -480,16 +474,36 @@ def run_hvac_flow():
     print("STEP 1: Get Environment Status")
     print("-" * 80)
 
-    # env_status = get_env_status()
+    env_status = get_env_status()
+#     env_status = {
+#   "room_name": "Conference Room A",
+#   "current_time": "18:23",
+#   "indoor_temp": 59.4,
+#   "outdoor_temp": 58.3,
+#   "meeting_plan": [
+#     {
+#       "start_time": "20:31",
+#       "end_time": "21:21"
+#     }
+#   ]
+# }
     env_status = {
   "room_name": "Conference Room A",
-  "current_time": "18:23",
-  "indoor_temp": 59.4,
-  "outdoor_temp": 58.3,
+  "current_time": "13:26",
+  "indoor_temp": 93.3,
+  "outdoor_temp": 92.4,
   "meeting_plan": [
     {
-      "start_time": "20:31",
-      "end_time": "21:21"
+      "start_time": "15:37",
+      "end_time": "17:27"
+    },
+    {
+      "start_time": "18:22",
+      "end_time": "18:52"
+    },
+    {
+      "start_time": "21:45",
+      "end_time": "22:00"
     }
   ]
 }

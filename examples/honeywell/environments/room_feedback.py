@@ -686,15 +686,16 @@ def validate_plan_success(
         # Find the closest meeting start time for this action
         meeting_start_time = None
         if meeting_plan:
-            # Find the meeting that starts closest to this action's time_off
-            time_off_min = parse_time(time_off)
+            # Find the meeting that starts closest to this action's time_on (start time)
+            # This makes more sense as we want to match the action with the meeting it's preparing for
+            time_on_min = parse_time(time_on)
             closest_meeting = None
             min_diff = float('inf')
             
             for meeting in meeting_plan:
                 meeting_start_min = parse_time(meeting["start_time"])
                 # Calculate time difference (considering day wrap-around)
-                diff = abs(meeting_start_min - time_off_min)
+                diff = abs(meeting_start_min - time_on_min)
                 if diff > 12 * 60:  # More than 12 hours, consider next day
                     diff = 24 * 60 - diff
                 
