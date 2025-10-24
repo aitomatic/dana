@@ -2,5 +2,5 @@ resources/*.csv
 resources/*.xlsx
 
 .ai/
-.input/
+# .input/
 .output/
