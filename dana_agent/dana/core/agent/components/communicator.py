@@ -52,6 +52,7 @@ class Communicator:
         print(f"\n=== {agent_type.upper()} AGENT CONVERSATION ===")
         print("Type '/quit', '/exit', or '/bye' to end the conversation")
         print("Type '/help' for available commands")
+        print("For multi-line input: just start typing, end with empty line")
         print("=" * 50)
 
         # Track if we should use initial_message on first iteration
@@ -65,7 +66,22 @@ class Communicator:
                     print(f"\n{USER_COLOR}{USER_EMOJI} You: {user_input}{RESET_COLOR}")
                     first_iteration = False
                 else:
+                    # Get first line of input
                     user_input = input(f"\n{USER_COLOR}{USER_EMOJI} You: {RESET_COLOR}").strip()
+
+                    # If first line is not empty and not a command, check for multi-line input
+                    if user_input and not user_input.startswith("/") and not user_input.startswith("@"):
+                        # Check if user wants to continue with more lines
+                        additional_lines = []
+                        while True:
+                            next_line = input().strip()
+                            if not next_line:  # Empty line terminates multi-line input
+                                break
+                            additional_lines.append(next_line)
+
+                        # If we collected additional lines, join them
+                        if additional_lines:
+                            user_input = user_input + "\n" + "\n".join(additional_lines)
 
                 # Check for exit commands
                 if user_input.lower() in ["/quit", "/exit", "/bye", "/q"]:
@@ -84,6 +100,7 @@ class Communicator:
                     print("• /agents - List available agents")
                     print("• @agent_name/@agent_id message - Send direct message to specific agent")
                     print("• Any other text - Send message to agent")
+                    print("• Multi-line input: just type, end with empty line")
                     continue
 
                 # Check for special commands
