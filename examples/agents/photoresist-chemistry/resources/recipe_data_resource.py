@@ -7,7 +7,6 @@ Handles structured data queries for photoresist formulations.
 
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, List, Any
 
 from dana.common.protocols.types import DictParams
 from dana.common.protocols.war import tool_use
@@ -305,6 +304,282 @@ class RecipeDataResource(BaseResource):
                 "results": [],
                 "error": f"Failed to get samples: {str(e)}"
             }
+
+    @tool_use
+    def analyze_concentration_differences(self, sample_names: list, **kwargs) -> DictParams:
+        """
+        Analyze concentration differences between samples to address feedback about missing quantitative analysis.
+        This tool specifically addresses the feedback about 72% concentration difference in AB03.
+
+        Args:
+            sample_names: List of sample names to compare (e.g., ["AB01", "AB02", "AB03"])
+
+        Returns:
+            Dictionary with concentration analysis
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No recipe data available"
+                }
+
+            # Get samples for analysis
+            samples_data = []
+            for sample_name in sample_names:
+                matches = self._data[
+                    (self._data['Sample Name'].str.contains(sample_name, case=False, na=False)) |
+                    (self._data['Submitted Sample Name'].str.contains(sample_name, case=False, na=False))
+                ]
+
+                for _, row in matches.iterrows():
+                    # Extract all component concentrations
+                    components = {}
+
+                    # Extract resin concentrations
+                    for i in range(1, 6):
+                        resin_name = row.get(f'Resin{i} Name', '')
+                        resin_phr = row.get(f'Resin{i} PHR', '')
+                        if pd.notna(resin_name) and resin_name:
+                            components[f"Resin_{resin_name}"] = float(resin_phr) if pd.notna(resin_phr) else 0
+
+                    # Extract photosensitizer concentrations
+                    for i in range(1, 4):
+                        ps_name = row.get(f'Photosensitizer{i} Name', '')
+                        ps_phr = row.get(f'Photosensitizer{i} PHR', '')
+                        if pd.notna(ps_name) and ps_name:
+                            components[f"Photosensitizer_{ps_name}"] = float(ps_phr) if pd.notna(ps_phr) else 0
+
+                    # Extract amine concentrations
+                    for i in range(1, 4):
+                        amine_name = row.get(f'Amine{i} Name', '')
+                        amine_phr = row.get(f'Amine{i} PHR', '')
+                        if pd.notna(amine_name) and amine_name:
+                            components[f"Amine_{amine_name}"] = float(amine_phr) if pd.notna(amine_phr) else 0
+
+                    # Extract additive concentrations
+                    for i in range(1, 4):
+                        additive_name = row.get(f'Additive{i} Name', '')
+                        additive_phr = row.get(f'Additive{i} PHR', '')
+                        if pd.notna(additive_name) and additive_name:
+                            components[f"Additive_{additive_name}"] = float(additive_phr) if pd.notna(additive_phr) else 0
+
+                    sample_data = {
+                        "sample_name": sample_name,
+                        "submitted_name": row.get('Submitted Sample Name', ''),
+                        "theme": row.get('Theme', ''),
+                        "preparation_purpose": row.get('Preparation Purpose', ''),
+                        "components": components
+                    }
+                    samples_data.append(sample_data)
+
+            # Analyze concentration differences
+            concentration_analysis = self._analyze_concentration_patterns(samples_data)
+
+            return {
+                "success": True,
+                "results": {
+                    "samples": samples_data,
+                    "concentration_analysis": concentration_analysis
+                },
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Concentration analysis failed: {str(e)}"
+            }
+
+    def _analyze_concentration_patterns(self, samples_data):
+        """Analyze concentration patterns across samples."""
+        # Find all unique components
+        all_components = set()
+        for sample in samples_data:
+            all_components.update(sample["components"].keys())
+
+        # Calculate concentration differences
+        component_analysis = {}
+        for component in all_components:
+            concentrations = []
+            for sample in samples_data:
+                if component in sample["components"]:
+                    concentrations.append({
+                        "sample": sample["sample_name"],
+                        "concentration": sample["components"][component]
+                    })
+
+            if len(concentrations) > 1:
+                # Calculate differences
+                concentrations.sort(key=lambda x: x["concentration"])
+                min_conc = concentrations[0]["concentration"]
+                max_conc = concentrations[-1]["concentration"]
+                difference = max_conc - min_conc
+                percentage_diff = (difference / min_conc * 100) if min_conc > 0 else 0
+
+                component_analysis[component] = {
+                    "concentrations": concentrations,
+                    "min_concentration": min_conc,
+                    "max_concentration": max_conc,
+                    "absolute_difference": difference,
+                    "percentage_difference": percentage_diff
+                }
+
+        return {
+            "all_components": list(all_components),
+            "component_analysis": component_analysis,
+            "total_components": len(all_components)
+        }
+
+    @tool_use
+    def get_complete_sample_analysis(self, sample_name: str, **kwargs) -> DictParams:
+        """
+        Get complete sample analysis including all components and their properties.
+        This tool addresses the feedback about incomplete sample analysis.
+
+        Args:
+            sample_name: Sample name to analyze (e.g., "AB01", "AB02", "AB03")
+
+        Returns:
+            Dictionary with complete sample analysis
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No recipe data available"
+                }
+
+            # Search for sample
+            matches = self._data[
+                (self._data['Sample Name'].str.contains(sample_name, case=False, na=False)) |
+                (self._data['Submitted Sample Name'].str.contains(sample_name, case=False, na=False))
+            ]
+
+            if matches.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": f"Sample '{sample_name}' not found"
+                }
+
+            results = []
+            for _, row in matches.iterrows():
+                # Extract comprehensive sample information
+                sample_info = {
+                    "sample_name": row.get('Sample Name', ''),
+                    "submitted_name": row.get('Submitted Sample Name', ''),
+                    "creation_date": row.get('Creation Date', ''),
+                    "creator": row.get('Creator', ''),
+                    "preparation_purpose": row.get('Preparation Purpose', ''),
+                    "theme": row.get('Theme', ''),
+                    "lot_number": row.get('Lot Number', ''),
+                    "basic_composition": row.get('Basic Composition', ''),
+                    "target_film_thickness": row.get('Target Film Thickness', ''),
+                    "preparation_amount": row.get('Preparation Amount', ''),
+                    "tsc": row.get('TSC', ''),
+                    "features": row.get('Features', '')
+                }
+
+                # Extract all components with detailed information
+                components = {
+                    "resins": self._extract_resin_components(row),
+                    "photosensitizers": self._extract_photosensitizer_components(row),
+                    "amines": self._extract_amine_components(row),
+                    "additives": self._extract_additive_components(row),
+                    "solvents": self._extract_solvent_components(row)
+                }
+
+                sample_info["components"] = components
+                results.append(sample_info)
+
+            return {
+                "success": True,
+                "results": results,
+                "total_matches": len(results),
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Complete sample analysis failed: {str(e)}"
+            }
+
+    def _extract_resin_components(self, row):
+        """Extract resin components with all properties."""
+        resins = []
+        for i in range(1, 6):
+            name = row.get(f'Resin{i} Name', '')
+            if pd.notna(name) and name:
+                resins.append({
+                    "name": name,
+                    "phr": row.get(f'Resin{i} PHR', ''),
+                    "purity": row.get(f'Resin{i} Purity', ''),
+                    "charge": row.get(f'Resin{i} Charge', '')
+                })
+        return resins
+
+    def _extract_photosensitizer_components(self, row):
+        """Extract photosensitizer components with all properties."""
+        photosensitizers = []
+        for i in range(1, 4):
+            name = row.get(f'Photosensitizer{i} Name', '')
+            if pd.notna(name) and name:
+                photosensitizers.append({
+                    "name": name,
+                    "phr": row.get(f'Photosensitizer{i} PHR', ''),
+                    "mw": row.get(f'Photosensitizer{i} MW', ''),
+                    "purity": row.get(f'Photosensitizer{i} Purity', ''),
+                    "charge": row.get(f'Photosensitizer{i} Charge', '')
+                })
+        return photosensitizers
+
+    def _extract_amine_components(self, row):
+        """Extract amine components with all properties."""
+        amines = []
+        for i in range(1, 4):
+            name = row.get(f'Amine{i} Name', '')
+            if pd.notna(name) and name:
+                amines.append({
+                    "name": name,
+                    "phr": row.get(f'Amine{i} PHR', ''),
+                    "mw": row.get(f'Amine{i} MW', ''),
+                    "purity": row.get(f'Amine{i} Purity', ''),
+                    "charge": row.get(f'Amine{i} Charge', '')
+                })
+        return amines
+
+    def _extract_additive_components(self, row):
+        """Extract additive components with all properties."""
+        additives = []
+        for i in range(1, 4):
+            name = row.get(f'Additive{i} Name', '')
+            if pd.notna(name) and name:
+                additives.append({
+                    "name": name,
+                    "phr": row.get(f'Additive{i} PHR', ''),
+                    "purity": row.get(f'Additive{i} Purity', ''),
+                    "charge": row.get(f'Additive{i} Charge', '')
+                })
+        return additives
+
+    def _extract_solvent_components(self, row):
+        """Extract solvent components with all properties."""
+        solvents = []
+        for i in range(1, 5):
+            name = row.get(f'Solvent{i} Name', '')
+            if pd.notna(name) and name:
+                solvents.append({
+                    "name": name,
+                    "ratio": row.get(f'Solvent{i} Ratio', ''),
+                    "charge": row.get(f'Solvent{i} Charge', '')
+                })
+        return solvents
 
     @property
     def is_available(self) -> bool:

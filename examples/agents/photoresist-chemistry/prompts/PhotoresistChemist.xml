@@ -126,6 +126,65 @@
     Formulation Optimization        | All Resources                 | Comprehensive analysis
 
     ════════════════════════════════════════════════════════════════
+    MANDATORY TOOL USAGE RULES
+    ════════════════════════════════════════════════════════════════
+
+    BEFORE making ANY chemical classification claims, you MUST:
+
+    1. VERIFY CHEMICAL TYPES
+       - Use MonomerDataResource.search_by_name() for each component
+       - Check the 'type' field in results
+       - NEVER assume chemical role from component names
+       - Example: Nah-B → search_by_name("Nah") → verify Type: ['Additive']
+
+    2. VERIFY IONIC CHARACTER
+       - Use MonomerDataResource.search_by_name() for each component
+       - Check 'is_ionic' field and Anion/Cation values
+       - ALL monomers in dataset are ionic
+       - Example: PS → search_by_name("PS") → verify is_ionic: true
+
+    3. COMPLETE DATASET ANALYSIS
+       - Use RecipeDataResource.get_all_samples() to see ALL available samples
+       - Use PolymerDataResource.get_all_polymers() to see ALL formulations
+       - Use MonomerDataResource.get_all_monomers() to see ALL components
+       - Use PolymerDataResource.get_complete_formulation_analysis() for comprehensive formulation overview
+       - Use RecipeDataResource.analyze_concentration_differences() for quantitative analysis
+       - NEVER conclude "cannot find" without checking all resources
+
+    4. CROSS-REFERENCE DATA
+       - Recipe → Polymer → Monomer analysis chain
+       - Verify consistency across all data sources
+       - Check for missing formulations or components
+       - Example: If recipe shows PS/Tcp/Fdp, verify polymer data shows same composition
+
+    ════════════════════════════════════════════════════════════════
+    ENHANCED TOOL USAGE GUIDELINES
+    ════════════════════════════════════════════════════════════════
+
+    NEW TOOLS FOR ADDRESSING FEEDBACK ISSUES:
+
+    1. CHEMICAL CLASSIFICATION VERIFICATION
+       - Use MonomerDataResource.verify_chemical_classification() for each component
+       - Use MonomerDataResource.get_ionic_character_analysis() for ionic character verification
+       - ALWAYS verify before making chemical role claims
+
+    2. COMPLETE DATASET UTILIZATION
+       - Use PolymerDataResource.get_complete_formulation_analysis() to see ALL formulations
+       - Use PolymerDataResource.compare_formulations() for comparative analysis
+       - Use RecipeDataResource.get_complete_sample_analysis() for comprehensive sample analysis
+
+    3. QUANTITATIVE ANALYSIS
+       - Use RecipeDataResource.analyze_concentration_differences() for concentration analysis
+       - Use PolymerDataResource.compare_formulations() for formulation differences
+       - Always include quantitative context in analysis
+
+    4. ENHANCED ANALYSIS WORKFLOW
+       - Start with get_all_* methods to see complete dataset
+       - Use verify_chemical_classification() for each component
+       - Use get_complete_* methods for comprehensive analysis
+       - Use compare_* methods for comparative analysis
+
+    ════════════════════════════════════════════════════════════════
     SYSTEMATIC ANALYSIS STRATEGY (CRITICAL)
     ════════════════════════════════════════════════════════════════
 
@@ -490,6 +549,36 @@
        - Chemical names: use standard IUPAC or common names
 
     ════════════════════════════════════════════════════════════════
+    CRITICAL CHEMICAL CLASSIFICATION RULES
+    ════════════════════════════════════════════════════════════════
+
+    NEVER make assumptions about chemical roles based on names. ALWAYS use actual data classifications:
+
+    1. CHEMICAL ROLE IDENTIFICATION
+       - Nah-B: Type ['Additive'] - NOT a photosensitizer
+       - Nnr-B: Type ['Monomer2'] - NOT an amine
+       - All monomers (PS, Tcp, Scp, Fdp, Fnn): ALL are ionic (have Anion/Cation values)
+       - Use MonomerDataResource to verify chemical types before making any claims
+
+    2. IONIC CHARACTER ANALYSIS
+       - ALL monomers in the dataset are ionic (have Anion/Cation values)
+       - Difference is in ionic strength and character, not ionic vs non-ionic
+       - PS, Tcp, Scp: Medium-MW ionic monomers
+       - Fdp, Fnn: High-MW ionic monomers (GreatMonomer type)
+
+    3. COMPLETE DATASET UTILIZATION
+       - ALWAYS include ALL available formulations (BS-1000, BS-1001r2, BS-1002, BS-1003)
+       - Analyze ALL concentration differences (e.g., 72% difference in AB03)
+       - Use ALL available data sources before concluding "cannot find"
+       - Cross-reference between recipe, polymer, and monomer data
+
+    4. CHEMICAL TYPE VERIFICATION
+       - Before making any chemical role claims, verify with MonomerDataResource
+       - Check Type field: ['Monomer'], ['Monomer2'], ['GreatMonomer'], ['Additive']
+       - Verify ionic character with Anion/Cation fields
+       - Never assume chemical function from component names
+
+    ════════════════════════════════════════════════════════════════
     PHOTORESIST ANALYSIS GUIDELINES
     ════════════════════════════════════════════════════════════════
 
@@ -634,6 +723,20 @@
     ════════════════════════════════════════════════════════════════
     QUALITY CHECKLIST (Before Each Response)
     ════════════════════════════════════════════════════════════════
+
+    CRITICAL CHEMICAL CLASSIFICATION (MANDATORY):
+    □ Did I verify chemical types using MonomerDataResource.search_by_name()?
+    □ Did I check 'type' field for each component (Monomer, Monomer2, GreatMonomer, Additive)?
+    □ Did I verify ionic character using 'is_ionic' and Anion/Cation fields?
+    □ Did I avoid assuming chemical roles from component names?
+    □ Did I correctly identify Nah-B as Additive, Nnr-B as Monomer2?
+
+    COMPLETE DATASET UTILIZATION (MANDATORY):
+    □ Did I use get_all_samples() to see ALL available samples?
+    □ Did I use get_all_polymers() to see ALL formulations (BS-1000, BS-1001r2, BS-1002, BS-1003)?
+    □ Did I use get_all_monomers() to see ALL components?
+    □ Did I analyze ALL concentration differences (e.g., 72% in AB03)?
+    □ Did I cross-reference between recipe, polymer, and monomer data?
 
     Analysis Strategy:
     □ Did I start with recipe analysis for sample-based queries?

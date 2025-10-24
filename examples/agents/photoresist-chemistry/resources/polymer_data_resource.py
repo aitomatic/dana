@@ -7,7 +7,6 @@ Handles structured data queries for polymer structures and monomer breakdowns.
 
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, List, Any
 
 from dana.common.protocols.types import DictParams
 from dana.common.protocols.war import tool_use
@@ -322,6 +321,191 @@ class PolymerDataResource(BaseResource):
                 "results": [],
                 "error": f"Failed to get polymers: {str(e)}"
             }
+
+    @tool_use
+    def get_complete_formulation_analysis(self, **kwargs) -> DictParams:
+        """
+        Get complete formulation analysis including all available formulations.
+        This tool specifically addresses the feedback about missing BS-1003 formulation.
+
+        Returns:
+            Dictionary with complete formulation analysis
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No polymer data available"
+                }
+
+            # Group by customer for analysis
+            customer_formulations = {}
+            all_formulations = []
+
+            for _, row in self._data.iterrows():
+                customer = row.get('Customer', 'Unknown')
+                lot_number = row.get('LotNo', '')
+                composition = row.get('Composition', '')
+
+                # Extract monomer information
+                monomers = []
+                ratios = []
+                for i in range(1, 6):
+                    monomer = row.get(f'Monomer{i}', '')
+                    ratio = row.get(f'Ratio{i}', '')
+                    if pd.notna(monomer) and monomer:
+                        monomers.append(monomer)
+                        ratios.append(ratio if pd.notna(ratio) else 0)
+
+                formulation_info = {
+                    "lot_number": lot_number,
+                    "composition": composition,
+                    "customer": customer,
+                    "theme": row.get('Theme', ''),
+                    "pattern": row.get('Pattern', ''),
+                    "pc_treat": row.get('PC_Treat', ''),
+                    "monomers": monomers,
+                    "ratios": ratios,
+                    "monomer_count": len(monomers),
+                    "total_ratio": sum(ratios) if ratios else 0
+                }
+
+                all_formulations.append(formulation_info)
+
+                if customer not in customer_formulations:
+                    customer_formulations[customer] = []
+                customer_formulations[customer].append(formulation_info)
+
+            # Analyze formulation patterns
+            analysis = {
+                "total_formulations": len(all_formulations),
+                "customer_breakdown": {customer: len(formulations) for customer, formulations in customer_formulations.items()},
+                "formulation_types": list(set([f["composition"] for f in all_formulations])),
+                "all_lot_numbers": [f["lot_number"] for f in all_formulations]
+            }
+
+            return {
+                "success": True,
+                "results": {
+                    "all_formulations": all_formulations,
+                    "customer_formulations": customer_formulations,
+                    "analysis": analysis
+                },
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Complete formulation analysis failed: {str(e)}"
+            }
+
+    @tool_use
+    def compare_formulations(self, lot_numbers: list, **kwargs) -> DictParams:
+        """
+        Compare multiple formulations to identify differences and similarities.
+        This tool addresses the feedback about incomplete comparative analysis.
+
+        Args:
+            lot_numbers: List of lot numbers to compare (e.g., ["BS-1000", "BS-1001r2", "BS-1002", "BS-1003"])
+
+        Returns:
+            Dictionary with comparative analysis
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No polymer data available"
+                }
+
+            # Find formulations for specified lot numbers
+            formulations = []
+            for lot_number in lot_numbers:
+                matches = self._data[
+                    self._data['LotNo'].str.contains(lot_number, case=False, na=False)
+                ]
+                for _, row in matches.iterrows():
+                    # Extract monomer information
+                    monomers = []
+                    ratios = []
+                    for i in range(1, 6):
+                        monomer = row.get(f'Monomer{i}', '')
+                        ratio = row.get(f'Ratio{i}', '')
+                        if pd.notna(monomer) and monomer:
+                            monomers.append(monomer)
+                            ratios.append(ratio if pd.notna(ratio) else 0)
+
+                    formulation_info = {
+                        "lot_number": lot_number,
+                        "composition": row.get('Composition', ''),
+                        "customer": row.get('Customer', ''),
+                        "theme": row.get('Theme', ''),
+                        "pattern": row.get('Pattern', ''),
+                        "pc_treat": row.get('PC_Treat', ''),
+                        "monomers": monomers,
+                        "ratios": ratios,
+                        "monomer_count": len(monomers),
+                        "total_ratio": sum(ratios) if ratios else 0
+                    }
+                    formulations.append(formulation_info)
+
+            # Perform comparative analysis
+            comparison = {
+                "formulations": formulations,
+                "monomer_analysis": self._analyze_monomer_usage(formulations),
+                "customer_analysis": self._analyze_customer_patterns(formulations),
+                "composition_analysis": self._analyze_composition_patterns(formulations)
+            }
+
+            return {
+                "success": True,
+                "results": comparison,
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Formulation comparison failed: {str(e)}"
+            }
+
+    def _analyze_monomer_usage(self, formulations):
+        """Analyze monomer usage patterns across formulations."""
+        monomer_usage = {}
+        for formulation in formulations:
+            for monomer, ratio in zip(formulation["monomers"], formulation["ratios"]):
+                if monomer not in monomer_usage:
+                    monomer_usage[monomer] = []
+                monomer_usage[monomer].append({
+                    "lot_number": formulation["lot_number"],
+                    "ratio": ratio,
+                    "customer": formulation["customer"]
+                })
+        return monomer_usage
+
+    def _analyze_customer_patterns(self, formulations):
+        """Analyze customer-specific formulation patterns."""
+        customer_patterns = {}
+        for formulation in formulations:
+            customer = formulation["customer"]
+            if customer not in customer_patterns:
+                customer_patterns[customer] = []
+            customer_patterns[customer].append(formulation)
+        return customer_patterns
+
+    def _analyze_composition_patterns(self, formulations):
+        """Analyze composition patterns across formulations."""
+        compositions = [f["composition"] for f in formulations]
+        unique_compositions = list(set(compositions))
+        return {
+            "unique_compositions": unique_compositions,
+            "composition_frequency": {comp: compositions.count(comp) for comp in unique_compositions}
+        }
 
     @property
     def is_available(self) -> bool:

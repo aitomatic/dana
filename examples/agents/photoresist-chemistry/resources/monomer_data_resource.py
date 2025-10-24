@@ -7,7 +7,6 @@ Handles structured data queries for chemical properties and molecular informatio
 
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, List, Any
 
 from dana.common.protocols.types import DictParams
 from dana.common.protocols.war import tool_use
@@ -328,6 +327,131 @@ class MonomerDataResource(BaseResource):
                 "success": False,
                 "results": [],
                 "error": f"Failed to get monomers: {str(e)}"
+            }
+
+    @tool_use
+    def verify_chemical_classification(self, component_name: str, **kwargs) -> DictParams:
+        """
+        Verify the chemical classification of a component to prevent misclassification errors.
+        This tool specifically addresses the feedback about chemical role misclassification.
+
+        Args:
+            component_name: Name of component to verify (e.g., "Nah", "Nnr", "PS")
+
+        Returns:
+            Dictionary with verified chemical classification
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No monomer data available"
+                }
+
+            # Search for exact name match first
+            exact_matches = self._data[
+                self._data['Name'].str.contains(component_name, case=False, na=False)
+            ]
+
+            if exact_matches.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": f"Component '{component_name}' not found in monomer database"
+                }
+
+            results = []
+            for _, row in exact_matches.iterrows():
+                result = {
+                    "name": row.get('Name', ''),
+                    "verified_type": row.get('Type', ''),
+                    "is_ionic": pd.notna(row.get('Anion', '')) or pd.notna(row.get('Cation', '')),
+                    "anion": row.get('Anion', ''),
+                    "cation": row.get('Cation', ''),
+                    "molecular_weight": row.get('MW', ''),
+                    "team": row.get('Team', ''),
+                    "classification_notes": self._get_classification_notes(row.get('Type', ''))
+                }
+                results.append(result)
+
+            return {
+                "success": True,
+                "results": results,
+                "total_matches": len(results),
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Chemical classification verification failed: {str(e)}"
+            }
+
+    def _get_classification_notes(self, monomer_type: str) -> str:
+        """Get classification notes for different monomer types."""
+        type_notes = {
+            'Monomer': 'Standard monomer component',
+            'Monomer2': 'Secondary monomer component (NOT an amine)',
+            'GreatMonomer': 'High-performance monomer with special properties',
+            'Additive': 'Additive component (NOT a photosensitizer)'
+        }
+        return type_notes.get(monomer_type, f'Unknown type: {monomer_type}')
+
+    @tool_use
+    def get_ionic_character_analysis(self, **kwargs) -> DictParams:
+        """
+        Analyze ionic character of all monomers to address ionic classification errors.
+        This tool specifically addresses the feedback about ionic character misclassification.
+
+        Returns:
+            Dictionary with ionic character analysis
+        """
+        try:
+            if self._data is None or self._data.empty:
+                return {
+                    "success": False,
+                    "results": [],
+                    "error": "No monomer data available"
+                }
+
+            ionic_monomers = []
+            non_ionic_monomers = []
+
+            for _, row in self._data.iterrows():
+                is_ionic = pd.notna(row.get('Anion', '')) or pd.notna(row.get('Cation', ''))
+                monomer_info = {
+                    "name": row.get('Name', ''),
+                    "type": row.get('Type', ''),
+                    "is_ionic": is_ionic,
+                    "anion": row.get('Anion', ''),
+                    "cation": row.get('Cation', ''),
+                    "molecular_weight": row.get('MW', '')
+                }
+
+                if is_ionic:
+                    ionic_monomers.append(monomer_info)
+                else:
+                    non_ionic_monomers.append(monomer_info)
+
+            return {
+                "success": True,
+                "results": {
+                    "ionic_monomers": ionic_monomers,
+                    "non_ionic_monomers": non_ionic_monomers,
+                    "total_ionic": len(ionic_monomers),
+                    "total_non_ionic": len(non_ionic_monomers),
+                    "analysis": f"Found {len(ionic_monomers)} ionic monomers and {len(non_ionic_monomers)} non-ionic monomers"
+                },
+                "error": None
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "results": [],
+                "error": f"Ionic character analysis failed: {str(e)}"
             }
 
     @property
