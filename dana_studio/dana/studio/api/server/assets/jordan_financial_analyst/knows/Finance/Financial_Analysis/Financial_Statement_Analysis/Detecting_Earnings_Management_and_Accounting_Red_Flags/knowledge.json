@@ -1,0 +1,1142 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Financial Statement Analysis",
+        "Detecting Earnings Management and Accounting Red Flags"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What is the purpose of generating initial hypotheses when analyzing financial statements for red flags?\n*Question 2* : Which key financial metrics should be reviewed first to identify potential earnings management?\n*Question 3* : How can you use trend analysis as an initial step to detect unusual financial patterns?\n*Question 4* : What are common signals in financial statements that might prompt a more detailed investigation into earnings management?\n*Question 5* : How does understanding industry benchmarks assist in the initial identification of accounting red flags?",
+            "facts": [
+                {
+                    "content": "In the context of evaluating the quality of financial reports, an analyst is attempting to answer two basic questions: 1. Are the financial reports GAAP-compliant and decision-useful? 2. Are the results (earnings) of high quality? Do they provide an adequate level of return, and are they sustainable?",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Understanding the economic activities of a company provides a basis for understanding why particular accounting principles may be appropriate and why particular financial metrics matter.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Understanding the accounting principles used by a company and its competitors provides a basis for understanding what constitutes the norm\u2014and to assess whether a company\u2019s treatment is appropriate.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The choices management makes to achieve desired results leave a trail, like tracks in sand or snow. The evidence, or warning signs, of information manipulation in financial reports is directly linked to the basic means of manipulation: biased revenue recognition and biased expense recognition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The bias may relate to timing or location of recognition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The single largest number on the income statement is revenue, and revenue recognition is a recurring source of accounting manipulation and even outright fraud.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analytical procedures can be routinely performed to identify warning signals of malfeasance.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Look at revenue relationships. Compare a company\u2019s revenue growth with its primary competitors or its industry peer group.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If a company\u2019s revenue growth is out of line with its competitors, its industry, or the economy, the investor or analyst needs to understand the reasons for the outperformance.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Net income propels stock prices, but cash flow pays bills. Management can manipulate either one, but sooner or later, net income must be realized in cash if a company is to remain viable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When net income is higher than cash provided by operations, one possibility is that aggressive accrual accounting policies have shifted current expenses to later periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the ratio of cash flow to net income for a company is consistently below 1 or has declined repeatedly over time, this may be a signal of manipulation of information in financial reports through aggressive accrual accounting policies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Evaluations require comparisons. It is difficult to say that a company\u2019s financial performance was \u201cgood\u201d or \u201cbad\u201d without clarifying the basis for comparison. Cross-sectional analysis compares multiple companies at the same point in time or over the same range of time, and trend or time-series analysis compares measures for a single company over a period of time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High-quality reporting represents the economic reality of the company\u2019s activities during the reporting period and the company\u2019s financial condition at the end of the period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Managers may be motivated to issue less-than-high-quality financial reports to mask poor performance, boost the company\u2019s stock price, to increase personal compensation, and/or to avoid violation of debt covenants.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Non-operating income or one-time sales included in revenue. To disguise weakening revenue growth, or just to enhance revenue growth, a company might classify non-operating income items into revenues or fail to clarify the nature of revenues.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Classification of expenses as \u201cnon-recurring.\u201d To make operating performance look more attractive, managers might carve out \u201cspecial items\u201d in the income statement. Particularly when these items appear period after period, equity investors might find their interests best served by not accepting the carve-out of serial \u201cspecial items\u201d and instead focusing on the net income line in evaluating performance over long periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Gross/operating margins out of line with competitors or industry. This disparity is an ambivalent warning sign. It might signal superior management ability. But it might also signal the presence of accounting manipulations to add a veneer of superior management ability to the company\u2019s reputation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For firms operating in multiple segments by geography or product\u2014particularly multinational firms\u2014consider whether inventory, sales, and expenses have been shifted to make it appear that a company is positively exposed to a geographic region or product segment that the investment community considers to be a desirable growth area. An analyst may suspect that this shift is occurring if the segment is showing strong performance while the consolidated results remain static or worsen.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The values of DSR, GMI, SGI, and DEPI are all greater than one. In the Beneish model, this indicates: DSR > 1 \u2014 receivables as a percentage of sales have increased; GMI > 1 \u2014 gross margins were higher last year; SGI > 1 \u2014 positive sales growth relative to the previous year; DEPI > 1 \u2014 the depreciation rate was higher in the prior year.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Earnings with a larger component of accruals are typically less persistent and of lower quality. An important distinction is between accruals that arise from normal transactions in the period (non-discretionary) and accruals that result from transactions or accounting choices outside the normal (discretionary accruals). Outlier discretionary accruals are an indicator of possibly manipulated\u2014and thus low quality earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Net income being greater than cash flow from operations is a warning sign that the firm may be using aggressive accrual accounting policies that shift current expenses to future periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "One property of high earnings quality is earnings persistence\u2014that is, sustainability of earnings excluding items that are obviously non-recurring and persistence of growth in those earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Companies are unique, and variation in specific analytical projects will require specific approaches.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Examine the trend to determine whether receivables are increasing as a percentage of total revenues. If so, a company might be engaging in channel-stuffing activities, or worse, recording fictitious sales transactions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare a company\u2019s days sales outstanding (DSO) or receivables turnover with that of relevant competitors or an industry peer group and determine whether the company is an outlier.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare growth in inventories with competitors and industry benchmarks. If a company\u2019s inventory growth is out of line with its peers, without any concurrent sales growth, then it simply may be the result of poor inventory management or may signal obsolescence problems in the company\u2019s inventory that have not yet been recognized through markdowns.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Calculate the inventory turnover ratio. Declining inventory turnover could also suggest obsolescence problems that should be recognized.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Consider whether the policies make it easier to prematurely recognize revenue, such as recognizing revenue immediately upon shipment of goods, or if the company uses bill-and-hold arrangements whereby a sale is recognized before goods actually are shipped to the customer.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although none of these decisions necessarily violates accounting standards, each involves significant judgement and warrants close attention if other warning signs are present.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare the company\u2019s policy with the industry practice. If the company is the only one capitalizing certain costs while other industry participants treat them as expenses, a red flag is raised.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Common-size analysis involves expressing financial data, including entire financial statements, in relation to a single financial statement item, or base. Trend data generated by a horizontal common-size analysis can be compared across financial statements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Warning signals are just that: signals, not indisputable declarations of accounting manipulation guilt. Investors and analysts need to evaluate them cohesively, not on an isolated basis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A company that consistently reports earnings that exactly meet or only narrowly beat benchmarks can raise questions about its earnings quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Learn about management. Evaluate whether the company\u2019s management has any particular incentives to misreport. Review disclosures about compensation and insider transactions, especially insiders\u2019 sales of the company\u2019s stock. Review the disclosures concerning related-party transactions.\n  3. Identify significant accounting areas, especially those in which management judgment or an unusual accounting rule is a significant determinant of reported financial performance.\n  4. Make comparisons:\n      A. Compare the company\u2019s financial statements and significant disclosures in the current year\u2019s report with those in the prior year\u2019s report.\n      B. Compare the company\u2019s accounting policies with those of its closest competitors.\n      C. Using ratio analysis, compare the company\u2019s performance with that of its closest competitors.\n  5. Check for warning signs of possible issues with the quality of the financial reports (e.g., declining receivables turnover, declining inventory turnover, net income greater than cash provided by operations).\n  6. For firms operating in multiple segments, consider whether inventory, sales, and expenses have been shifted to make it appear that a company is positively exposed to a desirable growth area.\n  7. Use appropriate quantitative tools to assess the likelihood of misreporting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Articulate the purpose of the analysis.\n  2. Collect input data, including an understanding of the target company\u2019s business model, financial performance, and financial position (including trends over time and relative to peer companies).\n  3. Obtain information on the economy and industry to understand the environment in which the company operates.\n  4. Process the data using appropriate analytical tools (e.g., ratios, growth rates, common-size financial statements, charts).\n  5. Analyze and interpret the processed data.\n  6. Develop and communicate conclusions and recommendations.\n  7. Follow-up periodically to determine if any changes are necessary to recommendations or holdings.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : What is confirmation bias, and how might it affect the interpretation of financial statement data?\n*Question 7* : Which basic technical analysis tools can be used to identify unusual trading patterns that may signal accounting irregularities?\n*Question 8* : How can scenario analysis be used to assess the risk of earnings manipulation in a given company?\n*Question 9* : Describe a situation where reliance on a single financial metric could mislead an analyst, and explain how to address this risk.\n*Question 10* : What are common types of financial modeling software or statistical techniques used to detect anomalies in financial statements?",
+            "facts": [
+                {
+                    "content": "Confirmation bias is the tendency to look for and notice what confirms prior beliefs and to ignore or undervalue whatever contradicts them. A common manifestation of this bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Confirmation bias is closely related to overconfidence and representativeness biases.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quantitative tools have been developed to help in evaluating financial reports, in addition to qualitative approaches.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Beneish model is used to estimate the probability of earnings manipulation (M-score) using a probit model and various financial ratios, including days sales receivable index, gross margin index, asset quality index, sales growth index, depreciation index, sales, general, and administrative expenses index, accruals, and leverage index.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The M-score in the Beneish model is a normally distributed random variable with a mean of 0 and a standard deviation of 1.0. Higher M-scores (i.e., less negative numbers) indicate an increased probability of earnings manipulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The use of the M-score to classify companies as potential manipulators depends on the relative cost of Type I errors (incorrectly classifying a manipulator as a non-manipulator) and Type II errors (incorrectly classifying a non-manipulator as a manipulator). Beneish considered that the likely relevant cutoff for investors is a probability of earnings manipulation of 3.8% (an M-score exceeding \u22121.78).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Researchers have examined numerous factors that contribute to assessing the probability that a company is engaged in accounting manipulation, including accruals quality, deferred taxes, auditor change, market-to-book value, listing status, growth rate differences between financial and non-financial variables, and aspects of corporate governance and incentive compensation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Earnings with a larger component of accruals are typically less persistent and of lower quality. Accruals arising from transactions or accounting choices outside the normal course (discretionary accruals) may be made with the intent to distort reported earnings. Outlier discretionary accruals are an indicator of possibly manipulated\u2014 and thus low quality\u2014earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities. Sensitivity analysis, scenario analysis, and simulation are techniques that can be used to evaluate the range of possible outcomes and associated risks in financial forecasts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "An analyst who has a positive view on a company might speak only to other analysts who share that view and the company\u2019s management, all of whom will likely tell the analyst what they want to hear and already know.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An important distinction is between accruals that arise from normal transactions in the period (non-discretionary) and accruals that result from transactions or accounting choices outside the normal (discretionary accruals). Discretionary accruals are possibly made with the intent to distort reported earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the likelihood of misreporting appears high, an analyst should take special care in analyzing, including qualitatively analyzing, the financial reports of the company.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope. For example, an analyst might research a particular company but conduct only cursory research on its competitors and companies that offer substitute products.\n  2. To mitigate confirmation bias, analysts should ensure that their research process includes a broad and balanced perspective, considering both supporting and contradicting information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Scenario analysis involves creating several scenarios with different reasonable inputs for key variables, rather than relying on a single forecasted number or scenario.\n  2. By asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios, which provide a range of possible financial outcomes and help assess the risk of earnings manipulation.\n  3. The forecasts can be easily modified (for example, in a spreadsheet model) to calculate different estimates for key financial metrics, such as free cash flow, based on alternative assumptions for variables like sales growth, EBIT margin, and working capital.\n  4. Evaluating the range of outcomes across scenarios helps to recognize the uncertainty and potential risks of manipulation in financial reporting.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : How can Monte Carlo simulation be applied to assess the sensitivity of financial statement outcomes under varying assumptions?\n*Question 12* : What role does Value at Risk (VaR) play in managing financial risk related to earnings volatility?\n*Question 13* : Describe how to interpret candlestick chart patterns to identify potential red flags in stock price movements.\n*Question 14* : In a scenario where a company\u2019s reported earnings significantly exceed industry peers, how would you combine stress testing and volume analysis to investigate possible earnings management?\n*Question 15* : Explain how hedging techniques can be integrated with financial modeling to mitigate risks identified during financial statement analysis.",
+            "facts": [
+                {
+                    "content": "The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Covariance adjustment reflects the fact that the risks within each and across risk types are not perfectly correlated and, consequently, the total VaR on a given day will be lower than the sum of the VARs relating to each individual risk type.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR is a single-day measure of market shocks that can affect a company. Market dislocations can linger for days, weeks, and even longer. Although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "HSBC uses a range of tools to monitor and limit market risk exposures including sensitivity analysis, value at risk, and stress testing.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "VaR statistics can be used for gauging trends in intra-company risk taking.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities. This can involve several techniques: sensitivity analysis (\u201cwhat if\u201d analysis), scenario analysis, and simulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis. By asking, \u201cWhere could I be wrong and by how much?,\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Assess market risk sensitivities of assets and liabilities by understanding how adverse changes in interest rates, exchange rates, and other market factors can affect earnings and the balance sheet.\n  2. Use required disclosures in financial statements, such as value at risk, to evaluate these sensitivities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Create several scenarios for key forecast variables rather than relying on a single set of forecast numbers.\n  2. Modify the spreadsheet-driven model to calculate different estimates (e.g., free cash flow) based on a range of reasonable inputs for key variables.\n  3. Compare results across the scenarios to assess the range of possible financial outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Perform sensitivity analysis by adjusting key cost or revenue drivers (e.g., price of inputs, ability to pass on costs) and evaluating the impact on gross profit and other financial metrics.\n  2. Evaluate multiple scenarios for capital expenditure decisions (e.g., building a new factory vs. refitting an existing one), and analyze their implications for financial forecasts.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : How might anchoring bias influence analysts' judgment when reviewing historical financial anomalies?\n*Question 17* : When faced with conflicting trends between cash flow statements and profitability ratios, what steps can you take to resolve the discrepancy?\n*Question 18* : In a situation with incomplete financial data, how would you integrate statistical analysis and technical charting to assess the likelihood of earnings manipulation?\n*Question 19* : What are the advantages of using machine learning algorithms, such as random forests or neural networks, for detecting subtle anomalies in large financial datasets?\n*Question 20* : How can Elliott Wave theory and Fibonacci retracement tools be used together to identify potential red flags in a company\u2019s market activity?",
+            "facts": [
+                {
+                    "content": "The most common form of conservatism is the reluctance to incorporate new negative information into a forecast; analysts could also fail to adequately incorporate positive information and thus have estimates that are too low. A different name for conservatism bias in this context is anchoring and adjustment, referring to an analyst using their prior estimates as an \u201canchor\u201d that is subsequently adjusted.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The previous forecast or anchor tends to exert significant influence; in other words, the adjustment is too small, and the updated forecast is too close to the previous forecast.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Conservatism bias is a bias in which people maintain their prior views or forecasts by inadequately incorporating new information. This often happens in forecasting when an analyst does not update their forecasting after receiving conflicting information, such as disappointing earnings results or a competitor action.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The probability of manipulation (M-score) is estimated using a probit model: M-score = \u22124.84 + 0.920 (DSR) + 0.528 (GMI) + 0.404 (AQI) + 0.892 (SGI) + 0.115 (DEPI) \u2212 0.172 (SGAI) + 4.679 (Accruals) \u2212 0.327 (LEVI).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Higher M-scores (i.e., less negative numbers) indicate an increased probability of earnings manipulation. The probability is given by the amount in the left side of the distribution. The use of the M-score to classify companies as potential manipulators depends on the relative cost of Type I and Type II errors. The cutoff value for classification minimizes the cost of misclassification. Beneish considered that the likely relevant cutoff for investors is a probability of earnings manipulation of 3.8% (an M-score exceeding \u22121.78).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The predictive power of the Beneish model is declining over time. Many managers have learned to test the detectability of earnings manipulation tactics by using the model to anticipate analysts\u2019 perceptions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High earnings quality is often considered to be evidenced by earnings that are sustainable and represent returns equal to or in excess of the company\u2019s cost of capital. High-quality earnings increase the value of the company more than low-quality earnings, and the term \u201chigh-quality earnings\u201d assumes that reporting quality is high.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Earnings with a larger component of accruals are typically less persistent and of lower quality. Discretionary accruals are possibly made with the intent to distort reported earnings. Outlier discretionary accruals are an indicator of possibly manipulated\u2014and thus low quality\u2014earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "The previous forecast or anchor tends to exert significant influence; the adjustment is too small, and the updated forecast is too close to the previous forecast.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Awareness of the bias and the recognition that uncertainty is an inherent characteristic in investments can help mitigate illusion of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "An additional limitation of using quantitative models is that they cannot determine cause and effect between model variables. Quantitative models establish only associations between variables.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The predictive power of the Beneish model can decline over time because many managers have learned to test the detectability of manipulation tactics by using the model.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "As useful as the Beneish model may be, the search for more powerful analytical tools continues. It is necessary for analysts to use qualitative, not just quantitative, means to assess quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. To improve forecasts and the investment decisions based on them, analysts must be aware of the impact of biases and potential remedies for them.\n  2. To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.\n  3. One such action is scenario analysis. By asking, \u201cWhere could I be wrong and by how much?\u201d an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. As a first step, management\u2019s credibility should be assessed by examining the company\u2019s performance against management guidance in the past.\n  2. Second, the guidance should be considered as a scenario in the scenario analysis, and the investment implications of that scenario should be considered.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Forecasts are not limited to a single point estimate but should involve a range of possibilities. This can involve several techniques:\n      - Sensitivity analysis: Shows the range of possible outcomes as specific assumptions are changed.\n      - Scenario analysis: Shows the changes in key financial quantities that result from given (economic) events; if events can be assigned probabilities, the analyst can evaluate not only the range of outcomes but also standard statistical measures such as the mean and median value.\n      - Simulation: Computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Multiple scenarios are run using assigned probability factors to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Use appropriate quantitative tools to assess the likelihood of misreporting. If the likelihood appears high, take special care in analyzing, including qualitatively analyzing, the financial reports of the company.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 21* : Given a recent high-profile accounting scandal with limited access to internal data, how would you prioritize your investigative steps to assess the situation?\n*Question 22* : How should an analyst respond if pressured to overlook questionable accounting practices that benefit their employer?\n*Question 23* : In what ways can AI-driven analytics improve the detection of earnings manipulation, and what are potential limitations to be aware of?\n*Question 24* : Describe a practical risk mitigation strategy when analyzing a company's financials during a period of market-wide volatility and incomplete data.\n*Question 25* : How can you effectively communicate complex findings about potential accounting irregularities to non-technical stakeholders while ensuring clarity and objectivity?",
+            "facts": [
+                {
+                    "content": "In the context of evaluating the quality of financial reports, an analyst is attempting to answer two basic questions: (1) Are the financial reports GAAP-compliant and decision-useful? (2) Are the results (earnings) of high quality? Do they provide an adequate level of return, and are they sustainable?",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Companies are unique, and variation in specific analytical projects will require specific approaches.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quantitative models such as the Beneish model are used to assess the likelihood of misreporting, but their predictive power can decline over time as managers learn to test the detectability of manipulation tactics.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quantitative models cannot determine cause and effect between model variables; they only establish associations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The predictive power of the Beneish model is declining over time because many managers have learned to test the detectability of earnings manipulation tactics by using the model.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "As useful as the Beneish model may be, it is necessary for analysts to use qualitative, not just quantitative, means to assess quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Managers may be motivated to issue financial reports that are not high quality to mask poor performance, meet or beat market expectations, increase stock price or management compensation, or avoid debt covenant violations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Typically, three conditions exist when low-quality financial reports are issued: opportunity, pressure or motivation, and rationalization\u2014sometimes referred to as the fraud triangle.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High-quality reporting provides decision-useful information\u2014information that is relevant and faithfully represents the economic reality of the company\u2019s activities during the reporting period and the company\u2019s financial condition at the end of the period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High-quality earnings reflect an adequate level of return on investment and are derived from activities that a company will likely be able to sustain in the future.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "High-quality earnings increase the value of the company more than low-quality earnings, and the term \u201chigh-quality earnings\u201d assumes that reporting quality is high.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Low-quality earnings are insufficient to cover the company\u2019s cost of capital and/or are derived from non-recurring, one-off activities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Management should disclose its principal strategic, commercial, operational, and financial risks, which are those that may significantly affect the entity\u2019s strategies and progress of the entity\u2019s value.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Net income greater than cash provided by operations could suggest that aggressive accrual accounting policies have shifted current expenses to later periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If a company is the only one capitalizing certain costs while other industry participants treat them as expenses, a red flag is raised.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Construct a time series of cash generated by operations divided by net income. If the ratio is consistently below 1.0 or has declined repeatedly, the company\u2019s accrual accounts may have problems.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare a company\u2019s depreciation methods and useful lives with those of its peers to determine whether it is particularly lenient in its effects on earnings.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Examine the company\u2019s accounting policy note for its capitalization policy for long-term assets, including interest costs, and for its handling of other deferred costs.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The choices management makes to achieve desired results leave a trail, like tracks in sand or snow. The evidence, or warning signs, of information manipulation in financial reports is directly linked to the basic means of manipulation: biased revenue recognition and biased expense recognition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Examine the accounting policies note for a company\u2019s revenue recognition policies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare a company\u2019s revenue growth with its primary competitors or its industry peer group.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Compare accounts receivable with revenues over several years.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Classification of expenses as \u201cnon-recurring.\u201d To make operating performance look more attractive, managers might carve out \u201cspecial items\u201d in the income statement. Particularly when these items appear period after period, equity investors might find their interests best served by not accepting the carve-out of serial \u201cspecial items\u201d and instead focusing on the net income line in evaluating performance over long periods.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Gross/operating margins out of line with competitors or industry might signal superior management ability or the presence of accounting manipulations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Warning signals are just that: signals, not indisputable declarations of accounting manipulation guilt. Investors and analysts need to evaluate them cohesively, not on an isolated basis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Context is important in judging the value of warning signals.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Typical steps involved in evaluating financial reporting quality include an understanding of the company\u2019s business and industry in which the company is operating; comparison of the financial statements in the current period and the previous period to identify any significant differences in line items; an evaluation of the company\u2019s accounting policies, especially any unusual revenue and expense recognition compared with those of other companies in the same industry; financial ratio analysis; examination of the statement of cash flows with particular focus on differences between net income and operating cash flows; perusal of risk disclosures; and review of management compensation and insider transactions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Required disclosures regarding, for example, changes in senior management or inability to make a timely filing of required financial reports can be a warning sign of problems with financial reporting quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Forecasts are not limited to a single point estimate but should involve a range of possibilities, including sensitivity analysis, scenario analysis, and simulation.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A company that consistently reports earnings that exactly meet or only narrowly beat benchmarks can raise questions about its earnings quality.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Understand the accounting principles used by a company and its competitors.\n  3. Learn about management, including incentives to misreport and insider transactions.\n  4. Identify significant accounting areas, especially those with significant management judgment or unusual accounting rules.\n  5. Make comparisons: compare current and prior periods\u2019 financial statements and disclosures, compare accounting policies with competitors, use ratio analysis to compare performance with competitors.\n  6. Check for warning signs of possible issues with the quality of the financial reports (e.g., declining receivables/inventory turnover, net income greater than cash from operations).\n  7. For multinational or multi-segment firms, consider whether inventory, sales, and expenses have been shifted to affect segment results.\n  8. Use appropriate quantitative tools to assess the likelihood of misreporting.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Use sensitivity analysis to show the range of possible outcomes as specific assumptions are changed.\n  2. Use scenario analysis to show the changes in key financial quantities that result from given events.\n  3. Use simulation (computer-generated sensitivity or scenario analysis) based on probability models for the factors that drive outcomes.\n````",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}
