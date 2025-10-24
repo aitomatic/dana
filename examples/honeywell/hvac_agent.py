@@ -32,7 +32,7 @@ class HVACAgent(STARAgent):
         super().__init__(
             agent_id="hvac-agent",
             llm_provider="openai",
-            model="gpt-4o-mini",
+            model="gpt-4.1-mini",
             prompt_path=prompt_path,
             **kwargs
         )
@@ -81,10 +81,7 @@ def run_hvac_flow():
     # Create prompt with ONLY environment data
     agent_prompt = f"""
 CURRENT ENVIRONMENT:
-- Current time: {env_status['current_time']}
-- Indoor temperature: {env_status['indoor_temp']}°F
-- Outdoor temperature: {env_status['outdoor_temp']}°F
-- Meetings: {len(env_status['meeting_plan'])} scheduled
+{json.dumps(env_status, indent=2)}
 """
 
     if env_status['meeting_plan']:
@@ -108,6 +105,7 @@ CURRENT ENVIRONMENT:
         return
 
     agent_response = result["response"]
+    print(agent_prompt)
     print("Agent Output:")
     print(agent_response)
     print()
@@ -146,7 +144,8 @@ CURRENT ENVIRONMENT:
         current_time=env_status['current_time'],
         plan=agent_plan['plan'],
         target_temps=agent_plan['target_temps'],
-        mode=agent_plan['mode']
+        mode=agent_plan['mode'],
+        meeting_plan=env_status['meeting_plan']
     )
 
     print("Feedback Output:")
@@ -156,12 +155,33 @@ CURRENT ENVIRONMENT:
     print()
 
     if feedback['action_results']:
-        action = feedback['action_results'][0]
-        print("  action_results[0]:")
-        print(f"    time_needed_minutes:     {action['time_needed_minutes']} min")
-        print(f"    time_available_minutes:  {action['time_available_minutes']} min")
-        print(f"    reached_time:            {action['reached_time']}")
-        print(f"    cost_kwh:                {action['cost_kwh']:.3f} kWh")
+        print(f"  Action breakdown ({len(feedback['action_results'])} actions):")
+        total_cost_check = 0.0
+        for i, action in enumerate(feedback['action_results']):
+            print(f"\n  action_results[{i}]:")
+            print(f"    time_on:                 {action['time_on']}")
+            print(f"    time_off:                {action['time_off']}")
+            print(f"    start_temp:              {action['start_temp_f']:.1f}°F")
+            print(f"    target_temp:             {action['target_temp_f']:.1f}°F")
+            print(f"    status:                  {action['schedule_success']}")
+            if action['time_needed_minutes'] is not None:
+                print(f"    time_needed_minutes:     {action['time_needed_minutes']} min")
+            if action['time_available_minutes'] is not None:
+                print(f"    time_available_minutes:  {action['time_available_minutes']} min")
+            if action['reached_time']:
+                print(f"    reached_time:            {action['reached_time']}")
+            print(f"    cost_kwh:                {action['cost_kwh']:.3f} kWh")
+            if action['error']:
+                print(f"    error:                   {action['error']}")
+            total_cost_check += action['cost_kwh']
+
+        print(f"\n  Cost verification:")
+        print(f"    Sum of action costs:     {total_cost_check:.3f} kWh")
+        print(f"    Reported total:          {feedback['total_cost_kwh']:.3f} kWh")
+        if abs(total_cost_check - feedback['total_cost_kwh']) > 0.001:
+            print(f"    ⚠️  MISMATCH: Difference of {abs(total_cost_check - feedback['total_cost_kwh']):.3f} kWh")
+        else:
+            print(f"    ✓ Match!")
     print()
 
     # ========================================================================
@@ -172,22 +192,38 @@ CURRENT ENVIRONMENT:
     print("=" * 80)
 
     if feedback['plan_success'] == 'success':
-        action = feedback['action_results'][0]
         action_verb = "Cools" if agent_plan['mode'] == "cool" else "Heats"
+        target_temp = agent_plan['target_temps'] if isinstance(agent_plan['target_temps'], (int, float)) else agent_plan['target_temps'][0]
         print(f"✓ Plan is valid!")
-        print(f"  • {action_verb} from {env_status['indoor_temp']}°F to {agent_plan['target_temps'][0]}°F")
-        print(f"  • Takes {action['time_needed_minutes']} min (have {action['time_available_minutes']} min)")
-        print(f"  • Reaches target at {action['reached_time']}")
-        print(f"  • Costs {action['cost_kwh']:.3f} kWh")
-        print(f"  • Reasoning: {agent_plan.get('reasoning', 'N/A')}")
+        print(f"  • {action_verb} from {env_status['indoor_temp']}°F to {target_temp}°F")
+        print(f"  • Total cost: {feedback['total_cost_kwh']:.3f} kWh")
+        print(f"  • Final temp: {feedback['final_temp_f']:.1f}°F")
+        print()
+        print(f"  Action summary:")
+        for i, action in enumerate(feedback['action_results']):
+            print(f"    {i+1}. {action['time_on']} → {action['time_off']}: ", end="")
+            if action['schedule_success'] == 'success':
+                print(f"✓ Reaches {action['target_temp_f']:.0f}°F at {action['reached_time']} (cost: {action['cost_kwh']:.3f} kWh)")
+            else:
+                print(f"✗ Failed: {action['error']}")
     else:
         print(f"✗ Plan failed!")
-        if feedback['failed_actions']:
-            print(f"  • {feedback['failed_actions'][0]['error']}")
-        if feedback['action_results']:
-            action = feedback['action_results'][0]
-            print(f"  • Cost (partial): {action['cost_kwh']:.3f} kWh")
+        print(f"  • Total cost: {feedback['total_cost_kwh']:.3f} kWh")
         print(f"  • Final temp: {feedback['final_temp_f']:.1f}°F")
+        print()
+        print(f"  Failed actions ({len(feedback['failed_actions'])}):")
+        for failed in feedback['failed_actions']:
+            print(f"    • Action {failed['action_index']}: {failed['time_on']} → {failed['time_off']}")
+            print(f"      {failed['error']}")
+        print()
+        print(f"  Action summary:")
+        for i, action in enumerate(feedback['action_results']):
+            status = "✓" if action['schedule_success'] == 'success' else "✗"
+            print(f"    {status} {i+1}. {action['time_on']} → {action['time_off']}: ", end="")
+            if action['schedule_success'] == 'success':
+                print(f"Reaches {action['target_temp_f']:.0f}°F (cost: {action['cost_kwh']:.3f} kWh)")
+            else:
+                print(f"Failed (cost: {action['cost_kwh']:.3f} kWh)")
 
     print()
     print("=" * 80)
