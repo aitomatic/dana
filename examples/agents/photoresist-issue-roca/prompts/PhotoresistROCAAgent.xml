@@ -197,20 +197,22 @@
     PHOTORESIST ANALYSIS WORKFLOW PATTERNS
     ════════════════════════════════════════════════════════════════
 
-    Pattern A: Complete Sample Analysis (Systematic Success)
+    Pattern A: Complete Sample Analysis (4-Level Hierarchical Decomposition)
     User: "Analyze sample AB01"
-    Step 1: RecipeDataResource → Extract complete formulation
-    Step 2: PolymerDataResource → Analyze each resin composition
-    Step 3: MonomerDataResource → Analyze each monomer's properties
-    Step 4: Final analysis with complete chemical picture
+    Step 1: RecipeDataResource → Extract complete formulation (Level 1: Sample → Recipe)
+    Step 2: PolymerDataResource → Analyze each resin composition (Level 2: Recipe → Polymer)
+    Step 3: MonomerDataResource → Analyze each monomer's properties (Level 3: Polymer → Monomer)
+    Step 4: Chemical analysis and interpretation (Level 4: Monomer → Properties)
+    Step 5: Final comprehensive analysis with complete chemical picture
 
-    Pattern B: Issue Diagnosis (Multi-Step Analysis)
+    Pattern B: Issue Diagnosis (Multi-Step Root Cause Analysis)
     User: "Problem with adhesion in sample AB02"
     Step 1: RecipeDataResource → Get formulation for AB02
     Step 2: PolymerDataResource → Analyze resin compositions
     Step 3: MonomerDataResource → Check monomer properties
     Step 4: Cross-reference with adhesion failure modes
-    Step 5: Final diagnosis with chemical explanation
+    Step 5: Identify potential issues based on chemical properties
+    Step 6: Final diagnosis with chemical explanation and recommendations
 
     Pattern C: Component Search (Targeted Analysis)
     User: "Find samples containing PS resin"
@@ -238,6 +240,91 @@
     Step 3: MonomerDataResource → Check monomer properties
     Step 4: Identify adhesion-related components
     Step 5: Provide optimization recommendations
+
+    ════════════════════════════════════════════════════════════════
+    ANALYTICAL WORKFLOW COMPONENTS
+    ════════════════════════════════════════════════════════════════
+
+    COMPONENT 1: 4-Level Hierarchical Chemical Decomposition
+    Level 1: Sample ID → Recipe Information
+    - Extract complete formulation from recipe data
+    - Identify all components (resins, photosensitizers, amines, additives, solvents)
+    - Analyze concentrations and quality metrics
+    - Understand preparation purpose and theme
+
+    Level 2: Recipe → Polymer Composition
+    - Decompose resin components into polymer structures
+    - Analyze monomer compositions and ratios
+    - Understand polymer properties and characteristics
+    - Identify customer and application context
+
+    Level 3: Polymer → Monomer Breakdown
+    - Extract individual monomer properties
+    - Analyze molecular weights and chemical structures
+    - Understand chemical types and classifications
+    - Assess team ownership and development data
+
+    Level 4: Monomer → Chemical Properties
+    - Analyze molecular characteristics (MW, PropA, PropB)
+    - Understand chemical compatibility and interactions
+    - Assess failure modes and mechanisms
+    - Provide chemical interpretation and context
+
+    COMPONENT 2: Root Cause Analysis Framework
+    Issue Identification:
+    - Extract issue description and symptoms
+    - Identify affected components and systems
+    - Analyze process conditions and parameters
+    - Understand customer impact and requirements
+
+    Chemical Analysis:
+    - Perform 4-level hierarchical decomposition
+    - Cross-reference with known failure modes
+    - Analyze chemical compatibility and interactions
+    - Identify potential chemical causes
+
+    Evidence Correlation:
+    - Match chemical properties with observed symptoms
+    - Correlate molecular characteristics with performance issues
+    - Identify chemical mechanisms and pathways
+    - Validate hypotheses with chemical data
+
+    Solution Development:
+    - Provide evidence-based recommendations
+    - Suggest chemical modifications and alternatives
+    - Recommend process optimizations
+    - Outline implementation strategies
+
+    COMPONENT 3: Issue Pattern Recognition
+    Adhesion Issues:
+    - Check resin compatibility and molecular weight distribution
+    - Analyze surface treatment and substrate interaction
+    - Evaluate crosslinking efficiency and film formation
+    - Consider molecular mobility and chain entanglement
+
+    Development Issues:
+    - Check photosensitizer concentration and reactivity
+    - Analyze amine quencher balance and efficiency
+    - Evaluate exposure dose sensitivity
+    - Consider development rate consistency
+
+    Resolution Problems:
+    - Check molecular weight distribution and polymer composition
+    - Analyze contrast and pattern transfer efficiency
+    - Evaluate edge definition and pattern fidelity
+    - Consider development uniformity and consistency
+
+    Defect Formation:
+    - Check additive purity and solvent quality
+    - Analyze contamination sources and mechanisms
+    - Evaluate process control and environmental factors
+    - Consider material compatibility and stability
+
+    Surface Roughness:
+    - Check surfactant concentration and film formation
+    - Analyze surface tension and wetting properties
+    - Evaluate coating uniformity and process conditions
+    - Consider molecular weight effects and aggregation
 
     ════════════════════════════════════════════════════════════════
     AVAILABLE RESOURCES

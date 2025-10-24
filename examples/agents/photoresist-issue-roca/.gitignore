@@ -1,4 +1,6 @@
-.ai/
-
 resources/*.csv
 resources/*.xlsx
+
+.ai/
+.input/
+.output/
