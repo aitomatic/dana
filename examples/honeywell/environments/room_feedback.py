@@ -465,7 +465,8 @@ def validate_plan_success(
     fan_boost_ua: float = 1.0,
     base_power_w: float = 7000.0,    # W, base HVAC power (2-ton AC)
     turbo_power_w: float = 9000.0,   # W, turbo HVAC power
-    turbo_max_min: float = 30.0     # max turbo time (minutes)
+    turbo_max_min: float = 30.0,    # max turbo time (minutes)
+    meeting_plan: list = None  # List of meetings with start_time and end_time
 ) -> dict:
     """
     Validate if a HVAC plan can successfully reach all target temperatures.
@@ -527,7 +528,13 @@ def validate_plan_success(
     total_cost_kwh = 0.0
     action_results = []
     failed_actions = []
-    
+
+    # Build a mapping of meeting start times for quick lookup
+    meeting_start_times = set()
+    if meeting_plan:
+        for meeting in meeting_plan:
+            meeting_start_times.add(meeting["start_time"])
+
     for i, (action, target_temp) in enumerate(zip(plan, target_temps)):
         time_on = action["time_on"]
         time_off = action["time_off"]
@@ -537,7 +544,7 @@ def validate_plan_success(
         if i > 0:
             prev_action = plan[i-1]
             prev_time_off = prev_action["time_off"]
-            
+
             # If there's a gap, estimate temperature change during off period
             if prev_time_off != time_on:
                 print(f"    Gap detected: {prev_time_off} to {time_on}")
@@ -548,7 +555,103 @@ def validate_plan_success(
                 )
                 print(f"    Temp after gap: {gap_temp:.1f}°F")
                 current_temp = gap_temp
-        
+
+        # CRITICAL VALIDATION: If this action starts at a meeting time,
+        # the target temperature must already be reached BEFORE the meeting starts
+        if time_on in meeting_start_times:
+            # Check if current temperature already meets target
+            if mode == "cool" and current_temp > target_temp:
+                # Need to cool but haven't reached target yet
+                error_msg = f"Meeting starts at {time_on} but room is {current_temp:.1f}°F (target: {target_temp}°F). HVAC should have turned on earlier!"
+                failed_action = {
+                    "action_index": i,
+                    "time_on": time_on,
+                    "time_off": time_off,
+                    "target_temp_f": target_temp,
+                    "error": error_msg
+                }
+                failed_actions.append(failed_action)
+
+                # Still calculate cost and partial result for this action
+                cost_result = calculate_plan_cost(
+                    current_indoor_temp_f=current_temp,
+                    outdoor_temp_f=outdoor_temp_f,
+                    current_time=time_on,
+                    plan=[action],
+                    mode=mode,
+                    ua=ua, c=c, q_int=q_int,
+                    fan_boost_ua=fan_boost_ua,
+                    base_power_w=base_power_w,
+                    turbo_power_w=turbo_power_w,
+                    turbo_max_min=turbo_max_min
+                )
+
+                action_results.append({
+                    "action_index": i,
+                    "time_on": time_on,
+                    "time_off": time_off,
+                    "use_turbo": use_turbo,
+                    "target_temp_f": target_temp,
+                    "start_temp_f": current_temp,
+                    "schedule_success": "failed",
+                    "cost_kwh": cost_result["total_cost_kwh"],
+                    "time_needed_minutes": None,
+                    "time_available_minutes": None,
+                    "reached_time": None,
+                    "redundant_time_minutes": None,
+                    "error": error_msg
+                })
+
+                total_cost_kwh += cost_result["total_cost_kwh"]
+                # Continue to next action
+                continue
+
+            elif mode == "heat" and current_temp < target_temp:
+                # Need to heat but haven't reached target yet
+                error_msg = f"Meeting starts at {time_on} but room is {current_temp:.1f}°F (target: {target_temp}°F). HVAC should have turned on earlier!"
+                failed_action = {
+                    "action_index": i,
+                    "time_on": time_on,
+                    "time_off": time_off,
+                    "target_temp_f": target_temp,
+                    "error": error_msg
+                }
+                failed_actions.append(failed_action)
+
+                # Still calculate cost and partial result for this action
+                cost_result = calculate_plan_cost(
+                    current_indoor_temp_f=current_temp,
+                    outdoor_temp_f=outdoor_temp_f,
+                    current_time=time_on,
+                    plan=[action],
+                    mode=mode,
+                    ua=ua, c=c, q_int=q_int,
+                    fan_boost_ua=fan_boost_ua,
+                    base_power_w=base_power_w,
+                    turbo_power_w=turbo_power_w,
+                    turbo_max_min=turbo_max_min
+                )
+
+                action_results.append({
+                    "action_index": i,
+                    "time_on": time_on,
+                    "time_off": time_off,
+                    "use_turbo": use_turbo,
+                    "target_temp_f": target_temp,
+                    "start_temp_f": current_temp,
+                    "schedule_success": "failed",
+                    "cost_kwh": cost_result["total_cost_kwh"],
+                    "time_needed_minutes": None,
+                    "time_available_minutes": None,
+                    "reached_time": None,
+                    "redundant_time_minutes": None,
+                    "error": error_msg
+                })
+
+                total_cost_kwh += cost_result["total_cost_kwh"]
+                # Continue to next action
+                continue
+
         # Check if this action can reach target temperature
         schedule_result = check_hvac_schedule(
             current_temp_f=current_temp,
