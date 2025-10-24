@@ -1,1 +1,0 @@
-# Photoresist Chemist Resources Package
