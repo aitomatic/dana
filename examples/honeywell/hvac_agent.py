@@ -240,12 +240,19 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
         summary_parts.append(f"  • Final temp: {final_temp:.1f}°F")
         summary_parts.append("")
         failed_count = len(feedback['failed_actions'])
-        summary_parts.append(f"  Failed actions ({failed_count}):")
+        if COLORAMA_AVAILABLE:
+            summary_parts.append(f"  {Fore.RED}Failed actions ({failed_count}):{Style.RESET_ALL}")
+        else:
+            summary_parts.append(f"  \033[91mFailed actions ({failed_count}):\033[0m")
         for failed in feedback['failed_actions']:
             action_idx = failed['action_index']
             time_range = f"{failed['time_on']} → {failed['time_off']}"
-            summary_parts.append(f"    • Action {action_idx}: {time_range}")
-            summary_parts.append(f"      {failed['error']}")
+            if COLORAMA_AVAILABLE:
+                summary_parts.append(f"    • Action {action_idx}: {time_range}")
+                summary_parts.append(f"      {Fore.RED}{failed['error']}{Style.RESET_ALL}")
+            else:
+                summary_parts.append(f"    • Action {action_idx}: {time_range}")
+                summary_parts.append(f"      \033[91m{failed['error']}\033[0m")
         summary_parts.append("")
         summary_parts.append("  Action Summary:")
         for i, action in enumerate(feedback['action_results']):
