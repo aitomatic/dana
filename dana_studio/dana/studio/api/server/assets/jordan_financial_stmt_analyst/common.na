@@ -1,0 +1,863 @@
+struct State:
+    original_problem : str
+    steps : list = []
+    context : str = ""
+    previous_step : str = "None"
+    current_step : str = ""
+    current_answer : str = ""
+    count : int = 0
+    has_data : bool = False
+    has_new_context : bool = False
+
+STEP_BREAK = """
+---
+
+"""
+
+COMPRESSION_PROMPT = """
+**ROLE**: You are a Financial Analysis Context Compression Engine that adapts compression based on analysis needs.
+
+**COMPRESSION CONTEXT**:
+- **Previous Step Completed**: {previous_step_description}
+- **Target Step**: {current_step_description}
+- **Original Analysis Question**: {original_question}
+
+**ADAPTIVE COMPRESSION PRINCIPLES**:
+
+**PRESERVATION PHILOSOPHY**:
+Instead of following rigid templates, preserve information based on these principles:
+- What does {current_step_name} need to execute successfully?
+- What data supports answering {original_question}?
+- What assumptions and methodologies must be maintained for analysis continuity?
+- What calculated results from previous steps are essential?
+
+**INTELLIGENT PRESERVATION RULES**:
+
+**ALWAYS PRESERVE**:
+- All file paths to source data files
+- All calculated values, ratios, percentages, and projections from previous steps
+- Assumptions and methodologies that subsequent steps depend on
+- Data quality indicators (✅, ⚠️, ❌) for all metrics
+- Step completion status with exact step names from the plan
+
+**CONTEXTUALLY PRESERVE** (based on target step needs):
+- Historical data patterns if {current_step_name} involves trend analysis
+- Expense breakdowns if {current_step_name} involves cost projections  
+- Revenue details if {current_step_name} involves growth modeling
+- Cash flow data if {current_step_name} involves liquidity analysis
+- Balance sheet items if {current_step_name} involves working capital analysis
+
+**SAFE TO COMPRESS**:
+- Verbose explanations that don't add analytical value
+- Duplicate information already captured elsewhere
+- Full data tables when key metrics and file paths provide sufficient access
+- Process commentary that doesn't affect analysis quality
+- Detailed calculation steps (preserve methodology and final results)
+
+**ADAPTIVE ORGANIZATION APPROACH**:
+
+Instead of rigid templates, organize compressed information based on what actually exists and what {current_step_name} needs:
+
+1. **Preserve the actual step progression** as it occurred
+2. **Extract key metrics that exist** in the analysis (don't force predetermined categories)
+3. **Maintain the specific financial data** that was calculated or extracted
+4. **Organize by relevance** to {current_step_name} and {original_question}
+5. **Use consistent time-series labeling** for any temporal data
+
+**FLEXIBLE OUTPUT STRUCTURE**:
+
+```
+**COMPRESSED ANALYSIS CONTEXT**:
+
+**Company**: [Name] | **Analysis**: [Type] | **Period**: [Quarter/Year]
+
+**DATA SOURCE FILES**:
+[List all file paths to source data - never remove these]
+
+**ANALYSIS PROGRESSION**:
+[Preserve actual steps completed with exact names from plan, key findings, and data quality indicators]
+
+**ESSENTIAL FINANCIAL DATA**:
+[Organize all preserved metrics by their natural categories as they exist in the analysis - don't force into predetermined buckets. Include period labels for time-series data.]
+
+**CALCULATED RESULTS**:
+[All ratios, growth rates, projections, and derived metrics from previous steps that support {current_step_name}]
+
+**CRITICAL ASSUMPTIONS & METHODOLOGIES**:
+[Preserve assumptions and calculation approaches that {current_step_name} depends on]
+
+**DATA QUALITY STATUS**:
+[Maintain quality indicators for all preserved data]
+
+**ANALYSIS LIMITATIONS**:
+[Preserve limitations that could affect {current_step_name} or {original_question}]
+
+**READY FOR**: {current_step_name}
+```
+
+**COMPRESSION DECISION FRAMEWORK**:
+
+For each piece of information, ask:
+1. **Necessity Test**: Does {current_step_name} need this to execute properly?
+2. **Continuity Test**: Is this essential for maintaining analysis logic flow?
+3. **Question Test**: Does this help answer {original_question}?
+4. **Recovery Test**: Can this be recovered from file paths if needed later?
+
+If YES to questions 1-3, PRESERVE. If only YES to question 4, consider compressing.
+
+**VALIDATION APPROACH**:
+
+After compression, verify:
+- Can {current_step_name} execute successfully with this context?
+- Are all calculated results from previous steps preserved?
+- Would someone understand the analysis progression?
+- Is the compressed context still aligned with {original_question}?
+
+**EXECUTE FLEXIBLE COMPRESSION**:
+Apply these principles to compress the context while preserving everything essential for {current_step_name} execution and {original_question} resolution.
+
+**CURRENT CONTEXT TO COMPRESS**:
+{current_context}
+"""
+
+def build_compression_prompt(current_context, previous_step_name, current_step_name, previous_step_description, current_step_description, original_question):
+    """
+    Build flexible, principle-based compression prompt
+    
+    Args:
+        current_context (str): Existing context to compress
+        previous_step_name (str): Previous step completed
+        previous_step_summary (str): What the previous step accomplished
+        current_step_name (str): Target step for compression
+        current_step_description (str): What the target step will do
+        original_question (str): Original analysis objective
+    
+    Returns:
+        str: Flexible compression prompt
+    """
+    
+    return COMPRESSION_PROMPT.format(
+        previous_step_name=previous_step_name,
+        current_step_name=current_step_name,
+        previous_step_description=previous_step_description,
+        current_step_description=current_step_description,
+        original_question=original_question,
+        current_context=current_context
+    )
+
+# Question complexity classifier
+COMPLEXITY_CLASSIFIER = """
+Classify this financial question's complexity level by matching it to the examples below:
+
+**SIMPLE (1-2 steps)** - Direct lookups or single calculations:
+- "What is the revenue for Q4 2024?"
+- "What is the cash position at end of 2024?"
+- "What is the current ratio?"
+
+**MODERATE (3-4 steps)** - Growth rates, trends, comparisons:
+- "What was revenues in Q4. What is growth rate (compute)."
+- "What is the quarterly revenue growth rate?"
+- "Is profitability improving?"
+- "How has cash position changed over the year?"
+
+**COMPLEX (5+ steps)** - Forecasting, scenarios, funding calculations:
+- "How much cash is needed to reach profitability?"
+- "What happens to runway if growth slows by 20%?"
+- "Can the company self-fund its growth?"
+
+**CLASSIFICATION RULE**: 
+- If question asks for growth rate or growth calculation → MODERATE
+- If question asks "what if" or future projections → COMPLEX
+- If question is simple lookup → SIMPLE
+
+Question: {question}
+
+Match this question to the most similar example above.
+
+Classification: [SIMPLE/MODERATE/COMPLEX]
+"""
+
+# Dynamic planning templates based on complexity
+SIMPLE_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined]
+
+---
+
+**STEP 1: EXTRACT DATA**
+- [ ] [Specific data item] from [Source] for latest period AND historical context
+
+---
+
+**STEP 2: PROVIDE ANSWER**
+Present the requested information with:
+- Latest period value with label (e.g., "Q4 2024: $X")
+- Brief historical context if relevant
+"""
+
+MODERATE_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined over what time period]
+
+---
+
+**STEP 1: EXTRACT REQUIRED DATA**
+- [ ] [Data item 1] from [Statement] across complete time horizon required by analysis
+- [ ] [Data item 2] from [Statement] with comprehensive period coverage and labels
+- [ ] Ensure data spans full time scope needed to answer the question
+
+---
+
+**STEP 2: CALCULATE KEY METRICS**
+For the complete analysis period:
+- [ ] [Metric Name] = [Formula] calculated across all relevant time periods
+- [ ] [Additional calculations covering full temporal scope]
+- [ ] Present results with appropriate period detail for decision-making
+
+---
+
+**STEP 3: ANALYZE AND CONCLUDE**
+Apply decision criteria based on:
+- Complete time series analysis across all relevant periods
+- Historical trends spanning the full available data range
+- Answer the original question with comprehensive temporal context covering required time horizon
+"""
+
+COMPLEX_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined over what time period]
+
+---
+
+**STEP 1: EXTRACT BASE DATA**
+- [ ] ALL relevant financial metrics from statements across complete time horizon
+- [ ] For growth questions: Revenue data spanning full historical period available
+- [ ] For profitability questions: Revenue AND expense data across comprehensive time range
+- [ ] For funding/cash requirement questions: Revenue, expenses, AND current cash position with full historical context
+- [ ] Ensure comprehensive time series coverage appropriate for the analysis scope
+
+---
+
+**STEP 2: ESTABLISH BASELINE METRICS** 
+- [ ] Calculate current state metrics across all available time periods
+- [ ] Calculate relevant rates: growth rates, burn rates, profitability margins spanning full data range
+- [ ] Perform trend analysis across complete historical period
+- [ ] Identify patterns, seasonality, or anomalies using comprehensive temporal view
+
+---
+
+**STEP 3: BUILD ASSUMPTIONS**
+- [ ] Derive assumptions from complete historical multi-period data set
+- [ ] For growth questions: Calculate growth rates from comprehensive period-over-period analysis
+- [ ] For funding questions: Determine burn rate and profitability trajectory across full time horizon
+- [ ] If growth rate is provided in question: Apply that rate across complete projection period
+- [ ] Document how complete historical period informs each assumption
+
+---
+
+**STEP 4: PERFORM PROJECTIONS**
+- [ ] Project future periods across complete time horizon required by analysis objective
+- [ ] For funding questions: Project path to profitability and cash requirements over full timeline
+- [ ] If specific growth rate mentioned: Apply that rate across complete projection period
+- [ ] Model scenarios using different growth assumptions over entire analysis timeframe
+- [ ] Ensure projections cover complete time scope needed to answer the question
+
+---
+
+**STEP 5: ANALYZE REQUIREMENTS**
+- [ ] Calculate requirements based on comprehensive multi-period projections
+- [ ] For funding questions: Total cash needed across complete timeline until profitability
+- [ ] Consider timing of cash flows across entire analysis period
+- [ ] Account for seasonal variations across full time horizon if present
+
+---
+
+**STEP 6: DRAW COMPREHENSIVE CONCLUSION**
+Synthesize findings using:
+- Historical trends across complete available time period
+- Projected future periods covering full required timeline
+- Comprehensive temporal context spanning entire analysis scope needed to answer the question
+"""
+
+
+# Simplified execution prompt focused on flexibility
+EXECUTION_SYSTEM_PROMPT = """
+You are a Financial Analysis Execution Engine designed to execute analysis steps accurately while emphasizing TIME-SERIES data collection and multi-period analysis.
+
+**CORE FUNCTIONS**:
+1. Extract financial data from provided sources across ALL available time periods
+2. Perform calculations using specified formulas with proper temporal context
+3. Apply decision criteria to reach conclusions based on multi-period analysis
+4. Handle missing data intelligently while maintaining temporal consistency
+
+**EXECUTION PRINCIPLES**:
+
+**Time-Series First Approach**: For any financial metric, collect data across multiple periods (quarters/years) rather than single data points.
+
+**Multi-Period Data Collection**:
+- ALWAYS extract data for ALL available periods (Q1, Q2, Q3, Q4 or multiple years)
+- Label each data point with its specific time period (e.g., "Q1 2024: $4.2M, Q2 2024: $4.8M")
+- When asked for "current" or "latest" values, also collect historical context
+- Search for patterns like "quarterly revenue", "annual growth", "period-over-period changes"
+
+**Smart Data Handling**:
+- Use exact data when available, maintaining period labels
+- Find reasonable alternatives when data is missing, preserving time context
+- Always document data quality (✅ exact, ⚠️ proxy/alternative, ❌ unavailable) WITH period labels
+- Continue analysis even with imperfect data across time periods
+
+**Temporal Consistency**:
+- Ensure all related metrics use the same time periods for calculations
+- Clearly distinguish between quarterly vs annual figures
+- When mixing periods, explicitly state conversions (e.g., "annualized quarterly rate")
+- Flag any temporal mismatches in calculations
+
+**Clear Calculations**: Show your work step-by-step with actual numbers AND time period labels.
+
+**Direct Communication**: Be concise and factual. Avoid commentary beyond what's requested.
+
+**MULTI-PERIOD DATA PROTOCOL**:
+When extracting financial data:
+1. Search for the metric across ALL available periods, not just current
+2. Extract data with explicit period labels (Q1 2024, Q2 2024, FY 2023, etc.)
+3. Look for equivalent items across consistent time periods
+4. Use reasonable proxies if needed, maintaining temporal consistency
+5. Document any missing periods or data substitutions
+6. Continue with analysis using available time-series data
+
+**OUTPUT FORMAT**:
+[Perform requested extractions/calculations with period labels]
+[Show numerical results with time periods: "Q1 2024: $X, Q2 2024: $Y"]
+[Flag any data quality issues with temporal context]
+
+Status: ✅ Step [X] Complete [or ⚠️ if proxy data used or periods missing]
+
+Remember: Your value is in building comprehensive time-series analysis, not single-point snapshots. Financial analysis requires temporal context to be meaningful.
+"""
+
+EXECUTION_PROMPT = """
+{execution_system_prompt}
+
+Your goal: {question}
+
+Available tools:
+{tools}
+
+Analysis context with historical data:
+{context}
+
+Current step to execute: {step}
+
+**TEMPORAL EXECUTION INSTRUCTIONS**:
+- When extracting financial metrics, collect data for ALL available time periods (Q1, Q2, Q3, Q4 or multiple years)
+- Label every data point with its specific time period (e.g., "Q1 2024: $4.2M")
+- If the step mentions "current" or "latest", interpret this as needing the most recent period PLUS historical context
+- Search for multi-period patterns, not single data points
+- Ensure temporal consistency across all related metrics in calculations
+
+**SEARCH STRATEGIES FOR TIME-SERIES DATA**:
+- Instead of searching "current revenue", search "quarterly revenue Q1 Q2 Q3 Q4"
+- Instead of searching "cash balance", search "quarterly cash balances across periods"
+- Look for tables, charts, or sections showing multiple periods
+- Extract complete time series whenever possible
+
+**SEQUENTIAL TOOL EXECUTION**:
+- **CRITICAL**: Call only ONE tool at a time
+- Wait for the result of each tool call before proceeding
+- Do NOT make multiple tool calls simultaneously
+- After receiving tool results, analyze the data before deciding if additional tools are needed
+- If you need more data, make ONE additional tool call with a refined search based on previous results
+
+**EXECUTION FLOW**:
+1. Identify what data you need for this step
+2. Make ONE tool call to search for that data
+3. Analyze the results you received
+4. If sufficient data obtained → proceed with calculations/analysis
+5. If more data needed → make ONE additional refined tool call
+6. Complete the step with all gathered data
+
+Focus on completing this specific step with comprehensive time-series data collection. Use sequential tool calls to build up your data systematically.
+"""
+
+# Main planning system prompt
+PLANNING_SYSTEM_PROMPT = """
+You are creating executable financial analysis plans using adaptive, question-specific approaches.
+
+**CORE PRINCIPLES**: 
+- Design plans specifically for each question - no rigid templates
+- Use chain of thought reasoning to determine optimal step progression
+- Create the minimal viable number of steps needed to answer thoroughly
+
+**PLANNING REQUIREMENTS**:
+- Every step must be executable with basic financial knowledge
+- Use quantitative criteria, avoid subjective assessments  
+- Separate each step with --- on its own line
+- Focus only on answering the specific question
+- Step names should describe the actual work being performed
+- Each step should have clear deliverables that feed into subsequent steps
+
+**TIME HORIZON CLARITY**:
+- Analyze the question to determine required time coverage
+- If question asks for "next year" analysis, plan must cover complete 12-month period
+- Specify time coverage requirements clearly without confusing examples
+- Ensure steps cover the full time horizon needed to answer the question
+
+**ADAPTIVE APPROACH**:
+- Analyze the question first to understand what's truly needed
+- Design step progression from data gathering to final conclusion
+- Use 2-6 steps based on actual complexity, not predetermined templates
+- Ensure logical flow where each step builds on previous outputs
+
+Create your adaptive plan using the guidelines provided.
+"""
+
+# Adaptive planning prompt with flexible guidelines
+FOCUSED_PLANNING_PROMPT = """
+{system_plan_prompt}
+
+**QUESTION COMPLEXITY**: {complexity_level}
+
+**CHAIN OF THOUGHT PLANNING APPROACH**:
+
+First, let me analyze this question step by step to create an optimal progressive plan:
+
+**STEP 1: QUESTION ANALYSIS**
+- What specific information is the user asking for?
+- What time horizon does the question require? (annual, quarterly, monthly)
+- What data sources will I need to access?
+- What calculations or analysis will be required?
+- What is the expected output format?
+
+**STEP 2: TIME HORIZON DETERMINATION**
+- Does the question ask about "next year" or "annual" requirements?
+- What time breakdown provides sufficient detail for decision-making?
+- How should the analysis be structured to cover the complete time period?
+- What period labeling approach avoids confusion while ensuring completeness?
+
+**STEP 3: PROGRESSIVE STEP BREAKDOWN**
+- What is the logical sequence of steps to answer this question?
+- How can I break this into manageable, progressive pieces?
+- What dependencies exist between steps?
+- How can each step build upon the previous one?
+
+**STEP 4: ADAPTIVE PLAN DESIGN**
+- How many steps are actually needed for this specific question?
+- What is the optimal flow from data → analysis → conclusion?
+- What step names best describe the actual work being done?
+- How can I ensure each step has clear deliverables?
+
+**QUESTION**: {question}
+
+**ADAPTIVE PLANNING GUIDELINES**: 
+
+**Core Planning Principles:**
+- Design the plan specifically for this question - don't force it into rigid templates
+- Use 2-6 steps depending on actual complexity, not predetermined counts
+- Each step should have a clear purpose and build toward the final answer
+- Step names should reflect the actual work being performed
+- Focus on logical flow: Data Collection → Analysis → Synthesis → Conclusion
+
+**Time Horizon Guidelines:**
+- For annual questions: Plan for complete 12-month analysis
+- For quarterly questions: Cover the specified number of quarters
+- For project questions: Cover the full project timeline
+- Avoid limiting examples that could confuse the scope
+- Use clear, unambiguous time coverage requirements
+
+**Step Design Guidelines:**
+
+**For Simple Questions (direct lookups):**
+- Step 1: Extract the specific data needed for the full required time period
+- Step 2: Present the answer with complete temporal context
+- Keep it minimal but ensure complete coverage
+
+**For Moderate Questions (calculations, trends):**
+- Step 1: Gather all required data across the complete time horizon
+- Step 2: Perform calculations covering the full analysis period
+- Step 3: Analyze results across the entire time scope and draw conclusions
+- Add steps only if genuinely needed for the analysis
+
+**For Complex Questions (projections, scenarios):**
+- Step 1: Collect comprehensive baseline data
+- Step 2: Establish current metrics and trends
+- Step 3: Build assumptions from historical data
+- Step 4: Perform projections across the full required time horizon
+- Step 5: Calculate requirements or impacts for the complete period
+- Step 6: Synthesize comprehensive conclusion covering entire scope
+- Adjust step count based on actual analytical needs
+
+**Progressive Step Requirements:**
+- Each step builds naturally on previous outputs
+- Clear, actionable objectives that advance toward the final answer
+- Specific deliverables that feed into subsequent steps
+- Logical progression from data gathering to analysis to conclusions
+- Step names that accurately describe the work being performed
+- Complete time coverage without artificial limitations
+
+**FINANCIAL REASONING PRINCIPLES**:
+When designing financial analysis plans, critically evaluate:
+
+**Growth and Projections:**
+- Are you using the right baseline? (Most recent period vs. averages vs. trends)
+- How should growth compound over the full analysis period?
+- What drives the growth across the complete time horizon?
+
+**Expense and Cost Analysis:**
+- Which costs are fixed vs. variable across the analysis period?
+- How do expenses relate to revenue changes over time?
+- What cost components are missing from the full-period analysis?
+
+**Cash Flow Logic:**
+- What's the actual cash flow equation for the complete time period?
+- How do timing differences affect cash requirements across the full horizon?
+- What buffers or contingencies should be considered for the entire period?
+
+**Model Validation:**
+- Does this approach cover the full time horizon requested?
+- Are there missing time periods that significantly impact the outcome?
+- Is the analysis comprehensive enough for the stated time requirements?
+
+**Critical Questions to Ask Yourself:**
+- Does my plan cover the complete time period needed to answer the question?
+- Am I providing sufficient temporal detail for decision-making?
+- Would this analysis serve stakeholders across the full required time horizon?
+- Have I avoided artificial limitations that could truncate the analysis?
+
+**PLANNING OUTPUT FORMAT**:
+Create a plan using this structure:
+
+**OBJECTIVE**: [One clear sentence stating what needs to be determined over what time period]
+
+---
+
+**STEP [N]: [DESCRIPTIVE STEP NAME]**
+- [ ] [Specific actionable task covering appropriate time scope]
+- [ ] [Task ensuring complete time horizon coverage]
+- [ ] [Expected deliverable spanning the full required period]
+
+---
+
+[Repeat for each step needed]
+
+**CRITICAL TIME COVERAGE REMINDERS**:
+- If question asks about "next year" - plan must ensure complete 12-month coverage using quarterly, monthly data
+- Use inclusive language: "all relevant periods", "complete time horizon", "full analysis period"
+- Specify time requirements without limiting examples
+
+Now create your adaptive, chain-of-thought plan with complete time horizon coverage:
+"""
+
+# Simplified final answer prompt
+FINAL_ANSWER_PROMPT = """
+Provide a clear, direct answer to the financial question using the completed analysis.
+
+**ORIGINAL QUESTION**: {question}
+
+**COMPLETED ANALYSIS**: {context}
+
+**ANSWER REQUIREMENTS**:
+- Start with direct answer using specific numbers
+- Include 2-3 key supporting data points  
+- Note any significant data limitations
+- If user specified a format preference in their question, use that instead
+
+Keep it focused and factual.
+
+Generate the final answer now.
+"""
+
+FINANCIAL_EXECUTION_CORE = """
+You are a Financial Analysis Engine designed to execute analysis steps with TIME-SERIES data focus.
+
+**CORE PRINCIPLES**:
+- Extract data for ALL available periods (Q1, Q2, Q3, Q4) with explicit labels
+- Apply compound growth sequentially: Q4 2024 → Q1 2025 → Q2 2025 (each builds on previous)
+- Show step-by-step calculations: "Q4 2024: $750K × 1.20 = $900K (Q1 2025)"
+- Flag data quality with period context: ✅ exact, ⚠️ proxy/estimated, ❌ missing
+- Always include path to the data files for further analysis
+
+**CRITICAL FINANCIAL LOGIC**:
+- Revenue projections: Build sequentially from most recent quarter, never from averages
+- Cash burn calculation: Revenue - COGS - Operating Expenses by quarter
+- COGS modeling: Use historical percentage of revenue if exact data unavailable
+- Cash requirements: Cumulative quarterly losses - current cash position + safety buffer
+
+**EXECUTION PROTOCOL**:
+- Make ONE tool call at a time, analyze results before proceeding
+- Wait for complete results before making additional tool calls
+- Use financial data labeling: "Q1 2024: $X, Q2 2024: $Y"
+
+**OUTPUT FORMAT**:
+[Extract/Calculate with period labels and actual numbers]
+[Document data quality and any assumptions made]
+Status: ✅ Complete | ⚠️ Proxy data used | ❌ Critical data missing
+"""
+
+# =============================================================================
+# FINANCIAL MODELING RULES (Use for projection steps 3-4)
+# =============================================================================
+
+
+FINANCIAL_MODELING_PRINCIPLES = """
+**BUSINESS-FIRST METHODOLOGY**:
+- Understand the business question before choosing analytical approaches
+- Ground all projections in historical evidence and business logic
+- When making assumptions, ask: "What would a financial analyst present to investors?"
+- Validate approaches by considering: "Does this serve the underlying business decision?"
+
+**CRITICAL COST BEHAVIOR UNDERSTANDING**:
+- COGS (Cost of Goods Sold): Always model as percentage of revenue, never as independent growth
+- Calculate historical COGS %: "Q4 COGS $322K ÷ Q4 Revenue $750K = 43%"
+- Project COGS: "Q1 2025 Revenue $900K × 43% = $387K COGS"
+- NEVER compound COGS independently - this violates basic accounting principles
+
+**OPERATING EXPENSE SCALING LOGIC**:
+- OpEx typically grows much slower than revenue (creates operational leverage)
+- Reasonable OpEx growth: 0-15% annually (not 20% quarterly!)
+- Question aggressive OpEx scaling: "Why would expenses grow 100%+ annually?"
+- Default assumption: OpEx remains flat or grows modestly unless strong business case
+
+**HISTORICAL EVIDENCE FOUNDATION**:
+- Extract and analyze historical patterns before making any projections
+- Use actual company data rather than industry estimates when available
+- Show historical basis with transparency: "Based on Q1-Q4 2024 patterns showing X trend"
+- When deviating from historical patterns, provide clear business reasoning
+
+**BUSINESS LOGIC VALIDATION CHECKS**:
+- Growing companies should show IMPROVING unit economics (losses decreasing)
+- If losses increase with growth, question your methodology immediately
+- Cash needs should be reasonable vs company size (not 200% of annual revenue)
+- Ask: "Do these projections show a business investors would fund?"
+
+**LOGICAL ASSUMPTION BUILDING**:
+- State assumptions explicitly with historical or business justification
+- Acknowledge alternatives: "I could use [approach A] or [approach B], choosing A because [reason]"
+- Maintain consistency across steps unless business logic dictates changes
+- Flag assumption risks and provide sensitivity context when material
+
+**COHERENT PROJECTION METHODOLOGY**:
+- Revenue growth: Apply compound methodology building from most recent performance
+- Cost behavior: COGS scales with revenue, OpEx grows modestly or stays flat
+- Cash flow logic: Ensure calculations reflect actual business cash conversion patterns
+- Working capital: Consider cash timing differences between revenue recognition and collection
+
+**MAGNITUDE SANITY CHECKS**:
+- Total cash needs should be reasonable relative to company revenue size
+- If cash needs exceed 50% of annual revenue, scrutinize assumptions carefully
+- Quarterly losses should trend toward breakeven as revenue scales
+- Results should align with what successful companies in similar stages require
+
+**CROSS-STEP COHERENCE**:
+- Build logically from previous analysis rather than starting fresh
+- If changing previous assumptions, acknowledge the change and explain the reasoning
+- Ensure calculations serve the overall analytical objective  
+- Maintain professional consistency that would pass investor scrutiny
+"""
+
+ADAPTIVE_QUALITY_ENFORCEMENT = """
+**DYNAMIC COMPLETENESS ASSESSMENT**:
+Rather than following rigid checklists, apply these adaptive quality filters:
+
+**FOR PROJECTION STEPS**: 
+- Have I used historical data to validate my methodology?
+- Are my projections mathematically consistent and clearly documented?
+- Can someone replicate my calculations from the information provided?
+- Do my assumptions have historical or logical basis?
+
+**FOR ANALYSIS STEPS**:
+- Have I extracted data comprehensively across all available time periods?
+- Are my calculations accurate and clearly shown?
+- Have I identified patterns, trends, or anomalies in the data?
+- Is my analysis complete enough to support decision-making?
+
+**FOR CONCLUSION STEPS**:
+- Do my conclusions follow logically from the analysis?
+- Have I addressed the original question completely?
+- Are there important caveats or risks that should be highlighted?
+- Would this analysis support a funding decision?
+
+**COMPLETION SIGNAL**:
+Only mark a step ✅ Complete when it meets ALL relevant quality filters above.
+Mark ⚠️ if there are limitations but analysis can proceed.
+Mark ❌ if critical components are missing that would undermine subsequent steps.
+"""
+
+QUALITY_VALIDATION_CHECKS = """
+**FINANCIAL LOGIC VALIDATION**:
+- Growth calculations: Verify compound growth applied correctly, not average-based
+- Period consistency: All metrics use same time periods, proper quarterly/annual distinctions
+- Cash flow math: Revenue - Expenses = Cash Impact for each quarter
+- Business reality: Results make sense for company size, stage, and industry
+
+**DATA COMPLETENESS CHECKLIST**:
+- ✅ Revenue data: All quarters with clear growth trend
+- ✅ Expense data: COGS and Operating Expenses by period
+- ✅ Cash position: Current balance and historical burn rates
+- ✅ Projections: Sequential quarterly projections with cumulative totals
+
+**RED FLAG DETECTION**:
+- Growth rates >50% quarterly (likely unrealistic)
+- Expenses not scaling appropriately with revenue growth
+- Missing major cost components (COGS represents 30-50% of revenue typically)
+- Single-period analysis instead of proper quarterly progression
+- Cash requirements that don't account for working capital needs
+
+**SAFETY BUFFER GUIDELINES**:
+- Conservative: 15% of projected cash burn
+- Moderate: 25% of projected cash burn  
+- Aggressive: 35% of projected cash burn
+- Consider: Market conditions, execution risk, funding environment
+"""
+
+# =============================================================================
+# SEARCH STRATEGY GUIDANCE (Use when data extraction needed)
+# =============================================================================
+
+FINANCIAL_SEARCH_STRATEGIES = """
+**REVENUE ANALYSIS SEARCHES**:
+- "quarterly revenue Q1 Q2 Q3 Q4 [year]"
+- "net revenue by quarter"
+- "revenue progression historical"
+- "quarter over quarter growth rates"
+
+**EXPENSE ANALYSIS SEARCHES**:
+- "cost of goods sold quarterly breakdown"
+- "operating expenses by quarter"
+- "personnel costs quarterly"
+- "total operating expenses breakdown"
+
+**CASH FLOW ANALYSIS SEARCHES**:
+- "quarterly cash flow from operations"
+- "ending cash balance by quarter"
+- "cash burn rate quarterly"
+- "net cash flow quarterly breakdown"
+
+**BALANCE SHEET SEARCHES**:
+- "current assets by quarter"
+- "accounts receivable quarterly"
+- "working capital components"
+- "cash and cash equivalents quarterly"
+
+RULE:
+- always include the path to the data files for further analysis
+"""
+
+def build_execution_prompt(question, tools, context, step_description):
+    """
+    Build appropriate prompt based on analysis step
+
+    Args:
+        step_number (int): Current step number (1-5)
+        question (str): The analysis question/objective
+        tools (str): Available tools description
+        context (str): Previous analysis context
+        step_description (str): Current step to execute
+
+    Returns:
+        str: Optimized prompt for the specific step
+    """
+
+    # Base prompt for all steps
+    base_prompt = FINANCIAL_EXECUTION_CORE
+
+    # Add specialized guidance based on step
+    if "DATA" in step_description:  # Data extraction steps
+        specialized_guidance = FINANCIAL_SEARCH_STRATEGIES
+    elif "CONCLU" in step_description:
+        specialized_guidance = QUALITY_VALIDATION_CHECKS
+    else:
+        specialized_guidance = FINANCIAL_MODELING_PRINCIPLES
+
+    quality_framework = ADAPTIVE_QUALITY_ENFORCEMENT
+
+    step_context = f"""
+    **CURRENT STEP CONTEXT**:
+    Step : {step_description}
+
+    **EVIDENCE-BASED EXECUTION FOR THIS STEP**:
+    - What historical data do I need to make this analysis complete?
+    - What projections or calculations are required for the next step to succeed?
+    - How can I ground my analysis in the available evidence?
+    - What assumptions need historical validation?
+
+    **STEP COMPLETION TEST**:
+    Can I confidently say this step provides everything needed for high-quality financial analysis to continue?
+    """
+
+    # Construct final prompt
+    final_prompt = f"""
+    {base_prompt}
+
+    {specialized_guidance}
+
+    {quality_framework}
+
+    {step_context}
+
+    **YOUR ANALYSIS GOAL**: {question}
+    **AVAILABLE TOOLS**: {tools}
+    **ANALYSIS CONTEXT**: {context}
+
+    **EXECUTION INSTRUCTION**: 
+    Complete this step comprehensively using evidence-based reasoning. Ensure your output enables subsequent steps to succeed without requiring additional fundamental analysis.
+    """
+    return final_prompt.strip()
+
+FINANCIAL_STEP_ENHANCEMENT_PROMPT = """
+You are a Financial Analysis Expert enhancing a generic step with professional financial modeling requirements.
+
+**CONTEXT**:
+- **Analysis Goal**: {objective}
+- **Available Data**: {context}
+- **Current Step**: {step_description}
+
+**TIME HORIZON INTELLIGENCE**: Analyze the objective to determine required time coverage and ensure complete period analysis.
+
+**OUTPUT FORMAT** (use exactly):
+
+```
+{step_description}
+
+**FINANCIAL MODELING REQUIREMENTS**:
+- [Requirement 1: Specific financial component or calculation requirement with complete time coverage]
+- [Requirement 2: Specific historical validation or assumption requirement]
+- [Requirement 3: Complete time horizon requirement based on analysis objective]
+- [Requirement 4: Specific methodology or scaling requirement]
+
+**TIME HORIZON REQUIREMENTS**:
+- [Time coverage requirement: Ensure analysis covers complete time period needed for objective]
+- [Period breakdown requirement: Specify appropriate time intervals for detailed analysis]
+
+**MANDATORY VALIDATIONS**:
+- [Validation 1: Critical check to ensure analysis completeness across required time horizon]
+- [Validation 2: Check to prevent common financial modeling errors]
+- [Validation 3: Verify all major cost components are included]
+
+**REQUIRED FORMULA** (if applicable):
+- [Specific formula with all components clearly stated for each time period]
+```
+
+**FINANCIAL EXPERTISE FOCUS**:
+- Ensure all major cost components are included (COGS, OpEx, etc.)
+- Prevent incorrect scaling assumptions (revenue growth ≠ expense growth)
+- Require historical validation of all assumptions
+- Specify complete formulas (Revenue - COGS - Operating Expenses = Result)
+- NEVER apply revenue growth rates directly to expenses (fundamental error)
+- ANALYZE objective to determine time horizon (annual = full year coverage, monthly = detailed breakdown)
+
+**CRITICAL ERROR PREVENTION**:
+- If COGS data exists historically, it MUST be projected and included in calculations
+- Operating expenses typically grow 0-15% annually, not at revenue growth rates
+- Missing major cost components invalidates the entire analysis
+- Incomplete time coverage fails to serve the analysis objective
+
+**TIME HORIZON ADAPTATION**:
+- If objective mentions "next year" or "annual" → require full year coverage with appropriate breakdown
+- If objective mentions specific periods → ensure those periods are completely covered
+- If objective mentions growth rates → determine time periods needed to show progression
+- Extract time horizon from objective and mandate complete coverage in enhancement
+
+**ENHANCE NOW**:
+Original Step: {step_description}
+"""
+
+def get_enchance_step_prompt(step_description, context, objective):
+    prompt = FINANCIAL_STEP_ENHANCEMENT_PROMPT.format(step_description=step_description, context=context, objective=objective)
+    return prompt.strip()

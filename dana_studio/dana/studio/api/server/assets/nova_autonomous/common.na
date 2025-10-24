@@ -1,0 +1,127 @@
+struct ExecutionState:
+    original_query: str
+    steps: list = []
+    context: str = ""
+    current_step: str = ""
+    task_results: list = []
+    completed_tasks: list = []
+    remaining_tasks: list = []
+    iteration_count: int = 0
+    query_completed: bool = False
+    max_iterations: int = 10
+    complexity: dict = {}
+
+struct TaskResult:
+    task: str
+    result: str
+    status: str
+    evaluation: dict = {}
+    feedback: str = ""
+
+EXECUTION_CONFIG = {
+    "min_tasks": 3,
+    "max_tasks": 5,
+    "default_temperature": 0.1
+}
+
+TASK_FULFILLMENT_PROMPT = """
+Evaluate if this result fulfills the task requirement:
+
+Task: {task}
+Result: {result}
+
+Return a JSON object with 'fulfilled' (boolean) and 'feedback' (string explaining why).
+Focus on completeness, accuracy, and relevance to the task.
+"""
+
+QUERY_COMPLETION_PROMPT = """
+Based on these task results, can we sufficiently answer the user query with a COMPLETE and COMPREHENSIVE response?
+
+User Query: {query}
+Task Results: {task_results}
+
+Evaluation Criteria:
+- Do we have sufficient research/data gathering completed?
+- Do we have detailed analysis of the gathered information?
+- Do we have comparisons/evaluations where needed?
+- Do we have specific recommendations or final synthesis?
+- Can we provide concrete numbers, options, and actionable advice?
+
+Return only 'True' if ALL aspects of the query can be answered comprehensively with specific details.
+Return 'False' if ANY important aspect is missing or incomplete.
+
+Be CONSERVATIVE - it's better to do more research than provide incomplete answers.
+"""
+
+TASK_PLANNING_PROMPT = """
+Create an execution plan for the following query. You MUST return exactly 3-5 specific, actionable tasks.
+
+Query: {query}
+
+Available Resources:
+- Web search for current information and data
+- Uploaded documents (if available) for specific context and details
+- Domain knowledge base for best practices and expertise
+
+Requirements:
+- Task 1: Should focus on initial research/information gathering (web + documents)
+- Task 2: Should focus on detailed analysis of gathered data
+- Task 3: Should focus on comparison/evaluation or deeper analysis
+- Task 4-5: Should focus on recommendations/final synthesis
+- Each task should be concrete and measurable
+- Tasks should build upon each other logically
+- Use action verbs like "Research", "Analyze", "Compare", "Calculate", "Recommend"
+- Consider both web sources and uploaded documents when planning
+
+IMPORTANT: Return EXACTLY a JSON array of 3-5 task strings, nothing else.
+
+Example format: ["Research current market data and analyze uploaded documents for context", "Analyze pricing options and compare with document specifications", "Evaluate alternatives against document requirements", "Calculate cost-benefit analysis using document data", "Provide final recommendations based on all sources"]
+"""
+
+TASK_REPLANNING_PROMPT = """
+The task '{failed_task}' failed with feedback: {feedback}
+
+Original query: {original_query}
+Current remaining tasks: {remaining_tasks}
+Completed tasks: {completed_tasks}
+Task results so far: {task_results}
+
+Please provide an updated task list to replace the remaining tasks, addressing the failure feedback.
+Return only the updated list of tasks as a JSON array of strings.
+"""
+
+FINAL_RESPONSE_PROMPT = """
+Based on the completed task execution, provide a comprehensive answer to the original query.
+
+Original Query: {original_query}
+Task Results: {task_results}
+Format Request: {format_preference}
+
+Information Sources Used:
+- Web search results for current data and trends
+- Uploaded documents (if available) for specific context and requirements
+- Domain knowledge for best practices and expertise
+
+Synthesize the information from all sources and tasks into a coherent, well-structured response.
+Clearly indicate when information comes from uploaded documents vs. web research.
+If a specific format was requested (like "facebook posts"), follow that format.
+Otherwise, provide a clear, informative answer with proper attribution to sources.
+"""
+
+FINAL_ANSWER_PROMPT = """
+Provide a comprehensive final answer to the user's question based on the execution context.
+
+**Original Question**: {question}
+
+**Execution Context**: 
+{context}
+
+**Instructions**:
+- Synthesize all information from the execution steps
+- Provide a clear, well-structured answer
+- Include specific details, numbers, and actionable recommendations
+- Acknowledge sources (web search, documents, analysis)
+- If any information is missing or uncertain, mention limitations
+
+Generate the final answer now.
+"""

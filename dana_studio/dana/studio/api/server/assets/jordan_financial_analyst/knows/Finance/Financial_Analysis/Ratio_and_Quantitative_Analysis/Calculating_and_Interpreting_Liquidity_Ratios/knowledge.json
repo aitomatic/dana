@@ -1,0 +1,950 @@
+{
+    "path_parts": [
+        "Finance",
+        "Financial Analysis",
+        "Ratio and Quantitative Analysis",
+        "Calculating and Interpreting Liquidity Ratios"
+    ],
+    "knowledges": [
+        {
+            "question": "*Question 1* : What financial statements are used to calculate liquidity ratios?\n*Question 2* : How do you identify the key components needed for calculating the current ratio?\n*Question 3* : What steps are involved in gathering data to compute the quick ratio?\n*Question 4* : How can errors in data collection affect the calculation of liquidity ratios?\n*Question 5* : What are common sources for obtaining reliable financial data for ratio analysis?",
+            "facts": [
+                {
+                    "content": "These liquidity ratios reflect a company\u2019s position at a point in time and, therefore, typically use data from the ending balance sheet rather than averages.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Balance sheet ratios are those involving balance sheet items only. For example, the current ratio expresses current assets in relation to current liabilities as an indicator of a company\u2019s liquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Balance sheet ratios include liquidity ratios (measuring the company\u2019s ability to meet its short-term obligations) and solvency ratios (measuring the company\u2019s ability to meet long-term and other obligations).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Current ratio: Current assets / Current liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Quick ratio: (Cash + Short-term marketable investments + Receivables) / Current liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The quick ratio is defined as (Cash and cash equivalents + Marketable securities + receivables) / Current liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The use of alternative accounting methods. Companies frequently have latitude when choosing certain accounting methods. Ratios taken from financial statements that employ different accounting choices may not be comparable unless adjustments are made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Ratios may be computed using data obtained directly from companies\u2019 financial statements or from a database such as Bloomberg, Compustat, FactSet, or Thomson Reuters.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The information provided by the database may include information as reported in companies\u2019 financial statements and ratios calculated based on the information.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is therefore a good practice to use the same source for data when comparing different companies or when evaluating the historical record of a single company. Analysts should verify the consistency of formulas and data classifications by the data source.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Cross-sectional financial ratio analysis can be limited by differences in accounting methods. In addition, lack of homogeneity of a company\u2019s operating activities can limit comparability.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "For diversified companies operating in different industries, using industry-specific ratios for different lines of business can provide better comparisons.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Ratio analysis requires a significant amount of judgment. One key area requiring judgment is understanding the limitations of any ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "When facing a substantial amount of data, a less experienced analyst may be tempted to start calculating ratios without considering what is relevant for the decision at hand. It is generally advisable to resist this temptation and thus avoid unnecessary or pointless efforts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Collection of financial data from regulatory filings and calculation of ratios can be automated.\n  2. The eXtensible Business Reporting Language (XBRL) is a mechanism that attaches \u201csmart tags\u201d to financial information (e.g., total assets), so that software can automatically collect the data and perform desired computations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Having clarified the purpose and context of the financial statement analysis, the analyst should next compile the specific questions to be answered by the analysis.\n  2. Next, the analyst obtains information required to answer the specific questions.\n  3. A key part of this step is obtaining an understanding of the target company\u2019s business model, financial performance, and financial position (including trends over time and relative to peer companies).\n  4. After obtaining the requisite financial and other information, the analyst processes these data using appropriate analytical tools. For example, processing the data may involve computing ratios or growth rates; preparing common-size financial statements; creating charts; performing statistical analyses.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 6* : How can behavioral biases impact the interpretation of liquidity ratios during financial analysis?\n*Question 7* : What technical analysis tools can be used to identify short-term liquidity risks in a company's stock performance?\n*Question 8* : Given a scenario where a company's quick ratio is declining but its stock price is rising, what potential risks should an analyst consider?\n*Question 9* : How would you apply stress-testing techniques to assess a firm's liquidity under adverse market conditions?\n*Question 10* : Which risk management strategies are most effective for mitigating liquidity risk in volatile markets?",
+            "facts": [
+                {
+                    "content": "Behavioral Finance and Analyst Forecasts: Overconfidence in Forecasting, Illusion of Control, Conservatism Bias, Representativeness Bias, Confirmation Bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The information from one ratio category can be helpful in answering questions raised by another category and the most accurate overall picture comes from integrating information from all sources.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Sensitivity analysis: Also known as \u201cwhat if\u201d analysis, sensitivity analysis shows the range of possible outcomes as specific assumptions are changed; this could, in turn, influence financing needs or investment in fixed assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis: This type of analysis shows the changes in key financial quantities that result from given (economic) events, such as the loss of customers, the loss of a supply source, or a catastrophic event.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Simulation: This is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes. Each event or possible outcome is assigned a probability. Multiple scenarios are then run using the probability factors assigned to the possible values of a variable to determine an expected outcome for that variable.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Among the several liquidity-monitoring metrics described in Basel III, two are discussed here: concentration of funding and contractual maturity mismatch.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Concentration of funding refers to the proportion of funding that is obtained from a single source. Excessive concentration of funding exposes a bank to the risk that a single funding source could be withdrawn.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Contractual maturity mismatch refers to the maturity dates of a bank\u2019s assets compared to the maturity dates of a bank\u2019s funding sources. Excessive maturity mismatches expose the bank to liquidity risk if the bank needs to return cash on its maturing deposits prior to the time that it receives cash repayment of loans from its borrowers.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Liquidity Coverage Ratio (\u201cLCR\u201d) aims to ensure that a bank has sufficient unencumbered high-quality liquid assets (\u201cHQLA\u201d) to meet its liquidity needs in a 30-calendar-day liquidity stress scenario.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Net Stable Funding Ratio (\u201cNSFR\u201d) requires institutions to maintain sufficient stable funding relative to required stable funding, and reflects a bank\u2019s long-term funding profile (funding with a term of more than a year).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Net Stable Funding Ratio is a measure of the available stable funding to cover funding of longer-term, less liquid assets, such as loans. Highly liquid assets do not enter the calculation of the Net Stable Funding Ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The minimum LCR threshold is 100%; anything less would indicate an inability to meet the liquidity needs.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Capital alone is not sufficient to assure liquidity; there must be enough capital available in cash or near-cash for the meeting of obligations.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Basel III Regulatory Framework introduced two liquidity standards to provide assurance that capital would be adequately liquid for meeting obligations under stressful conditions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The first is the Liquidity Coverage Ratio, which is the minimum percentage of a bank's expected cash outflows to be held in highly liquid assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Net Stable Funding Ratio is a kind of inverted Liquidity Coverage Ratio. Where the Liquidity Coverage Ratio evaluates short-term liquidity, the Net Stable Funding Ratio is a measure of the available stable funding to cover funding of longer-term, less liquid assets, such as loans.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Liquidity Coverage Ratio (LCR) is expressed as the minimum percentage of a bank\u2019s expected cash outflows that must be held in highly liquid assets. For this ratio, the expected cash outflows (the denominator) are the bank\u2019s anticipated one-month liquidity needs in a stress scenario, and the highly liquid assets (the numerator) include only those that are easily convertible into cash. The standards set a target minimum of 100%.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Net Stable Funding Ratio (NSFR) is expressed as the minimum percentage of a bank\u2019s *required* stable funding that must be sourced from *available* stable funding. For this ratio, required stable funding (the denominator) is a function of the composition and maturity of a bank\u2019s asset base, whereas available stable funding (the numerator) is a function of the composition and maturity of a bank\u2019s funding sources (i.e., capital and deposits and other liabilities).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The rationale for the Net Stable Funding Ratio is that it relates the liquidity needs of the financial institution\u2019s assets to the liquidity provided by the funding sources.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Bank assets and liabilities are constantly subject to market risk, which impacts their earnings performance and liquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Analysts can potentially detect management choices to decrease current assets or increase current liabilities, choices that will increase OCF, by looking at asset utilization (activity) ratios, changes in balance sheet accounts, and disclosures in notes to the financial statements.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Liquidity measures compare the amount of the company\u2019s more liquid assets, such as cash and marketable securities, to the amount of its near-term liabilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The adjusted amounts are calculated under both normal market conditions and stress.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Liquidity ratios measure the ability of a company to meet short-term obligations. Major liquidity ratios include the current ratio, quick ratio, cash ratio, and defensive interval ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "It is important to examine a variety of financial ratios\u2014not a single ratio or category of ratios in isolation\u2014to ascertain the overall position and performance of a company.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Trend analysis provides important information regarding historical performance and growth and, given a sufficiently long history of accurate seasonal information, can be of great assistance as a planning and forecasting tool for management and analysts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The quick ratio is more conservative than the current ratio because it includes only the more liquid current assets (sometimes referred to as \u201cquick assets\u201d) in relation to current liabilities. Like the current ratio, a higher quick ratio indicates greater liquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In situations in which inventories are illiquid (as indicated, for example, by low inventory turnover ratios), the quick ratio may be a better indicator of liquidity than the current ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Liquidity analysis measures a company\u2019s ability to meet its short-term obligations. In the short run, a company\u2019s sources of liquidity typically include cash and marketable securities on hand and debt issuance.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The level of liquidity needed differs from one industry to another. A particular company\u2019s liquidity position may vary according to the anticipated need for funds at any given time.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Judging whether a company has adequate liquidity requires analysis of its historical funding requirements, current liquidity position, anticipated future funding needs, and options for reducing funding needs or attracting additional funds (including actual and potential sources of such funding).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Contingent liabilities, such as letters of credit or financial guarantees, can also be relevant when assessing liquidity.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In the banking sector, contingent liabilities represent potentially significant cash outflows that are not dependent on the bank\u2019s financial condition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "In the longer run, for non-financial companies, liquidity is addressed by cash flows from operations and managing the structure of liabilities, such as the timing of debt maturities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Ratio analysis requires a significant amount of judgment. One key area requiring judgment is understanding the limitations of any ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The current ratio, for example, is only a rough measure of liquidity at a specific point in time. The ratio captures only the amount of current assets, but the components of current assets differ significantly in their nearness to cash (e.g., marketable securities versus inventory).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Another limitation of the current ratio is its sensitivity to end-of-period financing and operating decisions that potentially can affect current asset and current liability amounts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Another overall area requiring judgment is determining whether a ratio for a company is within a reasonable range for an industry.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Yet another area requiring judgment is evaluating whether a ratio signifies a persistent condition or reflects only a temporary condition.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overall, evaluating specific ratios requires an examination of the entire operations of a company, its competitors, and the external economic and industry setting in which it is operating.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "Overconfidence in forecasting, illusion of control, conservatism bias, representativeness bias, and confirmation bias can impact analyst interpretation of financial ratios and forecasts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If the quick ratio declines while the current ratio rises, and the company\u2019s days of inventory on hand (DOH) increases, this could indicate an inventory problem and deteriorating liquidity, even if the stock price is rising.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If proceeds from collections are used to purchase inventory, there would be no effect on the current ratio and a decline in the quick ratio.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A small percentage change could hide a significant currency change and vice versa, prompting the analyst to investigate the reasons despite one of the changes being relatively small.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Use sensitivity analysis to show the range of possible outcomes by changing specific assumptions, which may influence financing needs or investment in fixed assets.\n  2. Use scenario analysis to show changes in key financial quantities that result from specific economic events (e.g., loss of customers, supply sources, or catastrophic events).\n  3. Use simulation, which is computer-generated sensitivity or scenario analysis based on probability models for the factors that drive outcomes, where each event or possible outcome is assigned a probability and multiple scenarios are run to determine expected outcomes.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Monitor concentration of funding by assessing the proportion of funding from single sources to avoid excessive exposure.\n  2. Monitor contractual maturity mismatch by comparing the maturity dates of assets and funding sources to identify liquidity risks.\n  3. Calculate and monitor the Liquidity Coverage Ratio (LCR) to ensure sufficient unencumbered high-quality liquid assets to meet liquidity needs in a 30-day stressed scenario.\n  4. Calculate the Net Stable Funding Ratio (NSFR) to ensure sufficient stable funding relative to required stable funding, reflecting the long-term funding profile.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 11* : How would you use candlestick patterns to anticipate short-term liquidity shifts in a company's trading activity?\n*Question 12* : Describe the process for calculating value-at-risk (VaR) to measure a firm's potential liquidity exposure.\n*Question 13* : In a scenario where liquidity is rapidly drying up in the market, outline a step-by-step approach to hedge risk using derivatives.\n*Question 14* : What practical steps would you take to analyze volume indicators in Bloomberg or Excel to assess liquidity trends?\n*Question 15* : Given ambiguous financial signals and pressure to act quickly, how would you structure your analysis to avoid behavioral traps and ensure sound liquidity decisions?",
+            "facts": [
+                {
+                    "content": "The value at risk disclosure is helpful for assessing a bank\u2019s exposure to market factors.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "VaR statistics can be effective indicators of trends in intra-company risk taking; because of differences in calculation assumptions across companies, VaR is not as useful for assessing risk-taking activities between different companies.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Using a 99% confidence level, Citigroup estimates the value at risk of a potential decline in the value of a position or a portfolio under normal market conditions for an assumed single-day holding period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup uses a Monte Carlo simulation VaR model to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The total trading VaR includes mark-to-market and certain fair value option trading positions except for certain hedges. Available-for-sale and accrual exposures are not included.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The specific risk-only component represents the level of equity and fixed income issuer-specific risk embedded in VAR.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The credit portfolio is composed of mark-to-market positions associated with non-trading business units.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Citigroup\u2019s VaR is a single-day measure of market shocks that can affect a company. Market dislocations can linger for days, weeks, and even longer. Although VaR is useful for measuring the effects of very short-term shocks, it does not address the effects of longer-term market impacts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Classification of a derivatives contract as a hedge requires substantiating its correlation with the risk being hedged.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "If a derivatives contract fails classification as a hedge and is instead a free-standing derivative instrument or a hedge of fair value, then changes in its fair value are reported as income or expense in the income statement at each reporting period.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Basel III Regulatory Framework introduced two liquidity standards: the Liquidity Coverage Ratio (LCR) and the Net Stable Funding Ratio (NSFR).",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Liquidity Coverage Ratio is the minimum percentage of a bank's expected cash outflows to be held in highly liquid assets.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Expected net cash outflows are the bank\u2019s anticipated 30-day liquidity needs in a stress scenario, and the highly liquid assets include only those of high quality and immediately convertible into cash.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The minimum LCR threshold is 100%; anything less would indicate an inability to meet the liquidity needs.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The Net Stable Funding Ratio is a measure of the available stable funding to cover funding of longer-term, less liquid assets, such as loans.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both the correct and incorrect forecasts they have made.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "The goal is to recognize that forecast error rates are high, so mitigating actions that widen the confidence interval of forecasts should be taken. One such action is scenario analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "A bank's liquidity is extremely important for its own well-being in times of financial stress and for the well-being of other banks and possibly an entire economy.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "By asking, \u201cWhere could I be wrong and by how much?\u201d, an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. To calculate value-at-risk (VaR), estimate the potential decline in value of a position or a portfolio under normal market conditions using a specified confidence level (e.g., 99%) and holding period (e.g., one day).\n  2. Use a simulation method, such as Monte Carlo simulation, to capture material risk sensitivities of various asset classes/risk types.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Develop an understanding of the company and its industry.\n  2. Learn about management and evaluate incentives to misreport.\n  3. Identify significant accounting areas with management judgment or unusual rules.\n  4. Make comparisons: compare current and prior years, compare with competitors, use ratio analysis.\n  5. Check for warning signs of possible issues with financial report quality.\n  6. For multi-segment firms, consider if shifting of inventory, sales, or expenses is occurring.\n  7. Use appropriate quantitative tools to assess the likelihood of misreporting.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "question": "*Question 16* : How would you use market sentiment analysis tools to detect early signs of liquidity stress in financial markets?\n*Question 17* : In a real-world case where liquidity ratios and sentiment indicators provide conflicting signals, what steps would you take to resolve the ambiguity?\n*Question 18* : Describe how you would leverage Python or Tableau to visualize and analyze liquidity trends using large, multi-source datasets.\n*Question 19* : Given a sudden market downturn and inconsistent data from different sources, outline your integrated approach to assessing and managing liquidity risk under time pressure.\n*Question 20* : How can combining behavioral finance insights with quantitative analysis enhance decision-making when faced with ambiguous liquidity information?",
+            "facts": [
+                {
+                    "content": "Trend analysis, relationships among financial statements, and the use of graphs and regression analysis are important components of ratio and quantitative analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Liquidity ratios, their calculation, and interpretation are foundational elements of ratio analysis.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Five key behavioral biases that influence analyst forecasts are overconfidence, illusion of control, conservatism, representativeness, and confirmation bias.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Illusion of control, a bias linked to overconfidence, is a tendency to overestimate the ability to control what cannot be controlled and to take ultimately fruitless actions in pursuit of control.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Studies have shown that experts in many fields persistently make forecasting errors arising from behavioral biases, and investment analysts\u2019 models are not immune.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Scenario analysis broadens the confidence interval of forecasts; by asking \u201cWhere could I be wrong and by how much?\u201d, an analyst can generate different forecast scenarios.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Overconfidence bias occurs when people demonstrate unwarranted faith in their own abilities.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Mitigating actions that widen the confidence interval of forecasts should be taken due to high forecast error rates.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "A common manifestation of confirmation bias among investment analysts is to structure the research process in pursuit of only positive news or certain criteria, or with a narrow scope.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "heuristics": [
+                {
+                    "content": "To mitigate overconfidence bias, analysts should record and share their forecasts and review them regularly, identifying both correct and incorrect forecasts.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Creating several scenarios is an important modeling step because the range of outcomes for the most important variable is wider than a single point.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        },
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Given the wide range of outcomes for most financial variables, an analyst will likely find that they have been wrong as much or more often than they have been right.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "Although additional information and complexity in model specification can improve forecasting accuracy, there are diminishing marginal returns; the amount of material information available for an investment is finite, and adding immaterial information will mislead.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ],
+            "procedures": [
+                {
+                    "content": "1. Use scenario analysis by generating different forecast scenarios to recognize a wide range of possible outcomes for important variables.\n  2. Modify forecasts using spreadsheet-driven models to easily calculate different free cash flow estimates under varying assumptions.",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV2 2024 - Volume 2 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                },
+                {
+                    "content": "1. Record and share forecasts.\n  2. Review both correct and incorrect forecasts regularly.\n  3. Identify sources of forecast errors and adjust confidence intervals accordingly.\n  4. Use scenario analysis to generate forecast ranges rather than point estimates.\n```",
+                    "references": [
+                        {
+                            "source": "/Users/lam/Desktop/another_opendxa/agents/agent_1_jordan/docs/CFA LV1 2025 - Volume 4 - Financial Statement Analysis.md",
+                            "page_number": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "structured_data": {}
+}

@@ -1,0 +1,329 @@
+{
+  "topics": [
+    {
+      "id": "973041f7-e923-4122-aec3-5426a156be00",
+      "path": "Financial Analysis - Financial Statement Analysis - Understanding and Interpreting the Income Statement",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Understanding and Interpreting the Income Statement/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:30:18.504621Z",
+      "last_topic_update": "2025-09-17T06:20:14.806Z",
+      "error": null
+    },
+    {
+      "id": "4cd2702b-adea-478d-bb39-8e9c6b0f0abe",
+      "path": "Financial Analysis - Financial Statement Analysis - Analyzing the Balance Sheet for Financial Health",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Analyzing the Balance Sheet for Financial Health/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:31:50.956203Z",
+      "last_topic_update": "2025-09-17T06:30:18.509Z",
+      "error": null
+    },
+    {
+      "id": "d181db5d-e134-4163-809c-b30b353291ee",
+      "path": "Financial Analysis - Financial Statement Analysis - Evaluating the Statement of Cash Flows",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Evaluating the Statement of Cash Flows/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:33:09.006805Z",
+      "last_topic_update": "2025-09-17T06:31:50.959Z",
+      "error": null
+    },
+    {
+      "id": "ff26b0ea-f52c-432b-9e58-2c922ad52661",
+      "path": "Financial Analysis - Financial Statement Analysis - Identifying and Adjusting for Non-Recurring Items",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Identifying and Adjusting for Non-Recurring Items/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:34:44.900405Z",
+      "last_topic_update": "2025-09-17T06:33:09.009Z",
+      "error": null
+    },
+    {
+      "id": "e44741fc-59fd-429c-b4fb-6c8ef796e2de",
+      "path": "Financial Analysis - Financial Statement Analysis - Detecting Earnings Management and Accounting Red Flags",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Detecting Earnings Management and Accounting Red Flags/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:37:13.290468Z",
+      "last_topic_update": "2025-09-17T06:34:44.903Z",
+      "error": null
+    },
+    {
+      "id": "0662bfd1-aa0d-4e6f-a39c-40cd65889255",
+      "path": "Financial Analysis - Financial Statement Analysis - Integrating Financial Statements for Holistic Analysis",
+      "file": "Finance/Financial Analysis/Financial Statement Analysis/Integrating Financial Statements for Holistic Analysis/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:38:28.373805Z",
+      "last_topic_update": "2025-09-17T06:37:13.294Z",
+      "error": null
+    },
+    {
+      "id": "1ec6fc98-eb4b-4f9d-b950-b8a0a77112ba",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Calculating and Interpreting Liquidity Ratios",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Calculating and Interpreting Liquidity Ratios/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:39:54.881102Z",
+      "last_topic_update": "2025-09-17T06:38:28.375Z",
+      "error": null
+    },
+    {
+      "id": "f9296642-d146-4bee-810b-a48f896b0201",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Profitability Ratios: Analysis and Benchmarking",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Profitability Ratios: Analysis and Benchmarking/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:41:34.451349Z",
+      "last_topic_update": "2025-09-17T06:39:54.883Z",
+      "error": null
+    },
+    {
+      "id": "b1ac8dd5-5c08-43ce-a4fa-5f56ca7e906f",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Leverage and Solvency Ratios: Assessing Financial Risk",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Leverage and Solvency Ratios: Assessing Financial Risk/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:42:59.226846Z",
+      "last_topic_update": "2025-09-17T06:41:34.452Z",
+      "error": null
+    },
+    {
+      "id": "8f3ae4ff-4a84-473b-a857-9e6783097e84",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Activity and Efficiency Ratios for Operational Insights",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Activity and Efficiency Ratios for Operational Insights/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:44:26.357186Z",
+      "last_topic_update": "2025-09-17T06:42:59.228Z",
+      "error": null
+    },
+    {
+      "id": "ccdf9239-a786-4bdd-98c0-3b251c627f0d",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Market Valuation Ratios and Investment Decision-Making",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Market Valuation Ratios and Investment Decision-Making/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:06:19.480663Z",
+      "last_topic_update": "2025-09-17T06:44:26.358Z",
+      "error": null
+    },
+    {
+      "id": "8c84e6c1-bfe2-465b-afb4-750638c9c016",
+      "path": "Financial Analysis - Ratio and Quantitative Analysis - Trend, Common-Size, and Comparative Analysis Techniques",
+      "file": "Finance/Financial Analysis/Ratio and Quantitative Analysis/Trend, Common-Size, and Comparative Analysis Techniques/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:47:13.814819Z",
+      "last_topic_update": "2025-09-17T06:45:34.578Z",
+      "error": null
+    },
+    {
+      "id": "eca06658-70a3-41cc-82fa-29a520e13486",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Direct vs. Indirect Cash Flow Methods",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Direct vs. Indirect Cash Flow Methods/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:48:14.200647Z",
+      "last_topic_update": "2025-09-17T06:47:13.816Z",
+      "error": null
+    },
+    {
+      "id": "cecc0af5-8539-4439-a0ab-0ee120f27b4a",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Free Cash Flow Calculation and Interpretation",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Free Cash Flow Calculation and Interpretation/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:49:37.449479Z",
+      "last_topic_update": "2025-09-17T06:48:14.203Z",
+      "error": null
+    },
+    {
+      "id": "5e52fa8d-f609-4ab0-9168-185a6acc7410",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Cash Flow Forecasting Models and Assumptions",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Cash Flow Forecasting Models and Assumptions/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:51:05.030768Z",
+      "last_topic_update": "2025-09-17T06:49:37.452Z",
+      "error": null
+    },
+    {
+      "id": "92c7745c-1214-46ef-aed9-0c7f9390feb7",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Linking Cash Flow to Valuation and Investment Decisions",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Linking Cash Flow to Valuation and Investment Decisions/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:52:26.710083Z",
+      "last_topic_update": "2025-09-17T06:51:05.032Z",
+      "error": null
+    },
+    {
+      "id": "e9d54b8b-454e-4ba3-8e44-8c3519d33213",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Stress Testing and Scenario Analysis for Cash Flows",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Stress Testing and Scenario Analysis for Cash Flows/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:53:46.424134Z",
+      "last_topic_update": "2025-09-17T06:52:26.712Z",
+      "error": null
+    },
+    {
+      "id": "2ba56877-e6c3-4cb6-94fd-a895bf802643",
+      "path": "Financial Analysis - Cash Flow and Forecasting Techniques - Identifying Cash Flow Manipulation and Quality Issues",
+      "file": "Finance/Financial Analysis/Cash Flow and Forecasting Techniques/Identifying Cash Flow Manipulation and Quality Issues/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:55:41.945926Z",
+      "last_topic_update": "2025-09-17T06:53:46.427Z",
+      "error": null
+    },
+    {
+      "id": "bc981777-d013-4fe5-b610-cfaf175f205a",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - IFRS vs. US GAAP: Key Differences and Implications",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/IFRS vs. US GAAP: Key Differences and Implications/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:57:17.525164Z",
+      "last_topic_update": "2025-09-17T06:55:41.946Z",
+      "error": null
+    },
+    {
+      "id": "f776f7b6-2a07-4aa7-8dbd-240f8da31820",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - Revenue Recognition Principles and Impact on Analysis",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/Revenue Recognition Principles and Impact on Analysis/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T06:59:14.607192Z",
+      "last_topic_update": "2025-09-17T06:57:17.526Z",
+      "error": null
+    },
+    {
+      "id": "12072538-04e9-4cf0-a33c-665478ef7a41",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - Asset Valuation: Depreciation, Amortization, and Impairment",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/Asset Valuation: Depreciation, Amortization, and Impairment/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:01:39.839523Z",
+      "last_topic_update": "2025-09-17T06:59:14.608Z",
+      "error": null
+    },
+    {
+      "id": "a05b1375-7cce-4a7e-a9f3-2693da5758dc",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - Accounting for Leases, Pensions, and Off-Balance Sheet Items",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/Accounting for Leases, Pensions, and Off-Balance Sheet Items/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:08:02.233654Z",
+      "last_topic_update": "2025-09-17T07:01:39.842Z",
+      "error": null
+    },
+    {
+      "id": "07283860-1d22-4d47-bb94-a17cf7ddf88f",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - Impact of Accounting Choices on Financial Ratios",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/Impact of Accounting Choices on Financial Ratios/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:09:27.447965Z",
+      "last_topic_update": "2025-09-17T07:08:02.242Z",
+      "error": null
+    },
+    {
+      "id": "5a216f56-bd49-4b4b-aad0-a538e914f744",
+      "path": "Financial Analysis - Accounting Standards and Policy Analysis - Evaluating Changes in Accounting Policies and Estimates",
+      "file": "Finance/Financial Analysis/Accounting Standards and Policy Analysis/Evaluating Changes in Accounting Policies and Estimates/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:11:47.867398Z",
+      "last_topic_update": "2025-09-17T07:09:27.451Z",
+      "error": null
+    },
+    {
+      "id": "a387b9b0-526b-453f-8497-3ec05349e74a",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - DuPont Analysis and Decomposition of ROE",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/DuPont Analysis and Decomposition of ROE/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:13:34.289970Z",
+      "last_topic_update": "2025-09-17T07:11:47.868Z",
+      "error": null
+    },
+    {
+      "id": "f82d3896-b6d5-4fce-9ab6-c5a291e0302f",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - Credit Analysis and Default Risk Assessment",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/Credit Analysis and Default Risk Assessment/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:15:12.810495Z",
+      "last_topic_update": "2025-09-17T07:13:34.292Z",
+      "error": null
+    },
+    {
+      "id": "515034d2-9110-4ece-a9b1-d002764a3933",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - Financial Modeling for Scenario and Sensitivity Analysis",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/Financial Modeling for Scenario and Sensitivity Analysis/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:17:38.696666Z",
+      "last_topic_update": "2025-09-17T07:15:12.812Z",
+      "error": null
+    },
+    {
+      "id": "83d15255-2f52-49eb-ab5e-2775accfc7d6",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - Behavioral Finance Applications in Financial Analysis",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/Behavioral Finance Applications in Financial Analysis/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:19:10.403514Z",
+      "last_topic_update": "2025-09-17T07:17:38.698Z",
+      "error": null
+    },
+    {
+      "id": "6024acd6-c406-4b70-88fa-d9bfb6e94d90",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - Technical Analysis: Chart Patterns and Indicators",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/Technical Analysis: Chart Patterns and Indicators/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:20:37.065985Z",
+      "last_topic_update": "2025-09-17T07:19:10.405Z",
+      "error": null
+    },
+    {
+      "id": "b1529eda-1882-4ce9-9e1a-ad674bf91949",
+      "path": "Financial Analysis - Advanced Financial Analysis Techniques - Integrating Quantitative and Qualitative Factors in Valuation",
+      "file": "Finance/Financial Analysis/Advanced Financial Analysis Techniques/Integrating Quantitative and Qualitative Factors in Valuation/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:22:53.741870Z",
+      "last_topic_update": "2025-09-17T07:20:37.067Z",
+      "error": null
+    },
+    {
+      "id": "5cb0d8f7-79e4-4a2a-980c-ab39effc1bd0",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Identifying and Measuring Financial Risks (Market, Credit, Liquidity)",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Identifying and Measuring Financial Risks (Market, Credit, Liquidity)/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:24:15.266063Z",
+      "last_topic_update": "2025-09-17T07:22:53.745Z",
+      "error": null
+    },
+    {
+      "id": "09e75228-f1a5-4e2b-ba0b-4f6227a0185b",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Value at Risk (VaR) and Other Risk Metrics",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Value at Risk (VaR) and Other Risk Metrics/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:25:54.887660Z",
+      "last_topic_update": "2025-09-17T07:24:15.268Z",
+      "error": null
+    },
+    {
+      "id": "fb5ff72b-a270-4fe7-9dc0-30357c3eb423",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Portfolio Risk Analysis and Diversification Strategies",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Portfolio Risk Analysis and Diversification Strategies/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:27:04.660913Z",
+      "last_topic_update": "2025-09-17T07:25:54.889Z",
+      "error": null
+    },
+    {
+      "id": "422cc030-ea07-47eb-a806-1e92d0a465bb",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Behavioral Biases in Financial Decision-Making",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Behavioral Biases in Financial Decision-Making/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:28:49.495494Z",
+      "last_topic_update": "2025-09-17T07:27:04.665Z",
+      "error": null
+    },
+    {
+      "id": "187dbbf6-0ddf-43d0-baf1-2d3ececd19b2",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Stress Testing and Backtesting Financial Models",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Stress Testing and Backtesting Financial Models/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:30:15.294885Z",
+      "last_topic_update": "2025-09-17T07:28:49.497Z",
+      "error": null
+    },
+    {
+      "id": "af18322c-57e0-4060-b810-f900032bbf4a",
+      "path": "Financial Analysis - Risk Management and Decision-Making - Risk-Adjusted Performance Measurement (Sharpe, Treynor, Sortino Ratios)",
+      "file": "Finance/Financial Analysis/Risk Management and Decision-Making/Risk-Adjusted Performance Measurement (Sharpe, Treynor, Sortino Ratios)/knowledge.json",
+      "status": "success",
+      "last_generated": "2025-09-17T07:31:14.270422Z",
+      "last_topic_update": "2025-09-17T07:30:15.297Z",
+      "error": null
+    }
+  ],
+  "agent_id": "1"
+}

@@ -1,0 +1,12 @@
+# Tools configuration for Aurea Autonomous Agent
+# This file defines external tools and services available to the agent
+
+try:
+    websearch = use("mcp", url="YOUR MCP URL HERE")
+except:
+    websearch = None
+
+# Additional tools can be added here as needed
+# Example:
+# knowledge_base = use("knowledge", source="domain_specific_kb")
+# code_executor = use("code", runtime="python")
