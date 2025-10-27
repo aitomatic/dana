@@ -5,102 +5,19 @@ import socket
 import subprocess
 import sys
 import time
-from contextlib import asynccontextmanager
 from typing import Any, cast
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from dana.lang.api.client import APIClient
-from dana.lang.api.core.bc_engine import broadcast_engine
-from dana.lang.api.background.task_manager import get_task_manager, shutdown_task_manager
 from dana.lang.common.config import ConfigLoader
 from dana.lang.common.mixins.loggable import Loggable
-from alembic.config import Config
-from alembic import command
-from pathlib import Path
-from ..core.database import Base, engine, SQLALCHEMY_DATABASE_URL
-
-
-def run_migrations():
-    package_dir = Path(__file__).parent.parent
-    script_location = package_dir / "alembic"
-    alembic_cfg = Config()
-    alembic_cfg.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
-    alembic_cfg.set_main_option("script_location", str(script_location))
-    command.upgrade(alembic_cfg, "head")
-
-
-# --- WebSocket manager for knowledge status updates ---
-class KnowledgeStatusWebSocketManager:
-    def __init__(self):
-        self.clients = set()
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.clients.add(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.clients.discard(websocket)
-
-    async def broadcast(self, msg):
-        to_remove = set()
-        for ws in self.clients:
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                to_remove.add(ws)
-        for ws in to_remove:
-            self.clients.discard(ws)
-
-
-ws_manager = KnowledgeStatusWebSocketManager()
-
-# WebSocket endpoint
-from fastapi import APIRouter
-
-ws_router = APIRouter()
-
-
-@ws_router.websocket("/ws/knowledge-status")
-async def knowledge_status_ws(websocket: WebSocket):
-    await ws_manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()  # Keep alive
-    except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
-    except Exception:
-        ws_manager.disconnect(websocket)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Handle application startup and shutdown events"""
-    # Startup
-    # from ..core.migrations import run_migrations
-
-    try:
-        # Run any pending migrations
-        run_migrations()
-    except Exception as e:
-        print(f"Warning: Failed to run migrations: {e}. Creating base tables instead.")
-        # Create base tables first
-        Base.metadata.create_all(bind=engine)
-
-    await broadcast_engine.connect()
-    get_task_manager()  # INIT
-    yield
-
-    # Shutdown (if needed in the future)
-    await broadcast_engine.disconnect()
-    shutdown_task_manager()
-
+from fastapi import FastAPI
 
 def create_app():
     """Create FastAPI app with routers and static file serving"""
-    app = FastAPI(title="Dana API Server", version="1.0.0", lifespan=lifespan)
+    app = FastAPI(title="Dana API Server", version="1.0.0")
 
     # Add CORS middleware
     app.add_middleware(
@@ -113,18 +30,10 @@ def create_app():
 
     # Include routers under /api
     # New consolidated routers (preferred)
-    from ..routers.v1 import router as v1_router
-    from ..routers.main import router as main_router
     from ..routers.poet import router as poet_router
-    from ..routers.v2 import router as v2_router
-
-    app.include_router(main_router)
 
     # Use new consolidated routers
     app.include_router(poet_router, prefix="/api")
-    app.include_router(ws_router)
-    app.include_router(v2_router, prefix="/api/v2")
-    app.include_router(v1_router, prefix="/api")
 
     # Serve static files (React build)
     static_dir = os.path.join(os.path.dirname(__file__), "static")
