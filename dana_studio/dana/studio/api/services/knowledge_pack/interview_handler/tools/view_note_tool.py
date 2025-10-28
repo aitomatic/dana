@@ -50,9 +50,9 @@ class ViewNoteTool(BaseTool):
             elif section == "topics":
                 content = self._extract_section(note_content, "## Topics to Cover")
             elif section == "insights":
-                content = self._extract_section(note_content, "## Expert Insights")
+                content = self._extract_section(note_content, "## Topics to Cover")
             elif section == "understanding":
-                content = self._extract_section(note_content, "## Current Understanding Level")
+                content = self._extract_section(note_content, "## Topics to Cover")
             elif section == "documents":
                 content = self._extract_section(note_content, "## Documents Found")
             else:
@@ -95,62 +95,14 @@ class ViewNoteTool(BaseTool):
 
 if __name__ == "__main__":
     import asyncio
-    import tempfile
-    import os
 
     # Create test interview note
-    test_note = """# Interview Notes - Safety Expert
-**Date**: 2024-01-15
+    temp_path = "knowledge_packs/1/templates/template_2/sessions/session_1/interview_notes.md"
+    tool = ViewNoteTool(temp_path)
 
-## Topics to Cover
-### Conveyor Safety
-**Background**: Safety procedures for conveyor systems
-**Status**: In progress
+    print("🔍 Testing ViewNoteTool")
+    print("=" * 40)
 
-## Expert Insights
-- Expert works with belt conveyors and roller conveyors
-- Focuses on lockout/tagout procedures
-- 10 years of experience in manufacturing
-
-## Current Understanding Level
-- **Completeness**: 60% - Good initial understanding
-- **Confidence**: High
-- **Next Steps**: Ask about specific procedures
-
-## Documents Found
-*No documents searched yet*
-"""
-
-    async def test_view_note():
-        # Create temp file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            f.write(test_note)
-            temp_path = f.name
-
-        try:
-            tool = ViewNoteTool(temp_path)
-
-            print("🔍 Testing ViewNoteTool")
-            print("=" * 40)
-
-            # Test viewing all sections
-            result = await tool._execute(section="all")
-            print("📄 Full Note:")
-            print(result.result[:200] + "..." if len(result.result) > 200 else result.result)
-            print()
-
-            # Test viewing specific section
-            result = await tool._execute(section="insights")
-            print("💡 Expert Insights:")
-            print(result.result)
-            print()
-
-            # Test viewing understanding
-            result = await tool._execute(section="understanding")
-            print("📊 Understanding Level:")
-            print(result.result)
-
-        finally:
-            os.unlink(temp_path)
-
-    asyncio.run(test_view_note())
+    # Test viewing all sections
+    res = asyncio.run(tool._execute(section="insights"))
+    print(res.result)

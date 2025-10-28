@@ -358,7 +358,7 @@ User Message: The previous attempt didn't match the template's formatting. I'll 
 </thinking>
 
 <view_template>
-<section>topic:Managing Normal Operating Conditions Across Beet Sugar Process Steps</section>
+<section>topic:Managing Normally Operating Conditions Across Beet Sugar Process Steps</section>
 </view_template>
 """
 

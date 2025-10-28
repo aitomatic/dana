@@ -77,29 +77,7 @@ class ViewTemplateTool(BaseTool):
         if not topic:
             return message  # Error or suggestions
 
-        content_parts = []
-
-        # Add success message if fuzzy match was used
-        if "Matched:" in message and "Exact" not in message:
-            content_parts.append(f"ℹ️  {message}\n")
-        else:
-            return topic["raw_content"]
-
-        content_parts.append(f"### {topic['name']}")
-        content_parts.append("")
-
-        if topic["questions"]:
-            if topic["background"]:
-                content_parts.append(f"**Background**: {topic['background']}")
-
-            content_parts.append("**Opening Questions**:")
-            for i, question in enumerate(topic["questions"], 1):
-                content_parts.append(f"{i}. {question}")
-
-        else:
-            content_parts.append("*(No questions defined for this topic yet)*")
-
-        return "\n".join(content_parts)
+        return topic["raw_content"]
 
 
 if __name__ == "__main__":

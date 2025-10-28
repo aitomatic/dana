@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from rank_bm25 import BM25Okapi
+import numpy as np
 
 
 def parse_template(template_path: str) -> dict[str, any]:
@@ -224,33 +226,21 @@ def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, 
         - topic: Matched topic dict or None
         - message: Success/error/suggestion message
     """
-    # Try exact match first
-    for topic in topics:
-        if topic["name"] == topic_name:
-            return topic, f"✓ Exact match: {topic['name']}"
 
-    # Try case-insensitive exact match
-    topic_name_lower = topic_name.lower()
-    for topic in topics:
-        if topic["name"].lower() == topic_name_lower:
-            return topic, f"✓ Matched: {topic['name']}"
+    def _text_2_words(text: str) -> list[str]:
+        return text.split(" ")
 
-    # Try substring matching
-    matches = []
-    for topic in topics:
-        if topic_name_lower in topic["name"].lower():
-            matches.append(topic)
+    def _words_2_text(words: list[str]) -> str:
+        return " ".join(words)
 
-    if len(matches) == 1:
-        return matches[0], f"✓ Matched: {matches[0]['name']}"
-    elif len(matches) > 1:
-        suggestions = "\n".join([f"  - {t['name']}" for t in matches])
-        return None, f"❌ Multiple topics match '{topic_name}':\n{suggestions}\n\nPlease use the exact topic name."
+    corpus = [_text_2_words(topic["name"]) for topic in topics]
+    bm25 = BM25Okapi(corpus)
+    scores = bm25.get_scores(_text_2_words(topic_name))
+    top_n = np.argsort(scores)[::-1][:1]
+    if top_n:
+        return topics[top_n[0]], f"✓ Matched: {topics[top_n[0]]['name']}"
     else:
-        # No matches - show available topics
-        all_topics = "\n".join([f"  - {t['name']}" for t in topics[:10]])
-        more = f"\n  ... and {len(topics) - 10} more" if len(topics) > 10 else ""
-        return None, f"❌ Topic '{topic_name}' not found.\n\nAvailable topics:\n{all_topics}{more}"
+        return None, f"❌ Topic '{topic_name}' not found. Available topics: {'\n- '.join([topic['name'] for topic in topics])}"
 
 
 def find_topic_by_name(topics: list[dict], topic_name: str) -> dict | None:

@@ -114,6 +114,7 @@ dependencies = [
     "requests>=2.32.4",
     "dana",
     "dana-lang",
+    "rank-bm25>=0.2.2",
 ]
 
 # Command-line entry points
