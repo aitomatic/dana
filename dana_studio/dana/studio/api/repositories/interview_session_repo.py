@@ -57,7 +57,11 @@ class SQLInterviewSessionRepo(AbstractInterviewSessionRepo):
     async def get_session(cls, session_id: int, **kwargs) -> InterviewSessionRead | None:
         db = cls._get_db(**kwargs)
         session = db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
-        return InterviewSessionRead.model_validate(session) if session else None
+        result = InterviewSessionRead.model_validate(session) if session else None
+        if result and not result.conversation_id:
+            conversation_id = session.conversation.id if session and session.conversation else None
+            result.conversation_id = conversation_id
+        return result
 
     @classmethod
     async def get_session_by_template_id(cls, template_id: int, skip: int = 0, limit: int = 100, **kwargs) -> InterviewSessionListResponse:

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from rank_bm25 import BM25Okapi
-import numpy as np
+from dana.studio.api.services.search.bm25 import BM25SearchEngine
 
 
 def parse_template(template_path: str) -> dict[str, any]:
@@ -226,17 +225,9 @@ def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, 
         - topic: Matched topic dict or None
         - message: Success/error/suggestion message
     """
+    search_engine = BM25SearchEngine([topic["name"] for topic in topics])
+    top_n = search_engine.get_top_n_indices(topic_name, n=1)
 
-    def _text_2_words(text: str) -> list[str]:
-        return text.split(" ")
-
-    def _words_2_text(words: list[str]) -> str:
-        return " ".join(words)
-
-    corpus = [_text_2_words(topic["name"]) for topic in topics]
-    bm25 = BM25Okapi(corpus)
-    scores = bm25.get_scores(_text_2_words(topic_name))
-    top_n = np.argsort(scores)[::-1][:1]
     if top_n:
         return topics[top_n[0]], f"✓ Matched: {topics[top_n[0]]['name']}"
     else:
