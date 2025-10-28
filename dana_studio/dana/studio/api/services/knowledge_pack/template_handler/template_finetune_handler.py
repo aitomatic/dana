@@ -18,7 +18,6 @@ from dana.studio.api.services.knowledge_pack.template_handler.tools import (
     RefineTopicQuestionsTool,
     GenerateAdditionalQuestionsTool,
     ReplaceInFileTool,
-    UpdateInterviewApproachTool,
     AttemptCompletionTool,
     AskQuestionTool,
     ReadDocumentsTool,
@@ -27,7 +26,6 @@ from dana.studio.api.services.knowledge_pack.template_handler.prompts import TEM
 from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2
 from dana.studio.api.repositories.config import KNOW_FOLDER_NAME
 import logging
-import re
 import asyncio
 from pathlib import Path
 
@@ -126,7 +124,6 @@ class TemplateFinetuneHandler(AbstractHandler):
                 rag_docs=self.rag_docs,
             ).as_dict()
         )
-        self.tools.update(UpdateInterviewApproachTool(template_path=str(self.template_path)).as_dict())
         self.tools.update(ReplaceInFileTool(template_path=str(self.template_path)).as_dict())
         self.tools.update(ReadDocumentsTool(kp_id=self.kp_id, rag_docs=self.rag_docs).as_dict())
 
@@ -339,7 +336,7 @@ if __name__ == "__main__":
 
     # Test with sample template
     handler = TemplateFinetuneHandler(
-        template_path="/Users/lam/Desktop/repos/opendxa/knowledge_packs/1/template/master_interview_template.md",
+        template_path="/Users/lam/Desktop/repos/opendxa/knowledge_packs/1/templates/template_2/README.md",
         knowledge_pack_path="/Users/lam/Desktop/repos/opendxa/knowledge_packs/1",
         kp_id=1,
         doc_paths=[
@@ -351,128 +348,154 @@ if __name__ == "__main__":
     )
     chat_history = []
 
-    print("🎯 Template Fine-tuning Handler - Interactive Testing Environment")
-    print("=" * 70)
-    print("Commands:")
-    print("- Type any template refinement request to test the workflow")
-    print("- Type 'quit' or 'exit' to quit")
-    print("- Type 'reset' to clear conversation history")
-    print("- Type 'history' to view conversation")
-    print("- Type 'tools' to list available tools")
-    print("=" * 70)
+    tool_call = """
+<thinking>
+Intent: Clear all questions from the "Managing Normal Operating Conditions Across Beet Sugar Process Steps" topic.
+Context: The previous search pattern did not match the template, likely due to formatting differences (e.g., line breaks, spacing, or markdown structure). The section exists, but the exact match failed.
+Decision: View only the specific topic section to capture its precise formatting and ensure the search pattern matches exactly for successful replacement.
+Approval: None needed; this is a diagnostic step to ensure accuracy.
+User Message: The previous attempt didn't match the template's formatting. I'll display just the "Managing Normal Operating Conditions Across Beet Sugar Process Steps" section to capture its exact structure before proceeding.
+</thinking>
 
-    while True:
-        try:
-            user_message = input(f"\n💬 User ({len(chat_history) // 2 + 1}): ").strip()
-            chat_history.append(MessageData(role=SenderRole.USER, content=user_message))
+<view_template>
+<section>topic:Managing Normal Operating Conditions Across Beet Sugar Process Steps</section>
+</view_template>
+"""
 
-            if user_message.lower() in ["quit", "exit"]:
-                print("👋 Goodbye!")
-                break
-            elif user_message.lower() == "reset":
-                chat_history = []
-                print("🗑️  Chat history cleared.")
-                continue
-            elif user_message.lower() == "history":
-                if not chat_history:
-                    print("📝 No conversation history yet.")
-                else:
-                    print(f"\n📝 Conversation History ({len(chat_history)} messages):")
-                    for i, msg in enumerate(chat_history, 1):
-                        role_emoji = "👤" if msg.role == "user" else "🤖"
-                        print(f"  {i:2}. {role_emoji} {msg.role.upper()}: {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}")
-                continue
-            elif user_message.lower() == "tools":
-                print(f"\n🛠️  Available Tools ({len(handler.tools)}):")
-                for i, (name, tool) in enumerate(handler.tools.items(), 1):
-                    print(
-                        f"  {i:2}. {name}: {tool.tool_information.description[:80]}{'...' if len(tool.tool_information.description) > 80 else ''}"
-                    )
-                continue
-            elif not user_message:
-                continue
+    tool_name, params, thinking_content = handler._parse_xml_tool_call(tool_call)
+    print("=" * 100)
+    print(tool_name)
+    print(params)
+    print(thinking_content)
+    print("=" * 100)
 
-            # Create request
-            request = IntentDetectionRequest(user_message=user_message, chat_history=chat_history, current_domain_tree=None, agent_id=1)
+    result = asyncio.run(handler._execute_tool(tool_name, params, thinking_content))
+    print("=" * 100)
+    print(result.content)
+    print("=" * 100)
 
-            print(f"\n{'⚡' * 3} PROCESSING REQUEST {'⚡' * 3}")
-            print(f"Request: {user_message}")
+    # print("🎯 Template Fine-tuning Handler - Interactive Testing Environment")
+    # print("=" * 70)
+    # print("Commands:")
+    # print("- Type any template refinement request to test the workflow")
+    # print("- Type 'quit' or 'exit' to quit")
+    # print("- Type 'reset' to clear conversation history")
+    # print("- Type 'history' to view conversation")
+    # print("- Type 'tools' to list available tools")
+    # print("=" * 70)
 
-            # Run handler
-            result = asyncio.run(handler.handle(request))
+    # while True:
+    #     try:
+    #         user_message = input(f"\n💬 User ({len(chat_history) // 2 + 1}): ").strip()
+    #         chat_history.append(MessageData(role=SenderRole.USER, content=user_message))
 
-            # Display results
-            print(f"\n{'📊' * 3} WORKFLOW RESULTS {'📊' * 3}")
-            print(f"Status: {result['status']}")
-            print(f"Message: {result['message']}")
-            print(f"Template Modified: {result.get('template_modified', False)}")
+    #         if user_message.lower() in ["quit", "exit"]:
+    #             print("👋 Goodbye!")
+    #             break
+    #         elif user_message.lower() == "reset":
+    #             chat_history = []
+    #             print("🗑️  Chat history cleared.")
+    #             continue
+    #         elif user_message.lower() == "history":
+    #             if not chat_history:
+    #                 print("📝 No conversation history yet.")
+    #             else:
+    #                 print(f"\n📝 Conversation History ({len(chat_history)} messages):")
+    #                 for i, msg in enumerate(chat_history, 1):
+    #                     role_emoji = "👤" if msg.role == "user" else "🤖"
+    #                     print(f"  {i:2}. {role_emoji} {msg.role.upper()}: {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}")
+    #             continue
+    #         elif user_message.lower() == "tools":
+    #             print(f"\n🛠️  Available Tools ({len(handler.tools)}):")
+    #             for i, (name, tool) in enumerate(handler.tools.items(), 1):
+    #                 print(
+    #                     f"  {i:2}. {name}: {tool.tool_information.description[:80]}{'...' if len(tool.tool_information.description) > 80 else ''}"
+    #                 )
+    #             continue
+    #         elif not user_message:
+    #             continue
 
-            # Show conversation flow
-            conversation = result["conversation"]
-            print(f"\n{'💭' * 3} CONVERSATION FLOW ({len(conversation)} messages) {'💭' * 3}")
+    #         # Create request
+    #         request = IntentDetectionRequest(user_message=user_message, chat_history=chat_history, current_domain_tree=None, agent_id=1)
 
-            for i, msg in enumerate(conversation, 1):
-                role_emoji = "👤" if msg.role == "user" else "🤖"
-                role_color = "\033[94m" if msg.role == "user" else "\033[92m"  # Blue for user, green for assistant
-                reset_color = "\033[0m"
+    #         print(f"\n{'⚡' * 3} PROCESSING REQUEST {'⚡' * 3}")
+    #         print(f"Request: {user_message}")
 
-                print(f"\n{i:2}. {role_emoji} {role_color}{msg.role.upper()}{reset_color}:")
+    #         # Run handler
+    #         result = asyncio.run(handler.handle(request))
 
-                # Handle tool calls vs regular messages
-                if msg.role == "assistant" and ("<" in msg.content and ">" in msg.content):
-                    # This looks like a tool call
-                    if "<thinking>" in msg.content:
-                        # Extract thinking for display
-                        thinking_match = re.search(r"<thinking>(.*?)</thinking>", msg.content, re.DOTALL)
-                        if thinking_match:
-                            thinking = thinking_match.group(1).strip()
-                            print(f"    💭 Thinking: {thinking}")
+    #         # Display results
+    #         print(f"\n{'📊' * 3} WORKFLOW RESULTS {'📊' * 3}")
+    #         print(f"Status: {result['status']}")
+    #         print(f"Message: {result['message']}")
+    #         print(f"Template Modified: {result.get('template_modified', False)}")
 
-                    # Extract tool name and arguments (skip thinking tags)
-                    tool_match = re.search(r"<(?!thinking)(\w+)", msg.content)
-                    if tool_match:
-                        tool_name = tool_match.group(1)
-                        print(f"    🔧 Tool Call: {tool_name}")
+    #         # Show conversation flow
+    #         conversation = result["conversation"]
+    #         print(f"\n{'💭' * 3} CONVERSATION FLOW ({len(conversation)} messages) {'💭' * 3}")
 
-                        # Extract and display tool arguments
-                        try:
-                            _, params, _ = handler._parse_xml_tool_call(msg.content)
-                            if params:
-                                print("    📝 Arguments:")
-                                for key, value in params.items():
-                                    if isinstance(value, list):
-                                        print(f"      {key}: {value}")
-                                    elif isinstance(value, str) and len(value) > 100:
-                                        print(f"      {key}: {value[:100]}...")
-                                    else:
-                                        print(f"      {key}: {value}")
-                        except Exception as e:
-                            print(f"    ⚠️ Could not parse arguments: {e}")
-                else:
-                    # Regular message content
-                    content_lines = msg.content.split("\n")
-                    for line in content_lines:  # Show first 5 lines
-                        if line.strip():
-                            print(f"    {line}")
+    #         for i, msg in enumerate(conversation, 1):
+    #             role_emoji = "👤" if msg.role == "user" else "🤖"
+    #             role_color = "\033[94m" if msg.role == "user" else "\033[92m"  # Blue for user, green for assistant
+    #             reset_color = "\033[0m"
 
-            # Update chat history for next iteration
-            chat_history = conversation
+    #             print(f"\n{i:2}. {role_emoji} {role_color}{msg.role.upper()}{reset_color}:")
 
-            # Check if workflow is complete or needs user input
-            if result["status"] == "user_input_required":
-                print(f"\n{'⏸️' * 3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️' * 3}")
-                print("The system is waiting for your response to continue.")
-            elif result["status"] == "success":
-                print(f"\n{'✅' * 3} WORKFLOW COMPLETED SUCCESSFULLY {'✅' * 3}")
-                print("You can start a new template refinement request or type 'reset' to clear history.")
+    #             # Handle tool calls vs regular messages
+    #             if msg.role == "assistant" and ("<" in msg.content and ">" in msg.content):
+    #                 # This looks like a tool call
+    #                 if "<thinking>" in msg.content:
+    #                     # Extract thinking for display
+    #                     thinking_match = re.search(r"<thinking>(.*?)</thinking>", msg.content, re.DOTALL)
+    #                     if thinking_match:
+    #                         thinking = thinking_match.group(1).strip()
+    #                         print(f"    💭 Thinking: {thinking}")
 
-        except KeyboardInterrupt:
-            print("\n\n👋 Interrupted. Goodbye!")
-            break
-        except Exception as e:
-            print(f"\n❌ Error: {e}")
-            import traceback
+    #                 # Extract tool name and arguments (skip thinking tags)
+    #                 tool_match = re.search(r"<(?!thinking)(\w+)", msg.content)
+    #                 if tool_match:
+    #                     tool_name = tool_match.group(1)
+    #                     print(f"    🔧 Tool Call: {tool_name}")
 
-            print("Full traceback:")
-            traceback.print_exc()
-            print("\n💡 Continuing... (you can type 'reset' to clear state)")
+    #                     # Extract and display tool arguments
+    #                     try:
+    #                         _, params, _ = handler._parse_xml_tool_call(msg.content)
+    #                         if params:
+    #                             print("    📝 Arguments:")
+    #                             for key, value in params.items():
+    #                                 if isinstance(value, list):
+    #                                     print(f"      {key}: {value}")
+    #                                 elif isinstance(value, str) and len(value) > 100:
+    #                                     print(f"      {key}: {value[:100]}...")
+    #                                 else:
+    #                                     print(f"      {key}: {value}")
+    #                     except Exception as e:
+    #                         print(f"    ⚠️ Could not parse arguments: {e}")
+    #             else:
+    #                 # Regular message content
+    #                 content_lines = msg.content.split("\n")
+    #                 for line in content_lines:  # Show first 5 lines
+    #                     if line.strip():
+    #                         print(f"    {line}")
+
+    #         # Update chat history for next iteration
+    #         chat_history = conversation
+
+    #         # Check if workflow is complete or needs user input
+    #         if result["status"] == "user_input_required":
+    #             print(f"\n{'⏸️' * 3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️' * 3}")
+    #             print("The system is waiting for your response to continue.")
+    #         elif result["status"] == "success":
+    #             print(f"\n{'✅' * 3} WORKFLOW COMPLETED SUCCESSFULLY {'✅' * 3}")
+    #             print("You can start a new template refinement request or type 'reset' to clear history.")
+
+    #     except KeyboardInterrupt:
+    #         print("\n\n👋 Interrupted. Goodbye!")
+    #         break
+    #     except Exception as e:
+    #         print(f"\n❌ Error: {e}")
+    #         import traceback
+
+    #         print("Full traceback:")
+    #         traceback.print_exc()
+    #         print("\n💡 Continuing... (you can type 'reset' to clear state)")

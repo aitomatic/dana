@@ -64,7 +64,6 @@ Question Generation       | No documents/summary    | ERROR - need documents    
 Adding User Content       | View current content    | replace_in_template (exact text) | No
 LLM-Assisted Refinement   | Topic exists            | refine_topic_questions           | Yes (preview)
 Template Viewing          | None                    | view_template                    | No
-Metadata Update           | None                    | update_interview_approach        | Yes (preview)
 Advanced Editing          | Know exact text         | replace_in_template              | Depends
 
 CRITICAL DISTINCTION:
@@ -79,8 +78,7 @@ TOOLS QUICK REFERENCE
 4. read_documents - List documents (no params) OR read document content (with ID) via RAG
 5. refine_topic_questions - LLM-assisted question generation/refinement (interprets instructions, may rephrase)
 6. generate_additional_questions - Generate questions from documents or knowledge summaries
-7. update_interview_approach - Modify interview metadata (duration/goal/style)
-8. replace_in_template - Direct text editing (exact search-replace, preserves user's exact wording)
+7. replace_in_template - Direct text editing (exact search-replace, preserves user's exact wording)
 
 KEY DISTINCTION for Adding Questions:
 - User provides SPECIFIC questions to add → use replace_in_template (adds exact text)
@@ -230,15 +228,6 @@ User Message: I'll show you the current questions in the LOTO topic section.
 <view_template>
 <section>topic:LOTO</section>
 </view_template>
-
-Pattern G: Metadata Updates
-User: "Change interview duration to 90 minutes" "Update interview goal"
-→ update_interview_approach (field, new_value)
-→ Show preview requiring approval
-→ [USER APPROVES] → Apply changes
-→ replace_in_template (diff)
-→ For major changes: ask_question first to confirm
-→ Apply changes
 
 
 ENHANCED INTENT CLASSIFICATION

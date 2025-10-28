@@ -64,6 +64,7 @@ def extract_all_topics(content: str) -> list[dict[str, any]]:
     for match in matches:
         topic_name = match.group(1).strip()
         topic_content = match.group(2).strip()
+        raw_content = match.group(0)
 
         # Parse topic content
         background_match = re.search(r"\*\*Background\*\*:\s*([^\n]+)", topic_content)
@@ -73,7 +74,7 @@ def extract_all_topics(content: str) -> list[dict[str, any]]:
             "name": topic_name,
             "background": background_match.group(1).strip() if background_match else "",
             "questions": [],
-            "raw_content": topic_content,
+            "raw_content": raw_content,
         }
 
         # Extract questions
@@ -87,28 +88,24 @@ def extract_all_topics(content: str) -> list[dict[str, any]]:
     return topics
 
 
-def extract_relationship_prompts(content: str) -> list[str]:
+def extract_relationship_prompts(content: str) -> str:
     """Extract relationship exploration prompts."""
     prompts_match = re.search(r"## Relationship Exploration Prompts\s*\n(.*?)(?=\n## |\Z)", content, re.DOTALL)
 
     if not prompts_match:
-        return []
+        return ""
 
-    prompts_text = prompts_match.group(1)
-    prompts = re.findall(r"-\s*([^\n]+)", prompts_text)
-    return [p.strip() for p in prompts]
+    return prompts_match.group(0)
 
 
-def extract_followup_framework(content: str) -> list[str]:
+def extract_followup_framework(content: str) -> str:
     """Extract follow-up framework questions."""
     framework_match = re.search(r"## Follow-up Framework\s*\n(.*?)(?=\n## |\Z)", content, re.DOTALL)
 
     if not framework_match:
-        return []
+        return ""
 
-    framework_text = framework_match.group(1)
-    questions = re.findall(r'-\s*"([^"]+)"', framework_text)
-    return [q.strip() for q in questions]
+    return framework_match.group(0)
 
 
 def extract_topic_section(content: str, topic_name: str) -> tuple[str, int, int]:
@@ -135,7 +132,7 @@ def format_topic_section(topic_name: str, background: str, questions: list[str],
 *(No questions defined for this topic yet)*
 
 ---"""
-    
+
     questions_text = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
 
     return f"""### {topic_name}
@@ -221,7 +218,7 @@ def write_template(template_path: str, content: str, backup: bool = True) -> Non
 def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, str]:
     """
     Find topic by name with fuzzy matching support.
-    
+
     Returns:
         (topic, message) where:
         - topic: Matched topic dict or None
@@ -231,19 +228,19 @@ def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, 
     for topic in topics:
         if topic["name"] == topic_name:
             return topic, f"✓ Exact match: {topic['name']}"
-    
+
     # Try case-insensitive exact match
     topic_name_lower = topic_name.lower()
     for topic in topics:
         if topic["name"].lower() == topic_name_lower:
             return topic, f"✓ Matched: {topic['name']}"
-    
+
     # Try substring matching
     matches = []
     for topic in topics:
         if topic_name_lower in topic["name"].lower():
             matches.append(topic)
-    
+
     if len(matches) == 1:
         return matches[0], f"✓ Matched: {matches[0]['name']}"
     elif len(matches) > 1:
