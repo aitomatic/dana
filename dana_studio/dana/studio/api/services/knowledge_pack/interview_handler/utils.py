@@ -76,26 +76,24 @@ def parse_interview_note(note_path: str) -> dict:
 
             # Count insights (bullet points under **Expert Insights**)
             insights_count = 0
-            # Try multiple patterns to handle different formatting variations
+            expert_insight = ""
 
-            # Pattern 1: Standard bullet points (- or *)
-            insights_section_match = re.search(r"\*\*Expert Insights\*\*\s*\n((?:^[-*•]\s.+$\n?)+)", topic_section, re.MULTILINE)
-
-            # Pattern 2: Handle extra spacing or colons
-            if not insights_section_match:
-                insights_section_match = re.search(r"\*\*Expert Insights\*\*[:\s]*\n+((?:^[-*•]\s.+$\n?)+)", topic_section, re.MULTILINE)
-
-            # Pattern 3: Handle numbered lists
-            if not insights_section_match:
-                insights_section_match = re.search(r"\*\*Expert Insights\*\*[:\s]*\n+((?:^\d+\.\s.+$\n?)+)", topic_section, re.MULTILINE)
+            # Capture the entire Expert Insights section until the next ** header
+            # This handles multi-line bullets, nested sub-bullets, and blank lines
+            insights_section_match = re.search(r"\*\*Expert Insights\*\*[:\s]*\n(.*?)(?=\n\*\*[A-Z]|\Z)", topic_section, re.DOTALL)
 
             if insights_section_match:
-                insights_text = insights_section_match.group(1)
-                # Count bullet points (supporting -, *, •) and numbered lists
-                bullet_count = len(re.findall(r"^[-*•]\s", insights_text, re.MULTILINE))
-                numbered_count = len(re.findall(r"^\d+\.\s", insights_text, re.MULTILINE))
-                insights_count = max(bullet_count, numbered_count)
-                logger.debug(f"Found {insights_count} insights for topic '{topic_name}'")
+                insights_text = insights_section_match.group(1).strip()
+                expert_insight = insights_section_match.group(0).strip()
+
+                # Skip counting if it's just placeholder text
+                if insights_text and not re.match(r"^\*No insights captured yet\*$", insights_text, re.IGNORECASE):
+                    # Count only TOP-LEVEL bullet points (not indented sub-bullets)
+                    # Top-level bullets start at the beginning of the line (no leading whitespace)
+                    bullet_count = len(re.findall(r"^[-*•]\s", insights_text, re.MULTILINE))
+                    numbered_count = len(re.findall(r"^\d+\.\s", insights_text, re.MULTILINE))
+                    insights_count = max(bullet_count, numbered_count)
+                    logger.debug(f"Found {insights_count} top-level insights for topic '{topic_name}'")
 
             # Calculate completeness from status (no longer parse from notes)
             if status == "completed":
@@ -136,6 +134,7 @@ def parse_interview_note(note_path: str) -> dict:
                     "completeness": completeness,
                     "insights_count": insights_count,
                     "questions": questions,
+                    "expert_insight": expert_insight,
                 }
             )
 
@@ -492,3 +491,7 @@ def get_interview_progress(topics: list[dict], conversation_messages: list) -> I
         overall_completeness=int(sum(topic.completeness for topic in topics_progression.values()) / len(topics_progression)),
         current_topic=covered_topics_names[-1] if covered_topics_names else None,
     )
+
+
+if __name__ == "__main__":
+    print(parse_interview_note("knowledge_packs/1/templates/template_2/sessions/session_3/interview_notes.md"))

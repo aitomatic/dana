@@ -72,8 +72,10 @@ function extractExpertInsights(content: string): string[] {
   // Try multiple patterns to catch different insight formats
   
   // Pattern 1: Standard bullet points under "Expert Insights"
-  let insightsMatch = content.match(/\*\*Expert Insights\*\*\s*\n((?:^[-*•]\s.+$\n?)+)/m);
-  
+
+
+  let insightsMatch = content.match(/\*\*Expert Insights\*\*[:\s]*\n(.*?)(?=\n\*\*[A-Z]|\Z)/gs);
+
   // Pattern 2: Handle case where there might be extra spacing or colons
   if (!insightsMatch) {
     insightsMatch = content.match(/\*\*Expert Insights\*\*[:\s]*\n+((?:[-*•]\s*.+\n?)+)/m);
@@ -89,7 +91,8 @@ function extractExpertInsights(content: string): string[] {
     return [];
   }
   
-  const insightsText = insightsMatch[1];
+  const insightsText = insightsMatch[0];
+
   console.debug(`Found insights text: ${insightsText.substring(0, 100)}...`);
   
   // Extract bullet points (supporting -, *, •)
