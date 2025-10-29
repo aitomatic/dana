@@ -153,15 +153,14 @@ class SingleRoomEnvironment:
             return []
 
         # Generate meetings with diverse gaps from current time
-        # Sometimes close (30 min), sometimes far (2-3 hours)
-        if time_left < 60:
-            # Late in day - short gaps only
-            min_gap = 5
-            max_gap = min(45, time_left - 10)
+        # Ensure earliest meeting is at least 2 hours (120 minutes) from current time
+        if time_left < 120:
+            # Not enough time for 2-hour gap - no meetings possible
+            return []
         else:
-            # Normal hours - wide diversity: 30 min to 3 hours
-            min_gap = 30
-            max_gap = min(180, time_left - 30)  # Up to 3 hours
+            # Normal hours - ensure at least 2 hours gap, up to 3 hours
+            min_gap = 120  # 2 hours minimum
+            max_gap = min(180, time_left - 30)  # Up to 3 hours, but leave 30 min buffer
 
         gap = random.randint(min_gap, max(min_gap, max_gap))
         earliest_start = current_minutes + gap
