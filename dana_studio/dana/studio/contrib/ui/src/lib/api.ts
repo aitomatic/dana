@@ -1306,6 +1306,11 @@ class ApiService {
     return response.data;
   }
 
+  async getInterviewAnalysis(knowledgeId: number): Promise<any> {
+    const response = await this.client.get(`/v2/knowledge/${knowledgeId}/interview-analysis`);
+    return response.data;
+  }
+
   async deleteKnowledgePack(knowledgeId: number): Promise<any> {
     const response = await this.client.delete(`/v2/knowledge/${knowledgeId}`);
     return response.data;
