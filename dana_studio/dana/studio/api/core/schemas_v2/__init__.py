@@ -53,6 +53,15 @@ from ._interview_session import (
     InterviewProgressData,
     InterviewProgressResponse,
 )
+from ._interview_analysis import (
+    SessionInsight,
+    TopicAnalysis,
+    TemplateAnalysis,
+    KnowledgePackAnalysisData,
+    InterviewAnalysisGenerateRequest,
+    InterviewAnalysisGenerateResponse,
+    InterviewAnalysisGetResponse,
+)
 from ..schemas import SenderRole
 from ._doc import DocumentReadV2
 
@@ -115,4 +124,11 @@ __all__ = [
     "DocumentReadV2",
     "TemplateGenerationStatus",
     "TemplateFinetuneChannelResponse",
+    "SessionInsight",
+    "TopicAnalysis",
+    "TemplateAnalysis",
+    "KnowledgePackAnalysisData",
+    "InterviewAnalysisGenerateRequest",
+    "InterviewAnalysisGenerateResponse",
+    "InterviewAnalysisGetResponse",
 ]

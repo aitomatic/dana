@@ -23,7 +23,8 @@ def parse_interview_note(note_path: str) -> dict:
                 "status": "in_progress",
                 "completeness": 25,
                 "insights_count": 3,
-                "questions": [...]
+                "questions": [...],
+                "expert_insight": "...",
             }
         ],
         "overall_completeness": 40,

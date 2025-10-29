@@ -3,6 +3,7 @@ Domain Knowledge routers - API endpoints for managing agent domain knowledge tre
 """
 
 import logging
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -19,8 +20,18 @@ from dana.studio.api.core.schemas_v2 import (
     KnowledgePackUpdateRequest,
     KnowledgePackUpdateResponse,
     PaginatedKnowledgePackResponse,
+    InterviewAnalysisGenerateRequest,
+    InterviewAnalysisGenerateResponse,
+    InterviewAnalysisGetResponse,
+    KnowledgePackAnalysisData,
 )
-from dana.studio.api.repositories import get_domain_knowledge_repo, AbstractDomainKnowledgeRepo
+from dana.studio.api.repositories import (
+    get_domain_knowledge_repo,
+    AbstractDomainKnowledgeRepo,
+)
+from dana.studio.api.services.knowledge_pack.postprocess_interview_session.postprocessor import (
+    generate_kp_analysis,
+)
 from ..ws.domain_knowledge_ws import domain_knowledge_ws_notifier
 from fastapi import WebSocket
 from fastapi.concurrency import run_until_first_complete
@@ -42,15 +53,15 @@ async def get_knowledge_pack(
         kp = await repo.get_kp(kp_id=knowledge_id, db=db)
         if not kp:
             return KnowledgePackGetResponse(success=False, message="Knowledge pack not found", error="Not found")
-        
+
         # Get knowledge pack tree structure
         tree = await repo.get_kp_tree(kp_id=knowledge_id)
-        
+
         # Combine metadata and tree into a single response
         kp_dict = kp.model_dump()
-        kp_dict['tree'] = tree
+        kp_dict["tree"] = tree
         kp_with_tree = KnowledgePackOutput(**kp_dict)
-        
+
         return KnowledgePackGetResponse(success=True, message="Knowledge pack retrieved successfully", data=kp_with_tree)
     except Exception as e:
         logger.error(f"Error getting knowledge pack {knowledge_id}: {e}")
@@ -177,3 +188,115 @@ async def delete_knowledge_pack(
     except Exception as e:
         logger.error(f"Error deleting knowledge pack {knowledge_id}: {e}")
         return KnowledgePackDeleteResponse(success=False, message="Internal server error", error=str(e))
+
+
+@router.post("/{knowledge_id}/interview-analysis/generate", response_model=InterviewAnalysisGenerateResponse)
+async def generate_interview_analysis(
+    knowledge_id: int,
+    request: InterviewAnalysisGenerateRequest,
+    domain_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate LLM-enhanced analysis for all templates in a knowledge pack.
+    Uses per-topic caching for efficiency.
+
+    This endpoint:
+    1. Gets all templates for the knowledge pack
+    2. For each template, finds all interview_notes.md in sessions
+    3. Groups similar topics across sessions
+    4. Uses LLM to analyze each topic (consensus + contradictions)
+    5. Caches each topic individually (automatic cache invalidation on content change)
+    6. Returns structured JSON with all templates
+    """
+    try:
+        # Get knowledge pack to verify it exists
+        kp = await domain_repo.get_kp(kp_id=knowledge_id, db=db)
+        if not kp:
+            return InterviewAnalysisGenerateResponse(
+                success=False, message=f"Knowledge pack {knowledge_id} not found", error="Knowledge pack not found"
+            )
+
+        # Get all templates for this knowledge pack
+        templates = kp.interview_templates
+
+        if not templates:
+            logger.warning(f"No templates found for knowledge pack {knowledge_id}")
+            return InterviewAnalysisGenerateResponse(
+                success=True,
+                message="No templates found in this knowledge pack",
+                data=KnowledgePackAnalysisData(kp_id=knowledge_id, generated_at=datetime.now().isoformat(), templates=[]),
+            )
+
+        logger.info(f"Generating interview analysis for KP {knowledge_id} with {len(templates)} templates")
+
+        # Generate analysis (caching handled internally per topic)
+        analysis_data = await generate_kp_analysis(
+            kp_id=knowledge_id, templates=templates, use_llm=request.use_llm, llm_config=request.llm_config
+        )
+
+        total_templates = len(analysis_data["templates"])
+        logger.info(f"Analysis generated for {total_templates} templates")
+
+        return InterviewAnalysisGenerateResponse(
+            success=True,
+            message=f"Interview analysis completed for {total_templates} template{'s' if total_templates != 1 else ''}",
+            data=KnowledgePackAnalysisData.model_validate(analysis_data),
+        )
+
+    except Exception as e:
+        logger.error(f"Error generating interview analysis: {e}", exc_info=True)
+        return InterviewAnalysisGenerateResponse(success=False, message="Failed to generate interview analysis", error=str(e))
+
+
+@router.get("/{knowledge_id}/interview-analysis", response_model=InterviewAnalysisGetResponse)
+async def get_interview_analysis(
+    knowledge_id: int,
+    domain_repo: type[AbstractDomainKnowledgeRepo] = Depends(get_domain_knowledge_repo),
+    db: Session = Depends(get_db),
+):
+    """
+    Get interview analysis for all templates. Uses per-topic caching automatically.
+
+    Note: No force_refresh needed - cache invalidates automatically when content changes.
+    Each topic is cached separately based on the hash of expert insights.
+
+    Returns structured JSON with all templates, each containing sessions and unified_report per topic.
+    """
+    try:
+        # Get knowledge pack to verify it exists
+        kp = await domain_repo.get_kp(kp_id=knowledge_id, db=db)
+        if not kp:
+            return InterviewAnalysisGetResponse(
+                success=False, message=f"Knowledge pack {knowledge_id} not found", error="Knowledge pack not found"
+            )
+
+        # Get all templates for this knowledge pack
+        templates = kp.interview_templates
+
+        if not templates:
+            logger.warning(f"No templates found for knowledge pack {knowledge_id}")
+            return InterviewAnalysisGetResponse(
+                success=True,
+                message="No templates found in this knowledge pack",
+                data=KnowledgePackAnalysisData(kp_id=knowledge_id, generated_at=datetime.now().isoformat(), templates=[]),
+                cached=False,
+            )
+
+        # Generate analysis (will use cache automatically where valid)
+        analysis_data = await generate_kp_analysis(
+            kp_id=knowledge_id,
+            templates=templates,
+            use_llm=True,  # Default to LLM for GET requests
+        )
+
+        return InterviewAnalysisGetResponse(
+            success=True,
+            message="Interview analysis retrieved successfully",
+            data=KnowledgePackAnalysisData.model_validate(analysis_data),
+            cached=False,  # Individual topics may be cached
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting interview analysis: {e}", exc_info=True)
+        return InterviewAnalysisGetResponse(success=False, message="Failed to retrieve interview analysis", error=str(e))

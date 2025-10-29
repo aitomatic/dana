@@ -50,7 +50,7 @@
       "request": "launch",
       "justMyCode": false,
       "module": "dana_studio.dana.studio.__main__",
-      "args": ["--reload"],
+      "args": ["--reload",  "--skip-build"],
       "console": "integratedTerminal",
       "env" : {
         "DANAPATH" : "${workspaceFolder}"
