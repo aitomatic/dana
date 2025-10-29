@@ -1,0 +1,1046 @@
+{
+    "kp_id": 1,
+    "generated_at": "2025-10-29T14:02:46.778311",
+    "templates": [
+        {
+            "template_id": 1,
+            "template_name": "Default Capture Template - Manufacturing Operations Process Technician",
+            "topics": {},
+            "total_topics": 0,
+            "total_sessions": 0
+        },
+        {
+            "template_id": 2,
+            "template_name": "Default Capture Template - Manufacturing Operations Process Technician (Copy)",
+            "topics": {
+                "Shutdown Procedures and Safe Isolation of Beet Sugar Process Units": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Shutdown Procedures and Safe Isolation of Beet Sugar Process Units\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been provided in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> *No expert insights have been provided in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started  \n\n> *No expert insights captured; analysis pending further input.*"
+                },
+                "Startup Procedures for Beet Sugar Processing Equipment": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Startup Procedures for Beet Sugar Processing Equipment\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _All sessions currently lack captured insights._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _All sessions currently lack captured insights._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> _No expert insights have been provided for analysis. Please capture expert input to enable consensus and contradiction evaluation._"
+                },
+                "Handling Abnormal Conditions in Beet Sugar Manufacturing": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Handling Abnormal Conditions in Beet Sugar Manufacturing\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> _No expert insights captured. Further input is required to perform analysis._"
+                },
+                "Managing Normal Operating Conditions Across Beet Sugar Process Steps": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Managing Normal Operating Conditions Across Beet Sugar Process Steps\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> _No expert insights captured yet. Further input required to perform analysis._"
+                },
+                "Coordination with Control Room and Field Operations in Beet Sugar Plants": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Coordination with Control Room and Field Operations in Beet Sugar Plants\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or areas of disagreement identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> *No insights available. Awaiting expert input to perform analysis.*"
+                },
+                "Process Monitoring and Parameter Adjustment for Beet Sugar Operations": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Process Monitoring and Parameter Adjustment for Beet Sugar Operations\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. Contradiction analysis cannot be performed at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Hazard Identification and Risk Assessment in Beet Sugar Processing": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Hazard Identification and Risk Assessment in Beet Sugar Processing\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been provided. Consensus cannot be established at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been provided. Contradictions cannot be identified at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: **0**\n- Contradictions by severity:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Emergency Response Procedures for Beet Sugar Plant Incidents": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Emergency Response Procedures for Beet Sugar Plant Incidents\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions Identified:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**\n  - Session 1: Not started (0 insights)\n  - Session 2: Not started (0 insights)\n  - Session 3: Not started (0 insights)\n\n> _No substantive analysis possible due to absence of expert insights._"
+                },
+                "Incident Reporting and Near Miss Analysis in Beet Sugar Manufacturing": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Incident Reporting and Near Miss Analysis in Beet Sugar Manufacturing\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. No contradictions or disagreements can be identified.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: **0**\n- Contradictions identified:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: Not started\n  - Session 2: Not started\n  - Session 3: Not started\n\n*No expert insights available for analysis. Please provide completed sessions for a comprehensive report.*"
+                },
+                "Permit to Work System Application and Compliance for Beet Sugar Plant Maintenance": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Permit to Work System Application and Compliance for Beet Sugar Plant Maintenance\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session to date.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> *No expert insights have been captured in any session to date.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items identified:** 0\n- **Contradictions by severity:**\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- **Session completion status:**\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Safe Work Practices and PPE Usage in Beet Sugar Plants": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Safe Work Practices and PPE Usage in Beet Sugar Plants\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been provided yet. Consensus cannot be determined at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been provided yet. Contradictions cannot be identified at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items Identified:** 0\n- **Contradictions Identified:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started"
+                },
+                "Executing Standard Remedial Actions for Beet Sugar Process Deviations": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Executing Standard Remedial Actions for Beet Sugar Process Deviations\n\n---\n\n### 🤝 Expert Consensus\n\n_No consensus items identified. No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n_No contradictions or areas of disagreement identified. No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**\n  - Session 1: Not started (0 insights)\n  - Session 2: Not started (0 insights)\n  - Session 3: Not started (0 insights)"
+                },
+                "Documentation of Repairs and Interventions in Beet Sugar Manufacturing": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Documentation of Repairs and Interventions in Beet Sugar Manufacturing\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**\n\n*No expert insights have been provided in any session. Therefore, no areas of agreement can be established.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**\n\n*No expert insights have been provided in any session. Therefore, no areas of disagreement or contradiction can be analyzed.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> *No substantive data available. Awaiting expert insights to perform analysis.*"
+                },
+                "Temporary Repairs and Escalation Protocols for Beet Sugar Plant Equipment": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Temporary Repairs and Escalation Protocols for Beet Sugar Plant Equipment\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *All sessions currently have no captured insights.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> *All sessions currently have no captured insights.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started (0 insights)  \n  - Session 2: not_started (0 insights)  \n  - Session 3: not_started (0 insights)\n\n> *No expert insights have been provided yet. Analysis will be updated once sessions contain substantive input.*"
+                },
+                "Basic Instrumentation Troubleshooting and Adjustment for Beet Sugar Process Controls": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Basic Instrumentation Troubleshooting and Adjustment for Beet Sugar Process Controls\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. Contradiction analysis cannot be performed at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started\n  - Session 2: not_started\n  - Session 3: not_started\n\n*No substantive insights available for analysis. Awaiting expert input.*"
+                },
+                "Performing Minor Mechanical Repairs on Beet Sugar Equipment": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Performing Minor Mechanical Repairs on Beet Sugar Equipment\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been provided. Consensus cannot be established at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been provided. Contradictions cannot be identified at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Communication Protocols During Normal and Emergency Beet Sugar Plant Operations": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Communication Protocols During Normal and Emergency Beet Sugar Plant Operations\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or conflicting views identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n---\n\n> _No expert insights available. Analysis pending input from expert sessions._"
+                },
+                "Conflict Resolution and Constructive Feedback in Beet Sugar Plant Teams": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Conflict Resolution and Constructive Feedback in Beet Sugar Plant Teams\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus cannot be determined at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. Contradictions cannot be assessed at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified: 0 (CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0)\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Training and Mentoring of New Beet Sugar Process Technicians": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Training and Mentoring of New Beet Sugar Process Technicians\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> *No insights available for analysis. Recommend capturing expert input to enable meaningful consensus and contradiction analysis.*"
+                },
+                "Collaboration with Maintenance, Engineering, and Quality Teams in Beet Sugar Plants": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Collaboration with Maintenance, Engineering, and Quality Teams in Beet Sugar Plants\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> _No expert insights available for analysis. All sessions are pending input._"
+                },
+                "Effective Shift Handover and Logbook Management for Beet Sugar Process Areas": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Effective Shift Handover and Logbook Management for Beet Sugar Process Areas\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started (0 insights)  \n  - Session 2: not_started (0 insights)  \n  - Session 3: not_started (0 insights)"
+                },
+                "Identifying and Implementing Process Improvement Opportunities in Beet Sugar Operations": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Identifying and Implementing Process Improvement Opportunities in Beet Sugar Operations\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured for analysis._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been captured for analysis._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items identified:** 0\n- **Contradictions identified:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Sessions with insights: 0  \n  - Sessions pending insights: 9"
+                },
+                "Lean Manufacturing and Waste Reduction Techniques for Beet Sugar Plants": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Lean Manufacturing and Waste Reduction Techniques for Beet Sugar Plants\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. Contradiction analysis cannot be performed at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified:  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Suggestion and Feedback Mechanisms for Beet Sugar Plant Improvement": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Suggestion and Feedback Mechanisms for Beet Sugar Plant Improvement\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been provided. Consensus cannot be determined at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been provided. Contradictions cannot be identified at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items: 0\n- Contradictions (by severity):\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Participating in Root Cause and Corrective Action Teams for Beet Sugar Process Issues": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Participating in Root Cause and Corrective Action Teams for Beet Sugar Process Issues\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started (0 insights)  \n  - Session 2: not_started (0 insights)  \n  - Session 3: not_started (0 insights)"
+                },
+                "Crystallization and Centrifugation of Sugar": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Crystallization and Centrifugation of Sugar\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> *No expert insights available for analysis. All sessions are pending input.*"
+                },
+                "Extraction Diffusion Process and Diffuser Operation": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Extraction Diffusion Process and Diffuser Operation\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started (0 insights)  \n  - Session 2: not_started (0 insights)  \n  - Session 3: not_started (0 insights)"
+                },
+                "Juice Evaporation and Syrup Concentration": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Juice Evaporation and Syrup Concentration\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started"
+                },
+                "Juice Purification, Lime Addition, Carbonation, Filtration": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Juice Purification, Lime Addition, Carbonation, Filtration\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured for analysis._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been captured for analysis._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> _No expert insights available. Analysis will be updated once sessions are completed._"
+                },
+                "Process Chemicals Used in Beet Sugar Manufacturing": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Process Chemicals Used in Beet Sugar Manufacturing\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been provided. Consensus cannot be determined at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been provided. Contradictions cannot be identified at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions by severity:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: Not started (0 insights)\n  - Session 2: Not started (0 insights)\n  - Session 3: Not started (0 insights)"
+                },
+                "Beet Reception and Storage Operations": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Beet Reception and Storage Operations\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> *No expert insights have been captured in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> *No insights available. Awaiting expert input to perform analysis.*"
+                },
+                "Sugar Drying, Cooling, and Storage": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Sugar Drying, Cooling, and Storage\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> _No expert insights available. Awaiting input to perform analysis._"
+                },
+                "Molasses Management and Byproduct Handling": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Molasses Management and Byproduct Handling\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or areas of disagreement identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> _No expert insights available for analysis. All sessions are pending input._"
+                },
+                "Beet Slicing and Cossette Preparation": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Beet Slicing and Cossette Preparation\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session Completion Status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> _No substantive insights available for analysis. All sessions are pending expert input._"
+                },
+                "Operational Challenges Unique to Beet Sugar Plants": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Operational Challenges Unique to Beet Sugar Plants\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. Contradiction analysis cannot be performed at this time.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: 0\n- Contradictions identified:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: Not started (0 insights)\n  - Session 2: Not started (0 insights)\n  - Session 3: Not started (0 insights)"
+                },
+                "Beet Washing and Stone Removal Equipment Operation": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Beet Washing and Stone Removal Equipment Operation\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been provided in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> _No expert insights are available for analysis. All sessions are pending input._"
+                },
+                "Pulp Handling, Pressing, and Drying": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Pulp Handling, Pressing, and Drying\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured for any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or disagreements identified.**  \n> _No expert insights have been captured for any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> _No expert insights available for analysis. All sessions are pending input._"
+                },
+                "Reporting and Communicating Beet Sugar Plant Performance Issues": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Reporting and Communicating Beet Sugar Plant Performance Issues\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No expert insights have been provided in any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions or areas of disagreement identified.**  \n> *No expert insights have been provided in any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started  \n  - Session 2: not_started  \n  - Session 3: not_started\n\n> *No expert insights available. Analysis will be updated when data is provided.*"
+                },
+                "Root Cause Analysis for Beet Sugar Plant Operational Issues": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Root Cause Analysis for Beet Sugar Plant Operational Issues\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> *No insights have been captured from any session.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> *No insights have been captured from any session.*\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n> *No expert insights available for analysis. All sessions are pending input.*"
+                },
+                "Troubleshooting Beet Sugar Equipment and Process Failures": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Troubleshooting Beet Sugar Equipment and Process Failures\n\n---\n\n### 🤝 Expert Consensus\n\n*No expert insights have been captured yet. Consensus analysis cannot be performed at this time.*\n\n---\n\n### ⚠️ Areas of Disagreement\n\n*No expert insights have been captured yet. No contradictions or disagreements identified.*\n\n---\n\n### 📊 Topic Statistics\n\n- Consensus items identified: **0**\n- Contradictions by severity:\n  - 🔴 CRITICAL: 0\n  - 🟠 HIGH: 0\n  - 🟡 MEDIUM: 0\n  - 🟢 LOW: 0\n- Session completion status:\n  - Session 1: not_started (0 insights)\n  - Session 2: not_started (0 insights)\n  - Session 3: not_started (0 insights)"
+                },
+                "Collection and Interpretation of Performance Data for Beet Sugar Process Areas": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "**Expert Insights**  \n*No insights captured yet*",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "**Expert Insights**  \n- Baseline data is established after installation and post-maintenance for critical parameters: bearing temperatures (highest point), balance readings, vibration analysis, and motion amplification data, all under normal operating conditions.\n- Condition-Based Maintenance (CBM) monitoring uses a site CBM Matrix:\n  - Vibration analysis per STD-ENG-015, with readings on horizontal, axial, and vertical planes, and historical trending for early fault diagnosis.\n  - Ultrasound monitoring for bearing condition, especially during lubrication routes.\n  - Audio-Visual Inspection (AVI) routes at frequencies set by the CBM Matrix.\n  - Thermography (Tier 2 hot spot detection) during AVI routines, providing non-invasive temperature monitoring.\n  - Motion amplification technology (corporate investment, held at Wissington) for visualizing vibration sources, especially high 1x frequencies, looseness, and soft foot faults; baseline surveys upon fan installation and recommended 5-yearly surveys on established plant, conducted at 30x magnification from consistent geographic locations for repeatability.\n- Laser alignment equipment (ANSI/ASA S2.75-2017/part 1) is used upon installation and post-maintenance with precision tolerances: 0.1mm angular/0.13mm offset for up to 1000 RPM, 0.08mm angular/0.07mm offset for up to 2000 RPM, and 0.07mm angular/0.07mm offset for up to 3000 RPM. The equipment provides intuitive feedback—a \"smiley face/OK\" indicates acceptable alignment.\n- Non-Destructive Testing (NDT) suite for critical fan inspections:\n  - Liquid dye penetrant (BS EN 10228-2:2016) for non-magnetic components\n  - Magnetic particle inspection (BS EN 10228-1:2016) for magnetic materials\n  - Eddy current inspection (BS EN ISO 15549:2019) for coated surfaces\n  - All performed by Level 2 certified personnel minimum\n- Routine inspections:\n  - Daily: Monitor temperature thresholds (above 40°C for casings, above 80°C for motors/gearboxes/bearings), oil leaks, abnormal noise, equipment condition\n  - Bi-weekly: Internal inspections for conveying systems (STD-ENG-004)\n- Data interpretation:\n  - DIPF (Design, Installation, Potential Failure, Failure) curve used to interpret equipment lifespan and guide maintenance to maximize mean time to failure and minimize repair costs\n  - Trending and quantitative analysis: All CBM equipment captures quantitative data, building historical profiles for early fault diagnosis and issue development tracking\n- KPI-based monitoring for process quality:\n  - Thick juice storage: pH, degree of saturation, and temperature monitored as KPIs\n  - Samples analyzed per STD-OSS-008 every two weeks at multiple tank depths\n- The key advantage of these advanced tools is their ability to detect issues in the \"Potential Failure\" phase of the DIPF curve, allowing proactive intervention before catastrophic failures.\n- Overall approach shifts from reactive to proactive maintenance by using data to predict and prevent failures.",
+                            "status": "in_progress",
+                            "insights_count": 9
+                        }
+                    ],
+                    "unified_report": "## Topic: Collection and Interpretation of Performance Data for Beet Sugar Process Areas\n\n---\n\n### 🤝 Expert Consensus\n\n> _Note: Only Session 3 contains expert insights. Sessions 1 and 2 have no data; consensus is based solely on available insights._\n\n✅ **Establishing Baseline Data:**  \n> \"Baseline data is established after installation and post-maintenance for critical parameters: bearing temperatures (highest point), balance readings, vibration analysis, and motion amplification data, all under normal operating conditions.\"\n\n✅ **Condition-Based Maintenance (CBM) Monitoring:**  \n> \"CBM monitoring uses a site CBM Matrix: Vibration analysis per STD-ENG-015, with readings on horizontal, axial, and vertical planes, and historical trending for early fault diagnosis.\"  \n> \"Ultrasound monitoring for bearing condition, especially during lubrication routes.\"  \n> \"Audio-Visual Inspection (AVI) routes at frequencies set by the CBM Matrix.\"  \n> \"Thermography (Tier 2 hot spot detection) during AVI routines, providing non-invasive temperature monitoring.\"\n\n✅ **Use of Advanced Diagnostic Tools:**  \n> \"Motion amplification technology... for visualizing vibration sources, especially high 1x frequencies, looseness, and soft foot faults; baseline surveys upon fan installation and recommended 5-yearly surveys...\"\n\n✅ **Precision Alignment and Inspection Standards:**  \n> \"Laser alignment equipment (ANSI/ASA S2.75-2017/part 1) is used upon installation and post-maintenance with precision tolerances...\"  \n> \"Non-Destructive Testing (NDT) suite for critical fan inspections... All performed by Level 2 certified personnel minimum.\"\n\n✅ **Routine and Scheduled Inspections:**  \n> \"Daily: Monitor temperature thresholds... oil leaks, abnormal noise, equipment condition.\"  \n> \"Bi-weekly: Internal inspections for conveying systems (STD-ENG-004).\"\n\n✅ **Data Interpretation Using DIPF Curve and Trending:**  \n> \"DIPF (Design, Installation, Potential Failure, Failure) curve used to interpret equipment lifespan and guide maintenance...\"  \n> \"All CBM equipment captures quantitative data, building historical profiles for early fault diagnosis and issue development tracking.\"\n\n✅ **KPI-Based Monitoring for Process Quality:**  \n> \"Thick juice storage: pH, degree of saturation, and temperature monitored as KPIs.\"  \n> \"Samples analyzed per STD-OSS-008 every two weeks at multiple tank depths.\"\n\n✅ **Proactive Maintenance Philosophy:**  \n> \"The key advantage of these advanced tools is their ability to detect issues in the 'Potential Failure' phase of the DIPF curve, allowing proactive intervention before catastrophic failures.\"  \n> \"Overall approach shifts from reactive to proactive maintenance by using data to predict and prevent failures.\"\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> _No contradictions or conflicting views identified. Only one session contains insights; therefore, no cross-expert disagreements are present._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus Items Identified:** 8\n- **Contradictions Identified:** 0 (🔴 0, 🟠 0, 🟡 0, 🟢 0)\n- **Session Completion Status:**\n  - Session 1: not_started (no insights)\n  - Session 2: not_started (no insights)\n  - Session 3: in_progress (9 insights)"
+                },
+                "Current Understanding Level": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Current Understanding Level\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No insights have been captured in any session to establish areas of agreement._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights are available to analyze for conflicting views or disagreements._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: not_started (0 insights)  \n  - Session 2: not_started (0 insights)  \n  - Session 3: not_started (0 insights)\n\n> _No expert insights have been provided for analysis. All sessions are pending input._"
+                },
+                "Expert Insight Summaries": {
+                    "sessions": [
+                        {
+                            "session": "session_1",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_2",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        },
+                        {
+                            "session": "session_3",
+                            "expert_insight": "",
+                            "status": "not_started",
+                            "insights_count": 0
+                        }
+                    ],
+                    "unified_report": "## Topic: Expert Insight Summaries\n\n---\n\n### 🤝 Expert Consensus\n\n> **No consensus items identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### ⚠️ Areas of Disagreement\n\n> **No contradictions identified.**  \n> _No expert insights have been captured in any session._\n\n---\n\n### 📊 Topic Statistics\n\n- **Consensus items:** 0\n- **Contradictions:**  \n  - 🔴 CRITICAL: 0  \n  - 🟠 HIGH: 0  \n  - 🟡 MEDIUM: 0  \n  - 🟢 LOW: 0\n- **Session completion status:**  \n  - Session 1: Not started  \n  - Session 2: Not started  \n  - Session 3: Not started\n\n---\n\n> _No expert insights available. Please capture insights to enable analysis._"
+                }
+            },
+            "total_topics": 43,
+            "total_sessions": 3
+        }
+    ]
+}

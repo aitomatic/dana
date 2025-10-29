@@ -6,8 +6,9 @@ import DomainKnowledgeTree from './domain-tree';
 import { KnowledgePackChatSidebar } from './chat-sidebar';
 import { toast } from 'sonner';
 import { Eye, EyeClosed, GridPlus, Xmark } from 'iconoir-react';
-import { BookOpen, List, Files } from 'lucide-react';
+import { BookOpen, List, Files, FileText } from 'lucide-react';
 import { ContributionTemplatesTab } from './contribution-templates-tab';
+import { CaptureSummaryTab } from './capture-summary-tab';
 import { DocumentsTab } from './documents-tab';
 import { AssignAgentsDialog } from '@/components/library/assign-agents-dialog';
 import { AssignSuccessDialog } from '@/components/library/assign-success-dialog';
@@ -21,10 +22,11 @@ declare global {
   }
 }
 
-const TABS = ['Knowledge Pack', 'Capture Templates', 'Documents'];
+const TABS = ['Knowledge Pack', 'Capture Templates', 'Capture Summary', 'Documents'];
 const TAB_ICONS = {
   'Knowledge Pack': <BookOpen className="w-4 h-4" />,
   'Capture Templates': <List className="w-4 h-4" />,
+  'Capture Summary': <FileText className="w-4 h-4" />,
   'Documents': <Files className="w-4 h-4" />,
 };
 
@@ -306,6 +308,10 @@ export default function KnowledgePackDetailPage() {
           
           {activeTab === 'Capture Templates' && createdKnowledgePack.id !== undefined && (
             <ContributionTemplatesTab knowledgePackId={createdKnowledgePack.id} />
+          )}
+          
+          {activeTab === 'Capture Summary' && createdKnowledgePack.id !== undefined && (
+            <CaptureSummaryTab knowledgePackId={createdKnowledgePack.id} />
           )}
           
           {activeTab === 'Documents' && (
