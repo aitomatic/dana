@@ -22,9 +22,9 @@ const convertPathPartsToNodePath = (pathParts: string[]): string => {
 
 // Get WebSocket URL from environment
 const getWebSocketUrl = (knowledgeId: number): string => {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
   const wsBaseUrl = apiBaseUrl.replace(/^http/, 'ws');
-  return `${wsBaseUrl}/api/v2/knowledge/ws/${knowledgeId}`;
+  return `${wsBaseUrl}/v2/knowledge/ws/${knowledgeId}`;
 };
 
 // Map WebSocket status to node status
