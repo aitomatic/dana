@@ -733,11 +733,11 @@ async def get_session_progress(
         # Get current topic from notes (might be stale)
         note_current_topic = progress_dict.get("current_topic")
 
+        progress_data = get_interview_progress(progress_dict.get("topics", []), conversation_messages)
+        return InterviewProgressResponse(success=True, data=progress_data, error=None)
+
         # ALWAYS infer from conversation to get the most accurate current topic
         if conversation_messages:
-            progress_data = get_interview_progress(progress_dict.get("topics", []), conversation_messages)
-            return InterviewProgressResponse(success=True, data=progress_data, error=None)
-
             inferred_topic = infer_current_topic_from_conversation(progress_dict.get("topics", []), conversation_messages)
 
             # Prefer conversation inference over note status
