@@ -104,6 +104,9 @@ export interface KnowledgePackActions {
   // Knowledge generation management
   setIsGeneratingKnowledge: (isGenerating: boolean) => void;
 
+  // Helper methods
+  _extractStatusFromTree: (node: any, pathParts?: string[]) => any[];
+
   // Reset store
   reset: () => void;
 
@@ -366,11 +369,13 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
       // Build path without root (matching the format used elsewhere)
       const nodePath = currentPath.slice(1).join(' - ');
       topics.push({
+        id: nodePath.replace(/\s+/g, '_').toLowerCase(),
         path: nodePath,
-        status: node.status,
+        status: node.status as 'draft' | 'pending' | 'generating' | 'in_progress' | 'question_generated' | 'completed' | 'success' | 'failed',
         last_generated: null,
         error: null,
-        file: null,
+        file: '',
+        last_topic_update: new Date().toISOString(),
       });
     }
     
@@ -494,11 +499,13 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
       set({
         knowledgeStatus: {
           topics: [{
+            id: nodePath.replace(/\s+/g, '_').toLowerCase(),
             path: nodePath,
-            status: status,
+            status: status as 'draft' | 'pending' | 'generating' | 'in_progress' | 'question_generated' | 'completed' | 'success' | 'failed',
             last_generated: null,
             error: null,
-            file: null,
+            file: '',
+            last_topic_update: new Date().toISOString(),
           }],
         },
       });
@@ -522,11 +529,13 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
       updatedTopics = [
         ...currentStatus.topics,
         {
+          id: nodePath.replace(/\s+/g, '_').toLowerCase(),
           path: nodePath,
-          status: status,
+          status: status as 'draft' | 'pending' | 'generating' | 'in_progress' | 'question_generated' | 'completed' | 'success' | 'failed',
           last_generated: null,
           error: null,
-          file: null,
+          file: '',
+          last_topic_update: new Date().toISOString(),
         },
       ];
       console.log('✅ Knowledge Pack: New topic added');
