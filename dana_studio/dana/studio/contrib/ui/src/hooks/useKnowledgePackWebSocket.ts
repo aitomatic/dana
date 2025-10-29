@@ -38,6 +38,8 @@ const mapWebSocketStatusToNodeStatus = (
       case 'init':
       case 'in_progress':
         return 'generating';
+      case 'generating':  // Map directly (backend sends this during generation)
+        return 'generating';
       case 'question_generated':  // Map directly (current backend format)
         return 'question_generated';
       case 'finish':  // Backward compatibility
@@ -126,13 +128,22 @@ export const useKnowledgePackWebSocket = (
             // Map WebSocket status to node status
             const nodeStatus = mapWebSocketStatusToNodeStatus(tool_name, status);
 
+            console.log('🔄 [KP WebSocket] Processing message:', {
+              tool_name,
+              originalStatus: status,
+              mappedStatus: nodeStatus,
+              path_parts,
+              convertedNodePath: nodePath,
+            });
+
             if (nodeStatus && nodePath) {
-              console.log('🔄 [KP WebSocket] Updating node status:', {
-                nodePath,
-                nodeStatus,
-                path_parts,
-              });
+              console.log('✅ [KP WebSocket] Calling status update callback');
               onStatusUpdateRef.current(nodePath, nodeStatus);
+            } else {
+              console.warn('⚠️ [KP WebSocket] Skipping update:', {
+                hasNodeStatus: !!nodeStatus,
+                hasNodePath: !!nodePath,
+              });
             }
           }
         } catch (error) {

@@ -419,18 +419,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
   const generatingNodes = new Set<string>();
 
-  // Stabilize the WebSocket callback to prevent reconnections on re-renders
-  const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string) => {
-    console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
-    updateNodeStatus(nodePath, status);
-  }, [updateNodeStatus]);
-
-  // Set up WebSocket connection for real-time status updates
-  useKnowledgePackWebSocket(
-    knowledgePackId ? (typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId) : null,
-    handleWebSocketStatusUpdate
-  );
-
   // Background task status state
   const [backgroundTaskStatus, setBackgroundTaskStatus] = useState<BackgroundTaskResponse | null>(
     null,
@@ -641,6 +629,50 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
       timeoutRefs.current.clear();
     };
   }, [knowledgePackId]);
+
+  // Stabilize the WebSocket callback to prevent reconnections on re-renders
+  const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string) => {
+    console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
+    updateNodeStatus(nodePath, status);
+    
+    // Auto-expand the path to the updated node
+    if (domainTree?.root) {
+      const rootTopic = domainTree.root.topic;
+      // nodePath format: "Parent - Child - Grandchild" (without root)
+      // Split into parts and build full path with root
+      const pathParts = nodePath.split(' - ').filter(part => part.trim() !== '');
+      const fullPath = [rootTopic, ...pathParts];
+      
+      // Build node IDs for all parent levels
+      const nodeIdsToExpand = new Set(expandedNodes);
+      let currentPath = '';
+      
+      for (let i = 0; i < fullPath.length - 1; i++) { // -1 because we don't need to expand the leaf node itself
+        if (i === 0) {
+          currentPath = fullPath[i];
+        } else {
+          currentPath = currentPath + '/' + fullPath[i];
+        }
+        nodeIdsToExpand.add(currentPath);
+      }
+      
+      // Update expanded nodes if we added any new ones
+      if (nodeIdsToExpand.size > expandedNodes.size) {
+        console.log('🔓 [DomainKnowledgeTree] Auto-expanding path to updated node:', {
+          nodePath,
+          expandedNodeIds: Array.from(nodeIdsToExpand),
+        });
+        setExpandedNodes(nodeIdsToExpand);
+        // Note: Tree will regenerate automatically when statusData changes (from updateNodeStatus above)
+      }
+    }
+  }, [updateNodeStatus, domainTree, expandedNodes]);
+
+  // Set up WebSocket connection for real-time status updates
+  useKnowledgePackWebSocket(
+    knowledgePackId ? (typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId) : null,
+    handleWebSocketStatusUpdate
+  );
 
   // Function to center the view after nodes are expanded - optimized for performance
   const centerView = useCallback(() => {

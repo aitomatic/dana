@@ -106,30 +106,54 @@ export const getContributionTemplateColumns = (
         return '-mx-6 px-4'; // Default
       };
 
+      // Check if template is in draft status
+      const isDraftTemplate = templateItem && item.template_metadata?.status === TEMPLATE_GENERATION_STATUS.DRAFT;
+      const isClickable = (templateItem && !isDraftTemplate) || sessionItem;
+
       return (
         <div className={cn("flex items-center gap-2", getPaddingClass())}>
-          <div 
-            className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors min-w-0 flex-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (templateItem) {
-                handleTemplateClick(item.id);
-              } else if (sessionItem) {
-                handleSessionClick(item.id);
-              }
-            }}
-          >
-            {templateItem ? (
-              <PasteClipboard className="w-5 h-5 mt-0.5 text-[#0BA5EC] flex-shrink-0" />
-            ) : sessionItem ? (
-              <IconSchool className="w-5 h-5 mt-0.5 text-green-600 flex-shrink-0" />
-            ) : (
-              <div className="w-5 h-5 flex-shrink-0" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className={cn(
+                  "flex items-center gap-2 transition-colors min-w-0 flex-1",
+                  isClickable ? "cursor-pointer hover:text-blue-600" : "cursor-not-allowed opacity-60"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isClickable) {
+                    if (templateItem) {
+                      handleTemplateClick(item.id);
+                    } else if (sessionItem) {
+                      handleSessionClick(item.id);
+                    }
+                  }
+                }}
+              >
+                {templateItem ? (
+                  <PasteClipboard className={cn(
+                    "w-5 h-5 mt-0.5 flex-shrink-0",
+                    isDraftTemplate ? "text-gray-400" : "text-[#0BA5EC]"
+                  )} />
+                ) : sessionItem ? (
+                  <IconSchool className="w-5 h-5 mt-0.5 text-green-600 flex-shrink-0" />
+                ) : (
+                  <div className="w-5 h-5 flex-shrink-0" />
+                )}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className={cn(
+                    "font-medium truncate",
+                    isDraftTemplate ? "text-gray-500" : "text-gray-900"
+                  )}>{item.name}</span>
+                </div>
+              </div>
+            </TooltipTrigger>
+            {isDraftTemplate && (
+              <TooltipContent>
+                <p>Template must be completed before it can be viewed or edited</p>
+              </TooltipContent>
             )}
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-medium text-gray-900 truncate">{item.name}</span>
-            </div>
-          </div>
+          </Tooltip>
         </div>
       );
     },

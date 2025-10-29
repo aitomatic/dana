@@ -249,7 +249,7 @@ const SmartAgentChat: React.FC<{
     [],
   );
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
-  const hasLoadedConversationRef = useRef(false);
+  const [hasLoadedConversation, setHasLoadedConversation] = useState(false);
   const hasAttemptedAutoMessageRef = useRef(false);
 
   // Load conversation history from API on mount
@@ -257,7 +257,7 @@ const SmartAgentChat: React.FC<{
     console.log('🔄 Conversation loading useEffect triggered');
     
     const loadConversationHistory = async () => {
-      if (!knowledgePackId || hasLoadedConversationRef.current) return;
+      if (!knowledgePackId || hasLoadedConversation) return;
 
       console.log('🔄 Loading conversation history for knowledge pack:', knowledgePackId);
 
@@ -291,14 +291,14 @@ const SmartAgentChat: React.FC<{
           console.error('❌ Failed to load conversation history:', error);
         }
       } finally {
-        // ✅ Set flag AFTER API call completes (success or failure)
-        hasLoadedConversationRef.current = true;
-        console.log('✅ Conversation loading completed, hasLoadedConversationRef set to true');
+        // ✅ Set state AFTER API call completes (success or failure)
+        setHasLoadedConversation(true);
+        console.log('✅ Conversation loading completed, hasLoadedConversation set to true');
       }
     };
 
     loadConversationHistory();
-  }, [knowledgePackId, setMessages]);
+  }, [knowledgePackId, setMessages, hasLoadedConversation]);
 
 
   // Auto-scroll to bottom when messages change
@@ -437,6 +437,7 @@ const SmartAgentChat: React.FC<{
       console.log('🔍 Auto-first message check:', {
         messagesLength: messages.length,
         hasAttemptedAutoMessage: hasAttemptedAutoMessageRef.current,
+        hasLoadedConversation: hasLoadedConversation,
         originalDescription: createdKnowledgePack?.originalDescription,
         knowledgePackId
       });
@@ -444,6 +445,13 @@ const SmartAgentChat: React.FC<{
       // Prevent duplicate attempts
       if (hasAttemptedAutoMessageRef.current) {
         console.log('❌ Auto-first message already attempted');
+        return;
+      }
+      
+      // CRITICAL: Wait for conversation history to load first
+      // This prevents sending the auto-message on page refresh when messages exist
+      if (!hasLoadedConversation) {
+        console.log('❌ Auto-first message blocked: conversation history not loaded yet');
         return;
       }
       
@@ -490,11 +498,11 @@ const SmartAgentChat: React.FC<{
       }, 1000); // 1 second delay
     };
 
-    // Trigger when we have the required data
-    if (createdKnowledgePack?.originalDescription) {
+    // Trigger when we have the required data AND conversation has loaded
+    if (createdKnowledgePack?.originalDescription && hasLoadedConversation) {
       sendAutoFirstMessage();
     }
-  }, [createdKnowledgePack?.originalDescription, messages.length, sendMessage]);
+  }, [createdKnowledgePack?.originalDescription, messages.length, sendMessage, hasLoadedConversation]);
 
   // Set up global functions for HTMLRenderer option buttons to use
   useEffect(() => {

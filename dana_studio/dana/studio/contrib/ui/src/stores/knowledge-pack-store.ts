@@ -355,6 +355,35 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
     }
   },
 
+  // Helper to extract status from tree nodes recursively
+  _extractStatusFromTree: (node: any, pathParts: string[] = []): any[] => {
+    const topics: any[] = [];
+    const currentPath = [...pathParts, node.topic];
+    
+    // Only add status for leaf nodes (nodes without children)
+    const isLeaf = !node.children || node.children.length === 0;
+    if (isLeaf && node.status) {
+      // Build path without root (matching the format used elsewhere)
+      const nodePath = currentPath.slice(1).join(' - ');
+      topics.push({
+        path: nodePath,
+        status: node.status,
+        last_generated: null,
+        error: null,
+        file: null,
+      });
+    }
+    
+    // Recursively process children
+    if (node.children && node.children.length > 0) {
+      for (const child of node.children) {
+        topics.push(...get()._extractStatusFromTree(child, currentPath));
+      }
+    }
+    
+    return topics;
+  },
+
   // Fetch knowledge pack tree data (new - proper KP-specific method)
   fetchKnowledgePackTree: async (knowledgePackId: number) => {
     console.log('📡 Knowledge Pack: Fetching tree data for ID:', knowledgePackId);
@@ -366,12 +395,19 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
       if (response.success && response.data) {
         // Handle both new format (response.data.tree) and legacy format (response.data directly)
         const treeData = response.data.tree || response.data;
+        
+        // Extract status from tree nodes
+        const topics = treeData.root ? get()._extractStatusFromTree(treeData.root) : [];
+        console.log('📊 Knowledge Pack: Extracted', topics.length, 'topic statuses from tree');
+        
         set({
           domainKnowledge: treeData,
+          knowledgeStatus: { topics }, // Set status immediately from tree
           isLoadingTree: false,
           treeError: null,
+          lastFetchedKpId: knowledgePackId,
         });
-        console.log('✅ Knowledge Pack: Tree data loaded successfully');
+        console.log('✅ Knowledge Pack: Tree data and status loaded successfully');
       } else {
         throw new Error(response.error || 'Failed to load knowledge pack tree');
       }
@@ -449,34 +485,59 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
   // Update individual node status (for WebSocket updates)
   updateNodeStatus: (nodePath: string, status: string) => {
     const currentStatus = get().knowledgeStatus;
+    
+    console.log('🔄 Knowledge Pack: Updating node status:', { nodePath, status, hasCurrentStatus: !!currentStatus });
+
+    // If no knowledge status loaded yet, create initial structure with this topic
     if (!currentStatus) {
-      console.log('⚠️ Knowledge Pack: Cannot update node status - no knowledge status loaded');
+      console.log('⚠️ Knowledge Pack: No knowledge status loaded, creating initial structure');
+      set({
+        knowledgeStatus: {
+          topics: [{
+            path: nodePath,
+            status: status,
+            last_generated: null,
+            error: null,
+            file: null,
+          }],
+        },
+      });
+      console.log('✅ Knowledge Pack: Initial node status created');
       return;
     }
 
-    console.log('🔄 Knowledge Pack: Updating node status:', { nodePath, status });
+    // Find the topic index
+    const topicIndex = currentStatus.topics.findIndex((topic: any) => topic.path === nodePath);
 
-    // Find and update the topic with matching path
-    const updatedTopics = currentStatus.topics.map((topic: any) =>
-      topic.path === nodePath ? { ...topic, status } : topic
-    );
-
-    // Check if we actually found and updated a topic
-    const wasUpdated = updatedTopics.some(
-      (topic: any, index: number) => topic.path === nodePath && currentStatus.topics[index].status !== status
-    );
-
-    if (wasUpdated) {
-      set({
-        knowledgeStatus: {
-          ...currentStatus,
-          topics: updatedTopics,
-        },
-      });
+    let updatedTopics;
+    if (topicIndex >= 0) {
+      // Update existing topic
+      updatedTopics = currentStatus.topics.map((topic: any, index: number) =>
+        index === topicIndex ? { ...topic, status } : topic
+      );
       console.log('✅ Knowledge Pack: Node status updated successfully');
     } else {
-      console.log('⚠️ Knowledge Pack: No matching node found for path:', nodePath);
+      // Topic not found, add it to the list
+      console.log('⚠️ Knowledge Pack: Topic not found, adding new topic for path:', nodePath);
+      updatedTopics = [
+        ...currentStatus.topics,
+        {
+          path: nodePath,
+          status: status,
+          last_generated: null,
+          error: null,
+          file: null,
+        },
+      ];
+      console.log('✅ Knowledge Pack: New topic added');
     }
+
+    set({
+      knowledgeStatus: {
+        ...currentStatus,
+        topics: updatedTopics,
+      },
+    });
   },
 
   // Set knowledge generation status

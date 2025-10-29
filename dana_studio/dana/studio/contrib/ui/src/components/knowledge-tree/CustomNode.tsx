@@ -74,9 +74,8 @@ interface NodeData {
 const getStatusColor = (status?: string) => {
   switch (status) {
     case 'draft':
+    case 'pending': // Map pending to draft (combined status)
       return 'rgb(209, 213, 219)'; // Gray-300
-    case 'pending':
-      return 'rgb(255, 232, 79)'; // Warning-400 - Ctrl.xyz accent yellow
     case 'generating':
     case 'in_progress': // Backward compatibility
       return 'rgb(79, 204, 255)'; // Cyan-400 - Primary cyan accent
@@ -96,9 +95,8 @@ const getStatusIcon = (status?: string) => {
   console.log('🧠 status: ', status);
   switch (status) {
     case 'draft':
-      return null; // Draft has no icon
-    case 'pending':
-      return <Clock className="text-warning-400" />;
+    case 'pending': // Map pending to draft (combined status)
+      return null; // Draft/Not Started has no icon
     case 'generating':
     case 'in_progress': // Backward compatibility
       return <SystemRestart className="text-cyan-400 animate-spin" />;
@@ -117,9 +115,8 @@ const getStatusIcon = (status?: string) => {
 const getStatusText = (status?: string) => {
   switch (status) {
     case 'draft':
-      return 'Draft - not started';
-    case 'pending':
-      return 'Knowledge generation pending';
+    case 'pending': // Map pending to draft (combined status)
+      return 'Not started';
     case 'generating':
     case 'in_progress': // Backward compatibility
       return 'Generating knowledge...';
@@ -293,20 +290,13 @@ const CustomNode: React.FC<CustomNodeProps> = ({
     // Leaf nodes - status-based styling
     switch (knowledgeStatus?.status) {
       case 'draft':
+      case 'pending': // Map pending to draft (combined status)
         return {
           ...baseStyle,
           ...selectionStyle,
           background: 'rgb(249, 250, 251)', // Gray-50 - Very light
           border: '1px solid rgb(209, 213, 219)', // Gray-300
           opacity: 0.7, // Slightly faded
-        };
-      case 'pending':
-        return {
-          ...baseStyle,
-          ...selectionStyle,
-          background: 'rgb(254, 243, 199)', // Warning-100 - Light yellow
-          border: '1px solid rgb(255, 232, 79)', // Warning-400 - Ctrl.xyz accent yellow
-          opacity: 0.8, // Slightly faded
         };
       case 'generating':
       case 'in_progress': // Backward compatibility

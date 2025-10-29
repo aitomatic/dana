@@ -269,6 +269,9 @@ class QuestionBankGenerationTool(BaseTool):
 
     async def _process_single_leaf_path(self, semaphore: asyncio.Semaphore, index: int, path: list[str], total_paths: int) -> dict:
         """Process a single leaf path with semaphore-controlled concurrency."""
+        # Save the tree
+        from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
+
         async with semaphore:
             try:
                 leaf_topic = path[-1]  # Last element in path is the leaf topic
@@ -290,6 +293,12 @@ class QuestionBankGenerationTool(BaseTool):
                     progress,
                     path_parts=path,
                 )
+
+                if self.tree_structure and self.tree_structure_path:
+                    leaf_node = self._find_leaf_node_in_tree(path)
+                    if leaf_node:
+                        leaf_node.status = KnowledgeGenerationStatus.GENERATING
+                        ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
 
                 # Create storage directory if it doesn't exist
                 if not self.storage_path:
@@ -318,8 +327,6 @@ class QuestionBankGenerationTool(BaseTool):
                         if leaf_node:
                             leaf_node.status = KnowledgeGenerationStatus.QUESTION_GENERATED
                             # Save the tree
-                            from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
-
                             ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
 
                     await self._notify(

@@ -101,17 +101,10 @@ const KnowledgeBaseTab: React.FC = () => {
           <div className="flex gap-4 items-center px-4 py-2 text-sm text-gray-600 bg-white rounded-lg border border-gray-200 shadow-lg">
             <div className="flex gap-2 items-center">
               <div
-                className="w-4 h-4 bg-gray-100 rounded border border-gray-500"
-                style={{ opacity: 0.6 }}
+                className="w-4 h-4 rounded border border-gray-300"
+                style={{ background: 'rgb(249, 250, 251)', opacity: 0.7 }}
               ></div>
-              <span>Content generation required</span>
-            </div>
-            <div className="flex gap-2 items-center">
-              <div
-                className="w-4 h-4 rounded border border-warning-400 bg-warning-100"
-                style={{ opacity: 0.8 }}
-              ></div>
-              <span>Pending</span>
+              <span>Not Started</span>
             </div>
             <div className="flex gap-2 items-center">
               <div
