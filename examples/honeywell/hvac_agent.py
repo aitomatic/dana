@@ -8,7 +8,7 @@ import re
 
 # Try to import colorama for better cross-platform color support
 try:
-    from colorama import Fore, Back, Style, init
+    from colorama import Fore, Style, init
     init(autoreset=True)
     COLORAMA_AVAILABLE = True
 except ImportError:
@@ -127,11 +127,11 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                 reached_time = action['reached_time']
                 summary_parts.append(f"    Reached Time: {reached_time}")
                 
-                # Calculate wasted energy time if reached time is more than 5 minutes before meeting start
-                # We need to find the corresponding meeting start time for this action
-                # The meeting start time should be available in the feedback context
+                # Add meeting context and wasted energy calculation
                 if 'meeting_start_time' in action:
                     meeting_start = action['meeting_start_time']
+                    summary_parts.append(f"    Meeting Starts: {meeting_start}")
+                    
                     # Parse times to calculate difference
                     from datetime import datetime
                     try:
@@ -139,11 +139,23 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                         meeting_dt = datetime.strptime(meeting_start, "%H:%M")
                         time_diff_minutes = (meeting_dt - reached_dt).total_seconds() / 60
                         
-                        # Only show wasted energy time if it's positive (reached before meeting) and > 5 minutes
-                        if time_diff_minutes > 5:
-                            summary_parts.append(f"    Wasted energy time: {time_diff_minutes:.1f} min")
+                        if time_diff_minutes > 0:
+                            # Target reached before meeting
+                            if time_diff_minutes > 5:
+                                summary_parts.append(
+                                    f"    ⚠️  Wasted energy time: {time_diff_minutes:.1f} min "
+                                    f"(reached {time_diff_minutes:.1f} min before meeting)")
+                            else:
+                                summary_parts.append(
+                                    f"    ✓ Reached {time_diff_minutes:.1f} min before meeting "
+                                    f"(good timing)")
+                        else:
+                            # Target reached after meeting started
+                            summary_parts.append(
+                                f"    ❌ Target reached {abs(time_diff_minutes):.1f} min "
+                                f"AFTER meeting started!")
                     except ValueError:
-                        # If time parsing fails, skip the wasted energy calculation
+                        # If time parsing fails, skip the calculation
                         pass
 
             summary_parts.append(f"    Cost: {action['cost_kwh']:.3f} kWh")
@@ -181,7 +193,7 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
         if COLORAMA_AVAILABLE:
             summary_parts.append(f"  {Fore.GREEN}✓ Plan is valid!{Style.RESET_ALL}")
         else:
-            summary_parts.append("  \033[92m✓ Plan is valid!\033[0m")  # Green checkmark
+            summary_parts.append("  \033[92m✓ Plan is valid!\033[0m")
         indoor_temp = env_status['indoor_temp']
         summary_parts.append(f"  • {action_verb} from {indoor_temp}°F "
                              f"to {target_temp}°F")
@@ -198,8 +210,8 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                 cost = action['cost_kwh']
                 target_temp = action['target_temp_f']
                 
-                # Calculate wasted energy time for action summary
-                wasted_energy_info = ""
+                # Calculate meeting timing and wasted energy for action summary
+                meeting_timing_info = ""
                 if 'meeting_start_time' in action:
                     meeting_start = action['meeting_start_time']
                     from datetime import datetime
@@ -208,33 +220,45 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                         meeting_dt = datetime.strptime(meeting_start, "%H:%M")
                         time_diff_minutes = (meeting_dt - reached_dt).total_seconds() / 60
                         
-                        if time_diff_minutes > 5:
-                            wasted_energy_info = f" (wasted: {time_diff_minutes:.1f} min)"
+                        if time_diff_minutes > 0:
+                            if time_diff_minutes > 5:
+                                meeting_timing_info = (f" (meeting at {meeting_start}, "
+                                                      f"wasted: {time_diff_minutes:.1f} min)")
+                            else:
+                                meeting_timing_info = (f" (meeting at {meeting_start}, "
+                                                      f"good timing: {time_diff_minutes:.1f} min early)")
+                        else:
+                            meeting_timing_info = (f" (meeting at {meeting_start}, LATE: "
+                                                  f"{abs(time_diff_minutes):.1f} min after meeting started!)")
                     except ValueError:
                         pass
                 
                 if COLORAMA_AVAILABLE:
-                    summary_parts.append(f"    {i+1}. {time_range}: {Fore.GREEN}✓ Reaches{Style.RESET_ALL} "
-                                         f"{target_temp:.0f}°F at {reached_time} "
-                                         f"(cost: {cost:.3f} kWh){wasted_energy_info}")
+                    summary_parts.append(
+                        f"    {i+1}. {time_range}: {Fore.GREEN}✓ Reaches{Style.RESET_ALL} "
+                        f"{target_temp:.0f}°F at {reached_time} "
+                        f"(cost: {cost:.3f} kWh){meeting_timing_info}")
                 else:
-                    summary_parts.append(f"    {i+1}. {time_range}: \033[92m✓ Reaches\033[0m "
-                                         f"{target_temp:.0f}°F at {reached_time} "
-                                         f"(cost: {cost:.3f} kWh){wasted_energy_info}")
+                    summary_parts.append(
+                        f"    {i+1}. {time_range}: \033[92m✓ Reaches\033[0m "
+                        f"{target_temp:.0f}°F at {reached_time} "
+                        f"(cost: {cost:.3f} kWh){meeting_timing_info}")
             else:
                 time_range = f"{action['time_on']} → {action['time_off']}"
                 error = action['error']
                 if COLORAMA_AVAILABLE:
-                    summary_parts.append(f"    {i+1}. {time_range}: {Fore.RED}✗ Failed{Style.RESET_ALL}: "
-                                         f"{error}")
+                    summary_parts.append(
+                        f"    {i+1}. {time_range}: {Fore.RED}✗ Failed{Style.RESET_ALL}: "
+                        f"{error}")
                 else:
-                    summary_parts.append(f"    {i+1}. {time_range}: \033[91m✗ Failed\033[0m: "
-                                         f"{error}")
+                    summary_parts.append(
+                        f"    {i+1}. {time_range}: \033[91m✗ Failed\033[0m: "
+                        f"{error}")
     else:
         if COLORAMA_AVAILABLE:
             summary_parts.append(f"  {Fore.RED}✗ Plan failed!{Style.RESET_ALL}")
         else:
-            summary_parts.append("  \033[91m✗ Plan failed!\033[0m")  # Red X
+            summary_parts.append("  \033[91m✗ Plan failed!\033[0m")
         total_cost = feedback['total_cost_kwh']
         summary_parts.append(f"  • Total cost: {total_cost:.3f} kWh")
         final_temp = feedback['final_temp_f']
@@ -255,9 +279,9 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                 target_temp = action['target_temp_f']
                 cost = action['cost_kwh']
                 
-                # Calculate wasted energy time for action summary
-                wasted_energy_info = ""
-                if 'meeting_start_time' in action:
+                # Calculate meeting timing and wasted energy for action summary
+                meeting_timing_info = ""
+                if 'meeting_start_time' in action and action['reached_time']:
                     meeting_start = action['meeting_start_time']
                     from datetime import datetime
                     try:
@@ -265,27 +289,39 @@ def generate_feedback_summary(feedback, env_status, agent_plan):
                         meeting_dt = datetime.strptime(meeting_start, "%H:%M")
                         time_diff_minutes = (meeting_dt - reached_dt).total_seconds() / 60
                         
-                        if time_diff_minutes > 5:
-                            wasted_energy_info = f" (wasted: {time_diff_minutes:.1f} min)"
+                        if time_diff_minutes > 0:
+                            if time_diff_minutes > 5:
+                                meeting_timing_info = (f" (meeting at {meeting_start}, "
+                                                      f"wasted: {time_diff_minutes:.1f} min)")
+                            else:
+                                meeting_timing_info = (f" (meeting at {meeting_start}, "
+                                                      f"good timing: {time_diff_minutes:.1f} min early)")
+                        else:
+                            meeting_timing_info = (f" (meeting at {meeting_start}, LATE: "
+                                                  f"{abs(time_diff_minutes):.1f} min after meeting started!)")
                     except ValueError:
                         pass
                 
                 if COLORAMA_AVAILABLE:
-                    summary_parts.append(f"    {Fore.GREEN}✓{Style.RESET_ALL} {i+1}. {time_range}: "
-                                         f"Reaches {target_temp:.0f}°F "
-                                         f"(cost: {cost:.3f} kWh){wasted_energy_info}")
+                    summary_parts.append(
+                        f"    {Fore.GREEN}✓{Style.RESET_ALL} {i+1}. {time_range}: "
+                        f"Reaches {target_temp:.0f}°F "
+                        f"(cost: {cost:.3f} kWh){meeting_timing_info}")
                 else:
-                    summary_parts.append(f"    \033[92m✓\033[0m {i+1}. {time_range}: "
-                                         f"Reaches {target_temp:.0f}°F "
-                                         f"(cost: {cost:.3f} kWh){wasted_energy_info}")
+                    summary_parts.append(
+                        f"    \033[92m✓\033[0m {i+1}. {time_range}: "
+                        f"Reaches {target_temp:.0f}°F "
+                        f"(cost: {cost:.3f} kWh){meeting_timing_info}")
             else:
                 cost = action['cost_kwh']
                 if COLORAMA_AVAILABLE:
-                    summary_parts.append(f"    {Fore.RED}✗{Style.RESET_ALL} {i+1}. {time_range}: "
-                                         f"Failed (cost: {cost:.3f} kWh)")
+                    summary_parts.append(
+                        f"    {Fore.RED}✗{Style.RESET_ALL} {i+1}. {time_range}: "
+                        f"Failed (cost: {cost:.3f} kWh)")
                 else:
-                    summary_parts.append(f"    \033[91m✗\033[0m {i+1}. {time_range}: "
-                                         f"Failed (cost: {cost:.3f} kWh)")
+                    summary_parts.append(
+                        f"    \033[91m✗\033[0m {i+1}. {time_range}: "
+                        f"Failed (cost: {cost:.3f} kWh)")
 
     return "\n".join(summary_parts)
 
@@ -417,14 +453,6 @@ def analyze_feedback_with_learning_agent(feedback, env_status, agent_plan):
 
     # Create learning prompt with feedback summary and objectives
     learning_prompt = f"""
-FEEDBACK ANALYSIS REQUEST:
-
-Please analyze the following HVAC operation feedback to generate insights for optimizing two key objectives:
-
-OBJECTIVES:
-1. Ensure target temperature is reached before meeting starts and maintained during meeting
-2. Optimize for cost by minimizing electricity consumption
-
 FEEDBACK DATA:
 {feedback_summary}
 
@@ -435,7 +463,9 @@ ENVIRONMENTAL CONTEXT:
 - Outdoor Temperature: {env_status['outdoor_temp']}°F
 - Meeting Schedule: {len(env_status['meeting_plan'])} meetings planned
 
-Please provide detailed analysis and policy recommendations to help the HVAC Agent improve future performance.
+OBJECTIVES:
+1. Ensure target temperature is reached before meeting starts and maintained during meeting
+2. Optimize for cost by minimizing electricity consumption
 """
 
     # Call learning agent
