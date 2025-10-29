@@ -300,13 +300,26 @@ def check_hvac_schedule(
         }
     else:
         # Failed case - not enough time
+        # Calculate when the target would actually be reached
+        reached_minutes = current_minutes + time_needed_minutes
+        if reached_minutes >= 24 * 60:
+            reached_minutes -= 24 * 60  # Next day
+        
+        actual_reached_time = minutes_to_time(reached_minutes)
+        
+        # Create a more descriptive error message
+        error_msg = (f"Need {time_needed_minutes} min to cool down, "
+                     f"only {time_available_minutes} min available. "
+                     f"Target would be reached at {actual_reached_time} "
+                     f"(after action ends at {target_time})")
+        
         return {
             "reached_temp": "failed",
             "time_needed_minutes": time_needed_minutes,
             "time_available_minutes": time_available_minutes,
             "redundant_time_minutes": None,
-            "reached_time": None,
-            "error": f"Need {time_needed_minutes} min, only {time_available_minutes} min available"
+            "reached_time": actual_reached_time,  # Show when it would actually be reached
+            "error": error_msg
         }
 
 
@@ -710,9 +723,9 @@ def validate_plan_success(
         final_schedule_success = schedule_result["reached_temp"]
         final_error = schedule_result["error"]
         
-        if (schedule_result["reached_temp"] == "success" and 
-            meeting_start_time and 
-            schedule_result["reached_time"]):
+        if (schedule_result["reached_temp"] == "success" and
+                meeting_start_time and
+                schedule_result["reached_time"]):
             
             # Parse times to compare reached time with meeting start time
             reached_minutes = parse_time(schedule_result["reached_time"])
@@ -721,7 +734,18 @@ def validate_plan_success(
             # If reached time is after meeting start time, mark as failed
             if reached_minutes > meeting_start_minutes:
                 final_schedule_success = "failed"
-                final_error = f"Target reached at {schedule_result['reached_time']} but meeting starts at {meeting_start_time}"
+                final_error = (f"Target reached at {schedule_result['reached_time']} "
+                               f"but meeting starts at {meeting_start_time}. "
+                               f"HVAC should have started earlier to reach target "
+                               f"before meeting begins.")
+            else:
+                # Success case - check if there's wasted energy time
+                meeting_time_diff_minutes = meeting_start_minutes - reached_minutes
+                if meeting_time_diff_minutes > 5:  # More than 5 minutes early
+                    final_error = (f"Target reached at {schedule_result['reached_time']}, "
+                                   f"meeting starts at {meeting_start_time}. "
+                                   f"Wasted energy time: {meeting_time_diff_minutes} min "
+                                   f"(target reached {meeting_time_diff_minutes} min before meeting)")
         
         # Store action result
         action_result = {
