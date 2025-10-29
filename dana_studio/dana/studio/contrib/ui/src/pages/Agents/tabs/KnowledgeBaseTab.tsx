@@ -121,6 +121,13 @@ const KnowledgeBaseTab: React.FC = () => {
               <span>In Progress</span>
             </div>
             <div className="flex gap-2 items-center">
+              <div
+                className="w-4 h-4 rounded border border-purple-400"
+                style={{ background: 'rgb(243, 232, 255)', opacity: 0.9 }}
+              ></div>
+              <span>Question Generated</span>
+            </div>
+            <div className="flex gap-2 items-center">
               <div className="w-4 h-4 rounded border border-success-500 bg-success-50"></div>
               <span>Content Generated</span>
             </div>

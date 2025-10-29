@@ -419,13 +419,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
   const generatingNodes = new Set<string>();
 
+  // Stabilize the WebSocket callback to prevent reconnections on re-renders
+  const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string) => {
+    console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
+    updateNodeStatus(nodePath, status);
+  }, [updateNodeStatus]);
+
   // Set up WebSocket connection for real-time status updates
   useKnowledgePackWebSocket(
     knowledgePackId ? (typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : knowledgePackId) : null,
-    (nodePath: string, status: string) => {
-      console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
-      updateNodeStatus(nodePath, status);
-    }
+    handleWebSocketStatusUpdate
   );
 
   // Background task status state

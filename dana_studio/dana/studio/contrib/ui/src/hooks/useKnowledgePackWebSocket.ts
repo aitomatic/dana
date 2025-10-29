@@ -32,12 +32,15 @@ const mapWebSocketStatusToNodeStatus = (
   toolName: string,
   status: string
 ): string | null => {
-  if (toolName === 'generate_question_bank') {
+  // Support both naming conventions for question bank generation
+  if (toolName === 'generate_question_bank' || toolName === 'question_bank_generation') {
     switch (status) {
       case 'init':
       case 'in_progress':
         return 'generating';
-      case 'finish':
+      case 'question_generated':  // Map directly (current backend format)
+        return 'question_generated';
+      case 'finish':  // Backward compatibility
         return 'question_generated';
       case 'error':
         return 'failed';
@@ -61,16 +64,47 @@ export const useKnowledgePackWebSocket = (
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const currentKnowledgeIdRef = useRef<number | null>(null);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000; // Start at 1 second
+  
+  // Use ref for callback to avoid reconnection on callback changes
+  const onStatusUpdateRef = useRef(onStatusUpdate);
+  
+  // Keep ref up to date
+  useEffect(() => {
+    onStatusUpdateRef.current = onStatusUpdate;
+  }, [onStatusUpdate]);
 
   const connect = (knowledgeId: number) => {
     try {
+      // Prevent duplicate connections to the same knowledge pack
+      if (wsRef.current && currentKnowledgeIdRef.current === knowledgeId) {
+        console.log('⚠️ [KP WebSocket] Connection already exists for:', knowledgeId);
+        
+        // Check if existing connection is still open
+        if (wsRef.current.readyState === WebSocket.OPEN || 
+            wsRef.current.readyState === WebSocket.CONNECTING) {
+          console.log('✅ [KP WebSocket] Using existing connection');
+          return;
+        } else {
+          console.log('🔄 [KP WebSocket] Existing connection closed, reconnecting...');
+        }
+      }
+
+      // Close any existing connection before creating a new one
+      if (wsRef.current) {
+        console.log('🔌 [KP WebSocket] Closing previous connection');
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+
       const wsUrl = getWebSocketUrl(knowledgeId);
       console.log('🔌 [KP WebSocket] Connecting to:', wsUrl);
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
+      currentKnowledgeIdRef.current = knowledgeId;
 
       ws.onopen = () => {
         console.log('✅ [KP WebSocket] Connected successfully');
@@ -98,7 +132,7 @@ export const useKnowledgePackWebSocket = (
                 nodeStatus,
                 path_parts,
               });
-              onStatusUpdate(nodePath, nodeStatus);
+              onStatusUpdateRef.current(nodePath, nodeStatus);
             }
           }
         } catch (error) {
@@ -143,6 +177,7 @@ export const useKnowledgePackWebSocket = (
       console.log('🔌 [KP WebSocket] Disconnecting...');
       wsRef.current.close();
       wsRef.current = null;
+      currentKnowledgeIdRef.current = null;
     }
   };
 
