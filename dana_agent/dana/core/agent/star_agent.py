@@ -408,10 +408,15 @@ class STARAgent(BaseSTARAgent):
 
             # Add a synthetic user message to prompt the agent to respond based on tool results
             # This ensures the next THINK phase has a user message to respond to
+            last_command_message = ""
+            for entry in self._timeline.timeline[::-1]:
+                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+                    last_command_message = entry.content and "Please provide a response" not in entry.content
+                    break
             self._timeline.add_entry(
                 TimelineEntry(
                     entry_type=TimelineEntryType.USER_MESSAGE,
-                    content="Please provide a response based on the tool results above.",
+                    content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
                     is_latest_user_message=True,
                 )
             )
