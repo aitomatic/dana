@@ -155,6 +155,15 @@ class Timeline:
         self.timeline: list[TimelineEntry] = []
         self.max_context_tokens = max_context_tokens
 
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the timeline.
+
+        Returns:
+            String representation of the timeline
+        """
+        return f"Timeline(max_context_tokens={self.max_context_tokens}, timeline={self.timeline[-10:]})"
+
     def add_entry(self, entry: TimelineEntry) -> None:
         """
         Add entry to timeline.
