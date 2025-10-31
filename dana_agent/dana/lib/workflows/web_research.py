@@ -1,4 +1,5 @@
 from dana.common.protocols import DictParams
+from dana.common.protocols.war import tool_use
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.callable_workflow import CallableWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
@@ -126,14 +127,12 @@ class GoogleLookupWorkflow(BaseWorkflow):
         answer={"required": True, "type": str},
         source={"required": True, "type": str},
     )
+    @tool_use
     def _do_execute(self, **kwargs) -> DictParams:
-        """
-        Quick Google search for simple facts.
-
-        Args:
-            **kwargs: Input parameters, should contain:
-                query (str): Simple factual question (Required, min length 1)
-                max_results (int, optional): Max results to check (default 1, range 1-10)
+        """Quick Google search for simple facts.
+        Args: **kwargs: Input parameters, should contain:
+            - query (str): Simple factual question (Required, min length 1)
+            - max_results (int, optional): Max results to check (default 1, range 1-10)
 
         Returns:
             DictParams: Dictionary with success, answer, source.

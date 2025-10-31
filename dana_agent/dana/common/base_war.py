@@ -509,12 +509,12 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
         """Get the public description of the object."""
         return self._get_public_description()
 
-    def _get_public_description(self, only_specific_method: str | None = None, format: str = "xml") -> str:
+    def _get_public_description(self, only_specific_method: str | None = None, format: str = "text_flattened") -> str:
         """Get the public description including available tool methods.
         Args:
             only_specific_method: The specific method to get the description for.
             Used by BaseWorkflow to only include the description for the "execute" method.
-            format: Output format - "xml", "json", or "text" (default: "xml")
+            format: Output format - "xml", "json", "text", or "text_flattened" (default: "xml")
 
         Returns:
             The public description including available tool methods in the specified format.
@@ -531,6 +531,8 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
             return self._dict_to_json(data)
         elif format == "xml":
             return self._dict_to_xml(data)
+        elif format == "text_flattened":
+            return self._dict_to_text_flattened(data)
         else:  # text format
             return self._dict_to_text(data, only_specific_method)
 
@@ -554,7 +556,7 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
 
         # Use the class instead of the instance to avoid recursion
         for name in dir(self.__class__):
-            if name.startswith("_"):  # Skip private methods
+            if name.startswith("__"):  # Skip super private methods
                 continue
 
             attr = getattr(self.__class__, name)
@@ -665,6 +667,24 @@ class BaseWAR(Notifier, Identifiable, WARProtocol):
             self._public_description = description
 
         return description
+
+    def _dict_to_text_flattened(self, data: dict) -> str:
+        """Convert dictionary to flattened text format.
+
+        Args:
+            data: Dictionary to convert
+
+        Returns:
+            Flattened text string with fully qualified method signatures
+        """
+        lines = []
+        identifier = data.get("object_id") if data.get("object_id") is not None else data["class_name"]
+
+        for method in data["methods"]:
+            qualified_sig = f"{identifier}.{method['signature']}"
+            lines.append(f"- {qualified_sig}: {method['description']}")
+
+        return "\n".join(lines)
 
     def _enhance_docstring_with_types(self, method, docstring: str) -> str:
         """Enhance docstring Args section with type signatures from method signature.

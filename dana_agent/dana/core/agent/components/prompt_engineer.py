@@ -644,7 +644,12 @@ class PromptEngineer:
         agents = self._agent.available_agents
         if not agents or len(agents) == 0:
             return "None"
-        return "\n".join([f"- {a.agent_type} (ID: {a.object_id}): {a.public_description}" for a in agents])
+        descriptions = []
+        for a in agents:
+            desc = a.public_description
+            # If using text_flattened format, desc already has hyphens
+            descriptions.append(f"- {a.agent_type} (ID: {a.object_id}): {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_resource_descriptions(self) -> str:
@@ -653,7 +658,15 @@ class PromptEngineer:
         if not resources or len(resources) == 0:
             return "None"
         # return "\n".join([f"- {r.resource_type} (ID: {r.object_id}): {r.public_description}" for r in resources]
-        return "\n".join([f"- {r.public_description}" for r in resources])
+        descriptions = []
+        for r in resources:
+            desc = r.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_workflow_descriptions(self) -> str:
@@ -662,7 +675,15 @@ class PromptEngineer:
         if not workflows or len(workflows) == 0:
             return "None"
         # return "\n".join([f"- {w.workflow_type} (ID: {w.object_id}): {w.public_description}" for w in workflows])
-        return "\n".join([f"- {w.public_description}" for w in workflows])
+        descriptions = []
+        for w in workflows:
+            desc = w.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_usage_examples(self) -> str:
