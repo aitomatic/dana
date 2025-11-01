@@ -6,18 +6,8 @@ import inspect
 import re
 from typing import Any, get_type_hints
 
-from pydantic import BaseModel
-
 from dana.common.protocols.war import IS_TOOL_USE
-
-
-class ParsedArgKwargsResults(BaseModel):
-    matched_args: list[Any]
-    matched_kwargs: dict[str, Any]
-    varargs: list[Any]
-    varkwargs: dict[str, Any]
-    unmatched_args: list[Any]
-    unmatched_kwargs: dict[str, Any]
+from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedArgKwargsResults
 
 
 class Misc:
@@ -142,7 +132,7 @@ class Misc:
         return sections
 
     @staticmethod
-    def parse_method_signature(method: callable) -> dict[str, Any]:
+    def parse_method_signature(method: callable) -> MethodSignature:
         """
         Parse method signature and return structured parameter info.
         
@@ -150,22 +140,42 @@ class Misc:
             method: The method to parse
             
         Returns:
-            Dict with structure:
-            {
-                'name': str,
-                'description': str,
-                'parameters': [
-                    {
-                        'name': str,
-                        'type': str,
-                        'description': str,
-                        'default': Any (optional),
-                        'has_default': bool,
-                        'example': str (optional)
-                    }
-                ]
-            }
+            MethodSignature: Pydantic model containing:
+                - class_name: str | None (None for functions, class name for methods)
+                - name: str
+                - description: str
+                - parameters: list[ParameterInfo] where each ParameterInfo contains:
+                    - name: str
+                    - type: str
+                    - description: str
+                    - has_default: bool
+                    - default: Any | None (optional)
+                    - example: str | None (optional)
         """
+        # Detect if method is bound to a class and extract class name
+        class_name = None
+        if inspect.ismethod(method):
+            # Bound method: extract class from __self__
+            if hasattr(method, '__self__'):
+                self_obj = method.__self__
+                # Check if __self__ is a class (for classmethods)
+                if inspect.isclass(self_obj):
+                    class_name = self_obj.__name__
+                else:
+                    # Regular instance method: get class from instance
+                    class_name = self_obj.__class__.__name__
+        elif hasattr(method, '__qualname__'):
+            # Unbound method or function: check __qualname__ format
+            qualname = method.__qualname__
+            # If qualname contains '.', it's likely "ClassName.method_name" or "OuterClass.InnerClass.method_name"
+            if '.' in qualname:
+                parts = qualname.split('.')
+                # Get the class name (second-to-last part, e.g., "ClassName" from "ClassName.method_name")
+                # For nested classes, this gets the direct class containing the method
+                if len(parts) > 1:
+                    class_name = parts[-2]  # Get class name before method name
+        # If class_name is still None at this point, it's a standalone function
+        
         sig = inspect.signature(method)
         docstring = inspect.getdoc(method) or ""
         
@@ -204,26 +214,23 @@ class Misc:
             # Extract example from description or docstring
             example = Misc._extract_example_from_text(param_name, docstring)
             
-            param_info = {
-                'name': param_name,
-                'type': param_type,
-                'description': param_desc,
-                'has_default': has_default,
-            }
-            
-            if has_default and default_value is not None:
-                param_info['default'] = default_value
-            
-            if example:
-                param_info['example'] = example
+            param_info = ParameterInfo(
+                name=param_name,
+                type=param_type,
+                description=param_desc,
+                has_default=has_default,
+                default=default_value if has_default and default_value is not None else None,
+                example=example
+            )
             
             parameters.append(param_info)
         
-        return {
-            'name': method.__name__,
-            'description': method_description,
-            'parameters': parameters
-        }
+        return MethodSignature(
+            class_name=class_name,
+            name=method.__name__,
+            description=method_description,
+            parameters=parameters
+        )
 
     @staticmethod
     def _parse_param_descriptions(args_section: str) -> dict[str, str]:
@@ -318,3 +325,11 @@ class Misc:
             return match.group(1).strip()
         
         return None
+
+if __name__ == "__main__":
+    import os
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "examples", "agents", "financial-analysis", "resources"))
+    from create_file_resource import CreateFileResource
+    resource = CreateFileResource()
+    print(Misc.parse_method_signature(resource.create))
