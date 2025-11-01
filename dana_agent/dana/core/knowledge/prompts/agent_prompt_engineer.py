@@ -66,6 +66,7 @@ class AgentPromptEngineer(BasePromptEngineer):
         
         # Parse query method signature
         signature = Misc.parse_method_signature(query_method)
+        signature.class_name = agent_class.__name__
         
         # Use codec to format the method signature
         formatted = self._codec.construct(signature)
@@ -99,9 +100,7 @@ class AgentPromptEngineer(BasePromptEngineer):
         description = sections.get('description', '')
         
         if description:
-            # Get first paragraph
-            first_para = description.split('\n\n')[0].strip()
-            return first_para
+            return description
         
         return f"{agent_class.__name__} agent."
 
@@ -116,4 +115,3 @@ class AgentPromptEngineer(BasePromptEngineer):
             Always returns False (no conflicts possible)
         """
         return False
-

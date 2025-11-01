@@ -125,4 +125,3 @@ class ResourcePromptEngineer(BasePromptEngineer):
             return True
         
         return False
-

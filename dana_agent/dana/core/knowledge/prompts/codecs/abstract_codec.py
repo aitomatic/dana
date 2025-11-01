@@ -4,6 +4,15 @@ from dana.common.schemas.tool_call import MethodSignature, ToolCall
 
 
 class AbstractCodec(ABC):
+
+    @classmethod
+    @abstractmethod
+    def get_instruction(cls) -> str:
+        """
+        Get the instruction for the codec.
+        """
+        pass
+
     @classmethod
     @abstractmethod
     def construct(cls, signature: MethodSignature) -> str:
