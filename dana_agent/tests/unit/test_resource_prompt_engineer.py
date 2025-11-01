@@ -5,15 +5,16 @@ Tests the prompt engineering for resources that formats @tool_use decorated meth
 using the configured codec (CSXMLCodec or KLXMLCodec).
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from dana.common.protocols.types import DictParams
 from dana.common.protocols.war import tool_use
 from dana.common.storage import AbstractStorage
-from dana.core.resource.base_resource import BaseResource
 from dana.core.knowledge.prompts.codecs import CSXMLCodec, KLXMLCodec
 from dana.core.knowledge.prompts.resource_prompt_engineer import ResourcePromptEngineer
+from dana.core.resource.base_resource import BaseResource
 
 
 class MockResourceWithTool(BaseResource):
@@ -213,8 +214,8 @@ class TestResourcePromptEngineerIntegration:
     @pytest.fixture
     def create_file_resource(self):
         """Create a CreateFileResource instance for testing."""
-        import sys
         import os
+        import sys
         examples_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "..", "..", 
             "examples", "agents", "financial-analysis", "resources"

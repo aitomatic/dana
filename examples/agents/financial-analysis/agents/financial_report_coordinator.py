@@ -26,7 +26,6 @@ from resources.read_file_resource import ReadFileResource
 from resources.edit_file_resource import EditFileResource
 from resources.create_file_resource import CreateFileResource
 from resources.list_dir_resource import ListDirResource
-from dana.core.agent.components.prompt_engineer_lite import PromptEngineerLite
 
 
 class BroadcastNotificationHandler(Notifiable):
@@ -143,8 +142,6 @@ class FinancialReportCoordinatorAgent(STARAgent):
             model=model,
             **kwargs,
         )
-
-        self._prompt_engineer = PromptEngineerLite(self)
 
         # Store workspace root for reports
         self.workspace_root = workspace_root or str(Path.cwd())

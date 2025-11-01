@@ -24,7 +24,6 @@ from resources.edit_file_resource import EditFileResource
 from resources.create_file_resource import CreateFileResource
 from resources.list_dir_resource import ListDirResource
 from resources.semantic_search_resource import SemanticSearchResource
-from dana.core.agent.components.prompt_engineer_lite import PromptEngineerLite
 
 
 class BroadcastNotificationHandler(Notifiable):
@@ -136,7 +135,6 @@ class FinancialAnalysisAgent(STARAgent):
             **kwargs,
         )
         self._resources = []
-        self._prompt_engineer = PromptEngineerLite(self)
 
         # Register all file operation resources
         self.workspace_root = workspace_root

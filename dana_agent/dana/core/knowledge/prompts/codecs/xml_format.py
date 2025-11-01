@@ -6,6 +6,32 @@ from dana.core.knowledge.prompts.codecs.abstract_codec import AbstractCodec
 
 
 class CSXMLCodec(AbstractCodec):
+
+    @classmethod
+    def get_instruction(cls) -> str:
+        return """
+RESPONSE CONTRACT
+Output exactly TWO XML blocks per message:
+
+<thinking>
+<!-- 50-100 words max:
+Intent: [What user wants]
+Context: [Current state/findings] 
+Decision: [Tool choice + why]
+Approval: [If needed, what requires confirmation]
+User Message: [What the user needs to understand - acknowledge their request, explain findings in their context, address their concerns]
+-->
+</thinking>
+
+<function_call>
+  <invoke name="ClassName:methodName">
+    <parameter name="parameterName">value</parameter>
+    <parameter name="parameterName">value</parameter>
+    <parameter name="parameterName">value</parameter>
+  </invoke>
+</function_call>
+"""
+
     @classmethod
     @override
     def construct(cls, signature: MethodSignature) -> str:
@@ -14,7 +40,7 @@ class CSXMLCodec(AbstractCodec):
         """
         return "\n".join(
             [
-                f"# {signature.class_name}:{signature.name}",
+                f"### {signature.class_name}:{signature.name}",
                 f"Description: {signature.description}",
                 "Parameters:",
                 cls._parameters_to_str(signature.parameters),
@@ -140,6 +166,29 @@ class CSXMLCodec(AbstractCodec):
     
 
 class KLXMLCodec(AbstractCodec):
+
+    @classmethod
+    def get_instruction(cls) -> str:
+        return """
+RESPONSE CONTRACT
+Output exactly TWO XML blocks per message:
+
+<thinking>
+<!-- 50-100 words max:
+Intent: [What user wants]
+Context: [Current state/findings] 
+Decision: [Tool choice + why]
+Approval: [If needed, what requires confirmation]
+User Message: [What the user needs to understand - acknowledge their request, explain findings in their context, address their concerns]
+-->
+</thinking>
+
+<tool_name>
+  <param>value</param>
+</tool_name>
+"""
+
+
     @classmethod
     def _parameters_to_str(cls, parameters: list[ParameterInfo]) -> str:
         text = ""
@@ -168,7 +217,7 @@ class KLXMLCodec(AbstractCodec):
         """
         return "\n".join(
             [
-                f"# {signature.class_name}:{signature.name}",
+                f"### {signature.class_name}:{signature.name}",
                 f"Description: {signature.description}",
                 "Parameters:",
                 cls._parameters_to_str(signature.parameters),
