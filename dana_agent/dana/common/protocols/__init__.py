@@ -1,4 +1,5 @@
 from .notifiable import Notifiable, Notifier
+from .persistable import Persistable
 from .prompts import AssistantPromptComponents, PromptsProtocol, SystemPromptComponents, UserPromptComponents
 from .types import DictParams, Identifiable
 from .war import AgentProtocol, ResourceProtocol, STARAgentProtococol, WorkflowProtocol
@@ -17,4 +18,5 @@ __all__ = [
     "AssistantPromptComponents",
     "Notifiable",
     "Notifier",
+    "Persistable",
 ]
