@@ -1,12 +1,52 @@
 # Dana ↔ Llama Stack Integration Points
 
+## API Contract
+
+**1. Initialization (one-time setup)**
+
+- LlamaStack passes **API provider objects** to Dana
+- Dana stores these and uses them to make calls throughout execution
+- Think of it like: Dana gets a "handle" to LlamaStack's services
+
+**2. Per-Request (every agent interaction)**
+
+- LlamaStack converts agent data (config, messages) to plain dicts
+- Dana processes using its internal logic + calling LS APIs
+- Dana returns plain dict result
+- LlamaStack converts back to its types
+
+### Integration Contract
+
+Dana implements `DanaEngine` in `dana/adapters/llamastack/engine.py`:
+
+| When            | What Crosses Boundary   | Type                | Format/Purpose                                                                                                               |
+| --------------- | ----------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Init (once)** | LS → Dana: API objects  | Live Python objects | `inference_api`, `safety_api`, `vector_io_api`, `tool_runtime_api`, `tool_groups_api` - Dana stores and calls these directly |
+| **Per agent**   | LS → Dana: Agent config | Plain dict          | `{"model": "llama3.3", "instructions": "..."}` via `create_agent(agent_id, config)`                                          |
+| **Per turn**    | LS → Dana: Messages     | List of dicts       | `[{"role": "user", "content": "..."}]` via `execute_turn(agent_id, session_id, messages, config)`                            |
+| **Per turn**    | Dana → LS: Result       | Plain dict          | `{"content": "response", "stop_reason": "end_of_turn"}` returned from `execute_turn()`                                       |
+
+### How Dana Uses LlamaStack APIs
+
+| LS API Object      | Provides          | Dana Uses For                            | Dana Alternative         |
+| ------------------ | ----------------- | ---------------------------------------- | ------------------------ |
+| `inference_api`    | LLM calls         | STAR Loop reasoning, response generation | None (required)          |
+| `vector_io_api`    | Vector DB queries | Knowledge retrieval                      | Dana Timeline, Resources |
+| `safety_api`       | Safety checks     | Content moderation                       | Dana custom rules        |
+| `tool_runtime_api` | Tool execution    | Code interpreter, web search             | Dana native tools        |
+| `tool_groups_api`  | Tool metadata     | Dynamic tool discovery                   | Dana tool registry       |
+
+**Flexibility:** Dana can use all LS APIs, only LLM + Dana internals, or mix both as needed.
+
+---
+
 ## Clear Boundary Definition
 
 ```mermaid
 graph TB
     subgraph LS["LLAMA STACK REPOSITORY"]
         THIN[Dana Provider<br/>Thin Adapter ~230 lines]
-        THIN_DETAILS["• Receives: LS Agent API calls<br/>• Translates: LS types ↔ Dana types<br/>• Dependencies: 7 LS API providers<br/>• Returns: LS-formatted responses"]
+        THIN_DETAILS["• Receives: LS Agent API calls<br/>• Translates: LS types ↔ plain dicts<br/>• Dependencies: 7 LS API providers<br/>• Returns: LS-formatted responses"]
 
         subgraph BOUNDARY["INTEGRATION LAYER (BOUNDARY)"]
             INIT["initialize(config, deps):<br/>- Get 7 LS API providers<br/>- Pass to Dana engine<br/>- Return initialized engine"]
@@ -70,6 +110,7 @@ graph TB
 ```
 
 **Color Legend:**
+
 - 🟢 Pale Green (#e6ffe6): Dana components
 - 🔴 Pale Red (#ffe6e6): Core inference/safety
 - 🔵 Pale Blue (#e6f3ff): Memory & knowledge
@@ -104,6 +145,7 @@ async def get_provider_impl(config: DanaAgentConfig, deps: ProviderDependencies)
 ```
 
 **What Crosses the Boundary:**
+
 - **LS → Dana:** Configuration object, 7 API provider instances
 - **Dana → LS:** Initialized Dana provider
 
@@ -123,7 +165,7 @@ class DanaAgentProvider(Agents):  # Implements LS Agent protocol
         Output to Llama Stack:
         - AgentCreateResponse (LS type)
         """
-        # Translate LS types to Dana types
+        # Translate LS types to plain dicts
         dana_result = await self.engine.create_agent(
             model=agent_config.model,
             instructions=agent_config.instructions,
@@ -131,13 +173,14 @@ class DanaAgentProvider(Agents):  # Implements LS Agent protocol
             # ...
         )
 
-        # Translate Dana types back to LS types
+        # Translate plain dict back to LS types
         return AgentCreateResponse(
             agent_id=dana_result.id  # Dana type → LS type
         )
 ```
 
 **What Crosses the Boundary:**
+
 - **LS → Adapter:** `AgentConfig` (LS type)
 - **Adapter → Dana:** Simple Python types (strings, lists, dicts)
 - **Dana → Adapter:** Dana-specific result object
@@ -177,6 +220,7 @@ async def create_agent_turn(
 ```
 
 **What Crosses the Boundary:**
+
 - **LS → Adapter:** `agent_id`, `session_id`, `messages` (LS types)
 - **Adapter → Dana:** Dana session + messages
 - **Dana → Adapter:** Dana turn result
@@ -221,6 +265,7 @@ class DanaEngine:
 ```
 
 **What Crosses the Boundary:**
+
 - **Dana → LS VectorIO:** Query request (LS types)
 - **LS VectorIO → Dana:** Query response (LS types)
 - **Dana → LS Inference:** Chat request (LS types)
@@ -260,6 +305,7 @@ class DanaLearningEngine:
 ```
 
 **What Crosses the Boundary:**
+
 - **Dana → LS Datasets:** Dataset registration request (LS types)
 - **Dana → LS PostTraining:** Fine-tuning job request (LS types)
 - **Dana → LS Models:** Model registration request (LS types)
@@ -279,13 +325,13 @@ sequenceDiagram
 
     User->>LS_Server: HTTP/gRPC Request
     LS_Server->>Adapter: create_agent_turn()
-    Note over Adapter: Translate LS types → Dana types
+    Note over Adapter: Translate LS types → plain dicts
     Adapter->>Engine: execute_turn()
     Engine->>APIs: VectorIO.query_chunks()<br/>Inference.chat_completion()
     APIs-->>Engine: LS-typed responses
     Note over Engine: Process results
     Engine-->>Adapter: Dana-typed results
-    Note over Adapter: Translate Dana types → LS types
+    Note over Adapter: Translate plain dicts → LS types
     Adapter-->>LS_Server: AgentTurnCreateResponse
     LS_Server-->>User: HTTP/gRPC Response
 ```
@@ -356,17 +402,20 @@ regulations = await self.vector_io.query_chunks(
 ## Key Principles
 
 1. **Thin Adapter Responsibility:**
-   - Type conversion ONLY (LS types ↔ Dana types)
+
+   - Type conversion ONLY (LS types ↔ plain dicts)
    - No business logic
    - ~200-300 lines total
 
 2. **Dana Package Responsibility:**
+
    - All business logic (STAR Loop, Workflows, Learning)
    - Receives LS API providers as dependencies
    - Calls LS APIs directly with LS types
    - ~5000+ lines total
 
 3. **Clear Boundary:**
+
    - Llama Stack knows NOTHING about Dana internals
    - Dana knows about LS API contracts (uses them as dependencies)
    - Adapter is the ONLY connection point
@@ -460,6 +509,7 @@ graph TB
 ```
 
 **Bottom Line:**
+
 - **Llama Stack** provides the infrastructure (7 APIs)
 - **Dana** consumes it (external package)
 - **Thin adapter** (~230 lines) is just a translator at the boundary
