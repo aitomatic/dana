@@ -16,7 +16,10 @@ from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMResponse
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
-
+from dana.core.knowledge.prompts.codecs import AbstractCodec
+from dana.common.utils.misc import Misc
+from pydantic import BaseModel
+import traceback
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
@@ -1185,3 +1188,224 @@ Please provide the canonical XML format:
 
         except Exception as e:
             return self._create_tool_error("parsing", target or "unknown", f"Fault-tolerant parsing failed: {str(e)}")
+
+
+class CodecToolCaller(WARCaller):
+    def __init__(self, agent: "STARAgent", codec: type[AbstractCodec]):
+        super().__init__(agent, self)
+        self._agent = agent
+        self._codec = codec
+
+    @observable
+    def parse_llm_response(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using codec-based format.
+        """
+        return self.parse_llm_response_symbolic(llm_response)
+
+    @observable
+    def parse_llm_response_symbolic(self, llm_response: LLMResponse) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse LLM response using codec-based format.
+
+        Handles codec format with <thinking> and <function_call> blocks.
+        Falls back to parent implementation for old formats.
+
+        Args:
+            llm_response: The LLM response object containing content and tool calls
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        if not llm_response:
+            return None, None, []
+
+        # Work with a copy to avoid mutating the input
+        content = llm_response.content.strip()
+
+        return self._parse_codec_response(llm_response, content)
+
+    def _parse_codec_response(self, llm_response: LLMResponse, content: str) -> tuple[str | None, str | None, list[DictParams]]:
+        """
+        Parse codec-based response format using codec's parse_response method.
+
+        Uses self._codec.parse_response() to parse the content and converts
+        the result to the expected format.
+
+        Args:
+            llm_response: The LLM response object
+            content: The response content string
+
+        Returns:
+            Tuple of (response_text, response_reasoning, tool_calls_list)
+        """
+        # Handle structured tool calls from LLM providers first
+        result_tool_calls = []
+        if llm_response.tool_calls:
+            if len(llm_response.tool_calls) == 1 and llm_response.tool_calls[0].function.name == "<|constrain|>response":
+                # Response passed as tool call (openai/gpt-oss-20b)
+                content = llm_response.tool_calls[0].function.arguments
+                if content:
+                    content = content.strip()
+            else:
+                # Structured (JSON) tool calls
+                result_tool_calls.extend(self._to_tool_call_dicts(llm_response.tool_calls))
+
+        # Parse using codec's parse_response method
+        parsed_response = self._codec.parse_response(content)
+        
+        # Extract thinking as reasoning
+        response_reasoning = parsed_response.thinking if parsed_response.thinking else None
+
+        if not (response_reasoning and parsed_response.tool_calls):
+            suggestion_message = f"[Error] invalid tool call format, please follow the following instruction.\n{self._codec.get_instruction()}"
+            return None, suggestion_message, []
+
+        if not response_reasoning:
+            print(f"Response reasoning: {response_reasoning}")
+        
+        # Convert tool calls to DictParams format
+        if parsed_response.tool_calls:
+            for tool_call in parsed_response.tool_calls:
+                function_name = f"{tool_call.class_name}:{tool_call.name}"
+                result_tool_calls.append({
+                    "function": function_name,
+                    "arguments": tool_call.parameters
+                })
+
+        return response_reasoning, response_reasoning, result_tool_calls
+
+
+    def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
+        """Convert structured function calls to our internal format."""
+        tool_call_dicts = []
+
+        for llm_tool_call in llm_tool_calls:
+            try:
+                function_name = llm_tool_call.function.name
+                arguments = llm_tool_call.function.arguments
+
+                # Non-string arguments (already parsed) - use outer function name
+                tool_call_dicts.append({"function": function_name, "arguments": arguments})
+
+            except Exception:
+                continue
+
+        return tool_call_dicts
+
+    @observable
+    def execute_tool_calls(self, parsed_tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [self._execute_single_call(call) for call in parsed_tool_calls]
+
+    @observable
+    def _execute_single_call(self, tool_call: dict[str, Any]) -> dict[str, Any]:
+        function_name = tool_call.get("function", "")
+        arguments = tool_call.get("arguments", {})
+        if ":" not in function_name:
+            return self._create_tool_error(
+                "codec_format", function_name, "Expected ClassName:methodName format"
+            )
+        
+        parts = function_name.split(":", 1)
+        class_name = parts[0]
+        method_name = parts[1]
+
+        obj_info = self._find_object_by_class_name(class_name)
+        if not obj_info:
+            available_classes = self._get_available_class_names()
+            return self._create_tool_error(
+                "class_not_found",
+                class_name,
+                f"Class '{class_name}' not found in available agents/resources/workflows. "
+                f"Available classes: {', '.join(available_classes[:10])}{'...' if len(available_classes) > 10 else ''}"
+            )
+
+        # Method signature validation and conversion to the expected type
+        if hasattr(obj_info["object"], method_name):
+            method = getattr(obj_info["object"], method_name)
+            signature = Misc.parse_method_signature(method)
+            for param in signature.parameters:
+                if param.type_object and param.name in arguments:
+                    if hasattr(param.type_object, "__args__"):
+                        hinted_types = param.type_object.__args__
+                    else:
+                        hinted_types = [param.type_object]
+                    for _type in hinted_types:
+                        if _type in (str, int, float):
+                            try:
+                                arguments[param.name] = _type(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                        elif _type in (bool, list, dict):
+                            try:
+                                arguments[param.name] = eval(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                        elif issubclass(_type, BaseModel):
+                            try:
+                                arguments[param.name] = _type.model_validate_json(arguments[param.name])
+                                break
+                            except Exception:
+                                continue
+                            
+            try:
+                if asyncio.iscoroutinefunction(method):
+                    result = Misc.safe_asyncio_run(method, **arguments)
+                else:
+                    result = method(**arguments)
+                return {"type": obj_info["type"], "object": obj_info["object"], "result": result}
+            except Exception as e:
+                return self._create_tool_error(
+                    "execution_error",
+                    f"{class_name}.{method_name}",
+                    f"Error executing call {class_name}.{method_name}: {str(e)}\n{traceback.format_exc()}"
+                )
+        else:
+            return self._create_tool_error(
+                "method_not_found",
+                f"{class_name}.{method_name}",
+                f"Method '{method_name}' not found in class '{class_name}'\n{traceback.format_exc()}"
+            )
+
+    def _find_object_by_class_name(self, class_name: str) -> dict[str, Any] | None:
+        """
+        Find an object by its class name in available agents, resources, and workflows.
+
+        Note: This matches the first occurrence found. If multiple objects of the
+        same class exist, only the first one will be matched, which may cause issues.
+
+        Args:
+            class_name: The class name to search for (__class__.__name__)
+
+        Returns:
+            Dictionary with "type" and "object" keys, or None if not found
+        """
+        # Search in agents
+        for agent in self._agent.available_agents:
+            if agent.__class__.__name__ == class_name:
+                return {"type": "agent", "object": agent}
+        
+        # Search in resources
+        for resource in self._agent.available_resources:
+            if resource.__class__.__name__ == class_name:
+                return {"type": "resource", "object": resource}
+        
+        # Search in workflows
+        for workflow in self._agent.available_workflows:
+            if workflow.__class__.__name__ == class_name:
+                return {"type": "workflow", "object": workflow}
+        
+        return None
+
+    def _get_available_class_names(self) -> list[str]:
+        """Get list of available class names from all objects."""
+        class_names = []
+        for agent in self._agent.available_agents:
+            class_names.append(agent.__class__.__name__)
+        for resource in self._agent.available_resources:
+            class_names.append(resource.__class__.__name__)
+        for workflow in self._agent.available_workflows:
+            class_names.append(workflow.__class__.__name__)
+        return sorted(set(class_names))

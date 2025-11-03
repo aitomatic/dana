@@ -15,6 +15,7 @@ class ParameterInfo(BaseModel):
     """Information about a single method parameter."""
     name: str
     type: str
+    type_object: Any | None = None  # Actual type object for programmatic use
     description: str
     has_default: bool
     default: Any | None = None
@@ -56,3 +57,8 @@ class ToolCall(BaseModel):
     class_name: str | None = None
     name: str
     parameters: dict[str, Any]
+
+
+class ParsedCodecResponse(BaseModel):
+    thinking: str
+    tool_calls: list[ToolCall] | None = None

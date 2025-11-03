@@ -5,6 +5,8 @@
 import inspect
 import re
 from typing import Any, get_type_hints
+from collections.abc import Callable
+import asyncio
 
 from dana.common.protocols.war import IS_TOOL_USE
 from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, ParsedArgKwargsResults
@@ -12,6 +14,57 @@ from dana.common.schemas.tool_call import MethodSignature, ParameterInfo, Parsed
 
 class Misc:
     """A collection of miscellaneous utility methods."""
+
+    @staticmethod
+    def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        """Run a function in an asyncio loop with smart event loop handling.
+
+        This method handles all scenarios:
+        - No event loop running: Uses asyncio.run()
+        - Event loop running in async context: Uses await
+        - Event loop running in sync context: Uses loop.create_task() and run_until_complete()
+
+        This approach eliminates the need for nest_asyncio and works in:
+        - Jupyter notebooks
+        - FastMCP environments
+        - Standard Python scripts
+        - Any async framework
+
+        Args:
+            func: The async function to run
+            *args: Arguments to pass to the function
+            **kwargs: Keyword arguments to pass to the function
+
+        Returns:
+            The result of the async function
+        """
+        # Check if we're already in an event loop
+        try:
+            asyncio.get_running_loop()
+            # We're in a running event loop
+            return Misc._run_in_existing_loop(func, *args, **kwargs)
+        except RuntimeError:
+            # No event loop is running, we can use asyncio.run()
+            return asyncio.run(func(*args, **kwargs))
+
+    @staticmethod
+    def _run_in_existing_loop(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        """Run a function in an existing event loop.
+
+        This method handles the case where we're already in an event loop
+        and need to execute an async function. It uses a thread-based approach
+        to avoid interfering with the existing event loop.
+        """
+        # Use a thread-based approach to avoid event loop conflicts
+        import concurrent.futures
+
+        def run_in_thread():
+            # Create a new event loop in this thread and run the function
+            return asyncio.run(func(*args, **kwargs))
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_in_thread)
+            return future.result()
 
     @staticmethod
     def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
@@ -201,8 +254,13 @@ class Misc:
             if param.kind == inspect.Parameter.VAR_KEYWORD:
                 continue
             
-            # Get parameter type
+            # Get parameter type (string representation for serialization)
             param_type = Misc._format_type_annotation(param, type_hints.get(param_name))
+            
+            # Get actual type object for programmatic use
+            type_object = type_hints.get(param_name)
+            if type_object is None and param.annotation != inspect.Parameter.empty:
+                type_object = param.annotation
             
             # Get parameter description
             param_desc = param_descriptions.get(param_name, f"Parameter {param_name}")
@@ -217,6 +275,7 @@ class Misc:
             param_info = ParameterInfo(
                 name=param_name,
                 type=param_type,
+                type_object=type_object,
                 description=param_desc,
                 has_default=has_default,
                 default=default_value if has_default and default_value is not None else None,

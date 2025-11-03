@@ -7,7 +7,7 @@ ensuring they can parse XML method call strings back into ToolCall objects.
 
 import pytest
 
-from dana.common.schemas.tool_call import ToolCall, MethodSignature, ParameterInfo
+from dana.common.schemas.tool_call import ToolCall, MethodSignature, ParameterInfo, ParsedCodecResponse
 from dana.core.knowledge.prompts.codecs.xml_format import CSXMLCodec, KLXMLCodec
 
 
@@ -246,4 +246,295 @@ class TestXMLCodecsRoundTrip:
         assert result.class_name == signature.class_name
         assert result.name == signature.name
         assert result.parameters["relative_workspace_path"] == "dana/hello.py"
+
+
+class TestCSXMLCodecParseResponse:
+    """Test CSXMLCodec.parse_response functionality."""
+
+    def test_parse_response_with_single_tool_call_and_thinking(self):
+        """Test parse_response with single tool call and thinking block."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+        assert result.tool_calls[0].name == "create"
+        assert result.tool_calls[0].parameters == {"relative_workspace_path": "dana/hello.py"}
+
+    def test_parse_response_with_multiple_tool_calls(self):
+        """Test parse_response with multiple tool calls."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>
+<function_call>
+<invoke name="MyResource:myMethod">
+<parameter name="param1">value1</parameter>
+<parameter name="param2">value2</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 2
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+        assert result.tool_calls[0].name == "create"
+        assert result.tool_calls[1].class_name == "MyResource"
+        assert result.tool_calls[1].name == "myMethod"
+        assert result.tool_calls[1].parameters == {"param1": "value1", "param2": "value2"}
+
+    def test_parse_response_without_thinking_block(self):
+        """Test parse_response without thinking block (should treat text before tool calls as thinking)."""
+        xml_string = """<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == ""  # No text before tool calls
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_with_text_before_tool_calls_no_thinking_tag(self):
+        """Test parse_response with text before tool calls but no <thinking> tag."""
+        xml_string = """This is some thinking text
+about what I should do.
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is some thinking text" in result.thinking
+        assert "about what I should do" in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_without_tool_calls(self):
+        """Test parse_response without tool calls (should return None)."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is None
+
+    def test_parse_response_with_xml_comments_in_thinking(self):
+        """Test parse_response with XML comments in thinking block."""
+        xml_string = """<thinking>
+<!-- 50-100 words max:
+Intent: What user wants
+Context: Current state
+-->
+This is my thinking about the task.
+</thinking>
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        # XML comments should be stripped
+        assert "<!--" not in result.thinking
+        assert "Intent: What user wants" not in result.thinking
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+
+    def test_parse_response_with_text_before_and_after_xml(self):
+        """Test parse_response with text before and after XML blocks."""
+        xml_string = """Some text before
+<thinking>
+This is my thinking about the task.
+</thinking>
+<function_call>
+<invoke name="CreateFileResource:create">
+<parameter name="relative_workspace_path">dana/hello.py</parameter>
+</invoke>
+</function_call>
+Some text after"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_with_empty_function_call(self):
+        """Test parse_response with empty function_call block (should skip it gracefully)."""
+        xml_string = """<thinking>
+Intent: Confirm and proceed with creating the financial health report for AMD.
+Context: The data directory does not exist or is not found, so I cannot access the data files needed to perform the analysis.
+Decision: Inform the user about the missing data directory so they can provide the necessary data or correct the path.
+Approval: Request user confirmation or instructions on how to proceed given the missing data.
+User Message: I attempted to access the data directory to locate AMD's financial data files but the directory was not found. Please verify the data location or provide the data files needed to proceed with the financial health report.
+</thinking>
+
+<function_call>
+</function_call>"""
+
+        result = CSXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "Intent: Confirm and proceed" in result.thinking
+        # Empty function_call should be skipped, so tool_calls should be None or empty list
+        assert result.tool_calls is None or len(result.tool_calls) == 0
+
+
+class TestKLXMLCodecParseResponse:
+    """Test KLXMLCodec.parse_response functionality."""
+
+    def test_parse_response_with_single_tool_call_and_thinking(self):
+        """Test parse_response with single tool call and thinking block."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+        assert result.tool_calls[0].name == "create"
+        assert result.tool_calls[0].parameters == {"relative_workspace_path": "dana/hello.py"}
+
+    def test_parse_response_with_multiple_tool_calls(self):
+        """Test parse_response with multiple tool calls."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>
+<MyResource:myMethod>
+<param1>value1</param1>
+<param2>value2</param2>
+</MyResource:myMethod>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 2
+        assert result.tool_calls[0].class_name == "CreateFileResource"
+        assert result.tool_calls[0].name == "create"
+        assert result.tool_calls[1].class_name == "MyResource"
+        assert result.tool_calls[1].name == "myMethod"
+
+    def test_parse_response_without_thinking_block(self):
+        """Test parse_response without thinking block (should treat text before tool calls as thinking)."""
+        xml_string = """<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == ""  # No text before tool calls
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_with_text_before_tool_calls_no_thinking_tag(self):
+        """Test parse_response with text before tool calls but no <thinking> tag."""
+        xml_string = """This is some thinking text
+about what I should do.
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert "This is some thinking text" in result.thinking
+        assert "about what I should do" in result.thinking
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
+
+    def test_parse_response_without_tool_calls(self):
+        """Test parse_response without tool calls (should return None)."""
+        xml_string = """<thinking>
+This is my thinking about the task.
+</thinking>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is None
+
+    def test_parse_response_with_xml_comments_in_thinking(self):
+        """Test parse_response with XML comments in thinking block."""
+        xml_string = """<thinking>
+<!-- 50-100 words max:
+Intent: What user wants
+Context: Current state
+-->
+This is my thinking about the task.
+</thinking>
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        # XML comments should be stripped
+        assert "<!--" not in result.thinking
+        assert "Intent: What user wants" not in result.thinking
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+
+    def test_parse_response_with_text_before_and_after_xml(self):
+        """Test parse_response with text before and after XML blocks."""
+        xml_string = """Some text before
+<thinking>
+This is my thinking about the task.
+</thinking>
+<CreateFileResource:create>
+<relative_workspace_path>dana/hello.py</relative_workspace_path>
+</CreateFileResource:create>
+Some text after"""
+
+        result = KLXMLCodec.parse_response(xml_string)
+
+        assert isinstance(result, ParsedCodecResponse)
+        assert result.thinking == "This is my thinking about the task."
+        assert result.tool_calls is not None
+        assert len(result.tool_calls) == 1
 
