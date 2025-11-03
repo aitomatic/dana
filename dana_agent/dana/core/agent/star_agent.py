@@ -18,8 +18,10 @@ from dana.common.protocols import AgentProtocol, DictParams, Notifiable, Resourc
 from dana.common.protocols.types import LearningPhase
 from dana.core.resource.todo import ToDoResource
 
+from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, Learner, PromptEngineer, State, ToolCaller
+from .components.tool_caller import CodecToolCaller
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
@@ -45,6 +47,8 @@ class STARAgent(BaseSTARAgent):
         max_context_tokens: int = 4000,
         auto_register: bool = True,
         registry=None,
+        codec=None,
+        prompt_api : PromptAPIProtocol | None = None,
         **kwargs,
     ):
         """
@@ -59,6 +63,7 @@ class STARAgent(BaseSTARAgent):
             max_context_tokens: Maximum tokens for timeline context
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
+            codec: Codec class to use for new prompt/tool system (if None, uses old system)
             **kwargs: Additional arguments passed to components
         """
         # Initialize base class first (handles registration)
@@ -76,12 +81,22 @@ class STARAgent(BaseSTARAgent):
             "model": model,
         }
 
-        # Initialize components with composition
-        self._prompt_engineer = PromptEngineer(self)
+        # Conditional component initialization based on codec
+        if codec is not None:
+            # Use new PromptEngineerManager and CodecToolCaller
+            from dana.core.knowledge.prompts.prompt_api import LocalPromptAPI
+            from dana.config.storage_config import FileStorageConfig
+            self._prompt_engineer = prompt_api or LocalPromptAPI(self, codec=codec, storage_config=FileStorageConfig())
+            self._tool_caller = CodecToolCaller(self, codec=codec)
+        else:
+            # Use old PromptEngineer and ToolCaller (backward compatibility)
+            self._prompt_engineer = PromptEngineer(self)
+            self._tool_caller = ToolCaller(self)
+
+        # Initialize other components
         self._communicator = Communicator(self)
         self._state = State(self)
         self._learner = Learner(self)
-        self._tool_caller = ToolCaller(self)
 
         # Initialize timeline at agent level
         self._timeline = Timeline(max_context_tokens=max_context_tokens)
@@ -300,6 +315,15 @@ class STARAgent(BaseSTARAgent):
             has_tool_calls = tool_calls and len(tool_calls) > 0
             if has_content or has_tool_calls:
                 break
+            elif reasoning and "error" in reasoning.lower():
+                from dana.common.llm.types import LLMMessage
+                suggestion_message = LLMMessage(role="user", content=reasoning)
+                if llm_messages and llm_messages[-1].role == "user" and "error" in llm_messages[-1].content.lower():
+                    # Replace old suggestion message in case of consecutive errors
+                    llm_messages[-1] = suggestion_message
+                else:
+                    # Add new suggestion message
+                    llm_messages.append(suggestion_message)
             if attempt < self.MAX_EMPTY_RESPONSE_RETRIES - 1:
                 logger.warning("Empty LLM response, retrying", attempt=attempt + 1)
 
@@ -408,18 +432,18 @@ class STARAgent(BaseSTARAgent):
 
             # Add a synthetic user message to prompt the agent to respond based on tool results
             # This ensures the next THINK phase has a user message to respond to
-            last_command_message = ""
-            for entry in self._timeline.timeline[::-1]:
-                if entry.entry_type == TimelineEntryType.USER_MESSAGE:
-                    last_command_message = entry.content and "Please provide a response" not in entry.content
-                    break
-            self._timeline.add_entry(
-                TimelineEntry(
-                    entry_type=TimelineEntryType.USER_MESSAGE,
-                    content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
-                    is_latest_user_message=True,
-                )
-            )
+            # last_command_message = ""
+            # for entry in self._timeline.timeline[::-1]:
+            #     if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+            #         last_command_message = entry.content and "Please provide a response" not in entry.content
+            #         break
+            # self._timeline.add_entry(
+            #     TimelineEntry(
+            #         entry_type=TimelineEntryType.USER_MESSAGE,
+            #         content=f"Please provide a response based on the tool results above to answer : {last_command_message}",
+            #         is_latest_user_message=True,
+            #     )
+            # )
 
         # Output parameter checking
         assert isinstance(tool_results, list)
