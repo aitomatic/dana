@@ -22,7 +22,8 @@ Brief analysis (50-150 words):
 - Any user confirmation needed?
 
 [Then include the actual response to user:]
-Your complete answer, clarification question, or explanation of what tools you're about to call
+Your complete answer, clarification question, or explanation of what tools you're about to call.
+If you need to call a tool, include the tool call in the next <function_call> block.
 </thinking>
 
 <function_call>

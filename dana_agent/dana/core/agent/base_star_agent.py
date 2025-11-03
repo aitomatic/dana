@@ -6,6 +6,7 @@ without implementation details like LLM integration or rich state management.
 """
 
 from abc import abstractmethod
+from uuid import uuid4
 
 from dana.common.observable import observable
 from dana.common.protocols import DictParams, STARAgentProtococol
@@ -228,8 +229,21 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
     # STAR LOOP ORCHESTRATION
     # ============================================================================
 
-    def query(self, **kwargs) -> DictParams:
-        """Main entry point - orchestrates the STAR loop."""
+    def query(self, session_id: str | None = None, **kwargs) -> DictParams:
+        """Main entry point - orchestrates the STAR loop.
+        
+        Args:
+            session_id: Optional session identifier. If None, generates UUID.
+            **kwargs: Additional arguments passed to STAR loop.
+        """
+
+        # Generate session_id if not provided
+        if session_id is None:
+            session_id = str(uuid4())
+
+        # Set session_id for EventLog if it exists
+        if hasattr(self, "_event_log") and self._event_log is not None:
+            self._event_log._current_session_id = session_id
 
         @observable(name=f"Dana {self.agent_type}-agent-query")
         def _do_query(trace_inputs: DictParams) -> DictParams:
@@ -259,6 +273,11 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
         try:
             result = _do_query(trace_inputs={"trace_inputs": kwargs})
             result = result.get("trace_outputs", {}) if result else {}
+
+            # Save events and timeline at end of query if EventLog exists
+            if hasattr(self, "_event_log") and self._event_log is not None:
+                if hasattr(self, "_timeline") and self._timeline is not None:
+                    self._event_log.save(self._timeline, session_id)
 
         except Exception as e:
             print(f"Error in query: {e}")
