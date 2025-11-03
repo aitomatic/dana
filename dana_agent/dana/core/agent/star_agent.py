@@ -22,6 +22,7 @@ from ..knowledge.prompts.prompt_api import PromptAPIProtocol
 from .base_star_agent import BaseSTARAgent
 from .components import Communicator, Learner, PromptEngineer, State, ToolCaller
 from .components.tool_caller import CodecToolCaller
+from .components.observer import ObserverProtocol
 from .timeline import Timeline, TimelineEntry, TimelineEntryType
 
 
@@ -49,6 +50,7 @@ class STARAgent(BaseSTARAgent):
         registry=None,
         codec=None,
         prompt_api : PromptAPIProtocol | None = None,
+        observer: ObserverProtocol | None = None,
         **kwargs,
     ):
         """
@@ -100,6 +102,23 @@ class STARAgent(BaseSTARAgent):
 
         # Initialize timeline at agent level
         self._timeline = Timeline(max_context_tokens=max_context_tokens)
+
+        # Initialize EventLog API (only if observer AND codec provided)
+        # Events ONLY come from Observer - no observer = no EventLog
+        if observer is not None and codec is not None:
+            from dana.core.agent.components.event_log_api import EventLogAPI
+            from dana.config.storage_config import FileStorageConfig
+            
+            storage_config = FileStorageConfig()  # Use default or passed config
+            self._event_log = EventLogAPI(
+                agent=self,
+                codec=codec,
+                storage_config=storage_config,
+                observer=observer,  # REQUIRED - EventLog only works with Observer
+            )
+        else:
+            # No observer or codec = no EventLog (events only come from Observer)
+            self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
 
@@ -179,9 +198,14 @@ class STARAgent(BaseSTARAgent):
         """Get a summary of the agent's timeline."""
         return self._timeline.get_timeline_summary()
 
-    def converse(self, initial_message: str | None = None) -> None:
-        """Interactive conversation loop with a human user."""
-        self._communicator.converse(initial_message=initial_message)
+    def converse(self, initial_message: str | None = None, session_id: str | None = None) -> None:
+        """Interactive conversation loop with a human user.
+        
+        Args:
+            initial_message: Optional initial message to start the conversation
+            session_id: Optional session identifier. If None, generates UUID.
+        """
+        self._communicator.converse(initial_message=initial_message, session_id=session_id)
 
     def __getattr__(self, name: str):
         """
@@ -273,6 +297,11 @@ class STARAgent(BaseSTARAgent):
             # Keep caller_message in trace_inputs for notification
             if "caller_message" not in trace_inputs:
                 trace_inputs["caller_message"] = caller_message
+
+        # Observe environment if EventLog is enabled
+        # This is the ONLY way events are created - from Observer
+        if self._event_log:
+            self._event_log.observe_and_record()  # Observer.observe() -> Event
 
         trace_inputs |= {"timeline": self._timeline}
 
