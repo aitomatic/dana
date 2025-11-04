@@ -315,8 +315,8 @@ graph TB
 
 **All-hands (Architectural Review - 60 min):**
 - Review architecture and interfaces (`EventLog`, `KnowledgeStore`, `STARAgent`)
-- Confirm Llama-Stack integration points: `Inference API`, `Agent API`, `Storage API`, `Conversation API` (Prompts is local filesystem-based)
-- Align on simulator requirements: expose environment state outputs/telemetry, not just accept inputs
+- Confirm Llama-Stack integration points: `Inference API`, `Agent API` (primary focus); `Storage API`, `Conversation API`, `RAG` deferred to focus on packaging/installation (Prompts is local filesystem-based)
+- Align on simulator requirements: expose environment state outputs/telemetry, not just accept inputs; simulated HVAC data (no real building data yet)
 - Align on web application requirements: lightweight demo app to drive HVAC use case and demonstrate learning
 - Note: Lam unavailable Day 1; foundational work shifts to Day 2
 
@@ -331,8 +331,8 @@ graph TB
 **@zooey (Integration) - 4 hours:**
  - [ ] Llama-Stack dev environment ready
  - [ ] LLM client wrapper created and tested
- - [ ] Define and sequence API contracts: `Inference`, `Agent`, `Storage`, `Conversation` (Finetuning deferred)
- - **Deliverable:** Baseline connectivity + API contract plan
+ - [ ] Define and sequence API contracts: `Inference`, `Agent` (primary focus for packaging); `Storage`, `Conversation`, `RAG` deferred (Finetuning deferred)
+ - **Deliverable:** Baseline connectivity + API contract plan (focusing on Inference/Agent APIs for packaging deliverable)
 
 **Sync:** 4:30 PM - Blockers and priorities
 
@@ -382,57 +382,62 @@ Deliverables by role:
 - [ ] `STARAgent` skeleton (operate/learn modes)
 - [ ] Implement end-of-session write trigger (episodic summary on session close)
 - [ ] Local prompts service (filesystem): render + learn (MVP prompt learning)
-- **Deliverable:** Working episodic learning pipeline (Day 2 work shifted)
+- [ ] Create testable interfaces/harness for episodic learning (William can use to test HVAC integration)
+- **Deliverable:** Working episodic learning pipeline with testable interfaces/harness (Day 2 work shifted)
 
 **@william - 4 hours:**
 - [ ] Add simulator observability (logging, metrics)
-- [ ] Prepare integration scenarios
-- [ ] Web app: Integrate with agent/simulator to display HVAC operations (zones, temperatures, agent actions)
-- **Deliverable:** Enhanced simulator with observability; Web app showing HVAC operations
+- [ ] Prepare episodic learning scenarios/test cases
+- [ ] Ensure simulator/agent integration ready for episodic learning (verify agent can receive and process HVAC events)
+- **Deliverable:** Enhanced simulator with observability; Integration ready for episodic learning
 
 **@zooey - 4 hours:**
  - [ ] Wire `Agent API` to decision loop; connect to `Inference API`
- - **Deliverable:** Agent decisions using `Inference`
+ - [ ] Ensure LLM/Inference API is functional for agent decisions
+ - **Deliverable:** Agent decisions using `Inference` API (foundation for Day 4 packaging)
 
-**Sync:** 4:30 PM - Plan first integration for Day 4
+**Sync:** 4:30 PM - Review episodic pipeline progress; prepare for Day 4 episodic learning and packaging
 
 Deliverables by role:
- - @lam: Episodic pipeline functional with end-of-session write trigger
- - @william: Simulator with observability added; Web app showing HVAC operations
-- @zooey: Agent wired to Inference; decisions flowing
+ - @lam: Episodic pipeline functional with end-of-session write trigger; Testable interfaces/harness ready for William
+ - @william: Simulator with observability added; Integration ready for episodic learning
+- @zooey: Agent wired to Inference API; decisions flowing (foundation for packaging)
 
 ---
 
-### Day 4 - Wednesday, Nov 5, 2025 - First Integration & Proof
+### Day 4 - Wednesday, Nov 5, 2025 - Episodic Learning & LlamaStack Packaging
 
 **@lam - 8 hours:**
-- [ ] Simulation learning loop (run episodes, learn)
-- [ ] Demo notebook showing learning curve
-- [ ] End-to-end test (≥20 episodes) shows improvement
+- [ ] Framework-level validation: test episodic learning pipeline with synthetic scenarios (prove learning works at framework level)
+- [ ] Create test utilities/demo notebook showing learning curve (for William to use as reference)
 - [ ] Implement per-query acquisitive artifact write on query completion
-- **Deliverable:** Proven learning with metrics (Day 3 work shifted)
+- [ ] Provide validation tools/test harness that William can use for HVAC-specific testing
+- **Deliverable:** Framework-level learning validation complete; Test utilities and validation tools ready for William
 
 **@william - 4 hours:**
-- [ ] Create before/after demo scenarios
-- [ ] Integration testing with Lam's components
-- [ ] Web app: Run episodes/scenarios and display HVAC performance (temperature control, agent decisions, zone status)
-- **Deliverable:** Integration complete, scenarios ready; Web app running HVAC episodes with performance display
+- [ ] Wire episodic learning functionality into HVAC agent/simulator (use Lam's episodic pipeline and test harness from Day 3)
+- [ ] Configure agent to retrieve episodic memories for HVAC decisions (query episodic knowledge store during decision-making)
+- [ ] Run basic HVAC test scenarios using Lam's test utilities (from Day 3 preparation) - verify agent can retrieve and use episodic memories
+- [ ] Validate HVAC integration: agent retrieves relevant past episodes and uses them in HVAC decision-making
+- **Deliverable:** Episodic learning wired into HVAC agent/simulator; Agent successfully retrieves and uses episodic memories in HVAC test scenarios
 
 **@zooey - 4 hours:**
- - [ ] Integration testing across all components
- - [ ] Verify end-to-end flow
- - **Deliverable:** Full integration verified
+ - [ ] LlamaStack packaging/installation setup (dev environment, deployment configuration, packaging scripts)
+ - [ ] Package LLM/Inference API integration (from Day 3) into installable format
+ - [ ] Basic installation verification and testing
+ - [ ] Create initial installation documentation
+ - **Deliverable:** LlamaStack packaging/installation working with LLM/Inference API packaged and installable
 
-**Sync:** 4:00 PM - Full team integration test
+**Sync:** 4:00 PM - Review episodic learning progress and packaging status
 
 Deliverables by role:
-- @lam: Learning loop + notebook with improvement over ≥20 episodes; per-query acquisitive write
-- @william: Integration complete; before/after scenarios ready; Web app running HVAC episodes with performance display
-- @zooey: Full integration verified; end-to-end flow working
+- @lam: Framework-level learning validation complete; Test utilities and validation tools ready for William; per-query acquisitive write
+- @william: Episodic learning wired into HVAC agent/simulator; Agent successfully retrieves and uses episodic memories in HVAC test scenarios
+- @zooey: LlamaStack packaging/installation working with LLM/Inference API packaged and installable
 
 ---
 
-### Day 5 - Thursday, Nov 6, 2025 - HVAC Domain Logic & Integrative Prototype
+### Day 5 - Thursday, Nov 6, 2025 - Integration & Learning Proof
 
 **@lam - 8 hours:**
 - [ ] Implement Integrative scope (clustering, pattern extraction)
@@ -441,25 +446,27 @@ Deliverables by role:
 - **Deliverable:** Integrative learning working
 
 **@william - 4 hours:**
-- [ ] HVAC domain strategies (zone control)
-- [ ] Comfort vs efficiency optimization logic
-- [ ] Web app: Integrate HVAC domain controls and display strategies in UI
-- **Deliverable:** HVAC-specific agent intelligence; Web app showing domain strategies
+- [ ] Run HVAC-specific learning proof: multiple episodes with same scenario repeated (determine number of episodes needed to show improvement)
+- [ ] Create before/after demo scenarios: compare agent performance in first episode vs. later episodes
+- [ ] Measure and document learning proof: collect metrics showing agent improvement (e.g., faster response, better decisions, lower energy)
+- [ ] Prepare learning curve visualization/data: show how agent performance improves over episodes (using Lam's Day 4 test utilities as reference)
+- **Deliverable:** HVAC learning proof demonstrated with metrics; Before/after scenarios ready; Learning curve data collected
 
 **@zooey - 4 hours:**
-- [ ] RAG: retrieval wiring into `Prompts API` (context injection)
-- [ ] Introduce `Conversation API` for multi-turn decision traces
-- **Deliverable:** Context-aware prompts + conversational scaffolding
+- [ ] Expand LlamaStack packaging/installation documentation (deployment guides, installation steps, troubleshooting)
+- [ ] Packaging verification and testing across different environments
+- [ ] Installation verification scripts and test procedures
+- **Deliverable:** Comprehensive LlamaStack packaging/installation documentation and verification procedures
 
 Operational cadence notes:
 - Integrative runs daily across sessions (batch job).
 
-**Sync:** 4:30 PM - Demo dry run #1
+**Sync:** 4:30 PM - Integration review and learning proof demonstration
 
 Deliverables by role:
 - @lam: Integrative scope working + consolidation trigger logic
-- @william: HVAC domain strategies and optimization logic implemented; Web app showing domain strategies
-- @zooey: RAG context in Prompts; Conversation API scaffolding
+- @william: HVAC learning proof demonstrated with metrics; Before/after scenarios ready; Learning curve data collected
+- @zooey: Comprehensive LlamaStack packaging/installation documentation and verification procedures
 
 ---
 
@@ -472,47 +479,49 @@ Deliverables by role:
 - **Deliverable:** Polished core framework
 
 **@william - 4 hours:**
-- [ ] Improve simulator realism or ingest sample building data
-- [ ] Wire realistic data through pipeline
-- [ ] Web app: Integrate metrics collection and observability display (energy, comfort, accuracy)
-- **Deliverable:** Realistic HVAC data flowing end-to-end; Web app displaying metrics
+- [ ] Enhance simulator realism (improve thermal dynamics, add more realistic scenarios)
+- [ ] Wire simulated HVAC data through full pipeline (events → episodic learning → agent decisions)
+- [ ] Validate metrics collection and observability (energy, comfort, accuracy) in pipeline
+- [ ] Test end-to-end with enhanced simulator: verify learning pipeline works with more realistic simulated scenarios
+- **Deliverable:** Enhanced simulated HVAC data flowing end-to-end through learning pipeline; Metrics collection validated
 
 **@zooey - 4 hours:**
-- [ ] Implement `Storage API` for logs/telemetry of LLM calls
-- [ ] Observability (log calls, costs) across `Inference`/`Agent`/`Conversation`
-- **Deliverable:** Storage-backed LLM monitoring
+- [ ] Polish LlamaStack packaging/installation (error handling, edge cases, user experience)
+- [ ] Installation verification across different environments (Linux, macOS, Windows if applicable)
+- [ ] Complete deployment guides and troubleshooting documentation
+- [ ] Create installation quick-start guide
+- **Deliverable:** Production-ready LlamaStack packaging/installation with comprehensive documentation
 
 **Sync:** 3:00 PM - Full team integration
 
 Deliverables by role:
 - @lam: Optimized retrieval + metrics collection integrated
-- @william: Realistic data flowing end-to-end; Web app displaying metrics
-- @zooey: Storage-backed LLM observability
+- @william: Enhanced simulated HVAC data flowing end-to-end through learning pipeline; Metrics collection validated
+- @zooey: Production-ready LlamaStack packaging/installation with comprehensive documentation
 
 ---
 
-### Day 7 - Monday, Nov 10, 2025 - Visualization, UX, and Consolidation Stubs
+### Day 7 - Monday, Nov 10, 2025 - Demo Prep & Inspection Tools
 
 **@lam - 8 hours:**
-- [ ] Knowledge inspection tools (episodic memory, patterns)
-- [ ] Consolidation visualization
-- [ ] Stub Consolidative scope (interfaces + examples)
-- **Deliverable:** Framework feature-complete
+- [ ] Knowledge inspection tools (episodic memory inspection - show what agent learned, retrieve similar episodes)
+- [ ] Integration support for demo: ensure inspection tools work with William's web app
+- [ ] Final framework polish for demo readiness
+- **Deliverable:** Knowledge inspection tools ready for demo; Framework demo-ready
 
 **@william - 6 hours:**
 - [ ] Polish web application: Complete UI/UX for HVAC demo
-- [ ] Real-time HVAC visualization (zone temperatures, setpoints, agent actions, energy consumption)
+- [ ] Ensure web app demonstrates episodic learning functionality (show episodic memories, session boundaries, learning improvements)
+- [ ] Integrate Lam's inspection tools into web app (display episodic memories retrieved, learning progress)
 - [ ] Interactive controls: Start/stop episodes, scenario selection, parameter adjustment
-- [ ] Display HVAC performance metrics (comfort, energy efficiency, anomaly detection)
-- **Deliverable:** Complete driving application ready for demo with HVAC-focused visualization and controls
-
-**@lam - 2 hours:**
- - [ ] Local prompts versioning + rollout controls (filesystem)
- - **Deliverable:** Versioned prompts (filesystem)
+- [ ] Display HVAC performance metrics and learning progress (comfort, energy efficiency, learning curve)
+- **Deliverable:** Complete driving application ready for demo with episodic learning functionality demonstrated
 
 **@zooey - 2 hours:**
- - [ ] Enhance `Conversation API` (session metadata, transcript export)
- - **Deliverable:** Richer conversations
+ - [ ] Final LlamaStack packaging/installation validation
+ - [ ] Installation guide final review and polish
+ - [ ] Verify all installation paths work correctly
+ - **Deliverable:** Finalized and validated LlamaStack packaging/installation
 
 Operational cadence notes:
 - Consolidative runs weekly to promote stable rules/prompts (versioned, with rollback plan).
@@ -520,9 +529,9 @@ Operational cadence notes:
 **Sync:** 4:30 PM - Demo dry run #2
 
 Deliverables by role:
-- @lam: Inspection tools + consolidation visualization + consolidative stubs + versioned prompts
-- @william: Complete driving application ready for demo with HVAC-focused visualization and controls
-- @zooey: Enhanced conversations
+- @lam: Knowledge inspection tools ready for demo; Framework demo-ready
+- @william: Complete driving application ready for demo with episodic learning functionality demonstrated
+- @zooey: Finalized and validated LlamaStack packaging/installation
 
 ---
 
@@ -541,11 +550,13 @@ Deliverables by role:
 - **Deliverable:** Demo materials ready; Web application demo polished
 
 **@zooey - 4 hours:**
-- [ ] Deployment guide and performance benchmarks
-- [ ] Final checks across `Inference`/`Agent`/`Storage`/`Conversation`/`Prompts`
-- **Deliverable:** Deployment docs and Q&A readiness
+- [ ] Complete LlamaStack deployment guide (production deployment procedures)
+- [ ] Performance benchmarks for packaged installation (installation time, resource usage, API latency)
+- [ ] Final validation of LLM/Inference API integration within packaged installation
+- [ ] Create installation troubleshooting guide and FAQ
+- **Deliverable:** Complete LlamaStack deployment guide, performance benchmarks, and final packaging validation
 
-**Note:** Finetuning API is explicitly deferred to the next sprint.
+**Note:** Finetuning API is explicitly deferred to the next sprint. RAG, Conversation API, and Storage API are deferred to focus on packaging/installation as the primary LlamaStack deliverable.
 
 **All team (2 hours):**
 - [ ] Final rehearsal and handoff meeting (how to extend)
@@ -556,7 +567,7 @@ Deliverables by role:
 Deliverables by role:
 - @lam: Production-grade codebase, docs/diagrams
 - @william: Demo script, environment setup, handout; Complete web application for HVAC demo
-- @zooey: Deployment guide, benchmarks, final API checks
+- @zooey: Complete LlamaStack deployment guide, performance benchmarks, and final packaging validation
 - All team: Final rehearsal + handoff package
 
 ---
@@ -564,7 +575,7 @@ Deliverables by role:
 ## Success Metrics
 
 ### Technical Metrics
-- **Learning works:** Agent improves over 20+ episodes
+- **Learning works:** Agent improves over multiple episodes (number determined by testing)
 - **Retrieval speed:** <10ms for episodic queries
 - **Consolidation:** Patterns extracted from 100+ observations
 - **Integration:** All components work together end-to-end
@@ -610,10 +621,10 @@ Deliverables by role:
 
 ---
 
-**Document Version:** 1.1  
-**Last Updated:** 2025-10-31  
+**Document Version:** 1.2  
+**Last Updated:** 2025-11-01  
 **Owners:** @annieha (PM), @lam (Tech Lead)
-**Note:** Updated to 8-day plan due to Lam's unavailability on Day 1. Plan shifts Lam's foundational work to Day 2, with integration moved to Day 4. Web application added as driving application for HVAC use case, starting Day 1 and expanding Day 7 to 6 hours for polish.
+**Note:** Updated scope and timing: (1) Zooey focuses on packaging/installation using LlamaStack as primary deliverable; RAG, Conversation API, and Storage API deferred. LLM/Inference API integration included. (2) William's integration/learning proof moved from Nov 5 to Nov 6; Nov 5 focuses on episodic learning functionality. Plan maintains 8-day timeline without extension.
 
 ## Gantt: 8-Day Schedule
 
@@ -629,18 +640,18 @@ gantt
   section lam (Main SWE)
   Day 2: EventLog+KnowledgeStore + prompts scaffold (Day 1 shifted) :d2_lam, 2025-11-03, 1d
   Day 3: Episodic pipeline + session close + local prompts MVP :d3_lam, after d2_lam, 1d
-  Day 4: Learning loop + notebook (≥20 eps) + prompt learning integration :d4_lam, after d3_lam, 1d
+  Day 4: Framework validation + test utilities + acquisitive write :d4_lam, after d3_lam, 1d
   Day 5: Integrative scope + triggers       :d5_lam, after d4_lam, 1d
   Day 6: Retrieval perf + metrics wiring    :d6_lam, after d5_lam, 1d
-  Day 7: Inspect tools + consolidation viz + prompt versioning :d7_lam, after d6_lam, 1d
+  Day 7: Inspection tools + demo prep :d7_lam, after d6_lam, 1d
   Day 8: Robustness + docs/diagrams         :d8_lam, after d7_lam, 1d
 
   section william (Application)
   Day 1: Simulator stub + integration points :d1_w, 2025-10-31, 1d
   Day 2: Complete sim + web app structure+UI :d2_w, after d1_w, 1d
   Day 3: Observability + web app framework :d3_w, after d2_w, 1d
-  Day 4: Integration + web app learning    :d4_w, after d3_w, 1d
-  Day 5: Domain strategies + web app HVAC  :d5_w, after d4_w, 1d
+  Day 4: Episodic learning functionality    :d4_w, after d3_w, 1d
+  Day 5: Integration + learning proof  :d5_w, after d4_w, 1d
   Day 6: Realistic data + web app metrics  :d6_w, after d5_w, 1d
   Day 7: Complete driving app + polish    :d7_w, after d6_w, 1d
   Day 8: Demo script + final web app prep  :d8_w, after d7_w, 1d
@@ -649,11 +660,11 @@ gantt
   Day 1: Env + API contracts plan          :d1_z, 2025-10-31, 1d
   Day 2: Inference live; Agent stub        :d2_z, after d1_z, 1d
   Day 3: Wire Agent+Inference              :d3_z, after d2_z, 1d
-  Day 4: Integration verification         :d4_z, after d3_z, 1d
-  Day 5: RAG in prompts + Conversation API :d5_z, after d4_z, 1d
-  Day 6: Storage API + LLM observability   :d6_z, after d5_z, 1d
-  Day 7: Conversations enhancements        :d7_z, after d6_z, 1d
-  Day 8: Final checks + deploy docs        :d8_z, after d7_z, 1d
+  Day 4: Packaging/installation + LLM API :d4_z, after d3_z, 1d
+  Day 5: Packaging docs + verification :d5_z, after d4_z, 1d
+  Day 6: Packaging polish + deployment guides   :d6_z, after d5_z, 1d
+  Day 7: Final packaging checks        :d7_z, after d6_z, 1d
+  Day 8: Deploy guide + benchmarks        :d8_z, after d7_z, 1d
 
   section Milestones
   Demo Ready                        :milestone, m_demo, after d8_lam, 0d
