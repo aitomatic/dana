@@ -8,10 +8,15 @@ Provides access to LlamaStack APIs beyond basic inference:
 - Conversation API: Multi-turn session management (we USE this, convert to Timeline)
 """
 
-from .agent import DanaEngine
 from .client import LlamaStackClientManager
 from .conversation import ConversationResource
 from .resource import VectorIOResource
+
+try:
+    from .engine import DanaEngineAPI
+except ImportError:
+    # engine.py may not be fully implemented yet
+    DanaEngineAPI = None
 
 try:
     from .storage import StorageAPI, LlamaStackStorageAPI, TelemetryResource
@@ -23,11 +28,13 @@ except ImportError:
 
 
 __all__ = [
-    "DanaEngine",
     "LlamaStackClientManager",
     "ConversationResource",
     "VectorIOResource",
-    "StorageAPI",
-    "LlamaStackStorageAPI",
-    "TelemetryResource",
 ]
+
+# Add optional exports if available
+if DanaEngineAPI is not None:
+    __all__.append("DanaEngineAPI")
+if StorageAPI is not None:
+    __all__.extend(["StorageAPI", "LlamaStackStorageAPI", "TelemetryResource"])
