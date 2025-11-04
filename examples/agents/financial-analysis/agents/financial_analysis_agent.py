@@ -139,11 +139,11 @@ class FinancialAnalysisAgent(STARAgent):
         # Register all file operation resources
         self.workspace_root = workspace_root
         self.with_resources(
-            ReadFileResource(resource_id="read-file", workspace_root=workspace_root),
-            RipgrepSearchResource(resource_id="ripgrep-search", workspace_root=workspace_root),
-            EditFileResource(resource_id="edit-file", workspace_root=workspace_root, auto_save=True),
-            CreateFileResource(resource_id="create-file", workspace_root=workspace_root),
-            ListDirResource(resource_id="list-dir", workspace_root=workspace_root),
+            # ReadFileResource(resource_id="read-file", workspace_root=workspace_root),
+            # RipgrepSearchResource(resource_id="ripgrep-search", workspace_root=workspace_root),
+            # EditFileResource(resource_id="edit-file", workspace_root=workspace_root, auto_save=True),
+            # CreateFileResource(resource_id="create-file", workspace_root=workspace_root),
+            # ListDirResource(resource_id="list-dir", workspace_root=workspace_root),
             SemanticSearchResource(resource_id="semantic-search", workspace_root=os.path.join(os.path.dirname(__file__), "..", "data")),
         )
 

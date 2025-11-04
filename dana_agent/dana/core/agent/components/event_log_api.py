@@ -5,17 +5,18 @@ This module provides EventLogAPI following the LocalPromptAPI pattern.
 Events come ONLY from Observer.observe() - no action events, no tool call events.
 """
 
-from dataclasses import dataclass, field
+from collections.abc import Iterator
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, TYPE_CHECKING
-from uuid import uuid4
 import inspect
 import json
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-from dana.config.storage_config import FileStorageConfig
-from dana.core.agent.timeline import Timeline
 from structlog import get_logger
+
+from dana.common.schemas import Event
+from dana.config.storage_config import FileStorageConfig
+
 
 if TYPE_CHECKING:
     from dana.core.agent.base_agent import BaseAgent
@@ -23,35 +24,8 @@ if TYPE_CHECKING:
 
 from .observer import ObserverProtocol
 
+
 logger = get_logger()
-
-
-@dataclass
-class Event:
-    """
-    Single observation event in the event log.
-    
-    NOTE: Events ONLY come from Observer. No actions, tool calls, or feedback.
-    Events = Observations from environment/sensors only.
-    """
-    type: str = "observation"  # Always "observation" - events only from observer
-    timestamp: datetime = field(default_factory=datetime.now)
-    agent_id: str = ""
-    session_id: Optional[str] = None
-    data: Dict[str, Any] = field(default_factory=dict)  # Observer data
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            "id": str(uuid4()),
-            "type": self.type,  # Always "observation"
-            "timestamp": self.timestamp.isoformat(),
-            "agent_id": self.agent_id,
-            "session_id": self.session_id,
-            "data": self.data,  # Observer data (e.g., sensor readings)
-            "metadata": self.metadata,
-        }
 
 
 class EventLogAPI:
@@ -69,7 +43,7 @@ class EventLogAPI:
     def __init__(
         self,
         agent: "BaseAgent",
-        codec: type["AbstractCodec"],
+        codec: type["AbstractCodec"] | None,
         storage_config: FileStorageConfig,
         observer: ObserverProtocol,
     ):
@@ -86,9 +60,10 @@ class EventLogAPI:
         """
         self._agent = agent
         self._codec = codec
+        self._codec_prefix = codec.__qualname__ if codec else "default"
         self._storage_config = storage_config
         self._observer = observer
-        self._current_session_id: Optional[str] = None
+        self._current_session_id: str | None = None
         self._event_buffer: list[Event] = []  # Buffer for observations only
         
         # Calculate path following prompt_api.py pattern
@@ -101,9 +76,9 @@ class EventLogAPI:
         """Calculate relative path following prompt_api.py pattern."""
         filepath = inspect.getfile(self._agent.__class__)
         filename = Path(filepath).stem
-        return f"{self._codec.__qualname__}/{self._agent.__class__.__qualname__}__{filename}/events"
+        return f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
     
-    def observe_and_record(self) -> Optional[Event]:
+    def observe_and_record(self) -> Event | None:
         """
         Observe environment via Observer and create event.
         
@@ -131,12 +106,11 @@ class EventLogAPI:
             logger.warning(f"Observer failed: {e}")
         return None
     
-    def save(self, timeline: Timeline, session_id: str) -> None:
+    def save(self, session_id: str) -> None:
         """
-        Save events and timeline for a session.
+        Save events for a session.
         
         Args:
-            timeline: Timeline to save
             session_id: Session identifier
         """
         self._current_session_id = session_id
@@ -151,41 +125,27 @@ class EventLogAPI:
             for event in self._event_buffer:
                 f.write(json.dumps(event.to_dict()) + "\n")
         
-        # Save timeline to JSON
-        timeline_file = session_folder / "timeline.json"
-        timeline_data = {
-            "session_id": session_id,
-            "agent_id": self._agent.object_id,
-            "agent_type": self._agent.agent_type if hasattr(self._agent, "agent_type") else None,
-            "entries": [
-                {
-                    "timestamp": entry.timestamp.isoformat(),
-                    "type": entry.entry_type.value,
-                    "content": entry.content,
-                    "metadata": entry.metadata,
-                }
-                for entry in timeline.timeline
-            ]
-        }
-        with open(timeline_file, "w") as f:
-            json.dump(timeline_data, f, indent=2)
-        
         # Log before clearing buffer
         num_events = len(self._event_buffer)
         # Clear buffer after save
         self._event_buffer.clear()
-        logger.info(f"Saved {num_events} events and timeline for session {session_id}")
+        logger.info(f"Saved {num_events} events for session {session_id}")
     
     def read_since(self, checkpoint: int) -> Iterator[Event]:
         """
         Read events since checkpoint (for learning pipeline).
         
         Args:
-            checkpoint: Starting index for reading events
+            checkpoint: Starting index for reading events.
+                Negative values are supported (e.g., -10 means "last 10 events").
+                -1 means "last event only", -2 means "last 2 events", etc.
             
         Yields:
             Event objects since checkpoint
         """
+        # First pass: collect all events to support negative checkpoints
+        all_events: list[Event] = []
+        
         # Read from all session folders
         for session_folder in self._workspace_folder.iterdir():
             if not session_folder.is_dir():
@@ -195,22 +155,32 @@ class EventLogAPI:
             if not events_file.exists():
                 continue
             
-            with open(events_file, "r") as f:
-                for i, line in enumerate(f):
-                    if i >= checkpoint:
-                        try:
-                            event_data = json.loads(line)
-                            # Reconstruct Event from dict
-                            event = Event(
-                                type=event_data.get("type", "observation"),
-                                timestamp=datetime.fromisoformat(event_data["timestamp"]),
-                                agent_id=event_data.get("agent_id", ""),
-                                session_id=event_data.get("session_id"),
-                                data=event_data.get("data", {}),
-                                metadata=event_data.get("metadata", {}),
-                            )
-                            yield event
-                        except Exception as e:
-                            logger.warning(f"Failed to parse event at line {i}: {e}")
-                            continue
+            with open(events_file) as f:
+                for line in f:
+                    try:
+                        event_data = json.loads(line)
+                        # Reconstruct Event from dict
+                        event = Event(
+                            type=event_data.get("type", "observation"),
+                            timestamp=datetime.fromisoformat(event_data["timestamp"]),
+                            agent_id=event_data.get("agent_id", ""),
+                            session_id=event_data.get("session_id"),
+                            data=event_data.get("data", {}),
+                            metadata=event_data.get("metadata", {}),
+                        )
+                        all_events.append(event)
+                    except Exception as e:
+                        logger.warning(f"Failed to parse event: {e}")
+                        continue
+        
+        # Convert negative checkpoint to positive index
+        if checkpoint < 0:
+            total_count = len(all_events)
+            # Convert negative index: -1 = last event, -2 = second to last, etc.
+            # Similar to Python list slicing: checkpoint = total_count + checkpoint
+            checkpoint = max(0, total_count + checkpoint)
+        
+        # Yield events from checkpoint onwards
+        for i in range(checkpoint, len(all_events)):
+            yield all_events[i]
 

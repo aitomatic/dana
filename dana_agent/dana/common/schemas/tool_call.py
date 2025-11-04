@@ -62,3 +62,4 @@ class ToolCall(BaseModel):
 class ParsedCodecResponse(BaseModel):
     thinking: str
     tool_calls: list[ToolCall] | None = None
+    response: str | None = None

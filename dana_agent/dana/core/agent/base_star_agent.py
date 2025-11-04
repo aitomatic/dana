@@ -6,10 +6,11 @@ without implementation details like LLM integration or rich state management.
 """
 
 from abc import abstractmethod
-from uuid import uuid4
+import threading
 
 from dana.common.observable import observable
 from dana.common.protocols import DictParams, STARAgentProtococol
+from dana.common.protocols.types import LearningPhase
 from dana.core.agent.base_agent import BaseAgent
 
 
@@ -229,21 +230,15 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
     # STAR LOOP ORCHESTRATION
     # ============================================================================
 
-    def query(self, session_id: str | None = None, **kwargs) -> DictParams:
+
+    def query(self, **kwargs) -> DictParams:
         """Main entry point - orchestrates the STAR loop.
         
         Args:
-            session_id: Optional session identifier. If None, generates UUID.
             **kwargs: Additional arguments passed to STAR loop.
         """
 
-        # Generate session_id if not provided
-        if session_id is None:
-            session_id = str(uuid4())
-
-        # Set session_id for EventLog if it exists
-        if hasattr(self, "_event_log") and self._event_log is not None:
-            self._event_log._current_session_id = session_id
+        
 
         @observable(name=f"Dana {self.agent_type}-agent-query")
         def _do_query(trace_inputs: DictParams) -> DictParams:
@@ -255,7 +250,21 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     trace_thoughts = self._think(trace_percepts.get("trace_percepts", {}))
                     trace_outputs = self._act(trace_thoughts.get("trace_thoughts", {}))
-                    # _trace_learning = self._reflect(trace_outputs["trace_outputs"])
+
+                    # Trigger acquisitive learning asynchronously at end of each STAR loop
+                    if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        # Prepare acquisitive learning input (async, non-blocking)
+                        acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
+                        acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
+                        # Run asynchronously to not block STAR loop
+                        # Capture acquisitive_input in closure properly
+                        def run_reflect(acq_input):
+                            return self._reflect(acq_input)
+                        threading.Thread(
+                            target=run_reflect,
+                            args=(acquisitive_input,),
+                            daemon=True
+                        ).start()
 
                     if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break
@@ -274,10 +283,6 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
             result = _do_query(trace_inputs={"trace_inputs": kwargs})
             result = result.get("trace_outputs", {}) if result else {}
 
-            # Save events and timeline at end of query if EventLog exists
-            if hasattr(self, "_event_log") and self._event_log is not None:
-                if hasattr(self, "_timeline") and self._timeline is not None:
-                    self._event_log.save(self._timeline, session_id)
 
         except Exception as e:
             print(f"Error in query: {e}")
