@@ -67,7 +67,7 @@ class EditFileResource(BaseResource):
         self,
         relative_workspace_path: str,
         blocking: bool,
-        contents: str,
+        contents: str | None = None,
         line_ranges: list[dict] | None = None,
         should_edit_file_fail_for_large_files: bool = False,
         old_string: str | None = None,
@@ -84,7 +84,7 @@ class EditFileResource(BaseResource):
             relative_workspace_path: Path to file relative to workspace root (REQUIRED)
             language: Programming language of the file (REQUIRED)
             blocking: Whether to block on completion (REQUIRED)
-            contents: New file contents for full replacement (REQUIRED)
+            contents: New file contents for full replacement
             line_ranges: Specific line ranges to edit (OPTIONAL)
             should_edit_file_fail_for_large_files: Fail if file too large (OPTIONAL, default: False)
             old_string: String to search for in search-replace mode (OPTIONAL)

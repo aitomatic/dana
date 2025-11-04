@@ -7,7 +7,7 @@ EventLog come ONLY from Observer.observe().
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 
 class ObserverProtocol(ABC):
@@ -19,7 +19,7 @@ class ObserverProtocol(ABC):
     """
     
     @abstractmethod
-    def observe(self) -> Dict[str, Any]:
+    def observe(self) -> dict[str, Any]:
         """
         Observe the environment and return data.
         
@@ -47,7 +47,7 @@ class NullObserver(ObserverProtocol):
     Used when no observer is provided - returns empty observations.
     """
     
-    def observe(self) -> Dict[str, Any]:
+    def observe(self) -> dict[str, Any]:
         """Return empty dict - no observations."""
         return {}
     

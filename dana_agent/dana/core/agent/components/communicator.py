@@ -63,8 +63,12 @@ class Communicator:
                     first_iteration = False
                 else:
                     user_input = input("\nYou: ").strip()
+                    # Save events if EventLog exists
                     if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
-                        self._agent._event_log.save(self._agent._timeline, session_id)
+                        self._agent._event_log.save(session_id)
+                    # Save timeline (agent, codec, storage_config already set in __init__)
+                    if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                        self._agent._timeline.save(session_id)
 
                 # Check for exit commands
                 if user_input.lower() in ["/quit", "/exit", "/bye", "/q"]:
@@ -190,23 +194,29 @@ class Communicator:
 
             except KeyboardInterrupt:
                 print("\n\nAgent: Conversation interrupted. Goodbye!")
-                # Save events and timeline at end of conversation if EventLog exists
+                # Save events if EventLog exists
                 if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
-                    if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
-                        self._agent._event_log.save(self._agent._timeline, session_id)
+                    self._agent._event_log.save(session_id)
+                # Save timeline (agent, codec, storage_config already set in __init__)
+                if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                    self._agent._timeline.save(session_id)
                 break
             except EOFError:
                 print("\n\nAgent: Input ended. Goodbye!")
-                # Save events and timeline at end of conversation if EventLog exists
+                # Save events if EventLog exists
                 if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
-                    if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
-                        self._agent._event_log.save(self._agent._timeline, session_id)
+                    self._agent._event_log.save(session_id)
+                # Save timeline (agent, codec, storage_config already set in __init__)
+                if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+                    self._agent._timeline.save(session_id)
                 break
             except Exception as e:
                 print(f"\nError: {e}")
                 print("Type '/help' for available commands or '/quit' to exit")
         
-        # Save events and timeline at end of conversation if EventLog exists
+        # Save events if EventLog exists
         if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
-            if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
-                self._agent._event_log.save(self._agent._timeline, session_id)
+            self._agent._event_log.save(session_id)
+        # Save timeline (agent, codec, storage_config already set in __init__)
+        if hasattr(self._agent, "_timeline") and self._agent._timeline is not None:
+            self._agent._timeline.save(session_id)

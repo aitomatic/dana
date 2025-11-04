@@ -11,31 +11,44 @@ class CSXMLCodec(AbstractCodec):
     def get_instruction(cls) -> str:
         return """
 RESPONSE CONTRACT
-Output 1-2 blocks per message:
+PURPOSE: Enforce a clear separation between the assistant’s private reasoning
+         and its user-visible output (answer or tool invocation).
 
-<thinking> (ALWAYS REQUIRED)
-Brief analysis (50-150 words):
-- What does the user need?
-- Do I have sufficient information to answer?
-- If yes: What's my answer approach?
-- If no: What tool(s) do I need and why?
-- Any user confirmation needed?
+── OUTPUT FORMAT ────────────────────────────────────────────
+Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
+  1. <thinking>  ← MANDATORY, *internal* reasoning only
+  2. <response>  ← optional, a direct answer (omit if tool call needed)
+  3. <function_call> ← optional, external-tool invocation
 
-[Then include the actual response to user:]
-Your complete answer, clarification question, or explanation of what tools you're about to call.
-If you need to call a tool, include the tool call in the next <function_call> block.
+<thinking>
+/* PRIVATE — NOT SHOWN TO USER
+   Brief analysis (≈ 50-150 words):
+   • What does the user need?
+   • Do I have enough info? → If no, specify the tool(s) required.
+   • Planned answer approach or tool workflow.
+   • Whether a user confirmation question is needed.
+   END PRIVATE */
 </thinking>
 
+<!-- BRANCH A: DIRECT ANSWER (no tool call) -->
+<response>
+  <!-- Visible answer, clarification question, or next-step guidance. -->
+</response>
+
+<!-- BRANCH B: TOOL CALL (no <response>) -->
 <function_call>
   <invoke name="ClassName:methodName">
     <parameter name="parameterName">value</parameter>
+    <!-- Add more <parameter> tags as needed -->
   </invoke>
 </function_call>
 
-RULES:
-- <thinking> is always required and contains both reasoning AND user-facing message
-- <function_call> only appears when external tools are needed
-- Never output function calls without thinking
+# RULES
+• <thinking> is ALWAYS required; it contains only internal reasoning.
+• Exactly one of <response> or <function_call> must appear.
+• If <function_call> is present, ignore any <response>.
+• Never output a tool call without a preceding <thinking>.
+• If you have neither a tool call nor a direct answer, the <thinking> block’s user-visible section becomes the reply.
 """
 
     @classmethod
@@ -214,9 +227,37 @@ RULES:
                 # Skip malformed function_call blocks gracefully
                 continue
         
+        # Extract response tag if it exists
+        response_match = re.search(r'<response>(.*?)</response>', xml_string, re.DOTALL)
+        response = None
+        if response_match:
+            response = response_match.group(1).strip()
+            # Remove XML comments from response
+            response = re.sub(r'<!--.*?-->', '', response, flags=re.DOTALL).strip()
+        
+        # Fallback: if thinking is still empty, extract remaining content after removing function_call and response blocks
+        if not thinking:
+            # Remove all function_call blocks from xml_string
+            remaining_content = re.sub(r'<function_call>.*?</function_call>', '', xml_string, flags=re.DOTALL)
+            # Remove all response blocks from xml_string
+            remaining_content = re.sub(r'<response>.*?</response>', '', remaining_content, flags=re.DOTALL)
+            # Remove XML comments and strip whitespace
+            remaining_content = re.sub(r'<!--.*?-->', '', remaining_content, flags=re.DOTALL).strip()
+            # Use remaining content as thinking if not empty
+            if remaining_content:
+                thinking = remaining_content
+        
+        # Priority: if tool_calls exist, ignore response
+        if tool_calls:
+            response = None
+        # If only thinking exists (no response and no tool_calls), set response = thinking
+        elif thinking and not response and not tool_calls:
+            response = thinking
+        
         return ParsedCodecResponse(
             thinking=thinking,
-            tool_calls=tool_calls if tool_calls else None
+            tool_calls=tool_calls if tool_calls else None,
+            response=response
         )
 
 class KLXMLCodec(AbstractCodec):
@@ -225,22 +266,48 @@ class KLXMLCodec(AbstractCodec):
     def get_instruction(cls) -> str:
         return """
 RESPONSE CONTRACT
-Output exactly TWO XML blocks per message:
+PURPOSE: Enforce a clear separation between the assistant’s private reasoning
+         and its user-visible output (answer or tool invocation).
+
+── OUTPUT FORMAT ────────────────────────────────────────────
+Each assistant reply MUST contain 1-3 XML blocks, in the order shown:
+  1. <thinking>  ← MANDATORY, *internal* reasoning only
+  2. <response>  ← optional, a direct answer (omit if tool call needed)
+  3. <function_call> ← optional, external-tool invocation
 
 <thinking>
-Intent: [What user wants]
-Context: [Current state/findings] 
-Decision: [Tool choice + why]
-Approval: [If needed, what requires confirmation]
-User Message: [What the user needs to understand - acknowledge their request, explain findings in their context, address their concerns]
+/* PRIVATE — NOT SHOWN TO USER
+   Brief analysis (≈ 50-150 words):
+   • What does the user need?
+   • Do I have enough info? → If no, specify the tool(s) required.
+   • Planned answer approach or tool workflow.
+   • Whether a user confirmation question is needed.
+   END PRIVATE */
 </thinking>
 
-<tool_name>
-  <param>value</param>
-</tool_name>
-<tool_name>
-  <param>value</param>
-</tool_name>
+<!-- BRANCH A: DIRECT ANSWER (no tool call) -->
+<response>
+  <!-- Visible answer, clarification question, or next-step guidance. -->
+</response>
+
+<!-- BRANCH B — ONE OR MORE TOOL CALLS (omit <response>) -->
+<ClassName:methodName>
+  <param name="parameterName">value</param>
+  <!-- Add additional <param> tags as needed -->
+</ClassName:methodName>
+
+<!-- Example of a second tool call, if required
+<OtherClass:otherMethod>
+  <param name="...">...</param>
+</OtherClass:otherMethod> -->
+
+
+# RULES
+• <thinking> is ALWAYS required; it contains only internal reasoning.
+• Exactly one of <response> or <function_call> must appear.
+• If <function_call> is present, ignore any <response>.
+• Never output a tool call without a preceding <thinking>.
+• If you have neither a tool call nor a direct answer, the <thinking> block’s user-visible section becomes the reply.
 """
 
 
@@ -427,9 +494,37 @@ User Message: [What the user needs to understand - acknowledge their request, ex
             tool_call = cls.parse_method_call(full_match)
             tool_calls.append(tool_call)
         
+        # Extract response tag if it exists
+        response_match = re.search(r'<response>(.*?)</response>', xml_string, re.DOTALL)
+        response = None
+        if response_match:
+            response = response_match.group(1).strip()
+            # Remove XML comments from response
+            response = re.sub(r'<!--.*?-->', '', response, flags=re.DOTALL).strip()
+        
+        # Fallback: if thinking is still empty, extract remaining content after removing tool call and response blocks
+        if not thinking:
+            # Remove all tool call blocks (<ClassName:methodName>...</ClassName:methodName>) from xml_string
+            remaining_content = re.sub(r'<([^:>]+):([^>]+)>.*?</\1:\2>', '', xml_string, flags=re.DOTALL)
+            # Remove all response blocks from xml_string
+            remaining_content = re.sub(r'<response>.*?</response>', '', remaining_content, flags=re.DOTALL)
+            # Remove XML comments and strip whitespace
+            remaining_content = re.sub(r'<!--.*?-->', '', remaining_content, flags=re.DOTALL).strip()
+            # Use remaining content as thinking if not empty
+            if remaining_content:
+                thinking = remaining_content
+        
+        # Priority: if tool_calls exist, ignore response
+        if tool_calls:
+            response = None
+        # If only thinking exists (no response and no tool_calls), set response = thinking
+        elif thinking and not response and not tool_calls:
+            response = thinking
+        
         return ParsedCodecResponse(
             thinking=thinking,
-            tool_calls=tool_calls if tool_calls else None
+            tool_calls=tool_calls if tool_calls else None,
+            response=response
         )
 
 if __name__ == "__main__":

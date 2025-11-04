@@ -11,6 +11,7 @@ from dana.lang.common.sys_resource.rag.rag_resource_v2 import RAGResourceV2, CAC
 from dana.core.resource.base_resource import BaseResource
 from dana.lang.common.utils.misc import Misc
 from llama_index.core.schema import MetadataMode
+from dana.common.protocols.war import tool_use
 
 
 class SemanticSearchResource(BaseResource):
@@ -62,6 +63,7 @@ class SemanticSearchResource(BaseResource):
             reranking=False,  # Disable reranking for faster results
         )
 
+    @tool_use
     def search(self, query: str, top_k: int = 10) -> dict:
         """
         Perform semantic search across the workspace.

@@ -10,16 +10,18 @@ This component provides functionality for:
 import asyncio
 import json
 import re
+import traceback
 from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel
 
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMResponse
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
-from dana.core.knowledge.prompts.codecs import AbstractCodec
 from dana.common.utils.misc import Misc
-from pydantic import BaseModel
-import traceback
+from dana.core.knowledge.prompts.codecs import AbstractCodec
+
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
@@ -1222,8 +1224,10 @@ class CodecToolCaller(WARCaller):
 
         # Work with a copy to avoid mutating the input
         content = llm_response.content.strip()
-
-        return self._parse_codec_response(llm_response, content)
+        try:
+            return self._parse_codec_response(llm_response, content)
+        except Exception as _:
+            return content, None, []
 
     def _parse_codec_response(self, llm_response: LLMResponse, content: str) -> tuple[str | None, str | None, list[DictParams]]:
         """
@@ -1256,10 +1260,18 @@ class CodecToolCaller(WARCaller):
         
         # Extract thinking as reasoning
         response_reasoning = parsed_response.thinking if parsed_response.thinking else None
+        response_text = parsed_response.response if parsed_response.response else None
 
-        if not (response_reasoning and parsed_response.tool_calls):
-            suggestion_message = f"[Error] invalid tool call format, please follow the following instruction.\n{self._codec.get_instruction()}"
-            return None, suggestion_message, []
+
+
+
+        if response_reasoning and not (parsed_response.tool_calls or response_text):
+            suggestion_message = f"[Error] invalid format, please follow the following instruction.\n{self._codec.get_instruction()}"
+            return "No response generated", suggestion_message, []
+
+        if not (response_reasoning or response_text or parsed_response.tool_calls):
+            # If no xml tags parsed, likely there is a direct answer
+            return llm_response.content, None, []
 
         if not response_reasoning:
             print(f"Response reasoning: {response_reasoning}")
@@ -1272,8 +1284,9 @@ class CodecToolCaller(WARCaller):
                     "function": function_name,
                     "arguments": tool_call.parameters
                 })
-
-        return response_reasoning, response_reasoning, result_tool_calls
+            return "No response generated", response_reasoning , result_tool_calls
+        else:
+            return response_text, response_reasoning , result_tool_calls
 
 
     def _to_tool_call_dicts(self, llm_tool_calls: list) -> list[DictParams]:
@@ -1351,6 +1364,12 @@ class CodecToolCaller(WARCaller):
                                 continue
                             
             try:
+                # Set session_id for EventLog if it exists
+                if obj_info["type"] == "agent":
+                    if hasattr(self._agent, "_event_log") and self._agent._event_log is not None:
+                        session_id = self._agent._event_log._current_session_id
+                        if session_id is not None:
+                            arguments["session_id"] = session_id
                 if asyncio.iscoroutinefunction(method):
                     result = Misc.safe_asyncio_run(method, **arguments)
                 else:
