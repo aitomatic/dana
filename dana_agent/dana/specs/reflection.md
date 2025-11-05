@@ -4,6 +4,34 @@
 
 The Reflection Framework enables Dana STARAgents to learn from experience through a dual-mode architecture: **OPERATE** mode for real-time execution and **LEARN** mode for asynchronous knowledge mutation. This document outlines the architecture for the HVAC autonomous agent use case with an 8-day implementation plan.
 
+## Motivations & Impact
+
+**Why HVAC**
+
+HVAC represents one of the largest automation domains — hardware spending now exceeds semiconductors and data centers. It sits at the intersection of control systems, sensor feedback, and human comfort, making it a real-world proving ground for autonomous agents in physical environments.
+
+Efficiency matters strategically: training a single GPT-scale model consumes ~700,000L fresh water, with global AI water withdrawal projected at 6B m³ by 2027. HVAC provides a credible, measurable domain to demonstrate adaptive autonomy — not just LLM-powered chat, but operational control with real stakes.
+
+**Value Propositions**
+
+**For Dana/Aitomatic:**
+- Reference implementation: Dana agent installable + runnable via Llama Stack
+- Blueprints others can extend for industrial/enterprise use cases
+- Product milestone: validates Dana adaptive autonomous agents are ready for real-world physical systems
+
+**For Honeywell:**
+- Concrete step toward autonomous building management in $50B+ commercial energy market
+- Demonstrates adaptive behavior with targeted improvements: 15-25% energy reduction, 40% fewer comfort complaints, 60% faster anomaly diagnosis
+- Sets stage for pilot evaluation in real-building scenarios
+
+**For Llama Stack:**
+- Demonstrates real industrial use case beyond text/chat
+- Shows Llama Stack running an operational agent loop (See-Think-Act-Reflect) in physical-system context
+- Establishes Llama Stack as viable foundation for edge-aligned, safety-sensitive automation
+
+**Broader Pattern:**
+Broader Pattern: This is not only an HVAC demo. It proves an architecture where open, sovereign LLM foundations (Llama Stack) + a deterministic agent system with built-in reflection (Dana) deliver adaptive autonomy for high-stakes physical systems. Success here validates a repeatable model for mission-critical AI systems.
+
 ## Architecture Overview
 
 ```mermaid
@@ -207,10 +235,7 @@ Zone overheating → Retrieve similar episodes → Optimized response
 Anomaly detected → "Similar to episode #47" → Fast root cause
 ```
 
-**Metrics:**
-- Energy consumption reduction: 15-25%
-- Comfort complaint reduction: 40%
-- Anomaly diagnosis time: 60% faster
+Agent demonstrates measurable improvement in energy efficiency, comfort, and diagnostic speed (see Success Metrics).
 
 ## Core Interfaces
 
@@ -276,16 +301,14 @@ class PromptsAPI:
 
 ## Team Structure & Coordination
 
-## Team Structure & Coordination
-
 ```mermaid
 graph TB
     PM[annieha<br/>Project Manager]
     
     MAIN[lam<br/>Main SWE<br/>1.0 FTE]
     APP[william<br/>HVAC Core<br/>0.5 FTE]
-    UI[nhi<br/>Web UI<br/>0.75 FTE<br/>Days 3-8]
-    INT[zooey<br/>Llama-Stack<br/>0.5 FTE]
+    UI[nhi<br/>HVAC Web UI<br/>0.75 FTE<br/>Days 3-8]
+    INT[zooey<br/>Llama Stack Integration<br/>0.5 FTE]
     
     PM --> MAIN
     PM --> APP
@@ -293,9 +316,9 @@ graph TB
     PM --> INT
     
     MAIN -->|Framework Core| FC[Event Log<br/>Knowledge Store<br/>Learning Scopes]
-    APP -->|HVAC Logic| HL[HVAC Agent<br/>Simulator<br/>Domain Rules]
-    UI -->|Demo Web App| DA[Learning Viz<br/>Metrics Dashboard<br/>Inspection Tools]
-    INT -->|LLM Integration| LI[Llama-Stack<br/>Agent API<br/>Packaging]
+    APP -->|HVAC Core| HL[HVAC Agent<br/>Simulator<br/>Domain Rules]
+    UI -->|HVAC Demo UI| DA[Web App:<br/>Learning Viz<br/>Metrics Dashboard<br/>Inspection Tools]
+    INT -->|Llama Stack Package| LI[Installable HVAC Agent<br/>CLI: install/run<br/>Inference Integration]
     
     FC <-.->|Integration| HL
     FC <-.->|Integration| LI
@@ -319,7 +342,7 @@ graph TB
 
 **All-hands (Architectural Review - 60 min):**
 - Review architecture and interfaces (`EventLog`, `KnowledgeStore`, `STARAgent`)
-- Confirm Llama-Stack integration points: `Inference API`, `Agent API` (primary focus); `Storage API`, `Conversation API`, `RAG` deferred to focus on packaging/installation (Prompts is local filesystem-based)
+- Confirm Llama Stack integration points: `Inference API`, `Agent API` (primary focus); `Storage API`, `Conversation API`, `RAG` deferred to focus on packaging/installation (Prompts is local filesystem-based)
 - Align on simulator requirements: expose environment state outputs/telemetry, not just accept inputs; simulated HVAC data (no real building data yet)
 - Align on web application requirements: lightweight demo app to drive HVAC use case and demonstrate learning
 - Note: Lam unavailable Day 1; foundational work shifts to Day 2
@@ -333,7 +356,7 @@ graph TB
 - **Deliverable:** Simulator stub with basic zone dynamics and observable environment state; Web app integration points defined
 
 **@zooey (Integration) - 4 hours:**
- - [ ] Llama-Stack dev environment ready
+ - [ ] Llama Stack dev environment ready
  - [ ] LLM client wrapper created and tested
  - [ ] Define and sequence API contracts: `Inference`, `Agent` (primary focus for packaging); `Storage`, `Conversation`, `RAG` deferred (Finetuning deferred)
  - **Deliverable:** Baseline connectivity + API contract plan (focusing on Inference/Agent APIs for packaging deliverable)
@@ -344,7 +367,7 @@ Deliverables by role:
 - @annieha: Success metrics, tracking/milestones defined
 - All-hands: Architecture reviewed, integration points agreed (Lam's foundational work deferred to Day 2)
 - @william: Simulator stub with observable environment state; Web app integration points defined
-- @zooey: Llama-Stack connectivity + API contract plan
+- @zooey: Llama Stack connectivity + API contract plan
 
 ---
 
@@ -402,8 +425,8 @@ Deliverables by role:
 - **Deliverable:** Complete design doc + wireframe + framework chosen
 
 **@zooey - 4 hours:**
- - [ ] Design LlamaStack package structure for Dana HVAC agent
- - [ ] Define CLI commands: `llamastack install/run dana-hvac-agent`
+ - [ ] Design Llama Stack package structure for Dana HVAC agent
+ - [ ] Define CLI commands: `llama stack install/run dana-hvac-agent`
  - [ ] Scaffold package directory structure (dependencies, entry points)
  - **Deliverable:** Package structure designed; CLI commands defined
 
@@ -417,7 +440,7 @@ Deliverables by role:
 
 ---
 
-### Day 4 - Wednesday, Nov 5, 2025 - Episodic Learning & LlamaStack Packaging
+### Day 4 - Wednesday, Nov 5, 2025 - Episodic Learning & Llama Stack Packaging
 
 **@lam - 8 hours:**
 - [ ] Framework-level validation: test episodic learning pipeline with synthetic scenarios (prove learning works at framework level)
@@ -444,8 +467,8 @@ Deliverables by role:
 - **Deliverable:** Working simulator + agent visualization in web app
 
 **@zooey - 4 hours:**
- - [ ] Implement `llamastack install dana-hvac-agent` (package installation + dependencies)
- - [ ] Create entry point for `llamastack run dana-hvac-agent` (launches agent + web UI)
+ - [ ] Implement `llama stack install dana-hvac-agent` (package installation + dependencies)
+ - [ ] Create entry point for `llama stack run dana-hvac-agent` (launches agent + web UI)
  - [ ] Wire william's HVAC agent to CLI run command
  - [ ] Wire nhi's web UI to auto-launch with agent
  - [ ] **Evening: Integration checkpoint with nhi** - validate install → run launches everything
@@ -488,7 +511,7 @@ Deliverables by role:
 - **Deliverable:** Learning visualization complete; Demo ready for integration
 
 **@zooey - 4 hours:**
-- [ ] Complete `llamastack run dana-hvac-agent` command: agent runs in OPERATE mode with automatic LEARN triggers
+- [ ] Complete `llama stack run dana-hvac-agent` command: agent runs in OPERATE mode with automatic LEARN triggers
 - [ ] Add console output formatting: show OPERATE mode (See-Think-Act) and LEARN mode transitions (Reflect + episodic summary writes)
 - [ ] Ensure web UI launches automatically with agent
 - [ ] Test full flow: install → run → see OPERATE/LEARN modes in console → see learning in UI
@@ -499,8 +522,8 @@ Deliverables by role:
 - Integrative runs daily across sessions (batch job).
 
 **Evening Integration Checklist (All team):**
-- [ ] `llamastack install dana-hvac-agent` succeeds
-- [ ] `llamastack run dana-hvac-agent` launches agent + web UI
+- [ ] `llama stack install dana-hvac-agent` succeeds
+- [ ] `llama stack run dana-hvac-agent` launches agent + web UI
 - [ ] Console shows **OPERATE mode:** See → Think → Act per episode
 - [ ] Console shows **LEARN mode:** Reflect + episodic summary writes on session end
 - [ ] Agent retrieves episodic memories during OPERATE (Think phase)
@@ -630,10 +653,10 @@ Deliverables by role:
 - [ ] Final installation testing (fresh environment, following docs)
 - [ ] **TROUBLESHOOTING.md** - Common issues + solutions, FAQ
 - [ ] Polish CLI output and logging (ensure STAR loop is clear)
-- [ ] Final validation: `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` → verify works
-- **Deliverable:** Production-ready LlamaStack package with complete OSS documentation
+- [ ] Final validation: `llama stack install dana-hvac-agent` → `llama stack run dana-hvac-agent` → verify works
+- **Deliverable:** Production-ready Llama Stack package with complete OSS documentation
 
-**Note:** Finetuning API is explicitly deferred to the next sprint. RAG, Conversation API, and Storage API are deferred to focus on packaging/installation as the primary LlamaStack deliverable.
+**Note:** Finetuning API is explicitly deferred to the next sprint. RAG, Conversation API, and Storage API are deferred to focus on packaging/installation as the primary Llama Stack deliverable.
 
 **All team (2 hours):**
 - [ ] Final rehearsal and handoff meeting (demo run-through, extension roadmap)
@@ -645,7 +668,7 @@ Deliverables by role:
 - @lam: Production-grade codebase; Quick Start + Extension guide; Architecture docs
 - @william: Business value summary; HVAC validation complete; Demo narrative validated
 - @nhi: Rehearsed demo ready for presentation; 2-pager with value propositions
-- @zooey: Production-ready LlamaStack package with complete OSS documentation
+- @zooey: Production-ready Llama Stack package with complete OSS documentation
 - All team: Final rehearsal + handoff package
 
 ---
@@ -658,15 +681,12 @@ Deliverables by role:
 - **Consolidation:** Patterns extracted from 100+ observations
 - **Integration:** All components work together end-to-end
 - **Prompt learning:** New prompt versions correlate with improved decision metrics (win rate/latency)
-- **LlamaStack packaging:** `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` works (<5 min install-to-run)
-- **Dual-mode operation:** Console shows OPERATE mode (See-Think-Act) and LEARN mode (Reflect + knowledge updates)
+- **Llama Stack packaging:** `llama stack install dana-hvac-agent` → `llama stack run dana-hvac-agent` works (<5 min install-to-run)
 
 ### Product Metrics (HVAC Demo)
-- **Energy efficiency:** 15-25% improvement after learning
-- **Comfort:** 40% fewer complaints
-- **Anomaly diagnosis:** 60% faster root cause identification
-- **Adaptation:** Agent learns building-specific patterns
-- **Mode visibility:** Console shows OPERATE (See-Think-Act) and LEARN (Reflect) modes clearly
+- **Performance targets:** Suggestion: 15-25% energy reduction, 40% fewer comfort complaints, 60% faster anomaly diagnosis
+- **Adaptation:** Agent learns building-specific patterns across episodes
+- **Dual-mode visibility:** Console shows OPERATE (See-Think-Act) and LEARN (Reflect) modes clearly
 - **Web UI:** Learning progression visible in real-time dashboard
 
 ### Team Velocity
@@ -709,7 +729,7 @@ Deliverables by role:
 **Document Version:** 1.3  
 **Last Updated:** 2025-11-04  
 **Owners:** @annieha (PM), @lam (Tech Lead)
-**Note:** Updated scope and team structure: (1) @nhi joins Day 3 (Nov 4) to build demo web app (6 days). (2) @william focuses on core HVAC functionality only (at capacity). (3) @zooey's primary deliverable is packaged Dana installation for LlamaStack distribution; focuses on packaging + 2 CLI commands (`install`, `run`). (4) Days 6-8 consolidated with clear deliverables: inspection tools, consolidative learning, prompt evolution demonstration. (5) Two integration milestones: Day 5 evening (1st) and Day 7 afternoon (2nd).
+**Note:** Updated scope and team structure: (1) @nhi joins Day 3 (Nov 4) to build demo web app (6 days). (2) @william focuses on core HVAC functionality only (at capacity). (3) @zooey's primary deliverable is packaged Dana installation for Llama Stack distribution; focuses on packaging + 2 CLI commands (`install`, `run`). (4) Days 6-8 consolidated with clear deliverables: inspection tools, consolidative learning, prompt evolution demonstration. (5) Two integration milestones: Day 5 evening (1st) and Day 7 afternoon (2nd).
 
 ## Sprint Scope: In vs Out
 
@@ -717,14 +737,13 @@ Deliverables by role:
 - **Framework:** Episodic + Integrative + Consolidative learning scopes working
 - **HVAC Agent:** Autonomous learning agent with dual-mode operation:
   - **OPERATE mode (STA):** See-Think-Act, reads knowledge, writes events to `events.jsonl`
-  - **LEARN mode (STAR):** Reflect on observations, mutates knowledge (triggers: session end, daily, weekly)
+  - **LEARN mode (Reflect):** Reflect on observations, mutates knowledge (triggers: session end, daily, weekly)
 - **Web UI:** Demo app showing learning progression, metrics, before/after comparison
-- **LlamaStack Package:** `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` works
+- **Llama Stack Package:** `llama stack install dana-hvac-agent` → `llama stack run dana-hvac-agent` works
 - **Documentation:** README, INSTALL, Quick Start guide, Extension guide, examples
-- **Value Props:** Business case for HON, reference framework for Dana, demo for LlamaStack
 
 ### ❌ Out of Scope (Defer to Next Sprint)
-- **LlamaStack APIs:** Provider API implementation, RAG, Storage, Finetuning, Conversation APIs
+- **Llama Stack APIs:** Provider API implementation, RAG, Storage, Finetuning, Conversation APIs
 - **Production:** Multi-environment testing, monitoring, alerting, real building data
 - **Platforms:** Windows support (Linux/macOS only this sprint)
 - **Advanced:** Multi-agent coordination, distributed learning, real BMS integration
@@ -767,7 +786,7 @@ gantt
   Day 7: Consolidative/prompt views → 2nd Integration :d7_n, after d6_n, 1d
   Day 8: Demo script + practice runs :d8_n, after d7_n, 1d
 
-  section zooey (Llama-Stack)
+  section zooey (Llama Stack)
   Day 1: Env + API contracts plan          :d1_z, 2025-10-31, 1d
   Day 2: Inference live; Agent stub        :d2_z, after d1_z, 1d
   Day 3: Package structure + CLI design    :d3_z, after d2_z, 1d
