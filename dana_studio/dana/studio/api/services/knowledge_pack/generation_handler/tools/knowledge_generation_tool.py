@@ -112,34 +112,14 @@ class KnowledgeGenerationTool(BaseTool):
 
         # Import WS manager inside constructor to avoid circular imports
         if ws_manager is None:
-            from dana.studio.api.routers.v2.ws.domain_knowledge_ws import kp_generation_ws_notifier
+            from dana.studio.api.routers.v2.ws.domain_knowledge_ws import kp_question_generation_ws_notifier
 
-            ws_manager = kp_generation_ws_notifier
+            ws_manager = kp_question_generation_ws_notifier
 
         self.notifier = ws_manager.get_notifier(str(knowledge_id))
 
         # Get WebSocket manager for real-time status updates
-        try:
-            from dana.studio.api.server.server import ws_manager as server_ws_manager
-
-            self.server_ws_manager = server_ws_manager
-        except ImportError:
-            logger.warning("WebSocket manager not available for real-time updates")
-            self.server_ws_manager = None
-
-    async def _notify(
-        self, tool_name: str, content: str, status: str, progression: float | None = None, path_parts: list[str] | None = None
-    ) -> None:
-        """Helper method to send WebSocket notifications with proper formatting."""
-        if self.notifier:
-            message = {
-                "tool_name": tool_name,
-                "content": content,
-                "status": status,
-                "progression": progression,
-                "path_parts": path_parts,
-            }
-            await self.notifier(message)
+        self.server_ws_manager = None
 
         # Initialize KnowledgeStatusManager
         self.status_manager = None
@@ -175,6 +155,20 @@ class KnowledgeGenerationTool(BaseTool):
             ),
         )
         super().__init__(tool_info)
+
+    async def _notify(
+        self, tool_name: str, content: str, status: str, progression: float | None = None, path_parts: list[str] | None = None
+    ) -> None:
+        """Helper method to send WebSocket notifications with proper formatting."""
+        if self.notifier:
+            message = {
+                "tool_name": tool_name,
+                "content": content,
+                "status": status,
+                "progression": progression,
+                "path_parts": path_parts,
+            }
+            await self.notifier(message)
 
     def _load_tree_structure(self) -> DomainKnowledgeTreeV2:
         """Load tree structure from the provided path."""
@@ -314,9 +308,6 @@ class KnowledgeGenerationTool(BaseTool):
                 leaf_topic = path[-1]  # Last element in path is the leaf topic
                 path_str = self._path_parts_to_string(path)
 
-                # Calculate progress percentage
-                progress = (i / len(all_leaf_paths)) if len(all_leaf_paths) > 0 else 0.0
-
                 logger.info(f"Processing leaf {i + 1}/{len(all_leaf_paths)}: {leaf_topic}")
 
                 # Check if already generated
@@ -324,11 +315,6 @@ class KnowledgeGenerationTool(BaseTool):
                     if self.status_manager.is_success(path_str):
                         generation_results.append(f"⏭️ Skipped '{leaf_topic}' - already complete")
                         continue
-
-                # Stream progress update
-                await self._notify(
-                    "generate_knowledge", f"📝 Processing {i + 1}/{len(all_leaf_paths)}: {leaf_topic}", "in_progress", progress
-                )
 
                 # Initialize status manager for the current path if it hasn't been done yet
                 await self._initialize_path_in_status_manager(path)
@@ -369,62 +355,28 @@ class KnowledgeGenerationTool(BaseTool):
                     leaf_node = self._find_leaf_node_in_tree(path)
                     if leaf_node:
                         leaf_node.status = KnowledgeGenerationStatus.COMPLETED
-                        from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
+                        from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import (
+                            knowledge_ops_utils as ko_utils,
+                        )
 
                         ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
 
-                # Broadcast WebSocket notification for success
-                if self.server_ws_manager:
-                    try:
-                        topic_entry = self.status_manager.get_topic_entry(path_str) if self.status_manager else None
-                        if topic_entry:
-                            await self.server_ws_manager.broadcast(
-                                {
-                                    "type": "knowledge_status_update",
-                                    "topic_id": topic_entry.get("id"),
-                                    "path": topic_entry.get("path"),
-                                    "status": "success",
-                                    "last_generated": topic_entry.get("last_generated"),
-                                }
-                            )
-                            logger.info(f"Broadcasted success status for: {path_str}")
-                    except Exception as e:
-                        logger.warning(f"Failed to broadcast success status for {path_str}: {e}")
+                        await self._notify(
+                            "generate_question_bank",
+                            f"✅ Completed '{leaf_node}' - {i + 1}/{len(all_leaf_paths)} done",
+                            KnowledgeGenerationStatus.COMPLETED,
+                            (i + 1) / len(all_leaf_paths),
+                            path_parts=path,
+                        )
 
             except Exception as e:
                 logger.error(f"Failed to generate knowledge for {path}: {e}")
                 if self.status_manager:
                     self.status_manager.set_status(path_str, "failed")
 
-                # Broadcast WebSocket notification for failure
-                if self.server_ws_manager:
-                    try:
-                        topic_entry = self.status_manager.get_topic_entry(path_str) if self.status_manager else None
-                        if topic_entry:
-                            await self.server_ws_manager.broadcast(
-                                {
-                                    "type": "knowledge_status_update",
-                                    "topic_id": topic_entry.get("id"),
-                                    "path": topic_entry.get("path"),
-                                    "status": "failed",
-                                }
-                            )
-                            logger.info(f"Broadcasted failed status for: {path_str}")
-                    except Exception as e:
-                        logger.warning(f"Failed to broadcast failed status for {path_str}: {e}")
-
                 failed_generations += 1
                 generation_results.append(f"❌ Failed '{leaf_topic}': {str(e)}")
                 traceback.print_exc()
-
-            await self._notify(
-                "generate_knowledge",
-                f"✅ Completed '{leaf_topic}' - {i + 1}/{len(all_leaf_paths)} done",
-                "in_progress",
-                (i + 1) / len(all_leaf_paths),
-            )
-
-        await self._notify("generate_knowledge", f"✅ Knowledge generation complete. Summary: \n{status_text}", "finish", 1.0)
 
         logger.info(f"Knowledge generation completed: {successful_generations} successful, {failed_generations} failed")
 

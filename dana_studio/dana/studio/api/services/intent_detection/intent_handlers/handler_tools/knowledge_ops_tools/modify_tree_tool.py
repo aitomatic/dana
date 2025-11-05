@@ -5,7 +5,9 @@ from dana.studio.api.services.intent_detection.intent_handlers.handler_tools.bas
     BaseArgument,
     ToolResult,
 )
-from dana.studio.api.core.schemas import DomainKnowledgeTree
+
+# from dana.studio.api.core.schemas import DomainNode, DomainKnowledgeTree
+from dana.studio.api.core.schemas_v2 import DomainNodeV2 as DomainNode, DomainKnowledgeTreeV2 as DomainKnowledgeTree
 from dana.lang.common.sys_resource.llm.legacy_llm_resource import LegacyLLMResource as LLMResource
 from dana.lang.common.types import BaseRequest
 from dana.lang.common.utils.misc import Misc
@@ -117,7 +119,7 @@ class ModifyTreeTool(BaseTool):
         """Create new node(s) in the tree structure."""
         if not self.tree_structure:
             # Initialize tree if it doesn't exist
-            from dana.studio.api.core.schemas import DomainNode, DomainKnowledgeTree
+
             from datetime import datetime, UTC
 
             self.tree_structure = DomainKnowledgeTree(root=DomainNode(topic=path_parts[0]), last_updated=datetime.now(UTC), version=1)
@@ -157,7 +159,6 @@ class ModifyTreeTool(BaseTool):
 
             if child_node is None:
                 # Create new node
-                from dana.studio.api.core.schemas import DomainNode
 
                 child_node = DomainNode(topic=topic)
                 current_node.children.append(child_node)
@@ -423,7 +424,6 @@ Return as JSON with this exact structure:
             # Convert to DomainKnowledgeTree structure
             def create_node(topic_name: str, children_data=None):
                 """Create a DomainNode with optional children"""
-                from dana.studio.api.core.schemas import DomainNode
 
                 children = []
                 if children_data:
@@ -442,7 +442,6 @@ Return as JSON with this exact structure:
             root_node = create_node(domain, structure)
 
             # Create full DomainKnowledgeTree
-            from dana.studio.api.core.schemas import DomainKnowledgeTree
             from datetime import datetime, UTC
             import json
 
@@ -499,7 +498,6 @@ Return as JSON with this exact structure:
 
         except Exception as e:
             # Fallback structure if LLM fails
-            from dana.studio.api.core.schemas import DomainNode, DomainKnowledgeTree
             from datetime import datetime, UTC
             import json
 

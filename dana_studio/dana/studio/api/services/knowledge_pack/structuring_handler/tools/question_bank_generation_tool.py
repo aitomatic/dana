@@ -286,19 +286,6 @@ class QuestionBankGenerationTool(BaseTool):
 
                 # Stream progress update
                 progress = (index / total_paths) if total_paths > 0 else 0.0
-                await self._notify(
-                    self.name,
-                    f"📝 Processing {index + 1}/{total_paths}: {leaf_topic}",
-                    KnowledgeGenerationStatus.GENERATING,
-                    progress,
-                    path_parts=path,
-                )
-
-                if self.tree_structure and self.tree_structure_path:
-                    leaf_node = self._find_leaf_node_in_tree(path)
-                    if leaf_node:
-                        leaf_node.status = KnowledgeGenerationStatus.GENERATING
-                        ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
 
                 # Create storage directory if it doesn't exist
                 if not self.storage_path:
@@ -310,6 +297,20 @@ class QuestionBankGenerationTool(BaseTool):
 
                 if not full_file_path.exists():
                     # Generate questions for this topic
+                    await self._notify(
+                        self.name,
+                        f"📝 Processing {index + 1}/{total_paths}: {leaf_topic}",
+                        KnowledgeGenerationStatus.GENERATING,
+                        progress,
+                        path_parts=path,
+                    )
+
+                    if self.tree_structure and self.tree_structure_path:
+                        leaf_node = self._find_leaf_node_in_tree(path)
+                        if leaf_node:
+                            leaf_node.status = KnowledgeGenerationStatus.GENERATING
+                            ko_utils.save_tree(self.tree_structure, self.tree_structure_path)
+
                     knowledge_node = await self._generate_questions_for_topic_paths(path)
 
                     # Save to file

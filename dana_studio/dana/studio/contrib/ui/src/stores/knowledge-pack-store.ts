@@ -391,20 +391,23 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
 
   // Fetch knowledge pack tree data (new - proper KP-specific method)
   fetchKnowledgePackTree: async (knowledgePackId: number) => {
-    console.log('📡 Knowledge Pack: Fetching tree data for ID:', knowledgePackId);
+    console.log('📡 [STORE] fetchKnowledgePackTree called for ID:', knowledgePackId);
     set({ isLoadingTree: true, treeError: null });
 
     try {
+      console.log('🌐 [STORE] Fetching from API...');
       const response = await apiService.getKnowledgePack(knowledgePackId);
 
       if (response.success && response.data) {
         // Handle both new format (response.data.tree) and legacy format (response.data directly)
         const treeData = response.data.tree || response.data;
+        console.log('📦 [STORE] Received tree data with root:', treeData.root?.topic);
         
         // Extract status from tree nodes
         const topics = treeData.root ? get()._extractStatusFromTree(treeData.root) : [];
-        console.log('📊 Knowledge Pack: Extracted', topics.length, 'topic statuses from tree');
+        console.log('📊 [STORE] Extracted', topics.length, 'topic statuses from tree');
         
+        console.log('💾 [STORE] Updating store with new tree data - this will trigger domainTree useEffect');
         set({
           domainKnowledge: treeData,
           knowledgeStatus: { topics }, // Set status immediately from tree
@@ -412,13 +415,13 @@ export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
           treeError: null,
           lastFetchedKpId: knowledgePackId,
         });
-        console.log('✅ Knowledge Pack: Tree data and status loaded successfully');
+        console.log('✅ [STORE] Store updated with new tree data');
       } else {
         throw new Error(response.error || 'Failed to load knowledge pack tree');
       }
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to load knowledge pack tree';
-      console.error('❌ Knowledge Pack: Failed to fetch tree:', error);
+      console.error('❌ [STORE] Failed to fetch tree:', error);
       set({
         isLoadingTree: false,
         treeError: errorMessage,

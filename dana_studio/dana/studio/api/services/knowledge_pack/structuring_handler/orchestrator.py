@@ -10,7 +10,7 @@ from dana.studio.api.services.intent_detection.intent_handlers.handler_tools.kno
 from dana.studio.api.services.knowledge_pack.structuring_handler.tools.attempt_completion_tool import AttemptCompletionTool
 from dana.studio.api.services.knowledge_pack.config import MAX_CONCURRENT
 from dana.studio.api.core.schemas_v2 import HandlerConversation, HandlerMessage, SenderRole
-from dana.studio.api.core.schemas import DomainKnowledgeTree, DomainNode
+from dana.studio.api.core.schemas_v2 import DomainKnowledgeTreeV2 as DomainKnowledgeTree, DomainNodeV2 as DomainNode
 from dana.studio.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 from pathlib import Path
 from dana.lang.common.utils.misc import Misc
@@ -142,7 +142,9 @@ class KPStructuringOrchestrator(AbstractHandler):
         )
 
         # Question bank generation tool
-        from dana.studio.api.services.knowledge_pack.structuring_handler.tools.question_bank_generation_tool import QuestionBankGenerationTool
+        from dana.studio.api.services.knowledge_pack.structuring_handler.tools.question_bank_generation_tool import (
+            QuestionBankGenerationTool,
+        )
 
         self.tools.update(
             QuestionBankGenerationTool(

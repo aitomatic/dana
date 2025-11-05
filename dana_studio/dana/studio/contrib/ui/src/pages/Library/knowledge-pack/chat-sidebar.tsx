@@ -3,8 +3,10 @@ import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import { apiService } from '@/lib/api';
 import { createSmartChatStore } from '@/stores/smart-chat-store';
 import { useKnowledgePackStore } from '@/stores';
-import { ArrowUp, Expand, Collapse } from 'iconoir-react';
+import { ArrowUp, Expand, Collapse, LightBulb, Check, SystemRestart } from 'iconoir-react';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 // Removed animated placeholder styles - no longer needed
 
@@ -14,7 +16,7 @@ const SimplePlaceholder: React.FC<{
 }> = ({ isDisabled }) => {
   // If disabled, show disabled message
   if (isDisabled) {
-    return <span className="text-gray-400">Chat disabled during knowledge generation...</span>;
+    return <span className="text-gray-400">Chat disabled - knowledge generation in progress or completed</span>;
   }
 
   // Simple static placeholder
@@ -220,9 +222,15 @@ const SmartAgentChat: React.FC<{
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const [hasClickedGenerate, setHasClickedGenerate] = useState(false);
 
   // Get knowledge generation status and created knowledge pack from store
-  const { isGeneratingKnowledge, createdKnowledgePack } = useKnowledgePackStore();
+  const { 
+    isGeneratingKnowledge, 
+    createdKnowledgePack, 
+    knowledgeStatus,
+    setIsGeneratingKnowledge 
+  } = useKnowledgePackStore();
   
   console.log('📦 SmartAgentChat - createdKnowledgePack:', {
     id: createdKnowledgePack?.id,
@@ -251,6 +259,75 @@ const SmartAgentChat: React.FC<{
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true);
   const [hasLoadedConversation, setHasLoadedConversation] = useState(false);
   const hasAttemptedAutoMessageRef = useRef(false);
+
+  // Check if generation has been started (either by clicking button or from elsewhere)
+  const hasGenerationStarted = useMemo(() => {
+    // Check if user clicked button in this session
+    if (hasClickedGenerate) return true;
+    
+    // Check if generation is currently running
+    if (isGeneratingKnowledge) return true;
+    
+    // Check if there's a generation task ID (means generation was started)
+    if (createdKnowledgePack?.generation_task_id) return true;
+    
+    // Check if any node is in completed state (means Generate Knowledge was clicked)
+    // Don't check for in_progress or generating - those are part of question generation
+    if (knowledgeStatus?.topics && knowledgeStatus.topics.length > 0) {
+      const hasCompletedOrBeyond = knowledgeStatus.topics.some((topic: any) => 
+        topic.status === 'completed' || 
+        topic.status === 'success'
+      );
+      if (hasCompletedOrBeyond) return true;
+    }
+    
+    return false;
+  }, [hasClickedGenerate, isGeneratingKnowledge, createdKnowledgePack?.generation_task_id, knowledgeStatus]);
+
+  // Check if Generate Knowledge button should be shown
+  const shouldShowGenerateButton = useMemo(() => {
+    // Don't show if generation already started
+    if (hasGenerationStarted) return false;
+    
+    if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
+      return false;
+    }
+    
+    // Check if ALL nodes are either 'question_generated' or 'failed'
+    return knowledgeStatus.topics.every((topic: any) => 
+      topic.status === 'question_generated' || topic.status === 'failed'
+    );
+  }, [knowledgeStatus, hasGenerationStarted]);
+
+  // Check if generation is complete
+  const isGenerationComplete = useMemo(() => {
+    if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
+      return false;
+    }
+    
+    // Check if ALL nodes are either 'completed' or 'failed'
+    return knowledgeStatus.topics.every((topic: any) => 
+      topic.status === 'completed' || topic.status === 'success' || topic.status === 'failed'
+    );
+  }, [knowledgeStatus]);
+
+  // Check if knowledge content generation is in progress
+  // This is when we have a MIX of question_generated and completed/failed
+  const isKnowledgeGenerating = useMemo(() => {
+    if (!knowledgeStatus?.topics || knowledgeStatus.topics.length === 0) {
+      return false;
+    }
+    
+    const hasQuestionGenerated = knowledgeStatus.topics.some((topic: any) => 
+      topic.status === 'question_generated'
+    );
+    const hasCompleted = knowledgeStatus.topics.some((topic: any) => 
+      topic.status === 'completed' || topic.status === 'success' || topic.status === 'failed'
+    );
+    
+    // Only true if we have BOTH question_generated AND completed/failed nodes (mixed state)
+    return hasQuestionGenerated && hasCompleted;
+  }, [knowledgeStatus]);
 
   // Load conversation history from API on mount
   useEffect(() => {
@@ -429,9 +506,37 @@ const SmartAgentChat: React.FC<{
     ],
   );
 
+  // Handle Generate Knowledge button click
+  const handleGenerateKnowledge = async () => {
+    if (!knowledgePackId) return;
+
+    setHasClickedGenerate(true);
+    
+    try {
+      const kpId = typeof knowledgePackId === 'string' ? parseInt(knowledgePackId) : parseInt(knowledgePackId);
+      
+      const response = await apiService.generateKnowledgePackKnowledge(kpId);
+      
+      if (response.success) {
+        toast.success(
+          'Knowledge generation started! This process runs in the background.',
+          { duration: 6000 }
+        );
+        
+        // Set flag in store to disable chat
+        setIsGeneratingKnowledge(true);
+      } else {
+        toast.error(response.message || 'Failed to start knowledge generation');
+      }
+    } catch (error: any) {
+      console.error('Error generating knowledge:', error);
+      toast.error(error?.message || 'Failed to start knowledge generation');
+    }
+  };
+
   // Auto-first message system - sends user's original description as first message
   useEffect(() => {
-    console.log('🔄 Auto-first message useEffect triggered');
+    // console.log('🔄 Auto-first message useEffect triggered');
     
     const sendAutoFirstMessage = async () => {
       console.log('🔍 Auto-first message check:', {
@@ -564,6 +669,42 @@ const SmartAgentChat: React.FC<{
           </span>
         </div>
       )}
+
+      {/* Generate Knowledge Button Section */}
+      {!hasClickedGenerate && shouldShowGenerateButton && (
+        <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
+          <div className="flex flex-col gap-3">
+            <div className="text-sm text-gray-700">
+              All questions have been generated! Ready to generate knowledge?
+            </div>
+            <Button
+              onClick={handleGenerateKnowledge}
+              variant="default"
+              size="sm"
+              className="gap-2 w-full"
+            >
+              <LightBulb className="w-4 h-4" />
+              <span>Generate Knowledge</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Knowledge Generation Status - Only show when content is being generated */}
+      {isKnowledgeGenerating && (
+        <div className="px-3 py-4 bg-blue-50 border-b border-blue-200">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2 items-center text-blue-700">
+              <SystemRestart className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">Knowledge Generation in Progress</span>
+            </div>
+            <div className="text-sm text-gray-600">
+              The knowledge generation process is currently running. Please wait...
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar">
         {messages.map((msg, idx) => {
           const isThinking = msg.id && msg.id.startsWith('thinking-');
@@ -605,62 +746,88 @@ const SmartAgentChat: React.FC<{
         <div ref={bottomRef} />
       </div>
       <div className="p-3">
-        <div className="relative">
-          {/* Simple placeholder overlay */}
-          {!input && (
-            <div className="absolute top-3 left-3 z-10 text-sm text-gray-500 pointer-events-none">
-              <SimplePlaceholder
-                isDisabled={loading || isGeneratingKnowledge}
-              />
+        {/* Show completion message in place of chat input when generation is complete */}
+        {isGenerationComplete ? (
+          <div className="px-4 py-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-3 items-center text-green-700">
+                <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-full">
+                  <Check className="w-6 h-6" />
+                </div>
+                <span className="text-lg font-semibold">Knowledge Generation Complete!</span>
+              </div>
+              <div className="text-sm text-gray-700 leading-relaxed">
+                The knowledge generation process is completed. Please proceed to:
+              </div>
+              <div className="flex flex-col gap-3 pl-4">
+                <div className="flex items-center gap-3 text-base text-blue-600 font-medium">
+                  <span className="text-xl">→</span>
+                  <span>Capture Templates tab</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 text-xs text-gray-500 border-t border-green-200">
+                There's nothing more to do in this chat.
+              </div>
             </div>
-          )}
-          <textarea
-            className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
-              focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto
-              disabled:opacity-60 disabled:cursor-not-allowed"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            onFocus={() => {
-              // Focus handler - no special logic needed
-            }}
-            onBlur={() => {
-              // Blur handler - no special logic needed
-            }}
-            disabled={loading || isGeneratingKnowledge}
-            rows={1}
-            style={{
-              height: 'auto',
-              minHeight: '100px',
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-            }}
-            title={
-              isGeneratingKnowledge
-                ? 'Chat is disabled while knowledge generation is in progress'
-                : ''
-            }
-          />
-          {input.trim() && (
-            <button
-              onClick={() => sendMessage()}
-              className="absolute right-3 bottom-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Simple placeholder overlay */}
+            {!input && (
+              <div className="absolute top-3 left-3 z-10 text-sm text-gray-500 pointer-events-none">
+                <SimplePlaceholder
+                  isDisabled={loading || isGeneratingKnowledge || hasGenerationStarted}
+                />
+              </div>
+            )}
+            <textarea
+              className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
+                focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto
+                disabled:opacity-60 disabled:cursor-not-allowed"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
+              onFocus={() => {
+                // Focus handler - no special logic needed
+              }}
+              onBlur={() => {
+                // Blur handler - no special logic needed
+              }}
+              disabled={loading || isGeneratingKnowledge || hasGenerationStarted}
+              rows={1}
+              style={{
+                height: 'auto',
+                minHeight: '100px',
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+              }}
               title={
-                isGeneratingKnowledge
-                  ? 'Chat is disabled while knowledge generation is in progress'
-                  : 'Send message'
+                isGeneratingKnowledge || hasGenerationStarted
+                  ? 'Chat is disabled while knowledge generation is in progress or completed'
+                  : ''
               }
-              disabled={loading || isGeneratingKnowledge}
-            >
-              <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-          )}
-        </div>
+            />
+            {input.trim() && (
+              <button
+                onClick={() => sendMessage()}
+                className="absolute right-3 bottom-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  isGeneratingKnowledge || hasGenerationStarted
+                    ? 'Chat is disabled while knowledge generation is in progress or completed'
+                    : 'Send message'
+                }
+                disabled={loading || isGeneratingKnowledge || hasGenerationStarted}
+              >
+                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

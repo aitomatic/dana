@@ -603,10 +603,18 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const expandedNodesRef = useRef<Set<string>>(new Set());
+  const pendingExpandedNodesRef = useRef<Set<string> | null>(null); // For pending expansion state changes
   const previousKnowledgePackIdRef = useRef<string | number | undefined>(undefined);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const nodesRef = useRef<FlowNode[]>([]);
   const previousEdgesRef = useRef<Set<string>>(new Set());
+  
+  // Store pending expansion state in window to persist across remounts
+  // Key format: `pendingExpansion_${knowledgePackId}`
+  const getPendingExpansionKey = useCallback(() => {
+    const kpId = knowledgePackId ? String(knowledgePackId) : 'unknown';
+    return `pendingExpansion_${kpId}`;
+  }, [knowledgePackId]);
 
   // Refs to track timeouts for cleanup
   const timeoutRefs = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -1061,6 +1069,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
   // Process domain knowledge and status data from store
   useEffect(() => {
+    console.log('🔄 [TREE-REGEN] domainTree useEffect triggered');
+    console.log('📊 [TREE-REGEN] Current expandedNodesRef:', Array.from(expandedNodesRef.current));
+    console.log('📊 [TREE-REGEN] Current expandedNodes state:', Array.from(expandedNodes));
+    console.log('📊 [TREE-REGEN] Pending expansion state:', pendingExpandedNodesRef.current ? Array.from(pendingExpandedNodesRef.current) : 'none');
+    
     const effectiveStatusData = statusData || EMPTY_STATUS_DATA;
 
     if (!domainTree) {
@@ -1070,6 +1083,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
         setNodes(layouted);
         setEdges(initialEdges);
       }
+      console.log('⏭️ [TREE-REGEN] No domainTree, returning early');
       return;
     }
 
@@ -1078,17 +1092,68 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
       setNodes([]);
       setEdges([]);
       setError(domainTree.message);
+      console.log('⚠️ [TREE-REGEN] Domain tree has error message:', domainTree.message);
     } else if (domainTree.root) {
-      // Preserve existing expansion state or initialize with just the root
-      const currentExpanded =
-        expandedNodesRef.current.size > 0
-          ? expandedNodesRef.current
-          : new Set([domainTree.root.topic]);
-
-      // Only set expanded nodes if we don't have any yet
-      if (expandedNodesRef.current.size === 0) {
-        setExpandedNodes(currentExpanded);
+      // Check for pending expansion state changes (e.g., from node deletion)
+      // Check both ref and window storage (for persistence across remounts)
+      let currentExpanded: Set<string>;
+      
+      // First check ref (for same render cycle)
+      let pendingState: Set<string> | null = pendingExpandedNodesRef.current;
+      
+      // If ref is null, check window storage (for persistence across remounts)
+      if (!pendingState && knowledgePackId) {
+        const storedPending = (window as any)[getPendingExpansionKey()];
+        if (storedPending && Array.isArray(storedPending)) {
+          pendingState = new Set(storedPending);
+          console.log('💾 [TREE-REGEN] Restored pending expansion state from window storage:', Array.from(pendingState));
+          // Clear window storage
+          delete (window as any)[getPendingExpansionKey()];
+        }
       }
+      
+      if (pendingState !== null) {
+        console.log('🔓 [TREE-REGEN] Applying pending expansion state:', Array.from(pendingState));
+        currentExpanded = pendingState;
+        expandedNodesRef.current = pendingState;
+        setExpandedNodes(pendingState);
+        pendingExpandedNodesRef.current = null; // Clear pending state
+        // Persist current expansion state in window storage for subsequent effects
+        if (knowledgePackId) {
+          (window as any)[`currentExpansion_${knowledgePackId}`] = Array.from(pendingState);
+          console.log('💾 [TREE-REGEN] Persisted current expansion state to window storage');
+        }
+      } else if (expandedNodesRef.current.size > 0) {
+        console.log('🌳 [TREE-REGEN] Using existing expansion state from ref');
+        currentExpanded = expandedNodesRef.current;
+        // Also persist it in case of remount
+        if (knowledgePackId) {
+          (window as any)[`currentExpansion_${knowledgePackId}`] = Array.from(currentExpanded);
+        }
+      } else {
+        // Check window storage for current expansion state (for remounts)
+        if (knowledgePackId) {
+          const storedCurrent = (window as any)[`currentExpansion_${knowledgePackId}`];
+          if (storedCurrent && Array.isArray(storedCurrent) && storedCurrent.length > 0) {
+            currentExpanded = new Set(storedCurrent);
+            expandedNodesRef.current = currentExpanded;
+            setExpandedNodes(currentExpanded);
+            console.log('💾 [TREE-REGEN] Restored current expansion state from window storage:', Array.from(currentExpanded));
+          } else {
+            console.log('🌱 [TREE-REGEN] Initializing with root node only');
+            currentExpanded = new Set([domainTree.root.topic]);
+            expandedNodesRef.current = currentExpanded;
+            setExpandedNodes(currentExpanded);
+          }
+        } else {
+          console.log('🌱 [TREE-REGEN] Initializing with root node only');
+          currentExpanded = new Set([domainTree.root.topic]);
+          expandedNodesRef.current = currentExpanded;
+          setExpandedNodes(currentExpanded);
+        }
+      }
+
+      console.log('🌳 [TREE-REGEN] Final expansion state to use:', Array.from(currentExpanded));
 
       // Convert domain knowledge to flow format (now with status information)
       const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
@@ -1097,10 +1162,13 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
         currentExpanded,
         searchQuery,
       );
+      console.log('✨ [TREE-REGEN] Generated', flowNodes.length, 'nodes with IDs:', flowNodes.map(n => n.id));
+      
       const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
       setNodes(layoutedNodes);
       setEdges(flowEdges);
       setError(null);
+      console.log('✅ [TREE-REGEN] Tree regeneration complete');
     }
   }, [domainTree, statusData, searchQuery]);
 
@@ -1115,12 +1183,68 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
     if (!domainTree || !domainTree.root) return;
 
     console.log('[DomainKnowledgeTree] Status data updated, refreshing nodes');
+    console.log('📊 [STATUS-UPDATE] Current expandedNodesRef:', Array.from(expandedNodesRef.current));
+    console.log('📊 [STATUS-UPDATE] Pending expansion state:', pendingExpandedNodesRef.current ? Array.from(pendingExpandedNodesRef.current) : 'none');
 
-    // Preserve current expansion state
-    const currentExpanded =
-      expandedNodesRef.current.size > 0
-        ? expandedNodesRef.current
-        : new Set([domainTree.root.topic]);
+    // Preserve current expansion state - check both ref and window storage (same as main effect)
+    let currentExpanded: Set<string>;
+    
+    // First check ref (for same render cycle)
+    let pendingState: Set<string> | null = pendingExpandedNodesRef.current;
+    
+    // If ref is null, check window storage (for persistence across remounts)
+    if (!pendingState && knowledgePackId) {
+      const storedPending = (window as any)[getPendingExpansionKey()];
+      if (storedPending && Array.isArray(storedPending)) {
+        pendingState = new Set(storedPending);
+        console.log('💾 [STATUS-UPDATE] Restored pending expansion state from window storage:', Array.from(pendingState));
+        // Clear window storage
+        delete (window as any)[getPendingExpansionKey()];
+      }
+    }
+    
+    if (pendingState !== null) {
+      console.log('🔓 [STATUS-UPDATE] Applying pending expansion state:', Array.from(pendingState));
+      currentExpanded = pendingState;
+      expandedNodesRef.current = pendingState;
+      setExpandedNodes(pendingState);
+      pendingExpandedNodesRef.current = null; // Clear pending state
+      // Persist current expansion state in window storage for subsequent effects
+      if (knowledgePackId) {
+        (window as any)[`currentExpansion_${knowledgePackId}`] = Array.from(pendingState);
+        console.log('💾 [STATUS-UPDATE] Persisted current expansion state to window storage');
+      }
+    } else if (expandedNodesRef.current.size > 0) {
+      console.log('🌳 [STATUS-UPDATE] Using existing expansion state from ref');
+      currentExpanded = expandedNodesRef.current;
+      // Also persist it in case of remount
+      if (knowledgePackId) {
+        (window as any)[`currentExpansion_${knowledgePackId}`] = Array.from(currentExpanded);
+      }
+    } else {
+      // Check window storage for current expansion state (for remounts)
+      if (knowledgePackId) {
+        const storedCurrent = (window as any)[`currentExpansion_${knowledgePackId}`];
+        if (storedCurrent && Array.isArray(storedCurrent) && storedCurrent.length > 0) {
+          currentExpanded = new Set(storedCurrent);
+          expandedNodesRef.current = currentExpanded;
+          setExpandedNodes(currentExpanded);
+          console.log('💾 [STATUS-UPDATE] Restored current expansion state from window storage:', Array.from(currentExpanded));
+        } else {
+          console.log('🌱 [STATUS-UPDATE] Initializing with root node only');
+          currentExpanded = new Set([domainTree.root.topic]);
+          expandedNodesRef.current = currentExpanded;
+          setExpandedNodes(currentExpanded);
+        }
+      } else {
+        console.log('🌱 [STATUS-UPDATE] Initializing with root node only');
+        currentExpanded = new Set([domainTree.root.topic]);
+        expandedNodesRef.current = currentExpanded;
+        setExpandedNodes(currentExpanded);
+      }
+    }
+
+    console.log('🌳 [STATUS-UPDATE] Final expansion state to use:', Array.from(currentExpanded));
 
     // Convert domain knowledge to flow format with updated status
     const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
@@ -1129,6 +1253,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
       currentExpanded,
       searchQuery,
     );
+    console.log('✨ [STATUS-UPDATE] Generated', flowNodes.length, 'nodes with IDs:', flowNodes.map(n => n.id));
     const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
 
     // Knowledge detection logic - only detect transitions if intro box is visible
@@ -1502,7 +1627,86 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
       // Check for success
       if (response.success || response.message?.includes('deleted successfully')) {
-        console.log('✅ Delete successful, closing dialog and refreshing tree');
+        console.log('✅ [DELETE] Delete successful, closing dialog and refreshing tree');
+        console.log('📊 [DELETE] BEFORE cleanup - expandedNodes:', Array.from(expandedNodes));
+        console.log('📊 [DELETE] BEFORE cleanup - expandedNodesRef:', Array.from(expandedNodesRef.current));
+        console.log('🗑️ [DELETE] Deleting node ID:', nodeToDelete.id, 'with path:', nodeToDelete.path);
+
+        // CRITICAL: Find the actual node to get the correct ID format (uses '/' not ' - ')
+        // The nodeToDelete.id might be in the wrong format if it fell back to nodePath
+        let deletedNodeId = nodeToDelete.id;
+        
+        // Check if the ID is in the wrong format (contains ' - ' instead of '/')
+        if (deletedNodeId.includes(' - ')) {
+          // Convert nodePath format to node ID format
+          // nodePath format: "Process Technician - Documentation & Regulatory Compliance - Managing Material Safety Data Sheets (MSDS)"
+          // node ID format: "Manufacturing Operations/Process Technician/Documentation & Regulatory Compliance/Managing Material Safety Data Sheets (MSDS)"
+          const pathParts = nodeToDelete.path.split(' - ');
+          const fullPath = [rootNode, ...pathParts];
+          deletedNodeId = fullPath.join('/');
+          console.log('🔄 [DELETE] Converted nodePath to node ID format:', deletedNodeId);
+        }
+        
+        // Also try to find the node in the current nodes array to get the exact ID
+        const actualNode = nodes.find((n) => {
+          // Try exact match first
+          if (n.id === deletedNodeId) return true;
+          // Try matching by nodePath in data
+          if (n.data?.nodePath === nodeToDelete.path) return true;
+          // Try matching by label
+          if (n.data?.label === nodeToDelete.label) return true;
+          return false;
+        });
+        
+        if (actualNode) {
+          deletedNodeId = actualNode.id;
+          console.log('✅ [DELETE] Found actual node, using ID:', deletedNodeId);
+        } else {
+          console.warn('⚠️ [DELETE] Could not find node in nodes array, using calculated ID:', deletedNodeId);
+        }
+
+        const newExpandedNodes = new Set(expandedNodes);
+        
+        // First, explicitly preserve all parent nodes by extracting parent paths
+        const parentPaths: string[] = [];
+        const idParts = deletedNodeId.split('/');
+        for (let i = 1; i < idParts.length; i++) {
+          const parentPath = idParts.slice(0, i).join('/');
+          if (parentPath) {
+            parentPaths.push(parentPath);
+          }
+        }
+        console.log('👪 [DELETE] Parent paths to preserve:', parentPaths);
+        
+        // Remove the deleted node itself
+        newExpandedNodes.delete(deletedNodeId);
+        console.log('🧹 [DELETE] Removed deleted node:', deletedNodeId);
+        
+        // Remove all descendant nodes (nodes whose ID starts with deletedNodeId + '/')
+        expandedNodes.forEach(nodeId => {
+          if (nodeId.startsWith(deletedNodeId + '/')) {
+            newExpandedNodes.delete(nodeId);
+            console.log('🧹 [DELETE] Removing deleted descendant from expansion:', nodeId);
+          }
+        });
+        
+        // Explicitly re-add parent paths to ensure they stay expanded
+        parentPaths.forEach(parentPath => {
+          newExpandedNodes.add(parentPath);
+          console.log('✅ [DELETE] Ensured parent path is expanded:', parentPath);
+        });
+        
+        console.log('📊 [DELETE] AFTER cleanup - newExpandedNodes:', Array.from(newExpandedNodes));
+        
+        // Store the cleaned expansion state in both ref and window storage
+        // Ref for immediate use, window storage for persistence across remounts
+        pendingExpandedNodesRef.current = newExpandedNodes;
+        if (knowledgePackId) {
+          (window as any)[getPendingExpansionKey()] = Array.from(newExpandedNodes);
+          console.log('💾 [DELETE] Stored expansion state in window storage with key:', getPendingExpansionKey());
+        }
+        console.log('🔓 [DELETE] Stored expansion state in pendingExpandedNodesRef');
+        console.log('📊 [DELETE] Pending expansion state:', Array.from(pendingExpandedNodesRef.current));
 
         // Show success toast
         toast.success('Node deleted successfully');
@@ -1513,10 +1717,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
 
         // Refresh the knowledge pack tree to show updated structure
         if (window.refreshKnowledgePackTree) {
-          console.log('🔄 Refreshing knowledge pack tree after deletion');
+          console.log('🔄 [DELETE] Calling refreshKnowledgePackTree()');
           window.refreshKnowledgePackTree();
         } else {
-          console.warn('⚠️ refreshKnowledgePackTree function not available');
+          console.warn('⚠️ [DELETE] refreshKnowledgePackTree function not available');
         }
       } else {
         console.error('Delete failed:', response.message);
@@ -1725,50 +1929,52 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
                   );
                 })()}
 
-                {/* Generate Knowledge Button */}
-                <Button
-                  onClick={handleGenerateKnowledge}
-                  disabled={
-                    isGenerating ||
-                    initialLoading ||
-                    loading ||
-                    backgroundTaskStatus?.status === 'running' ||
-                    backgroundTaskStatus?.status === 'pending' ||
-                    backgroundTaskStatus?.status === 'completed'
-                  }
-                  variant="default"
-                  size="sm"
-                  className="gap-2"
-                  title={
-                    backgroundTaskStatus?.status === 'running' || isGenerating
-                      ? 'Knowledge generation is in progress'
-                      : backgroundTaskStatus?.status === 'completed'
-                        ? 'Knowledge generation completed'
-                        : 'Start generating knowledge for all topics'
-                  }
-                >
-                  {backgroundTaskStatus?.status === 'running' || isGenerating ? (
-                    <>
-                      <SystemRestart className="w-4 h-4 animate-spin" />
-                      <span>Generating...</span>
-                    </>
-                  ) : backgroundTaskStatus?.status === 'pending' ? (
-                    <>
-                      <SystemRestart className="w-4 h-4 animate-spin" />
-                      <span>Pending...</span>
-                    </>
-                  ) : backgroundTaskStatus?.status === 'completed' ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Knowledge generated</span>
-                    </>
-                  ) : (
-                    <>
-                      <LightBulb className="w-4 h-4" />
-                      <span>Generate Knowledge</span>
-                    </>
-                  )}
-                </Button>
+                {/* Generate Knowledge Button - MOVED TO CHAT SIDEBAR */}
+                {false && (
+                  <Button
+                    onClick={handleGenerateKnowledge}
+                    disabled={
+                      isGenerating ||
+                      initialLoading ||
+                      loading ||
+                      backgroundTaskStatus?.status === 'running' ||
+                      backgroundTaskStatus?.status === 'pending' ||
+                      backgroundTaskStatus?.status === 'completed'
+                    }
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                    title={
+                      backgroundTaskStatus?.status === 'running' || isGenerating
+                        ? 'Knowledge generation is in progress'
+                        : backgroundTaskStatus?.status === 'completed'
+                          ? 'Knowledge generation completed'
+                          : 'Start generating knowledge for all topics'
+                    }
+                  >
+                    {backgroundTaskStatus?.status === 'running' || isGenerating ? (
+                      <>
+                        <SystemRestart className="w-4 h-4 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : backgroundTaskStatus?.status === 'pending' ? (
+                      <>
+                        <SystemRestart className="w-4 h-4 animate-spin" />
+                        <span>Pending...</span>
+                      </>
+                    ) : backgroundTaskStatus?.status === 'completed' ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Knowledge generated</span>
+                      </>
+                    ) : (
+                      <>
+                        <LightBulb className="w-4 h-4" />
+                        <span>Generate Knowledge</span>
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

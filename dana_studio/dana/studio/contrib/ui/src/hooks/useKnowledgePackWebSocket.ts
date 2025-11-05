@@ -8,7 +8,7 @@ interface WebSocketMessage {
   message: {
     tool_name: string;
     content: string;
-    status: 'init' | 'in_progress' | 'finish' | 'error';
+    status: 'init' | 'in_progress' | 'finish' | 'error' | 'completed' | 'question_generated' | 'generating';
     progression?: number;
     path_parts?: string[];
   };
@@ -42,6 +42,8 @@ const mapWebSocketStatusToNodeStatus = (
         return 'generating';
       case 'question_generated':  // Map directly (current backend format)
         return 'question_generated';
+      case 'completed':  // Knowledge generation complete - maps to "completed" (green)
+        return 'completed';
       case 'finish':  // Backward compatibility
         return 'question_generated';
       case 'error':
@@ -50,6 +52,24 @@ const mapWebSocketStatusToNodeStatus = (
         return null;
     }
   }
+  
+  // Handle knowledge generation tool
+  if (toolName === 'generate_knowledge') {
+    switch (status) {
+      case 'init':
+      case 'in_progress':
+      case 'generating':
+        return 'generating';
+      case 'completed':
+      case 'success':
+        return 'completed';
+      case 'error':
+        return 'failed';
+      default:
+        return null;
+    }
+  }
+  
   return null;
 };
 

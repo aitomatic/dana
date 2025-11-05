@@ -1,4 +1,4 @@
-from dana.studio.api.core.schemas import DomainKnowledgeTree
+from dana.studio.api.core.schemas_v2 import DomainKnowledgeTreeV2 as DomainKnowledgeTree
 from pathlib import Path
 
 
