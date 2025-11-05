@@ -633,7 +633,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({
   // Stabilize the WebSocket callback to prevent reconnections on re-renders
   const handleWebSocketStatusUpdate = useCallback((nodePath: string, status: string) => {
     console.log('🔄 [DomainKnowledgeTree] WebSocket status update:', { nodePath, status });
-    updateNodeStatus(nodePath, status);
+    updateNodeStatus(nodePath, status as KnowledgeTopicStatus['status']);
     
     // Auto-expand the path to the updated node
     if (domainTree?.root) {

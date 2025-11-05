@@ -6,7 +6,7 @@ import { ArrowUp, Expand, Collapse } from 'iconoir-react';
 import { toast } from 'sonner';
 import { HybridRenderer } from '@/pages/Agents/chat/hybrid-renderer';
 import { DiffRenderer } from '@/components/animated-diff';
-import { parseDiffResponse } from '@/lib/diff-utils';
+import { parseDiffResponse, getChangedSections } from '@/lib/diff-utils';
 
 // CSS for blinking cursor animation
 const cursorBlinkStyle = `
@@ -484,8 +484,7 @@ const ContributionTemplateChat: React.FC<{
                 Let's start adjusting the capture template
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                💡 Tip: Be detailed in your requests. I'll help you modify the interview template
-                to better suit your needs.
+                💡 Tip: Provide a persona of the expert you are capturing knowledge from.
               </p>
             </div>
           </div>
@@ -502,22 +501,28 @@ const ContributionTemplateChat: React.FC<{
                   const diffData = JSON.parse(msg.text.replace('__TEMPLATE_DIFF__', ''));
                   const parsedDiff = parseDiffResponse(diffData);
                   
-                  if (parsedDiff && parsedDiff.sections.length > 0) {
-                    return (
-                      <div
-                        key={messageKey}
-                        className="rounded-sm px-3 py-2 text-sm self-start text-left bg-gray-50 border border-gray-200"
-                      >
-                        <div className="mb-2 text-xs font-semibold text-gray-700">
-                          📝 Template Changes:
+                  // Only render if there are visible changes (add/remove sections)
+                  if (parsedDiff) {
+                    const changedSections = getChangedSections(parsedDiff);
+                    if (changedSections.length > 0) {
+                      return (
+                        <div
+                          key={messageKey}
+                          className="rounded-sm px-3 py-2 text-sm self-start text-left bg-gray-50 border border-gray-200"
+                        >
+                          <div className="mb-2 text-xs font-semibold text-gray-700">
+                            📝 Template Changes:
+                          </div>
+                          <DiffRenderer
+                            sections={parsedDiff.sections}
+                            maxChars={800}
+                          />
                         </div>
-                        <DiffRenderer
-                          sections={parsedDiff.sections}
-                          maxChars={800}
-                        />
-                      </div>
-                    );
+                      );
+                    }
                   }
+                  // Return null if no visible changes - don't show the block at all
+                  return null;
                 } catch (e) {
                   console.error('Failed to parse diff message:', e);
                   return null;

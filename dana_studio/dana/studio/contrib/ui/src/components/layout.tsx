@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
-import { ArrowLeft } from 'iconoir-react';
+import { ArrowLeft, ArrowUpRight } from 'iconoir-react';
 import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { useContributionStore } from '@/stores/contribution-store';
@@ -22,12 +22,13 @@ interface LayoutProps {
 
 export function Layout({ children, hideLayout = false }: LayoutProps) {
   const location = useLocation();
-  const { agent_id, templateId } = useParams();
+  const { agent_id } = useParams();
   const navigate = useNavigate();
   const { fetchAgent, selectedAgent } = useAgentStore();
   const { currentTemplate } = useContributionStore();
   const { contributionTemplate } = useCaptureKnowledgeStore();
   const [prebuiltAgent, setPrebuiltAgent] = useState<any>(null);
+  const [knowledgePack, setKnowledgePack] = useState<any>(null);
   const { trackTabNavigation, trackError } = useDanaAnalytics();
 
   // Fetch agent data when on chat pages
@@ -54,14 +55,25 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     }
   }, [agent_id, location.pathname, fetchAgent]);
 
-  // Template will be loaded by the ContributionTemplatePage component
-  // We just need to access it from the store
+  // Fetch knowledge pack when template is loaded for capture-template page
   useEffect(() => {
-    if (templateId && location.pathname.includes('/capture-template')) {
-      // Template will be loaded by the ContributionTemplatePage component
-      // We just need to access it from the store
-    }
-  }, [templateId, location.pathname]);
+    const fetchKnowledgePack = async () => {
+      if (currentTemplate?.kp_id && location.pathname.includes('/capture-template')) {
+        try {
+          const response = await apiService.getKnowledgePack(currentTemplate.kp_id);
+          if (response.success && response.data) {
+            setKnowledgePack(response.data);
+          }
+        } catch (error) {
+          console.error('Error fetching knowledge pack:', error);
+        }
+      } else {
+        setKnowledgePack(null);
+      }
+    };
+
+    fetchKnowledgePack();
+  }, [currentTemplate?.kp_id, location.pathname]);
 
   // Get page title based on current route - moved before early return
   const getPageTitle = useCallback(() => {
@@ -92,7 +104,30 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
           return 'Agent Details';
         }
         if (location.pathname.startsWith('/capture-template/')) {
-          return currentTemplate?.name || 'Capture Template';
+          // Return JSX for capture-template page to show knowledge pack link
+          return (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{currentTemplate?.name || 'Capture Template'}</span>
+              {knowledgePack?.id && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        window.open(`/knowledge-pack/${knowledgePack.id}`, '_blank');
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                      <span>To Knowledge Pack</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Open Knowledge Pack</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          );
         }
         if (location.pathname.startsWith('/capture-knowledge/')) {
           // Return JSX for capture-knowledge page to apply different styling
@@ -123,7 +158,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
         }
         return 'Agent workspace';
     }
-  }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name, currentTemplate?.name, contributionTemplate?.name]);
+  }, [location.pathname, selectedAgent?.name, agent_id, prebuiltAgent?.name, currentTemplate?.name, contributionTemplate?.name, knowledgePack]);
 
   const isChatPage = location.pathname.includes('/chat');
   const isContributionTemplatePage = location.pathname.includes('/capture-template');

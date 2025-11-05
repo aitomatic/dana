@@ -18,12 +18,9 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
   const changedSections = getChangedSections({ sections, oldContent: null, newContent: null });
   const displaySections = truncateDiffForAnimation(changedSections, maxChars);
 
+  // Don't show anything if there are no visible changes
   if (displaySections.length === 0) {
-    return (
-      <div className="text-sm text-gray-600 italic">
-        Template updated (no visible changes to display)
-      </div>
-    );
+    return null;
   }
 
   // Show all changes statically

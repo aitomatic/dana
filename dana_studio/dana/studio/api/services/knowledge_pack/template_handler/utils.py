@@ -184,15 +184,27 @@ def reorder_topics(template_content: str, new_order: list[str]) -> str:
     # Add relationship prompts
     if relationship_prompts:
         new_content.append("## Relationship Exploration Prompts")
-        for prompt in relationship_prompts:
-            new_content.append(f"- {prompt}")
+        # relationship_prompts is a string, iterate over lines if it's a multi-line string
+        if isinstance(relationship_prompts, str):
+            for prompt in relationship_prompts.split("\n"):
+                if prompt.strip():
+                    new_content.append(f"- {prompt.strip()}")
+        elif relationship_prompts:  # Handle list case
+            for prompt in relationship_prompts:
+                new_content.append(f"- {prompt}")
         new_content.append("")
 
     # Add follow-up framework
     if followup_framework:
         new_content.append("## Follow-up Framework")
-        for question in followup_framework:
-            new_content.append(f'- "{question}"')
+        # followup_framework is a string, iterate over lines if it's a multi-line string
+        if isinstance(followup_framework, str):
+            for question in followup_framework.split("\n"):
+                if question.strip():
+                    new_content.append(f'- "{question.strip()}"')
+        elif followup_framework:  # Handle list case
+            for question in followup_framework:
+                new_content.append(f'- "{question}"')
         new_content.append("")
 
     return "\n".join(new_content)
@@ -214,6 +226,62 @@ def write_template(template_path: str, content: str, backup: bool = True) -> Non
 
     with open(template_path, "w", encoding="utf-8") as f:
         f.write(content)
+
+
+def normalize_template_separators(content: str) -> str:
+    """
+    Normalize template content by removing orphaned separator lines and excessive blank lines.
+    
+    Removes:
+    - Multiple consecutive "---" lines (3+ = orphaned separators, removed completely)
+    - Duplicate "---" lines (2 consecutive = normalized to single)
+    - Excessive blank lines (3+ newlines = normalized to max 2)
+    
+    Preserves:
+    - Single "---" lines that appear between actual content sections
+    - Normal spacing (1-2 blank lines between sections)
+    
+    Args:
+        content: Raw template content
+        
+    Returns:
+        Normalized template content with orphaned separators removed
+    """
+    if content is None:
+        return ""
+    if not content:
+        return content
+    
+    # Step 1: Remove 3+ consecutive separator lines (orphaned separators)
+    # Pattern: line starting with "---" followed by optional whitespace, repeated 3+ times
+    # Match across newlines to find consecutive separator blocks
+    content = re.sub(r"(^---\s*\n){3,}", "", content, flags=re.MULTILINE)
+    
+    # Step 2: Normalize 2 consecutive separator lines to single separator
+    # Pattern: line with "---" followed by blank line(s) and another "---" line
+    content = re.sub(r"^---\s*\n(\s*\n)*---\s*\n", "---\n", content, flags=re.MULTILINE)
+    
+    # Step 3: Remove excessive blank lines (3+ consecutive newlines -> max 2)
+    # This handles cases like "\n\n\n\n" -> "\n\n"
+    content = re.sub(r"\n{3,}", "\n\n", content)
+    
+    # Step 4: Clean up trailing separators at start/end of file
+    # Remove separator lines at the very beginning or end with no content around them
+    content = re.sub(r"^\s*---\s*\n+", "", content)  # Leading orphaned separators
+    content = re.sub(r"\n+\s*---\s*$", "", content)  # Trailing orphaned separators
+    
+    # Step 5: Normalize trailing whitespace while preserving structure
+    # Remove trailing whitespace from each line but keep newlines
+    lines = content.split("\n")
+    normalized_lines = [line.rstrip() for line in lines]
+    content = "\n".join(normalized_lines)
+    
+    # Ensure content doesn't start or end with excessive newlines
+    content = content.strip("\n")
+    if content:  # Only add final newline if content exists
+        content += "\n"
+    
+    return content
 
 
 def find_topic_fuzzy(topics: list[dict], topic_name: str) -> tuple[dict | None, str]:
@@ -319,8 +387,14 @@ def reconstruct_template_content(parsed_data: dict[str, any]) -> str:
     # Relationship prompts
     if parsed_data.get("relationship_prompts"):
         content_parts.append("## Relationship Exploration Prompts")
-        for prompt in parsed_data["relationship_prompts"]:
-            content_parts.append(prompt)
+        relationship_prompts = parsed_data["relationship_prompts"]
+        if isinstance(relationship_prompts, str):
+            for prompt in relationship_prompts.split("\n"):
+                if prompt.strip():
+                    content_parts.append(prompt.strip())
+        elif relationship_prompts:  # Handle list case
+            for prompt in relationship_prompts:
+                content_parts.append(prompt)
         content_parts.append("")
         content_parts.append("---")
         content_parts.append("")
@@ -328,8 +402,14 @@ def reconstruct_template_content(parsed_data: dict[str, any]) -> str:
     # Follow-up framework
     if parsed_data.get("followup_framework"):
         content_parts.append("## Follow-up Framework")
-        for question in parsed_data["followup_framework"]:
-            content_parts.append(question)
+        followup_framework = parsed_data["followup_framework"]
+        if isinstance(followup_framework, str):
+            for question in followup_framework.split("\n"):
+                if question.strip():
+                    content_parts.append(question.strip())
+        elif followup_framework:  # Handle list case
+            for question in followup_framework:
+                content_parts.append(question)
         content_parts.append("")
         content_parts.append("---")
         content_parts.append("")

@@ -142,7 +142,7 @@ result = await handler.handle(request)
 
 ## Key Constraints
 
-- **Topics are Fixed**: Topics map 1:1 to knowledge.json files and cannot be added, removed, or reordered
+- **Topics can be Adjusted**: Topics can be removed from templates. Note: Topics map 1:1 to knowledge.json files in the knowledge pack, but template topics are independent and can be customized or removed.
 - **Question Refinement Only**: You can only modify questions within existing topics
 - **Framework Flexibility**: Relationship prompts and follow-up questions can be freely modified using ReplaceInFileTool
 

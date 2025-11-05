@@ -9,6 +9,7 @@ import os
 import re
 import logging
 from pathlib import Path
+from dana.studio.api.services.knowledge_pack.template_handler.utils import normalize_template_separators
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,10 @@ The tool automatically preserves the template markdown structure and formatting.
             return str(e)
         except Exception as e:
             return f"❌ Error applying diff: {e}"
+
+        # Normalize template separators to remove orphaned "---" lines and excessive blank lines
+        # This ensures clean templates after modifications (especially topic removals)
+        new_content = normalize_template_separators(new_content)
 
         # Write the modified content back to the file
         try:
