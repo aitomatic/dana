@@ -70,11 +70,23 @@ trace_learning = coordinator_learner._reflect_episodic({})
 learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
 print(learning_content)
 
-
+print("=" * 80)
+print("Storing episodic learning")
+print("=" * 80)
 # Store episodic learning
 coordinator_learner._store_episodic_learning(learning_content)
 print(coordinator_learner._load_episodic())
 
+print("=" * 80)
+print("Storing feedback")
+print("=" * 80)
 # Store feedback
 coordinator_learner.save_feedback("This is a test feedback")
 print(coordinator_learner._load_feedback())
+
+print("=" * 80)
+print("Getting timeline entries")
+print("=" * 80)
+# Get timeline entries
+timeline_entries = coordinator_learner._get_timeline_entries()
+print(timeline_entries)
