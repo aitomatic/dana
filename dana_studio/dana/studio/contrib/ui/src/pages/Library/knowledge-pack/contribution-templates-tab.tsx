@@ -29,6 +29,7 @@ interface ExtendedLibraryItem {
   status?: string;
   interviewee_name?: string;
   interviewee_role?: string;
+  is_master?: boolean;
 }
 
 export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
@@ -176,6 +177,7 @@ export function ContributionTemplatesTab({}: ContributionTemplatesTabProps) {
           updated: template.updated_at,
           template_metadata: template.template_metadata,
           interview_sessions: sessions,
+          is_master: template.is_master,
           children: sessions
             .filter((session: any) => !deletedItemIds.has(session.id)) // Filter out deleted sessions
             .map((session: any) => ({

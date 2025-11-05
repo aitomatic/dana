@@ -65,6 +65,7 @@ interface ExtendedLibraryItem {
   status?: string;
   interviewee_name?: string;
   interviewee_role?: string;
+  is_master?: boolean;
 }
 
 export const getContributionTemplateColumns = (
@@ -106,9 +107,13 @@ export const getContributionTemplateColumns = (
         return '-mx-6 px-4'; // Default
       };
 
-      // Check if template is in draft status
-      const isDraftTemplate = templateItem && item.template_metadata?.status === TEMPLATE_GENERATION_STATUS.DRAFT;
-      const isClickable = (templateItem && !isDraftTemplate) || sessionItem;
+      // For master templates: only clickable when completed
+      // For non-master templates: always clickable
+      const isMasterTemplate = templateItem && item.is_master === true;
+      const isCompletedTemplate = item.template_metadata?.status === TEMPLATE_GENERATION_STATUS.COMPLETED;
+      const isClickable = templateItem 
+        ? (isMasterTemplate ? isCompletedTemplate : true)  // Master: only if completed, Non-master: always
+        : sessionItem;  // Sessions always clickable
 
       return (
         <div className={cn("flex items-center gap-2", getPaddingClass())}>
@@ -133,7 +138,7 @@ export const getContributionTemplateColumns = (
                 {templateItem ? (
                   <PasteClipboard className={cn(
                     "w-5 h-5 mt-0.5 flex-shrink-0",
-                    isDraftTemplate ? "text-gray-400" : "text-[#0BA5EC]"
+                    !isClickable ? "text-gray-400" : "text-[#0BA5EC]"
                   )} />
                 ) : sessionItem ? (
                   <IconSchool className="w-5 h-5 mt-0.5 text-green-600 flex-shrink-0" />
@@ -143,14 +148,14 @@ export const getContributionTemplateColumns = (
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className={cn(
                     "font-medium truncate",
-                    isDraftTemplate ? "text-gray-500" : "text-gray-900"
+                    !isClickable ? "text-gray-500" : "text-gray-900"
                   )}>{item.name}</span>
                 </div>
               </div>
             </TooltipTrigger>
-            {isDraftTemplate && (
+            {templateItem && !isClickable && (
               <TooltipContent>
-                <p>Template must be completed before it can be viewed or edited</p>
+                <p>Master template must be completed before it can be viewed or edited</p>
               </TooltipContent>
             )}
           </Tooltip>
@@ -230,6 +235,7 @@ export const getContributionTemplateColumns = (
         const metadata = (item as any).template_metadata;
         const isCompleted = metadata?.status === TEMPLATE_GENERATION_STATUS.COMPLETED;
         const isCapturing = capturingKnowledge.has(item.id);
+        const isMasterTemplate = item.is_master === true;
 
         return (
           <div className="flex items-center gap-2">
@@ -277,17 +283,34 @@ export const getContributionTemplateColumns = (
               )}
             </Tooltip>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(item.id, 'template', item.name);
-              }}
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-8 w-8 p-0",
+                    isMasterTemplate 
+                      ? "text-gray-400 cursor-not-allowed opacity-50" 
+                      : "text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isMasterTemplate) {
+                      handleDelete(item.id, 'template', item.name);
+                    }
+                  }}
+                  disabled={isMasterTemplate}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              {isMasterTemplate && (
+                <TooltipContent>
+                  <p>Master templates cannot be deleted</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
           </div>
         );
       } else if (sessionItem) {
