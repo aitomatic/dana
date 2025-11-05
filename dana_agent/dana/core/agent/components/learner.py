@@ -12,7 +12,7 @@ import inspect
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, Any
 from uuid import uuid4
 
 from structlog import get_logger
@@ -20,14 +20,13 @@ from structlog import get_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
-
+from dana.common.protocols.types import LearningPhase
 logger = get_logger()
 
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
     from dana.core.agent.timeline import Timeline
-
 
 class LearnerProtocol(Protocol):
     def _reflect_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
@@ -42,12 +41,20 @@ class LearnerProtocol(Protocol):
     def _reflect_retentive(self, trace_retentive: DictParams) -> DictParams:
         ...
 
-    def _load_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
+    def _load_acquisitive(self) -> list[str]:
         ...
 
-    def _load_episodic(self, trace_episodic: DictParams) -> DictParams:
+    def _load_episodic(self) -> str | None:
         ...
 
+    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        ...
+
+    def _load_feedback(self) -> Any:
+        ...
+
+    def save_feedback(self, feedback: Any) -> None:
+        ...
 class Learner:
     """Component providing STAR learning phase implementations."""
 
@@ -148,6 +155,20 @@ class Learner:
         }
         return {"trace_learning": trace_learning}
 
+    def _load_acquisitive(self) -> list[str]:
+        return []
+
+    def _load_episodic(self) -> str | None:
+        return None
+
+    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        return None
+
+    def _load_feedback(self) -> Any:
+        return None
+
+    def save_feedback(self, feedback: Any) -> None:
+        pass
 
 class DefaultLearner(LearnerProtocol):
     """Component providing STAR learning phase implementations."""
@@ -646,8 +667,17 @@ Provide your analysis in the markdown format specified above."""
         }
         return {"trace_learning": trace_learning}
 
-    def _load_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
-        return trace_acquisitive
+    def _load_acquisitive(self) -> list[str]:
+        return []
 
-    def _load_episodic(self, trace_episodic: DictParams) -> DictParams:
-        return trace_episodic
+    def _load_episodic(self) -> str | None:
+        return None
+
+    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        return None
+
+    def _load_feedback(self) -> Any:
+        return None
+
+    def save_feedback(self, feedback: Any) -> None:
+        pass

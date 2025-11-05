@@ -11,7 +11,7 @@ from agents.financial_report_coordinator import FinancialReportCoordinatorAgent
 from leaners.william_learner import WilliamLearner
 
 
-SESSION_ID = "financial-report-session-001"
+SESSION_ID = "financial-report-session-002"
 
 # Get the current directory (agents/)
 current_dir = Path("examples/agents/financial-analysis")
@@ -33,6 +33,8 @@ analyst = FinancialAnalysisAgent(
 )
 analyst.enable_notifications(verbose=False)
 
+analyst.set_session_id(SESSION_ID)
+
 analyst_learner = WilliamLearner(agent=analyst)
 
 # Initialize the coordinator agent with the analyst and observer
@@ -46,6 +48,7 @@ coordinator = FinancialReportCoordinatorAgent(
     max_context_tokens=40000,
     observer=reports_observer,  # Add observer
 )
+coordinator.set_session_id(SESSION_ID)
 coordinator_learner = WilliamLearner(agent=coordinator)
 
 # Disable notifications for cleaner output in demo
@@ -60,7 +63,18 @@ print("=" * 80)
 print()
 
 
-print(coordinator_learner._load_acquisitive({}))
+print(coordinator_learner._load_acquisitive())
 
 # This can now learn independently from agent loop
-print(coordinator_learner._reflect_episodic({}))
+trace_learning = coordinator_learner._reflect_episodic({})
+learning_content = trace_learning.get("trace_learning", {}).get("simple_summary", "")
+print(learning_content)
+
+
+# Store episodic learning
+coordinator_learner._store_episodic_learning(learning_content)
+print(coordinator_learner._load_episodic())
+
+# Store feedback
+coordinator_learner.save_feedback("This is a test feedback")
+print(coordinator_learner._load_feedback())

@@ -51,6 +51,7 @@ dependencies = [
     "readability-lxml>=0.8.1",
     "html2text>=2024.2.26",
     "pydantic-settings>=2.11.0",
+    "rank-bm25>=0.2.2",
 ]
 
 # Command-line entry points

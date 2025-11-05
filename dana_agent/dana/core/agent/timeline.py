@@ -180,11 +180,9 @@ class Timeline:
         self._codec = codec
         self._storage_config = storage_config
         self._codec_prefix = codec.__qualname__ if codec else "default"
-        try:
-            self.timeline = list(self.read_since(checkpoint=-100))
-        except Exception as e:
-            logger.warning(f"Failed to load back timeline: {e}")
-            self.timeline: list[TimelineEntry] = []
+        self.timeline: list[TimelineEntry] = []
+        # If you want to load back the timeline, you can do it like this:
+        # self.timeline = list(self.read_since(checkpoint=-100))
 
     def __repr__(self) -> str:
         """

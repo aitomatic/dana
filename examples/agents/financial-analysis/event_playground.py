@@ -11,7 +11,7 @@ from agents.financial_report_coordinator import FinancialReportCoordinatorAgent
 from leaners.william_learner import WilliamLearner
 
 
-SESSION_ID = "financial-report-session-001"
+SESSION_ID = "financial-report-session-002"
 
 # Get the current directory (agents/)
 current_dir = Path("examples/agents/financial-analysis")
@@ -32,7 +32,7 @@ analyst = FinancialAnalysisAgent(
     observer=reports_observer,  # Add observer
 )
 analyst.enable_notifications(verbose=False)
-
+analyst.set_session_id(SESSION_ID)
 analyst._learner = WilliamLearner(agent=analyst)
 
 # Initialize the coordinator agent with the analyst and observer
@@ -47,7 +47,7 @@ coordinator = FinancialReportCoordinatorAgent(
     observer=reports_observer,  # Add observer
 )
 coordinator._learner = WilliamLearner(agent=coordinator)
-
+coordinator.set_session_id(SESSION_ID)
 # Disable notifications for cleaner output in demo
 coordinator.enable_notifications(verbose=False)
 

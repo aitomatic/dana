@@ -12,6 +12,9 @@ from agents.financial_report_coordinator import FinancialReportCoordinatorAgent
 from observers.report_observers import ReportsFolderObserver
 from leaners.william_learner import WilliamLearner
 
+SESSION_ID = "financial-report-session-002"
+
+
 print("=" * 80)
 print("FinancialReportCoordinatorAgent Demo with Observer")
 print("=" * 80)
@@ -63,9 +66,8 @@ print("=" * 80)
 print()
 
 # Execute report generation with session_id
-session_id = "financial-report-session-001"
 result = coordinator.converse(
-    session_id=session_id,
+    session_id=SESSION_ID,
     initial_message="Create a comprehensive financial health report for AMD based on the data in the data directory. "
     "The report should include liquidity analysis, profitability analysis, leverage analysis, and efficiency analysis."
 )
@@ -87,6 +89,7 @@ if final_observation['files']:
     for file_info in final_observation['files']:
         print(f"    - {file_info['path']}: {file_info['size_kb']} KB")
 print("=" * 80)
+
 
 # Stop observer monitoring
 reports_observer.stop()
