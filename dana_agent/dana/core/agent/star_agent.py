@@ -87,6 +87,8 @@ class STARAgent(BaseSTARAgent):
             "model": model,
         }
 
+
+        self._session_id = str(uuid4())
         # Conditional component initialization based on codec
         self._codec = codec
         if codec is not None:
@@ -135,6 +137,11 @@ class STARAgent(BaseSTARAgent):
             self._event_log = None
 
         self.with_resources(ToDoResource(resource_id="todo-resource"))
+
+
+    def set_session_id(self, session_id: str) -> None:
+        """Set the session id for the agent."""
+        self._session_id = session_id
 
     @property
     def llm_client(self) -> LLM:
@@ -215,9 +222,11 @@ class STARAgent(BaseSTARAgent):
 
     def query(self, **kwargs) -> DictParams:
         # Generate session_id if not provided
-        session_id = kwargs.get("session_id")
-        if session_id is None:
-            session_id = str(uuid4())
+        new_session_id = kwargs.get("session_id")
+        if new_session_id is not None:
+            self.set_session_id(new_session_id)
+        session_id = self._session_id
+            
 
         # Set session_id for EventLog if it exists
         if hasattr(self, "_event_log") and self._event_log is not None:
@@ -337,10 +346,7 @@ class STARAgent(BaseSTARAgent):
             if "caller_message" not in trace_inputs:
                 trace_inputs["caller_message"] = caller_message
 
-        # Observe environment if EventLog is enabled
-        # This is the ONLY way events are created - from Observer
-        if self._event_log:
-            self._event_log.observe_and_record()  # Observer.observe() -> Event
+        
 
         trace_inputs |= {"timeline": self._timeline}
 
@@ -529,7 +535,7 @@ class STARAgent(BaseSTARAgent):
 
         return super()._act(trace_thoughts)
 
-    @observable
+    # @observable
     def _reflect(self, trace_outputs: DictParams) -> DictParams:
         """
         REFLECT: Reflect on the actions or episode, depending on the reflection phase.

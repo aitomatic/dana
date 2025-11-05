@@ -12,7 +12,7 @@ import inspect
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from structlog import get_logger
@@ -20,14 +20,39 @@ from structlog import get_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
 from dana.common.protocols import DictParams
+from dana.common.protocols.types import LearningPhase
 from dana.core.agent.components.learner import LearnerProtocol
+from dana.config.storage_config import FileStorageConfig
 from dana.common.llm.debug_logger import get_debug_logger
+from dana.core.agent.timeline import TimelineEntry
+from rank_bm25 import BM25Okapi
+import numpy as np
 
 logger = get_logger()
 
 if TYPE_CHECKING:
     from dana.core.agent.star_agent import STARAgent
     from dana.core.agent.timeline import Timeline
+
+class BM25SearchEngine:
+    def __init__(self, corpus: list[str]):
+        self._original_corpus = corpus
+        self.corpus = [self.text_to_words(text) for text in corpus]
+        self.bm25 = BM25Okapi(self.corpus)
+
+    @staticmethod
+    def text_to_words(text: str) -> list[str]:
+        return [word.lower() for word in text.split(" ")]
+
+    def search(self, query: str, n: int = 1) -> list[str]:
+        top_n = self.get_top_n_indices(query, n)
+        return [self._original_corpus[i] for i in top_n]
+
+    def get_top_n_indices(self, query: str, n: int = 1) -> list[int]:
+        scores = self.bm25.get_scores(self.text_to_words(query))
+        return np.argsort(scores)[::-1][:n].tolist()
+
+
 
 
 class WilliamLearner(LearnerProtocol):
@@ -43,13 +68,44 @@ class WilliamLearner(LearnerProtocol):
         # NOTE : self._agent will be set by the agent when it is initialized the agent
         self._agent = agent
         self.acquisitive_memory = []
-        self.episodic_memory = []
+        self.episodic_memory = None
 
     # ============================================================================
     # LEARNING PHASES (STAR REFLECTION IMPLEMENTATIONS)
     # ============================================================================
 
     @observable
+    def query_learnings(self, query: str, phase: LearningPhase | None = None) -> str | None:
+        if phase == LearningPhase.ACQUISITIVE:
+            if not self.acquisitive_memory:
+                self.acquisitive_memory = self._load_acquisitive()
+            if not self.acquisitive_memory:
+                return None
+            # SIMPLE RETRIEVAL FIRST
+            engine = BM25SearchEngine(self.acquisitive_memory)
+            results = engine.search(query, n=3)
+            return "\n".join(results)
+        elif phase == LearningPhase.EPISODIC:
+            if not self.episodic_memory:
+                self.episodic_memory = self._load_episodic()
+            return self.episodic_memory
+        else:
+            return None
+
+
+    @property
+    def session_id(self) -> str | None:
+        # Get session_id from agent if available
+        if hasattr(self._agent, "_session_id") and "magic" not in str(self._agent._session_id):
+            return self._agent._session_id
+        _event_log = getattr(self._agent, "_event_log", None)
+        if _event_log is None or "magic" in str(_event_log):
+            # Try to get from timeline or other sources
+            session_id = None
+        else:
+            session_id = _event_log._current_session_id
+        return session_id
+
     def _reflect_acquisitive(
         self, trace_acquisitive: DictParams
     ) -> DictParams:
@@ -84,21 +140,15 @@ class WilliamLearner(LearnerProtocol):
             reflection_context = result["trace_learning"].get("reflection_context", "")
             
             # Keep in-memory for backward compatibility
-            self.acquisitive_memory.append(reflection_context)
+            self.acquisitive_memory.append(learning_note)
 
-            # Get session_id from agent if available
-            _event_log = getattr(self._agent, "_event_log", None)
-            if _event_log is None or "magic" in str(_event_log):
-                # Try to get from timeline or other sources
-                session_id = None
-            else:
-                session_id = _event_log._current_session_id
+            
 
             # Build complete JSON structure
             loop_data = {
                 "loop_id": loop_id,
                 "timestamp": timestamp.isoformat(),
-                "session_id": session_id if session_id else None,
+                "session_id": self.session_id,
                 "query_id": None,  # Can be set if available
                 "timeline_context": timeline_context,
                 "caller_message": trace_acquisitive.get("caller_message", ""),
@@ -163,11 +213,11 @@ knowledge."""
 
             messages.append(LLMMessage(role="system", content=system_prompt))
             timeline = self._agent._timeline
-
+            timeline.timeline = list(timeline.read_since(checkpoint=-100))
             # Convert timeline to messages for learning context
             if timeline:
                 timeline_messages = timeline.to_llm_messages(
-                    separate_latest_user=False
+                    separate_latest_user=False, max_tokens=40000
                 )
 
                 if timeline_messages:
@@ -268,7 +318,7 @@ Format: [Condition] [Advice of what should do]"""
             )
 
             # Keep in-memory for backward compatibility
-            self.episodic_memory.append(episodic_content)
+            self.episodic_memory = episodic_content
 
             # Store episodic learning to disk
             self._store_episodic_learning(episodic_content)
@@ -423,6 +473,22 @@ learned from this interaction."""
         }
         return {"trace_learning": trace_learning}
 
+
+    def get_relative_path(self) -> str:
+        # Get codec from agent
+        codec = getattr(self._agent, "_codec", None)
+        if codec is None or "magic" in str(codec.__qualname__):
+            # Try to get from prompt_engineer if available
+            prompt_engineer = getattr(self._agent, "_prompt_engineer", None)
+            if prompt_engineer:
+                codec = getattr(prompt_engineer, "_codec", None)
+        codec_name = codec.__qualname__ if codec else "default"
+
+        filepath = inspect.getfile(self._agent.__class__)
+        filename = Path(filepath).stem
+        relative_path = f"{codec_name}/{self._agent.__class__.__qualname__}__{filename}/"
+        return relative_path
+
     def _get_acquisitive_storage_path(self) -> Path:
         """
         Get acquisitive learning storage path following EventLog pattern.
@@ -432,27 +498,11 @@ learned from this interaction."""
         Returns:
             Path to acquisitive learning storage directory
         """
-        from dana.config.storage_config import FileStorageConfig
 
         storage_config = FileStorageConfig()
         base_path = Path(storage_config.workspace_folder)
 
-        # Follow EventLog pattern
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-
-        # Get codec from agent
-        codec = getattr(self._agent, "_codec", None)
-        if codec is None or "magic" in str(codec.__qualname__):
-            # Try to get from prompt_engineer if available
-            prompt_engineer = getattr(self._agent, "_prompt_engineer", None)
-            if prompt_engineer:
-                codec = getattr(prompt_engineer, "_codec", None)
-
-        codec_name = codec.__qualname__ if codec else "default"
-
-        relative_path = f"{codec_name}/{self._agent.__class__.__qualname__}__{filename}/learnings/acquisitive"
-        storage_path = base_path / relative_path
+        storage_path = base_path / self.get_relative_path() / f"learnings/{self.session_id}/acquisitive"
         storage_path.mkdir(parents=True, exist_ok=True)
         return storage_path
 
@@ -465,27 +515,10 @@ learned from this interaction."""
         Returns:
             Path to episodic learning storage directory
         """
-        from dana.config.storage_config import FileStorageConfig
-
         storage_config = FileStorageConfig()
         base_path = Path(storage_config.workspace_folder)
 
-        # Follow EventLog pattern
-        filepath = inspect.getfile(self._agent.__class__)
-        filename = Path(filepath).stem
-
-        # Get codec from agent
-        codec = getattr(self._agent, "_codec", None)
-        if codec is None or "magic" in str(codec.__qualname__):
-            # Try to get from prompt_engineer if available
-            prompt_engineer = getattr(self._agent, "_prompt_engineer", None)
-            if prompt_engineer:
-                codec = getattr(prompt_engineer, "_codec", None)
-
-        codec_name = codec.__qualname__ if codec else "default"
-
-        relative_path = f"{codec_name}/{self._agent.__class__.__qualname__}__{filename}/learnings/episodic"
-        storage_path = base_path / relative_path
+        storage_path = base_path / self.get_relative_path() / f"learnings/{self.session_id}/episodic"
         storage_path.mkdir(parents=True, exist_ok=True)
         return storage_path
 
@@ -604,7 +637,7 @@ learned from this interaction."""
         except Exception as e:
             logger.error(f"Failed to store episodic learning: {e}", exc_info=True)
 
-    def _load_acquisitive(self, trace_acquisitive: DictParams) -> DictParams:
+    def _load_acquisitive(self) -> list[str]:
         """
         Load acquisitive learning from disk.
 
@@ -614,7 +647,7 @@ learned from this interaction."""
             trace_acquisitive: Acquisitive learning data
 
         Returns:
-            trace_learning: Acquisitive learning insights containing all learning notes
+            list[str]: Acquisitive learning notes
         """
         try:
             storage_path = self._get_acquisitive_storage_path()
@@ -642,19 +675,13 @@ learned from this interaction."""
                 except Exception as e:
                     logger.warning(f"Failed to load loop file {loop_file}: {e}")
             
-            trace_learning = {
-                "learning_notes": learning_notes,
-                "total_loops": len(loop_files),
-                "total_learning_notes": len(learning_notes),
-            }
-            
-            return {"trace_learning": trace_learning}
+            return [learning_note["learning_note"] for learning_note in learning_notes]
             
         except Exception as e:
             logger.warning(f"Failed to load acquisitive learning: {e}")
-            return {"trace_learning": {"learning_notes": [], "total_loops": 0, "total_learning_notes": 0}}
+            return []
 
-    def _load_episodic(self, trace_episodic: DictParams) -> DictParams:
+    def _load_episodic(self) -> str | None:
         """
         Load episodic learning from disk.
 
@@ -667,8 +694,34 @@ learned from this interaction."""
         try:
             previous_learning = self._load_episodic_learning()
             if previous_learning:
-                return {"trace_learning": {"previous_learning": previous_learning}}
-            return {"trace_learning": {}}
+                return previous_learning
+            return None
         except Exception as e:
             logger.warning(f"Failed to load episodic learning: {e}")
-            return {"trace_learning": {}}
+            return None
+
+    def save_feedback(self, feedback: Any) -> None:
+        try:
+            storage_path = self._get_feedback_storage_path()
+            feedback_file = storage_path / "feedback.md"
+            feedback_file.write_text(feedback)
+            logger.info(f"Stored feedback: {feedback_file}")
+        except Exception as e:
+            logger.error(f"Failed to store feedback: {e}", exc_info=True)
+
+    def _get_feedback_storage_path(self) -> Path:
+        base_path = Path(FileStorageConfig().workspace_folder)
+        storage_path = base_path / self.get_relative_path() / f"feedback/{self.session_id}"
+        storage_path.mkdir(parents=True, exist_ok=True)
+        return storage_path
+
+    def _load_feedback(self) -> Any:
+        storage_path = self._get_feedback_storage_path()
+        feedback_file = storage_path / "feedback.md"
+        if not feedback_file.exists():
+            return None
+        return feedback_file.read_text()
+
+    def _get_timeline_entries(self, checkpoint: int = -100) -> list["TimelineEntry"]:
+        timeline = self._agent._timeline
+        return list(timeline.read_since(checkpoint=checkpoint))
