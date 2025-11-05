@@ -283,20 +283,24 @@ graph TB
     PM[annieha<br/>Project Manager]
     
     MAIN[lam<br/>Main SWE<br/>1.0 FTE]
-    APP[william<br/>Application SWE<br/>0.5 FTE]
+    APP[william<br/>HVAC Core<br/>0.5 FTE]
+    UI[nhi<br/>Web UI<br/>0.75 FTE<br/>Days 3-8]
     INT[zooey<br/>Llama-Stack<br/>0.5 FTE]
     
     PM --> MAIN
     PM --> APP
+    PM --> UI
     PM --> INT
     
     MAIN -->|Framework Core| FC[Event Log<br/>Knowledge Store<br/>Learning Scopes]
-    APP -->|HVAC Logic| HL[Agent<br/>Simulator<br/>Domain Rules]
-    INT -->|LLM Integration| LI[Llama-Stack<br/>Model Calls<br/>Prompt Management]
+    APP -->|HVAC Logic| HL[HVAC Agent<br/>Simulator<br/>Domain Rules]
+    UI -->|Demo Web App| DA[Learning Viz<br/>Metrics Dashboard<br/>Inspection Tools]
+    INT -->|LLM Integration| LI[Llama-Stack<br/>Agent API<br/>Packaging]
     
     FC <-.->|Integration| HL
     FC <-.->|Integration| LI
-    HL <-.->|Integration| LI
+    HL <-.->|Integration| DA
+    DA <-.->|Integration| LI
 ```
 
 **Coordination Strategy:**
@@ -382,7 +386,7 @@ Deliverables by role:
 - [ ] `STARAgent` skeleton (operate/learn modes)
 - [ ] Implement end-of-session write trigger (episodic summary on session close)
 - [ ] Local prompts service (filesystem): render + learn (MVP prompt learning)
-- [ ] Create testable interfaces/harness for episodic learning (William can use to test HVAC integration)
+- [ ] Create testable interfaces/harness for episodic learning (william can use to test HVAC integration)
 - **Deliverable:** Working episodic learning pipeline with testable interfaces/harness (Day 2 work shifted)
 
 **@william - 4 hours:**
@@ -391,16 +395,24 @@ Deliverables by role:
 - [ ] Ensure simulator/agent integration ready for episodic learning (verify agent can receive and process HVAC events)
 - **Deliverable:** Enhanced simulator with observability; Integration ready for episodic learning
 
+**@nhi - 6 hours:** (Web UI - Starting today)
+- [ ] Handoff with william (understand HVAC simulator)
+- [ ] **Complete demo design:** narrative/story arc, UI wireframe (3-panel layout: Simulator | Agent Modes | Learning), interaction flow, key "wow moments"
+- [ ] Choose web framework (Streamlit recommended)
+- **Deliverable:** Complete design doc + wireframe + framework chosen
+
 **@zooey - 4 hours:**
- - [ ] Wire `Agent API` to decision loop; connect to `Inference API`
- - [ ] Ensure LLM/Inference API is functional for agent decisions
- - **Deliverable:** Agent decisions using `Inference` API (foundation for Day 4 packaging)
+ - [ ] Design LlamaStack package structure for Dana HVAC agent
+ - [ ] Define CLI commands: `llamastack install/run dana-hvac-agent`
+ - [ ] Scaffold package directory structure (dependencies, entry points)
+ - **Deliverable:** Package structure designed; CLI commands defined
 
 **Sync:** 4:30 PM - Review episodic pipeline progress; prepare for Day 4 episodic learning and packaging
 
 Deliverables by role:
- - @lam: Episodic pipeline functional with end-of-session write trigger; Testable interfaces/harness ready for William
+ - @lam: Episodic pipeline functional with end-of-session write trigger; Testable interfaces/harness ready for william
  - @william: Simulator with observability added; Integration ready for episodic learning
+ - @nhi: Complete design doc + wireframe + framework chosen
 - @zooey: Agent wired to Inference API; decisions flowing (foundation for packaging)
 
 ---
@@ -409,165 +421,231 @@ Deliverables by role:
 
 **@lam - 8 hours:**
 - [ ] Framework-level validation: test episodic learning pipeline with synthetic scenarios (prove learning works at framework level)
-- [ ] Create test utilities/demo notebook showing learning curve (for William to use as reference)
+- [ ] Create test utilities/demo notebook showing learning curve (for william to use as reference)
 - [ ] Implement per-query acquisitive artifact write on query completion
-- [ ] Provide validation tools/test harness that William can use for HVAC-specific testing
-- **Deliverable:** Framework-level learning validation complete; Test utilities and validation tools ready for William
+- [ ] Make agent loop observable/loggable in framework (hooks for OPERATE: See → Think → Act; LEARN: Reflect)
+- [ ] Ensure EventLog/KnowledgeStore paths are configurable (for CLI packaging)
+- **Deliverable:** Framework-level learning validation complete; Test utilities ready; Agent loop logging hooks added
 
 **@william - 4 hours:**
-- [ ] Wire episodic learning functionality into HVAC agent/simulator (use Lam's episodic pipeline and test harness from Day 3)
+- [ ] Wire episodic learning functionality into HVAC agent/simulator (use lam's episodic pipeline and test harness from Day 3)
 - [ ] Configure agent to retrieve episodic memories for HVAC decisions (query episodic knowledge store during decision-making)
-- [ ] Run basic HVAC test scenarios using Lam's test utilities (from Day 3 preparation) - verify agent can retrieve and use episodic memories
-- [ ] Validate HVAC integration: agent retrieves relevant past episodes and uses them in HVAC decision-making
-- **Deliverable:** Episodic learning wired into HVAC agent/simulator; Agent successfully retrieves and uses episodic memories in HVAC test scenarios
+- [ ] Ensure HVAC agent emits agent loop steps (OPERATE: See-Think-Act; LEARN: Reflect)
+- [ ] Make agent runnable as standalone (entry point for CLI packaging)
+- [ ] Run basic HVAC test scenarios - verify agent can retrieve and use episodic memories
+- **Deliverable:** Complete runnable HVAC agent with episodic learning and dual-mode logging; Ready for packaging
+
+**@nhi - 6 hours:**
+- [ ] Create app structure and 3-panel layout skeleton
+- [ ] **Simulator View:** Zone visualization (temperature colors, current state)
+- [ ] **Agent View:** Dual-mode display (OPERATE: See → Think → Act; LEARN: Reflect)
+- [ ] Hook up william's simulator to live display
+- [ ] Basic controls: Start Episode, Stop Episode, Scenario Selector
+- **Deliverable:** Working simulator + agent visualization in web app
 
 **@zooey - 4 hours:**
- - [ ] LlamaStack packaging/installation setup (dev environment, deployment configuration, packaging scripts)
- - [ ] Package LLM/Inference API integration (from Day 3) into installable format
- - [ ] Basic installation verification and testing
- - [ ] Create initial installation documentation
- - **Deliverable:** LlamaStack packaging/installation working with LLM/Inference API packaged and installable
+ - [ ] Implement `llamastack install dana-hvac-agent` (package installation + dependencies)
+ - [ ] Create entry point for `llamastack run dana-hvac-agent` (launches agent + web UI)
+ - [ ] Wire william's HVAC agent to CLI run command
+ - [ ] Wire nhi's web UI to auto-launch with agent
+ - [ ] **Evening: Integration checkpoint with nhi** - validate install → run launches everything
+ - **Deliverable:** Installation working; Single run command launches agent + UI
 
-**Sync:** 4:00 PM - Review episodic learning progress and packaging status
+**Sync:** 4:00 PM - Review episodic learning progress and packaging readiness
 
 Deliverables by role:
-- @lam: Framework-level learning validation complete; Test utilities and validation tools ready for William; per-query acquisitive write
-- @william: Episodic learning wired into HVAC agent/simulator; Agent successfully retrieves and uses episodic memories in HVAC test scenarios
-- @zooey: LlamaStack packaging/installation working with LLM/Inference API packaged and installable
+- @lam: Framework-level learning validation complete; Test utilities ready; Agent loop logging hooks added
+- @william: Complete runnable HVAC agent with episodic learning and dual-mode logging; Ready for packaging
+- @nhi: Working simulator + agent visualization in web app
+- @zooey: Installation working; Single run command launches agent + UI
 
 ---
 
-### Day 5 - Thursday, Nov 6, 2025 - Integration & Learning Proof
+### Day 5 - Thursday, Nov 6, 2025 - 1st Integration Milestone
 
 **@lam - 8 hours:**
 - [ ] Implement Integrative scope (clustering, pattern extraction)
 - [ ] Consolidation trigger logic
 - [ ] Production hardening (error handling)
-- **Deliverable:** Integrative learning working
+- [ ] **Integration support:** Ensure nhi can demonstrate both episodic + integrative learning
+- [ ] **Evening: 1st Integration Checkpoint** - validate full learning pipeline
+- **Deliverable:** Integrative learning working; Full pipeline validated
 
 **@william - 4 hours:**
-- [ ] Run HVAC-specific learning proof: multiple episodes with same scenario repeated (determine number of episodes needed to show improvement)
+- [ ] Run HVAC-specific learning proof: multiple episodes with same scenario repeated
 - [ ] Create before/after demo scenarios: compare agent performance in first episode vs. later episodes
-- [ ] Measure and document learning proof: collect metrics showing agent improvement (e.g., faster response, better decisions, lower energy)
-- [ ] Prepare learning curve visualization/data: show how agent performance improves over episodes (using Lam's Day 4 test utilities as reference)
+- [ ] Measure and document learning proof: collect metrics showing agent improvement (energy, response time, comfort)
+- [ ] Prepare learning curve data (uses lam's Day 4 test utilities)
 - **Deliverable:** HVAC learning proof demonstrated with metrics; Before/after scenarios ready; Learning curve data collected
 
-**@zooey - 4 hours:**
-- [ ] Expand LlamaStack packaging/installation documentation (deployment guides, installation steps, troubleshooting)
-- [ ] Packaging verification and testing across different environments
-- [ ] Installation verification scripts and test procedures
-- **Deliverable:** Comprehensive LlamaStack packaging/installation documentation and verification procedures
+**@nhi - 6 hours:**
+- [ ] **Learning View:** Episodic memory timeline (events being recorded)
+- [ ] Display retrieved memories during agent Think phase ("Recalling Episode #3...")
+- [ ] Show Reflect phase: what agent learned from this episode
+- [ ] Episode counter and session tracking
+- [ ] Before/after comparison mode (Episode 1 vs Episode 10) using william's scenarios
+- [ ] **Evening: 1st Integration Checkpoint** - validate demo runs end-to-end
+- **Deliverable:** Learning visualization complete; Demo ready for integration
 
-Operational cadence notes:
+**@zooey - 4 hours:**
+- [ ] Complete `llamastack run dana-hvac-agent` command: agent runs in OPERATE mode with automatic LEARN triggers
+- [ ] Add console output formatting: show OPERATE mode (See-Think-Act) and LEARN mode transitions (Reflect + episodic summary writes)
+- [ ] Ensure web UI launches automatically with agent
+- [ ] Test full flow: install → run → see OPERATE/LEARN modes in console → see learning in UI
+- [ ] **Evening: 1st Integration Checkpoint** - validate complete install → run flow
+- **Deliverable:** Complete CLI commands working; End-to-end install → run validated
+
+**Operational cadence notes:**
 - Integrative runs daily across sessions (batch job).
 
-**Sync:** 4:30 PM - Integration review and learning proof demonstration
+**Evening Integration Checklist (All team):**
+- [ ] `llamastack install dana-hvac-agent` succeeds
+- [ ] `llamastack run dana-hvac-agent` launches agent + web UI
+- [ ] Console shows **OPERATE mode:** See → Think → Act per episode
+- [ ] Console shows **LEARN mode:** Reflect + episodic summary writes on session end
+- [ ] Agent retrieves episodic memories during OPERATE (Think phase)
+- [ ] Integrative learning extracts patterns (daily batch job working)
+- [ ] Web UI shows learning visualization and improvement
+- [ ] Before/after comparison demonstrates learning
+- [ ] Knowledge files update automatically (`events.jsonl` during OPERATE, `knowledge/` during LEARN)
+
+**Sync:** 6:00 PM - **1st Integration Milestone Validation**
 
 Deliverables by role:
-- @lam: Integrative scope working + consolidation trigger logic
-- @william: HVAC learning proof demonstrated with metrics; Before/after scenarios ready; Learning curve data collected
-- @zooey: Comprehensive LlamaStack packaging/installation documentation and verification procedures
+- @lam: Integrative scope working + consolidation trigger logic; Full pipeline validated
+- @william: HVAC learning proof demonstrated with metrics; Before/after scenarios + learning curve data
+- @nhi: Learning visualization complete; Demo ready for integration
+- @zooey: Complete CLI commands working; End-to-end install → run validated
 
 ---
 
-### Day 6 - Friday, Nov 7, 2025 - End-to-End Polish & Observability
+### Day 6 - Friday, Nov 7, 2025 - Inspection Tools & Metrics
 
 **@lam - 8 hours:**
+- [ ] Complete inspection tools: memory browser, pattern viewer, rule inspector
+- [ ] Metrics collection finalized (energy, comfort, accuracy)
 - [ ] Performance optimization (retrieval speed)
-- [ ] Metrics collection (energy, comfort, accuracy)
-- [ ] Integration sweep across components
-- **Deliverable:** Polished core framework
+- **Deliverable:** All inspection tools ready; Metrics system complete
 
 **@william - 4 hours:**
-- [ ] Enhance simulator realism (improve thermal dynamics, add more realistic scenarios)
-- [ ] Wire simulated HVAC data through full pipeline (events → episodic learning → agent decisions)
-- [ ] Validate metrics collection and observability (energy, comfort, accuracy) in pipeline
-- [ ] Test end-to-end with enhanced simulator: verify learning pipeline works with more realistic simulated scenarios
-- **Deliverable:** Enhanced simulated HVAC data flowing end-to-end through learning pipeline; Metrics collection validated
+- [ ] Enhance simulator realism (improved thermal dynamics, more realistic scenarios)
+- [ ] Validate metrics collection through full pipeline
+- [ ] Test end-to-end with enhanced simulator
+- **Deliverable:** Enhanced HVAC scenarios; Metrics validated
+
+**@nhi - 6 hours:**
+- [ ] **Learning Curve Chart:** Performance improvement over episodes using william's metrics
+- [ ] **Auto-Run Mode:** Run 10 episodes automatically, show progression
+- [ ] **Learning Proof Mode:** Same scenario repeated, metrics improve
+- [ ] Integrate lam's inspection tools (memory browser, pattern viewer)
+- [ ] Polish dual-mode visualization (OPERATE vs LEARN mode clarity)
+- **Deliverable:** Demo with metrics + inspection capability
 
 **@zooey - 4 hours:**
-- [ ] Polish LlamaStack packaging/installation (error handling, edge cases, user experience)
-- [ ] Installation verification across different environments (Linux, macOS, Windows if applicable)
-- [ ] Complete deployment guides and troubleshooting documentation
-- [ ] Create installation quick-start guide
-- **Deliverable:** Production-ready LlamaStack packaging/installation with comprehensive documentation
+- [ ] Installation verification script (test install on clean environment)
+- [ ] Package configuration files (defaults for HVAC demo scenarios)
+- [ ] Dependency management (ensure all deps install correctly)
+- [ ] Test cross-platform (Linux, macOS if applicable)
+- **Deliverable:** Robust installation; Configuration ready
 
-**Sync:** 3:00 PM - Full team integration
+**Sync:** 4:30 PM - Review inspection tools and metrics integration
 
 Deliverables by role:
-- @lam: Optimized retrieval + metrics collection integrated
-- @william: Enhanced simulated HVAC data flowing end-to-end through learning pipeline; Metrics collection validated
-- @zooey: Production-ready LlamaStack packaging/installation with comprehensive documentation
+- @lam: All inspection tools ready; Metrics system complete
+- @william: Enhanced HVAC scenarios; Metrics validated
+- @nhi: Demo with metrics + inspection capability
+- @zooey: Robust installation; Configuration ready
 
 ---
 
-### Day 7 - Monday, Nov 10, 2025 - Demo Prep & Inspection Tools
+### Day 7 - Monday, Nov 10, 2025 - Consolidative Learning & 2nd Integration
 
 **@lam - 8 hours:**
-- [ ] Knowledge inspection tools (episodic memory inspection - show what agent learned, retrieve similar episodes)
-- [ ] Integration support for demo: ensure inspection tools work with William's web app
-- [ ] Final framework polish for demo readiness
-- **Deliverable:** Knowledge inspection tools ready for demo; Framework demo-ready
+- [ ] Add consolidative learning demonstration (show stable rules emerged)
+- [ ] Add prompt learning demonstration (show prompt versions/evolution)
+- [ ] Performance optimization for demo
+- [ ] Final framework polish
+- **Deliverable:** Complete learning scopes demonstrated (Acquisitive/Episodic/Integrative/Consolidative)
 
-**@william - 6 hours:**
-- [ ] Polish web application: Complete UI/UX for HVAC demo
-- [ ] Ensure web app demonstrates episodic learning functionality (show episodic memories, session boundaries, learning improvements)
-- [ ] Integrate Lam's inspection tools into web app (display episodic memories retrieved, learning progress)
-- [ ] Interactive controls: Start/stop episodes, scenario selection, parameter adjustment
-- [ ] Display HVAC performance metrics and learning progress (comfort, energy efficiency, learning curve)
-- **Deliverable:** Complete driving application ready for demo with episodic learning functionality demonstrated
+**@william - 4 hours:**
+- [ ] Create failure/recovery scenarios (what happens when agent makes mistakes)
+- [ ] Final HVAC validation and testing
+- [ ] Validate HVAC domain semantics in demo
+- **Deliverable:** All HVAC scenarios validated; Failure scenarios ready
 
-**@zooey - 2 hours:**
- - [ ] Final LlamaStack packaging/installation validation
- - [ ] Installation guide final review and polish
- - [ ] Verify all installation paths work correctly
- - **Deliverable:** Finalized and validated LlamaStack packaging/installation
+**@nhi - 6 hours:**
+- [ ] Integrate consolidative + prompt learning views (show stable rules, prompt evolution)
+- [ ] Polish visual storytelling and "wow moments"
+- [ ] Add annotations and highlights for key learning moments
+- [ ] **Afternoon: 2nd Integration Checkpoint with zooey** - validate packaged installation works with complete demo
+- **Deliverable:** Complete demo ready with all learning scopes
 
-Operational cadence notes:
+**@zooey - 4 hours:**
+- [ ] **README.md** with exact commands and expected output
+- [ ] **INSTALL.md** - Prerequisites, installation steps, verification
+- [ ] **examples/** - HVAC demo walkthrough matching CLI commands
+- [ ] **Afternoon: 2nd Integration Checkpoint with nhi** - validate docs work end-to-end
+- **Deliverable:** Complete documentation; Package validated
+
+**Operational cadence notes:**
 - Consolidative runs weekly to promote stable rules/prompts (versioned, with rollback plan).
 
-**Sync:** 4:30 PM - Demo dry run #2
+**Sync:** 4:30 PM - **2nd Integration Milestone & Demo Dry Run**
 
 Deliverables by role:
-- @lam: Knowledge inspection tools ready for demo; Framework demo-ready
-- @william: Complete driving application ready for demo with episodic learning functionality demonstrated
-- @zooey: Finalized and validated LlamaStack packaging/installation
+- @lam: Complete learning scopes demonstrated; Framework demo-ready
+- @william: All HVAC scenarios validated; Failure scenarios ready
+- @nhi: Complete demo with all learning scopes; 2nd integration validated
+- @zooey: Complete documentation; Package validated
 
 ---
 
-### Day 8 - Tuesday, Nov 11, 2025 - Robustness, Demo Prep, and Handoff
+### Day 8 - Tuesday, Nov 11, 2025 - Final Polish & Demo Ready
 
 **@lam - 8 hours:**
-- [ ] Error handling, edge cases, recovery (corrupt files)
+- [ ] Error handling, edge cases, recovery (corrupt files, failed writes)
 - [ ] Performance tests (≥1000 observations latency)
-- [ ] Documentation polish (README, API docs, diagrams)
-- **Deliverable:** Production-grade codebase ready for demo
+- [ ] **Quick Start guide** (15-30 min: install → run → see learning)
+- [ ] **Extension guide:** "Adapting HVAC Agent to New Use Cases" (key extension points, file structure)
+- [ ] Core architecture documentation (Event Log, Knowledge Store, Learning Scopes)
+- **Deliverable:** Production-grade codebase; Quick Start + Extension guide; Architecture docs
 
 **@william - 4 hours:**
-- [ ] Demo script (narrative, timing) and environment setup
-- [ ] Final practice run with web application demo
-- [ ] Create one-pager handout
-- **Deliverable:** Demo materials ready; Web application demo polished
+- [ ] **Business value summary** (1 page): Metrics achieved, estimated ROI, what this proves for building management
+- [ ] Demo narrative review (HVAC accuracy and domain validation)
+- [ ] Support nhi with demo script creation
+- [ ] Final HVAC validation
+- **Deliverable:** Business value summary; HVAC validation complete; Demo narrative validated
+
+**@nhi - 6 hours:**
+- [ ] **Demo script with exact timing** (5-7 min presentation with transitions)
+- [ ] Practice runs (minimum 3x)
+- [ ] **2-pager handout:**
+  - Page 1: Demo flow with screenshots (learning proof)
+  - Page 2: Value summary + next steps (HON path to pilot, Dana extensibility)
+- [ ] Final polish and bug fixes
+- **Deliverable:** Rehearsed demo ready for presentation; 2-pager with value propositions
 
 **@zooey - 4 hours:**
-- [ ] Complete LlamaStack deployment guide (production deployment procedures)
-- [ ] Performance benchmarks for packaged installation (installation time, resource usage, API latency)
-- [ ] Final validation of LLM/Inference API integration within packaged installation
-- [ ] Create installation troubleshooting guide and FAQ
-- **Deliverable:** Complete LlamaStack deployment guide, performance benchmarks, and final packaging validation
+- [ ] Final installation testing (fresh environment, following docs)
+- [ ] **TROUBLESHOOTING.md** - Common issues + solutions, FAQ
+- [ ] Polish CLI output and logging (ensure STAR loop is clear)
+- [ ] Final validation: `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` → verify works
+- **Deliverable:** Production-ready LlamaStack package with complete OSS documentation
 
 **Note:** Finetuning API is explicitly deferred to the next sprint. RAG, Conversation API, and Storage API are deferred to focus on packaging/installation as the primary LlamaStack deliverable.
 
 **All team (2 hours):**
-- [ ] Final rehearsal and handoff meeting (how to extend)
+- [ ] Final rehearsal and handoff meeting (demo run-through, extension roadmap)
 - **Deliverable:** Complete handoff package
 
 **Demo Day:** Ready for presentation!
 
 Deliverables by role:
-- @lam: Production-grade codebase, docs/diagrams
-- @william: Demo script, environment setup, handout; Complete web application for HVAC demo
-- @zooey: Complete LlamaStack deployment guide, performance benchmarks, and final packaging validation
+- @lam: Production-grade codebase; Quick Start + Extension guide; Architecture docs
+- @william: Business value summary; HVAC validation complete; Demo narrative validated
+- @nhi: Rehearsed demo ready for presentation; 2-pager with value propositions
+- @zooey: Production-ready LlamaStack package with complete OSS documentation
 - All team: Final rehearsal + handoff package
 
 ---
@@ -580,12 +658,16 @@ Deliverables by role:
 - **Consolidation:** Patterns extracted from 100+ observations
 - **Integration:** All components work together end-to-end
 - **Prompt learning:** New prompt versions correlate with improved decision metrics (win rate/latency)
+- **LlamaStack packaging:** `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` works (<5 min install-to-run)
+- **Dual-mode operation:** Console shows OPERATE mode (See-Think-Act) and LEARN mode (Reflect + knowledge updates)
 
 ### Product Metrics (HVAC Demo)
 - **Energy efficiency:** 15-25% improvement after learning
 - **Comfort:** 40% fewer complaints
 - **Anomaly diagnosis:** 60% faster root cause identification
 - **Adaptation:** Agent learns building-specific patterns
+- **Mode visibility:** Console shows OPERATE (See-Think-Act) and LEARN (Reflect) modes clearly
+- **Web UI:** Learning progression visible in real-time dashboard
 
 ### Team Velocity
 - **AI coding boost:** 2x faster implementation vs manual
@@ -601,6 +683,9 @@ Deliverables by role:
 | LLM reliability | Implement fallbacks, caching | @zooey |
 | Learning doesn't work | Tune parameters early (Day 4 checkpoint) | @lam |
 | Demo failure | Pre-record backup, save notebook outputs | @annieha |
+| **Packaging scope creep** | **Focus on 2 CLI commands only (`install`, `run`); No provider APIs; Linux/macOS only** | **@zooey** |
+| **Nhi web app (6 days)** | **Use Streamlit; Descope features if needed Day 6; Daily check-ins** | **@nhi + @annieha** |
+| **Day 5 integration bottleneck** | **Sequence work: lam (morning) → william/zooey (midday) → integration (evening)** | **@annieha** |
 
 ## Extension Roadmap (Post-Demo)
 
@@ -621,10 +706,28 @@ Deliverables by role:
 
 ---
 
-**Document Version:** 1.2  
-**Last Updated:** 2025-11-01  
+**Document Version:** 1.3  
+**Last Updated:** 2025-11-04  
 **Owners:** @annieha (PM), @lam (Tech Lead)
-**Note:** Updated scope and timing: (1) Zooey focuses on packaging/installation using LlamaStack as primary deliverable; RAG, Conversation API, and Storage API deferred. LLM/Inference API integration included. (2) William's integration/learning proof moved from Nov 5 to Nov 6; Nov 5 focuses on episodic learning functionality. Plan maintains 8-day timeline without extension.
+**Note:** Updated scope and team structure: (1) @nhi joins Day 3 (Nov 4) to build demo web app (6 days). (2) @william focuses on core HVAC functionality only (at capacity). (3) @zooey's primary deliverable is packaged Dana installation for LlamaStack distribution; focuses on packaging + 2 CLI commands (`install`, `run`). (4) Days 6-8 consolidated with clear deliverables: inspection tools, consolidative learning, prompt evolution demonstration. (5) Two integration milestones: Day 5 evening (1st) and Day 7 afternoon (2nd).
+
+## Sprint Scope: In vs Out
+
+### ✅ In Scope (Must Deliver)
+- **Framework:** Episodic + Integrative + Consolidative learning scopes working
+- **HVAC Agent:** Autonomous learning agent with dual-mode operation:
+  - **OPERATE mode (STA):** See-Think-Act, reads knowledge, writes events to `events.jsonl`
+  - **LEARN mode (STAR):** Reflect on observations, mutates knowledge (triggers: session end, daily, weekly)
+- **Web UI:** Demo app showing learning progression, metrics, before/after comparison
+- **LlamaStack Package:** `llamastack install dana-hvac-agent` → `llamastack run dana-hvac-agent` works
+- **Documentation:** README, INSTALL, Quick Start guide, Extension guide, examples
+- **Value Props:** Business case for HON, reference framework for Dana, demo for LlamaStack
+
+### ❌ Out of Scope (Defer to Next Sprint)
+- **LlamaStack APIs:** Provider API implementation, RAG, Storage, Finetuning, Conversation APIs
+- **Production:** Multi-environment testing, monitoring, alerting, real building data
+- **Platforms:** Windows support (Linux/macOS only this sprint)
+- **Advanced:** Multi-agent coordination, distributed learning, real BMS integration
 
 ## Gantt: 8-Day Schedule
 
@@ -641,31 +744,41 @@ gantt
   Day 2: EventLog+KnowledgeStore + prompts scaffold (Day 1 shifted) :d2_lam, 2025-11-03, 1d
   Day 3: Episodic pipeline + session close + local prompts MVP :d3_lam, after d2_lam, 1d
   Day 4: Framework validation + test utilities + acquisitive write :d4_lam, after d3_lam, 1d
-  Day 5: Integrative scope + triggers       :d5_lam, after d4_lam, 1d
-  Day 6: Retrieval perf + metrics wiring    :d6_lam, after d5_lam, 1d
-  Day 7: Inspection tools + demo prep :d7_lam, after d6_lam, 1d
-  Day 8: Robustness + docs/diagrams         :d8_lam, after d7_lam, 1d
+  Day 5: Integrative scope + triggers → 1st Integration :d5_lam, after d4_lam, 1d
+  Day 6: Inspection tools + metrics complete    :d6_lam, after d5_lam, 1d
+  Day 7: Consolidative + prompt learning demo :d7_lam, after d6_lam, 1d
+  Day 8: Error handling + docs/diagrams         :d8_lam, after d7_lam, 1d
 
-  section william (Application)
+  section william (HVAC Core)
   Day 1: Simulator stub + integration points :d1_w, 2025-10-31, 1d
-  Day 2: Complete sim + web app structure+UI :d2_w, after d1_w, 1d
-  Day 3: Observability + web app framework :d3_w, after d2_w, 1d
-  Day 4: Episodic learning functionality    :d4_w, after d3_w, 1d
-  Day 5: Integration + learning proof  :d5_w, after d4_w, 1d
-  Day 6: Realistic data + web app metrics  :d6_w, after d5_w, 1d
-  Day 7: Complete driving app + polish    :d7_w, after d6_w, 1d
-  Day 8: Demo script + final web app prep  :d8_w, after d7_w, 1d
+  Day 2: Complete sim + observability :d2_w, after d1_w, 1d
+  Day 3: Episodic learning prep + scenarios :d3_w, after d2_w, 1d
+  Day 4: Wire episodic learning + test    :d4_w, after d3_w, 1d
+  Day 5: Learning proof + metrics  :d5_w, after d4_w, 1d
+  Day 6: Enhanced scenarios + validation  :d6_w, after d5_w, 1d
+  Day 7: Failure scenarios + final validation    :d7_w, after d6_w, 1d
+  Day 8: Demo narrative validation  :d8_w, after d7_w, 1d
+
+  section nhi (Web App)
+  Day 3: Demo design + wireframe :d3_n, 2025-11-04, 1d
+  Day 4: App skeleton + Simulator/Agent views :d4_n, after d3_n, 1d
+  Day 5: Learning view + before/after → 1st Integration :d5_n, after d4_n, 1d
+  Day 6: Metrics + inspection tools integration :d6_n, after d5_n, 1d
+  Day 7: Consolidative/prompt views → 2nd Integration :d7_n, after d6_n, 1d
+  Day 8: Demo script + practice runs :d8_n, after d7_n, 1d
 
   section zooey (Llama-Stack)
   Day 1: Env + API contracts plan          :d1_z, 2025-10-31, 1d
   Day 2: Inference live; Agent stub        :d2_z, after d1_z, 1d
-  Day 3: Wire Agent+Inference              :d3_z, after d2_z, 1d
-  Day 4: Packaging/installation + LLM API :d4_z, after d3_z, 1d
-  Day 5: Packaging docs + verification :d5_z, after d4_z, 1d
-  Day 6: Packaging polish + deployment guides   :d6_z, after d5_z, 1d
-  Day 7: Final packaging checks        :d7_z, after d6_z, 1d
-  Day 8: Deploy guide + benchmarks        :d8_z, after d7_z, 1d
+  Day 3: Package structure + CLI design    :d3_z, after d2_z, 1d
+  Day 4: Install + run commands + UI launch :d4_z, after d3_z, 1d
+  Day 5: Complete CLI + STAR logging → 1st Integration :d5_z, after d4_z, 1d
+  Day 6: Installation verification + config   :d6_z, after d5_z, 1d
+  Day 7: Docs (README/INSTALL/examples) → 2nd Integration :d7_z, after d6_z, 1d
+  Day 8: Final testing + troubleshooting        :d8_z, after d7_z, 1d
 
   section Milestones
+  1st Integration (Day 5 Evening)   :milestone, m_int1, 2025-11-06, 0d
+  2nd Integration (Day 7 Afternoon) :milestone, m_int2, 2025-11-10, 0d
   Demo Ready                        :milestone, m_demo, after d8_lam, 0d
 ```
