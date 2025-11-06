@@ -28,7 +28,7 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
 
     import os
 
-    import dana as dana_module
+    import dana.lang as dana_module
     from dana.lang.registry import GLOBAL_REGISTRY
 
     dana_module_path = Path(dana_module.__file__).parent

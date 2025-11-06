@@ -10,6 +10,7 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
+from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.historical_yield_resource import HistoricalYieldResource
 
@@ -39,15 +40,26 @@ class FailureCorrelationWorkflow(BaseWorkflow):
             **kwargs
         )
 
-        # LLM for intelligent correlation and hypothesis generation
-        self.conversation = ConversationResource(
-            resource_id="llm-reasoning",
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
-        )
+        # Store config for step agent resources
+        self._llm_provider = llm_provider
+        self._model = model or "claude-3-5-sonnet-20241022"
+        self._step_agent_configured = False
 
         # Historical data access
         self.historical = HistoricalYieldResource(resource_id="historical-yield")
+
+    def _ensure_step_agent_configured(self):
+        """Ensure workflow_step_agent is configured with necessary resources."""
+        if not self._step_agent_configured:
+            # Give step agent access to resources it needs
+            self.workflow_step_agent.with_resources(
+                ConversationResource(
+                    resource_id=f"{self.workflow_id}-llm",
+                    llm_provider=self._llm_provider,
+                    model=self._model
+                )
+            )
+            self._step_agent_configured = True
 
     @validate_input(
         product={"required": True, "type": str},
@@ -234,12 +246,12 @@ Questions:
 Provide structured analysis."""
 
         try:
-            llm_response = self.conversation.send_message(
-                message=prompt,
-                conversation_history=[]
-            )
+            # Ensure step agent is configured with resources
+            self._ensure_step_agent_configured()
 
-            analysis = llm_response.get("response", "")
+            # Use step agent for intelligent correlation analysis
+            result = self.workflow_step_agent.query(caller_message=prompt)
+            analysis = result.get("response", "")
 
             # For demo, also provide structured correlation
             # (In production, would parse LLM response)
@@ -253,19 +265,19 @@ Provide structured analysis."""
                         "suspected_impact": primary_change.get("impact", "Unknown"),
                         "confidence": "MEDIUM-HIGH",
                     },
-                    "llm_analysis": analysis,
+                    "agent_analysis": analysis,
                 }
             else:
                 return {
                     "correlations_found": False,
-                    "llm_analysis": analysis,
+                    "agent_analysis": analysis,
                 }
 
         except Exception as e:
             return {
                 "correlations_found": False,
                 "error": str(e),
-                "analysis": "LLM correlation analysis failed"
+                "analysis": "Agent correlation analysis failed"
             }
 
     def _generate_root_cause_hypotheses(
@@ -327,12 +339,12 @@ Generate 2-3 ranked hypotheses with:
 Rank by likelihood (most likely first)."""
 
         try:
-            llm_response = self.conversation.send_message(
-                message=prompt,
-                conversation_history=[]
-            )
+            # Ensure step agent is configured with resources
+            self._ensure_step_agent_configured()
 
-            llm_hypotheses = llm_response.get("response", "")
+            # Use step agent for intelligent hypothesis generation
+            result = self.workflow_step_agent.query(caller_message=prompt)
+            agent_hypotheses = result.get("response", "")
 
             # Also generate structured hypotheses based on data
             hypotheses = []
@@ -380,9 +392,9 @@ Rank by likelihood (most likely first)."""
                     "next_steps": "Detailed failure analysis, defect pareto, SEM imaging",
                 })
 
-            # Add LLM analysis
+            # Add agent analysis
             for h in hypotheses:
-                h["llm_analysis"] = llm_hypotheses
+                h["agent_analysis"] = agent_hypotheses
 
             return hypotheses
 
@@ -391,7 +403,7 @@ Rank by likelihood (most likely first)."""
             return [{
                 "rank": 1,
                 "hypothesis": "Unknown - requires investigation",
-                "evidence": ["LLM hypothesis generation failed"],
+                "evidence": ["Agent hypothesis generation failed"],
                 "confidence": "LOW",
                 "next_steps": "Manual root cause analysis",
                 "error": str(e)

@@ -18,6 +18,7 @@ logger = structlog.get_logger()
 import time
 
 from .debug_logger import get_debug_logger
+from dana.common.observable import observable
 
 
 debug_logger = get_debug_logger()
@@ -180,6 +181,7 @@ class LLM:
 
             raise ProviderError(f"Chat failed with {self.provider_name}: {e}") from e
 
+    @observable
     def chat_response_sync(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
         """
         Synchronous version of chat_response - runs the async version in a new event loop.

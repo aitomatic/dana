@@ -1,0 +1,498 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { create } from 'zustand';
+import { apiService } from '@/lib/api';
+import type { KnowledgePackData, Topic } from '@/types/library';
+import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
+import type { KnowledgeStatusResponse } from '@/lib/api';
+
+// Processing status enum
+export type ProcessingStatus = 'idle' | 'processing' | 'success' | 'error';
+
+export interface KnowledgePackState {
+  // Dialog state
+  isKnowledgePackOpen: boolean;
+  isEditorOpen: boolean;
+
+  // File selection (optional - from banner)
+  selectedFiles: any[];
+  selectedDocumentIds: number[];
+
+  // Processing state
+  processingStatus: ProcessingStatus;
+  processingStep: string | null;
+
+  // Extracted specialization data
+  specialization: {
+    domain: string;
+    role: string;
+    task: string;
+  } | null;
+  extractedText: string | null;
+
+  // Textarea content (task-2: user-editable)
+  textareaContent: string;
+
+  // Uploaded file info
+  uploadedFile: {
+    name: string;
+    size: number;
+    type: string;
+  } | null;
+
+  // Created knowledge pack
+  createdKnowledgePack: KnowledgePackData | null;
+
+  // Topic tree for visualization (legacy/future use)
+  topicTree: Topic[] | null;
+
+  // Loading states for individual operations
+  isParsingDocument: boolean;
+  isParsingText: boolean;
+  isCreatingPack: boolean;
+
+  // Error state
+  error: string | null;
+
+  // Domain knowledge tree state
+  domainKnowledge: DomainKnowledgeResponse | null;
+  isLoadingTree: boolean;
+  treeError: string | null;
+
+  // Knowledge status state (NEW)
+  knowledgeStatus: KnowledgeStatusResponse | null;
+  isLoadingStatus: boolean;
+  statusError: string | null;
+  lastFetchedKpId: number | null; // Track which KP's status was last fetched
+
+  // Knowledge generation state
+  isGeneratingKnowledge: boolean; // Track if knowledge generation is in progress
+}
+
+export interface KnowledgePackActions {
+  // Dialog controls
+  setKnowledgePackOpen: (isOpen: boolean) => void;
+  setEditorOpen: (isOpen: boolean) => void;
+
+  // File selection
+  setSelectedFiles: (files: any[]) => void;
+  clearSelectedFiles: () => void;
+
+  // Textarea content
+  setTextareaContent: (content: string) => void;
+
+  // Set created knowledge pack (for viewing existing packs)
+  setCreatedKnowledgePack: (pack: KnowledgePackData) => void;
+
+  // Parse document (immediate on upload)
+  parseDocument: (file: File) => Promise<void>;
+
+  // Parse text (on build button for text-only)
+  parseText: (text: string) => Promise<void>;
+
+  // Build knowledge pack (two-step process)
+  buildKnowledgePack: (textContent: string, documentIds: number[]) => Promise<number | null>;
+
+  // Tree data management (new - proper KP-specific methods)
+  fetchKnowledgePackTree: (knowledgePackId: number) => Promise<void>;
+  clearTreeData: () => void;
+
+  // Knowledge status management (NEW)
+  fetchKnowledgeStatus: (knowledgePackId: number, force?: boolean) => Promise<void>;
+  clearKnowledgeStatus: () => void;
+  updateNodeStatus: (nodePath: string, status: string) => void;
+
+  // Knowledge generation management
+  setIsGeneratingKnowledge: (isGenerating: boolean) => void;
+
+  // Reset store
+  reset: () => void;
+
+  // Clear error
+  clearError: () => void;
+}
+
+export type KnowledgePackStore = KnowledgePackState & KnowledgePackActions;
+
+// Initial state
+const initialState: KnowledgePackState = {
+  isKnowledgePackOpen: false,
+  isEditorOpen: false,
+  selectedFiles: [],
+  selectedDocumentIds: [],
+  processingStatus: 'idle',
+  processingStep: null,
+  specialization: null,
+  extractedText: null,
+  textareaContent: '',
+  uploadedFile: null,
+  createdKnowledgePack: null,
+  topicTree: null,
+  isParsingDocument: false,
+  isParsingText: false,
+  isCreatingPack: false,
+  error: null,
+  domainKnowledge: null,
+  isLoadingTree: false,
+  treeError: null,
+  knowledgeStatus: null,
+  isLoadingStatus: false,
+  statusError: null,
+  lastFetchedKpId: null,
+  isGeneratingKnowledge: false,
+};
+
+export const useKnowledgePackStore = create<KnowledgePackStore>((set, get) => ({
+  ...initialState,
+
+  // Dialog controls
+  setKnowledgePackOpen: (isOpen: boolean) => {
+    set({ isKnowledgePackOpen: isOpen });
+    if (!isOpen) {
+      // Reset on close
+      get().reset();
+    }
+  },
+
+  setEditorOpen: (isOpen: boolean) => {
+    set({ isEditorOpen: isOpen });
+  },
+
+  // File selection
+  setSelectedFiles: (files: any[]) => {
+    const documentIds = files
+      .map((f) => {
+        // Extract numeric ID from "doc-X" format
+        if (typeof f.id === 'string' && f.id.startsWith('doc-')) {
+          return parseInt(f.id.replace('doc-', ''), 10);
+        }
+        return typeof f.id === 'number' ? f.id : null;
+      })
+      .filter((id): id is number => id !== null && !isNaN(id));
+    set({ selectedFiles: files, selectedDocumentIds: documentIds });
+  },
+
+  clearSelectedFiles: () => {
+    set({ selectedFiles: [], selectedDocumentIds: [] });
+  },
+
+  // Textarea content
+  setTextareaContent: (content: string) => {
+    set({ textareaContent: content });
+  },
+
+  // Set created knowledge pack (for viewing existing packs)
+  setCreatedKnowledgePack: (pack: KnowledgePackData) => {
+    set({ createdKnowledgePack: pack });
+  },
+
+  // Parse document - Called immediately when file is uploaded
+  parseDocument: async (file: File) => {
+    console.log('📄 Knowledge Pack: Parsing document...', file.name);
+    set({
+      isParsingDocument: true,
+      processingStatus: 'processing',
+      processingStep: 'Processing document...',
+      error: null,
+      uploadedFile: {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      },
+    });
+
+    try {
+      // Call API to parse document
+      const response = await apiService.parseDocumentSpecialization(file);
+
+      if (response.success && response.specialization) {
+        // Store specialization data
+        set({
+          specialization: response.specialization,
+          extractedText: response.extracted_text,
+          textareaContent: response.specialization.task, // Auto-fill textarea
+          processingStatus: 'success',
+          processingStep: null,
+          isParsingDocument: false,
+        });
+
+        console.log('✅ Knowledge Pack: Document parsed successfully', {
+          domain: response.specialization.domain,
+          role: response.specialization.role,
+          tasksLength: response.specialization.task.length,
+        });
+      } else {
+        throw new Error(response.error || 'Failed to parse document');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to parse document';
+      console.error('❌ Knowledge Pack: Parse document failed:', error);
+
+      set({
+        processingStatus: 'error',
+        processingStep: null,
+        isParsingDocument: false,
+        error: errorMessage,
+        uploadedFile: null,
+      });
+
+      throw error; // Re-throw for toast handling
+    }
+  },
+
+  // Parse text - Called when building with text-only
+  parseText: async (text: string) => {
+    console.log('📝 Knowledge Pack: Parsing text...', text.substring(0, 100));
+    set({
+      isParsingText: true,
+      processingStatus: 'processing',
+      processingStep: 'Processing tasks...',
+      error: null,
+    });
+
+    try {
+      const response = await apiService.parseTextSpecialization(text);
+
+      if (response.success && response.specialization) {
+        set({
+          specialization: response.specialization,
+          extractedText: response.extracted_text,
+          isParsingText: false,
+        });
+
+        console.log('✅ Knowledge Pack: Text parsed successfully', {
+          domain: response.specialization.domain,
+          role: response.specialization.role,
+        });
+
+        return response.specialization;
+      } else {
+        throw new Error(response.error || 'Failed to parse text');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to parse text';
+      console.error('❌ Knowledge Pack: Parse text failed:', error);
+
+      set({
+        processingStatus: 'error',
+        processingStep: null,
+        isParsingText: false,
+        error: errorMessage,
+      });
+
+      throw error;
+    }
+  },
+
+  // Build knowledge pack - Two-step process
+  buildKnowledgePack: async (textContent: string, documentIds: number[]) => {
+    console.log('🏗️ Knowledge Pack: Building knowledge pack...');
+
+    try {
+      set({
+        isCreatingPack: true,
+        processingStatus: 'processing',
+        processingStep: 'Step 1/2: Processing tasks...',
+        error: null,
+      });
+
+      // Step 1: Parse text to get final structured specialization (task-3)
+      const step1Response = await apiService.parseTextSpecialization(textContent);
+
+      if (!step1Response.success || !step1Response.specialization) {
+        throw new Error(step1Response.error || 'Failed to process tasks');
+      }
+
+      console.log('✅ Step 1/2: Tasks processed', step1Response.specialization);
+
+      // Step 2: Create knowledge pack with task-3
+      set({ processingStep: 'Step 2/2: Creating knowledge pack...' });
+
+      const step2Response = await apiService.createKnowledgePack({
+        specialization: step1Response.specialization,
+        document_ids: documentIds,
+      });
+
+      if (!step2Response.success || !step2Response.data) {
+        throw new Error(step2Response.error || 'Failed to create knowledge pack');
+      }
+
+      console.log('✅ Step 2/2: Knowledge pack created', step2Response.data);
+
+      // Success! Store the created pack data
+      set({
+        createdKnowledgePack: {
+          id: step2Response.data.id,
+          specialization: step1Response.specialization,
+          document_ids: documentIds,
+          status: step2Response.data.status,
+          folder_path: step2Response.data.folder_path,
+          kp_metadata: step2Response.data.kp_metadata,
+          // NEW: Preserve original description for auto-first message
+          originalDescription: textContent,
+        },
+        processingStatus: 'success',
+        processingStep: null,
+        isCreatingPack: false,
+        isKnowledgePackOpen: false, // Close creation dialog
+        isEditorOpen: true, // Open editor dialog
+      });
+
+      console.log('🎉 Knowledge Pack: Build complete!');
+      
+      return step2Response.data.id; // Return the created knowledge pack ID
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to build knowledge pack';
+      console.error('❌ Knowledge Pack: Build failed:', error);
+
+      set({
+        processingStatus: 'error',
+        processingStep: null,
+        isCreatingPack: false,
+        error: errorMessage,
+      });
+
+      throw error;
+    }
+  },
+
+  // Fetch knowledge pack tree data (new - proper KP-specific method)
+  fetchKnowledgePackTree: async (knowledgePackId: number) => {
+    console.log('📡 Knowledge Pack: Fetching tree data for ID:', knowledgePackId);
+    set({ isLoadingTree: true, treeError: null });
+
+    try {
+      const response = await apiService.getKnowledgePack(knowledgePackId);
+
+      if (response.success && response.data) {
+        // Handle both new format (response.data.tree) and legacy format (response.data directly)
+        const treeData = response.data.tree || response.data;
+        set({
+          domainKnowledge: treeData,
+          isLoadingTree: false,
+          treeError: null,
+        });
+        console.log('✅ Knowledge Pack: Tree data loaded successfully');
+      } else {
+        throw new Error(response.error || 'Failed to load knowledge pack tree');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to load knowledge pack tree';
+      console.error('❌ Knowledge Pack: Failed to fetch tree:', error);
+      set({
+        isLoadingTree: false,
+        treeError: errorMessage,
+      });
+      throw error;
+    }
+  },
+
+  // Clear tree data
+  clearTreeData: () => {
+    console.log('🗑️ Knowledge Pack: Clearing tree data');
+    set({
+      domainKnowledge: null,
+      isLoadingTree: false,
+      treeError: null,
+    });
+  },
+
+  // Fetch knowledge status (NEW)
+  fetchKnowledgeStatus: async (knowledgePackId: number, force: boolean = false) => {
+    const state = get();
+
+    // Prevent duplicate calls: skip if already loading or already fetched for this KP
+    if (!force && state.isLoadingStatus) {
+      console.log('⏭️ Knowledge Pack: Skipping status fetch (already loading)');
+      return;
+    }
+
+    if (!force && state.lastFetchedKpId === knowledgePackId && state.knowledgeStatus) {
+      console.log('⏭️ Knowledge Pack: Skipping status fetch (already have data for this KP)');
+      return;
+    }
+
+    console.log('📊 Knowledge Pack: Fetching knowledge status for ID:', knowledgePackId);
+    set({ isLoadingStatus: true, statusError: null });
+
+    try {
+      const response = await apiService.getKnowledgePackStatus(knowledgePackId);
+      console.log('✅ Knowledge Pack: Knowledge status loaded successfully');
+      set({
+        knowledgeStatus: response,
+        isLoadingStatus: false,
+        statusError: null,
+        lastFetchedKpId: knowledgePackId,
+      });
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to load knowledge status';
+      console.error('❌ Knowledge Pack: Failed to fetch knowledge status:', error);
+      set({
+        knowledgeStatus: { topics: [] }, // Set empty status on error
+        isLoadingStatus: false,
+        statusError: errorMessage,
+        lastFetchedKpId: knowledgePackId, // Mark as attempted even on error
+      });
+    }
+  },
+
+  // Clear knowledge status (NEW)
+  clearKnowledgeStatus: () => {
+    console.log('🗑️ Knowledge Pack: Clearing knowledge status');
+    set({
+      knowledgeStatus: null,
+      isLoadingStatus: false,
+      statusError: null,
+      lastFetchedKpId: null,
+    });
+  },
+
+  // Update individual node status (for WebSocket updates)
+  updateNodeStatus: (nodePath: string, status: string) => {
+    const currentStatus = get().knowledgeStatus;
+    if (!currentStatus) {
+      console.log('⚠️ Knowledge Pack: Cannot update node status - no knowledge status loaded');
+      return;
+    }
+
+    console.log('🔄 Knowledge Pack: Updating node status:', { nodePath, status });
+
+    // Find and update the topic with matching path
+    const updatedTopics = currentStatus.topics.map((topic: any) =>
+      topic.path === nodePath ? { ...topic, status } : topic
+    );
+
+    // Check if we actually found and updated a topic
+    const wasUpdated = updatedTopics.some(
+      (topic: any, index: number) => topic.path === nodePath && currentStatus.topics[index].status !== status
+    );
+
+    if (wasUpdated) {
+      set({
+        knowledgeStatus: {
+          ...currentStatus,
+          topics: updatedTopics,
+        },
+      });
+      console.log('✅ Knowledge Pack: Node status updated successfully');
+    } else {
+      console.log('⚠️ Knowledge Pack: No matching node found for path:', nodePath);
+    }
+  },
+
+  // Set knowledge generation status
+  setIsGeneratingKnowledge: (isGenerating: boolean) => {
+    console.log('🔄 Knowledge Pack: Setting isGeneratingKnowledge to', isGenerating);
+    set({ isGeneratingKnowledge: isGenerating });
+  },
+
+  // Reset store
+  reset: () => {
+    console.log('🔄 Knowledge Pack: Resetting store');
+    set(initialState);
+  },
+
+  // Clear error
+  clearError: () => {
+    set({ error: null });
+  },
+}));

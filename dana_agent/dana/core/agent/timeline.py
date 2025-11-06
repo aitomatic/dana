@@ -5,37 +5,50 @@ This module provides a unified, chronological record of all agent interactions
 with efficient context management to prevent context window explosion.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Final
+import inspect
+import json
+from pathlib import Path
+from typing import TYPE_CHECKING, Final
+
+from structlog import get_logger
 
 from dana.common.llm.types import LLMMessage
 
+if TYPE_CHECKING:
+    from dana.config.storage_config import FileStorageConfig
+    from dana.core.agent.base_agent import BaseAgent
+    from dana.core.knowledge.prompts.codecs import AbstractCodec
+
+logger = get_logger()
+
 
 class TimelineEntryType(Enum):
-    CALLER_MESSAGE = "caller_message"
-    MY_RESPONSE = "my_response"
-    MY_THOUGHTS = "my_thoughts"
-    TOOL_CALL = "tool_call"
+    USER_MESSAGE = "user_message"
     AGENT_RESPONSE = "agent_response"
+    AGENT_THOUGHTS = "agent_thoughts"
+    TOOL_CALL = "tool_call"
+    FAILED_TOOL_CALL = "failed_tool_call"
+    SUB_AGENT_RESPONSE = "sub_agent_response"
     RESOURCE_RESULT = "resource_result"
     WORKFLOW_RESULT = "workflow_result"
     UNKNOWN_TOOL_CALL = "unknown_tool_call"
-    MY_LEARNING = "my_learning"
+    AGENT_LEARNING = "agent_learning"
 
 
-# Static mapping of entry types to (role, label) tuples
+# Static mapping of entry types to display labels
 ENTRY_CONFIG: Final = {
-    TimelineEntryType.CALLER_MESSAGE: ("user", "User/Caller Message"),
-    TimelineEntryType.MY_RESPONSE: ("assistant", "My Response"),
-    TimelineEntryType.MY_THOUGHTS: ("system", "My Thoughts"),
-    TimelineEntryType.MY_LEARNING: ("system", "My Learning"),
-    TimelineEntryType.AGENT_RESPONSE: ("system", "Tool Response (Agent)"),
-    TimelineEntryType.RESOURCE_RESULT: ("system", "Tool Response (Resource)"),
-    TimelineEntryType.WORKFLOW_RESULT: ("system", "Tool Response (Workflow)"),
-    TimelineEntryType.UNKNOWN_TOOL_CALL: ("system", "Tool Response (Unknown)"),
-    TimelineEntryType.TOOL_CALL: ("system", "Tool Call"),
+    TimelineEntryType.USER_MESSAGE: "User-to-Agent Message",
+    TimelineEntryType.AGENT_RESPONSE: "Agent-to-User Response",
+    TimelineEntryType.AGENT_THOUGHTS: "Agent's Internal Thoughts",
+    TimelineEntryType.AGENT_LEARNING: "Agent's Self-Learning",
+    TimelineEntryType.SUB_AGENT_RESPONSE: "SubAgent-to-Agent Response",
+    TimelineEntryType.RESOURCE_RESULT: "Resource-to-Agent Result",
+    TimelineEntryType.WORKFLOW_RESULT: "Workflow-to-Agent Result",
+    TimelineEntryType.UNKNOWN_TOOL_CALL: "Unknown Tool-to-Agent Result",
 }
 
 
@@ -58,24 +71,14 @@ class TimelineEntry:
     metadata: dict = field(default_factory=dict)
     is_latest_user_message: bool = False
 
-    def _get_entry_config(self) -> tuple[str, str]:
+    def _get_entry_config(self) -> str:
         """
-        Get the role and label for this entry type.
+        Get the label for this entry type.
 
         Returns:
-            Tuple of (role, label)
+            Display label string
         """
-        return ENTRY_CONFIG.get(self.entry_type, ("user", str(self.entry_type)))
-
-    def _get_llm_role(self) -> str:
-        """
-        Get the LLM role for this entry type.
-
-        Returns:
-            LLM role string (user, assistant, system)
-        """
-        role, _ = self._get_entry_config()
-        return role
+        return ENTRY_CONFIG.get(self.entry_type, str(self.entry_type))
 
     def _get_display_label(self) -> str:
         """
@@ -84,8 +87,7 @@ class TimelineEntry:
         Returns:
             Display label string
         """
-        _, label = self._get_entry_config()
-        return label
+        return self._get_entry_config()
 
     def _get_formatted_content(self) -> str:
         """
@@ -94,7 +96,7 @@ class TimelineEntry:
         Returns:
             Formatted content string
         """
-        if self.entry_type in [TimelineEntryType.CALLER_MESSAGE, TimelineEntryType.MY_RESPONSE]:
+        if self.entry_type in [TimelineEntryType.USER_MESSAGE, TimelineEntryType.AGENT_RESPONSE]:
             return self.content
         else:
             label = self._get_display_label()
@@ -108,17 +110,6 @@ class TimelineEntry:
             Formatted content string with semantic context
         """
         return self._get_formatted_content()
-
-    def to_llm_message(self) -> LLMMessage:
-        """
-        Convert to LLM message format for context building.
-
-        Returns:
-            LLMMessage object suitable for LLM context
-        """
-        role = self._get_llm_role()
-        content = self._format_content_for_llm()
-        return LLMMessage(role=role, content=content)
 
     def _get_display_content(self) -> str:
         """
@@ -148,7 +139,7 @@ class TimelineEntry:
         Returns:
             True if this is a caller message
         """
-        return self.entry_type == TimelineEntryType.CALLER_MESSAGE
+        return self.entry_type == TimelineEntryType.USER_MESSAGE
 
     def is_resource_result(self) -> bool:
         """
@@ -168,15 +159,39 @@ class Timeline:
     with efficient context management to prevent context window explosion.
     """
 
-    def __init__(self, max_context_tokens: int = 4000):
+    def __init__(
+        self,
+        max_context_tokens: int = 4000,
+        agent: "BaseAgent | None" = None,
+        codec: type["AbstractCodec"] | None = None,
+        storage_config: "FileStorageConfig | None" = None,
+    ):
         """
         Initialize the Timeline.
 
         Args:
             max_context_tokens: Maximum number of tokens to include in context
+            agent: Agent instance (can be None)
+            codec: Codec class for path structure (can be None)
+            storage_config: Storage configuration (can be None)
         """
-        self.timeline: list[TimelineEntry] = []
         self.max_context_tokens = max_context_tokens
+        self._agent = agent
+        self._codec = codec
+        self._storage_config = storage_config
+        self._codec_prefix = codec.__qualname__ if codec else "default"
+        self.timeline: list[TimelineEntry] = []
+        # If you want to load back the timeline, you can do it like this:
+        # self.timeline = list(self.read_since(checkpoint=-100))
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the timeline.
+
+        Returns:
+            String representation of the timeline
+        """
+        return f"Timeline(max_context_tokens={self.max_context_tokens}, timeline={self.timeline[-10:]})"
 
     def add_entry(self, entry: TimelineEntry) -> None:
         """
@@ -187,48 +202,156 @@ class Timeline:
         """
         self.timeline.append(entry)
 
-    def get_context(self, max_tokens: int | None = None) -> list[LLMMessage]:
+    def to_llm_messages(
+        self, max_tokens: int | None = None, default_role: str = "user", separate_latest_user: bool = False
+    ) -> list[LLMMessage]:
         """
-        Get timeline context within token limits.
+        Convert timeline entries to LLM messages with proper role assignment and token management.
+
+        This method encapsulates the logic for:
+        - Role assignment based on entry type
+        - Sliding window for recent entries
+        - Token-based compaction
+        - Chronological ordering
+        - Optional separation of latest user message
 
         Args:
             max_tokens: Maximum tokens to include (overrides max_context_tokens)
+            default_role: Default role for entries that don't have a specific role mapping
+            separate_latest_user: If True, separates latest user message from context
 
         Returns:
-            List of LLMMessage objects for LLM context
-        """
-        token_limit = max_tokens or self.max_context_tokens
-        return self._build_context_with_token_limit(token_limit)
-
-    def to_llm_messages(self, max_tokens: int | None = None) -> list[LLMMessage]:
-        """
-        Get timeline context optimized for LLM processing with strict chronological ordering.
-
-        This method maintains true chronological order of all timeline entries,
-        which is crucial for multi-agent coordination and conversation flow.
-
-        Args:
-            max_tokens: Maximum tokens to include (overrides max_context_tokens)
-
-        Returns:
-            List of LLMMessage objects in strict chronological order
+            List of LLMMessage objects in chronological order
         """
         token_limit = max_tokens or self.max_context_tokens
 
-        # Get all timeline entries in chronological order
+        if separate_latest_user:
+            # Find latest user message
+            latest_user_entry = next((entry for entry in self.timeline if entry.is_latest_user_message), None)
+
+            if latest_user_entry:
+                # Get context entries (excluding latest user message)
+                context_entries = [entry for entry in self.timeline if not entry.is_latest_user_message]
+
+                # Convert context entries to messages
+                context_messages = []
+                for entry in context_entries:
+                    role = self._get_entry_role(entry, default_role)
+                    content = self._format_entry_content(entry)
+                    context_messages.append(LLMMessage(role=role, content=content))
+
+                # Apply token limit to context if needed
+                if self._estimate_tokens(context_messages) > token_limit:
+                    context_messages = self._build_context_with_token_limit(context_messages, token_limit)
+
+                # Add latest user message as separate message
+                latest_user_message = LLMMessage(role="user", content=latest_user_entry.content)
+                context_messages.append(latest_user_message)
+
+                # Mark latest user message as processed
+                latest_user_entry.is_latest_user_message = False
+
+                return context_messages
+
+        # Standard processing (no latest user separation)
         timeline_entries = self.timeline
 
-        # Convert all entries to LLM messages in chronological order
-        # This maintains the true temporal sequence of events
+        # Convert entries to LLM messages
         messages = []
         for entry in timeline_entries:
-            messages.append(entry.to_llm_message())
+            role = self._get_entry_role(entry, default_role)
+            content = self._format_entry_content(entry)
+            messages.append(LLMMessage(role=role, content=content))
 
         # Apply token limit if needed
         if self._estimate_tokens(messages) > token_limit:
-            return self._build_context_with_token_limit(token_limit)
+            return self._build_context_with_token_limit(messages, token_limit)
 
         return messages
+
+    def _get_entry_role(self, entry: TimelineEntry, default_role: str) -> str:
+        """
+        Get the LLM role for a timeline entry.
+
+        Args:
+            entry: TimelineEntry to get role for
+            default_role: Default role if no specific mapping exists
+
+        Returns:
+            LLM role string (user, assistant, system)
+        """
+        if entry.entry_type == TimelineEntryType.USER_MESSAGE:
+            return "user"
+        elif entry.entry_type in [
+            TimelineEntryType.AGENT_RESPONSE,
+            TimelineEntryType.AGENT_THOUGHTS,
+            TimelineEntryType.AGENT_LEARNING,
+            TimelineEntryType.SUB_AGENT_RESPONSE,
+            TimelineEntryType.RESOURCE_RESULT,
+            TimelineEntryType.WORKFLOW_RESULT,
+            TimelineEntryType.UNKNOWN_TOOL_CALL,
+        ]:
+            return "assistant"
+        else:
+            return default_role
+
+    def _format_entry_content(self, entry: TimelineEntry) -> str:
+        """
+        Format timeline entry content for LLM consumption.
+
+        Args:
+            entry: TimelineEntry to format
+
+        Returns:
+            Formatted content string
+        """
+        if entry.entry_type in [TimelineEntryType.USER_MESSAGE, TimelineEntryType.AGENT_RESPONSE]:
+            return entry.content
+        else:
+            label = entry._get_display_label()
+            return f"[{label}] {entry.content}"
+
+    def _estimate_tokens(self, messages: list[LLMMessage]) -> int:
+        """
+        Estimate token count for messages.
+
+        Args:
+            messages: List of LLMMessage objects
+
+        Returns:
+            Estimated token count
+        """
+        total = 0
+        for msg in messages:
+            # Rough estimation: 1.3 tokens per word
+            total += len(msg.content.split()) * 1.3
+        return int(total)
+
+    def _build_context_with_token_limit(self, messages: list[LLMMessage], max_tokens: int) -> list[LLMMessage]:
+        """
+        Build context using token limit approach with sliding window.
+
+        Args:
+            messages: All messages in chronological order
+            max_tokens: Maximum tokens to include
+
+        Returns:
+            List of LLMMessage objects within token limit
+        """
+        # Start with most recent messages and work backwards
+        result = []
+        current_tokens = 0
+
+        for message in reversed(messages):
+            message_tokens = self._estimate_tokens([message])
+
+            if current_tokens + message_tokens > max_tokens:
+                break
+
+            result.insert(0, message)  # Insert at beginning to maintain chronological order
+            current_tokens += message_tokens
+
+        return result
 
     def get_recent_entries(self, count: int) -> list[TimelineEntry]:
         """
@@ -269,60 +392,6 @@ class Timeline:
 
         return original_count - len(self.timeline)
 
-    def _estimate_tokens(self, messages: list[LLMMessage]) -> int:
-        """
-        Estimate token count for messages.
-
-        Args:
-            messages: List of LLMMessage objects
-
-        Returns:
-            Estimated token count
-        """
-        total = 0
-        for msg in messages:
-            # Rough estimation: 1.3 tokens per word
-            total += len(msg.content.split()) * 1.3
-        return int(total)
-
-    def _build_context_with_sliding_window(self, window_size: int) -> list[LLMMessage]:
-        """
-        Build context using sliding window approach.
-
-        Args:
-            window_size: Number of recent entries to include
-
-        Returns:
-            List of LLMMessage objects for context
-        """
-        recent_entries = self.get_recent_entries(window_size)
-        return [entry.to_llm_message() for entry in recent_entries]
-
-    def _build_context_with_token_limit(self, max_tokens: int) -> list[LLMMessage]:
-        """
-        Build context using token limit approach.
-
-        Args:
-            max_tokens: Maximum tokens to include
-
-        Returns:
-            List of LLMMessage objects for context
-        """
-        messages = []
-
-        # Add entries from most recent to oldest
-        for entry in reversed(self.timeline):
-            entry_message = entry.to_llm_message()
-            messages.insert(0, entry_message)
-
-            # Check if we're approaching token limit
-            if self._estimate_tokens(messages) > max_tokens:
-                # Remove oldest message to stay within limits
-                messages.pop(0)
-                break
-
-        return messages
-
     def get_timeline_summary(self) -> str:
         """
         Get a summary of the timeline.
@@ -359,3 +428,119 @@ class Timeline:
         for entry in self.timeline:
             counts[entry.entry_type] = counts.get(entry.entry_type, 0) + 1
         return counts
+
+    def save(self, session_id: str) -> None:
+        """
+        Save timeline for a session.
+
+        Args:
+            session_id: Session identifier
+        """
+        if self._agent is None:
+            raise ValueError("Cannot save timeline: agent is None. Initialize Timeline with agent parameter.")
+        
+        if self._storage_config is None:
+            raise ValueError("Cannot save timeline: storage_config is None. Initialize Timeline with storage_config parameter.")
+
+        # Calculate workspace folder path
+        filepath = inspect.getfile(self._agent.__class__)
+        filename = Path(filepath).stem
+        relative_path = f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
+        workspace_folder = Path(self._storage_config.workspace_folder) / relative_path
+
+        # Create session folder
+        session_folder = workspace_folder / session_id
+        session_folder.mkdir(parents=True, exist_ok=True)
+
+        # Save timeline to JSON
+        timeline_file = session_folder / "timeline.json"
+        timeline_data = {
+            "session_id": session_id,
+            "agent_id": self._agent.object_id,
+            "agent_type": self._agent.agent_type if hasattr(self._agent, "agent_type") else None,
+            "entries": [
+                {
+                    "timestamp": entry.timestamp.isoformat(),
+                    "type": entry.entry_type.value,
+                    "content": entry.content,
+                    "metadata": entry.metadata,
+                }
+                for entry in self.timeline
+            ]
+        }
+        with open(timeline_file, "w") as f:
+            json.dump(timeline_data, f, indent=2)
+
+        logger.info(f"Saved timeline with {len(self.timeline)} entries for session {session_id}")
+
+    def read_since(self, checkpoint: int) -> Iterator[TimelineEntry]:
+        """
+        Read timeline entries since checkpoint (for learning pipeline).
+
+        Args:
+            checkpoint: Starting index for reading entries.
+                Negative values are supported (e.g., -10 means "last 10 entries").
+                -1 means "last entry only", -2 means "last 2 entries", etc.
+
+        Yields:
+            TimelineEntry objects since checkpoint
+        """
+        if self._agent is None:
+            raise ValueError("Cannot read timeline: agent is None. Initialize Timeline with agent parameter.")
+        
+        if self._storage_config is None:
+            raise ValueError("Cannot read timeline: storage_config is None. Initialize Timeline with storage_config parameter.")
+
+        # Calculate workspace folder path
+        filepath = inspect.getfile(self._agent.__class__)
+        filename = Path(filepath).stem
+        relative_path = f"{self._codec_prefix}/{self._agent.__class__.__qualname__}__{filename}/events"
+        workspace_folder = Path(self._storage_config.workspace_folder) / relative_path
+
+        # First pass: collect all entries to support negative checkpoints
+        all_entries: list[TimelineEntry] = []
+
+        # Read from all session folders
+        if workspace_folder.exists():
+            for session_folder in workspace_folder.iterdir():
+                if not session_folder.is_dir():
+                    continue
+
+                timeline_file = session_folder / "timeline.json"
+                if not timeline_file.exists():
+                    continue
+
+                try:
+                    with open(timeline_file) as f:
+                        timeline_data = json.load(f)
+                        entries_data = timeline_data.get("entries", [])
+                        for entry_data in entries_data:
+                            try:
+                                # Reconstruct TimelineEntry from dict
+                                entry_type_str = entry_data.get("type", "user_message")
+                                # Convert string to TimelineEntryType enum
+                                entry_type = TimelineEntryType(entry_type_str)
+                                entry = TimelineEntry(
+                                    entry_type=entry_type,
+                                    timestamp=datetime.fromisoformat(entry_data["timestamp"]),
+                                    content=entry_data.get("content", ""),
+                                    metadata=entry_data.get("metadata", {}),
+                                )
+                                all_entries.append(entry)
+                            except Exception as e:
+                                logger.warning(f"Failed to parse timeline entry: {e}")
+                                continue
+                except Exception as e:
+                    logger.warning(f"Failed to read timeline file {timeline_file}: {e}")
+                    continue
+
+        # Convert negative checkpoint to positive index
+        if checkpoint < 0:
+            total_count = len(all_entries)
+            # Convert negative index: -1 = last entry, -2 = second to last, etc.
+            # Similar to Python list slicing: checkpoint = total_count + checkpoint
+            checkpoint = max(0, total_count + checkpoint)
+
+        # Yield entries from checkpoint onwards
+        for i in range(checkpoint, len(all_entries)):
+            yield all_entries[i]

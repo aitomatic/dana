@@ -19,13 +19,158 @@ import sys
 from dana.common.llm.debug_logger import get_debug_logger
 from dana.common.llm.types import LLMMessage
 from dana.common.observable import observable
-from dana.common.protocols import DictParams
 from dana.core.agent.star_agent import BaseSTARAgent
 from dana.core.agent.timeline import Timeline
+from dana.common.protocols.types import LearningPhase
+
+
+class PromptFormatter:
+    """Formats prompt sections into different output formats (XML, Markdown, JSON)."""
+
+    @staticmethod
+    def format_section(tag: str, content: str, format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a prompt section in the specified format.
+
+        Args:
+            tag: Section tag name (e.g., "IDENTITY", "CONSTRAINT")
+            content: Section content
+            format_type: Output format - "xml", "markdown", "json", "minified_xml", "minified_json"
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted section string
+        """
+        if not content or not content.strip():
+            return ""
+
+        indent = " " * (indent_spaces * level)
+
+        if format_type == "xml":
+            return f"{indent}<{tag}>\n{content}\n{indent}</{tag}>"
+        elif format_type == "minified_xml":
+            content_single_line = " ".join(content.split())
+            return f"<{tag}>{content_single_line}</{tag}>"
+        elif format_type == "markdown":
+            # Convert tag to markdown heading
+            heading_level = min(level + 1, 6)  # Max heading level is 6
+            heading = "#" * heading_level
+            formatted_content = PromptFormatter._indent_lines(content, indent_spaces, level + 1)
+            return f"{indent}{heading} {tag}\n\n{formatted_content}"
+        elif format_type == "json":
+            # Return as dict entry (caller will assemble into JSON)
+            return content.strip()
+        elif format_type == "minified_json":
+            # Minified version - single line
+            return " ".join(content.split())
+        else:
+            # Default to XML
+            return f"{indent}<{tag}>\n{content}\n{indent}</{tag}>"
+
+    @staticmethod
+    def _indent_lines(text: str, spaces: int, level: int) -> str:
+        """Indent all lines in text by the specified amount."""
+        if not text:
+            return ""
+        indent = " " * (spaces * level)
+        lines = text.split("\n")
+        return "\n".join(f"{indent}{line}" if line.strip() else "" for line in lines)
+
+    @staticmethod
+    def format_list(items: list[str], format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a list of items in the specified format.
+
+        Args:
+            items: List of items to format
+            format_type: Output format
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted list string
+        """
+        if not items:
+            return "None"
+
+        indent = " " * (indent_spaces * level)
+
+        if format_type in ("xml", "minified_xml"):
+            return "\n".join(f"{indent}- {item}" for item in items)
+        elif format_type == "markdown":
+            return "\n".join(f"{indent}- {item}" for item in items)
+        elif format_type in ("json", "minified_json"):
+            # Return as JSON array
+            import json
+
+            minify = format_type == "minified_json"
+            separator = "" if minify else " "
+            indent_str = None if minify else indent_spaces * (level + 1)
+            return json.dumps(items, indent=indent_str, separators=("," + separator, ":" + separator))
+        else:
+            return "\n".join(f"{indent}- {item}" for item in items)
+
+    @staticmethod
+    def format_dict(data: dict, format_type: str = "xml", indent_spaces: int = 2, level: int = 0) -> str:
+        """
+        Format a dictionary in the specified format.
+
+        Args:
+            data: Dictionary to format
+            format_type: Output format
+            indent_spaces: Number of spaces per indentation level
+            level: Current indentation level
+
+        Returns:
+            Formatted dictionary string
+        """
+        if not data:
+            return ""
+
+        import json
+
+        if format_type in ("json", "minified_json"):
+            minify = format_type == "minified_json"
+            separator = "" if minify else " "
+            indent_str = None if minify else indent_spaces
+            return json.dumps(data, indent=indent_str, separators=("," + separator, ":" + separator))
+        elif format_type == "markdown":
+            # Format as markdown list
+            indent = " " * (indent_spaces * level)
+            lines = []
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    lines.append(f"{indent}**{key}**:")
+                    nested = PromptFormatter.format_dict(value, format_type, indent_spaces, level + 1)
+                    lines.append(nested)
+                elif isinstance(value, list):
+                    lines.append(f"{indent}**{key}**:")
+                    nested = PromptFormatter.format_list(value, format_type, indent_spaces, level + 1)
+                    lines.append(nested)
+                else:
+                    lines.append(f"{indent}**{key}**: {value}")
+            return "\n".join(lines)
+        else:  # XML format
+            indent = " " * (indent_spaces * level)
+            lines = []
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    nested = PromptFormatter.format_dict(value, format_type, indent_spaces, level + 1)
+                    lines.append(f"{indent}<{key}>\n{nested}\n{indent}</{key}>")
+                elif isinstance(value, list):
+                    nested = PromptFormatter.format_list(value, format_type, indent_spaces, level + 1)
+                    lines.append(f"{indent}<{key}>\n{nested}\n{indent}</{key}>")
+                else:
+                    lines.append(f"{indent}<{key}>{value}</{key}>")
+            return "\n".join(lines)
 
 
 class PromptEngineer:
     """Component providing XML-based prompt files with section-level inheritance."""
+
+    # Compiled regex pattern for tag extraction (performance optimization)
+    _START_TAG_PATTERN = re.compile(r"<(\w+)>")
 
     def __init__(self, agent: BaseSTARAgent):
         """
@@ -35,16 +180,18 @@ class PromptEngineer:
             agent: The agent instance this component belongs to
         """
         self._agent = agent
-        # Cache for prompt sections from files
-        self._prompt_sections_cache = None
+        # Cache for raw prompt content (text)
+        self._raw_content_cache = None
+        # Cache for extracted sections
+        self._section_cache = {}
         # File-based prompt support
         self._prompt_file_path = None
         self._file_mtime = None
 
     def reset(self) -> None:
         """Reset the prompt engineer."""
-        del self._prompt_sections_cache
-        self._prompt_sections_cache = None
+        self._raw_content_cache = None
+        self._section_cache = {}
         # Don't reset file path - let discovery happen again
         # self._prompt_file_path = None
         self._file_mtime = None
@@ -135,60 +282,56 @@ class PromptEngineer:
 
         return current_dir
 
-    def _get_file_sections(self, file_path: str) -> DictParams:
-        """Extract all sections from a single .xml file."""
+    def _load_file_content(self, file_path: str) -> str:
+        """Load raw text content from a single .xml file."""
         if not file_path or not os.path.exists(file_path):
-            return {}
+            return ""
 
         try:
             with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+                return f.read()
         except OSError:
-            return {}
+            return ""
 
-        # Same regex pattern as docstring parsing - works for XML tags!
-        result = {}
-        matches = re.findall(r"<(.*?)>(.*?)</\1>", content, re.DOTALL)
-        for match in matches:
-            tag_name = match[0]
-            content = match[1].strip()
-            result[tag_name] = content
-
-        return result
-
-    def _get_inherited_file_sections(self) -> DictParams:
-        """Get sections from all prompt files in inheritance chain with proper merging."""
+    def _load_inherited_prompt_content(self) -> str:
+        """Load and concatenate prompt files from inheritance chain (parent to child)."""
         # Get the Method Resolution Order (MRO) for inheritance support
         class_names = [cls.__name__ for cls in self._agent.__class__.__mro__ if issubclass(cls, BaseSTARAgent)]
-        result = {}
+        content_parts = []
 
-        # Process classes in REVERSE MRO order (parent -> child) so child sections override parent
+        # Process classes in REVERSE MRO order (parent -> child)
+        # Child sections will appear later in text, so searches find child version first
         for class_name in reversed(class_names):
             # Try to find a prompt file for this class (in priority order)
             user_prompt_file = self._get_user_prompt_file(class_name)
             if user_prompt_file and os.path.exists(user_prompt_file):
-                file_sections = self._get_file_sections(user_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(user_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             lib_prompt_file = self._get_lib_prompt_file(class_name)
             if lib_prompt_file and os.path.exists(lib_prompt_file):
-                file_sections = self._get_file_sections(lib_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(lib_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             core_prompt_file = self._get_core_prompt_file(class_name)
             if core_prompt_file and os.path.exists(core_prompt_file):
-                file_sections = self._get_file_sections(core_prompt_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(core_prompt_file)
+                if content:
+                    content_parts.append(content)
                 continue
 
             co_located_file = self._get_co_located_prompt_file(class_name)
             if co_located_file and os.path.exists(co_located_file):
-                file_sections = self._get_file_sections(co_located_file)
-                result.update(file_sections)  # Child sections override parent
+                content = self._load_file_content(co_located_file)
+                if content:
+                    content_parts.append(content)
 
-        return result
+        # Join with newlines; when searching, later sections override earlier ones
+        return "\n\n".join(content_parts)
 
     def _check_file_modified(self) -> bool:
         """Check if prompt file has been modified since last load."""
@@ -253,32 +396,98 @@ class PromptEngineer:
         }
 
     def _get_prompt_section_for_tag(self, tag: str, show_tag: bool | str = True) -> str:
-        """Extract a section from the formatted prompt for a given tag."""
-        content = self._prompt_sections.get(tag, "")
-        if len(content) == 0:
+        """
+        Extract a section by tag name using direct text search.
+        Supports nested tags automatically. Results are cached.
+        """
+        # Check cache first
+        cache_key = f"{tag}:{show_tag}"
+        if cache_key in self._section_cache:
+            return self._section_cache[cache_key]
+
+        # Extract from raw content
+        content = self._extract_section_from_text(self._prompt_content, tag)
+
+        if not content:
+            self._section_cache[cache_key] = ""
             return ""
 
+        # Format with tags if requested
         if show_tag:
             if isinstance(show_tag, str):
                 content = f"<{show_tag}>\n{content}\n</{show_tag}>"
             else:
                 content = f"<{tag}>\n{content}\n</{tag}>"
+
+        self._section_cache[cache_key] = content
         return content
 
+    def _extract_section_from_text(self, content: str, target_tag: str) -> str:
+        """
+        Extract a section by searching for start/end tags in raw text.
+        Tolerant of missing end tags (uses next tag or EOF).
+        Searches recursively for nested tags.
+        """
+        # Look for the opening tag
+        start_pattern = f"<{target_tag}>"
+        start_pos = content.rfind(start_pattern)  # Use rfind to get last occurrence (child overrides parent)
+
+        if start_pos == -1:
+            # Not found at top level - try as nested tag
+            return self._search_nested_tag(content, target_tag)
+
+        tag_start = start_pos + len(start_pattern)
+
+        # Look for matching closing tag
+        end_pattern = f"</{target_tag}>"
+        end_pos = content.find(end_pattern, tag_start)
+
+        if end_pos != -1:
+            # Found closing tag
+            return content[tag_start:end_pos].strip()
+
+        # No closing tag - find next opening tag or EOF (tolerant parsing)
+        next_tag = self._START_TAG_PATTERN.search(content, tag_start)
+        if next_tag:
+            return content[tag_start : next_tag.start()].strip()
+
+        # No more tags - take rest of content
+        return content[tag_start:].strip()
+
+    def _search_nested_tag(self, content: str, target_tag: str) -> str:
+        """
+        Search for a tag that's nested inside other tags.
+        E.g., find CONTEXT_INSTRUCTIONS inside CONTEXT.
+        """
+        # Search for target tag anywhere in content (use rfind for last occurrence)
+        pattern = f"<{target_tag}>"
+        pos = content.rfind(pattern)
+
+        if pos == -1:
+            return ""
+
+        tag_start = pos + len(pattern)
+        end_pattern = f"</{target_tag}>"
+        end_pos = content.find(end_pattern, tag_start)
+
+        if end_pos != -1:
+            return content[tag_start:end_pos].strip()
+
+        # Tolerant: find next tag
+        next_tag = self._START_TAG_PATTERN.search(content, tag_start)
+        if next_tag:
+            return content[tag_start : next_tag.start()].strip()
+
+        return content[tag_start:].strip()
+
     @property
-    def _prompt_sections(self) -> DictParams:
-        """Get the prompt sections (cached) - file-based with section-level inheritance."""
-        # Check if we need to reload (no cache or files modified)
-        if not hasattr(self, "_prompt_sections_cache") or not self._prompt_sections_cache:
-            # Load sections from all prompt files in inheritance chain
-            self._prompt_sections_cache = self._get_inherited_file_sections()
+    def _prompt_content(self) -> str:
+        """Get the raw prompt content (cached) - file-based with section-level inheritance."""
+        if self._raw_content_cache is None:
+            # Load raw text from all prompt files in inheritance chain
+            self._raw_content_cache = self._load_inherited_prompt_content()
 
-        return self._prompt_sections_cache
-
-    @_prompt_sections.setter
-    def _prompt_sections(self, value: DictParams) -> None:
-        """Set the prompt sections."""
-        self._prompt_sections_cache = value
+        return self._raw_content_cache
 
     # ============================================================================
     # PUBLIC INTERFACE PROPERTIES
@@ -303,6 +512,14 @@ class PromptEngineer:
     # SYSTEM PROMPT GENERATION
     # ============================================================================
 
+    def _get_learnings_section(self) -> str:
+        """Get the learnings section."""
+        episodic_learnings = self._agent._learner.query_learnings("ANYTHING", LearningPhase.EPISODIC)
+        episodic_content = episodic_learnings if episodic_learnings else None
+        return f"""<LEARNINGS>
+{episodic_content}
+</LEARNINGS>"""
+
     def _get_system_prompt(self) -> str:
         """
         Generate system prompt with optimal section ordering for context engineering.
@@ -315,6 +532,8 @@ class PromptEngineer:
         6. AVAILABLE_TARGETS - Unified registry
         """
         return f"""
+{self._get_system_first_word_section()}
+
 {self._get_preamble_section()}
 
 {self._get_constraint_section()}
@@ -325,14 +544,26 @@ class PromptEngineer:
 
 {self._get_examples_section()}
 
-{self._get_available_targets_section()}
+{self._get_available_tools_section()}
 
 {self._get_postscript_section()}
+
+{self._get_learnings_section()}
+
+{self._get_system_last_word_section()}
 """.strip()
 
     # ============================================================================
     # SYSTEM PROMPT SECTION METHODS
     # ============================================================================
+
+    def _get_system_first_word_section(self) -> str:
+        """Get the system first word section."""
+        return self._get_prompt_section_for_tag("SYSTEM_FIRST_WORD", show_tag=False)
+
+    def _get_system_last_word_section(self) -> str:
+        """Get the system last word section."""
+        return self._get_prompt_section_for_tag("SYSTEM_LAST_WORD", show_tag=False)
 
     def _get_preamble_section(self) -> str:
         """Get the preamble section."""
@@ -401,6 +632,14 @@ class PromptEngineer:
 </WORKFLOWS>
 </AVAILABLE_TARGETS>"""
 
+    def _get_available_tools_section(self) -> str:
+        """Get the available tools section (combined agents, resources, workflows)."""
+        return f"""<AVAILABLE_TOOLS>
+{self._prt_agent_descriptions}
+{self._prt_resource_descriptions}
+{self._prt_workflow_descriptions}
+</AVAILABLE_TOOLS>"""
+
     # ============================================================================
     # TEMPLATE FORMATTING PROPERTIES
     # ============================================================================
@@ -416,7 +655,12 @@ class PromptEngineer:
         agents = self._agent.available_agents
         if not agents or len(agents) == 0:
             return "None"
-        return "\n".join([f"- {a.agent_type} (ID: {a.object_id}): {a.public_description}" for a in agents])
+        descriptions = []
+        for a in agents:
+            desc = a.public_description
+            # If using text_flattened format, desc already has hyphens
+            descriptions.append(f"- {a.agent_type} (ID: {a.object_id}): {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_resource_descriptions(self) -> str:
@@ -425,7 +669,15 @@ class PromptEngineer:
         if not resources or len(resources) == 0:
             return "None"
         # return "\n".join([f"- {r.resource_type} (ID: {r.object_id}): {r.public_description}" for r in resources]
-        return "\n".join([f"- {r.public_description}" for r in resources])
+        descriptions = []
+        for r in resources:
+            desc = r.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_workflow_descriptions(self) -> str:
@@ -434,7 +686,15 @@ class PromptEngineer:
         if not workflows or len(workflows) == 0:
             return "None"
         # return "\n".join([f"- {w.workflow_type} (ID: {w.object_id}): {w.public_description}" for w in workflows])
-        return "\n".join([f"- {w.public_description}" for w in workflows])
+        descriptions = []
+        for w in workflows:
+            desc = w.public_description
+            # If using text_flattened format, don't add extra hyphen prefix
+            if desc.startswith("- "):
+                descriptions.append(desc)
+            else:
+                descriptions.append(f"- {desc}")
+        return "\n".join(descriptions)
 
     @property
     def _prt_usage_examples(self) -> str:
@@ -470,24 +730,12 @@ class PromptEngineer:
 
             # Get system information
             system_info = f"{platform.system()} {platform.release()}"
-            python_version = platform.python_version()
-
-            # Get working directory
-            working_dir = os.getcwd()
 
             # Get user information
             try:
                 username = os.getenv("USER") or os.getenv("USERNAME") or "Unknown"
             except Exception:
                 username = "Unknown"
-
-            # Get additional environment info
-            try:
-                shell = os.getenv("SHELL", "Unknown")
-                home_dir = os.path.expanduser("~")
-            except Exception:
-                shell = "Unknown"
-                home_dir = "Unknown"
 
             # Get location information
             try:
@@ -509,11 +757,11 @@ class PromptEngineer:
             locale_info.append(f"Timezone: {timezone}")
             locale_info.append(f"Locale: {locale_str}")
             locale_info.append(f"System: {system_info}")
-            locale_info.append(f"Python: {python_version}")
+            # locale_info.append(f"Python: {python_version}")
             locale_info.append(f"User: {username}")
-            locale_info.append(f"Shell: {shell}")
-            locale_info.append(f"Home Directory: {home_dir}")
-            locale_info.append(f"Working Directory: {working_dir}")
+            # locale_info.append(f"Shell: {shell}")
+            # locale_info.append(f"Home Directory: {home_dir}")
+            # locale_info.append(f"Working Directory: {working_dir}")
             locale_info.append(f"Location: {location}")
 
             return "\n".join(locale_info)
@@ -523,35 +771,54 @@ class PromptEngineer:
 
     @observable
     def build_llm_request(self, timeline: Timeline) -> list[LLMMessage]:
-        """Build LLM messages for the agent with simple timeline_used logic."""
+        """Build LLM messages for the agent using the Timeline's LLM conversion API."""
         messages = []
 
         # System prompt - use the sophisticated prompt from components
         system_prompt = self._get_system_prompt()
         messages.append(LLMMessage(role="system", content=system_prompt))
 
-        # Walk through timeline entries and assign roles based on is_latest_user_message
+        # Use Timeline's LLM conversion with latest user message separation
         if timeline:
-            # Build timeline content (excluding latest user message)
-            timeline_entries = [entry for entry in timeline.timeline if not entry.is_latest_user_message]
-            if timeline_entries:
-                timeline_lines = [
-                    "<CONTEXT>",
-                    self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
-                    "<TIMELINE>",
-                ]
-                for entry in timeline_entries:
-                    # Use the entry's to_string() method to include all fields
-                    timeline_lines.append(f"<ENTRY>{entry.to_string()}</ENTRY>")
-                timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
-                timeline_content = "\n".join(timeline_lines)
-                messages.append(LLMMessage(role="system", content=timeline_content))
+            # Get timeline messages with latest user separation
+            timeline_messages = timeline.to_llm_messages(separate_latest_user=True)
 
-            # Add latest user message as separate user message, and mark it as not latest
-            latest_user_entry = next((entry for entry in timeline.timeline if entry.is_latest_user_message), None)
-            if latest_user_entry:
-                messages.append(LLMMessage(role="user", content=latest_user_entry.content))
-                latest_user_entry.is_latest_user_message = False
+            # Check if we have a latest user message (last message should be user role)
+            if timeline_messages and timeline_messages[-1].role == "user":
+                # Separate context from latest user message
+                context_messages = timeline_messages[:-1]
+                latest_user_message = timeline_messages[-1]
+
+                # Wrap context in structured format if we have context
+                if context_messages:
+                    timeline_lines = [
+                        "<CONTEXT>",
+                        self._get_prompt_section_for_tag("CONTEXT_INSTRUCTIONS", show_tag=False),
+                        "<TIMELINE>",
+                    ]
+                    for msg in context_messages:
+                        timeline_lines.append(f"<ENTRY>{msg.content}</ENTRY>")
+                    timeline_lines.extend(["</TIMELINE>", "</CONTEXT>"])
+                    timeline_content = "\n".join(timeline_lines)
+                    messages.append(LLMMessage(role="assistant", content=timeline_content))
+
+                # Add latest user message as separate user message
+                messages.append(latest_user_message)
+            else:
+                # No latest user message, use all timeline messages
+                messages.extend(timeline_messages)
+
+        # Hack: put the user state/locale here for now
+        latest_msg = messages[-1].content if messages else None
+        if latest_msg:
+            related_acquisitive_learnings = self._agent._learner.query_learnings(latest_msg, LearningPhase.ACQUISITIVE)
+            if related_acquisitive_learnings:
+                messages.append(LLMMessage(role="system", content=f"Learning from the past : {related_acquisitive_learnings}"))
+
+        
+        state_info = ["<STATE_INFO>", "The current state of the user is as follows:", self._get_state_info_section(), "</STATE_INFO>"]
+        state_info_content = "\n".join(state_info)
+        messages.append(LLMMessage(role="user", content=state_info_content))
 
         # Debug logging - log message building
         debug_logger = get_debug_logger()

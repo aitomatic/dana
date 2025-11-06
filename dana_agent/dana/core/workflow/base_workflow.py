@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from dana.common.base_wa import BaseWA
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, WorkflowProtocol
-from dana.common.protocols.war import tool_use
 from dana.core.global_registry import get_workflow_registry
+
+
+if TYPE_CHECKING:
+    from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 
 @dataclass
@@ -71,6 +75,7 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
             agent: The agent associated with this workflow
             auto_register: Whether to automatically register with the global registry
             registry: Specific registry to use (defaults to global registry)
+            agent: The agent associated with this workflow
             **kwargs: Additional arguments passed to parent classes
         """
         # Call super().__init__ to properly initialize all parent classes
@@ -78,6 +83,7 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
         self.workflow_type = workflow_type or self.__class__.__name__
 
         # Compile declarative transformation to callables
+        self.output_key = None  # Key to namespace workflow output under
         if args_transform:
             if pre_callable or post_callable:
                 raise ValueError("Cannot specify 'transform' with 'pre_callable' or 'post_callable'")
@@ -87,17 +93,13 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
                 input_part, output_part = args_transform.split("->", 1)
                 input_part = input_part.strip()
                 output_part = output_part.strip()
+                self.output_key = output_part if output_part else None
             else:
                 input_part = args_transform.strip()
-                output_part = "result"
 
             # Compile input mappings if present
             if input_part:
                 pre_callable = self._compile_input_mapping(input_part)
-
-            # Compile output mapping if not default
-            if output_part and output_part != "result":
-                post_callable = self._compile_output_mapping(output_part)
 
         self.pre_callable = pre_callable
         self.post_callable = post_callable
@@ -109,6 +111,19 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
 
         self.composite_left = composite_left
         self.composite_right = composite_right
+
+        self._workflow_step_agent = None
+
+    @property
+    def workflow_step_agent(self) -> WorkflowStepAgent:
+        """Get the orchestrator agent for this workflow."""
+        if self._workflow_step_agent is None:
+            id = f"{self.workflow_id}-workflow-agent"
+
+            from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
+
+            self._workflow_step_agent = WorkflowStepAgent(agent_id=id)
+        return self._workflow_step_agent
 
     @staticmethod
     def _get_nested_value(data: DictParams, path: str) -> any:
@@ -210,48 +225,26 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
 
         return mapper
 
-    @staticmethod
-    def _compile_output_mapping(output_key: str) -> Callable[[DictParams], None]:
-        """
-        Compile an output mapping specification to a callable.
-
-        Args:
-            output_key: The key name to use for the output (e.g., "search_result")
-
-        Returns:
-            A callable that renames "result" to the specified key
-        """
-
-        def mapper(data: DictParams) -> None:
-            """Rename 'result' key to output_key."""
-            if "result" in data:
-                data[output_key] = data.pop("result")
-
-        return mapper
-
-    @tool_use
     @observable
     def execute(self, **kwargs) -> DictParams:
         """Invoke the workflow with pre/post-processing.
         Args:
             **kwargs: Keyword arguments passed to the workflow
 
-        Returns: A DictParams with the invoke results.
-            result: The result (DictParams or str) of the workflow.
+        Returns: A DictParams with the execution results merged with input kwargs.
         """
         # Check if this is a composite workflow
         if self.composite_left and self.composite_right:
             # Execute left workflow
             left_result: DictParams = self.composite_left.execute(**kwargs)
 
-            # Merge results into kwargs for right workflow
+            # Merge left result into kwargs for right workflow
             combined_kwargs = {**kwargs, **left_result}
 
-            # Execute right workflow
-            right_result: DictParams = self.composite_right.execute(**combined_kwargs)
+            # Execute right workflow with merged context
+            result = self.composite_right.execute(**combined_kwargs)
 
-            # Return combined results
-            result = {**left_result, **right_result}
+            return result
 
         else:
             # Single workflow execution
@@ -260,17 +253,25 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
                 self.pre_callable(kwargs)
 
             # Execute the workflow logic
-            result = {"result": self._do_execute(**kwargs)}
+            workflow_output = self._do_execute(**kwargs)
 
-            # Carry over any additional kwargs
-            result = {**kwargs, **result}
+            # Handle output namespacing if specified
+            if self.output_key:
+                # Namespace workflow output under specified key
+                result = {**kwargs, self.output_key: workflow_output}
+            else:
+                # Merge workflow output flat with input kwargs
+                # If workflow_output is a dict, merge it; otherwise wrap in "result" key
+                if isinstance(workflow_output, dict):
+                    result = {**kwargs, **workflow_output}
+                else:
+                    result = {**kwargs, "result": workflow_output}
 
             # Post-processing
             if self.post_callable and callable(self.post_callable):
                 self.post_callable(result)
 
-        # Always return a dictionary with the "result" key
-        return result
+            return result
 
     def _do_execute(self, **kwargs) -> DictParams:
         """Override this method to implement workflow logic.

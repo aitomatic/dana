@@ -10,6 +10,7 @@ from dana.common.protocols import DictParams
 from dana.core.workflow.base_workflow import BaseWorkflow
 from dana.core.workflow.validation import validate_input, validate_output
 from dana.lib.resources.conversation import ConversationResource
+from dana.lib.agents.workflow_step_agent import WorkflowStepAgent
 
 from resources.test_data_resource import TestDataResource
 
@@ -40,15 +41,26 @@ class ROIPrioritizationWorkflow(BaseWorkflow):
             **kwargs
         )
 
-        # LLM for intelligent fix difficulty assessment and recommendations
-        self.conversation = ConversationResource(
-            resource_id="llm-reasoning",
-            llm_provider=llm_provider,
-            model=model or "claude-3-5-sonnet-20241022"
-        )
+        # Store config for step agent resources
+        self._llm_provider = llm_provider
+        self._model = model or "claude-3-5-sonnet-20241022"
+        self._step_agent_configured = False
 
         # Test data for product context and bin details
         self.test_data = TestDataResource(resource_id="test-data")
+
+    def _ensure_step_agent_configured(self):
+        """Ensure workflow_step_agent is configured with necessary resources."""
+        if not self._step_agent_configured:
+            # Give step agent access to resources it needs
+            self.workflow_step_agent.with_resources(
+                ConversationResource(
+                    resource_id=f"{self.workflow_id}-llm",
+                    llm_provider=self._llm_provider,
+                    model=self._model
+                )
+            )
+            self._step_agent_configured = True
 
     @validate_input(
         top_bins={"required": True, "type": list},
@@ -285,12 +297,12 @@ Recommendations should be:
 Provide recommendations in structured format."""
 
         try:
-            llm_response = self.conversation.send_message(
-                message=prompt,
-                conversation_history=[]
-            )
+            # Ensure step agent is configured with resources
+            self._ensure_step_agent_configured()
 
-            llm_recommendations = llm_response.get("response", "")
+            # Use step agent for intelligent recommendations
+            result = self.workflow_step_agent.query(caller_message=prompt)
+            agent_recommendations = result.get("response", "")
 
             # Build structured action list
             prioritized_actions = []
@@ -343,14 +355,14 @@ Provide recommendations in structured format."""
                     "estimated_timeline": bin_info.get("estimated_time_to_fix_days", "Unknown"),
                 })
 
-            # Add LLM analysis to top priorities
+            # Add agent analysis to top priorities
             if prioritized_actions:
-                prioritized_actions[0]["llm_detailed_plan"] = llm_recommendations
+                prioritized_actions[0]["agent_detailed_plan"] = agent_recommendations
 
             return prioritized_actions
 
         except Exception as e:
-            # Fallback: return actions without LLM recommendations
+            # Fallback: return actions without agent recommendations
             prioritized_actions = []
             for rank, bin_info in enumerate(bins_with_roi, start=1):
                 prioritized_actions.append({
@@ -360,7 +372,7 @@ Provide recommendations in structured format."""
                     "revenue_impact_usd": bin_info["annual_revenue_impact_usd"],
                     "fix_difficulty": bin_info["fix_difficulty"],
                     "roi_score": bin_info["roi_score"],
-                    "recommended_actions": ["LLM recommendation generation failed"],
+                    "recommended_actions": ["Agent recommendation generation failed"],
                     "priority_justification": f"ROI score: {bin_info['roi_score']:,.0f}",
                     "error": str(e),
                 })

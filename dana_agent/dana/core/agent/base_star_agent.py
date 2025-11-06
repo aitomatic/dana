@@ -6,9 +6,11 @@ without implementation details like LLM integration or rich state management.
 """
 
 from abc import abstractmethod
+import threading
 
 from dana.common.observable import observable
 from dana.common.protocols import DictParams, STARAgentProtococol
+from dana.common.protocols.types import LearningPhase
 from dana.core.agent.base_agent import BaseAgent
 
 
@@ -228,8 +230,15 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
     # STAR LOOP ORCHESTRATION
     # ============================================================================
 
+
     def query(self, **kwargs) -> DictParams:
-        """Main entry point - orchestrates the STAR loop."""
+        """Main entry point - orchestrates the STAR loop.
+        
+        Args:
+            **kwargs: Additional arguments passed to STAR loop.
+        """
+
+        
 
         @observable(name=f"Dana {self.agent_type}-agent-query")
         def _do_query(trace_inputs: DictParams) -> DictParams:
@@ -241,30 +250,39 @@ class BaseSTARAgent(BaseAgent, STARAgentProtococol):
                     trace_percepts = self._see(trace_inputs.get("trace_inputs", {}))
                     trace_thoughts = self._think(trace_percepts.get("trace_percepts", {}))
                     trace_outputs = self._act(trace_thoughts.get("trace_thoughts", {}))
-                    # trace_learning = self._reflect(trace_outputs["trace_outputs"], continue_flag)
-                    # trace_episode[datetime.now().isoformat()] = trace_learning
 
-                    outputs = trace_outputs.get("trace_outputs", {})
+                    # Trigger acquisitive learning asynchronously at end of each STAR loop
+                    if not self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
+                        # Prepare acquisitive learning input (async, non-blocking)
+                        acquisitive_input = trace_outputs.get("trace_outputs", {}).copy()
+                        acquisitive_input["phase"] = LearningPhase.ACQUISITIVE
+                        # Run asynchronously to not block STAR loop
+                        # Capture acquisitive_input in closure properly
+                        def run_reflect(acq_input):
+                            return self._reflect(acq_input)
+                        threading.Thread(
+                            target=run_reflect,
+                            args=(acquisitive_input,),
+                            daemon=True
+                        ).start()
 
-                    # On next loop, agent will continue reasoning on the outputs (and any timeline)
-                    trace_inputs["trace_inputs"] = outputs
-
-                    if self._do_exit_star_loop(outputs):
+                    if self._do_exit_star_loop(trace_outputs.get("trace_outputs", {})):
                         break
 
                 except Exception as e:
-                    # print(f"Error in STAR loop: {e}")
-                    # break
-                    raise e
+                    print(f"Error in query: {e}")
+                    trace_outputs = {"trace_outputs": {"error": e}}
+                    break
 
-            # trace_episode["phase"] = LearningPhase.EPISODIC
-            # _trace_trajectory = self._reflect(do_continue, trace_episode)
+            # _trace_episode["phase"] = LearningPhase.EPISODIC
+            # trace_learning = self._reflect(trace_outputs)
 
             return trace_outputs
 
         try:
             result = _do_query(trace_inputs={"trace_inputs": kwargs})
             result = result.get("trace_outputs", {}) if result else {}
+
 
         except Exception as e:
             print(f"Error in query: {e}")

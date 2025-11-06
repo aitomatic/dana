@@ -113,6 +113,8 @@ nothing is actually stored. This is a perfect example of how psychological manip
 can be more effective than real implementation for certain use cases.
 """
 
+from typing import Any
+
 from dana.common.protocols.war import tool_use
 from dana.core.resource.base_resource import BaseResource
 
@@ -127,8 +129,10 @@ class ToDoResource(BaseResource):
         super().__init__(resource_type="todo", **kwargs)
 
     @tool_use
-    def write(self, todos: list[dict]) -> str:
+    def write(self, todos: Any | None = None) -> str:
         """Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user. It also helps the user understand the progress of the task and overall progress of their requests.
+        IMPORTANT: anytime a task appears to be more complex than a single step, use this tool to
+        create a todo list and manage your workflow that way.
 
         ## CRITICAL RULES - MUST FOLLOW
 
