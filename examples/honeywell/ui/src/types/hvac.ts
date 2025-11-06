@@ -50,5 +50,17 @@ export interface Feedback {
   failed_actions: any[];
 }
 
-export type ExecutionStep = 'idle' | 'environment' | 'planning' | 'validation' | 'complete';
+export type ExecutionStep =
+  | 'idle'
+  | 'environment'
+  | 'planning'
+  | 'validation'
+  | 'learning'
+  | 'complete';
 
+export interface LearningAnalysis {
+  success: boolean;
+  insights: string;
+  policies: string[];
+  error?: string;
+}

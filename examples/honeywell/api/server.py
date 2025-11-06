@@ -1,6 +1,24 @@
 #!/usr/bin/env python3
 """
 FastAPI server for HVAC Agent demonstration UI.
+
+IMPORTANT: This script requires dependencies from the uv-managed virtual environment.
+Do NOT run with: python3 server.py (will fail with ModuleNotFoundError)
+
+CORRECT ways to run:
+  1. Using uv run (recommended):
+     cd /path/to/dana-internal
+     uv run python3 examples/honeywell/api/server.py
+  
+  2. Using the run script:
+     cd examples/honeywell/api
+     ./run_server.sh
+  
+  3. After activating venv manually:
+     source .venv/bin/activate
+     python3 server.py
+
+The server will run on http://localhost:8081
 """
 
 from fastapi import FastAPI, HTTPException
@@ -27,7 +45,7 @@ sys.path.insert(0, DANA_AGENT_DIR)  # For dana imports
 
 # Import after paths are set up
 from hvac_api import get_env_status, get_feedback
-from hvac_agent import HVACAgent
+from hvac_agent import HVACAgent, analyze_feedback_with_learning_agent, extract_policies_from_learning_analysis, update_hvac_agent_prompt_with_policies, delete_policies_from_hvac_agent
 
 # Request models
 class PlanRequest(BaseModel):
@@ -36,6 +54,14 @@ class PlanRequest(BaseModel):
 class ValidatePlanRequest(BaseModel):
     environment: Dict[str, Any]
     plan: Dict[str, Any]
+
+class AnalyzeRequest(BaseModel):
+    environment: Dict[str, Any]
+    agent_plan: Dict[str, Any]
+    feedback: Dict[str, Any]
+
+class DeletePoliciesRequest(BaseModel):
+    policies: List[str]  # List of policy strings to delete
 
 app = FastAPI(title="HVAC Agent API")
 
@@ -200,6 +226,86 @@ async def get_policies():
         print(f"Error in get_policies: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get policies: {str(e)}")
+
+@app.post("/api/hvac/analyze")
+async def analyze_feedback(request: AnalyzeRequest):
+    """Analyze feedback with Learning Agent and extract policies"""
+    try:
+        env = request.environment
+        agent_plan = request.agent_plan
+        feedback = request.feedback
+        
+        # Analyze feedback with learning agent
+        # Run in thread pool to avoid event loop conflict
+        learning_analysis = await asyncio.to_thread(
+            analyze_feedback_with_learning_agent,
+            feedback,
+            env,
+            agent_plan
+        )
+        
+        if "error" in learning_analysis:
+            return {
+                "success": False,
+                "insights": "",
+                "policies": [],
+                "error": learning_analysis["error"]
+            }
+        
+        if not learning_analysis.get("success"):
+            return {
+                "success": False,
+                "insights": learning_analysis.get("raw_response", ""),
+                "policies": [],
+                "error": "Learning agent did not return success"
+            }
+        
+        # Extract policies from learning analysis
+        policies = extract_policies_from_learning_analysis(learning_analysis["insights"])
+        
+        # Update HVACAgent.xml with extracted policies if any found
+        if policies:
+            update_hvac_agent_prompt_with_policies(policies)
+            print(f"Updated HVACAgent.xml with {len(policies)} policies")
+        
+        return {
+            "success": True,
+            "insights": learning_analysis["insights"],
+            "policies": policies
+        }
+    except Exception as e:
+        print(f"Error in analyze_feedback: {e}")
+        print(f"Exception type: {type(e).__name__}")
+        traceback.print_exc()
+        error_msg = str(e) if isinstance(e, Exception) else repr(e)
+        raise HTTPException(status_code=500, detail=f"Failed to analyze feedback: {error_msg}")
+
+@app.post("/api/hvac/policies/delete")
+async def delete_policies(request: DeletePoliciesRequest):
+    """Delete specified policies from HVACAgent.xml"""
+    try:
+        policies_to_delete = request.policies
+        
+        if not policies_to_delete:
+            raise HTTPException(status_code=400, detail="No policies specified for deletion")
+        
+        # Delete policies (run in thread pool since it's a synchronous file operation)
+        deleted_count = await asyncio.to_thread(
+            delete_policies_from_hvac_agent,
+            policies_to_delete
+        )
+        
+        return {
+            "success": True,
+            "deleted_count": deleted_count,
+            "message": f"Deleted {deleted_count} policy/policies"
+        }
+    except Exception as e:
+        print(f"Error in delete_policies: {e}")
+        print(f"Exception type: {type(e).__name__}")
+        traceback.print_exc()
+        error_msg = str(e) if isinstance(e, Exception) else repr(e)
+        raise HTTPException(status_code=500, detail=f"Failed to delete policies: {error_msg}")
 
 if __name__ == "__main__":
     import uvicorn

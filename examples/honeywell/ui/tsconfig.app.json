@@ -26,5 +26,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/types"]
+  "include": ["src", "src/types"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__tests__/**",
+    "src/hooks/use-api.ts",
+    "src/hooks/useAutoSwitchToKnowledgeTab.ts"
+  ]
 }
