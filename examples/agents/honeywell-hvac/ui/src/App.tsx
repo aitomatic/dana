@@ -38,7 +38,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid grid-cols-12 gap-4 p-6 h-[calc(100vh-140px)]">
+      <main className="grid grid-cols-12 gap-4 p-6 h-[calc(100vh-100px)]">
         {/* Left Panel: Environment + Execution Progress */}
         <div className="col-span-3 space-y-4 overflow-y-auto">
           <EnvironmentPanel />
