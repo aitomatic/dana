@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from dana.common.base_wa import BaseWA
 from dana.common.observable import observable
 from dana.common.protocols import AgentProtocol, DictParams, WorkflowProtocol
-from dana.common.protocols.war import tool_use
 from dana.core.global_registry import get_workflow_registry
 
 
@@ -226,7 +225,6 @@ class BaseWorkflow(BaseWA, WorkflowProtocol):
 
         return mapper
 
-    @tool_use
     @observable
     def execute(self, **kwargs) -> DictParams:
         """Invoke the workflow with pre/post-processing.

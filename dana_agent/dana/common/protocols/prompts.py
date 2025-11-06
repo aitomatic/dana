@@ -6,6 +6,7 @@ system from specific implementations, allowing for better dependency
 management and testability.
 """
 
+from abc import abstractmethod
 from typing import Protocol, runtime_checkable
 
 from .types import DictParams
@@ -116,3 +117,34 @@ class BasePrompts(PromptsProtocol):
             return template.format(**kwargs)
         except KeyError as e:
             raise ValueError(f"Missing required variable: {e}")
+
+
+class PublicPromptsProtocol(Protocol):
+    """Protocol for public prompts."""
+
+    @property
+    @abstractmethod
+    def public_description(self) -> str:
+        """Public description for the object."""
+        ...
+
+class PrivatePromptsProtocol(Protocol):
+    """Protocol for private prompts."""
+
+    @property
+    @abstractmethod
+    def system_prompt(self) -> str:
+        """System prompt for the object."""
+        ...
+
+    @property
+    @abstractmethod
+    def available_tools_prompt(self) -> str:
+        """Available tools prompt for the object."""
+        ...
+
+    @property
+    @abstractmethod
+    def identity(self) -> str:
+        """Identity prompt for the object. For backward compatibility."""
+        ...

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """HVAC Control Agent - Simple flow without tools."""
 
-import sys
-import os
 import json
+import os
 import re
+import sys
+
 
 # Try to import colorama for better cross-platform color support
 try:
@@ -367,7 +368,7 @@ def update_hvac_agent_prompt_with_policies(policies):
     )
     
     # Read the current prompt file
-    with open(prompt_path, 'r') as f:
+    with open(prompt_path) as f:
         content = f.read()
     
     # Find the IDENTITY section
@@ -429,6 +430,95 @@ def update_hvac_agent_prompt_with_policies(policies):
         f.write(new_content)
     
     print(f"Updated HVACAgent.xml with {len(policies)} policies")
+
+
+def delete_policies_from_hvac_agent(policies_to_delete):
+    """
+    Delete specified policies from the HVACAgent.xml file.
+    
+    Args:
+        policies_to_delete: List of policy strings to delete (exact match required)
+    
+    Returns:
+        int: Number of policies deleted
+    """
+    prompt_path = os.path.join(
+        os.path.dirname(__file__),
+        "prompts",
+        "HVACAgent.xml"
+    )
+    
+    # Read the current prompt file
+    with open(prompt_path) as f:
+        content = f.read()
+    
+    # Find the IDENTITY section
+    identity_start = content.find('<IDENTITY>')
+    if identity_start == -1:
+        print("Warning: Could not find IDENTITY section in HVACAgent.xml")
+        return 0
+    
+    identity_end = content.find('</IDENTITY>')
+    if identity_end == -1:
+        print("Warning: Could not find end of IDENTITY section in HVACAgent.xml")
+        return 0
+    
+    # Get the content before and after IDENTITY
+    before_identity = content[:identity_start]
+    after_identity = content[identity_end + len('</IDENTITY>'):]
+    
+    # Extract the original IDENTITY content (without the tags)
+    identity_content = content[identity_start + len('<IDENTITY>'):identity_end].strip()
+    
+    # Extract existing policies if they exist
+    existing_policies = []
+    if "YOU MUST FOLLOW THESE RULES:" in identity_content:
+        # Find the start and end of the policies section
+        policies_start = identity_content.find("YOU MUST FOLLOW THESE RULES:")
+        # Find the end by looking for the next empty line or end of content
+        lines = identity_content[policies_start:].split('\n')
+        policies_end = policies_start
+        for i, line in enumerate(lines):
+            if i > 0 and line.strip() == "":
+                policies_end = policies_start + len('\n'.join(lines[:i+1]))
+                break
+        
+        # Extract existing policies
+        policies_section = identity_content[policies_start:policies_end]
+        for line in policies_section.split('\n'):
+            if line.strip().startswith('- '):
+                existing_policies.append(line.strip()[2:])  # Remove the '- ' prefix
+        
+        # Remove the existing policies section from identity_content
+        identity_content = identity_content[:policies_start] + identity_content[policies_end:]
+    
+    # Create a set of policies to delete for quick lookup
+    policies_to_delete_set = set(policies_to_delete)
+    
+    # Filter out policies to delete
+    remaining_policies = [p for p in existing_policies if p not in policies_to_delete_set]
+    deleted_count = len(existing_policies) - len(remaining_policies)
+    
+    # Reconstruct the IDENTITY content with remaining policies
+    if remaining_policies:
+        policies_section = "YOU MUST FOLLOW THESE RULES:\n"
+        for policy in remaining_policies:
+            policies_section += f"- {policy}\n"
+        policies_section += "\n"
+        new_identity_content = f"<IDENTITY>\n{policies_section}{identity_content}\n</IDENTITY>"
+    else:
+        # No policies left, remove the policies section entirely
+        new_identity_content = f"<IDENTITY>\n{identity_content}\n</IDENTITY>"
+    
+    # Reconstruct the entire file
+    new_content = before_identity + new_identity_content + after_identity
+    
+    # Write the updated content back to the file
+    with open(prompt_path, 'w') as f:
+        f.write(new_content)
+    
+    print(f"Deleted {deleted_count} policies from HVACAgent.xml")
+    return deleted_count
 
 
 def analyze_feedback_with_learning_agent(feedback, env_status, agent_plan):
@@ -727,7 +817,7 @@ def test_policy_extraction():
         
         print("\nUpdated HVACAgent.xml content:")
         print("-" * 50)
-        with open(prompt_path, 'r') as f:
+        with open(prompt_path) as f:
             content = f.read()
             print(content)
         print("-" * 50)
